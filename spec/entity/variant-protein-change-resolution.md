@@ -108,6 +108,23 @@ that names no reference residue, proves nothing either way — an unverified
 other-transcript claim is exactly the false note this check removes — so
 the answer carries no note rather than an unproven one.
 
+The check also covers the cases a residue comparison cannot reach
+(ticket 2042). A requested position the canonical protein cannot hold
+proves the request follows another numbering without a residue to
+compare: `BRCA1 Y1866D` — P38398 ends at residue 1863 — resolves the
+MANE headline `p.Tyr1845Asp` on NM_007294.4 with the other-transcript
+note, and `BRCA1 Q1878R`, whose SnpEff list carries 48
+`feature_type: interaction` protein-structure rows the projection now
+reads past instead of dropping the whole list for their count, resolves
+`p.Gln1857Arg` on NM_007294.4 the same way. A record that names no
+protein change on any transcript refuses rather than answer a bare
+genomic variant. And when the canonical facts never arrive — UniProt
+unreachable, or the record naming no MANE transcript — nothing is
+proven either way, so no other-numbering claim prints: a headline that
+spells the request resolves under a note saying plainly the numbering
+could not be checked against MANE, and a headline naming a different
+change refuses.
+
 | query | id | hgvs_p | transcript | note |
 |---|---|---|---|---|
 | BRCA1 A314T | chr17:g.41246608C>T | p.Ala314Thr | NM_007294.4 | no |
@@ -116,6 +133,8 @@ the answer carries no note rather than an unproven one.
 | BRCA1 I1568N | chr17:g.41223228A>T | p.Ile1568Asn | NM_007294.4 | no |
 | BRCA1 S1551Y | chr17:g.41226371G>T | p.Ser1551Tyr | NM_007294.4 | no |
 | BRCA1 S395T | chr17:g.41246365A>T | p.Ser395Thr | NM_007294.4 | no |
+| BRCA1 Y1866D | chr17:g.41197754A>C | p.Tyr1845Asp | NM_007294.4 | yes |
+| BRCA1 Q1878R | chr17:g.41197717T>C | p.Gln1857Arg | NM_007294.4 | yes |
 
 ```bash each_row="Protein-change numbering"
 biomcp --json --no-cache get variant '{{query}}' \
@@ -185,6 +204,31 @@ biomcp --json --no-cache get variant 'BRCA1 S1587F'
   "error": {
     "code": "invalid_argument",
     "message": "Invalid argument: No MANE-numbered variant matches 'BRCA1 S1587F': the gene's canonical protein (UniProt P38398) has Ser at 1587, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Ser1566Phe on NM_007294.4 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.41223234G>A (rs1060502325)\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'S1587F', or search the spelling: biomcp search variant -g BRCA1 --hgvsp S1587F."
+  }
+}
+```
+
+With UniProt unreachable the same requests still cannot answer silently
+(ticket 2042): the residue check cannot run, so a headline that spells
+the request resolves under a note saying plainly the numbering could not
+be checked against MANE, and a lookalike naming a different change
+refuses. The dead loopback port stands in for the unreachable provider.
+
+```bash run id=unchecked-numbering-note-uniprot-unreachable exit=0
+BIOMCP_UNIPROT_BASE=http://127.0.0.1:9 biomcp --json --no-cache get variant 'TP53 S183Y' \
+  | jq -c '{id: .id, hgvs_p: .hgvs_p, transcript: .transcript, note: .protein_numbering_note}' \
+  | mustmatch like '{"id":"chr17:g.7576902G>T","hgvs_p":"p.Ser183Tyr","transcript":"NM_001126115.1","note":"Numbering note: resolved on NM_001126115.1 as p.Ser183Tyr; the requested S183Y could not be checked against MANE numbering."}'
+```
+
+```bash run id=unchecked-numbering-refusal-uniprot-unreachable exit=2
+BIOMCP_UNIPROT_BASE=http://127.0.0.1:9 biomcp --json --no-cache get variant 'TP53 R116Q'
+```
+
+```json expect=unchecked-numbering-refusal-uniprot-unreachable contains
+{
+  "error": {
+    "code": "invalid_argument",
+    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R116Q': the canonical (MANE Select) protein could not be read, so the requested numbering could not be checked, and the only alias match is p.Arg248Gln on NM_000546.6 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.7577538C>T (ClinVar VariationID 12356; rs11540652)\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'R116Q', or search the spelling: biomcp search variant -g TP53 --hgvsp R116Q."
   }
 }
 ```

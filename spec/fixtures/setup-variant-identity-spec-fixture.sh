@@ -110,6 +110,13 @@ TP53_S183Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_s183y_20261
 BRCA1_S1587F_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1587f_20261009.json").read_bytes()
 BRCA1_S1551Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1551y_20261009.json").read_bytes()
 BRCA1_S395T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s395t_20261009.json").read_bytes()
+# Ticket 2042: recorded ClinVar-free BRCA1 queries whose requested position
+# lies past the canonical protein's 1863 residues. Y1866D's response carries
+# ClinVar's MANE name (p.Tyr1845Asp on NM_007294.4); Q1878R's SnpEff list
+# carries 48 feature_type:interaction protein-structure rows beside the
+# transcript rows.
+BRCA1_Y1866D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_y1866d_20261009.json").read_bytes()
+BRCA1_Q1878R_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_q1878r_20261009.json").read_bytes()
 # The reference-residue check reads the gene's canonical (MANE Select)
 # protein sequence from UniProt; the records are minimized to the accession,
 # the sequence, and the MANE-Select cross-reference whose RefSeq mRNA names
@@ -407,6 +414,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
             return
+        # Ticket 2042: the MYD88 L265P capture carries no SnpEff annotation
+        # and no ClinVar name, so its gene+protein form now refuses; the
+        # recorded hit still serves the recurrence card by coordinate.
+        if parsed.path == "/v1/variant/chr3:g.38182641T%3EC":
+            send_json(self, 200, json.loads(MYD88_L265P_RESPONSE)["hits"][0])
+            return
         if parsed.path == "/refsnp/334":
             send_json(self, 200, {
                 "primary_snapshot_data": {"placements_with_allele": [{
@@ -611,6 +624,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S395T"':
                 send_json(self, 200, json.loads(BRCA1_S395T_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.Y1866D"':
+                send_json(self, 200, json.loads(BRCA1_Y1866D_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.Q1878R"':
+                send_json(self, 200, json.loads(BRCA1_Q1878R_RESPONSE))
                 return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return

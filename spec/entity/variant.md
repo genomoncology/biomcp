@@ -324,8 +324,18 @@ biomcp --json --no-cache get variant 'BRAF V600E' all \
   | mustmatch like '{"source":"cancerhotspots.org","transcript":"ENST00000288602","position_count":897,"same_aa_count":833}'
 ```
 
+```bash run id=myd88-l265p-protein-form-refuses exit=2
+biomcp --json --no-cache get variant 'MYD88 L265P' all
+```
+
+The MYD88 capture carries no SnpEff annotation and no ClinVar name, so the
+protein-change form refuses — a record with no protein change on any
+transcript cannot carry the numbering story, and BioMCP refuses rather
+than return a bare genomic variant (ticket 2042). The same recorded data
+still serves the recurrence card through its genomic coordinate:
+
 ```bash
-biomcp --json --no-cache get variant 'MYD88 L265P' all \
+biomcp --json --no-cache get variant 'chr3:g.38182641T>C' all \
   | jq '{source: .cancerhotspots.source, transcript: .cancerhotspots.matched_transcript, position_count: .cancerhotspots.position_count, same_aa_count: .cancerhotspots.same_aa_count}' \
   | mustmatch like '{"source":"cancerhotspots.org","transcript":"ENST00000396334","position_count":37,"same_aa_count":37}'
 ```
