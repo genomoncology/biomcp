@@ -210,8 +210,12 @@ pub(super) fn gene_first_working_form(
     condition: &str,
     explicit_filters: &ExplicitFilterFlags,
 ) -> String {
-    let command = crate::next_command::NextCommand::biomcp()
-        .args(["search", "variant", "--condition", condition]);
+    let command = crate::next_command::NextCommand::biomcp().args([
+        "search",
+        "variant",
+        "--condition",
+        condition,
+    ]);
     append_explicit_filters(command, explicit_filters).render_shell()
 }
 
