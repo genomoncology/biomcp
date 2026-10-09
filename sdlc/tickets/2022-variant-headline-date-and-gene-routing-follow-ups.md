@@ -113,7 +113,7 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
 
 ## Third-review fix round
 
-- Code re-review (the third review, 2026-10-08): REJECT 2026-10-08, fixed
+- Code re-review (item 1, item 2): REJECT 2026-10-08, fixed
   2026-10-08. Item 1: the routed zero-row alternative dropped explicit
   `--hgvsp` and `--consequence` flags while the hint said "the same
   filters"; the alternative now keeps the resolved `--hgvsp` filter and
