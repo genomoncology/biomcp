@@ -19,7 +19,7 @@ Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, fi
 - Keeps: 2017's resolutions for myeloma, NSCLC, CML and AML, and its refusals for MF, CAD and MDS.
 - Changes: name the oncology reading the source cannot see in the refusal's candidate surface, so MM points at multiple myeloma; make trial search return the refusal and its choices.
 - Proof: `get disease MM` lists multiple myeloma (MONDO:0009693); `search trial -c MF` refuses with choices; tests pin both.
-- Defers: nothing.
+- Defers: refusing ambiguous conditions on the default ClinicalTrials.gov source (the NCI source refuses; the default source still keyword-searches).
 
 D
 ## Build status addendum
@@ -87,3 +87,16 @@ Verified live against MyDisease.info on 2026-10-08.
   the new trial.md section (a run-and-expect section with no mustmatch
   assertion); it now carries the same lint opt-out the other
   run-and-expect sections use.
+
+## Fourth-review records (findings 18 and 19)
+
+- Scope change recorded: the approved Changes line said to draw refusal
+  candidates from the abbreviation's synonyms; the delivered fix uses a
+  pointer line instead, because no source query can surface a reading
+  the source does not hold (verified live before coding). The review
+  covering the delivered shape is recorded above.
+- Outcome narrowing recorded: the NCI refusal covers the --source nci
+  path; the default ClinicalTrials.gov source still runs a raw keyword
+  search for an ambiguous condition (22 of 50 MF results are
+  myelofibrosis trials). Widening to the default source is deferred to
+  a follow-up; the Defers line is amended accordingly.
