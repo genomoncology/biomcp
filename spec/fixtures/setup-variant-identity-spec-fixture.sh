@@ -103,10 +103,12 @@ TP53_R209Q_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r209q_20261
 TP53_G112D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_g112d_20261008.json").read_bytes()
 TP53_R174H_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r174h_20261008.json").read_bytes()
 # The reference-residue check reads the gene's canonical (MANE Select)
-# protein sequence from UniProt; the record is minimized to the accession
+# protein sequence from UniProt; the records are minimized to the accession
 # and sequence. The complexportal fixture owns the routine lane's UniProt
 # base (it sources later) and serves the same bytes.
 UNIPROT_P04637_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p04637_20261008.json").read_bytes()
+# Ticket 2035 finding 4: BRCA1's residue checks read P38398.
+UNIPROT_P38398_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p38398_20261009.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 # Ticket 1291: the switch never reproduced live (the recorded
 # reproduction runs' efetch calls all answered within 1.4 s), so this
@@ -114,14 +116,17 @@ CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_202610
 # answer slower than the optional-enrichment deadline. The ClinVar
 # section must name the deadline miss and label the served
 # MyVariant.info copy as degraded with its newest evaluation date.
+# Every identifier here is invented (fourth review, finding 21): the
+# coordinate, VariationID, and RCV accession belong to no real variant,
+# so the synthetic hold cannot mislabel one.
 CLINVAR_TIMEOUT_HIT = {
-    "_id": "chr17:g.7676154G>A",
+    "_id": "chr17:g.7676000G>A",
     "dbnsfp": {"genename": "TP53", "hgvsp": "p.R273H"},
     "clinvar": {
         "gene": {"symbol": "TP53"},
-        "variant_id": 1290630,
+        "variant_id": 6000001,
         "rcv": [{
-            "accession": "RCV000030704",
+            "accession": "RCV006000001",
             "clinical_significance": "Pathogenic",
             "last_evaluated": "2021-03-11",
             "number_submitters": 3,
@@ -341,7 +346,7 @@ class Handler(BaseHTTPRequestHandler):
             if params.get("db") == ["clinvar"] and params.get("id") == ["428884"]:
                 send_xml(self, 200, CLINVAR_428884_XML)
                 return
-            if params.get("db") == ["clinvar"] and params.get("id") == ["1290630"]:
+            if params.get("db") == ["clinvar"] and params.get("id") == ["6000001"]:
                 # Ticket 1291: a synthetic hold, not a recorded exchange — no
                 # provider control forces a real eight-second NCBI hold. The
                 # optional-enrichment deadline fires before this answer lands.
@@ -590,6 +595,9 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/uniprotkb/P04637.json" and not parse_qs(parsed.query):
             send_json(self, 200, UNIPROT_P04637_RESPONSE)
+            return
+        if parsed.path == "/uniprotkb/P38398.json" and not parse_qs(parsed.query):
+            send_json(self, 200, UNIPROT_P38398_RESPONSE)
             return
 
         if parsed.path in CANCERHOTSPOTS_RESPONSES:

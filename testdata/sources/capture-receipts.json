@@ -3508,6 +3508,18 @@
       }
     },
     {
+      "path": "uniprot/get_p38398_20261009.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "UniProt",
+        "request": "https://rest.uniprot.org/uniprotkb/P38398.json",
+        "captured_at": "2026-10-09T00:30:00Z",
+        "sha256": "30b4d868183e22a2d30dff4b73d9e2c8250e9da88719c64d69fe91ab4093a7cd",
+        "minimization_or_redaction": "Kept the accession and the sequence (the fields the MANE-numbering residue check reads); dropped the rest of the record. Original full-response SHA-256 was d2dd4fec6406c53f3624d834cf63b528a68c88c855a01d95a62e6e063a11ecbf.",
+        "provider_origin_statement": "Bytes recorded from the public provider response (HTTP 200) before minimization (ticket 2016; fourth-review finding 4's BRCA1 checks)."
+      }
+    },
+    {
       "path": "myvariant/get_braf_v600e_grch37_20261007.json",
       "classification": "real_and_receipted",
       "receipt": {

@@ -8,8 +8,9 @@ into one alias list, so the same alias sits on several genomic variants
 a shorter isoform). And a ClinVar record names its own genomic variant, which
 may be a different variant than the one the user named. `get variant`
 therefore counts a hit as a match only when the transcript BioMCP headlines
-for it — the ClinVar-named or MANE (first-NM_) SnpEff annotation — spells the
-requested change; ClinVar presence breaks ties among those named matches
+for it — the ClinVar-named, MANE, change-naming, or first-NM_ SnpEff
+annotation — spells the requested change; ClinVar presence breaks ties among
+those named matches
 (ticket 1297) but never outranks the named change (ticket 2016, where the
 1297 rule returned `p.Cys135Tyr` for `TP53 C124Y` and `p.Ala1823Thr` for
 `BRCA1 A314T`). A unique provider match resolves, the one ClinVar record
@@ -50,14 +51,23 @@ ahead of the first NM_ in the SnpEff list (BRCA1's NM_007300 leads the SnpEff
 list and numbers residues 21 higher than MANE Select NM_007294 past the
 isoform insert). MyVariant.info's SnpEff and dbNSFP sections carry no MANE
 status of their own, so a response whose ClinVar preferred names disagree,
-or that carries none, falls back to the first NM_. When the resolved hit's
-protein change does not spell the request and the request named residues,
-the answer says which numbering matched (`protein_numbering_note`):
-`TP53 R116Q` resolves to the `p.Arg248Gln` variant through a shorter
-isoform's numbering, and `BRCA1 A1844T` (the long isoform's spelling, past
-the insert) resolves to the MANE spelling `p.Ala1823Thr` — both with the
-note; `BRCA1 I1568N` shows the fallback, answered on NM_007300.3 with the
-note.
+or that carries none, headlines the annotation that spells the requested
+change — the signal a ClinVar-free response still carries — and falls back
+to the first NM_ when nothing names the request. `BRCA1 I1568N` shows the
+ClinVar-free shape: nothing in the response carries a ClinVar name, and the
+hit's NM_007294 annotation spells `p.Ile1568Asn`, so the answer resolves on
+MANE Select numbering with no note instead of answering `p.Ile1589Asn` on
+the first NM_ with a note claiming the request follows another
+transcript's numbering. The answer also shows one accession per stem —
+ClinVar's preferred names carry the current RefSeq version where the SnpEff
+build lags it, so `TP53 R116Q` and `BRCA1 A1844T` both show the version
+ClinVar names (NM_000546.6, NM_007294.4) even though the SnpEff
+annotations sit on the older versions. When the resolved hit's protein
+change does not spell the request and the request named residues, the
+answer says which numbering matched (`protein_numbering_note`): `TP53
+R116Q` resolves to the `p.Arg248Gln` variant through a shorter isoform's
+numbering, and `BRCA1 A1844T` (the long isoform's spelling, past the
+insert) resolves to the MANE spelling `p.Ala1823Thr` — both with the note.
 
 The note is only honest when the request's numbering genuinely differs from
 MANE's, so BioMCP checks the requested reference residue against the gene's
@@ -68,15 +78,17 @@ names the change there, the only alias match is a lookalike naming a
 different change, so `get variant` refuses instead of returning it with the
 other-transcript note: `TP53 R209Q` (Arg at 209, only match `p.Arg248Gln`),
 `TP53 G112D` (Gly at 112, only match `p.Gly244Asp`), and `TP53 R174H` (Arg
-at 174, only match `p.Arg333His`). An unavailable sequence proves nothing
-either way, and the answer keeps its note.
+at 174, only match `p.Arg333His`). An unavailable sequence, or a request
+that names no reference residue, proves nothing either way — an unverified
+other-transcript claim is exactly the false note this check removes — so
+the answer carries no note rather than an unproven one.
 
 | query | id | hgvs_p | transcript | note |
 |---|---|---|---|---|
-| BRCA1 A314T | chr17:g.41246608C>T | p.Ala314Thr | NM_007294.3 | no |
-| TP53 R116Q | chr17:g.7577538C>T | p.Arg248Gln | NM_000546.5 | yes |
-| BRCA1 A1844T | chr17:g.41199660C>T | p.Ala1823Thr | NM_007294.3 | yes |
-| BRCA1 I1568N | chr17:g.41223228A>T | p.Ile1589Asn | NM_007300.3 | yes |
+| BRCA1 A314T | chr17:g.41246608C>T | p.Ala314Thr | NM_007294.4 | no |
+| TP53 R116Q | chr17:g.7577538C>T | p.Arg248Gln | NM_000546.6 | yes |
+| BRCA1 A1844T | chr17:g.41199660C>T | p.Ala1823Thr | NM_007294.4 | yes |
+| BRCA1 I1568N | chr17:g.41223228A>T | p.Ile1568Asn | NM_007294.3 | no |
 
 ```bash each_row="Protein-change numbering"
 biomcp --json --no-cache get variant '{{query}}' \
@@ -119,7 +131,7 @@ biomcp --json --no-cache get variant 'TP53 R209Q'
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R209Q': the gene's canonical protein (UniProt P04637) has Arg at 209, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Arg248Gln on NM_000546.5 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.7577538C>T (ClinVar VariationID 12356; rs11540652)\nRetry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS."
+    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R209Q': the gene's canonical protein (UniProt P04637) has Arg at 209, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Arg248Gln on NM_000546.6 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.7577538C>T (ClinVar VariationID 12356; rs11540652)\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'R209Q', or search the spelling: biomcp search variant -g TP53 --hgvsp R209Q."
   }
 }
 ```
