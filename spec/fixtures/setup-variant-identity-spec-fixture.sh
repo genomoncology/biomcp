@@ -102,10 +102,20 @@ BRCA1_I1568N_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_i1568n_2
 TP53_R209Q_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r209q_20261008.json").read_bytes()
 TP53_G112D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_g112d_20261008.json").read_bytes()
 TP53_R174H_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r174h_20261008.json").read_bytes()
+# Ticket 2036: recorded ClinVar-free queries where the alias match spells
+# the request only on another isoform, or where two alias hits compete and
+# exactly one names the change on MANE. The canonical-residue check must
+# run before the isoform annotation is accepted.
+TP53_S183Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_s183y_20261009.json").read_bytes()
+BRCA1_S1587F_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1587f_20261009.json").read_bytes()
+BRCA1_S1551Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1551y_20261009.json").read_bytes()
+BRCA1_S395T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s395t_20261009.json").read_bytes()
 # The reference-residue check reads the gene's canonical (MANE Select)
-# protein sequence from UniProt; the records are minimized to the accession
-# and sequence. The complexportal fixture owns the routine lane's UniProt
-# base (it sources later) and serves the same bytes.
+# protein sequence from UniProt; the records are minimized to the accession,
+# the sequence, and the MANE-Select cross-reference whose RefSeq mRNA names
+# the MANE transcript with its current version (ticket 2036). The
+# complexportal fixture owns the routine lane's UniProt base (it sources
+# later) and serves the same bytes.
 UNIPROT_P04637_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p04637_20261008.json").read_bytes()
 # Ticket 2035 finding 4: BRCA1's residue checks read P38398.
 UNIPROT_P38398_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p38398_20261009.json").read_bytes()
@@ -589,6 +599,18 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.R174H"':
                 send_json(self, 200, json.loads(TP53_R174H_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.S183Y"':
+                send_json(self, 200, json.loads(TP53_S183Y_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S1587F"':
+                send_json(self, 200, json.loads(BRCA1_S1587F_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S1551Y"':
+                send_json(self, 200, json.loads(BRCA1_S1551Y_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S395T"':
+                send_json(self, 200, json.loads(BRCA1_S395T_RESPONSE))
                 return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return
