@@ -1,6 +1,6 @@
 # 2032 — Ambiguous disease refusals offer the oncology choice and reach trial search
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
