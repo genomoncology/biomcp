@@ -120,6 +120,22 @@ jobs:
           bwrap --version
           apparmor_parser --version
           rg --version
+      - name: Provision the private-name declaration
+        env:
+          PM_FORBIDDEN_NAMES: ${{ secrets.PM_FORBIDDEN_NAMES }}
+        run: |
+          # The forbidden-name declaration is gitignored (the tree is
+          # public), so CI reads it from a secret when one exists and then
+          # holds the tree scan to it. Without the secret the scan runs on
+          # the tracked example placeholders only, and says so loudly
+          # instead of passing silently (2038 finding 7, 2035 #11).
+          if [ -n "$PM_FORBIDDEN_NAMES" ]; then
+            printf '%s' "$PM_FORBIDDEN_NAMES" > sdlc/pm-forbidden-names.json
+            echo "QUALITY_RATCHET_REQUIRE_LOCAL_NAMES=1" >> "$GITHUB_ENV"
+            echo "provisioned the local forbidden-name declaration; the tree scan requires it"
+          else
+            echo "::warning::No PM_FORBIDDEN_NAMES secret; the private-name tree scan runs with inert example placeholders only this run."
+          fi
       - name: Canonical lint gate
         run: make lint
       - name: Canonical test gate

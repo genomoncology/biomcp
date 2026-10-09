@@ -99,3 +99,12 @@ First remove the queue report so main is green. Then 2036 and 2037, and the code
   keeps its hint. That is the project's existing rule.
 - Finding 5 — Ian authorizes one full release rehearsal in the public
   scratch repository on the tag candidate, after the fixes land.
+
+## Code-lane wiring recorded 2026-10-10
+
+- Finding 7, 2035 #11 — CI reads the forbidden-name declaration from the
+  `PM_FORBIDDEN_NAMES` secret when present and then requires it (the
+  checker fails loudly when it is missing). Until the secret exists, CI
+  prints the checker's loud notice that the guard runs on inert example
+  placeholders only. Ian's action: add the `PM_FORBIDDEN_NAMES` secret
+  holding the local declaration's JSON.
