@@ -4,7 +4,6 @@ Status: complete.
 
 Milestone: 0.9.2
 
-Reviews: revision cd257afe8, accept
 
 ## Outcome
 
@@ -131,3 +130,12 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
   (2017 landed, third-review tickets filed): receipts union to 333 entries
   in main's formatting, the zero-coupling digest is repinned, and the
   inventory keeps the measured counts. Re-review of this round pending.
+
+## Landed-head re-review (2026-10-10)
+
+- Code re-review (landed head cd257afe8): ACCEPT 2026-10-10, recorded
+  through pm and normalized to the house line shape here. The four code
+  points verified with evidence; the findings were records wording,
+  resolved in the build record. Report-only corners (the refused hint
+  dropping an explicit hgvsp or consequence flag, and the -g HCC hint
+  returning no rows) are carried by ticket 2044.
