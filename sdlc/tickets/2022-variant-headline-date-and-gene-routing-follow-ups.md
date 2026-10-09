@@ -1,6 +1,6 @@
 # 2022 — Variant headline date and gene routing follow-ups
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
