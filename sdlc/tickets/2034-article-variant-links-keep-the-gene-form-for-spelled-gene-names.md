@@ -62,3 +62,38 @@ mention also loses to a more-mentioned spelled form: a document mentioning
 - 2029's keeps hold: rows with no gene keep their rsID links, rows with no
   usable form keep the mention-text command, and the existing named tests stay
   green.
+
+## Build status
+
+- Built on branch `tickets/2034-spelled-gene-names`, head `7fad90a9e`
+  (`1c8d7b97b` plus the test-expectation fix and the receipts-digest repin),
+  2026-10-08.
+- Scoped verification on the build host: `cargo fmt --check` clean;
+  `cargo clippy --no-default-features --lib --tests --locked -- -D warnings`
+  clean; `cargo nextest run --no-default-features --locked -E
+  'test(annotations) or test(mygene)'` 52 passed; `-E 'test(article) or
+  test(pubtator)'` 712 passed; `make lint` green;
+  `tools/check-source-capture-receipts.py --root testdata/sources` clean.
+  After `make sync-python-dev` and `make prepare-spec`, `mustmatch test
+  spec/entity/article-entities.md --lang bash --timeout 180` passed all 24
+  blocks under the article and variant-identity fixtures. The new 37887282
+  blocks print `biomcp get variant "KRAS p.G12C"`, `"KRAS p.G12V"` and
+  `"KRAS p.G12D"`, and the fixture's request log records exactly one MyGene
+  `ids=3845` batch per 37887282 command while 30738221 issues none.
+- Red on main: with only
+  `spelled_gene_mentions_pick_the_most_mentioned_symbol_shaped_text`
+  appended over `origin/main` (`0b432cf0d`), the test fails with
+  `namespace: "rsID"`, `identifier: "rs121913529"` — the link the ticket
+  records opening G12D. It passes on this branch.
+- Boundary: `get article`, `article entities` and batch article resolve
+  official symbols through MyGene; the `variant articles` search enrichment
+  (`resolve_variant_article_from_pmid`) keeps the mention-text rule, so a
+  spelled-gene document's rows there still take the document-based fallbacks
+  until that path grows deadline-aware MyGene support. The ticket's Outcome
+  names `article entities` only.
+- The receipts-manifest edit required repinning its digest in
+  `tools/zero-coupling-historical.json`, following 2029's landing.
+- Protocol note: one local `pytest tests/test_capture_receipts.py` run
+  slipped during the lane (66 passed); the repo pre-commit hook also runs
+  fmt and a dev-profile check on commit. Every other verification ran on the
+  build host through `yr`.
