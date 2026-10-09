@@ -10,7 +10,7 @@ use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::ema::{EmaClient, EmaSyncMode};
-use crate::sources::mychem::MyChemHit;
+use crate::sources::mychem::{MyChemHit, MyChemQueryResponse};
 use crate::sources::openfda::OpenFdaClient;
 use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
@@ -269,6 +269,60 @@ enum SparseDrugDiscoverRescue {
     Canonical(String),
     AliasFallback,
     None,
+}
+
+/// A secondary identity resolution through openFDA's field-scoped label
+/// search: the first row's generic name, taken when it differs from the
+/// query (ticket 2031). The rows come from a query scoped to
+/// `openfda.generic_name`/`openfda.brand_name`, but the code does not
+/// itself require the query to equal one of the row's identity values —
+/// some label records carry no openFDA identity block at all, so this
+/// path can miss (a brand MyChem itself carries, such as TAGRISSO on
+/// `drugcentral.synonyms`/`ndc.proprietaryname`, resolves through the
+/// MyChem record instead).
+async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
+    let client = OpenFdaClient::new().ok()?;
+    let response = client.label_search(name).await.ok()??;
+    search_results_from_openfda_label_response(&response, name, 1)
+        .into_iter()
+        .next()
+        .map(|row| row.name)
+        .filter(|candidate| !candidate.eq_ignore_ascii_case(name))
+}
+
+/// A MyChem response for `name` whose own names match `name`: `None` when
+/// only other drugs' records matched the full-text query (ticket 2031).
+async fn named_drug_response(name: &str) -> Option<MyChemQueryResponse> {
+    let resp = direct_drug_lookup(name).await.ok()?;
+    (!transform::drug::select_hits_for_name(&resp.hits, name).is_empty()).then_some(resp)
+}
+
+/// The honest no-match refusal (ticket 2031): name what the MyChem text
+/// query matched, so a wrong card is never silently substituted.
+fn name_miss_not_found(name: &str, hits: &[MyChemHit]) -> BioMcpError {
+    let mut seen = HashSet::new();
+    let candidates = hits
+        .iter()
+        .filter_map(transform::drug::from_mychem_search_hit)
+        .map(|row| row.name)
+        .filter(|candidate| seen.insert(candidate.clone()))
+        .take(3)
+        .collect::<Vec<_>>();
+    let matched_note = if candidates.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " The MyChem text search matched other drugs: {}.",
+            candidates.join(", ")
+        )
+    };
+    BioMcpError::NotFound {
+        entity: "drug".into(),
+        id: name.to_string(),
+        suggestion: format!(
+            "No drug card matches \"{name}\" by name, brand, or synonym.{matched_note} Try searching: biomcp search drug -q \"{name}\""
+        ),
+    }
 }
 
 fn normalized_discover_drug_label(value: &str) -> String {
@@ -641,47 +695,64 @@ pub(super) async fn resolve_drug_base(
                 }
             });
 
-        if let Some(candidate) = fallback_name {
-            if let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
-                && !fallback_resp.hits.is_empty()
-            {
-                lookup_name = candidate;
-                resp = fallback_resp;
-            } else {
-                return Err(original_not_found());
-            }
+        if let Some(candidate) = fallback_name
+            && let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
+            && !fallback_resp.hits.is_empty()
+        {
+            lookup_name = candidate;
+            resp = fallback_resp;
         } else {
             return Err(original_not_found());
         }
     }
 
     let mut selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    if selected.is_empty() {
+        // The MyChem full-text query matched only other drugs' records. The
+        // query may still be a real brand whose identity openFDA knows, so
+        // resolve it through openFDA's identity fields before refusing
+        // (ticket 2031).
+        let identity_fallback = match openfda_label_identity_candidate(&lookup_name).await {
+            Some(candidate) => named_drug_response(&candidate)
+                .await
+                .map(|candidate_resp| (candidate, candidate_resp)),
+            None => None,
+        };
+        match identity_fallback {
+            Some((candidate, candidate_resp)) => {
+                lookup_name = candidate;
+                resp = candidate_resp;
+                selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+            }
+            None => return Err(name_miss_not_found(name, &resp.hits)),
+        }
+    }
     let mut drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
     let needs_canonical_fallback =
         drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none();
-    if needs_canonical_fallback
-        && let Ok(client) = OpenFdaClient::new()
-        && let Ok(Some(label_response)) = client.label_search(name).await
-        && let Some(candidate) =
-            search_results_from_openfda_label_response(&label_response, name, 1)
-                .into_iter()
-                .next()
-        && !candidate.name.eq_ignore_ascii_case(name)
-        && let Ok(fallback_resp) = direct_drug_lookup(&candidate.name).await
-        && !fallback_resp.hits.is_empty()
-    {
-        lookup_name = candidate.name;
-        resp = fallback_resp;
-        selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
-        drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+    if needs_canonical_fallback {
+        let identity_fallback = match openfda_label_identity_candidate(&lookup_name).await {
+            Some(candidate) => named_drug_response(&candidate)
+                .await
+                .map(|candidate_resp| (candidate, candidate_resp)),
+            None => None,
+        };
+        if let Some((candidate, candidate_resp)) = identity_fallback {
+            lookup_name = candidate;
+            resp = candidate_resp;
+            selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+            drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+        }
     }
 
     if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
         match discover_sparse_drug_rescue(name).await {
             SparseDrugDiscoverRescue::Canonical(candidate) => {
-                if let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
-                    && !fallback_resp.hits.is_empty()
-                {
+                // Adopt the canonical candidate only when its own MyChem
+                // record names it; a sparse card that matched the query by
+                // name stays put instead of becoming a name-only card
+                // rebuilt from another record's text hits (ticket 2031).
+                if let Some(fallback_resp) = named_drug_response(&candidate).await {
                     lookup_name = candidate;
                     resp = fallback_resp;
                     selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
