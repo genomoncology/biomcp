@@ -61,7 +61,7 @@ Live evidence (recorded 2026-10-08):
 ## Fix round (review, 2026-10-08)
 
 - Code review: ACCEPT 2026-10-08 on `695ecc9b1`, three P2s folded in this round (c72a8ac91): Success criterion 4's edetate wording now names the exact ChEMBL/UNII record the build selects (CHEMBL3989507); the lazertinib keep-list claim carries the dated live check above; and `discover_sparse_drug_rescue`'s Canonical branch adopts a candidate only through `named_drug_response` — its own MyChem names must match — so a rescue miss keeps the query-matched sparse card instead of building a name-only card from another record's text hits. The get.rs source-size baseline moves with it to 1203 lines (delta 100).
-- Review coverage, honest: the ACCEPT above reviewed `695ecc9b1`. The follow-up commit `c72a8ac91` (discover-rescue guard) and this round's head carry no review yet; the fresh pre-landing review round must cover the final head.
+- Coverage note: the ACCEPT above reviewed `695ecc9b1`; the later commits (the discover-rescue change and the fourth-review brand fix) await the fresh pre-landing review.
 
 ## Fix round (fourth review, ticket 2035, 2026-10-08)
 
