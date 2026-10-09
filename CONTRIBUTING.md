@@ -83,33 +83,19 @@ lints all targets with all shipped features, runs the AlphaGenome behavior
 tests, and builds the all-feature release CLI. `make release-gate` runs the
 routine gates plus that full-feature proof.
 
-### Local Pre-Commit Hook
+### Pre-Commit Hook
 
-Developers opt in to the repository-owned hook for each checkout; the
-repository does not install it automatically. Run
-`scripts/install-pre-commit-hook` to install it:
-
-```bash
-scripts/install-pre-commit-hook
-```
-
-Check whether the current checkout already has that exact handoff without
-changing it:
-
-```bash
-scripts/install-pre-commit-hook --check
-```
-
-The installed `.git/hooks/pre-commit` file is only a thin handoff to the tracked
-`scripts/pre-commit` entrypoint. Every commit still runs the credential and
-forbidden-artifact scans. A change containing only Markdown in the repository
-root, `sdlc/`, `docs/`, `architecture/`, `spec/`, or `skills/` runs strict
-documentation checks without Cargo, rustfmt, or Clippy. Any other staged path
-runs the full Rust pre-commit checks. The artifact helper
-`scripts/pre-commit-reject-march-artifacts.sh` still permits staged deletions
-and allows only `.march/code-review-log.md` under `.march/`.
-The full path runs `cargo fmt --check` and
-`cargo clippy --no-default-features --lib --tests -- -D warnings`.
+The local pre-commit hook is withdrawn: never install it, and never run
+`scripts/install-pre-commit-hook`. Committing runs no local Rust toolchain.
+Verify before you push by running `make lint` and the lanes your change
+touches on the build machine; CI stays the merge gate. The tracked
+`scripts/pre-commit` entrypoint remains the record of the checks the
+repository owns — the credential and forbidden-artifact scans, with the
+`.march/code-review-log.md` allowance in
+`scripts/pre-commit-reject-march-artifacts.sh` (staged deletions stay
+permitted), and the `cargo fmt --check` plus
+`cargo clippy --no-default-features --lib --tests -- -D warnings` forms
+the build machine runs.
 
 ### Rust maintenance ratchets
 

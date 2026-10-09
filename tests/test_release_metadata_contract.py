@@ -153,9 +153,9 @@ def test_version_lock_rejects_formula_version_drift(tmp_path: Path) -> None:
 
 def test_version_lock_rejects_dirty_future_release_rewrite(tmp_path: Path) -> None:
     repo = _copy_release_metadata_fixture(tmp_path)
-    # The tree itself is the committed 0.9.1 release now, so the dirty
+    # The tree itself is the committed 0.9.2 release now, so the dirty
     # rewrite must reach one version FURTHER to stay a rewrite.
-    _set_every_concrete_version(repo, "0.9.2")
+    _set_every_concrete_version(repo, "0.9.3")
 
     result = _run_version_lock(repo)
 
