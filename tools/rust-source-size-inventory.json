@@ -137,12 +137,12 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1207,
+      "baseline_lines": 1231,
       "floor_lines": 1103,
       "authorized_increase": {
-        "delta": 104,
-        "ticket": "1254, 1300, 2031",
-        "reason": "Poison-recovery scoping plus the guarded label fallback call with its oversize and no-match settle reasons, and the label section outcome completion in the base resolution path. Ticket 2031: the openFDA identity fallback for queries no MyChem name matches, the refusal that names what the text search matched, the discover rescue guard that adopts only name-matched canonical candidates, and the honest description of what the openFDA candidate path guarantees.",
+        "ticket": "1254, 1300, 2031, 2037",
+        "delta": 128,
+        "reason": "Poison-recovery scoping plus the guarded label fallback call with its oversize and no-match settle reasons, and the label section outcome completion in the base resolution path. Ticket 2031: the openFDA identity fallback for queries no MyChem name matches, the refusal that names what the text search matched, the discover rescue guard that adopts only name-matched canonical candidates, and the honest description of what the openFDA candidate path guarantees. Ticket 2037: the guarded discover rescue also runs before a name-miss refusal, so a brand MyChem holds only on a nameless record resolves instead of refusing.",
         "removal_condition": "Revisit when the trial-alias cache moves behind a type, the panic arm shrinks, and the label outcome settles in a dedicated section owner module."
       }
     },
@@ -515,12 +515,12 @@
     },
     {
       "path": "src/transform/drug.rs",
+      "baseline_lines": 1309,
       "floor_lines": 1000,
-      "baseline_lines": 1250,
       "authorized_increase": {
-        "delta": 250,
-        "ticket": "1254, 1300, 2031",
-        "reason": "Anchor-only synonym fold, the end-to-end identity tests, and the label_note field on the merged drug card. Ticket 2031: the exact-name selection tiers with the leading-qualified fallback, the all-row name collectors (NDC established and proprietary names, openFDA values, DrugCentral synonyms), and the matched-canonical card-name choice.",
+        "ticket": "1254, 1300, 2031, 2037",
+        "delta": 309,
+        "reason": "Anchor-only synonym fold, the end-to-end identity tests, and the label_note field on the merged drug card. Ticket 2031: the exact-name selection tiers with the leading-qualified fallback, the all-row name collectors (NDC established and proprietary names, openFDA values, DrugCentral synonyms), and the matched-canonical card-name choice. Ticket 2037: the brand-paired nonproprietary name collector with its identity-bearing-hit guard, so a brand card takes the name its own product row pairs instead of another product's row or the brand string itself.",
         "removal_condition": "Split the merge tests into a dedicated tests submodule."
       }
     },

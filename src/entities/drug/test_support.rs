@@ -75,6 +75,9 @@ pub(super) fn who_api_row(product_id: &str, inn: &str) -> WhoPrequalificationEnt
 
 struct RequiredLabelFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
 
+#[cfg(test)]
+mod brand_resolution;
+
 impl RequiredLabelFixtureEnv {
     fn set(&mut self, name: &'static str, value: &str) {
         self.0.push((name, std::env::var_os(name)));
@@ -533,12 +536,14 @@ fn decoded_query_param(request_target: &str, key: &str) -> Option<String> {
     None
 }
 
-/// A fixture server for the name-resolution flows (ticket 2031): MyChem
-/// answers by decoded query term, and each openFDA label search answers with
-/// the body the caller registered or a no-match 404.
+/// A fixture server for the name-resolution flows (tickets 2031 and 2037):
+/// MyChem answers by decoded query term, each openFDA label search answers
+/// with the body the caller registered or a no-match 404, and the OLS4
+/// discover search answers by decoded `q` term or a no-match 404.
 async fn name_resolution_fixture_server(
     mychem: Vec<(String, String)>,
     label_searches: Vec<(String, String)>,
+    ols_searches: Vec<(String, String)>,
 ) -> (String, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -548,6 +553,7 @@ async fn name_resolution_fixture_server(
         while let Ok((mut stream, _)) = listener.accept().await {
             let mychem = mychem.clone();
             let label_searches = label_searches.clone();
+            let ols_searches = ols_searches.clone();
             tokio::spawn(async move {
                 let mut request = vec![0_u8; 64 * 1024];
                 let len = stream
@@ -563,6 +569,15 @@ async fn name_resolution_fixture_server(
                 let (status, body): (&str, Vec<u8>) = if target.starts_with("/v1/query?") {
                     let term = decoded_query_param(&target, "q").unwrap_or_default();
                     match mychem.iter().find(|(query, _)| *query == term) {
+                        Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                        None => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
+                        ),
+                    }
+                } else if target.starts_with("/api/search?") {
+                    let term = decoded_query_param(&target, "q").unwrap_or_default();
+                    match ols_searches.iter().find(|(query, _)| *query == term) {
                         Some((_, body)) => ("200 OK", body.clone().into_bytes()),
                         None => (
                             "404 Not Found",
@@ -623,6 +638,12 @@ async fn name_resolution_fixture_drug(base: &str, name: &str) -> super::Drug {
     );
     env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_OPENFDA_BASE", base);
+    // The guarded discover rescue reaches OLS4 and the HPO alias lookup it
+    // carries; both stay on the fixture so no name-resolution test leaves
+    // it (ticket 2037).
+    env.set("BIOMCP_OLS4_BASE", base);
+    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
+    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
     env.set(
         "BIOMCP_DDINTER_DIR",
@@ -641,6 +662,7 @@ async fn terfenadine_returns_terfenadines_card_with_an_honest_empty_label() {
             "terfenadine".to_string(),
             crate::transform::drug::name_resolution_tests::TERFENADINE_CAPTURE.to_string(),
         )],
+        Vec::new(),
         Vec::new(),
     )
     .await;
@@ -684,6 +706,7 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
                 .to_string(),
         )],
         Vec::new(),
+        Vec::new(),
     )
     .await;
 
@@ -698,6 +721,9 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
     );
     env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_OPENFDA_BASE", &base);
+    env.set("BIOMCP_OLS4_BASE", &base);
+    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
+    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
     env.set(
         "BIOMCP_DDINTER_DIR",
@@ -738,6 +764,7 @@ async fn a_brand_query_resolves_through_the_mychem_record_itself() {
             "TAGRISSO".to_string(),
             crate::transform::drug::name_resolution_tests::TAGRISSO_CAPTURE.to_string(),
         )],
+        Vec::new(),
         Vec::new(),
     )
     .await;

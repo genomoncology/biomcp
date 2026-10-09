@@ -523,3 +523,267 @@ fn merge_mychem_hits_keeps_the_imatinib_mesylate_established_name() {
     let drug = merge_mychem_hits(&[&imatinib], "imatinib");
     assert_eq!(drug.name, "imatinib mesylate");
 }
+
+/// `q=Tarceva` recorded 2026-10-09 (ticket 2037): MyChem holds the brand only
+/// on a record with no name at all, so nothing in the reply can identify the
+/// drug and openFDA holds no Tarceva label either.
+pub(crate) const TARCEVA_CAPTURE: &str = r#"
+{
+  "total": 1,
+  "max_score": 17.668518,
+  "hits": [
+    {"_id": "C1135136", "_score": 17.668518}
+  ]
+}
+"#;
+
+/// `q=Erlotinib Hydrochloride` recorded 2026-10-09 (ticket 2037): the
+/// DB00530 record names erlotinib hydrochloride on its own NDC rows. NDC rows
+/// deduplicated to first occurrences; the fieldless text-only hits removed.
+pub(crate) const ERLOTINIB_HYDROCHLORIDE_CAPTURE: &str = r#"
+{
+  "total": 6,
+  "hits": [
+    {
+      "_id": "AAKJLRGGTJKAMG-UHFFFAOYSA-N",
+      "_score": 54.598755,
+      "drugbank": {"id": "DB00530", "name": "Erlotinib", "synonyms": ["Erlotinib"]},
+      "chembl": {"molecule_chembl_id": "CHEMBL553", "pref_name": "ERLOTINIB"},
+      "ndc": [
+        {"nonproprietaryname": "Erlotinib hydrochloride", "proprietaryname": "Erlotinib"},
+        {"nonproprietaryname": "Erlotinib Hydrochloride", "proprietaryname": "Erlotinib Hydrochloride"}
+      ],
+      "unii": {"unii": "J4T82JAH4P", "display_name": "ERLOTINIB HYDROCHLORIDE"},
+      "chebi": {"name": "erlotinib"},
+      "drugcentral": {
+        "synonyms": ["erlotinib hydrochloride", "tarceva", "erlotinib"]
+      }
+    },
+    {
+      "_id": "31722-263",
+      "_score": 36.026367,
+      "ndc": {"nonproprietaryname": "ERLOTINIB", "proprietaryname": "ERLOTINIB"}
+    }
+  ]
+}
+"#;
+
+/// `q=Zejula` recorded 2026-10-09 (ticket 2037): the niraparib record carries
+/// the Akeega combination rows first and Zejula's own rows after them, each
+/// pairing the brand with its established name. NDC rows deduplicated to
+/// first occurrences; the fieldless second hit removed.
+pub(crate) const ZEJULA_CAPTURE: &str = r#"
+{
+  "total": 2,
+  "hits": [
+    {
+      "_id": "PCHKPVIQAHNQLW-CQSZACIVSA-N",
+      "_score": 26.552227,
+      "drugbank": {"id": "DB11793", "name": "Niraparib", "synonyms": ["Niraparib"]},
+      "chembl": {
+        "molecule_chembl_id": "CHEMBL1094636",
+        "pref_name": "NIRAPARIB",
+        "drug_mechanisms": [
+          {"action_type": "INHIBITOR", "target_name": "Poly [ADP-ribose] polymerase 1"}
+        ]
+      },
+      "ndc": [
+        {"nonproprietaryname": "NIRAPARIB TOSYLATE MONOHYDRATE and ABIRATERONE ACETATE", "proprietaryname": "AKEEGA"},
+        {"nonproprietaryname": "niraparib", "proprietaryname": "ZEJULA"}
+      ],
+      "unii": {"unii": "HMC2H89N35", "display_name": "NIRAPARIB"},
+      "chebi": {"name": "niraparib"},
+      "gtopdb": {"name": "niraparib", "interaction_targets": [{"symbol": "PARP1"}]},
+      "drugcentral": {
+        "synonyms": ["niraparib", "niraparib tosylate", "zejula"]
+      }
+    }
+  ]
+}
+"#;
+
+#[test]
+fn zejula_names_the_card_for_the_drug_its_own_row_pairs() {
+    // Ticket 2037: MyChem pairs proprietaryname ZEJULA with
+    // nonproprietaryname niraparib on the same rows, while the first rows on
+    // the record belong to the Akeega combination. The brand card takes the
+    // name its own product row carries.
+    let capture = hits(serde_json::from_str(ZEJULA_CAPTURE).expect("valid capture"));
+    let selected = select_hits_for_name(&capture, "zejula");
+    assert_eq!(selected.len(), 1);
+    let drug = merge_mychem_hits(&selected, "zejula");
+    assert_eq!(drug.name, "niraparib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB11793"));
+    assert!(
+        !drug.name.contains("abiraterone"),
+        "the card never takes the Akeega combination row's name"
+    );
+}
+
+/// `q=KEYTRUDA` recorded 2026-10-09 (ticket 2037): the brand names two
+/// NDC-only records — the pembrolizumab row and the Keytruda QLEX
+/// combination row. The exact brand row resolves the card.
+pub(crate) const KEYTRUDA_CAPTURE: &str = r#"
+{
+  "total": 4,
+  "hits": [
+    {
+      "_id": "0006-3083",
+      "_score": 17.676718,
+      "ndc": {"nonproprietaryname": "pembrolizumab and berahyaluronidase alfa-pmph", "proprietaryname": "KEYTRUDA QLEX"}
+    },
+    {
+      "_id": "0006-3026",
+      "_score": 17.670006,
+      "ndc": {"nonproprietaryname": "pembrolizumab", "proprietaryname": "KEYTRUDA"}
+    }
+  ]
+}
+"#;
+
+#[test]
+fn keytruda_keeps_the_pembrolizumab_card_name() {
+    let capture = hits(serde_json::from_str(KEYTRUDA_CAPTURE).expect("valid capture"));
+    let selected = select_hits_for_name(&capture, "keytruda");
+    assert_eq!(
+        selected.len(),
+        1,
+        "only the record whose own brand row says KEYTRUDA resolves the query"
+    );
+    let drug = merge_mychem_hits(&selected, "keytruda");
+    assert_eq!(drug.name, "pembrolizumab");
+    assert!(
+        !drug.name.contains("berahyaluronidase"),
+        "the single-row record keeps its own established name, never the QLEX row's"
+    );
+}
+
+/// `q=Lonsurf` recorded 2026-10-09 (ticket 2037): both ingredient records
+/// carry Lonsurf product rows, and a bare CHEBI record named "Lonsurf"
+/// also matches the brand exactly, so the exact tier holds all three.
+/// NDC rows deduplicated to first occurrences; the fieldless hit removed.
+pub(crate) const LONSURF_CAPTURE: &str = r#"
+{
+  "total": 4,
+  "hits": [
+    {
+      "_id": "VSQQQLOSPVPRAZ-RRKCRQDMSA-N",
+      "_score": 23.3516,
+      "drugbank": {"id": "DB00432", "name": "Trifluridine"},
+      "chembl": {"molecule_chembl_id": "CHEMBL1129", "pref_name": "TRIFLURIDINE"},
+      "unii": {"unii": "RMW9V5RW38", "display_name": "TRIFLURIDINE"},
+      "chebi": {"name": "trifluridine"},
+      "gtopdb": {"name": "trifluridine"},
+      "ndc": [
+        {"nonproprietaryname": "trifluridine and tipiracil", "proprietaryname": "LONSURF"},
+        {"nonproprietaryname": "trifluridine", "proprietaryname": "Trifluridine"}
+      ]
+    },
+    {
+      "_id": "QQHMKNYGKVVGCZ-UHFFFAOYSA-N",
+      "_score": 23.344343,
+      "drugbank": {"id": "DB09343", "name": "Tipiracil"},
+      "ndc": {"nonproprietaryname": "trifluridine and tipiracil", "proprietaryname": "LONSURF"}
+    },
+    {
+      "_id": "CHEBI:90876",
+      "_score": 17.141884,
+      "chebi": {"name": "Lonsurf"}
+    }
+  ]
+}
+"#;
+
+#[test]
+fn lonsurf_says_trifluridine_and_tipiracil_again() {
+    // Ticket 2037: the exact tier also holds a bare CHEBI record whose own
+    // canonical name is the brand string "Lonsurf", and that name must not
+    // win: the card takes the established name the LONSURF rows pair on the
+    // identity-bearing records.
+    let capture = hits(serde_json::from_str(LONSURF_CAPTURE).expect("valid capture"));
+    let selected = select_hits_for_name(&capture, "lonsurf");
+    assert_eq!(selected.len(), 3);
+    let drug = merge_mychem_hits(&selected, "lonsurf");
+    assert_eq!(drug.name, "trifluridine and tipiracil");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00432"));
+}
+
+/// `q=Rybrevant` recorded 2026-10-09 (ticket 2037): the exact tier holds the
+/// identity-bearing amivantamab record, whose DrugCentral synonyms carry the
+/// brand, beside a bare NDC product row that pairs the brand with
+/// "amivantamab-vmjw". The naked row must not rename the card that the
+/// identity record already names.
+pub(crate) const RYBREVANT_CAPTURE: &str = r#"
+{
+  "total": 7,
+  "hits": [
+    {
+      "_id": "0JSR7Z0NB6",
+      "_score": 16.336586,
+      "drugbank": {"id": "DB16695", "name": "Amivantamab"},
+      "unii": {"unii": "0JSR7Z0NB6", "display_name": "AMIVANTAMAB"},
+      "drugcentral": {"synonyms": ["amivantamab", "amivantamab-vmjw", "rybrevant"]}
+    },
+    {
+      "_id": "57894-501",
+      "_score": 17.143324,
+      "ndc": {"nonproprietaryname": "amivantamab-vmjw", "proprietaryname": "Rybrevant"}
+    }
+  ]
+}
+"#;
+
+#[test]
+fn rybrevant_keeps_the_identity_records_name_over_the_naked_product_row() {
+    let capture = hits(serde_json::from_str(RYBREVANT_CAPTURE).expect("valid capture"));
+    let selected = select_hits_for_name(&capture, "rybrevant");
+    assert_eq!(selected.len(), 2);
+    let drug = merge_mychem_hits(&selected, "rybrevant");
+    assert_eq!(drug.name, "amivantamab");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
+}
+
+/// The osimertinib record carrying its brand only as a DrugCentral synonym:
+/// no NDC proprietary name and no openFDA brand hold "tagrisso", so the
+/// synonym is the only field that identifies the record for the brand query.
+/// This pin bites when DrugCentral synonyms leave `hit_all_names`, which
+/// every other test tolerated (ticket 2037).
+pub(crate) const TAGRISSO_DRUGCENTRAL_ONLY_CAPTURE: &str = r#"
+{
+  "total": 1,
+  "hits": [
+    {
+      "_id": "DUYJMQONPNNFPI-UHFFFAOYSA-N",
+      "_score": 24.06902,
+      "drugbank": {"id": "DB09330", "name": "Osimertinib"},
+      "chembl": {"molecule_chembl_id": "CHEMBL3353410", "pref_name": "OSIMERTINIB"},
+      "ndc": [{"nonproprietaryname": "osimertinib"}],
+      "unii": {"unii": "3C06JJ0Z2O", "display_name": "OSIMERTINIB"},
+      "chebi": {"name": "osimertinib"},
+      "drugcentral": {
+        "synonyms": ["osimertinib", "tagrisso", "AZD9291"]
+      }
+    }
+  ]
+}
+"#;
+
+#[test]
+fn tagrisso_still_selects_its_record_through_drugcentral_synonyms_alone() {
+    // Ticket 2037: 2031 credits DrugCentral synonyms for the Tagrisso fix,
+    // yet no other test failed when they were dropped, because every other
+    // capture also carries the brand on an NDC proprietary name. This
+    // capture holds the brand on the synonym alone, so removing the
+    // synonyms from `hit_all_names` empties the selection and fails here.
+    let capture =
+        hits(serde_json::from_str(TAGRISSO_DRUGCENTRAL_ONLY_CAPTURE).expect("valid capture"));
+    let selected = select_hits_for_name(&capture, "TAGRISSO");
+    assert_eq!(
+        selected.len(),
+        1,
+        "the DrugCentral synonym is the only field naming the brand here"
+    );
+    let drug = merge_mychem_hits(&selected, "TAGRISSO");
+    assert_eq!(drug.name, "osimertinib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09330"));
+}

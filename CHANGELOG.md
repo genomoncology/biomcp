@@ -28,6 +28,7 @@
 - `get drug NAME` now returns the named drug or an honest no-match: a record counts only when the query matches its name, one of its brand names or a listed synonym, brand queries such as TAGRISSO resolve through the record the brand lives on, and a card never takes its name from an unrelated product's packaging row. (2031)
 - An ambiguous disease refusal now includes the oncology reading a clinician likely means, so `get disease MM` lists multiple myeloma, and NCI trial search refuses the same ambiguous condition with its choices instead of falling back to a keyword search. (2032)
 - Variant rows keep the gene-plus-change command even when the article spells the gene as K-ras or K-RAS, resolving the official gene symbol from the row's gene identifier when no symbol-shaped mention exists. (2034)
+- `get drug` keeps a brand's own drug: a brand that lives in MyChem only on a nameless record and holds no current openFDA label, such as Tarceva, Lartruvo, Portrazza or Lumoxiti, resolves through the guarded discover rescue before any refusal, and a brand card takes the name its own product row carries, so Zejula names niraparib rather than the Akeega combination and Lonsurf says trifluridine and tipiracil again. (2037)
 
 ### New features
 
