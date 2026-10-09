@@ -1177,7 +1177,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^test:\n"
         r"\t\$\(MAKE\) prepare-test\n"
-        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)"\n'
+        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"\n'
         r"\t\$\(MAKE\) test-contracts-prepared$",
         makefile,
         flags=re.MULTILINE,
