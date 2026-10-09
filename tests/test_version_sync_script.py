@@ -153,18 +153,18 @@ def test_version_sync_script_passes_for_development_candidate(tmp_path: Path) ->
     repo_root = _copy_version_sync_fixture(tmp_path)
     rust_version = _read_version(repo_root / "Cargo.toml")
     python_version = _read_version(repo_root / "pyproject.toml")
-    # The 0.9.1 release moved every field to 0.9.1 (the fixture copies
+    # The 0.9.2 release moved every field to 0.9.2 (the fixture copies
     # the committed tree); the sync script must confirm them together.
-    assert rust_version == "0.9.1"
-    assert python_version == "0.9.1"
-    assert _read_manifest_version(repo_root / "manifest.json") == "0.9.1"
-    assert _read_server_versions(repo_root / "server.json") == ("0.9.1", "0.9.1")
-    assert _read_citation_version(repo_root / "CITATION.cff") == "0.9.1"
+    assert rust_version == "0.9.2"
+    assert python_version == "0.9.2"
+    assert _read_manifest_version(repo_root / "manifest.json") == "0.9.2"
+    assert _read_server_versions(repo_root / "server.json") == ("0.9.2", "0.9.2")
+    assert _read_citation_version(repo_root / "CITATION.cff") == "0.9.2"
 
     result = _run_version_sync_script(repo_root)
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "Versions in sync: 0.9.1 (Python 0.9.1; release candidate)"
+    assert result.stdout.strip() == "Versions in sync: 0.9.2 (Python 0.9.2; release candidate)"
     assert result.stderr == ""
 
 
@@ -219,7 +219,7 @@ def test_version_sync_script_reports_pyproject_mismatch(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"pyproject.toml={mismatched_version}"
     ) in result.stderr
 
@@ -251,7 +251,7 @@ def test_version_sync_script_reports_manifest_mismatch(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"manifest.json={mismatched_version}"
     ) in result.stderr
 
@@ -267,7 +267,7 @@ def test_version_sync_script_reports_citation_mismatch(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"CITATION.cff={mismatched_version}"
     ) in result.stderr
 
@@ -283,7 +283,7 @@ def test_version_sync_script_reports_server_json_mismatch(tmp_path: Path) -> Non
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"server.json={mismatched_version}"
     ) in result.stderr
 
@@ -299,7 +299,7 @@ def test_version_sync_script_reports_server_package_mismatch(tmp_path: Path) -> 
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"server.json biomcp-cli={mismatched_version}"
     ) in result.stderr
 
@@ -329,7 +329,7 @@ def test_version_sync_script_reports_all_mismatches_in_one_run(tmp_path: Path) -
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"pyproject.toml={pyproject_mismatch}"
     ) in result.stderr
     assert (
@@ -337,19 +337,19 @@ def test_version_sync_script_reports_all_mismatches_in_one_run(tmp_path: Path) -
         f"Cargo.lock={lock_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"manifest.json={manifest_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"CITATION.cff={citation_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"server.json={server_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.1, "
+        "Version mismatch: Cargo.toml=0.9.2, "
         f"server.json biomcp-cli={server_package_mismatch}"
     ) in result.stderr
 
@@ -358,11 +358,11 @@ def test_manifest_and_citation_versions_match_repo_metadata() -> None:
     cargo = tomllib.loads((REPO_ROOT / "Cargo.toml").read_text(encoding="utf-8"))
     pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-    assert cargo["package"]["version"] == "0.9.1"
-    assert pyproject["project"]["version"] == "0.9.1"
-    assert _read_manifest_version(REPO_ROOT / "manifest.json") == "0.9.1"
-    assert _read_server_versions(REPO_ROOT / "server.json") == ("0.9.1", "0.9.1")
-    assert _read_citation_version(REPO_ROOT / "CITATION.cff") == "0.9.1"
+    assert cargo["package"]["version"] == "0.9.2"
+    assert pyproject["project"]["version"] == "0.9.2"
+    assert _read_manifest_version(REPO_ROOT / "manifest.json") == "0.9.2"
+    assert _read_server_versions(REPO_ROOT / "server.json") == ("0.9.2", "0.9.2")
+    assert _read_citation_version(REPO_ROOT / "CITATION.cff") == "0.9.2"
 
 
 def test_uv_lock_matches_release_version_and_excludes_mustmatch_package() -> None:
@@ -371,7 +371,7 @@ def test_uv_lock_matches_release_version_and_excludes_mustmatch_package() -> Non
     root_match = UV_LOCK_ROOT_VERSION_PATTERN.search(uv_lock)
 
     assert root_match is not None, "missing biomcp-cli package entry in uv.lock"
-    assert root_match.group(2) == "0.9.1"
+    assert root_match.group(2) == "0.9.2"
     assert 'name = "mustmatch"' not in uv_lock
     assert "mustmatch" + "==0.0.4" not in uv_lock
     assert 'specifier = "==0.0.4"' not in uv_lock
