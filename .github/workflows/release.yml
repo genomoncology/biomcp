@@ -352,7 +352,7 @@ jobs:
           python -m venv "$RUNNER_TEMP/wheel-venv"
           "$RUNNER_TEMP/wheel-venv/${{ matrix.python }}" -m pip install "$RUNNER_TEMP"/wheel/*.whl
           expected="${TAG#v}"
-          printed="$('$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}' --version)"
+          printed="$("$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}" --version)"
           printf '%s\n' "$printed"
           case "$printed" in
             "biomcp $expected "*) ;;

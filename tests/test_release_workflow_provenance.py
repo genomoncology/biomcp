@@ -303,7 +303,7 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("pypi-build", "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"): "b9b6cca0e685928f03d3f444bac8c0825b2ee3510663d6503c24525218de1e23",
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
-    ("wheel-smoke", "Install the wheel into a clean venv"): "426e6b1c027fa139266e524ce40cbf5f74a8bd2a59fb65fd96de68702c71df46",
+    ("wheel-smoke", "Install the wheel into a clean venv"): "941aa2252d78ec8d6a258d88857c1e922f18489d60bfd34287e9d2de3be398b4",
     ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "311f74c8033560a975c32557cf90984636d1c4cd86bdd175307697a2a0ad11ec",
     ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
     ("docs-live", "Check out the gate helper"): "afce43fafcab696d9cef03f29b0c43b6c9849baf126b749e198bdb9d83555430",
