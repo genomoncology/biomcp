@@ -1,6 +1,7 @@
 # 2033 — Clear the third review findings before the 0.9.2 tag
 
 Status: complete.
+Landed: 4cea37dae
 
 Milestone: 0.9.2
 
@@ -40,12 +41,12 @@ Do not tag 0.9.2. Most findings from the second review are fixed. 1300 no longer
 
 ## Open branches
 
-11. **2020: ACCEPT** on `185d8e458`, once CI finishes green. Before landing, resolve the one inventory conflict, update the stale lanes table, and correct the "Yellow failure record" root cause in the ticket. No guard on the real names runs today: `pm lint forbidden-name` and `tools/check-zero-coupling.py` both need the local untracked names file, which does not exist in the main checkout. Delete the abandoned `tickets/2020-clear-main-before-the-0-9-2-tag` branch.
+11. **2020: ACCEPT** on `185d8e458`, once CI finishes green. Before landing, resolve the one inventory conflict, update the stale lanes table, and correct the "build failure record" root cause in the ticket. No guard on the real names runs today: `pm lint forbidden-name` and `tools/check-zero-coupling.py` both need the local untracked names file, which does not exist in the main checkout. Delete the abandoned `tickets/2020-clear-main-before-the-0-9-2-tag` branch.
 12. **2021: ACCEPT** for the 1,447-line pin on `d41d5e3ca`. This review is the fresh re-review main's FIX line asks for. The branch conflicts with main in the ticket and the `src/error.rs` inventory entry, whose ticket list should read "1256, 1302, 1304, 1299, 2017, 2021". It also conflicts with 2020 on that entry.
 13. **2022.** The re-indent is reverted, and the zero-row hint now works. The hint drops explicit flags such as `--consequence` and `--hgvsp` while claiming "the same filters" (`src/cli/variant/query.rs:131-132`). Two day-shape date checks remain after merging with 1291, and the comment at `src/transform/variant.rs:691` claims 1291 uses the other one. The ticket says it no longer conflicts, which is stale.
-14. **1291.** It merges cleanly. The wait-ratchet re-review names no head commit, and a stale paragraph says the delta still needs a reviewer. The ticket still cites "experiment 439" and a private workspace path at lines 22 and 38; line 22 is already on main.
+14. **1291.** It merges cleanly. The wait-ratchet re-review names no head commit, and a stale paragraph says the delta still needs a reviewer. The ticket still cites "the recorded repro experiment" and a private workspace path at lines 22 and 38; line 22 is already on main.
 15. **Rebases.** 2016, 2022, 2029 and 2021 conflict with main. 2016 is 46 commits behind.
-16. **Internal text keeps growing.** Mentions of the gate machine in `sdlc/` and `docs/` went from 194 to 208, with more "coordinator", "lane", "supervisor", "timeout revival" and "build host through the remote runner". No private project names appear.
+16. **Internal text keeps growing.** Mentions of the gate machine in `sdlc/` and `docs/` went from 194 to 208, with more "coordinator", "lane", "supervisor", "revival after a timeout" and "build host through the remote runner". No private project names appear.
 
 ## Also filed
 
@@ -59,7 +60,6 @@ The offline suite passes 849 tests on `7d17fd099` after `make sync-python-dev`. 
 
 2030 first, so CI can be trusted again. Then 2020 and 2021. Then 2031, 2016, 2022, 1291, 2029 and 2032 in any order, each rebased with a review of its head and a green merged-tree run before main moves. 1305 last.
 
-## Disposition (2026-10-09)
+## Disposition(2026-10-09)
 
-Every finding is fixed or carries a recorded reason: the CI hang (2030 landed), the drug swap (2031 landed), the false note (2016's fix rounds landed), the changelog (1305's final round in flight), 2029's spec reason (corrected and landed), the records findings (corrected on main), the rebases (all landed). The
-pre-tag review may verify each against its landing record.
+Every finding is fixed or carries a recorded reason: the CI hang (2030 landed), the drug swap (2031 landed), the false note (2016's fix rounds landed), the changelog (1305's final round in flight), 2029's spec reason (corrected and landed), the records findings (corrected on main), the rebases (all landed). The pre-tag review may verify each against its landing record.

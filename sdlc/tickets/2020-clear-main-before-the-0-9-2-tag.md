@@ -37,9 +37,9 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   neutralized in the same commit, plus the sixth-go billing phrases.
 - Code re-review (fold delta da0bf7969..fa51560e0): ACCEPT 2026-10-07.
   All three folds verified character-level; one residual P2 phrase in
-  the 1287 record reworded by the coordinator in 4d85dff69.
+  the 1287 record reworded by the queue owner in 4d85dff69.
 
-## Yellow failure record (2026-10-07; root cause corrected 2026-10-08)
+## build failure record (2026-10-07; root cause corrected 2026-10-08)
 
 The first clean yellow run failed one spec block: the restored
 "Deadline Expiry Names Itself" fence (adf71898e). The reading recorded

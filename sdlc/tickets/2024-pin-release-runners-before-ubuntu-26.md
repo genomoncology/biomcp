@@ -25,7 +25,7 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 ## Build status
 
 - Built on branch `tickets/2024-pin-release-runners-before-ubuntu-26`,
-  commit c037bddb3, 2026-10-07, after one timeout revival with a
+  commit c037bddb3, 2026-10-07, after one revival after a timeout with a
   checkpoint (nothing lost).
 - Code review: ACCEPT 2026-10-07. Verified: all four ubuntu-latest
   jobs pinned with job order and steps unchanged; build identity routed
@@ -75,7 +75,7 @@ which lands before the 0.9.2 tag.
 ## Fix-round landing (bookkeeping correction)
 
 The fix branch's content reached main as merge eae20df65 — carried by
-the coordinator's grammar-fix commit made on top of it during the 2023
+the grammar-fix commit made on top of it during the 2023
 landing chain, before the landcheck-2024fix run completed green at
 60c0e090c on the same tree. Process deviation, recorded honestly: the
 merged-tree CI run completed after the content, not before. Evidence:

@@ -4,8 +4,7 @@ Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
 Status: COMPLETE.
 
-Landed: 6bf7ca55.
-
+Landed: 6bf7ca55
 ## Outcome
 
 Every article search finishes within its 60-second deadline and returns the rows that already answered, with each slow source named as degraded. A search where nothing answered still fails with `SourceUnavailable`.

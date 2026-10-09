@@ -1,7 +1,12 @@
 # 2022 build record — variant headline date and gene routing follow-ups
 
-Landed 2026-10-08, merge d7a1323be. Review verdicts live on
+Landed 2026-10-08, merge 74c0fe87f (the later d7a1323be is a
+records-only follow-up, not the landing merge). Review verdicts live on
 sdlc/tickets/2022-variant-headline-date-and-gene-routing-follow-ups.md.
+The last review verdict before landing was REJECT with the re-review
+pending; the landing did not wait for it. Ticket 2038 item 5 orders a
+fresh re-review of the landed content, which ticket 2038's code lane
+follows by fixing the dropped-filter half the REJECT named.
 
 Outcome: the headline pairs a classification with its own evaluation
 date; gene-first routing confirms official symbols only (aliases keep

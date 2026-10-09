@@ -129,7 +129,7 @@ because no allele-specific form exists for it.
 ## Delta review
 
 - Code re-review (post-ACCEPT delta through df760a463): ACCEPT
-  2026-10-08. The cap split is a pure move; the coordinator fixes are
+  2026-10-08. The cap split is a pure move; the records fixes are
   correct (the boundary root line intact, the merged-tree count
   measured 1_405 with ticket 2020's probe removal accounted); the
   third-review correction states the multi-allele truth and narrows the

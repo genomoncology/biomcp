@@ -8,9 +8,7 @@ Status: complete.
 
 - Built on branch `tickets/1300-drug-label-sections`, sha `149cee54b`, 2026-10-07. Two review cycles. Cycle 1: FIX, one P1 (raw label+safety dedup compared whole label warnings against capped safety warnings, printing over-cap warnings twice). Cycle 2: ACCEPT — the dedup compares the Markdown projection on both sides, pinned by an over-cap test that fails on the old code; verified against the branch's own gefitinib capture.
 - The wrong-drug trap is closed structurally: a guarded full-text fallback fires only on a narrow no-match, an identity word-sequence filter rejects records that merely mention the requested drug (the amivantamab and itraconazole captures pin it), fetch errors stay errors, and Ok(None) means openFDA answered with no record of this drug. Four honest label states with retry; whole sections in JSON with the cap moved to the Markdown view; the required-label abort became a settling unavailable outcome per the ticket's Changes item 2.
-- Deferred: SPL section-name mapping across versions; safety and interactions keep their own caps; the fallback is get-path only; a record past the full-text limit of 100 reports no SPL match.
-
-## Outcome
+- Deferred: SPL section-name mapping across versions; safety and interactions keep their own caps; the fallback is get-path only.
 
 ## Outcome
 
@@ -31,7 +29,7 @@ Status: complete.
   revival with a checkpoint (nothing lost).
 - Code review: ACCEPT 2026-10-07 on the fix round (fresh reviewer,
   tip 48d976598). All six fixes verified at code level: quoted
-  pointer; view-cut gate (the coordinator's directive reading,
+  pointer; view-cut gate (the project directive reading,
   honestly pinned); oversize settles empty-with-reason through the
   WithSourceContext-aware body-limit match; fetch errors stay errors
   with a genuinely biting test; the identity guard matches within one
@@ -39,7 +37,7 @@ Status: complete.
   (all fixture traces checked); empty_with_reason bounded and safe
   with label_note gone from Drug. Inventory repins measured exact;
   MAX_PACKAGE_FILES 1_402 measured on the branch (merge-time
-  re-measure is the coordinator's). Two report-only P2s, recorded not
+  re-measure belongs to the queue owner). Two report-only P2s, recorded not
   folded: the pointer does not print in the summary-fallback branch
   (direction-safe; a cut section still shows its own truncation note
   with the full-label URL), and two inventory reason strings still

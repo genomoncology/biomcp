@@ -1,6 +1,7 @@
 # 2010 — Split the system dispatch CLI file
 
-Status: complete. Absorbed by ticket 1304, whose line-cap fold split the who-sync reporting into src/cli/system/who_sync.rs and moved its tests to tests/who_sync.rs; both parents under the cap and the allowlist empty again.
+Status: complete. Absorbed by ticket 1304
+Landed: f6eca26b3
 Milestone: 0.9.2
 
 ## Outcome
@@ -9,6 +10,12 @@ Milestone: 0.9.2
 allowlist entry retires.
 
 ## Evidence
+
+- Starts from: ticket 1304's line-cap split of the system CLI.
+- Keeps: the dispatch behavior.
+- Changes: the split retired this ticket's allowlist entry.
+- Proof: the allowlist entry is gone at the 1304 landing; that fold split the who-sync reporting into src/cli/system/who_sync.rs and moved its tests to tests/who_sync.rs, both parents under the cap and the allowlist empty again.
+- Defers: nothing.
 
 Ticket 1304's honest sync reporting grew the file to 726 lines; the CLI
 line-cap ratchet failed CI. The allowlist carries the overage with this

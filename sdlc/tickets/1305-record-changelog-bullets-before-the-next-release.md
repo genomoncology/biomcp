@@ -5,9 +5,7 @@ Milestone: 0.9.2
 
 ## Outcome
 
-Every landed ticket that owes a CHANGELOG bullet carries one before any
-release tag is cut, so the changelog-coverage release gate passes on the
-first try.
+Every landed ticket that owes a CHANGELOG bullet carries one before any release tag is cut, so the changelog-coverage release gate passes on the first try.
 
 ## Evidence
 

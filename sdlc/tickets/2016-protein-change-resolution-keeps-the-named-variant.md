@@ -87,7 +87,7 @@ transcript-aware resolver; a CHANGELOG bullet is owed via ticket 1305.
 
 - Built on branch `tickets/2016-protein-change-resolution-keeps-the-named-variant`,
   commits 1bf775733, 0663802e1, plus the review fold, 2026-10-07,
-  after one timeout revival with a checkpoint (nothing lost).
+  after one revival after a timeout with a checkpoint (nothing lost).
 - Code review: ACCEPT 2026-10-07. Verified: canonical_protein_change
   shares the headline transcript selection with hgvs_p; the named-match
   rule resolves TP53 C124Y, BRCA1 A314T, and BRCA1 C61G correctly while
@@ -127,7 +127,7 @@ transcript-aware resolver; a CHANGELOG bullet is owed via ticket 1305.
   (request parse, UniProt canonical sequence, MANE-stem guard
   protecting I1568N); the three false-note cases refuse with full
   messages against their captures; the honest notes survive with
-  graceful degradation; the fixture wiring across the routine lane; the
+  graceful degradation; the fixture wiring across the routine spec suite; the
   inventory re-measures; the 342-entry receipts union with the digest
   repin; the ticket grammar. No findings. Minor notes recorded: miss-
   path latency (two sequential lookups), the record describing round 1
@@ -201,13 +201,12 @@ New recorded captures: `query_tp53_r209q_20261008.json`,
 minimized `uniprot/get_p04637_20261008.json` (accession and sequence; the
 original response's SHA-256 is in the receipt). The variant-identity fixture
 serves the queries and the UniProt record, and the complexportal fixture —
-which owns the routine lane's UniProt base — serves the same record bytes.
+which owns the routine spec suite's UniProt base — serves the same record bytes.
 The spec page pins the three refusals plus `TP53 R116Q`'s honest note.
 
-D
 ## Review record (2016)
 
-- Code review: ACCEPT 2026-10-09 (fresh reviewer, full head). The naming tier and the residue check before any note verified with source evidence; report-only P2s recorded in the review artifacts (/tmp/review-2016-fix4.md).
+- Code review: ACCEPT 2026-10-09, head 64b82efa on tickets/2016-mane-without-clinvar. A fresh read-only reviewer verified by inspection: the naming tier ranks the annotation spelling the request between the MANE marker and the first transcript; the residue check runs before any note; notes stay silent when unverifiable; transcript versions unify to what ClinVar carries; the synthetic fixture identifiers are invented. The reviewer ran no commands and no gates; the branch CI and the merged-tree CI at e99ed6cfb carry the gate evidence. Report-only P2: the residual naming gap when no annotation spells the request, now ticket 2036.
 
 ## Fix round 4 (2026-10-09, ticket 2035 findings 4 and 21)
 

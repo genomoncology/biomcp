@@ -23,7 +23,7 @@ Gates: branch CI green at 84a647904; yellow gates fully green at the
 same sha (lint, spec, and test rc=0 in the isolated gate clone); code
 review ACCEPT at 5b2ee79c2 plus the delta ACCEPT through 84a647904.
 Landing deviation, corrected from the third review's finding 6: the
-merge reached main via the coordinator's local-chain push before the
+merge reached main via the queue owner's local-chain push before the
 landcheck finished; the landcheck run completed green eight minutes
 later, and main's own run for that push was runner-cancelled — the
 landcheck run, not main's, is the covering evidence.

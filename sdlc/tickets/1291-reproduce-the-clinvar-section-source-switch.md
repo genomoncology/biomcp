@@ -11,7 +11,7 @@ The ClinVar section's fallback to MyVariant.info is reproduced and explained: th
 
 ## Evidence
 
-- Starts from: Experiment 432's diagnosis reports that the same `get variant ... clinvar` command served the ClinVar section from NCBI ClinVar in some runs and from MyVariant.info in others, and that the MyVariant.info copy carried years-old Uncertain significance records (cells c/13, d/04, d/15, d/16). The diagnosis reran each of four variants once, and all four returned NCBI ClinVar. The owner reran one variant twice with the same result. The switch is not yet reproduced. Code reading by the ticket reviewer shows the mechanism: `add_clinvar` wraps the NCBI call in an 8 s timeout (`src/entities/variant/get.rs:61`, `src/entities/variant/mod.rs:435-438`), and on any error or timeout it serves the MyVariant.info record as a `degraded` section (`mod.rs:401-413`).
+- Starts from: an owner's diagnosis notes report that the same `get variant ... clinvar` command served the ClinVar section from NCBI ClinVar in some runs and from MyVariant.info in others, and that the MyVariant.info copy carried years-old Uncertain significance records. The diagnosis reran each of four variants once, and all four returned NCBI ClinVar. The switch is not yet reproduced. Code reading by the ticket reviewer shows the mechanism: `add_clinvar` wraps the NCBI call in an 8 s timeout (`src/entities/variant/get.rs:61`, `src/entities/variant/mod.rs:435-438`), and on any error or timeout it serves the MyVariant.info record as a `degraded` section (`mod.rs:401-413`).
 - Keeps: The fallback itself stays. Agents still get an answer when NCBI is slow.
 - Changes: See Change detail.
 - Proof: A spec case with a held-open NCBI efetch answer that shows the fallback label. The fixture is synthetic; see the 2026-10-07 note for why a live recording is not reproducible. The reproduction log goes in the record.
@@ -35,7 +35,7 @@ Finding 9 of the 2026-10-07 review of the work since 0.9.1 landed on this ticket
 2. The timeout wording is honestly merged: "NCBI ClinVar timed out (slow answer or sustained rate limiting)". A sustained 429 whose Retry-After hold outlives the deadline classifies as a deadline miss, and the label admits it, because the rate-limit waits (the Retry-After retry sleep and the in-process rate limiter) run inside the dropped send future and leave no signal at the `add_clinvar` seam. Pretending a pure timeout, or inventing a RateLimited label the seam cannot know, would both be wrong; the fast-429 refusal still reads "rate limited" because the response arrives before the deadline.
 3. Non-429 failures read "NCBI ClinVar request failed": transport errors, non-success HTTP statuses, and decode or parse failures share the class, so no non-429 failure claims HTTP error when the failure was not one. The class renamed from `HttpError` to `ProviderError` to match what it holds.
 4. Tests now fail the review's attacks: a multi-row fallback picks its true newest dated row (`.max()` to `.min()` fails), `add_clinvar` drives the deadline miss end to end against a held-open fixture server through `BIOMCP_CLINVAR_BASE` (mapping the miss to another class fails), a 429 with Retry-After outliving the deadline pins the merged wording, a fast 429 and a 500 each pin their distinct labels end to end, and the day gate requires a real calendar day (2021-02-30, 2021-02-29, 2021-04-31 refused; 2020-02-29 accepted).
-5. The spec fixture is synthetic and says so on the page: experiment 439's 31 recorded efetch calls all answered within 1.4 s, no provider control forces an eight-second server hold, and the trigger never reproduced live, so a recorded exchange of the timeout path is not reproducible on demand. The recorded evidence for the seam is experiment 439's fast-answer exchanges; the fixture holds the NCBI answer open to exercise the code-confirmed path.
+5. The spec fixture is synthetic and says so on the page: 31 recorded efetch exchanges all answered within 1.4 s, no provider control forces an eight-second server hold, and the trigger never reproduced live, so a recorded exchange of the timeout path is not reproducible on demand. The recorded evidence for the seam is those fast-answer exchanges; the fixture holds the NCBI answer open to exercise the code-confirmed path.
 
 ## Review
 
@@ -45,7 +45,7 @@ Finding 9 of the 2026-10-07 review of the work since 0.9.1 landed on this ticket
 
 - Built on branch `tickets/1291-clinvar-source-switch-labeling`
   through ef33a1473 plus the fold-record count fix, 2026-10-07, across
-  two timeout revivals with checkpoints (nothing lost).
+  two revival after a timeouts with checkpoints (nothing lost).
 - Code review: ACCEPT 2026-10-07
   The full post-fix-round review (the one the adversarial review said
   was missing; recorded on main at 990cba43b) covered the branch
@@ -61,8 +61,8 @@ Finding 9 of the 2026-10-07 review of the work since 0.9.1 landed on this ticket
   on the branch.
 - Code re-review (the wait-ratchet delta): ACCEPT 2026-10-08. The rebase replay is content-identical to the reviewed chain; the three watchdog markers, the clinvar.rs wait-inventory entry, and the 43→46 chained raises are exactly as described; the records commits change no behavior; the ncbi_efetch 1322 baseline is measured-true.
   The ACCEPT above covers the branch only through 7026e9a77, the
-  fold-record count fix; it predates the delta, which needs a fresh
-  reviewer. The delta is bb4d52250 on the pre-rebase branch (c20b0e878
-  rebased): the watchdog comments on the deadline test clock checks,
-  the clinvar.rs wait-inventory entry, and the 43→46 marker-ceiling
-  raise.
+  fold-record count fix; it predates the delta. The delta is bb4d52250
+  on the pre-rebase branch (c20b0e878 rebased): the watchdog comments
+  on the deadline test clock checks, the clinvar.rs wait-inventory
+  entry, and the 43→46 marker-ceiling raise; the wait-ratchet delta
+  ACCEPT above is that delta's review, head bb4d52250.

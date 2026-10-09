@@ -2,8 +2,7 @@
 
 Ticket: sdlc/tickets/1301-route-a-gene-symbol-first-token-in-variant-search.md
 Branch: tickets/1301-gene-symbol-first, sha 22d15888
-Built by a lane worker across two cycles; reviewed fresh twice; driven by
-the branch lead.
+Built on a branch queue across two cycles; reviewed fresh twice.
 
 ## Prior evidence
 

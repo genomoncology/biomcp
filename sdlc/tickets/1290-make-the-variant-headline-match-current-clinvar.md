@@ -4,8 +4,7 @@ Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
 Status: COMPLETE.
 
-Landed: 8b188c99.
-
+Landed: 8b188c99
 ## Outcome
 
 `get variant` states the current ClinVar classification in its headline when the `clinvar` section answers from NCBI ClinVar, and names the classification's source, review status and date. The quick default view keeps its value but says it is a cached copy and prints the command that returns the current classification.

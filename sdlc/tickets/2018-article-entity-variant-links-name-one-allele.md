@@ -78,7 +78,7 @@ rsIDs (rs121913530, rs121913535) name exactly one allele.
 ## Build status
 
 - Built on branch `tickets/2018-article-entity-variant-links-name-one-allele`,
-  commit 3c94532ae, 2026-10-07, after one timeout revival with a
+  commit 3c94532ae, 2026-10-07, after one revival after a timeout with a
   checkpoint (nothing lost).
 - Code review: ACCEPT 2026-10-07. Verified statically: the qualified
   rsID-first fix (multi-allele rsIDs alone take the gene-qualified

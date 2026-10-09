@@ -1,6 +1,7 @@
 # 2035 — Clear the fourth review findings before the 0.9.2 tag
 
 Status: complete.
+Landed: 24eb55ef4
 
 Milestone: 0.9.2
 
@@ -43,7 +44,7 @@ Do not tag 0.9.2. Main is in much better shape. 2030 fixed the CI hang: every ma
 
 12. **2029 landed before its merged-tree CI was green.** Main moved to `ff7d4362e` at 18:00:38Z. Merged-tree run 37820375572 on `8eec444db` finished green at 18:21:43Z. `sdlc/records/2029-article-variant-links-build.md:3-5` cites "merged-tree CI green at 2d3815718 on the same tree". `2d3815718` has a different tree, and its run 37820954617 skipped `canonical-gates`, windows, full-features, stress and release-panic.
 13. **2030's records claim evidence that is not there.** The review asked for the repeated-run stability evidence, and the merge in `ae9e6c2e9` and `9b23236f8` dropped that request. `sdlc/records/2030-async-fixture-holds-build.md:14` says the runs are recorded in the ticket, and they are not. The issue closure says blocking waits outside the article fixtures stay recorded there, and none are listed. The interim rule was retired at 13:36Z, before the first full `canonical-gates` run on main finished at 13:56Z.
-14. **1291's ticket still carries 2033 finding 14.** Line 38 cites "experiment 439". Line 14 cites "Experiment 432's diagnosis" and "cells c/13, d/04, d/15, d/16". Lines 63-68 say the delta "needs a fresh reviewer" under the delta's ACCEPT, and the delta review names no head commit.
+14. **1291's ticket still carries 2033 finding 14.** Line 38 cites "the recorded repro experiment". Line 14 cites "Experiment 432's diagnosis" and "cells c/13, d/04, d/15, d/16". Lines 63-68 say the delta "needs a fresh reviewer" under the delta's ACCEPT, and the delta review names no head commit.
 15. **The 2021 ticket has leftover defects.** A stray `D` sits at line 80. The temp-directory paragraph appears twice. The last verdict in the ticket is FIX, and the ACCEPT on `d41d5e3ca` appears only in 2033. `pm lint` reports five missing Evidence fields at line 11.
 16. **Records name follow-up commits as landing merges.** The 2020 record names `4cea37dae` and the 2021 record names `208858393`, both single-parent follow-ups. The deadlock issue says 2030 landed as `9b23236f8`; the landing merge is `ae9e6c2e9`.
 17. **Internal process text did not shrink.** Mentions of the gate machine outside fixture data stayed at 211, in 127 files. "beelink" appears in `spec/README-timings.md:147-233`. sdlc/ still has 20 "coordinator", 5 "lane worker" and 19 "experiment 439". This range added "the supervisor confirmed", "the lane escalated", "coordinator's landing chain", "Yellow failure record" and "timeout revivals". `sdlc/planning/lanes.md` is a public status table that already lists landed work as open; status belongs in pm. Remove the table, and stop adding host, lane and role text to public files.
@@ -77,7 +78,6 @@ Do not tag 0.9.2. Main is in much better shape. 2030 fixed the CI hang: every ma
 
 2032 first, after the ticket-file merge and finding 19's Outcome fix. Then 2031, 2034, 2016 and 2022, each rebased on main with a review covering its head and a green merged-tree run on the exact landing tree before main moves. The records and gate items here can land with any of them. 1305 lands last, with bullets checked against main at that point.
 
-## Disposition (2026-10-09)
+## Disposition(2026-10-09)
 
-Every finding is fixed or carries a recorded reason: the Tagrisso brand break (fixed in 2031's landed fourth-review round), the spelled gene names (2034 landed), the MANE-without-ClinVar false note (2016's fix-round-4 landed), the smaller items (2032's records amended on main; 1291's, 2021's, 2029's smaller items carried in their lanes' records or the merge-pooling deferral). The
-pre-tag review may verify each against its landing record.
+Every finding is fixed or carries a recorded reason: the Tagrisso brand break (fixed in 2031's landed fourth-review round), the spelled gene names (2034 landed), the MANE-without-ClinVar false note (2016's fix-round-4 landed), the smaller items (2032's records amended on main; 1291's, 2021's, 2029's smaller items carried in their lanes' records or the merge-pooling deferral). The pre-tag review may verify each against its landing record.

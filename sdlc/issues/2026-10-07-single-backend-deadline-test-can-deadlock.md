@@ -1,6 +1,6 @@
 # The single-backend deadline test can deadlock on the gate host
 
-Status: open
+Status: closed by ticket 2030's landing (async holds, named hang guard)
 
 ## Finding
 
@@ -101,7 +101,7 @@ the known flake, or the cap has to rise until the fix lands.
 
 Ticket 2030 replaced the blocking receives with async primitives and
 added hang guards naming the test; its branch CI and merged-tree run
-are green, and it landed as 9b23236f8. The interim gate-evidence rule
+are green, and it landed as merge ae9e6c2e9 (9b23236f8 is the follow-up records commit). The interim gate-evidence rule
 above is retired: landings again require the ordinary green gates. The
 pre-existing blocking waits outside the article fixtures (noted in the
 2030 review) stay recorded here for a future ticket.

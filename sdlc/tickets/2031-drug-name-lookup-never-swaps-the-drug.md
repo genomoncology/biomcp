@@ -22,7 +22,6 @@ Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, fi
 - Proof: terfenadine and mannitol return no wrong card, and a test pins each against recorded captures; the five correct resolutions above still pass.
 - Defers: nothing.
 
-D
 ## Head review (fourth-review fix round)
 
 - Code re-review (full head through c0dc28edf, covering the discover

@@ -1,6 +1,6 @@
 # 2031 build record — drug name lookup never swaps the drug
 
-Landed 2026-10-09, merge 50679cc02. Review verdicts live on
+Landed 2026-10-09, merge 548f0b854 (50679cc02 is the landcheck-tree commit, not the landing merge). Review verdicts live on
 sdlc/tickets/2031-drug-name-lookup-never-swaps-the-drug.md.
 
 Outcome: a drug lookup returns that drug's card or an honest refusal

@@ -1,12 +1,13 @@
 # 2032 — Ambiguous disease refusals offer the oncology choice and reach trial search
 
 Status: complete.
+Landed: d18d30e7f
 
 Milestone: 0.9.2
 
 ## Outcome
 
-When `get disease` refuses an ambiguous abbreviation, the choices include the common oncology meaning. `search trial -c` refuses the same input the same way instead of falling back to a keyword search.
+When `get disease` refuses an ambiguous abbreviation, the choices include the common oncology meaning. `search trial -c` refuses the same input on the NCI source instead of falling back to a keyword search. The default ClinicalTrials.gov source still runs the keyword search; ticket 2040 carries widening the refusal to it.
 
 ## Evidence
 
@@ -21,7 +22,6 @@ Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, fi
 - Proof: `get disease MM` lists multiple myeloma (MONDO:0009693); `search trial -c MF` refuses with choices; tests pin both.
 - Defers: refusing ambiguous conditions on the default ClinicalTrials.gov source (the NCI source refuses; the default source still keyword-searches).
 
-D
 ## Build status addendum
 
 - Code review: ACCEPT 2026-10-08. All six points verified at the code
@@ -100,3 +100,12 @@ Verified live against MyDisease.info on 2026-10-08.
   search for an ambiguous condition (22 of 50 MF results are
   myelofibrosis trials). Widening to the default source is deferred to
   a follow-up; the Defers line is amended accordingly.
+
+## Follow-ups filed (2026-10-10, ticket 2038 item 6)
+
+- Ticket 2039 carries the product names shared by unrelated drugs
+  (2031's deferral).
+- Ticket 2040 carries the default-source trial refusal plus the
+  recorded gaps: the MF refusal omits myelofibrosis, the MM pointer
+  table cites no source, and NCI conditions over 512 bytes fail
+  outright.

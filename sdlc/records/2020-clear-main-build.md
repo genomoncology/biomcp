@@ -1,6 +1,6 @@
 # 2020 build record — clear main before the 0.9.2 tag
 
-Landed 2026-10-08, merge 4cea37dae. Review verdicts live on
+Landed 2026-10-08, merge d1c6d713f (4cea37dae is the follow-up scrub commit, not the landing merge). Review verdicts live on
 sdlc/tickets/2020-clear-main-before-the-0-9-2-tag.md.
 
 Outcome: the stray probe file leaves the crate (count measured 1,404);

@@ -2,7 +2,7 @@
 
 Ticket: sdlc/tickets/1296-give-article-entities-identifiers.md
 Branch: tickets/1296-article-entity-identifiers, sha b57b8fc6e
-Built by a lane worker; reviewed fresh; driven by the branch lead.
+Built on a branch queue; reviewed fresh.
 
 ## Changes
 

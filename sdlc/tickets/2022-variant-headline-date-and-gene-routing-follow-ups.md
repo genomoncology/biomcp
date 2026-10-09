@@ -73,7 +73,7 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
 
 - Built on branch `tickets/2022-variant-headline-date-and-gene-routing-follow-ups`,
   commits 15225975b, fe6b3ae8f, fold aa8317a4f, 2026-10-07, across two
-  timeout revivals with checkpoints (nothing lost). The 2026-10-08 rebase
+  revival after a timeouts with checkpoints (nothing lost). The 2026-10-08 rebase
   onto main (after 2023 and 1300 landed) rewrote those as 77003a2e7,
   3c021ab0d, and fd2522e16; a second rebase the same day, after 2017
   landed, rewrote the chain again to b427eb233..c3bf14929; the work is

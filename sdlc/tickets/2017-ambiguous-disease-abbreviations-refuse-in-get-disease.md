@@ -107,7 +107,7 @@ curated abbreviation preferences.
 ## Build status
 
 - Built on branch `tickets/2017-ambiguous-disease-abbreviations-refuse-in-get-disease`,
-  commits 99bdea36a, 5bb4a1cae, 2026-10-07, after one timeout revival
+  commits 99bdea36a, 5bb4a1cae, 2026-10-07, after one revival after a timeout
   with a checkpoint (nothing lost).
 - Code review: ACCEPT 2026-10-07. Verified: the holder-count rule with
   the 1297-pattern refusal and the short-token gate; the labelled-first
@@ -166,7 +166,7 @@ Landed 2026-10-08, merge d8afa297f. Evidence: branch CI green at
 84a647904; yellow gates fully green at the same sha (lint, spec, and
 test all rc=0 in the isolated gate clone); code review ACCEPT at
 5b2ee79c2 plus delta ACCEPT through 84a647904. Process deviation,
-recorded honestly: the merge reached main through the coordinator's
+recorded honestly: the merge reached main through the queue owner's
 local-chain push before the landcheck run finished — the landcheck at
 d8afa297f completed green afterward, and main's own CI on the landing
 push covers the same tree.

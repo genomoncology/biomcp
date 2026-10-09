@@ -2,8 +2,7 @@
 
 Ticket: sdlc/tickets/1294-return-whole-abstracts-and-cleaner-full-text.md
 Branch: tickets/1294-whole-abstracts, sha d00f515c
-Built by a lane worker across two cycles; reviewed fresh twice; driven by
-the branch lead.
+Built on a branch queue across two cycles; reviewed fresh twice.
 
 ## Prior evidence
 

@@ -102,6 +102,6 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md
   carries the forensics and the rule).
 - Code re-review (post-review delta: the rebase unions, the two
-  coordinator commits, the repin): ACCEPT 2026-10-07 at ec27dfbcf;
+  records commits, the repin): ACCEPT 2026-10-07 at ec27dfbcf;
   the cosmetic seam fold at 9187de358. Merged-tree CI running at
   05eeda3f3.
