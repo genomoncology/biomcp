@@ -5,29 +5,45 @@
 ### Fixes
 
 - `get variant` now states the current ClinVar classification in its headline when the `clinvar` section answers from NCBI ClinVar, and the quick default view names its cached copy and prints the command that returns the current classification. (1290)
-- When NCBI ClinVar drops, the degraded ClinVar section now names NCBI ClinVar and the reason it failed (timeout, rate limit, or HTTP error) and dates the MyVariant.info fallback copy by its newest evaluation. (1291)
+- When NCBI ClinVar drops, the degraded ClinVar section now names NCBI ClinVar and the reason it failed (timeout, rate limit, or provider error) and dates the MyVariant.info fallback copy by its newest evaluation. (1291)
 - `get variant` now resolves transcript deletion ranges with intronic offsets and bare ClinVar VariationIDs, with the ClinVar alias fallback answering only on an exact transcript match. (1292)
-- Article search now finishes within its 60-second deadline and returns the rows that already answered, with each silent or slow source named as degraded. (1293, 1299)
+- Article search now finishes within its 60-second deadline and returns the rows that already answered, with each silent or slow source named as degraded. (1293)
 - `get article` and batch detail now return whole abstracts instead of a 1,500-byte cap while search rows keep a named 240-byte snippet, and full text renders reference identifiers, clean PMC HTML, and ragged tables instead of dropping them. (1294)
 - `search disease` now finds the parent disease for common abbreviations such as NSCLC and DLBCL by matching the exact synonym fields MyDisease holds. (1295)
-- A protein-change query with several compatible hits now resolves only when exactly one carries a ClinVar record, and every other ambiguous case refuses naming every candidate and the working input forms. (1297)
+- A protein-change query with several compatible hits refuses when no single hit names the requested change, naming every candidate and the working input forms. (1297)
 - Europe PMC searches now return distinct rows for every requested page through cursorMark paging, where the ignored page parameter collapsed every search to its first page. (1298)
-- A search that hits its deadline mid-pagination now keeps the rows it already fetched and names the silent source as degraded, exits at the deadline instead of outliving it, names the deadline in its error instead of a generic I/O failure, and no longer stalls construction on the cache lock past the deadline. (1299)
+- A search that hits its deadline mid-pagination now keeps the rows it already fetched and names the silent source as degraded, exits at the deadline instead of outliving it, names the deadline in its error instead of a generic I/O failure, and honors the deadline in cache construction even while another caller holds the cache lock. (1299)
 - `get drug NAME label` now returns whole label sections in JSON while Markdown keeps a capped short form pointing to the full label, says why a label is missing (no SPL record matched, or the matched record carries no section text) instead of a silent null, and resolves sparse-metadata labels such as osimertinib through a guarded full-text search that never returns another drug's label. (1300)
 - Citation evidence now degrades to OpenCitations when Semantic Scholar refuses with a rate limit or a server error, and a live 429 that took twenty-two seconds to fail now returns in under three. (1302)
 - `get author` and `author papers` now read ORCID's lowercase visibility values, so an `orcid:` lookup no longer fails and papers no longer silently return zero works. (1303)
-- `who sync` now accepts the header set the WHO exports ship today, reports the true outcome per file, and exits nonzero when required files are missing. (1304, absorbing 2010)
+- `who sync` now accepts the header set the WHO exports ship today, reports the true outcome per file, and exits nonzero when required files are missing. (1304)
 - The degraded citation path now reuses the first seed's resolved record when the second seed refuses, reports a malformed citation identifier as such instead of claiming the index was unavailable, and names the DOI-resolution search in its status row instead of reporting it not requested. (1306)
+- A protein-change query now returns the variant whose headline transcript spells the requested change, ClinVar presence breaks ties only among those named matches, and a request that matches the reference protein but finds no variant record refuses with the honest reason instead of a renumbered lookalike carrying a false other-transcript note. (2016)
+- `get disease` now refuses an abbreviation that several human diseases hold, naming every candidate with its label, and a resolved card no longer attaches another disease's genes to its definition. (2017)
+- Article entity variant rows no longer share one rsID command when the article names two alleles of that rsID; each row prints the gene-plus-change command that opens its own variant. (2018)
+- A failed WHO Prequalification export now degrades every caller honestly: drug search names the reason on the card, in JSON and through MCP, `who sync` names the failing file and its missing column, and a partial sync reports each file's outcome with a nonzero exit instead of claiming it synchronized. (2021)
+- The variant headline now pairs its ClinVar classification with that classification's own evaluation date, gene-first routing accepts a first token only when it spells the official symbol, a protein change after the gene becomes its own filter, and a zero-row routed search names the parsed form and a working alternative that keeps every explicit filter. (2022)
+- Article search now refuses a deep offset window on every sort order, names the deadline as the error whenever any source hit it, and renders small-caps and styled text such as "T ABLE" and "PD L1" without splitting the words. (2023)
+- Every article entity variant row that carries a gene symbol and a protein change now prints the gene-plus-change command, including when the article mentions only one allele of an rsID that names several. (2029)
+- `get drug NAME` now returns the named drug or an honest no-match: a record counts only when the query matches its name, one of its brand names or a listed synonym, brand queries such as TAGRISSO resolve through the record the brand lives on, and a card never takes its name from an unrelated product's packaging row. (2031)
+- An ambiguous disease refusal now includes the oncology reading a clinician likely means, so `get disease MM` lists multiple myeloma, and NCI trial search refuses the same ambiguous condition with its choices instead of falling back to a keyword search. (2032)
+- Variant rows keep the gene-plus-change command even when the article spells the gene as K-ras or K-RAS, resolving the official gene symbol from the row's gene identifier when no symbol-shaped mention exists. (2034)
 
 ### New features
 
 - Article annotation rows now carry namespace identifiers (NCBIGene for genes, MESH and OMIM for diseases and chemicals, rsID then HGVS for variants), and markdown rows print a `get` command only where the real parsers accept the identifier form. (1296)
-- `search variant` now routes a free-text phrase whose first token is a confirmed gene symbol to that gene filter with the remaining words as the condition, and `BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` restores the whole-phrase search. (1301)
+- `search variant` now routes a free-text phrase whose first token is an official gene symbol to that gene filter with the remaining words as the condition, and `BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` restores the whole-phrase search. (1301)
+- Release binaries now print the commit they were built from, every release job runs on a pinned runner image that a host upgrade cannot change, and `make spec` prepares the Python environment the executable contracts need. (2024)
 
 ### Internal
 
-- The 0.9.1 post-release sweep, the citation-evidence issue filing with its Semantic Scholar 429 root-cause diagnosis, and the agent-value programme planning recorded no user-visible change, and the changelog bullet sweep ahead
-of this release. (1287, 1288, 1289, 1305)
+- The `who sync` reporting split into its own module under the CLI line cap, retiring the size allowlist entry. (2010)
+- The changelog coverage gate now counts Land subjects, completed ticket files and build records, so a ticket cannot ship without a described bullet, and changelog-only pushes run the changelog test instead of skipping as documentation. (2019)
+- The repository tree no longer ships a stray packaging file or a private name list: the package count returned to its true value, the forbidden-name check reads a local untracked file, and the article spec's deadline fences run again. (2020)
+- Article test fixtures hold replies on async primitives instead of blocking runtime workers, so a held reply cannot deadlock the deadline tests, and a hung test fails at its own named timeout instead of stalling the run. (2030)
+- The third review round before this release corrected the landed records: overstated CI evidence, spec fences stripped by a merge and stale review lines now state what actually happened. (2033)
+- The fourth review round before this release closed or answered every remaining finding, from the brand-name drug rescue to the MANE-numbered protein refusals, and recorded each residual limit with its reason. (2035)
+- Maintenance: repository housekeeping after 0.9.1, the Semantic Scholar rate-limit diagnosis behind the citation-evidence fix, and release planning that shipped no behavior change (1287, 1288, 1289, 1305).
 
 ## 0.9.1 — 2026-10-01
 
