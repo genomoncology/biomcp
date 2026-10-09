@@ -65,3 +65,14 @@ P3: due before the next release tag, which has no date.
 Note: hand-numbered. pm ticket new drew 2010 despite the numbering
 ruling (see the message to the pm team, 2026-10-06); the reservation
 was released and this ticket takes 1305.
+
+## Final-round review
+
+- Code review: ACCEPT 2026-10-09 (fresh reviewer, head 19eae876a on
+  the rebased branch). The gate covers all 36 demanded tickets; the
+  bullets spot-checked truthful against their landed records; the
+  Internal bullet restructured; 1304/2010 split honestly; 1297 states
+  the post-2016 rule; the corrections (1291 provider error, 1301
+  official gene symbol, 1299 construction clause, 1293 ungrouped) all
+  present. One report-only P2: the delta carries the documented
+  test-docs allowance, not the ticket file.
