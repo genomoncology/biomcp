@@ -120,7 +120,6 @@ transcript-aware resolver; a CHANGELOG bullet is owed via ticket 1305.
   (git show --stat confirms one file, the inventory). The lane head is
   d6801ed8b.
 
-D
 ## Fix-round-3 review
 
 - Code re-review (head 86aadbc88, the false-note fix closing the third
@@ -205,6 +204,65 @@ serves the queries and the UniProt record, and the complexportal fixture —
 which owns the routine lane's UniProt base — serves the same record bytes.
 The spec page pins the three refusals plus `TP53 R116Q`'s honest note.
 
+D
 ## Review record (2016)
 
 - Code review: ACCEPT 2026-10-09 (fresh reviewer, full head). The naming tier and the residue check before any note verified with source evidence; report-only P2s recorded in the review artifacts (/tmp/review-2016-fix4.md).
+
+## Fix round 4 (2026-10-09, ticket 2035 findings 4 and 21)
+
+The MANE marker depended on a ClinVar hit, so a response without ClinVar
+records fell back to the first NM_ and the refusal returned early before the
+UniProt check: `get variant "BRCA1 I1568N"` answered `p.Ile1589Asn` on
+`NM_007300.3` with a note claiming I1568N follows another transcript's
+numbering, while UniProt P38398 has Ile at 1568 and MyVariant's NM_007294
+entry reads p.Ile1568Asn — the note was false and the headline renumbered.
+The recorded captures carry no MANE status outside ClinVar (checked against
+`query_brca1_i1568n_20261007.json` and, in round 1, the live provider with
+`fields=all`), so the ClinVar-free signal is the annotation that names the
+request: the SnpEff ranking now headlines the annotation spelling the
+requested change whenever the response marks no ClinVar-preferred stem
+(tier order: the hit's own ClinVar-preferred transcript, the response's MANE
+marker, the annotation naming the request, the first NM_, anything else), so
+I1568N resolves honestly on NM_007294's `p.Ile1568Asn` with no note, and the
+ClinVar marker still outranks the naming annotation — `TP53 R209Q` keeps
+refusing instead of resolving through NM_001126118's `p.Arg209Gln`.
+
+The residue check now runs before any note prints: the refusal no longer
+returns early without a marker, and the note prints only when the check
+proved the canonical protein carries a different residue at the requested
+position (`TP53 R116Q`). When the request names no reference residue, or the
+UniProt lookup fails, nothing is proven either way and the answer stays
+silent rather than carry an unverified other-transcript claim — round 3's
+"the note still prints when the response marks no MANE transcript / when the
+lookup is unavailable" is replaced by this rule.
+
+Finding 21's smaller items: the MANE marker now carries the versioned
+accession ClinVar's preferred names use, and the headline shows that current
+RefSeq accession where the SnpEff build lags it (NM_000546.6 against .5,
+NM_007294.4 against .3, NM_004333.6 against BRAF's .4), so one gene's
+answers stop mixing transcript versions; the MANE-numbering refusal's retry
+line names the requested change (`a transcript-qualified HGVS naming
+'R209Q'`, or `biomcp search variant -g TP53 --hgvsp R209Q`) instead of
+pointing at the candidate already known to be a different change; and the
+variant-identity fixture's synthetic TP53 R273H hold now carries invented
+identifiers (chr17:g.7676000G>A, VariationID 6000001, RCV006000001) instead
+of real identifiers borrowed from VLDLR, FANCB and TP53 P72L.
+
+New recorded capture: the minimized `uniprot/get_p38398_20261009.json`
+(accession and sequence; the original response's SHA-256 is in the receipt),
+served by the variant-identity and complexportal fixtures so BRCA1's residue
+checks run in the spec lane. The spec page's numbering table repins
+`BRCA1 I1568N` to the honest resolution (p.Ile1568Asn on NM_007294.3, no
+note) and the unified transcript versions, and the R209Q refusal block pins
+the new retry line. Unit tests pin the ClinVar-free naming tier (single-hit
+and two-hit cohorts), the marker outranking the naming annotation, the
+version upgrade on a recorded BRAF V600E shape, and the refusal retry line.
+
+## Fix-round-4 residual (recorded from the review)
+
+A ClinVar-free response whose only naming annotation sits on a
+non-MANE isoform resolves on that annotation: no MANE source exists in
+this data to overrule it. The answer names the exact transcript and
+spelling, and the ClinVar-marked equivalent still refuses. The full
+transcript-aware resolver stays deferred to the shared parser.

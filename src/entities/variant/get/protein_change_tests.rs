@@ -164,9 +164,11 @@ fn protein_change_resolution_keeps_the_named_brca1_change_over_a_clinvar_lookali
 fn protein_change_resolution_headlines_the_mane_transcript_of_the_query() {
     // The same recorded BRCA1 A314T cohort: the lookalike's ClinVar preferred
     // names sit on NM_007294, the gene's MANE Select transcript, so the
-    // ClinVar-less hit headlines NM_007294.3 instead of the first NM_ in the
+    // ClinVar-less hit headlines NM_007294 instead of the first NM_ in the
     // SnpEff list (NM_007300.3, which numbers residues 21 higher past the
-    // isoform insert).
+    // isoform insert). The marker carries ClinVar's current accession
+    // version (.4) where the SnpEff build lags (.3), so the headline shows
+    // the current accession (ticket 2035 finding 21).
     let hits = vec![
         brca1_a314t_snpeff(ProteinHitBuilder::default()).hit(
             "chr17:g.41246608C>T",
@@ -175,14 +177,15 @@ fn protein_change_resolution_headlines_the_mane_transcript_of_the_query() {
         ),
         brca1_clinvar_55588_hit(),
     ];
-    let mane_stem = transform::variant::clinvar_mane_transcript_stem(&hits);
-    assert_eq!(mane_stem.as_deref(), Some("NM_007294"));
+    let mane = transform::variant::clinvar_mane_transcript(&hits);
+    assert_eq!(mane.as_deref(), Some("NM_007294.4"));
 
     let resolved = resolve_protein_change_hit("BRCA1 A314T", "BRCA1", "A314T", hits)
         .expect("the named hit resolves");
-    let variant = transform::variant::from_myvariant_hit_with_mane(&resolved, mane_stem.as_deref());
+    let variant =
+        transform::variant::from_myvariant_hit_with_mane(&resolved, mane.as_deref(), Some("A314T"));
     assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ala314Thr"));
-    assert_eq!(variant.transcript.as_deref(), Some("NM_007294.3"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_007294.4"));
     assert_eq!(variant.hgvs_c.as_deref(), Some("c.940G>A"));
 }
 
@@ -204,24 +207,29 @@ fn protein_change_resolution_resolves_a_past_insert_change_on_mane_numbering() {
         ),
         brca1_clinvar_55588_hit(),
     ];
-    let mane_stem = transform::variant::clinvar_mane_transcript_stem(&hits);
-    assert_eq!(mane_stem.as_deref(), Some("NM_007294"));
+    let mane = transform::variant::clinvar_mane_transcript(&hits);
+    assert_eq!(mane.as_deref(), Some("NM_007294.4"));
 
     let resolved = resolve_protein_change_hit("BRCA1 I1568N", "BRCA1", "I1568N", hits)
         .expect("the MANE-named hit resolves past the insert");
     assert_eq!(resolved.id, "chr17:g.41223228A>T");
-    let variant = transform::variant::from_myvariant_hit_with_mane(&resolved, mane_stem.as_deref());
+    let variant = transform::variant::from_myvariant_hit_with_mane(
+        &resolved,
+        mane.as_deref(),
+        Some("I1568N"),
+    );
     assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ile1568Asn"));
-    assert_eq!(variant.transcript.as_deref(), Some("NM_007294.3"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_007294.4"));
     assert_eq!(variant.protein_numbering_note, None);
 }
 
 #[test]
-fn protein_change_resolution_falls_back_to_first_nm_without_a_mane_marker() {
+fn protein_change_resolution_resolves_the_naming_annotation_without_a_marker() {
     // The same recorded I1568N cohort with the lookalike carrying no ClinVar
     // preferred names: nothing in the response marks a MANE transcript, so
-    // the selection falls back to the first NM_ (NM_007300.3, p.Ile1589Asn)
-    // and the request stays unnamed on both hits.
+    // the annotation that names the request is the signal (ticket 2035
+    // finding 4) — the true hit headlines NM_007294's p.Ile1568Asn and
+    // resolves instead of refusing while the data names the change.
     let hits = vec![
         brca1_i1568n_snpeff(ProteinHitBuilder::default()).hit(
             "chr17:g.41223228A>T",
@@ -236,13 +244,15 @@ fn protein_change_resolution_falls_back_to_first_nm_without_a_mane_marker() {
                 "p.Ala1823Thr, p.I1568N, p.Ala719Thr",
             ),
     ];
+    assert_eq!(transform::variant::clinvar_mane_transcript(&hits), None);
 
-    let error = resolve_protein_change_hit("BRCA1 I1568N", "BRCA1", "I1568N", hits)
-        .expect_err("without a MANE marker neither hit names the request");
-    let BioMcpError::InvalidArgument(message) = &error else {
-        panic!("a marker-less cohort refuses as invalid argument, got: {error}");
-    };
-    assert!(message.contains("none of them names that change"));
+    let resolved = resolve_protein_change_hit("BRCA1 I1568N", "BRCA1", "I1568N", hits)
+        .expect("the naming annotation resolves without a marker");
+    assert_eq!(resolved.id, "chr17:g.41223228A>T");
+    let variant = transform::variant::from_myvariant_hit_with_mane(&resolved, None, Some("I1568N"));
+    assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ile1568Asn"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_007294.3"));
+    assert_eq!(variant.protein_numbering_note, None);
 }
 
 #[test]
@@ -395,7 +405,9 @@ fn protein_change_resolution_notes_the_numbering_when_the_hit_does_not_spell_the
     // hit is ClinVar 12356, whose preferred name sits on NM_000546, TP53's
     // MANE Select transcript; the request follows a shorter isoform's
     // numbering (p.Arg116Gln), so the answer must say which numbering
-    // matched instead of resolving silently.
+    // matched instead of resolving silently. ClinVar's accession version
+    // (.6) is current where the SnpEff build lags (.5), so the note names
+    // the current accession (ticket 2035 finding 21).
     let hits = vec![
         ProteinHitBuilder::default()
             .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
@@ -409,27 +421,31 @@ fn protein_change_resolution_notes_the_numbering_when_the_hit_does_not_spell_the
 
     let resolved = resolve_protein_change_hit("TP53 R116Q", "TP53", "R116Q", hits)
         .expect("a unique provider hit resolves");
-    let mane_stem =
-        transform::variant::clinvar_mane_transcript_stem(std::slice::from_ref(&resolved));
-    let note = protein_change_numbering_note(&resolved, "R116Q", mane_stem.as_deref())
+    let mane = transform::variant::clinvar_mane_transcript(std::slice::from_ref(&resolved));
+    assert_eq!(mane.as_deref(), Some("NM_000546.6"));
+    let note = protein_change_numbering_note(&resolved, "R116Q", mane.as_deref())
         .expect("the answer names the numbering that matched");
     assert_eq!(
         note,
-        "Numbering note: resolved on NM_000546.5 as p.Arg248Gln; the \
+        "Numbering note: resolved on NM_000546.6 as p.Arg248Gln; the \
          requested R116Q follows another transcript's numbering."
     );
 
-    let variant = transform::variant::from_myvariant_hit_with_mane(&resolved, mane_stem.as_deref());
+    let variant =
+        transform::variant::from_myvariant_hit_with_mane(&resolved, mane.as_deref(), Some("R116Q"));
     assert_eq!(variant.hgvs_p.as_deref(), Some("p.Arg248Gln"));
-    assert_eq!(variant.transcript.as_deref(), Some("NM_000546.5"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_000546.6"));
 }
 
 #[test]
-fn protein_change_resolution_notes_the_fallback_numbering_without_a_marker() {
+fn protein_change_resolution_resolves_the_requested_numbering_without_a_marker() {
     // Recorded BRCA1 I1568N shape (query_brca1_i1568n_20261007.json): the
-    // single ClinVar-less response carries no MANE marker, so the headline
-    // falls back to the first NM_ (NM_007300.3, p.Ile1589Asn) and the note
-    // names that numbering.
+    // single ClinVar-less response carries no MANE marker, and the
+    // annotation naming the request is the signal (ticket 2035 finding 4)
+    // — NM_007294's p.Ile1568Asn spells the request, so the answer resolves
+    // on MANE Select numbering with no note instead of answering p.Ile1589Asn
+    // on the first NM_ (NM_007300.3) with a note claiming the request
+    // follows another transcript's numbering.
     let hits = vec![brca1_i1568n_snpeff(ProteinHitBuilder::default()).hit(
         "chr17:g.41223228A>T",
         "BRCA1",
@@ -438,16 +454,21 @@ fn protein_change_resolution_notes_the_fallback_numbering_without_a_marker() {
 
     let resolved = resolve_protein_change_hit("BRCA1 I1568N", "BRCA1", "I1568N", hits)
         .expect("a unique provider hit resolves");
-    let mane_stem =
-        transform::variant::clinvar_mane_transcript_stem(std::slice::from_ref(&resolved));
-    assert_eq!(mane_stem, None);
-    let note = protein_change_numbering_note(&resolved, "I1568N", None)
-        .expect("the fallback numbering is named too");
+    let mane = transform::variant::clinvar_mane_transcript(std::slice::from_ref(&resolved));
+    assert_eq!(mane, None);
     assert_eq!(
-        note,
-        "Numbering note: resolved on NM_007300.3 as p.Ile1589Asn; the \
-         requested I1568N follows another transcript's numbering."
+        protein_change_numbering_note(&resolved, "I1568N", None),
+        None,
+        "the headline spells the request, so no numbering note prints"
     );
+    let variant = transform::variant::from_myvariant_hit_with_mane(
+        &resolved,
+        mane.as_deref(),
+        Some("I1568N"),
+    );
+    assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ile1568Asn"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_007294.3"));
+    assert_eq!(variant.protein_numbering_note, None);
 }
 
 #[test]
@@ -478,7 +499,9 @@ fn requested_reference_residue_parses_compact_substitutions() {
 fn mane_annotation_names_change_reads_the_mane_stem_only() {
     // Recorded BRCA1 I1568N shape (query_brca1_i1568n_20261007.json): the
     // hit's NM_007294 annotation names I1568N even though the first-NM_
-    // headline picks NM_007300's p.Ile1589Asn.
+    // headline picks NM_007300's p.Ile1589Asn. The marker may carry a
+    // versioned accession (ticket 2035 finding 21); the stem is what
+    // matches.
     let hit = brca1_i1568n_snpeff(ProteinHitBuilder::default()).hit(
         "chr17:g.41223228A>T",
         "BRCA1",
@@ -489,18 +512,26 @@ fn mane_annotation_names_change_reads_the_mane_stem_only() {
         "I1568N",
         Some("NM_007294")
     ));
+    assert!(transform::variant::mane_annotation_names_change(
+        &hit,
+        "I1568N",
+        Some("NM_007294.4")
+    ));
     assert!(!transform::variant::mane_annotation_names_change(
         &hit,
         "I1568N",
         Some("NM_007300")
     ));
-    // No known MANE stem: nothing can be named on one.
+    // No known MANE transcript: nothing can be named on one.
     assert!(!transform::variant::mane_annotation_names_change(
         &hit, "I1568N", None
     ));
 
     // Recorded TP53 R209Q shape (query_tp53_r209q_20261008.json): the hit
-    // names p.Arg248Gln on NM_000546 and never R209Q there.
+    // names p.Arg248Gln on NM_000546 and never R209Q there. The response's
+    // ClinVar marker must outrank the annotation that names the request on
+    // the shorter isoform, or the lookalike would resolve through it
+    // (ticket 2033 finding 3; ticket 2035 finding 4).
     let lookalike = ProteinHitBuilder::default()
         .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
         .with_snpeff("NM_000546.5", "c.743G>A", Some("p.Arg248Gln"))
@@ -515,6 +546,39 @@ fn mane_annotation_names_change_reads_the_mane_stem_only() {
         "R209Q",
         Some("NM_000546")
     ));
+    let variant = transform::variant::from_myvariant_hit_with_mane(
+        &lookalike,
+        Some("NM_000546.6"),
+        Some("R209Q"),
+    );
+    assert_eq!(variant.hgvs_p.as_deref(), Some("p.Arg248Gln"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_000546.6"));
+}
+
+#[test]
+fn headline_shows_the_current_transcript_version_clinvar_carries() {
+    // Recorded BRAF V600E shape (get_braf_v600e_grch38_20260806.json): the
+    // hit's own ClinVar preferred names carry NM_004333.6 while the SnpEff
+    // build still says NM_004333.4, so the answer headlines the current
+    // MANE accession (ticket 2035 finding 21).
+    let hit: crate::sources::myvariant::MyVariantHit = serde_json::from_value(serde_json::json!({
+        "_id": "chr7:g.140453136A>T",
+        "dbnsfp": {"genename": "BRAF", "hgvsp": "p.Val600Glu"},
+        "clinvar": {"variant_id": 13961, "rcv": [{
+            "preferred_name": "NM_004333.6(BRAF):c.1799T>A (p.Val600Glu)",
+        }]},
+        "snpeff": {"ann": [{
+            "feature_id": "NM_004333.4",
+            "genename": "BRAF",
+            "hgvs_c": "c.1799T>A",
+            "hgvs_p": "p.Val600Glu",
+        }]}
+    }))
+    .expect("valid MyVariant hit");
+    let variant = transform::variant::from_myvariant_hit(&hit);
+    assert_eq!(variant.hgvs_p.as_deref(), Some("p.Val600Glu"));
+    assert_eq!(variant.hgvs_c.as_deref(), Some("c.1799T>A"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_004333.6"));
 }
 
 #[test]
@@ -522,14 +586,18 @@ fn mane_numbering_refusal_names_the_residue_and_the_lookalike() {
     // Recorded TP53 R209Q shape: UniProt P04637 (the canonical/MANE Select
     // protein) has Arg at 209, so the request's numbering is valid on MANE
     // while the only alias match names p.Arg248Gln — a different change.
-    // The refusal must say both facts instead of the other-transcript note.
+    // The refusal must say both facts instead of the other-transcript note,
+    // and its retry line names the requested change, because the candidate
+    // is already known to be a different change (ticket 2035 finding 21).
     let error = mane_numbering_refusal_message(
         "TP53 R209Q",
+        "TP53",
+        "R209Q",
         "P04637",
         "Arg",
         209,
         "p.Arg248Gln",
-        "NM_000546.5",
+        "NM_000546.6",
         "chr17:g.7577538C>T (ClinVar VariationID 12356)",
     );
     let BioMcpError::InvalidArgument(message) = &error else {
@@ -539,9 +607,10 @@ fn mane_numbering_refusal_names_the_residue_and_the_lookalike() {
         "No MANE-numbered variant matches 'TP53 R209Q'",
         "canonical protein (UniProt P04637) has Arg at 209",
         "no matching record names that change",
-        "the only alias match is p.Arg248Gln on NM_000546.5",
+        "the only alias match is p.Arg248Gln on NM_000546.6",
         "- chr17:g.7577538C>T (ClinVar VariationID 12356)",
-        "ClinVar VariationID, rsID, or a transcript-qualified HGVS",
+        "Retry `biomcp get variant` with a transcript-qualified HGVS naming 'R209Q'",
+        "biomcp search variant -g TP53 --hgvsp R209Q",
     ] {
         assert!(
             message.contains(expected),
@@ -551,5 +620,9 @@ fn mane_numbering_refusal_names_the_residue_and_the_lookalike() {
     assert!(
         !message.contains("follows another transcript's numbering"),
         "the refusal must not carry the other-transcript note: {message}"
+    );
+    assert!(
+        !message.contains("one candidate's exact form"),
+        "the retry line must not point at the known-differing candidate: {message}"
     );
 }
