@@ -7472,7 +7472,7 @@ Reviewed on: <code>2026-09-27</code></li>
 </ul>
 <h3 id="mygeneinfo">MyGene.info<a class="headerlink" href="#mygeneinfo" title="Permanent link">&para;</a></h3>
 <ul>
-<li>BioMCP surfaces: <code>search gene; get gene &lt;symbol&gt;</code></li>
+<li>BioMCP surfaces: <code>search gene; get gene &lt;symbol&gt;; search variant &lt;free-text query&gt;; get variant &lt;gene&gt; &lt;change&gt;; get article &lt;id&gt;; article entities</code></li>
 <li>Integration mode: <code>direct_api</code></li>
 <li>BioMCP auth: <code>none</code></li>
 <li>Provider access / registration: open public API</li>
@@ -7480,7 +7480,7 @@ Reviewed on: <code>2026-09-27</code></li>
 <li>Redistribution / reuse summary: reuse should preserve provenance back to NCBI Gene, UniProt, and other upstream sources</li>
 <li>Official terms URL: <a href="https://docs.mygene.info/en/latest/">https://docs.mygene.info/en/latest/</a>
 Reviewed on: <code>2026-09-27</code></li>
-<li>Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data.</li>
+<li>Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data. Free-text variant search confirms a gene-symbol first token, <code>get variant &lt;gene&gt; &lt;change&gt;</code> resolves the gene's UniProt accession for the numbering check, and article cards and article entities resolve official symbols for spelled gene names.</li>
 </ul>
 <h3 id="myvariantinfo">MyVariant.info<a class="headerlink" href="#myvariantinfo" title="Permanent link">&para;</a></h3>
 <ul>
@@ -7682,7 +7682,7 @@ Reviewed on: <code>2026-09-27</code></li>
 </ul>
 <h3 id="uniprot">UniProt<a class="headerlink" href="#uniprot" title="Permanent link">&para;</a></h3>
 <ul>
-<li>BioMCP surfaces: <code>get protein &lt;id&gt;; get gene &lt;symbol&gt; protein</code></li>
+<li>BioMCP surfaces: <code>get protein &lt;id&gt;; get gene &lt;symbol&gt; protein; get variant &lt;gene&gt; &lt;change&gt;</code></li>
 <li>Integration mode: <code>direct_api</code></li>
 <li>BioMCP auth: <code>none</code></li>
 <li>Provider access / registration: open public API</li>
@@ -7690,7 +7690,7 @@ Reviewed on: <code>2026-09-27</code></li>
 <li>Redistribution / reuse summary: reuse is allowed with attribution; linked cross-references can have their own terms</li>
 <li>Official terms URL: <a href="https://www.uniprot.org/help/license">https://www.uniprot.org/help/license</a>
 Reviewed on: <code>2026-09-27</code></li>
-<li>Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly.</li>
+<li>Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly. <code>get variant &lt;gene&gt; &lt;change&gt;</code> reads the canonical (MANE Select) protein sequence to check a requested reference residue.</li>
 </ul>
 <h3 id="variantvalidator">VariantValidator<a class="headerlink" href="#variantvalidator" title="Permanent link">&para;</a></h3>
 <ul>

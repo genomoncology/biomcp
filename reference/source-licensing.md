@@ -618,7 +618,7 @@ Reviewed on: `2026-09-27`
 
 ### MyGene.info
 
-- BioMCP surfaces: `search gene; get gene <symbol>`
+- BioMCP surfaces: `search gene; get gene <symbol>; search variant <free-text query>; get variant <gene> <change>; get article <id>; article entities`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -626,7 +626,7 @@ Reviewed on: `2026-09-27`
 - Redistribution / reuse summary: reuse should preserve provenance back to NCBI Gene, UniProt, and other upstream sources
 - Official terms URL: <https://docs.mygene.info/en/latest/>
 Reviewed on: `2026-09-27`
-- Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data.
+- Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data. Free-text variant search confirms a gene-symbol first token, `get variant <gene> <change>` resolves the gene's UniProt accession for the numbering check, and article cards and article entities resolve official symbols for spelled gene names.
 
 ### MyVariant.info
 
@@ -828,7 +828,7 @@ Reviewed on: `2026-09-27`
 
 ### UniProt
 
-- BioMCP surfaces: `get protein <id>; get gene <symbol> protein`
+- BioMCP surfaces: `get protein <id>; get gene <symbol> protein; get variant <gene> <change>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -836,7 +836,7 @@ Reviewed on: `2026-09-27`
 - Redistribution / reuse summary: reuse is allowed with attribution; linked cross-references can have their own terms
 - Official terms URL: <https://www.uniprot.org/help/license>
 Reviewed on: `2026-09-27`
-- Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly.
+- Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly. `get variant <gene> <change>` reads the canonical (MANE Select) protein sequence to check a requested reference residue.
 
 ### VariantValidator
 
