@@ -118,14 +118,17 @@ fn who_pq_sync_error_carries_its_detail_and_recovery() {
     // The recovery never tells the user to run the command that just
     // failed; it names network access and the resolved data directory so
     // the manual preseed has a destination (1304 post-landing review
-    // finding 2; second review finding 17).
-    assert!(!message.contains("Run `biomcp who sync`"));
-    assert!(message.contains("network access"));
-    assert!(message.contains("BIOMCP_WHO_DIR"));
+    // finding 2; second review finding 17). That sentence stays on the
+    // terminal; the projected surfaces carry the path-free spelling
+    // (ticket 2038 finding 7, 2035 #6).
+    let rendered = err.to_string();
+    assert!(!rendered.contains("Run `biomcp who sync`"));
+    assert!(rendered.contains("network access"));
+    assert!(rendered.contains("BIOMCP_WHO_DIR"));
     assert!(
-        message.contains("place the three WHO Prequalification CSV exports in /tmp/who-pq-data")
+        rendered.contains("place the three WHO Prequalification CSV exports in /tmp/who-pq-data")
     );
-    // The full sentence also reaches the public surface (ticket 2021).
+    // The full reason also reaches the public surface (ticket 2021).
     let projection = err.public_projection();
     assert_eq!(
         projection.message,
@@ -135,6 +138,13 @@ fn who_pq_sync_error_carries_its_detail_and_recovery() {
     );
     assert_eq!(
         projection.recovery,
-        Some(who_pq_sync_failure_recovery(root).as_str())
+        Some(WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY),
+        "projected recovery: {:?}",
+        projection.recovery
+    );
+    assert!(
+        !projection
+            .recovery
+            .is_some_and(|recovery| recovery.contains("/tmp"))
     );
 }

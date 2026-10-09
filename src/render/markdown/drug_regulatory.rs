@@ -272,9 +272,20 @@ fn render_eu_regulatory_block(heading: &str, rows: Option<&[EmaRegulatoryRow]>) 
     out
 }
 
-fn render_who_regulatory_block(heading: &str, rows: Option<&[WhoPrequalificationEntry]>) -> String {
+fn render_who_regulatory_block(
+    heading: &str,
+    rows: Option<&[WhoPrequalificationEntry]>,
+    note: Option<&str>,
+) -> String {
     let Some(rows) = rows else {
-        return String::new();
+        // No rows and no note: the section was never requested. With a
+        // note, the bundle could not be read, so the heading prints beside
+        // the reason instead of silently disappearing (ticket 2038
+        // finding 7, 2035 #6).
+        let Some(note) = note else {
+            return String::new();
+        };
+        return format!("{heading}\n\n{note}\n");
     };
 
     let mut out = String::new();
@@ -599,6 +610,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
         DrugRegion::Who => render_who_regulatory_block(
             "## Regulatory (WHO Prequalification)",
             drug.who_prequalification.as_deref(),
+            drug.who_note.as_deref(),
         ),
         DrugRegion::All => {
             let us = render_us_approvals_block(
@@ -614,6 +626,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
             let who = render_who_regulatory_block(
                 "## Regulatory (WHO Prequalification)",
                 drug.who_prequalification.as_deref(),
+                drug.who_note.as_deref(),
             );
             [us, orphan, eu, who]
                 .into_iter()

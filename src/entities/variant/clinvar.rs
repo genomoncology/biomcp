@@ -83,55 +83,15 @@ impl ClinvarDirectFailure {
 
 /// Newest `last_evaluated` date in the MyVariant.info fallback copy, so a
 /// degraded label can say how old the fallback data may be. Only strict
-/// day-shaped dates surface; any other provider spelling is omitted.
-/// ISO day shape only: four digits, a dash, two digits, a dash, two
-/// digits, naming a real calendar day under the Gregorian leap rule.
-/// Provider spellings like "01 Apr 2019" or reordered forms are
+/// day-shaped dates surface, under the one shared day-shape rule,
+/// `crate::utils::date::is_day_shaped`; any other provider spelling is
 /// omitted rather than trusted.
-fn is_day_shaped(value: &str) -> bool {
-    let bytes = value.as_bytes();
-    let digits_at =
-        |indices: [usize; 8]| indices.iter().all(|index| bytes[*index].is_ascii_digit());
-    if value.len() != 10
-        || bytes[4] != b'-'
-        || bytes[7] != b'-'
-        || !digits_at([0, 1, 2, 3, 5, 6, 8, 9])
-    {
-        return false;
-    }
-    match (
-        value[0..4].parse::<u16>(),
-        value[5..7].parse::<u8>(),
-        value[8..10].parse::<u8>(),
-    ) {
-        // Digit-only fixed-width slices always parse; the arms below are the
-        // real gate: a real month and a day that month can hold.
-        (Ok(year), Ok(month), Ok(day)) => {
-            (1..=12).contains(&month) && day >= 1 && day <= days_in_month(year, month)
-        }
-        _ => false,
-    }
-}
-
-/// Days in a Gregorian calendar month; zero for a value that is not a
-/// month, so callers can fold the month-range check into the day bound.
-fn days_in_month(year: u16, month: u8) -> u8 {
-    let leap = year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400));
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if leap => 29,
-        2 => 28,
-        _ => 0,
-    }
-}
-
 fn fallback_evaluation_date(record: Option<&ClinvarRecord>) -> Option<&str> {
     record?
         .aggregates
         .iter()
         .filter_map(|row| row.evaluation_date.as_deref())
-        .filter(|value| is_day_shaped(value))
+        .filter(|value| crate::utils::date::is_day_shaped(value))
         .max()
 }
 
@@ -495,20 +455,38 @@ mod tests {
     }
 
     #[test]
-    fn day_shaped_gate_requires_iso_shape_and_a_real_calendar_day() {
-        assert!(is_day_shaped("2019-04-01"));
-        assert!(is_day_shaped("2020-02-29"));
-        assert!(is_day_shaped("2000-02-29"));
-        assert!(!is_day_shaped("1900-02-29"));
-        assert!(!is_day_shaped("2021-02-29"));
-        assert!(!is_day_shaped("2021-02-30"));
-        assert!(!is_day_shaped("2021-04-31"));
-        assert!(!is_day_shaped("2019-13-01"));
-        assert!(!is_day_shaped("01-04-2019"));
-        assert!(!is_day_shaped("9999-99-99"));
-        assert!(!is_day_shaped("----------"));
-        assert!(!is_day_shaped("2019-4-01"));
-        assert!(!is_day_shaped("01 Apr 2019"));
+    fn day_shaped_gate_lives_in_utils_and_dates_it_prints_come_from_the_shared_rule() {
+        // The duplicate inline gate is gone (2038 finding 7, 2035 #5): the
+        // fallback age label reads crate::utils::date::is_day_shaped, whose
+        // own tests pin the shape and calendar rules. This test pins the
+        // consumer: a provider date that is day-shaped in shape but names
+        // no real day (day zero) is omitted from the degraded label.
+        let dated = serde_json::from_value(serde_json::json!({
+            "_id": "chr5:g.118860951A>G",
+            "clinvar": {"variant_id": 974782, "rcv": [
+                {"accession": "RCV000000001", "last_evaluated": "2019-04-00"},
+                {"accession": "RCV000000002", "last_evaluated": "2019-13-01"}
+            ]}
+        }))
+        .expect("fixture");
+        let fallback = indirect_clinvar_record(&dated).expect("fallback");
+        assert_eq!(fallback_evaluation_date(Some(&fallback)), None);
+        let mut variant = crate::transform::variant::from_myvariant_hit(&dated);
+        variant.clinvar = None;
+        apply_clinvar_result(
+            &mut variant,
+            Some(fallback),
+            Err(ClinvarDirectFailure::Timeout),
+        );
+        let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
+        assert_eq!(outcome.outcome(), SectionOutcomeState::Degraded);
+        assert_eq!(
+            outcome.message(),
+            Some(
+                "NCBI ClinVar timed out (slow answer or sustained rate limiting); showing \
+                 MyVariant.info fallback data.",
+            )
+        );
     }
 
     #[test]

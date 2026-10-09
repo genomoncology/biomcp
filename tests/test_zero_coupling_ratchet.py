@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import subprocess
 import tarfile
 
 import pytest
@@ -532,19 +533,138 @@ def test_both_declaration_files_union_their_names(tmp_path: Path) -> None:
 
 
 def test_repository_declares_only_the_inert_example_names() -> None:
+    """The tracked example stays inert, in both local-file modes.
+
+    The example file is the only declaration a fresh checkout has, and it
+    must carry inert placeholders only. A machine that keeps the real
+    local declaration must still pass: the inertness rule reads the
+    tracked example alone, never the union (ticket 2038 finding 7,
+    2035 #11).
+    """
     checker = _module()
-    names = checker.declared_names(ROOT)
-    assert names, "the tracked example must declare forbidden names"
-    assert all(name.startswith("example-") for name in names), (
-        "the tracked example must carry inert placeholders only"
+    example = json.loads(
+        (ROOT / "sdlc" / "pm-forbidden-names.example.json").read_text(
+            encoding="utf-8"
+        )
     )
+    entries = example["forbiddenNames"]
+    assert entries, "the tracked example must declare forbidden names"
+    for entry in entries:
+        try:
+            name = base64.b64decode(entry.encode("ascii"), validate=True).decode(
+                "utf-8"
+            )
+        except (UnicodeError, ValueError):
+            name = entry
+        assert name.startswith("example-"), (
+            f"the tracked example must carry inert placeholders only: {name!r}"
+        )
     config = json.loads((ROOT / "sdlc" / "pm.json").read_text(encoding="utf-8"))
     assert "forbiddenNames" not in config, (
         "pm.json must not declare names; they live in the local declaration"
     )
-    example = (ROOT / "sdlc" / "pm-forbidden-names.example.json").read_text(
+    raw_example = (ROOT / "sdlc" / "pm-forbidden-names.example.json").read_text(
         encoding="utf-8"
     )
-    assert not any(name in example.casefold() for name in names), (
-        "the example's names must stay encoded so the scan never matches them"
+    assert not any(
+        name in raw_example.casefold() for name in checker.declared_names(ROOT)
+    ), (
+        "declared names must stay encoded so the scan never matches them"
     )
+    # The union is non-empty in both modes: the tracked example always
+    # declares its placeholders, and a local file only adds to them.
+    names = checker.declared_names(ROOT)
+    assert names, "the tracked example must declare forbidden names"
+    example_only = checker.declared_names(ROOT / "example-only-check")
+    assert example_only == (), "a missing tree declares nothing"
+
+
+def test_both_declaration_modes_guard(tmp_path: Path) -> None:
+    """The no-file and with-file modes both scan, and the test for the
+    second no longer breaks the first (ticket 2038 finding 7, 2035 #11).
+    """
+    checker = _module()
+    inventory = _inventory(tmp_path / "inventory.json", {})
+
+    # Mode one: no local file, so only the tracked example's inert
+    # placeholders guard. A planted private name is NOT caught in this
+    # mode; that is exactly why CI must pass --require-local-names.
+    assert checker.local_declaration_names(tmp_path) == ()
+    planted = "docs/note.md"
+    path = tmp_path / planted
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"see {PRIVATE_NAME}\n", encoding="utf-8")
+    assert checker.scan_files(tmp_path, [planted], inventory) == []
+
+    # Mode two: with the local file, the same planted name is caught.
+    _declare(
+        tmp_path,
+        "sdlc/pm-forbidden-names.json",
+        [base64.b64encode(PRIVATE_NAME.encode()).decode()],
+    )
+    assert checker.local_declaration_names(tmp_path) == (PRIVATE_NAME,)
+    assert checker.scan_files(tmp_path, [planted], inventory) == [planted]
+
+
+def test_required_local_names_fail_loudly_when_missing(tmp_path: Path) -> None:
+    checker = _module()
+    # Without the local declaration the require mode must fail loudly with
+    # a clear message, not exit 0 silently.
+    message = checker.missing_local_names_error(tmp_path)
+    assert message is not None
+    assert "sdlc/pm-forbidden-names.json" in message
+    assert "cannot guard private project names" in message
+
+    _declare(
+        tmp_path,
+        "sdlc/pm-forbidden-names.json",
+        [base64.b64encode(PRIVATE_NAME.encode()).decode()],
+    )
+    assert checker.missing_local_names_error(tmp_path) is None
+
+
+def test_main_requires_local_names_and_notes_the_inert_mode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    checker = _module()
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    # Root the declaration lookup at the fixture tree so the test does not
+    # depend on whether the machine running the suite keeps a local file.
+    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    # The scan walks tracked files, so the fixture needs a repository.
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+
+    code = checker.main(
+        [
+            "--root",
+            str(tmp_path),
+            "--inventory",
+            str(inventory),
+            "--require-local-names",
+        ]
+    )
+    assert code == 2
+    out = capsys.readouterr().out
+    assert "cannot guard private project names" in out
+
+    _declare(
+        tmp_path,
+        "sdlc/pm-forbidden-names.json",
+        [base64.b64encode(PRIVATE_NAME.encode()).decode()],
+    )
+    code = checker.main(
+        ["--root", str(tmp_path), "--inventory", str(inventory)]
+    )
+    assert code == 0
+    err = capsys.readouterr().err
+    assert "guarding only the tracked example names" not in err
+
+    # Without the local file and without the flag, the run still passes but
+    # says plainly that the guard is inert.
+    (tmp_path / "sdlc" / "pm-forbidden-names.json").unlink()
+    code = checker.main(
+        ["--root", str(tmp_path), "--inventory", str(inventory)]
+    )
+    assert code == 0
+    err = capsys.readouterr().err
+    assert "guarding only the tracked example names" in err

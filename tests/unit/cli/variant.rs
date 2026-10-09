@@ -392,6 +392,7 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
         Some("SCN5A".into()),
         None,
         None,
+        &[],
     );
     assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
     assert_eq!(resolved.condition.as_deref(), Some("Brugada syndrome"));
@@ -408,8 +409,15 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
 
     // An uppercase non-gene first token such as BRUGADA is refused by the
     // oracle, so the whole phrase keeps the condition routing.
-    let (resolved, note) =
-        apply_gene_first_routing("BRUGADA".into(), None, "syndrome".into(), None, None, None);
+    let (resolved, note) = apply_gene_first_routing(
+        "BRUGADA".into(),
+        None,
+        "syndrome".into(),
+        None,
+        None,
+        None,
+        &[],
+    );
     assert_eq!(resolved.gene, None);
     assert_eq!(resolved.condition.as_deref(), Some("BRUGADA syndrome"));
     assert_eq!(
@@ -430,6 +438,7 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
         Some("EGFR".into()),
         None,
         None,
+        &[],
     );
     assert_eq!(resolved.gene.as_deref(), Some("EGFR"));
     assert_eq!(resolved.condition.as_deref(), Some("glioblastoma"));
@@ -444,6 +453,7 @@ fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
         Some("BRAF".into()),
         None,
         None,
+        &[],
     );
     assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
     assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
@@ -468,6 +478,7 @@ fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
         None,
         Some("p.Val600Glu".into()),
         None,
+        &[],
     );
     assert_eq!(resolved.gene, None);
     assert_eq!(
@@ -496,6 +507,7 @@ fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
         Some("SCN5A".into()),
         None,
         Some("missense_variant".into()),
+        &[],
     );
     assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
     assert_eq!(resolved.condition.as_deref(), Some("Brugada"));
@@ -518,6 +530,7 @@ fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
         Some("BRAF".into()),
         Some("p.Val600Glu".into()),
         Some("missense_variant".into()),
+        &[],
     );
     assert!(matches!(
         note.as_ref(),
@@ -536,6 +549,7 @@ fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
         None,
         Some("p.Val600Glu".into()),
         None,
+        &[],
     );
     assert_eq!(resolved.gene, None);
     assert_eq!(resolved.condition.as_deref(), Some("BRUGADA syndrome"));
@@ -551,13 +565,74 @@ fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
 }
 
 #[test]
+fn apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints() {
+    // The finding's case: `search variant "BRAF melanoma" --significance
+    // benign --tumor-site skin` dropped both flags from the routed hint,
+    // and the refused hint dropped `--significance` too. Every explicit
+    // filter the search applied stays in both hints (ticket 2022's
+    // promise, restored by ticket 2038 finding 7).
+    let filters = vec![
+        ("--significance", "benign".to_string()),
+        ("--tumor-site", "skin".to_string()),
+        ("--max-frequency", "0.01".to_string()),
+        ("--min-cadd", "20".to_string()),
+        ("--review-status", "2".to_string()),
+    ];
+
+    let (resolved, note) = apply_gene_first_routing(
+        "BRAF".into(),
+        None,
+        "melanoma".into(),
+        Some("BRAF".into()),
+        None,
+        None,
+        &filters,
+    );
+    assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
+    assert_eq!(resolved.condition.as_deref(), Some("melanoma"));
+    assert!(matches!(
+        note.as_ref(),
+        Some(GeneFirstNote::Routed {
+            alternative,
+            ..
+        }) if alternative
+            == "biomcp search variant -g BRAF --significance benign --tumor-site skin \
+                 --max-frequency 0.01 --min-cadd 20 --review-status 2"
+    ));
+
+    let (resolved, note) = apply_gene_first_routing(
+        "BRUGADA".into(),
+        None,
+        "syndrome".into(),
+        None,
+        None,
+        None,
+        &filters,
+    );
+    assert_eq!(resolved.gene, None);
+    assert_eq!(resolved.condition.as_deref(), Some("BRUGADA syndrome"));
+    assert_eq!(
+        note,
+        Some(GeneFirstNote::Refused {
+            gene: "BRUGADA".into(),
+            condition: "syndrome".into(),
+        })
+    );
+    assert_eq!(
+        gene_first_working_form("BRUGADA", None, "syndrome", &filters),
+        "biomcp search variant -g BRUGADA --condition syndrome --significance benign \
+         --tumor-site skin --max-frequency 0.01 --min-cadd 20 --review-status 2"
+    );
+}
+
+#[test]
 fn gene_first_working_form_quotes_multi_word_conditions() {
     assert_eq!(
-        gene_first_working_form("SCN5A", None, "Brugada syndrome"),
+        gene_first_working_form("SCN5A", None, "Brugada syndrome", &[]),
         "biomcp search variant -g SCN5A --condition \"Brugada syndrome\""
     );
     assert_eq!(
-        gene_first_working_form("BRAF", Some("V600E"), "melanoma"),
+        gene_first_working_form("BRAF", Some("V600E"), "melanoma", &[]),
         "biomcp search variant -g BRAF --hgvsp V600E --condition melanoma"
     );
 }

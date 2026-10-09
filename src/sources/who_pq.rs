@@ -112,6 +112,13 @@ pub(crate) fn who_pq_sync_failure_recovery(root: &Path) -> String {
     )
 }
 
+/// Recovery sentence for the projected surfaces — JSON `error.recovery`
+/// and MCP callers — which never carry a local data path: the resolved
+/// data directory stays terminal-only (ticket 2038 finding 7, 2035 #6).
+/// Like the terminal sentence it never tells the caller to run the
+/// command that just failed (1304 post-landing review finding 2).
+pub(crate) const WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY: &str = "Retry with network access or set BIOMCP_WHO_DIR to a directory holding the three WHO Prequalification CSV exports.";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum WhoPqSyncMode {
     Auto,

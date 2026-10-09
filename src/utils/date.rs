@@ -90,10 +90,9 @@ pub(crate) fn validate_since(value: &str) -> Result<String, BioMcpError> {
 
 /// Strict day shape for provider-supplied ClinVar evaluation dates: exactly
 /// `YYYY-MM-DD`, naming a real Gregorian day. Provider spellings such as
-/// "01 Apr 2019" or reordered forms are omitted rather than trusted. The
-/// variant headline date (ticket 2022) uses this rule; ticket 1291 still
-/// carries its own inline check on its branch, and whichever of the two
-/// lands second collapses the duplicate onto this helper.
+/// "01 Apr 2019" or reordered forms are omitted rather than trusted. This
+/// is the one day-shape rule: the variant headline date (ticket 2022) and
+/// the ClinVar fallback age label (ticket 1291) both gate on it.
 pub(crate) fn is_day_shaped(value: &str) -> bool {
     let bytes = value.as_bytes();
     let digits_at =
@@ -198,7 +197,7 @@ mod tests {
 
     #[test]
     fn is_day_shaped_accepts_real_days_only() {
-        for value in ["2014-09-04", "2025-01-23", "2024-02-29"] {
+        for value in ["2014-09-04", "2025-01-23", "2024-02-29", "2000-02-29"] {
             assert!(is_day_shaped(value), "expected day shape: {value}");
         }
     }
@@ -210,10 +209,15 @@ mod tests {
             "01 Apr 2019",
             "2019-4-11",
             "2019-13-01",
+            "2019-00-01",
             "2021-02-30",
+            "2021-04-31",
             "2023-02-29",
+            "1900-02-29",
             "2023-00-10",
             "2023-10-00",
+            "9999-99-99",
+            "----------",
         ] {
             assert!(!is_day_shaped(value), "expected rejection: {value:?}");
         }

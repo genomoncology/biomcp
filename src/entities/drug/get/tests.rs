@@ -700,3 +700,66 @@ fn drugsfda_failure_state_matrix() {
     );
     assert_approval_outcome(&data, SectionOutcomeState::Data);
 }
+
+#[test]
+fn unreadable_who_bundle_degrades_the_card_section_without_a_local_path() {
+    // Ticket 2038 finding 7, 2035 #6: with WHO broken, `get drug <name>
+    // regulatory` must not error outright carrying a local data path. The
+    // card degrades: the WHO section is omitted with a note that names the
+    // gap, and the note carries no local path, so JSON and MCP callers
+    // never see one.
+    let unavailable = BioMcpError::SourceUnavailable {
+        source_name: "WHO Prequalification".to_string(),
+        reason: format!(
+            "{} Refresh failed for who_pq.csv: WHO Prequalification export headers did not match: who_pq.csv: missing required column BASIS OF LISTING. Missing required WHO Prequalification file(s) after the run: who_pq.csv.",
+            crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX
+        ),
+        suggestion: crate::sources::who_pq::who_pq_sync_failure_recovery(std::path::Path::new(
+            "/home/who/private-data",
+        )),
+    };
+    let mut drug = test_approval_drug();
+    apply_who_sections_result(&mut drug, "zidovudine", Err(unavailable)).expect("degrade");
+    assert!(drug.who_prequalification.is_none());
+    let note = drug
+        .who_note
+        .as_deref()
+        .expect("degraded card carries the note");
+    assert!(note.contains("WHO Prequalification data is unavailable"));
+    assert!(note.contains("so this card omits the WHO section"));
+    assert!(note.contains("biomcp who sync"));
+    assert!(note.contains("BIOMCP_WHO_DIR"));
+    assert!(
+        !note.contains("/home/who"),
+        "the card note must stay path-free: {note}"
+    );
+    // The JSON surface (and so MCP `get drug ... regulatory` with --json)
+    // carries the same note and no path.
+    let json = serde_json::to_value(&drug).expect("drug JSON");
+    assert_eq!(
+        json["who_note"].as_str(),
+        Some(note),
+        "the degraded note must reach JSON"
+    );
+    assert!(!json.to_string().contains("/home/who"));
+
+    // A readable bundle clears the note and fills the section.
+    let root = crate::test_support::TempDirGuard::new("who-card-ready");
+    let fixture_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("spec")
+        .join("fixtures")
+        .join("who-pq");
+    for file in crate::sources::who_pq::WHO_PQ_REQUIRED_FILES {
+        std::fs::copy(fixture_dir.join(file), root.path().join(file)).expect("copy WHO fixture");
+    }
+    let mut drug = test_approval_drug();
+    drug.who_note = Some("stale note".into());
+    apply_who_sections_result(
+        &mut drug,
+        "zidovudine",
+        Ok(crate::sources::who_pq::WhoPqClient::from_root(root.path())),
+    )
+    .expect("populated bundle root resolves sections");
+    assert!(drug.who_note.is_none());
+    assert!(drug.who_prequalification.is_some());
+}

@@ -240,6 +240,47 @@ struct VariantSearchRequest {
     offset: usize,
 }
 
+impl VariantSearchRequest {
+    /// Every explicit filter flag this request carries, in the command
+    /// line's own spelling, so the gene-first hints repeat what the caller
+    /// typed instead of dropping filters the search applied (ticket 2022's
+    /// promise, restored by ticket 2038 finding 7). `--limit` and `--offset`
+    /// are pagination, not filters, and stay out.
+    fn explicit_filter_flags(&self) -> Vec<(&'static str, String)> {
+        let mut flags = Vec::new();
+        flag_text(&mut flags, "--significance", self.significance.as_deref());
+        flag_number(&mut flags, "--max-frequency", self.max_frequency);
+        flag_number(&mut flags, "--min-cadd", self.min_cadd);
+        flag_text(&mut flags, "--review-status", self.review_status.as_deref());
+        flag_text(&mut flags, "--population", self.population.as_deref());
+        flag_number(&mut flags, "--revel-min", self.revel_min);
+        flag_number(&mut flags, "--gerp-min", self.gerp_min);
+        flag_text(&mut flags, "--tumor-site", self.tumor_site.as_deref());
+        flag_text(&mut flags, "--impact", self.impact.as_deref());
+        if self.lof {
+            flags.push(("--lof", String::new()));
+        }
+        flag_text(&mut flags, "--has", self.has.as_deref());
+        flag_text(&mut flags, "--missing", self.missing.as_deref());
+        flag_text(&mut flags, "--therapy", self.therapy.as_deref());
+        flags
+    }
+}
+
+/// Add a text-valued flag when the request carries a non-blank value.
+fn flag_text(flags: &mut Vec<(&'static str, String)>, flag: &'static str, value: Option<&str>) {
+    if let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) {
+        flags.push((flag, value.to_string()));
+    }
+}
+
+/// Add a number-valued flag when the request carries a value.
+fn flag_number(flags: &mut Vec<(&'static str, String)>, flag: &'static str, value: Option<f64>) {
+    if let Some(value) = value {
+        flags.push((flag, value.to_string()));
+    }
+}
+
 pub(crate) fn render_loaded_card(
     variant: &crate::entities::variant::Variant,
     has_clinvar_signal: bool,
@@ -312,6 +353,7 @@ async fn render_variant_search_outcome(
     guidance_as_json: bool,
     request: VariantSearchRequest,
 ) -> anyhow::Result<CommandOutcome> {
+    let explicit_filters = request.explicit_filter_flags();
     let VariantSearchRequest {
         gene,
         positional_query,
@@ -356,6 +398,7 @@ async fn render_variant_search_outcome(
                     confirmed,
                     hgvsp,
                     consequence,
+                    &explicit_filters,
                 )
             }
         };
@@ -400,7 +443,7 @@ async fn render_variant_search_outcome(
     let zero_row_note = gene_first_note.as_ref().filter(|_| results.is_empty());
     let zero_row_command = zero_row_note.map(|note| match note {
         GeneFirstNote::Refused { gene, condition } => {
-            gene_first_working_form(gene, None, condition)
+            gene_first_working_form(gene, None, condition, &explicit_filters)
         }
         GeneFirstNote::Routed { alternative, .. } => alternative.clone(),
     });
@@ -447,7 +490,7 @@ async fn render_variant_search_outcome(
         Some(GeneFirstNote::Refused { gene, condition }) => format!(
             "{body}\n\nNo variants matched the phrase as a condition. If {gene} is a gene symbol, \
              try the working form: {}",
-            gene_first_working_form(gene, None, condition)
+            gene_first_working_form(gene, None, condition, &explicit_filters)
         ),
         Some(GeneFirstNote::Routed {
             parsed,
@@ -459,4 +502,84 @@ async fn render_variant_search_outcome(
         None => body,
     };
     Ok(CommandOutcome::stdout(body))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::VariantSearchRequest;
+
+    #[test]
+    fn explicit_filter_flags_state_every_flag_in_command_spelling() {
+        let request = VariantSearchRequest {
+            gene: None,
+            positional_query: Vec::new(),
+            hgvsp: None,
+            significance: Some("benign".into()),
+            max_frequency: Some(0.01),
+            min_cadd: Some(20.0),
+            consequence: None,
+            review_status: Some("2".into()),
+            population: Some("nfe".into()),
+            revel_min: Some(0.5),
+            gerp_min: None,
+            tumor_site: Some("skin".into()),
+            condition: None,
+            impact: None,
+            lof: true,
+            has: Some("clinvar".into()),
+            missing: None,
+            therapy: None,
+            limit: 10,
+            offset: 0,
+        };
+        assert_eq!(
+            request.explicit_filter_flags(),
+            vec![
+                ("--significance", "benign".to_string()),
+                ("--max-frequency", "0.01".to_string()),
+                ("--min-cadd", "20".to_string()),
+                ("--review-status", "2".to_string()),
+                ("--population", "nfe".to_string()),
+                ("--revel-min", "0.5".to_string()),
+                ("--tumor-site", "skin".to_string()),
+                ("--lof", String::new()),
+                ("--has", "clinvar".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn explicit_filter_flags_skip_unset_and_blank_values() {
+        let request = VariantSearchRequest {
+            significance: Some("   ".into()),
+            lof: false,
+            ..empty_request()
+        };
+        assert!(request.explicit_filter_flags().is_empty());
+    }
+
+    fn empty_request() -> VariantSearchRequest {
+        VariantSearchRequest {
+            gene: None,
+            positional_query: Vec::new(),
+            hgvsp: None,
+            significance: None,
+            max_frequency: None,
+            min_cadd: None,
+            consequence: None,
+            review_status: None,
+            population: None,
+            revel_min: None,
+            gerp_min: None,
+            tumor_site: None,
+            condition: None,
+            impact: None,
+            lof: false,
+            has: None,
+            missing: None,
+            therapy: None,
+            limit: 10,
+            offset: 0,
+        }
+    }
 }

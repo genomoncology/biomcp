@@ -779,19 +779,12 @@ fn who_ready_for_region(
                 query = %query,
                 "WHO Prequalification auto-sync unavailable for all-region search: {err}"
             );
-            let note = who_pq_degradation_note(&err);
+            let note = crate::entities::drug::who_pq_degradation_note(&err, "search");
             write_search_warning_line(&format!("Warning: {note}"))?;
             Ok((None, Some(note)))
         }
         Err(err) => Err(err),
     }
-}
-
-fn who_pq_degradation_note(err: &BioMcpError) -> String {
-    format!(
-        "WHO Prequalification data is unavailable ({}), so this search omits the WHO section. Run `biomcp who sync` with network access or set BIOMCP_WHO_DIR.",
-        err.public_projection().message
-    )
 }
 
 fn empty_who_search_page() -> RankedDrugSearchPage<WhoPrequalificationSearchResult> {
