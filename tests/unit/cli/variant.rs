@@ -654,10 +654,7 @@ fn refused_zero_row_hint_keeps_the_explicit_hgvsp_and_consequence_flags() {
     );
     assert_eq!(resolved.gene, None);
     assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
-    assert_eq!(
-        resolved.consequence.as_deref(),
-        Some("missense_variant")
-    );
+    assert_eq!(resolved.consequence.as_deref(), Some("missense_variant"));
     let GeneFirstNote::Refused {
         gene,
         condition,
@@ -765,10 +762,7 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind myvariant fixture");
-    let base = format!(
-        "http://{}",
-        listener.local_addr().expect("fixture address")
-    );
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let server = tokio::spawn(async move {
         let body = r#"{"total":0,"hits":[]}"#;
         while let Ok((mut stream, _)) = listener.accept().await {
@@ -786,13 +780,11 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
         .tempdir()
         .expect("temp cache dir");
     // SAFETY: this test owns the source_env serial-test key.
-    let _myvariant =
-        unsafe { SearchEnvRestore::set("BIOMCP_MYVARIANT_BASE", &base) };
+    let _myvariant = unsafe { SearchEnvRestore::set("BIOMCP_MYVARIANT_BASE", &base) };
     // SAFETY: this test owns the source_env serial-test key.
     let _cache = unsafe { SearchEnvRestore::set("BIOMCP_CACHE_DIR", cache.path()) };
     // SAFETY: this test owns the source_env serial-test key.
-    let _routing =
-        unsafe { SearchEnvRestore::set("BIOMCP_VARIANT_QUERY_GENE_ROUTING", "off") };
+    let _routing = unsafe { SearchEnvRestore::set("BIOMCP_VARIANT_QUERY_GENE_ROUTING", "off") };
 
     let cli = Cli::try_parse_from([
         "biomcp",

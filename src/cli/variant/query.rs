@@ -191,9 +191,7 @@ pub(super) fn apply_gene_first_routing(
                 Some(GeneFirstNote::Refused {
                     gene,
                     condition: remainder,
-                    hgvsp: hgvsp_flag
-                        .as_deref()
-                        .map(normalize_search_hgvsp),
+                    hgvsp: hgvsp_flag.as_deref().map(normalize_search_hgvsp),
                     consequence: consequence_flag,
                 }),
             )

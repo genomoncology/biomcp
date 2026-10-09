@@ -501,8 +501,8 @@ async fn held_fixture_replies_self_release_at_their_own_bound() {
     // with this test's name instead of hanging. Paused time advances the
     // bound at once, so the proof needs no wall-clock minutes.
     let (_release_tx, hold) = held_reply_gate();
-    let fixture = TestHttpFixture::spawn(move |_request| TestHttpReply::Hold(Arc::clone(&hold)))
-        .await;
+    let fixture =
+        TestHttpFixture::spawn(move |_request| TestHttpReply::Hold(Arc::clone(&hold))).await;
     let client = reqwest::Client::new();
 
     let response = client

@@ -288,11 +288,11 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2845,
+      "baseline_lines": 2847,
       "floor_lines": 1956,
       "authorized_increase": {
         "ticket": "1258, 2044",
-        "delta": 889,
+        "delta": 891,
         "reason": "One-sided-constraint clash rule in merge_property, the constraint keyword table, the get-sections uniqueItems resolution pins, and should-panic tests for the clash. | Ticket 2044: the MCP error projection helpers (bio_mcp_error_text, cli_error_text) route every tool error through the public path-free projection, and the WHO region-search test pins the path-free MCP error text.",
         "removal_condition": "Shrink when the should-panic clash tests fold into a shared schema merge test module. | Shrink when the MCP error projection tests move into a tests submodule."
       }

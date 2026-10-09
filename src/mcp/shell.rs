@@ -1934,10 +1934,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("bind WHO Prequalification MCP fixture");
-        let base = format!(
-            "http://{}",
-            listener.local_addr().expect("fixture address")
-        );
+        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
         let server = tokio::spawn(async move {
             // Every export answers a CSV whose headers do not match, so the
             // sync fails per file and the final error names the exports.
@@ -1950,7 +1947,11 @@ mod tests {
                     .nth(1)
                     .unwrap_or_default()
                     .to_string();
-                let status = if target.starts_with("/") { "200 OK" } else { "404 Not Found" };
+                let status = if target.starts_with("/") {
+                    "200 OK"
+                } else {
+                    "404 Not Found"
+                };
                 let response = format!(
                     "HTTP/1.1 {status}\r\nContent-Type: text/csv\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                     body.len()
@@ -1990,12 +1991,13 @@ mod tests {
             .as_str()
             .expect("WHO failure text");
         assert!(
-            text.starts_with(
-                "Error: Could not prepare WHO Prequalification data."
-            ),
+            text.starts_with("Error: Could not prepare WHO Prequalification data."),
             "the projected message names the failure: {text}"
         );
-        assert!(text.contains("BIOMCP_WHO_DIR"), "recovery names the env: {text}");
+        assert!(
+            text.contains("BIOMCP_WHO_DIR"),
+            "recovery names the env: {text}"
+        );
         let root = who_dir.path().display().to_string();
         assert!(
             !text.contains(&root),
