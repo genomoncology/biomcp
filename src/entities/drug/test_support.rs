@@ -732,24 +732,22 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn a_brand_query_resolves_through_openfda_identity_fields() {
-    let tagrisso_capture =
-        crate::transform::drug::name_resolution_tests::TAGRISSO_CAPTURE.to_string();
+async fn a_brand_query_resolves_through_the_mychem_record_itself() {
     let (base, server) = name_resolution_fixture_server(
-        vec![
-            ("TAGRISSO".to_string(), tagrisso_capture.clone()),
-            ("osimertinib".to_string(), tagrisso_capture),
-        ],
         vec![(
             "TAGRISSO".to_string(),
-            r#"{"meta":{"results":{"total":1}},"results":[{"set_id":"tagrisso-setid","openfda":{"brand_name":["TAGRISSO"],"generic_name":["osimertinib"]}}]}"#.to_string(),
+            crate::transform::drug::name_resolution_tests::TAGRISSO_CAPTURE.to_string(),
         )],
+        Vec::new(),
     )
     .await;
 
-    // Ticket 2031 keep-list: no fetched MyChem name field carries the brand,
-    // so the lookup resolves the brand through openFDA's own identity fields
-    // and lands on the generic identity.
+    // Ticket 2031, fourth-review finding 1: live openFDA returns NOT_FOUND
+    // for `openfda.brand_name:"TAGRISSO"` (the label has no openFDA block),
+    // so the fixture answers every label search with no match — the brand
+    // must resolve through the drugcentral synonyms and NDC proprietary
+    // names on the osimertinib record itself and land on the generic
+    // identity.
     let drug = name_resolution_fixture_drug(&base, "TAGRISSO").await;
     assert_eq!(drug.name, "osimertinib");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09330"));

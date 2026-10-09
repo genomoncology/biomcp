@@ -22,6 +22,19 @@ fn ndc_nonproprietary_names(hit: &MyChemHit) -> Vec<&str> {
     }
 }
 
+fn ndc_proprietary_names(hit: &MyChemHit) -> Vec<&str> {
+    let Some(ndc) = hit.ndc.as_ref() else {
+        return Vec::new();
+    };
+    match ndc {
+        MyChemNdcField::One(v) => v.proprietaryname.as_deref().into_iter().collect(),
+        MyChemNdcField::Many(v) => v
+            .iter()
+            .filter_map(|n| n.proprietaryname.as_deref())
+            .collect(),
+    }
+}
+
 fn ndc_nonproprietaryname(hit: &MyChemHit) -> Option<&str> {
     ndc_nonproprietary_names(hit).into_iter().next()
 }
@@ -133,6 +146,9 @@ fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
     for value in ndc_nonproprietary_names(hit) {
         out.push(normalize_name(value));
     }
+    for value in ndc_proprietary_names(hit) {
+        out.push(normalize_name(value));
+    }
     for value in openfda_generic_names(hit) {
         out.push(normalize_name(value));
     }
@@ -144,6 +160,14 @@ fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
     }
     if let Some(drugbank) = hit.drugbank.as_ref() {
         for synonym in &drugbank.synonyms {
+            out.push(normalize_name(synonym));
+        }
+    }
+    if let Some(drugcentral) = hit.drugcentral.as_ref() {
+        // DrugCentral synonyms carry brands ("tagrisso") that no fetched
+        // openFDA block holds, so a brand query selects the drug record the
+        // brand lives on (ticket 2031).
+        for synonym in &drugcentral.synonyms {
             out.push(normalize_name(synonym));
         }
     }

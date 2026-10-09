@@ -397,10 +397,14 @@ fn amivantamab_keeps_resolving_through_its_exact_drugbank_record() {
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
 }
 
-/// `q=TAGRISSO`: the MyChem fields fetched carry no brand array, so no hit
-/// names the query and `get` must fall through to the openFDA identity
-/// fallback instead of merging the osimertinib record unasked (ticket 2031
-/// keep-list).
+/// `q=TAGRISSO`, re-recorded 2026-10-08 after the fourth review with the
+/// `get` field list widened to `drugcentral.synonyms` and
+/// `ndc.proprietaryname`: the brand names the osimertinib record itself
+/// (DrugCentral synonym "tagrisso", every NDC row's proprietary name), so
+/// the brand query resolves through MyChem and needs no openFDA fallback
+/// — live openFDA returns NOT_FOUND for `openfda.brand_name:"TAGRISSO"`
+/// because the label carries no openFDA block (ticket 2031, fourth-review
+/// finding 1). NDC rows deduplicated to first occurrences.
 pub(crate) const TAGRISSO_CAPTURE: &str = r#"
 {
   "total": 4,
@@ -408,33 +412,63 @@ pub(crate) const TAGRISSO_CAPTURE: &str = r#"
     {
       "_id": "DUYJMQONPNNFPI-UHFFFAOYSA-N",
       "_score": 24.06902,
-      "drugbank": {"id": "DB09330", "name": "Osimertinib"},
+      "drugbank": {
+        "id": "DB09330",
+        "name": "Osimertinib",
+        "synonyms": [
+          "Mereletinib",
+          "Osimertinib",
+          "Osimertinibum"
+        ]
+      },
       "chembl": {"molecule_chembl_id": "CHEMBL3353410", "pref_name": "OSIMERTINIB"},
-      "ndc": {"nonproprietaryname": "osimertinib"},
+      "ndc": [
+        {"nonproprietaryname": "osimertinib", "proprietaryname": "TAGRISSO"}
+      ],
       "unii": {"unii": "3C06JJ0Z2O", "display_name": "OSIMERTINIB"},
-      "chebi": {"name": "osimertinib"}
+      "chebi": {"name": "osimertinib"},
+      "drugcentral": {
+        "synonyms": [
+          "osimertinib",
+          "tagrisso",
+          "AZD9291",
+          "AZD-9291",
+          "AZD 9291",
+          "osimertinib mesylate",
+          "osimertinib mesilate",
+          "AZD9291 mesylate",
+          "mereletinib"
+        ]
+      },
+      "gtopdb": {"name": "osimertinib"}
     },
     {
       "_id": "0310-1248",
       "_score": 17.670006,
-      "ndc": {"nonproprietaryname": "osimertinib"}
+      "ndc": {"nonproprietaryname": "osimertinib", "proprietaryname": "TAGRISSO"}
     },
     {
       "_id": "0310-1251",
       "_score": 17.141884,
-      "ndc": {"nonproprietaryname": "osimertinib"}
+      "ndc": {"nonproprietaryname": "osimertinib", "proprietaryname": "TAGRISSO"}
     }
   ]
 }
 "#;
 
 #[test]
-fn tagrisso_hits_select_nothing_by_name_so_get_uses_the_openfda_fallback() {
+fn tagrisso_resolves_through_the_brand_fields_on_osimertinibs_record() {
     let capture = hits(serde_json::from_str(TAGRISSO_CAPTURE).expect("valid capture"));
-    assert!(
-        select_hits_for_name(&capture, "TAGRISSO").is_empty(),
-        "no fetched name field carries the brand, so nothing merges by name"
-    );
+    // The DrugCentral synonym "tagrisso" and every NDC row's proprietary
+    // name "TAGRISSO" equal the query, so the exact tier keeps the drug
+    // record and its product rows — the brand resolves through MyChem
+    // itself, never through an invented openFDA reply (fourth-review
+    // finding 1).
+    let selected = select_hits_for_name(&capture, "TAGRISSO");
+    assert_eq!(selected.len(), 3);
+    let drug = merge_mychem_hits(&selected, "TAGRISSO");
+    assert_eq!(drug.name, "osimertinib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09330"));
 }
 
 /// `q=ferric oxide` with the ferric oxide records absent: what the text

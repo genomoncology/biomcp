@@ -271,11 +271,15 @@ enum SparseDrugDiscoverRescue {
     None,
 }
 
-/// The openFDA identity resolution of a name MyChem could not match by name:
-/// the generic name of a label record whose own `openfda.generic_name` or
-/// `openfda.brand_name` equals the query (ticket 2031). Brand queries such
-/// as TAGRISSO resolve here when the MyChem fields fetched carry no brand
-/// array for the record.
+/// A secondary identity resolution through openFDA's field-scoped label
+/// search: the first row's generic name, taken when it differs from the
+/// query (ticket 2031). The rows come from a query scoped to
+/// `openfda.generic_name`/`openfda.brand_name`, but the code does not
+/// itself require the query to equal one of the row's identity values —
+/// some label records carry no openFDA identity block at all, so this
+/// path can miss (a brand MyChem itself carries, such as TAGRISSO on
+/// `drugcentral.synonyms`/`ndc.proprietaryname`, resolves through the
+/// MyChem record instead).
 async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
     let client = OpenFdaClient::new().ok()?;
     let response = client.label_search(name).await.ok()??;
