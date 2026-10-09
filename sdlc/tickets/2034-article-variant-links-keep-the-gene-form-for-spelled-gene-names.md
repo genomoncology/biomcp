@@ -22,3 +22,7 @@ Filed 2026-10-08 from the fourth independent review of main at `cf8113f3a` (tick
 - Changes: choose the most-mentioned gene text that passes the symbol check; when a row has a gene identifier and no usable symbol text, build the gene form from the gene identifier's official symbol or the mention text, not the rsID.
 - Proof: a test with "K-ras" mentions and a single G12A row prints `biomcp get variant "KRAS p.G12A"` and fails on `cf8113f3a`; a test covers a gene with no symbol-shaped mention.
 - Defers: gene-less multi-allele rsID rows, which 2029 records as a known limit.
+
+## Review record (2034)
+
+- Code review: ACCEPT 2026-10-09 (fresh reviewer, full head). Spelled gene names keep the gene form; the official-symbol fallback verified with source evidence; report-only P2s recorded in the review artifacts (/tmp/review-2034-code.md).

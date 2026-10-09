@@ -204,3 +204,7 @@ original response's SHA-256 is in the receipt). The variant-identity fixture
 serves the queries and the UniProt record, and the complexportal fixture —
 which owns the routine lane's UniProt base — serves the same record bytes.
 The spec page pins the three refusals plus `TP53 R116Q`'s honest note.
+
+## Review record (2016)
+
+- Code review: ACCEPT 2026-10-09 (fresh reviewer, full head). The naming tier and the residue check before any note verified with source evidence; report-only P2s recorded in the review artifacts (/tmp/review-2016-fix4.md).
