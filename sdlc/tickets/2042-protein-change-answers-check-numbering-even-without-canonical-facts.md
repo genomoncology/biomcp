@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision b177354f1, accept
+
 ## Outcome
 
 `biomcp get variant "GENE change"` never returns a change on a different numbering with no note, including when the requested position lies past the end of the canonical protein, when UniProt cannot be reached, when UniProt names no MANE transcript, or when the variant record carries many SnpEff rows. In each case it returns the MANE change, an honest refusal, or a note that names the other numbering or says the numbering could not be checked.
