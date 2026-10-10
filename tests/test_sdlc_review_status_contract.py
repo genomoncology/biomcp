@@ -113,6 +113,15 @@ STATE_AND_RESOLUTION = re.compile(
     re.IGNORECASE,
 )
 
+# pm's own verdict line (2048): `pm ticket review` writes exactly
+# "Reviews: revision <sha>, accept|findings" at the top of the ticket,
+# and pm reads verdicts only from that line, so the contract accepts it
+# as a valid record rather than forcing a hand-rewrite.
+PM_REVIEW = re.compile(
+    r"^Reviews: revision (?P<rev>[0-9a-f]{7,40}), (?P<verdict>accept|findings)$",
+    re.IGNORECASE,
+)
+
 # Verdict state tokens, in the order they appear in the text.
 STATE_TOKEN = re.compile(r"\b(ACCEPT|REJECT|BLOCK|pending)\b", re.IGNORECASE)
 # Words that say what happened to a rejection on the same line. A
@@ -243,6 +252,19 @@ def _review_records(path: Path) -> list[dict[str, object]]:
     global _last_no_state_failures
     _last_no_state_failures = []
     for number, marker, text in _logical_lines(path.read_text(encoding="utf-8")):
+        pm_match = PM_REVIEW.match(text)
+        if pm_match is not None:
+            verdict = pm_match.group("verdict")
+            records.append(
+                {
+                    "line": number,
+                    "kind": "review",
+                    "scope": "pm revision " + pm_match.group("rev"),
+                    "verdict": verdict,
+                    "states": ["accept" if verdict.lower() == "accept" else "findings"],
+                }
+            )
+            continue
         if marker != "-":
             continue
         match = REVIEW_LINE.match(text)
@@ -332,8 +354,9 @@ def _review_failures(path: Path, landed: bool) -> list[str]:
             head_word and head_word.group(1).lower() not in ALLOWED_KIND_WORDS
         )
         status_head = bool(STATUS_HEAD.match(unquoted))
+        pm_verdict = bool(PM_REVIEW.match(unquoted))
         grammar_bullet = marker == "-" and REVIEW_LINE.match(logical_text) is not None
-        if (
+        if not pm_verdict and (
             unknown_kind
             or only_state
             or bullet_status
