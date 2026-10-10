@@ -1696,9 +1696,11 @@ def test_the_strict_parse_rejects_the_duplicated_with_shape_github_refused() -> 
     assert duplicated != workflow, "the build checkout with: block moved; replant it"
     with pytest.raises(DuplicateWorkflowKey):
         _load_workflow_strictly(duplicated)
-    assert "fetch-depth: 0" in yaml.safe_load(duplicated)["jobs"]["build"]["steps"][0][
-        "with"
-    ], "the quiet parse must keep the last key, which is why the check exists"
+    quiet = yaml.safe_load(duplicated)["jobs"]["build"]["steps"][0]["with"]
+    assert quiet == {"fetch-depth": 0}, (
+        "the quiet parse must keep only the last key, dropping the ref with it, "
+        "which is why the strict check exists"
+    )
 
 
 # Variables a container runtime provides on its own; everything else
