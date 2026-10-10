@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 21630b5eb, accept
+
 ## Outcome
 
 The 2038 code-lane changes on main meet Ian's terminal-only WHO decision on every surface, keep every explicit filter on every hint path, carry honest per-file size records, and landed through green CI with a recorded review of the landed head.
