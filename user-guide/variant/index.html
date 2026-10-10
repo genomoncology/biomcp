@@ -4669,6 +4669,14 @@ and names any oversized preview fields it omitted.</p>
 </code></pre></div>
 <p>Standalone protein shorthand like <code>R620W</code> returns variant-specific recovery
 guidance instead of falling back to gene or condition discovery.</p>
+<p>A free-text phrase whose first word is a gene's official symbol routes that
+word to the gene filter and searches the remaining words as the condition:
+<code>biomcp search variant "SCN5A Brugada"</code> reads as <code>gene=SCN5A,
+condition=Brugada</code>. Aliases and other words never route, so
+<code>"HCC liver cancer"</code> stays one whole-phrase condition search. Set
+<code>BIOMCP_VARIANT_QUERY_GENE_ROUTING=off</code> to restore the whole-phrase search
+for every phrase. A phrase search that returns nothing states how it was
+read and prints a working alternative.</p>
 <p>Protein searches using <code>--hgvsp</code> or positional <code>GENE CHANGE</code>, plus coding-HGVS and rsID searches, are exact identity routes. BioMCP keeps
 the supplied spelling, normalizes aliases only for comparison, and excludes
 MyVariant candidates whose source gene or allele facts contradict the request.

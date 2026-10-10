@@ -4679,7 +4679,12 @@ deduplication. Use <code>--max-per-source &lt;N&gt;</code> to override that cap,
 Default article search excludes confirmed retractions unless you pass
 <code>--include-retracted</code>. Sources that do not expose retraction metadata still
 participate in the search, and compact and <code>--full</code> JSON search rows keep the
-tri-state contract: <code>"is_retracted": true</code>, <code>false</code>, or <code>null</code>.
+tri-state contract: <code>"is_retracted": true</code>, <code>false</code>, or <code>null</code>.</p>
+<p>Every article search runs under a 60-second deadline: when the deadline
+arrives, BioMCP returns the rows that already answered and names each silent
+or slow source as degraded instead of hanging. Deep pages are refused —
+<code>--offset</code> plus <code>--limit</code> beyond 1,250 returns an error on every sort order
+rather than walking hundreds of provider pages.
 <code>--type</code>, <code>--open-access</code>, and <code>--no-preprints</code> are backend-compatibility
 constraints rather than universal filters across every article source.
 <code>--type</code> on <code>--source all</code> uses Europe PMC + PubMed when <code>--open-access</code> and
@@ -4833,6 +4838,12 @@ Scholar only after a successful response.</p>
 <a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
 <a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citation-evidence<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">10</span>.1038/nature10725<span class="w">  </span><span class="c1"># passage for one directed citation</span>
 </code></pre></div>
+<p>Variant rows in <code>article entities</code> print a <code>get variant</code> command that opens
+the row's own allele whenever the row carries a gene and a protein change. A
+row with neither part keeps its rsID command, and one rsID can name several
+alleles, so a gene-less row that mentions only one allele of such an rsID can
+still print a command that opens a different allele; BioMCP has no
+allele-specific form for that row.</p>
 <p><code>batch article --mode compact</code> works without <code>S2_API_KEY</code> and returns the
 standard <code>{summary, items}</code> batch envelope in request order. Each compact card
 echoes the original <code>requested_id</code>, keeps its
@@ -4862,9 +4873,11 @@ for one directed citation pair: Semantic Scholar context by default, and when
 the edge carries no context, the paragraphs of the citing paper's open
 Europe PMC JATS full text whose unambiguous bibliographic markers link to the
 cited reference. Pass <code>--fulltext</code> to force the JATS path even when provider
-context exists. When no passage is openly available, OpenCitations confirms
-whether the directed edge exists and the response reports that confirmed edge
-without a passage. The response is a closed six-status evidence object
+context exists. When Semantic Scholar refuses with a rate limit or a server
+error, the evidence degrades to OpenCitations and names the provider it used
+and the provider that failed. When no passage is openly available, OpenCitations
+confirms whether the directed edge exists and the response reports that confirmed
+edge without a passage. The response is a closed six-status evidence object
 (<code>context_from_provider</code>, <code>context_from_fulltext</code>, <code>fulltext_unavailable</code>,
 <code>reference_confirmed_without_passage</code>, <code>reference_unresolved</code>,
 <code>citation_marker_unlinked</code>) with per-passage locators and evidence URLs. It
