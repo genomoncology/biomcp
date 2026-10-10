@@ -42,7 +42,8 @@ Gaps in 2044:
 - Merge `321969db0` took 2043's inventory reasons for `src/entities/drug/get.rs` and `src/transform/drug.rs`, erasing the history 2044 restored. The updater's growth arm overwrites the reason (`tools/update-rust-source-size-inventory:83`). Commit `c907cdd60` hand-edited seven inventory entries.
 - The same merge dropped the explicit `.config` assertion from `tests/test_source_package_boundary.py`. The exclude survives in `Cargo.toml:14`.
 - Replacing `hgvsp` or `consequence` with None in the JSON next-command arm (`src/cli/variant/dispatch.rs:452-453`), or the consequence at `:509`, passes every test.
-- Still open from its Changes: lower the `src/transform/variant.rs` floor, move the test out of `src/render/json.rs`, let the updater approve several files in one run, and run the name check by hand with the full list before the `PM_FORBIDDEN_NAMES` secret is created.
+- Still open from its Changes: lower the `src/transform/variant.rs` floor, move the test out of `src/render/json.rs`, and let the updater approve several files in one run.
+- Remove the private-name scan. Ian ruled on 2026-10-10 that leaving other projects' names out of public repos is a writing habit that needs no guard and no GitHub secret. Delete the `PM_FORBIDDEN_NAMES` step in `.github/workflows/ci.yml` (around line 360), the forbidden-name declaration files and their reader in `tools/check-zero-coupling.py`, and the tests that cover them.
 
 Gap in 2045:
 
