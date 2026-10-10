@@ -809,7 +809,7 @@ pub(super) async fn resolve_drug_base(
         // for, so the request's own name travels with the card's canonical
         // name (ticket 2043).
         match OpenFdaClient::new() {
-            Ok(client) => match lookup_label_response(&client, name, &drug.name).await {
+            Ok(client) => match lookup_label_response(&client, &drug.name, &drug.name).await {
                 Ok(LabelLookup::Response(response)) => label_response_opt = Some(response),
                 Ok(LabelLookup::NoSplRecord) => {}
                 Ok(LabelLookup::ElementsSearchTooLarge) => label_elements_oversize = true,
