@@ -34,24 +34,11 @@ Filed 2026-10-09 from the pre-tag review of main at `e71ac046b` (ticket 2038, fi
 - Live sweep, 2026-10-09, branch binary on the build host, live sources, cache off: Tarceva→erlotinib hydrochloride DB00530 (label ab6f3cb3), Lartruvo→olaratumab DB06043, Portrazza→necitumumab DB09559, Lumoxiti→moxetumomab pasudotox DB12688, Zejula→niraparib DB11793 (b7f675e2), Lonsurf→trifluridine and tipiracil DB00432, Keytruda→pembrolizumab DB09037 (097d166f, QLEX, as v0.9.1), Herceptin→trastuzumab DB00072 (b6465b44, OGIVRI, as v0.9.1), pembrolizumab and trastuzumab unchanged, amivantamab and Rybrevant→amivantamab DB16695 (9e58b045, Rybrevant Faspro, as v0.9.1), Tagrisso→osimertinib DB09330, Gleevec→imatinib mesylate DB00619, Enhertu→trastuzumab deruxtecan DB14962, Lazcluze→lazertinib DB16216, Opdivo→nivolumab DB09035, Lynparza→olaparib DB09074, Ibrance→palbociclib DB09073, Revlimid→lenalidomide DB00480, Xeloda→capecitabine DB01101, Kadcyla→ado-trastuzumab emtansine DB05773, Imbruvica→ibrutinib DB09053, Tecentriq→atezolizumab DB11595, Kisqali→ribociclib DB11730, Verzenio→abemaciclib DB12001, Tukysa→tucatinib DB11652, carboplatin DB00958, cisplatin DB00515, paclitaxel DB01229, docetaxel anhydrous DB01248, terfenadine DB00342 (no label, honest), mannitol DB00742, cisapride DB00604; 5-FU and Ara-C refuse honestly.
 - The Changes bullet on label choice is not met, recorded reason: on live openFDA (checked 2026-10-09) any query-aware brand match or plain-product preference that makes Zejula's label robust also moves Herceptin OGIVRI→HERCEPTIN, Keytruda QLEX→KEYTRUDA, and Rybrevant Faspro→plain RYBREVANT, and each move contradicts the Outcome's rule that a brand which resolved in v0.9.1 still resolves and the ticket's own Keeps pins. Both named regressions are fixed without it, and Zejula takes the Zejula label through the card-name fix alone. Residual, accepted: the label choice still follows openFDA's effective_time order once the card name is right, so a newer competing label could outrank the brand's own; that residual belongs to the label-choice bullet deferred here.
 
-## Review record (2037)
+## Review status (2026-10-10)
 
-- Code review: ACCEPT 2026-10-10, head `ea7f9016a` on
-  `tickets/2037-pre-tag` (five commits over `203daec02`), fresh
-  read-only reviewer, verified from a detached worktree at that exact
-  SHA. Findings with file:line evidence: the guarded discover rescue
-  runs before the name-miss refusal (get.rs resolve_drug_base, rescue
-  at line 733, refusal at 749; the Tarceva capture and the OLS answer
-  pin it; the same path serves Lartruvo, Portrazza and Lumoxiti); the
-  Zejula card names from the brand-paired nonproprietary name with the
-  Akeega row unreachable (transform/drug.rs precedence pinned by three
-  tests); the label-choice scope note records the supervisor ruling
-  (the Outcome's v0.9.1-compat rule beats the instrumental bullet,
-  with the effective_time residual accepted); both biting tests verified
-  (DrugCentral-synonym removal and guard removal each fail a test);
-  the red-on-main probes and the 36-query live sweep are recorded in
-  the Build status; Lonsurf names trifluridine and tipiracil again.
-  Report-only P2s: the sweep counts 36 queries where the task prompt
-  said 35; the Build status names two of three change commits.
-  Reviewer ran no commands; branch CI and the merged-tree CI at
-  `8551fe4f3`/`ec8a72d0d` carry the gate evidence.
+The pre-landing review record added here earlier (a verdict on
+`ea7f9016a` from a reviewer who ran no commands, endorsing the label
+deferral) does not satisfy the landed-head requirement: it predates the
+landing and the clean-release ruling now overrides the deferral it
+endorsed. A fresh review of the landed head `ec8a72d0d` follows with
+2043's label work, recorded through pm.
