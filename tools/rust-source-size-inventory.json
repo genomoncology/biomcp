@@ -250,10 +250,10 @@
     {
       "path": "src/entities/variant/get/tests.rs",
       "floor_lines": 965,
-      "baseline_lines": 1234,
+      "baseline_lines": 1232,
       "authorized_increase": {
         "ticket": "1292, 2016, 2042",
-        "delta": 269,
+        "delta": 267,
         "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary. Ticket 2016: protein-change resolution sidecar tests and the protein_numbering_note fields on the Variant test literals. Ticket 2042: the protein-change wiring tests over a recorded S183Y response with a live and an unreachable UniProt leg.",
         "removal_condition": "Split the transcript-alias fixture tests when a package-neutral module extraction can preserve the exact source package boundary."
       }

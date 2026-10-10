@@ -1204,12 +1204,10 @@ async fn protein_change_get_notes_unchecked_numbering_when_uniprot_is_unreachabl
     env.set("BIOMCP_UNIPROT_BASE", "http://127.0.0.1:9");
     env.set("BIOMCP_CACHE_MODE", "off");
 
-    let (variant, _, _) = crate::sources::with_no_cache(
-        true,
-        resolve_base_with_hit("TP53 S183Y", None),
-    )
-    .await
-    .expect("the record's spelling of the request resolves with its note");
+    let (variant, _, _) =
+        crate::sources::with_no_cache(true, resolve_base_with_hit("TP53 S183Y", None))
+            .await
+            .expect("the record's spelling of the request resolves with its note");
     server.abort();
 
     assert_eq!(variant.id, "chr17:g.7576902G>T");
