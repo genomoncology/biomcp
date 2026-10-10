@@ -31,7 +31,12 @@ def tracked_sources() -> dict[str, int]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--authorize")
+    parser.add_argument(
+        "--authorize",
+        help="comma-joined list of source paths whose growth or metadata "
+        "re-stamp this run authorizes (ticket 2044: one path; ticket 2047: "
+        "several files in one run)",
+    )
     parser.add_argument("--ticket")
     parser.add_argument("--reason")
     parser.add_argument("--removal-condition")
@@ -42,6 +47,15 @@ def main() -> int:
         parser.error("--authorize requires --ticket, --reason, and --removal-condition")
     if not args.authorize and any(authorization_fields):
         parser.error("authorization metadata requires --authorize PATH")
+    # One run can authorize several files (a lane that grows many sources on
+    # one ticket): --authorize takes a comma-joined path list, and every
+    # named file gets the same ticket metadata (ticket 2047 finishing 2044's
+    # open Changes item).
+    authorized: set[str] = set()
+    if args.authorize:
+        authorized = {path.strip() for path in args.authorize.split(",")}
+        if "" in authorized:
+            parser.error("--authorize takes a comma-joined list of source paths")
 
     old_entries: dict[str, dict[str, object]] = {}
     if INVENTORY.exists():
@@ -68,7 +82,7 @@ def main() -> int:
         baseline = int(old["baseline_lines"])
         floor = int(old["floor_lines"])
         if lines > baseline:
-            if args.authorize != path:
+            if path not in authorized:
                 raise SystemExit(
                     f"growth requires --authorize {path} and complete ticket metadata"
                 )
@@ -85,7 +99,7 @@ def main() -> int:
                     },
                 }
             )
-        elif lines == baseline and args.authorize == path and baseline > floor:
+        elif lines == baseline and path in authorized and baseline > floor:
             # Reason-only re-authorization (ticket 2044): a file can sit at
             # its pinned baseline while its recorded history is wrong — an
             # inline rewrite of this inventory once replaced every earlier
