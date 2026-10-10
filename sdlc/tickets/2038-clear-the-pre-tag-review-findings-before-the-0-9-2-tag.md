@@ -174,4 +174,10 @@ First remove the queue report so main is green. Then 2036 and 2037, and the code
   could never match) and P1 (shallow checkouts missing the tag ref)
   were fixed on the branch and re-verified: the exact-line comparison,
   the fetch-depth 0 build checkouts, and the re-pinned step hashes with
-  the provenance suite green and CI green at the fixed head.
+  the provenance suite green. CI was not green at the fixed heads: run
+  38041252124 at `9a1f5ec83` and run 38049458224 at `ac4c6739a` failed
+  canonical-gates on the duplicated `with:` keys and the broken quotes
+  in the container smoke. The last green run, 38014529319, sat at
+  `6116e2bbb`. Ticket 2046 carries the workflow fixes, the tests that
+  pin them, and the dropping of those fetch-depth blocks (a depth-one
+  checkout of the tag carries the tag).

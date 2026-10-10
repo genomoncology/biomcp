@@ -268,7 +268,7 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 ## Release Pipeline
 
-v0.9.0 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
+v0.9.1 is the latest published release. Package versions are committed metadata, not values stamped from tags. The tree carries the 0.9.2 release candidate at Cargo `0.9.2` and Python `0.9.2`; `scripts/check-version-sync.sh` validates that agreement and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
 
 `.github/workflows/release.yml` runs when a GitHub release is published, or on
 `workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
