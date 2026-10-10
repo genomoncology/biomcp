@@ -304,7 +304,7 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
     ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "ba1d56b7e0843225c073a6449f6d48c98ff0ae3b016cf72fa6ec829f90c070eb",
+    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "31c21258330a6cd50375ed048c75f98f26c3ee177c75124ba5e30c39bf5b9107",
     ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
     ("docs-live", "Check out the gate helper"): "afce43fafcab696d9cef03f29b0c43b6c9849baf126b749e198bdb9d83555430",
     ("docs-live", "Resolve the tag commit"): "b52e25a4026bed9172a0eff4b90f6a706ec984875307d7e89f9d450878a96e44",

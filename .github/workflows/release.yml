@@ -376,8 +376,8 @@ jobs:
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
             printed="$(/opt/python/cp312-cp312/bin/biomcp --version)"
             printf "%s\n" "$printed"
-            expected="$(printf '%s' "${TAG#v}")"
-            actual="$(printf '%s' "$printed" | tr -d "\015\012")"
+            expected="${TAG#v}"
+            actual="$(printf "%s" "$printed" | tr -d "\015\012")"
             if [ "$actual" != "biomcp $expected" ]; then
               echo "wheel --version must print exactly biomcp $expected, got: $printed" >&2; exit 1
             fi
