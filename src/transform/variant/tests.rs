@@ -3,9 +3,7 @@ use super::*;
 #[test]
 fn significance_rank_prefers_pathogenic_over_benign() {
     assert!(significance_rank("Pathogenic") > significance_rank("Benign"));
-    assert!(
-        significance_rank("Likely pathogenic") > significance_rank("Uncertain significance")
-    );
+    assert!(significance_rank("Likely pathogenic") > significance_rank("Uncertain significance"));
 }
 
 #[test]

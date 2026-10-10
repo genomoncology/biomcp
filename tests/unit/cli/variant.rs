@@ -872,8 +872,7 @@ async fn refused_zero_row_json_next_command_keeps_both_caller_flags_end_to_end()
     ])
     .await;
 
-    let value: serde_json::Value =
-        serde_json::from_str(&outcome.text).expect("valid search json");
+    let value: serde_json::Value = serde_json::from_str(&outcome.text).expect("valid search json");
     let commands = value["_meta"]["next_commands"]
         .as_array()
         .expect("next commands array");
