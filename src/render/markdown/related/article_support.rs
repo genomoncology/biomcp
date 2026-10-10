@@ -52,8 +52,7 @@ pub(super) fn article_annotation_command(
     annotation: &AnnotationCount,
     verified_disease_get: Option<&str>,
 ) -> Option<String> {
-    if let Some(command) =
-        article_annotation_get_command(bucket, annotation, verified_disease_get)
+    if let Some(command) = article_annotation_get_command(bucket, annotation, verified_disease_get)
     {
         return Some(command);
     }

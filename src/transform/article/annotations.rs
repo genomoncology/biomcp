@@ -81,8 +81,7 @@ fn annotation_identity(
         AnnotationKind::Gene => clean_identifier(infons.identifier.as_deref()?)
             .map(|identifier| ("NCBIGene", identifier.to_string(), None)),
         AnnotationKind::Disease | AnnotationKind::Chemical => {
-            let (namespace, identifier) =
-                registry_identity(infons.identifier.as_deref()?)?;
+            let (namespace, identifier) = registry_identity(infons.identifier.as_deref()?)?;
             let name = (kind == AnnotationKind::Disease)
                 .then(|| infons.name.as_deref())
                 .flatten()
@@ -314,14 +313,18 @@ fn push_annotation_count(
     }
     let key = (
         t.to_ascii_lowercase(),
-        identity.as_ref().map(|(_, identifier, _)| identifier.clone()),
+        identity
+            .as_ref()
+            .map(|(_, identifier, _)| identifier.clone()),
     );
     let entry = map.entry(key).or_insert_with(|| AnnotationTally {
         text: t.to_string(),
         count: 0,
         first_seen_order: order,
         namespace: identity.as_ref().map(|(namespace, _, _)| *namespace),
-        identifier: identity.as_ref().map(|(_, identifier, _)| identifier.clone()),
+        identifier: identity
+            .as_ref()
+            .map(|(_, identifier, _)| identifier.clone()),
         // One registry identifier carries one concept name; a row that lost
         // its name to an earlier mention of the same identifier keeps the
         // first one seen (ticket 2047).

@@ -57,10 +57,7 @@ fn q(plan: &crate::sources::RequestPlan) -> &str {
 #[test]
 fn field_lists_request_snpeff_feature_type_in_get_and_search() {
     for fields in [MYVARIANT_FIELDS_GET, MYVARIANT_FIELDS_SEARCH] {
-        let requested = fields
-            .split(',')
-            .map(str::trim)
-            .collect::<Vec<_>>();
+        let requested = fields.split(',').map(str::trim).collect::<Vec<_>>();
         assert!(
             requested.contains(&"snpeff.ann.feature_type"),
             "the {fields} projection must request snpeff.ann.feature_type"

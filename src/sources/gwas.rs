@@ -171,10 +171,8 @@ impl GwasClient {
         let plan = Self::associations_by_rsid_plan(rsid, limit)?;
         let req = self.request_no_store(&plan);
 
-        let Some(resp): Option<GwasAssociationsResponse> = self
-            .get_json_by_rsid(req)
-            .await
-            .map_err(remap_gwas_error)?
+        let Some(resp): Option<GwasAssociationsResponse> =
+            self.get_json_by_rsid(req).await.map_err(remap_gwas_error)?
         else {
             return Ok(Vec::new());
         };

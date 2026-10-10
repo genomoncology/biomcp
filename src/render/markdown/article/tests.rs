@@ -93,13 +93,10 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
             },
         ],
     };
-    let markdown = article_entities_markdown(
-        "30738221",
-        Some(&annotations),
-        Some(10),
-        &|row| (row.identifier.as_deref() == Some("MESH:D002289"))
-            .then(|| "biomcp get disease MONDO:0005233".to_string()),
-    )
+    let markdown = article_entities_markdown("30738221", Some(&annotations), Some(10), &|row| {
+        (row.identifier.as_deref() == Some("MESH:D002289"))
+            .then(|| "biomcp get disease MONDO:0005233".to_string())
+    })
     .expect("markdown");
 
     // A verified crosswalk hit opens the named disease; an unverified

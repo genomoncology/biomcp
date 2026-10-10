@@ -286,7 +286,11 @@ pub(crate) fn isoform_annotation_naming_change(
         if mane_stem.is_some_and(|mane| accession_stem(feature) == mane) {
             return None;
         }
-        let raw = ann.hgvs_p.as_deref().map(str::trim).filter(|v| !v.is_empty())?;
+        let raw = ann
+            .hgvs_p
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())?;
         let normalized = crate::entities::variant::normalize_protein_change(raw)?;
         crate::entities::variant::protein_changes_equivalent(change, &normalized)
             .then(|| (feature.to_string(), raw.to_string()))

@@ -1219,11 +1219,13 @@ fn protein_change_resolution_refuses_a_hit_without_any_protein_change() {
 /// isoform that spells the request.
 #[test]
 fn protein_change_absent_refusal_without_a_mane_transcript_claims_only_the_headline() {
-    let hits = vec![ProteinHitBuilder::default()
-        .rsid("rs9999002")
-        .with_snpeff("NM_007300.3", "", Some("p.Gln1878Arg"))
-        .with_snpeff("NM_007294.3", "", Some("p.Gln1857Arg"))
-        .hit("chr17:g.41197717T>C", "BRCA1", "p.Q1878R, p.Q1857R")];
+    let hits = vec![
+        ProteinHitBuilder::default()
+            .rsid("rs9999002")
+            .with_snpeff("NM_007300.3", "", Some("p.Gln1878Arg"))
+            .with_snpeff("NM_007294.3", "", Some("p.Gln1857Arg"))
+            .hit("chr17:g.41197717T>C", "BRCA1", "p.Q1878R, p.Q1857R"),
+    ];
     let resolved = resolve_protein_change_hit("BRCA1 Q1878R", "BRCA1", "Q1878R", hits, None)
         .expect("a unique provider hit resolves before the numbering check");
     let facts = CanonicalProteinFacts {
@@ -1232,8 +1234,9 @@ fn protein_change_absent_refusal_without_a_mane_transcript_claims_only_the_headl
         sequence_length: Some(1863),
         mane_transcript: None,
     };
-    let error = refuse_or_note_with_facts("BRCA1 Q1878R", "BRCA1", "Q1878R", &resolved, None, &facts)
-        .expect_err("a past-the-end request whose record headlines no protein change refuses");
+    let error =
+        refuse_or_note_with_facts("BRCA1 Q1878R", "BRCA1", "Q1878R", &resolved, None, &facts)
+            .expect_err("a past-the-end request whose record headlines no protein change refuses");
     let BioMcpError::InvalidArgument(message) = &error else {
         panic!("the protein-change-less hit refuses as invalid argument, got: {error}");
     };
@@ -1259,10 +1262,12 @@ fn protein_change_absent_refusal_without_a_mane_transcript_claims_only_the_headl
 /// refusal kept every test green.
 #[test]
 fn protein_change_absent_refusal_fires_mid_sequence() {
-    let hits = vec![ProteinHitBuilder::default()
-        .rsid("rs9999003")
-        .with_snpeff("NM_007300.3", "", Some("p.Gln1878Arg"))
-        .hit("chr17:g.41223234A>T", "BRCA1", "p.S1587F, p.Ser1587Phe")];
+    let hits = vec![
+        ProteinHitBuilder::default()
+            .rsid("rs9999003")
+            .with_snpeff("NM_007300.3", "", Some("p.Gln1878Arg"))
+            .hit("chr17:g.41223234A>T", "BRCA1", "p.S1587F, p.Ser1587Phe"),
+    ];
     let resolved = resolve_protein_change_hit("BRCA1 S1587F", "BRCA1", "S1587F", hits, None)
         .expect("a unique provider hit resolves before the numbering check");
     let facts = CanonicalProteinFacts {
@@ -1271,8 +1276,11 @@ fn protein_change_absent_refusal_fires_mid_sequence() {
         sequence_length: Some(1863),
         mane_transcript: None,
     };
-    let error = refuse_or_note_with_facts("BRCA1 S1587F", "BRCA1", "S1587F", &resolved, None, &facts)
-        .expect_err("a valid-numbering request whose record headlines no protein change refuses");
+    let error =
+        refuse_or_note_with_facts("BRCA1 S1587F", "BRCA1", "S1587F", &resolved, None, &facts)
+            .expect_err(
+                "a valid-numbering request whose record headlines no protein change refuses",
+            );
     let BioMcpError::InvalidArgument(message) = &error else {
         panic!("the mid-sequence arm refuses as invalid argument, got: {error}");
     };

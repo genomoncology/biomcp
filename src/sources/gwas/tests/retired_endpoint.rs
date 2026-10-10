@@ -77,7 +77,11 @@ async fn retired_endpoint_server(
 
 async fn associations_by_rsid_against(
     status_line: &'static str,
-) -> (BioMcpError, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+) -> (
+    BioMcpError,
+    Arc<Mutex<Vec<String>>>,
+    tokio::task::JoinHandle<()>,
+) {
     let (base, requests, server) = retired_endpoint_server(status_line).await;
     let mut env = GwasBaseEnv(None);
     env.set(&base);
@@ -96,12 +100,14 @@ async fn associations_by_rsid_against(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
-    let (error, requests, server) =
-        associations_by_rsid_against("410 Gone").await;
+    let (error, requests, server) = associations_by_rsid_against("410 Gone").await;
     server.abort();
     assert_eq!(error.code(), "source_unavailable");
     let detail = format!("{error:?}");
-    assert!(detail.contains("legacy GWAS Catalog REST endpoint"), "{detail}");
+    assert!(
+        detail.contains("legacy GWAS Catalog REST endpoint"),
+        "{detail}"
+    );
     assert!(detail.contains("retired upstream"), "{detail}");
     assert!(detail.contains("HTTP 410"), "{detail}");
     let requests = requests.lock().expect("lock fixture requests").join("\n");
@@ -117,8 +123,7 @@ async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn not_found_by_rsid_endpoint_degrades_with_the_retirement_note() {
-    let (error, _requests, server) =
-        associations_by_rsid_against("404 Not Found").await;
+    let (error, _requests, server) = associations_by_rsid_against("404 Not Found").await;
     server.abort();
     assert_eq!(error.code(), "source_unavailable");
     let detail = format!("{error:?}");

@@ -29,12 +29,11 @@ pub(super) async fn verified_disease_get_commands(
         .diseases
         .iter()
         .filter(|row| {
-            matches!(
-                row.namespace.as_deref(),
-                Some("MESH") | Some("OMIM")
-            ) && row.identifier.as_deref().is_some_and(|identifier| {
-                seen.insert(identifier.trim().to_string())
-            })
+            matches!(row.namespace.as_deref(), Some("MESH") | Some("OMIM"))
+                && row
+                    .identifier
+                    .as_deref()
+                    .is_some_and(|identifier| seen.insert(identifier.trim().to_string()))
         })
         .collect::<Vec<_>>();
     let commands = join_all(rows.iter().map(|row| async move {

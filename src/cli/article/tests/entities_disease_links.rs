@@ -121,7 +121,10 @@ async fn article_entities_disease_rows_link_the_named_disease_or_search() {
     env.set("BIOMCP_EUROPEPMC_BASE", &base);
     env.set("BIOMCP_MYDISEASE_BASE", &base);
     env.set("BIOMCP_MYGENE_BASE", &base);
-    env.set("BIOMCP_CACHE_DIR", cache.path().to_str().expect("utf-8 cache root"));
+    env.set(
+        "BIOMCP_CACHE_DIR",
+        cache.path().to_str().expect("utf-8 cache root"),
+    );
 
     let markdown = crate::cli::execute(vec![
         "biomcp".to_string(),
@@ -143,7 +146,10 @@ async fn article_entities_disease_rows_link_the_named_disease_or_search() {
         "`biomcp get disease MONDO:0004972`",
         "`biomcp get disease MONDO:0005070`",
     ] {
-        assert!(markdown.contains(expected), "missing {expected} in: {markdown}");
+        assert!(
+            markdown.contains(expected),
+            "missing {expected} in: {markdown}"
+        );
     }
     // The wrong cards never appear, and no disease row trusts a bare
     // crosswalk identifier.
@@ -153,7 +159,10 @@ async fn article_entities_disease_rows_link_the_named_disease_or_search() {
         "MONDO:0002533",
         "get disease MESH:",
     ] {
-        assert!(!markdown.contains(wrong), "{wrong} must not appear: {markdown}");
+        assert!(
+            !markdown.contains(wrong),
+            "{wrong} must not appear: {markdown}"
+        );
     }
 
     let requests = requests.lock().expect("lock fixture requests").join("\n");

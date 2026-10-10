@@ -68,7 +68,9 @@ fn exact_named_crosswalk_hit<'a>(
     name: &str,
     hits: &'a [crate::sources::mydisease::MyDiseaseHit],
 ) -> Option<&'a crate::sources::mydisease::MyDiseaseHit> {
-    let mut holders = hits.iter().filter(|hit| crosswalk_hit_holds_name(name, hit));
+    let mut holders = hits
+        .iter()
+        .filter(|hit| crosswalk_hit_holds_name(name, hit));
     let first = holders.next()?;
     holders.next().is_none().then_some(first)
 }
@@ -86,7 +88,9 @@ pub(crate) async fn article_disease_row_get_command(
     identifier: &str,
     concept_name: Option<&str>,
 ) -> Option<String> {
-    let concept_name = concept_name.map(str::trim).filter(|name| !name.is_empty())?;
+    let concept_name = concept_name
+        .map(str::trim)
+        .filter(|name| !name.is_empty())?;
     let identifier = identifier.trim();
     if identifier.is_empty() {
         return None;
@@ -105,7 +109,10 @@ pub(crate) async fn article_disease_row_get_command(
         return None;
     }
     let client = crate::sources::mydisease::MyDiseaseClient::new().ok()?;
-    let response = match client.lookup_disease_by_xref(kind.source_key(), value, 5).await {
+    let response = match client
+        .lookup_disease_by_xref(kind.source_key(), value, 5)
+        .await
+    {
         Ok(response) => response,
         Err(error) => {
             tracing::debug!(
@@ -118,4 +125,3 @@ pub(crate) async fn article_disease_row_get_command(
     let hit = exact_named_crosswalk_hit(concept_name, &response.hits)?;
     Some(format!("biomcp get disease {}", hit.id))
 }
-
