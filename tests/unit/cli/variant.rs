@@ -656,7 +656,7 @@ fn refused_zero_row_hint_keeps_the_explicit_hgvsp_and_consequence_flags() {
     assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
     assert_eq!(resolved.consequence.as_deref(), Some("missense_variant"));
     let GeneFirstNote::Refused {
-        gene,
+        gene: _,
         condition,
         hgvsp,
         consequence,
