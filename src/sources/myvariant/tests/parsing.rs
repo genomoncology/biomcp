@@ -191,7 +191,7 @@ fn snpeff_interaction_rows_are_skipped_and_transcript_rows_kept() {
         json!(7),
         json!(["interaction"]),
         json!({}),
-        json!(" Interaction "),
+        json!(" Transcript "),
     ] {
         let kept: MyVariantHit = serde_json::from_value(json!({
             "_id": "x",
@@ -206,6 +206,20 @@ fn snpeff_interaction_rows_are_skipped_and_transcript_rows_kept() {
             "feature_type {feature_type} must not drop or invalidate the row"
         );
     }
+    // The classification is case-insensitive: a differently-cased
+    // interaction row is still a protein-structure row.
+    let caseless: MyVariantHit = serde_json::from_value(json!({
+        "_id": "x",
+        "snpeff": {"ann": [
+            {"feature_id": "1JNX:X_1-X_2:NM_1.1", "feature_type": " Interaction ", "hgvs_c": "c.1A>G"},
+            {"feature_id": "NM_1.1", "hgvs_c": "c.1A>G"}
+        ]}
+    }))
+    .unwrap();
+    let snpeff = caseless.snpeff.expect("present SnpEff section");
+    assert!(snpeff.complete);
+    assert_eq!(snpeff.ann.len(), 1);
+    assert_eq!(snpeff.ann[0].feature_id.as_deref(), Some("NM_1.1"));
     let duplicated: MyVariantHit = serde_json::from_str(
         r#"{"_id":"x","snpeff":{"ann":[{"feature_id":"NM_1.1","feature_type":"transcript","feature_type":"interaction","hgvs_c":"c.1A>G"}]}}"#,
     )

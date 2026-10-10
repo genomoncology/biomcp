@@ -1102,11 +1102,24 @@ async fn protein_change_uniprot_fixture_server()
         while let Ok((mut stream, _)) = listener.accept().await {
             let captured = captured.clone();
             tokio::spawn(async move {
+                // The production GET field list makes the request line span
+                // TCP segments, so read until the headers end before
+                // routing — a single read would answer mid-request.
                 let mut request = vec![0_u8; 32 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
+                let mut len = 0_usize;
+                loop {
+                    let read = stream
+                        .read(&mut request[len..])
+                        .await
+                        .expect("read fixture request");
+                    len += read;
+                    if read == 0
+                        || len == request.len()
+                        || request[..len].windows(4).any(|w| w == b"\r\n\r\n")
+                    {
+                        break;
+                    }
+                }
                 let request = String::from_utf8_lossy(&request[..len]).into_owned();
                 captured
                     .lock()
