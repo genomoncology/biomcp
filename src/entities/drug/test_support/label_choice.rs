@@ -1024,7 +1024,10 @@ async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
         Vec::new(),
         vec![
             ("Darzalex".to_string(), DARZALEX_ELEMENTS_BODY.to_string()),
-            ("daratumumab".to_string(), DARZALEX_ELEMENTS_BODY.to_string()),
+            (
+                "daratumumab".to_string(),
+                DARZALEX_ELEMENTS_BODY.to_string(),
+            ),
         ],
     )
     .await;
@@ -1058,7 +1061,10 @@ async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
         vec![("daratumumab".to_string(), DARATUMUMAB_CAPTURE.to_string())],
         vec![("daratumumab".to_string(), DARZALEX_LABEL_BODY.to_string())],
         Vec::new(),
-        vec![("daratumumab".to_string(), DARZALEX_ELEMENTS_BODY.to_string())],
+        vec![(
+            "daratumumab".to_string(),
+            DARZALEX_ELEMENTS_BODY.to_string(),
+        )],
     )
     .await;
 
@@ -1119,12 +1125,9 @@ async fn phesgo_resolves_its_own_label_and_safety_line() {
     // label outcome. The pairing split must leave the comma-list
     // combination whole: splitting it at " and " mangles the line to
     // "pertuzumab, trastuzumab,".
-    let drug = super::super::get(
-        "Phesgo",
-        &["label".to_string(), "safety".to_string()],
-    )
-    .await
-    .expect("Phesgo settles a card");
+    let drug = super::super::get("Phesgo", &["label".to_string(), "safety".to_string()])
+        .await
+        .expect("Phesgo settles a card");
     assert_eq!(drug.name, "pertuzumab, trastuzumab, and hyaluronidase-zzxf");
     assert_label_data_with_set_id(&drug, "27dd5e6b-72cd-458d-a015-cf4dab5800da");
     assert!(
@@ -1184,7 +1187,10 @@ async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
         vec![("Gleevec".to_string(), GLEEVEC_CAPTURE.to_string())],
         vec![
             ("Gleevec".to_string(), GLEEVEC_LABEL_BODY.to_string()),
-            ("imatinib".to_string(), IMATINIB_GENERIC_PAGE_BODY.to_string()),
+            (
+                "imatinib".to_string(),
+                IMATINIB_GENERIC_PAGE_BODY.to_string(),
+            ),
             ("IMATINIB".to_string(), IMATINIB_EXACT_BODY.to_string()),
         ],
         Vec::new(),

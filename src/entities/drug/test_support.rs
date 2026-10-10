@@ -559,13 +559,8 @@ async fn name_resolution_fixture_server(
     label_searches: Vec<(String, String)>,
     ols_searches: Vec<(String, String)>,
 ) -> (String, tokio::task::JoinHandle<()>) {
-    name_resolution_fixture_server_with_elements(
-        mychem,
-        label_searches,
-        ols_searches,
-        Vec::new(),
-    )
-    .await
+    name_resolution_fixture_server_with_elements(mychem, label_searches, ols_searches, Vec::new())
+        .await
 }
 
 async fn name_resolution_fixture_server_with_elements(

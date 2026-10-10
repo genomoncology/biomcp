@@ -158,12 +158,7 @@ fn a_card_without_label_content_prints_no_fda_label_heading() {
             "No openFDA SPL label record matched this drug.",
         ),
     );
-    let markdown = drug_markdown_with_region(
-        &drug,
-        &["label".to_string()],
-        DrugRegion::Us,
-        false,
-    )
-    .expect("markdown");
+    let markdown = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, false)
+        .expect("markdown");
     assert!(markdown.contains("## FDA Label"), "{markdown}");
 }

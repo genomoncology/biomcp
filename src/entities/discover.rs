@@ -1735,8 +1735,7 @@ fn heuristic_type(label: &str, query: &str) -> DiscoverType {
         || text.contains("injection")
     {
         DiscoverType::Drug
-    } else if looks_like_gene_query(query)
-        && crate::entities::gene::looks_like_symbol(label.trim())
+    } else if looks_like_gene_query(query) && crate::entities::gene::looks_like_symbol(label.trim())
     {
         DiscoverType::Gene
     } else if text.contains("syndrome")
@@ -3868,10 +3867,7 @@ mod tests {
             "a drug label is never typed as a gene"
         );
 
-        let symbol = concept_from_ols(
-            &ols_doc("ncit", "BRCA1", "NCIT:C164709", &[]),
-            "5-FU",
-        );
+        let symbol = concept_from_ols(&ols_doc("ncit", "BRCA1", "NCIT:C164709", &[]), "5-FU");
         assert_eq!(symbol.primary_type, DiscoverType::Gene);
     }
 
