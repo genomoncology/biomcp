@@ -7,9 +7,10 @@ use super::*;
 
 /// The live openFDA label answers below were recorded 2026-10-13 (ticket
 /// 2043) from `api.fda.gov/drug/label.json` with the drug card's search
-/// plan, with each section's text cut after its opening words. Rows the
-/// choice rule never reads were removed and the removal is noted per body;
-/// the kept rows keep their live order and identity fields.
+/// plan, with each kept section's text cut to its first indication or its
+/// opening words. Rows the choice rule never reads were removed and the
+/// removal is noted per body; the kept rows keep their live order and
+/// identity fields.
 
 /// Search `Keytruda` and `pembrolizumab` (identical live answers): the
 /// under-the-skin KEYTRUDA QLEX combination answers first and the plain
@@ -154,7 +155,7 @@ const RYBREVANT_LABEL_BODY: &str = r#"{
     "substance_name": ["AMIVANTAMAB"]
    },
    "indications_and_usage": [
-    "1 INDICATIONS AND USAGE RYBREVANT is a bispecific EGF receptor-directed and MET receptor-directed antibody indicated: in combination with lazertinib for the first-line treatment of \u2026[recorded reply trimmed for the fixture]"
+    "1 INDICATIONS AND USAGE RYBREVANT is a bispecific EGF receptor-directed and MET receptor-directed antibody indicated: in combination with lazertinib for the first-line treatment of adult patients with locally advanced or metastatic non-small cell lung cancer (NSCLC) with epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 L858R substitution mutations, as detected by an FDA-approved test. ( 1 , 2.2 ) \u2026[recorded reply trimmed for the fixture]"
    ],
    "warnings_and_cautions": [
     "5 WARNINGS AND PRECAUTIONS Infusion-Related Reactions (IRR) : Interrupt infusion at the first sign of IRRs. Reduce the infusion rate or perm \u2026[recorded reply trimmed for the fixture]"
@@ -276,7 +277,7 @@ const DARZALEX_LABEL_BODY: &str = r#"{
     "substance_name": ["DARATUMUMAB", "HYALURONIDASE (HUMAN RECOMBINANT)"]
    },
    "indications_and_usage": [
-    "1 INDICATIONS AND USAGE DARZALEX FASPRO is a combination of daratumumab, a CD38-directed cytolytic antibody, and hyaluronidase, an endoglycosidase, indicated for the treatment of a \u2026[recorded reply trimmed for the fixture]"
+    "1 INDICATIONS AND USAGE DARZALEX FASPRO is a combination of daratumumab, a CD38-directed cytolytic antibody, and hyaluronidase, an endoglycosidase, indicated for the treatment of adult patients with: multiple myeloma in combination with bortezomib, lenalidomide, and dexamethasone for induction and consolidation in newly diagnosed patients who are eligible for autologous stem cell transplant \u2026[recorded reply trimmed for the fixture]"
    ],
    "warnings_and_cautions": [
     "5 WARNINGS AND PRECAUTIONS Hypersensitivity and Other Administration Reactions : Permanently discontinue DARZALEX FASPRO for life-threatenin \u2026[recorded reply trimmed for the fixture]"
