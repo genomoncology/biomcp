@@ -1055,10 +1055,10 @@ async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
 #[serial_test::serial(source_env)]
 async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
     let (base, server) = name_resolution_fixture_server_with_elements(
-        vec!["daratumumab".to_string(), DARATUMUMAB_CAPTURE.to_string()],
-        vec!["daratumumab".to_string(), DARZALEX_LABEL_BODY.to_string()],
+        vec![("daratumumab".to_string(), DARATUMUMAB_CAPTURE.to_string())],
+        vec![("daratumumab".to_string(), DARZALEX_LABEL_BODY.to_string())],
         Vec::new(),
-        vec!["daratumumab".to_string(), DARZALEX_ELEMENTS_BODY.to_string()],
+        vec![("daratumumab".to_string(), DARZALEX_ELEMENTS_BODY.to_string())],
     )
     .await;
 
@@ -1077,7 +1077,7 @@ async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
 #[serial_test::serial(source_env)]
 async fn phesgo_resolves_its_own_label_and_safety_line() {
     let (base, server) = name_resolution_fixture_server_with_elements(
-        vec!["Phesgo".to_string(), PHESGO_CAPTURE.to_string()],
+        vec![("Phesgo".to_string(), PHESGO_CAPTURE.to_string())],
         Vec::new(),
         Vec::new(),
         vec![
@@ -1151,7 +1151,7 @@ async fn a_non_hyaluronidase_combination_never_becomes_another_products_card() {
             ("Opdualag".to_string(), OPDUALAG_CAPTURE.to_string()),
             ("nivolumab".to_string(), NIVOLUMAB_CAPTURE.to_string()),
         ],
-        vec!["Opdualag".to_string(), OPDUALAG_LABEL_BODY.to_string()],
+        vec![("Opdualag".to_string(), OPDUALAG_LABEL_BODY.to_string())],
         Vec::new(),
         Vec::new(),
     )
@@ -1181,7 +1181,7 @@ async fn a_non_hyaluronidase_combination_never_becomes_another_products_card() {
 #[serial_test::serial(source_env)]
 async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
     let (base, server) = name_resolution_fixture_server_with_elements(
-        vec!["Gleevec".to_string(), GLEEVEC_CAPTURE.to_string()],
+        vec![("Gleevec".to_string(), GLEEVEC_CAPTURE.to_string())],
         vec![
             ("Gleevec".to_string(), GLEEVEC_LABEL_BODY.to_string()),
             ("imatinib".to_string(), IMATINIB_GENERIC_PAGE_BODY.to_string()),
