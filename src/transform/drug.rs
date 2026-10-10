@@ -424,18 +424,32 @@ fn name_matches_requested(candidate: &str, requested: &str) -> bool {
     if candidate == requested {
         return true;
     }
+    if names_second_ingredient(candidate) {
+        return false;
+    }
     candidate.starts_with(&format!("{requested} "))
         || candidate.ends_with(&format!(" {requested}"))
         || candidate.contains(&format!(" {requested} "))
 }
 
+/// Whether a product name names a combination: a second ingredient joined
+/// by "and" or a comma-separated list. The names here arrive already
+/// normalized to lowercase. A combination is another product, never a
+/// qualified form or canonical name of one requested ingredient — salts
+/// and hydrates qualify ("niraparib tosylate"), combinations do not
+/// ("niraparib tosylate monohydrate and abiraterone acetate", ticket
+/// 2043).
+fn names_second_ingredient(candidate: &str) -> bool {
+    candidate.contains(" and ") || candidate.contains(',')
+}
+
 /// A qualified form of the requested drug: the request followed by more
-/// words (salt, hydrate, combination, strength). The request merely
-/// appearing inside a longer name does not identify the drug —
-/// "Zinc Oxide, Ferric Oxide Red, and Pramoxine Hydrochloride" is not
-/// ferric oxide's record (ticket 2031).
+/// words (salt, hydrate, strength). The request merely appearing inside a
+/// longer name does not identify the drug — "Zinc Oxide, Ferric Oxide Red,
+/// and Pramoxine Hydrochloride" is not ferric oxide's record (ticket 2031)
+/// — and neither does a combination name (ticket 2043).
 fn name_extends_request(candidate: &str, requested: &str) -> bool {
-    candidate.starts_with(&format!("{requested} "))
+    candidate.starts_with(&format!("{requested} ")) && !names_second_ingredient(candidate)
 }
 
 fn json_first_string(value: &serde_json::Value) -> Option<String> {

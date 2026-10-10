@@ -77,6 +77,7 @@ struct RequiredLabelFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
 
 #[cfg(test)]
 mod brand_resolution;
+mod label_choice;
 
 impl RequiredLabelFixtureEnv {
     fn set(&mut self, name: &'static str, value: &str) {

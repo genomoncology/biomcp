@@ -743,6 +743,102 @@ fn rybrevant_keeps_the_identity_records_name_over_the_naked_product_row() {
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
 }
 
+/// `q=niraparib` recorded 2026-10-10 (ticket 2043): the niraparib record
+/// carries the Akeega combination rows first and Zejula's own rows after
+/// them. NDC rows deduplicated to first occurrences; the abiraterone
+/// record's product rows trimmed to one; the fieldless text-only hits
+/// removed.
+pub(crate) const NIRAPARIB_CAPTURE: &str = r#"
+{
+  "total": 6,
+  "hits": [
+    {
+      "_id": "PCHKPVIQAHNQLW-CQSZACIVSA-N",
+      "_score": 26.485,
+      "drugbank": {"id": "DB11793", "name": "Niraparib", "synonyms": ["Niraparib"]},
+      "ndc": [
+        {"nonproprietaryname": "NIRAPARIB TOSYLATE MONOHYDRATE and ABIRATERONE ACETATE", "proprietaryname": "AKEEGA"},
+        {"nonproprietaryname": "niraparib", "proprietaryname": "ZEJULA"}
+      ],
+      "unii": {"unii": "HMC2H89N35", "display_name": "NIRAPARIB"},
+      "chebi": {"name": "niraparib"},
+      "drugcentral": {
+        "synonyms": ["niraparib hydrochloride", "niraparib HCl", "MK-4827"]
+      }
+    },
+    {
+      "_id": "GZOSMCIZMLWJML-VJLLXTKPSA-N",
+      "_score": 22.19,
+      "drugbank": {"id": "DB05812", "name": "Abiraterone"},
+      "ndc": {"nonproprietaryname": "abiraterone acetate", "proprietaryname": "Abiraterone Acetate"},
+      "unii": {"unii": "G819A456D0", "display_name": "ABIRATERONE ACETATE"}
+    }
+  ]
+}
+"#;
+
+#[test]
+fn niraparib_names_the_plain_ingredient_card() {
+    // Ticket 2043: the Akeega combination rows sit first on the niraparib
+    // record, and on main their name wins the card through the
+    // qualified-form rule. A combination never counts as a qualified form
+    // of the requested ingredient, so the card names niraparib itself.
+    let capture = hits(serde_json::from_str(NIRAPARIB_CAPTURE).expect("valid capture"));
+    let selected = select_hits_for_name(&capture, "niraparib");
+    assert_eq!(
+        selected.len(),
+        1,
+        "the abiraterone record never resolves a niraparib query"
+    );
+    let drug = merge_mychem_hits(&selected, "niraparib");
+    assert_eq!(drug.name, "niraparib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB11793"));
+    assert!(
+        !drug.name.contains("abiraterone"),
+        "the Akeega combination row never names the plain ingredient's card"
+    );
+}
+
+/// A brand whose canonical name equals the brand string, beside a naked
+/// product row that pairs the brand with a salt name: the identity-record
+/// filter on the brand pairing is the only thing keeping the card's own
+/// name (ticket 2043). Removing the filter — the third rescue-guard
+/// mutation from ticket 2043's review — renames this card "fixturebrand
+/// special salt" while every existing pin still passes.
+pub(crate) const CANONICAL_BRAND_BESIDE_NAKED_ROW_CAPTURE: &str = r#"
+{
+  "total": 2,
+  "hits": [
+    {
+      "_id": "DB90001",
+      "_score": 24.0,
+      "drugbank": {"id": "DB90001", "name": "Fixturebrand"}
+    },
+    {
+      "_id": "55555-001",
+      "_score": 17.0,
+      "ndc": {"nonproprietaryname": "fixturebrand special salt", "proprietaryname": "FIXTUREBRAND"}
+    }
+  ]
+}
+"#;
+
+#[test]
+fn a_canonical_name_equal_to_the_brand_never_yields_to_a_naked_row() {
+    let capture = hits(
+        serde_json::from_str(CANONICAL_BRAND_BESIDE_NAKED_ROW_CAPTURE).expect("valid capture"),
+    );
+    let selected = select_hits_for_name(&capture, "Fixturebrand");
+    assert_eq!(selected.len(), 2);
+    let drug = merge_mychem_hits(&selected, "Fixturebrand");
+    assert_eq!(drug.name, "fixturebrand");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB90001"));
+    assert!(
+        !drug.name.contains("special salt"),
+        "only an identity-bearing record's own row may rename the card"
+    );
+}
+
 /// The osimertinib record carrying its brand only as a DrugCentral synonym:
 /// no NDC proprietary name and no openFDA brand hold "tagrisso", so the
 /// synonym is the only field that identifies the record for the brand query.

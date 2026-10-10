@@ -130,6 +130,42 @@ impl OpenFdaClient {
         ))
     }
 
+    /// The plain-product escalation for the drug card's label choice: an
+    /// exact-field match on the card's ingredient name (ticket 2043).
+    ///
+    /// openFDA sorts `drug/label.json` by the caller's `sort`, so a page of
+    /// newest-first records can hold five biosimilars while the plain
+    /// product's own record sits past the page. The `.exact` field matches
+    /// only records whose `openfda.generic_name` IS the ingredient, and
+    /// openFDA stores these values in SPL casing, so the caller uppercases
+    /// the name it sends.
+    pub(crate) fn label_generic_exact_search_plan(
+        drug_name: &str,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let drug_name = drug_name.trim();
+        if drug_name.is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "Drug name is required. Example: biomcp get drug vemurafenib label".into(),
+            ));
+        }
+        if drug_name.len() > 256 {
+            return Err(BioMcpError::InvalidArgument(
+                "Drug name is too long.".into(),
+            ));
+        }
+
+        let escaped = Self::escape_query_value(drug_name);
+        let q = format!("openfda.generic_name.exact:\"{escaped}\"");
+        Ok(with_api_key(
+            RequestPlan::get("drug/label.json")
+                .query("search", q)
+                .query("limit", "5")
+                .query("sort", "effective_time:desc"),
+            api_key,
+        ))
+    }
+
     /// The identity-field fallback: openFDA phrase search over each label's
     /// own `spl_product_data_elements`.
     ///
@@ -403,6 +439,15 @@ impl OpenFdaClient {
         drug_name: &str,
     ) -> Result<Option<serde_json::Value>, BioMcpError> {
         let plan = Self::label_search_plan(drug_name, self.api_key.as_deref())?;
+        self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .await
+    }
+
+    pub async fn label_generic_exact_search(
+        &self,
+        drug_name: &str,
+    ) -> Result<Option<serde_json::Value>, BioMcpError> {
+        let plan = Self::label_generic_exact_search_plan(drug_name, self.api_key.as_deref())?;
         self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
             .await
     }

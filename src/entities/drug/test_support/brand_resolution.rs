@@ -187,8 +187,11 @@ const ERLOTINIB_LABEL_BODY: &str = r#"{
 }"#;
 
 /// The live openFDA label answer for the niraparib search, recorded
-/// 2026-10-09 (ticket 2037): Zejula's own record first and the Akeega
-/// combination second, with the section text trimmed for the fixture.
+/// 2026-10-09 (ticket 2037) and repinned 2026-10-10 for ticket 2043:
+/// the Akeega combination record promoted ahead of Zejula's own record,
+/// the order openFDA serves whenever Akeega's label is the newer one,
+/// so the fixture pins the choice rule instead of that day's
+/// effective_time order. Section text trimmed for the fixture.
 const NIRAPARIB_LABEL_BODY: &str = r#"{
  "meta": {
   "results": {
@@ -198,33 +201,6 @@ const NIRAPARIB_LABEL_BODY: &str = r#"{
   }
  },
  "results": [
-  {
-   "set_id": "b7f675e2-159c-490c-b6f4-3f16d9492b7d",
-   "effective_time": "20260728",
-   "openfda": {
-    "brand_name": [
-     "ZEJULA"
-    ],
-    "generic_name": [
-     "NIRAPARIB"
-    ],
-    "route": [
-     "ORAL"
-    ],
-    "substance_name": [
-     "NIRAPARIB TOSYLATE"
-    ]
-   },
-   "indications_and_usage": [
-    "1 INDICATIONS AND USAGE ZEJULA is a poly (ADP-ribose) polymerase (PARP) inhibitor indicated: \u2022 for the maintenance treatment of adult patients with advanced epithelial ovarian, fallopian tube, or primary peritoneal cancer who are in a complete or partial response to first-line platinum-based chemotherapy and whose cancer is associated with homologous recombination deficiency (HRD)-positive status defined by either: o a deleterious or suspected deleterious BRCA mutation, and/or o genomic instability. Select patients for therapy based on an FDA\u2011authorized companion diagnostic for ZEJULA. ( 1.1 , 2.1 ) \u2022 for the maintenance treatment of adult patients with deleterious or suspected deleterious g \u2026[recorded reply trimmed for the fixture]"
-   ],
-   "warnings_and_cautions": [
-    "5 WARNINGS AND PRECAUTIONS \u2022 Myelodysplastic Syndrome/Acute Myeloid Leukemia (MDS/AML): MDS/AML occurred in patients exposed to ZEJULA, and some cases were fatal. Monitor patients for hematological toxicity and discontinue if MDS/AML is confirmed. ( 5.1 ) \u2022 Bone Marrow Suppression: Test complete blood counts weekly for the first month, monthly for the next 11 months, and periodically thereafter for clinically significant changes. ( 5.2 ) \u2022 Hypertension and Cardiovascular Effects: Monitor blood pressure and heart rate at least weekly for the first 2 months, then monthly for the first year and periodically thereafter during treatment with ZEJULA. Manage with antihypertensive medications and ad \u2026[recorded reply trimmed for the fixture]"
-   ],
-   "dosage_and_administration": [
-    "2 DOSAGE AND ADMINISTRATION \u2022 First \u2011 Line Maintenance Treatment of HRD \u2011 Positive Advanced Ovarian Cancer: o For patients weighing <77 kg (<170 lbs) OR with a platelet count <150,000/mcL, the recommended dosage is 200 mg taken orally once daily. ( 2.2 ) o For patients weighing \u226577 kg (\u2265170 lbs) AND a platelet count \u2265150,000/mcL, the recommended dosage is 300 mg taken orally once daily. ( 2.2 ) \u2022 Maintenance Treatment of Recurrent Germline BRCA \u2011 Mutated Ovarian Cancer: The recommended dosage is 300 mg taken orally once daily. ( 2.2 ) \u2022 Continue treatment until disease progression or unacceptable toxicity. ( 2.2 ) \u2022 ZEJULA may be taken with or without food. ( 2.2 ) \u2022 For adverse reactions, c \u2026[recorded reply trimmed for the fixture]"
-   ]
-  },
   {
    "set_id": "8245a990-3268-4613-b5c5-9537858a1eb9",
    "effective_time": "20251218",
@@ -244,16 +220,43 @@ const NIRAPARIB_LABEL_BODY: &str = r#"{
     ]
    },
    "indications_and_usage": [
-    "1 INDICATIONS AND USAGE AKEEGA with prednisone is indicated for the treatment of adult patients with deleterious or suspected deleterious BRCA2 -mutated ( BRCA2 m) metastatic castration-sensitive prostate cancer (mCSPC). AKEEGA with prednisone is indicated for the treatment of adult patients with deleterious or suspected deleterious BRCA -mutated ( BRCA m) metastatic castration-resistant prostate cancer (mCRPC). Select patients for therapy based on an FDA-approved test for AKEEGA [see Dosage and Administration (2.1) ] . AKEEGA is a combination of niraparib, a poly (ADP-ribose) polymerase (PARP) inhibitor, and abiraterone acetate, a CYP17 inhibitor indicated with prednisone for the treatment  \u2026[recorded reply trimmed for the fixture]"
+    "1 INDICATIONS AND USAGE AKEEGA with prednisone is indicated for the treatment of adult patients with deleterious or suspected deleterious BRCA2 -mutated ( BRCA2 m) metastatic castration-sensitive prostate cancer (mCSPC). AKEEGA with prednisone is indicated for the treatment of adult patients with deleterious or suspected deleterious BRCA -mutated ( BRCA m) metastatic castration-resistant prostate cancer (mCRPC). Select patients for therapy based on an FDA-approved test for AKEEGA [see Dosage and Administration (2.1) ] . AKEEGA is a combination of niraparib, a poly (ADP-ribose) polymerase (PARP) inhibitor, and abiraterone acetate, a CYP17 inhibitor indicated with prednisone for the treatment  …[recorded reply trimmed for the fixture]"
    ],
    "warnings_and_cautions": [
-    "5 WARNINGS AND PRECAUTIONS Myelodysplastic Syndrome/Acute Myeloid Leukemia (MDS/AML) : MDS/AML, including a case with fatal outcome, has been observed in patients treated with AKEEGA. Monitor patients for hematological toxicity and discontinue if MDS/AML is confirmed. ( 5.1 ) Myelosuppression: Test complete blood counts weekly for the first month, every two weeks for the next two months, monthly for the remainder of the first year, then every other month, and as clinically indicated. ( 2.3 , 5.2 ) Hypokalemia, Fluid Retention, and Cardiovascular Adverse Reactions: Monitor patients for hypertension, hypokalemia, and fluid retention at least weekly for the first two months, then once a month.  \u2026[recorded reply trimmed for the fixture]"
+    "5 WARNINGS AND PRECAUTIONS Myelodysplastic Syndrome/Acute Myeloid Leukemia (MDS/AML) : MDS/AML, including a case with fatal outcome, has been observed in patients treated with AKEEGA. Monitor patients for hematological toxicity and discontinue if MDS/AML is confirmed. ( 5.1 ) Myelosuppression: Test complete blood counts weekly for the first month, every two weeks for the next two months, monthly for the remainder of the first year, then every other month, and as clinically indicated. ( 2.3 , 5.2 ) Hypokalemia, Fluid Retention, and Cardiovascular Adverse Reactions: Monitor patients for hypertension, hypokalemia, and fluid retention at least weekly for the first two months, then once a month.  …[recorded reply trimmed for the fixture]"
    ],
    "dosage_and_administration": [
-    "2 DOSAGE AND ADMINISTRATION BRCA2 m mCSPC: The recommended dosage of AKEEGA is 200 mg niraparib/1,000 mg abiraterone acetate orally once daily in combination with 5 mg prednisone daily until disease progression or unacceptable toxicity. ( 2.2 ) BRCA m mCRPC : The recommended dosage of AKEEGA is 200 mg niraparib/1,000 mg abiraterone acetate orally once daily in combination with 10 mg prednisone daily until disease progression or unacceptable toxicity. ( 2.2 ) Patients receiving AKEEGA should also receive a gonadotropin-releasing hormone (GnRH) analog concurrently or should have had bilateral orchiectomy. ( 2.2 ) Take AKEEGA on an empty stomach at least one hour before or two hours after food. \u2026[recorded reply trimmed for the fixture]"
+    "2 DOSAGE AND ADMINISTRATION BRCA2 m mCSPC: The recommended dosage of AKEEGA is 200 mg niraparib/1,000 mg abiraterone acetate orally once daily in combination with 5 mg prednisone daily until disease progression or unacceptable toxicity. ( 2.2 ) BRCA m mCRPC : The recommended dosage of AKEEGA is 200 mg niraparib/1,000 mg abiraterone acetate orally once daily in combination with 10 mg prednisone daily until disease progression or unacceptable toxicity. ( 2.2 ) Patients receiving AKEEGA should also receive a gonadotropin-releasing hormone (GnRH) analog concurrently or should have had bilateral orchiectomy. ( 2.2 ) Take AKEEGA on an empty stomach at least one hour before or two hours after food. …[recorded reply trimmed for the fixture]"
    ],
    "drug_interactions": [
-    "7 DRUG INTERACTIONS Strong CYP3A4 Inducers: Avoid coadministration. ( 7.1 ) CYP2D6 Substrates: Avoid coadministration of AKEEGA with CYP2D6 substrates for which minimal changes in concentration may lead to serious toxicities. If alternative treatments cannot be used, consider a dose reduction of the concomitant CYP2D6 substrate. ( 7.2 ) 7.1 Effect of Other Drugs on AKEEGA Effect of CYP3A4 Inducers Avoid coadministration with strong CYP3A4 inducers [see Clinical Pharmacology (12.3) ] . Abiraterone is a substrate of CYP3A4. Strong CYP3A4 inducers may decrease abiraterone concentrations [see Clinical Pharmacology (12.3) ], which may reduce the effectiveness of abiraterone. 7.2 Effects of AKEEGA \u2026[recorded reply trimmed for the fixture]"
+    "7 DRUG INTERACTIONS Strong CYP3A4 Inducers: Avoid coadministration. ( 7.1 ) CYP2D6 Substrates: Avoid coadministration of AKEEGA with CYP2D6 substrates for which minimal changes in concentration may lead to serious toxicities. If alternative treatments cannot be used, consider a dose reduction of the concomitant CYP2D6 substrate. ( 7.2 ) 7.1 Effect of Other Drugs on AKEEGA Effect of CYP3A4 Inducers Avoid coadministration with strong CYP3A4 inducers [see Clinical Pharmacology (12.3) ] . Abiraterone is a substrate of CYP3A4. Strong CYP3A4 inducers may decrease abiraterone concentrations [see Clinical Pharmacology (12.3) ], which may reduce the effectiveness of abiraterone. 7.2 Effects of AKEEGA …[recorded reply trimmed for the fixture]"
+   ]
+  },
+  {
+   "set_id": "b7f675e2-159c-490c-b6f4-3f16d9492b7d",
+   "effective_time": "20260728",
+   "openfda": {
+    "brand_name": [
+     "ZEJULA"
+    ],
+    "generic_name": [
+     "NIRAPARIB"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "NIRAPARIB TOSYLATE"
+    ]
+   },
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE ZEJULA is a poly (ADP-ribose) polymerase (PARP) inhibitor indicated: • for the maintenance treatment of adult patients with advanced epithelial ovarian, fallopian tube, or primary peritoneal cancer who are in a complete or partial response to first-line platinum-based chemotherapy and whose cancer is associated with homologous recombination deficiency (HRD)-positive status defined by either: o a deleterious or suspected deleterious BRCA mutation, and/or o genomic instability. Select patients for therapy based on an FDA‑authorized companion diagnostic for ZEJULA. ( 1.1 , 2.1 ) • for the maintenance treatment of adult patients with deleterious or suspected deleterious g …[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS • Myelodysplastic Syndrome/Acute Myeloid Leukemia (MDS/AML): MDS/AML occurred in patients exposed to ZEJULA, and some cases were fatal. Monitor patients for hematological toxicity and discontinue if MDS/AML is confirmed. ( 5.1 ) • Bone Marrow Suppression: Test complete blood counts weekly for the first month, monthly for the next 11 months, and periodically thereafter for clinically significant changes. ( 5.2 ) • Hypertension and Cardiovascular Effects: Monitor blood pressure and heart rate at least weekly for the first 2 months, then monthly for the first year and periodically thereafter during treatment with ZEJULA. Manage with antihypertensive medications and ad …[recorded reply trimmed for the fixture]"
+   ],
+   "dosage_and_administration": [
+    "2 DOSAGE AND ADMINISTRATION • First ‑ Line Maintenance Treatment of HRD ‑ Positive Advanced Ovarian Cancer: o For patients weighing <77 kg (<170 lbs) OR with a platelet count <150,000/mcL, the recommended dosage is 200 mg taken orally once daily. ( 2.2 ) o For patients weighing ≥77 kg (≥170 lbs) AND a platelet count ≥150,000/mcL, the recommended dosage is 300 mg taken orally once daily. ( 2.2 ) • Maintenance Treatment of Recurrent Germline BRCA ‑ Mutated Ovarian Cancer: The recommended dosage is 300 mg taken orally once daily. ( 2.2 ) • Continue treatment until disease progression or unacceptable toxicity. ( 2.2 ) • ZEJULA may be taken with or without food. ( 2.2 ) • For adverse reactions, c …[recorded reply trimmed for the fixture]"
    ]
   }
  ]
@@ -330,7 +333,9 @@ async fn zejula_returns_niraparib_with_the_zejula_label() {
 
     // Ticket 2037: the Zejula card takes the name its own product row pairs
     // (niraparib), never the Akeega combination row that sits first, and
-    // the label is Zejula's own record.
+    // ticket 2043: the label choice picks Zejula's own record out of the
+    // Akeega-first page, because only ZEJULA's brand name equals the query
+    // and the Akeega generic name is a combination.
     let drug = name_resolution_fixture_drug(&base, "Zejula").await;
     assert_eq!(drug.name, "niraparib");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB11793"));
@@ -360,6 +365,56 @@ async fn zejula_returns_niraparib_with_the_zejula_label() {
                 .as_deref()
                 .is_some_and(|text| text.contains("ZEJULA"))),
         "the Zejula label text reached the card"
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn niraparib_names_the_plain_card_and_takes_its_own_label() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "niraparib".to_string(),
+            crate::transform::drug::name_resolution_tests::NIRAPARIB_CAPTURE.to_string(),
+        )],
+        vec![("niraparib".to_string(), NIRAPARIB_LABEL_BODY.to_string())],
+        Vec::new(),
+    )
+    .await;
+
+    // Ticket 2043: the ingredient query names the card for the plain
+    // ingredient — never the Akeega combination rows MyChem lists first on
+    // the same record — and the label choice picks the record whose generic
+    // name is exactly niraparib out of the Akeega-first page.
+    let drug = name_resolution_fixture_drug(&base, "niraparib").await;
+    assert_eq!(drug.name, "niraparib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB11793"));
+    assert_eq!(
+        drug.label_set_id.as_deref(),
+        Some("b7f675e2-159c-490c-b6f4-3f16d9492b7d")
+    );
+    assert!(
+        !drug.name.contains("abiraterone"),
+        "the card never takes the Akeega combination row's name"
+    );
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Data
+    );
+    assert!(
+        drug.label.as_ref().is_some_and(|label| label
+            .indication_summary
+            .iter()
+            .any(|row| row.name.contains("ovarian"))
+            || drug.label.as_ref().is_some_and(|label| label
+                .indications
+                .as_deref()
+                .is_some_and(|text| text.contains("ZEJULA")))),
+        "the plain niraparib label text reached the card"
     );
     server.abort();
 }
