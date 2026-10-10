@@ -115,6 +115,146 @@ fn snpeff_long_tail_is_drained_without_projecting_tail_objects_or_strings() {
     assert_eq!(snpeff_projection_counts(), (32, 128));
 }
 
+#[test]
+fn snpeff_interaction_rows_are_skipped_and_transcript_rows_kept() {
+    // Recorded BRCA1 Q1878R shape (query_brca1_q1878r_20261009.json):
+    // SnpEff's protein-structure annotations carry feature_type
+    // "interaction" on PDB chain features (48 rows for a BRCT-region
+    // variant) beside the transcript rows. The interaction rows are read
+    // and dropped without counting against the retained-annotation bound,
+    // so the transcript rows survive instead of the whole list dying for
+    // its length (ticket 2042).
+    let mut annotations = (0..48)
+        .map(|index| {
+            json!({
+                "feature_id": format!("1JNX:X_182{index}-X_1857:NM_007294.3"),
+                "feature_type": "interaction",
+                "genename": "BRCA1",
+                "hgvs_c": "c.5570A>G"
+            })
+        })
+        .collect::<Vec<_>>();
+    annotations.extend([
+        json!({
+            "feature_id": "NM_007300.3",
+            "feature_type": "transcript",
+            "genename": "BRCA1",
+            "hgvs_c": "c.5633A>G",
+            "hgvs_p": "p.Gln1878Arg"
+        }),
+        json!({
+            "feature_id": "NM_007294.3",
+            "feature_type": "transcript",
+            "genename": "BRCA1",
+            "hgvs_c": "c.5570A>G",
+            "hgvs_p": "p.Gln1857Arg"
+        }),
+        json!({
+            "feature_id": "NR_027676.1",
+            "feature_type": "transcript",
+            "genename": "BRCA1",
+            "hgvs_c": "n.5706A>G"
+        }),
+    ]);
+    let hit: MyVariantHit = serde_json::from_value(json!({
+        "_id": "chr17:g.41197717T>C",
+        "dbnsfp": {"genename": "BRCA1", "hgvsp": "p.Q1878R"},
+        "snpeff": {"ann": annotations}
+    }))
+    .unwrap();
+    let snpeff = hit.snpeff.expect("present SnpEff section");
+    assert!(snpeff.complete);
+    let features: Vec<&str> = snpeff
+        .ann
+        .iter()
+        .map(|ann| ann.feature_id.as_deref().unwrap_or_default())
+        .collect();
+    assert_eq!(features, ["NM_007300.3", "NM_007294.3", "NR_027676.1"]);
+
+    // The interaction classification reads the value only: a lone
+    // interaction object in the single-object form leaves an honestly
+    // empty, complete list, and a non-string or differently-cased value
+    // marks nothing and keeps the row.
+    let lone: MyVariantHit = serde_json::from_value(json!({
+        "_id": "x",
+        "snpeff": {"ann": {
+            "feature_id": "1JNX:X_1822-X_1857:NM_007294.3",
+            "feature_type": "interaction",
+            "hgvs_c": "c.5570A>G"
+        }}
+    }))
+    .unwrap();
+    let snpeff = lone.snpeff.expect("present SnpEff section");
+    assert!(snpeff.complete);
+    assert!(snpeff.ann.is_empty());
+    for feature_type in [
+        json!(7),
+        json!(["interaction"]),
+        json!({}),
+        json!(" Transcript "),
+    ] {
+        let kept: MyVariantHit = serde_json::from_value(json!({
+            "_id": "x",
+            "snpeff": {"ann": [
+                {"feature_id": "NM_1.1", "feature_type": feature_type, "hgvs_c": "c.1A>G"}
+            ]}
+        }))
+        .unwrap();
+        let snpeff = kept.snpeff.expect("present SnpEff section");
+        assert!(
+            snpeff.complete && snpeff.ann.len() == 1,
+            "feature_type {feature_type} must not drop or invalidate the row"
+        );
+    }
+    // The classification is case-insensitive: a differently-cased
+    // interaction row is still a protein-structure row.
+    let caseless: MyVariantHit = serde_json::from_value(json!({
+        "_id": "x",
+        "snpeff": {"ann": [
+            {"feature_id": "1JNX:X_1-X_2:NM_1.1", "feature_type": " Interaction ", "hgvs_c": "c.1A>G"},
+            {"feature_id": "NM_1.1", "hgvs_c": "c.1A>G"}
+        ]}
+    }))
+    .unwrap();
+    let snpeff = caseless.snpeff.expect("present SnpEff section");
+    assert!(snpeff.complete);
+    assert_eq!(snpeff.ann.len(), 1);
+    assert_eq!(snpeff.ann[0].feature_id.as_deref(), Some("NM_1.1"));
+    let duplicated: MyVariantHit = serde_json::from_str(
+        r#"{"_id":"x","snpeff":{"ann":[{"feature_id":"NM_1.1","feature_type":"transcript","feature_type":"interaction","hgvs_c":"c.1A>G"}]}}"#,
+    )
+    .unwrap();
+    let snpeff = duplicated.snpeff.expect("present SnpEff section");
+    assert!(!snpeff.complete && snpeff.ann.is_empty());
+}
+
+#[test]
+fn snpeff_interaction_rows_past_the_bound_drop_the_list() {
+    let mut annotations = (0..257)
+        .map(|index| {
+            json!({
+                "feature_id": format!("1JNX:X_182{index}-X_1857:NM_007294.3"),
+                "feature_type": "interaction",
+                "hgvs_c": "c.5570A>G"
+            })
+        })
+        .collect::<Vec<_>>();
+    annotations.push(json!({
+        "feature_id": "NM_007294.3",
+        "feature_type": "transcript",
+        "hgvs_c": "c.5570A>G",
+        "hgvs_p": "p.Gln1857Arg"
+    }));
+    let hit: MyVariantHit = serde_json::from_value(json!({
+        "_id": "x",
+        "snpeff": {"ann": annotations}
+    }))
+    .unwrap();
+    let snpeff = hit.snpeff.expect("present SnpEff section");
+    assert!(!snpeff.complete);
+    assert!(snpeff.ann.is_empty());
+}
+
 macro_rules! fixture {
     ($name:expr) => {
         include_bytes!(concat!(

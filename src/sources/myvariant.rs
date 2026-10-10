@@ -21,7 +21,7 @@ const MYVARIANT_BASE_ENV: &str = "BIOMCP_MYVARIANT_BASE";
 pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "_id,cadd.phred,cadd.consequence,",
     "clinvar.gene.symbol,clinvar.rcv.accession,clinvar.rcv.version,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.rcv.preferred_name,clinvar.rcv.last_evaluated,clinvar.rcv.number_submitters,clinvar.variant_id,clinvar.hgvs.coding,",
-    "snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,",
+    "snpeff.ann.feature_id,snpeff.ann.feature_type,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,",
     "dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,",
     "dbnsfp.sift.pred,dbnsfp.sift.score,",
     "dbnsfp.polyphen2.hdiv.pred,",
@@ -51,7 +51,7 @@ pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "cosmic.cosmic_id,cosmic.mut_freq,cosmic.tumor_site,cosmic.mut_nt,",
     "cgi,civic"
 );
-pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
+pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.feature_type,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -892,6 +892,7 @@ pub struct MyVariantSnpeffAnnotation {
 }
 
 const MAX_SNPEFF_ANNOTATIONS: usize = 32;
+const MAX_SNPEFF_INTERACTION_ANNOTATIONS: usize = 256;
 const MAX_SNPEFF_IDENTITY_BYTES: usize = 256;
 
 #[cfg(test)]
@@ -1001,7 +1002,88 @@ impl<'de> Visitor<'de> for BoundedIdentityVisitor {
 
 enum ProjectedAnnotation {
     Valid(MyVariantSnpeffAnnotation),
+    /// A protein-structure row (`feature_type: interaction`, SnpEff's
+    /// structural_interaction_variant annotations on PDB chain features):
+    /// real provider data that names no transcript, so the projection
+    /// keeps the list it arrives in and drops only the row (ticket 2042).
+    Interaction,
     Invalid,
+}
+
+/// Reads a SnpEff `feature_type` value as the single fact the projection
+/// needs: whether the row is a protein-structure interaction annotation
+/// rather than a transcript annotation. No value is stored, so the field
+/// costs no retained bytes; a non-string value marks nothing (the identity
+/// fields decide validity, and an odd `feature_type` alone cannot).
+struct InteractionFeatureType;
+
+impl<'de> serde::de::DeserializeSeed<'de> for InteractionFeatureType {
+    type Value = bool;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(InteractionFeatureTypeVisitor)
+    }
+}
+
+struct InteractionFeatureTypeVisitor;
+
+impl<'de> Visitor<'de> for InteractionFeatureTypeVisitor {
+    type Value = bool;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a SnpEff feature_type value")
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E> {
+        Ok(false)
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E> {
+        Ok(false)
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E> {
+        Ok(value.trim().eq_ignore_ascii_case("interaction"))
+    }
+
+    fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Self::Value, E> {
+        self.visit_str(&value)
+    }
+
+    fn visit_bool<E>(self, _: bool) -> Result<Self::Value, E> {
+        Ok(false)
+    }
+
+    fn visit_i64<E>(self, _: i64) -> Result<Self::Value, E> {
+        Ok(false)
+    }
+
+    fn visit_u64<E>(self, _: u64) -> Result<Self::Value, E> {
+        Ok(false)
+    }
+
+    fn visit_f64<E>(self, _: f64) -> Result<Self::Value, E> {
+        Ok(false)
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        while seq.next_element::<IgnoredAny>()?.is_some() {}
+        Ok(false)
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        while map.next_entry::<IgnoredAny, IgnoredAny>()?.is_some() {}
+        Ok(false)
+    }
 }
 
 struct AnnotationSeed;
@@ -1039,6 +1121,7 @@ impl<'de> Visitor<'de> for AnnotationVisitor {
             hgvs_p: None,
         };
         let mut valid = true;
+        let mut interaction = false;
         let mut seen = 0_u8;
         while let Some(key) = map.next_key::<String>()? {
             let target = match key.as_str() {
@@ -1046,6 +1129,16 @@ impl<'de> Visitor<'de> for AnnotationVisitor {
                 "genename" => Some((&mut annotation.genename, 2)),
                 "hgvs_c" => Some((&mut annotation.hgvs_c, 4)),
                 "hgvs_p" => Some((&mut annotation.hgvs_p, 8)),
+                "feature_type" => {
+                    if seen & 16 != 0 {
+                        map.next_value::<IgnoredAny>()?;
+                        valid = false;
+                        continue;
+                    }
+                    seen |= 16;
+                    interaction = map.next_value_seed(InteractionFeatureType)?;
+                    continue;
+                }
                 _ => None,
             };
             if let Some((target, bit)) = target {
@@ -1063,10 +1156,12 @@ impl<'de> Visitor<'de> for AnnotationVisitor {
                 map.next_value::<IgnoredAny>()?;
             }
         }
-        Ok(if valid {
-            ProjectedAnnotation::Valid(annotation)
-        } else {
+        Ok(if !valid {
             ProjectedAnnotation::Invalid
+        } else if interaction {
+            ProjectedAnnotation::Interaction
+        } else {
+            ProjectedAnnotation::Valid(annotation)
         })
     }
 
@@ -1146,6 +1241,12 @@ impl<'de> Visitor<'de> for AnnotationSetVisitor {
                 ann: vec![annotation],
                 complete: true,
             },
+            // The single-object form read completely; a lone interaction
+            // row simply leaves no transcript annotation (ticket 2042).
+            ProjectedAnnotation::Interaction => MyVariantSnpeff {
+                ann: Vec::new(),
+                complete: true,
+            },
             ProjectedAnnotation::Invalid => MyVariantSnpeff {
                 ann: Vec::new(),
                 complete: false,
@@ -1157,10 +1258,38 @@ impl<'de> Visitor<'de> for AnnotationSetVisitor {
     where
         A: SeqAccess<'de>,
     {
+        // Interaction rows are read and dropped without counting against
+        // the retained-annotation bound: BRCA1's BRCT-region variants carry
+        // about 48 protein-structure rows per transcript row, and dropping
+        // the whole list for their count left the answer with no protein
+        // change at all (ticket 2042). A bounded count of them still caps
+        // the deserialization work a hostile array can force. Once the
+        // retained rows reach the bound the tail is drained without
+        // projecting it, so the projection counters keep their meaning.
         let mut annotations = Vec::with_capacity(MAX_SNPEFF_ANNOTATIONS);
-        for _ in 0..MAX_SNPEFF_ANNOTATIONS {
+        let mut interactions = 0_usize;
+        loop {
+            if annotations.len() == MAX_SNPEFF_ANNOTATIONS {
+                if seq.next_element::<IgnoredAny>()?.is_some() {
+                    while seq.next_element::<IgnoredAny>()?.is_some() {}
+                    return Ok(incomplete_snpeff());
+                }
+                return Ok(MyVariantSnpeff {
+                    ann: annotations,
+                    complete: true,
+                });
+            }
             match seq.next_element_seed(AnnotationSeed)? {
-                Some(ProjectedAnnotation::Valid(annotation)) => annotations.push(annotation),
+                Some(ProjectedAnnotation::Interaction) => {
+                    interactions += 1;
+                    if interactions > MAX_SNPEFF_INTERACTION_ANNOTATIONS {
+                        while seq.next_element::<IgnoredAny>()?.is_some() {}
+                        return Ok(incomplete_snpeff());
+                    }
+                }
+                Some(ProjectedAnnotation::Valid(annotation)) => {
+                    annotations.push(annotation);
+                }
                 Some(ProjectedAnnotation::Invalid) => {
                     while seq.next_element::<IgnoredAny>()?.is_some() {}
                     return Ok(incomplete_snpeff());
@@ -1173,14 +1302,6 @@ impl<'de> Visitor<'de> for AnnotationSetVisitor {
                 }
             }
         }
-        if seq.next_element::<IgnoredAny>()?.is_some() {
-            while seq.next_element::<IgnoredAny>()?.is_some() {}
-            return Ok(incomplete_snpeff());
-        }
-        Ok(MyVariantSnpeff {
-            ann: annotations,
-            complete: true,
-        })
     }
 
     fn visit_bool<E>(self, _: bool) -> Result<Self::Value, E> {

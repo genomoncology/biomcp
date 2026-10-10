@@ -227,23 +227,34 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1804,
+      "baseline_lines": 1962,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016, 2035, 2036",
-        "delta": 676,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its MANE or ClinVar-named transcript spells the change; the MANE stem from the query's ClinVar-preferred names, the numbering note, and the MANE-numbering refusal. Ticket 2035 findings 4 and 21: the residue check runs before any note prints (refuse when the request's numbering is valid on MANE, note when it provably differs, stay silent when unverifiable) and the refusal retry names the requested change instead of the known-differing candidate. Ticket 2036: the canonical-protein facts fetch (accession, requested-position residue, MANE-Select transcript) runs before any non-MANE annotation is accepted, so the refuse-or-note decision splits into the async wrapper and the pure facts decision.",
+        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016, 2035, 2036, 2042",
+        "delta": 834,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its MANE or ClinVar-named transcript spells the change; the MANE stem from the query's ClinVar-preferred names, the numbering note, and the MANE-numbering refusal. Ticket 2035 findings 4 and 21: the residue check runs before any note prints (refuse when the request's numbering is valid on MANE, note when it provably differs, stay silent when unverifiable) and the refusal retry names the requested change instead of the known-differing candidate. Ticket 2036: the canonical-protein facts fetch (accession, requested-position residue, MANE-Select transcript) runs before any non-MANE annotation is accepted, so the refuse-or-note decision splits into the async wrapper and the pure facts decision. Ticket 2042: the canonical facts carry the sequence length so a position past the protein's end proves another numbering, and the no-facts decision (unchecked note, could-not-check refusal, no-protein-change refusal) splits out of the wrapper.",
         "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms."
+      }
+    },
+    {
+      "path": "src/entities/variant/get/protein_change_tests.rs",
+      "baseline_lines": 1181,
+      "floor_lines": 902,
+      "authorized_increase": {
+        "ticket": "2042",
+        "delta": 279,
+        "reason": "The past-the-end, unchecked-numbering, no-facts-refusal, no-MANE-transcript, and no-protein-change decision tests with the many-interaction-row record shape.",
+        "removal_condition": "Fold the recorded SnpEff shapes into a shared builder when the decision tests grow another provider shape."
       }
     },
     {
       "path": "src/entities/variant/get/tests.rs",
       "floor_lines": 965,
-      "baseline_lines": 1076,
+      "baseline_lines": 1232,
       "authorized_increase": {
-        "ticket": "1292, 2016",
-        "delta": 111,
-        "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary. Ticket 2016: protein-change resolution sidecar tests and the protein_numbering_note fields on the Variant test literals.",
+        "ticket": "1292, 2016, 2042",
+        "delta": 267,
+        "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary. Ticket 2016: protein-change resolution sidecar tests and the protein_numbering_note fields on the Variant test literals. Ticket 2042: the protein-change wiring tests over a recorded S183Y response with a live and an unreachable UniProt leg.",
         "removal_condition": "Split the transcript-alias fixture tests when a package-neutral module extraction can preserve the exact source package boundary."
       }
     },
@@ -443,12 +454,12 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1489,
+      "baseline_lines": 1610,
       "floor_lines": 1033,
       "authorized_increase": {
-        "ticket": "1091, 1154, 1155, 1150, 1292",
-        "delta": 456,
-        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, stream-isolate bounded SnpEff annotations, and expose deadline-aware construction without adding a package file beyond the fixed 1300-file boundary. Ticket 1292: the ClinVar coding-alias field on the get-fields projection with its exact membership check.",
+        "ticket": "1091, 1154, 1155, 1150, 1292, 2042",
+        "delta": 577,
+        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, stream-isolate bounded SnpEff annotations, and expose deadline-aware construction without adding a package file beyond the fixed 1300-file boundary. Ticket 1292: the ClinVar coding-alias field on the get-fields projection with its exact membership check. Ticket 2042: the feature_type interaction projection and the interaction-row skip in the bounded SnpEff list.",
         "removal_condition": "Split MyVariant request planning and SnpEff decoding when a package-neutral module extraction can preserve the exact source package boundary."
       }
     },

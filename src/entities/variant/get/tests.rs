@@ -1074,3 +1074,159 @@ fn agreeing_record_level_classification_drops_the_cached_copy_note() {
     assert_eq!(variant.significance_source.as_deref(), Some("NCBI ClinVar"));
     assert!(variant.significance_note.is_none());
 }
+
+/// Recorded provider shapes for the ticket-2042 wiring tests: the S183Y
+/// MyVariant query (query_tp53_s183y_20261009.json) and the minimized
+/// UniProt record (get_p04637_20261008.json) with Ser at 183 and the
+/// MANE-Select cross-reference NM_000546.6. The MyGene TP53→P04637
+/// resolution mirrors the provider-contract fixture's entry.
+const TP53_S183Y_RESPONSE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/myvariant/query_tp53_s183y_20261009.json"
+));
+const UNIPROT_P04637_RESPONSE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/uniprot/get_p04637_20261008.json"
+));
+const MYGENE_TP53_RESPONSE: &[u8] = br#"{"total":1,"hits":[{"symbol":"TP53","name":"tumor protein p53","entrezgene":7157,"type_of_gene":"protein-coding","ensembl":{"gene":"ENSG00000141510"},"uniprot":{"Swiss-Prot":"P04637"}}]}"#;
+
+async fn protein_change_uniprot_fixture_server()
+-> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind protein-change fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                // The production GET field list makes the request line span
+                // TCP segments, so read until the headers end before
+                // routing — a single read would answer mid-request.
+                let mut request = vec![0_u8; 32 * 1024];
+                let mut len = 0_usize;
+                loop {
+                    let read = stream
+                        .read(&mut request[len..])
+                        .await
+                        .expect("read fixture request");
+                    len += read;
+                    if read == 0
+                        || len == request.len()
+                        || request[..len].windows(4).any(|w| w == b"\r\n\r\n")
+                    {
+                        break;
+                    }
+                }
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock requests")
+                    .push(request.clone());
+                let body: &[u8] = if request.starts_with("GET /v1/query?")
+                    && request.contains("dbnsfp.genename%3ATP53")
+                    && request.contains("p.S183Y")
+                {
+                    TP53_S183Y_RESPONSE
+                } else if request.starts_with("GET /query?") && request.contains("TP53") {
+                    MYGENE_TP53_RESPONSE
+                } else if request.starts_with("GET /uniprotkb/P04637.json") {
+                    UNIPROT_P04637_RESPONSE
+                } else {
+                    br#"{"not":"routed"}"#
+                };
+                let head = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream.write_all(head.as_bytes()).await.expect("write head");
+                stream
+                    .write_all(body)
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+/// The ClinVar-free S183Y response must reach the canonical-protein check
+/// before any answer prints (ticket 2036): with UniProt reachable the
+/// request refuses naming Ser at 183, and the request log shows the
+/// up-front UniProt read. Skipping that read fails this test (ticket 2042
+/// re-pins the wiring). The no-cache scope matches the CLI's `--no-cache`
+/// (the environment alone does not bypass the disk cache for client
+/// construction).
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn protein_change_get_checks_the_canonical_protein_before_answering() {
+    let (base, requests, server) = protein_change_uniprot_fixture_server().await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_MYGENE_BASE", &base);
+    env.set("BIOMCP_UNIPROT_BASE", &base);
+    env.set("BIOMCP_CACHE_MODE", "off");
+
+    let error = crate::sources::with_no_cache(true, resolve_base_with_hit("TP53 S183Y", None))
+        .await
+        .expect_err("an isoform-only spelling of a MANE-numbered request refuses");
+    server.abort();
+
+    let message = error.to_string();
+    assert!(
+        message.contains("canonical protein (UniProt P04637) has Ser at 183"),
+        "unexpected refusal: {message}"
+    );
+    let requests = requests.lock().expect("lock requests").join("\n");
+    assert!(
+        requests.contains("GET /uniprotkb/P04637.json"),
+        "the canonical-protein read must run up front: {requests}"
+    );
+    assert!(
+        requests.contains("p.S183Y"),
+        "the MyVariant alias search must run: {requests}"
+    );
+}
+
+/// With UniProt unreachable the same request still cannot resolve silently
+/// (ticket 2042): the answer keeps the record's spelling of the request
+/// (p.Ser183Tyr on NM_001126115.1) under a note that says plainly the
+/// numbering could not be checked against MANE.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn protein_change_get_notes_unchecked_numbering_when_uniprot_is_unreachable() {
+    let (base, requests, server) = protein_change_uniprot_fixture_server().await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_MYGENE_BASE", &base);
+    env.set("BIOMCP_UNIPROT_BASE", "http://127.0.0.1:9");
+    env.set("BIOMCP_CACHE_MODE", "off");
+
+    let (variant, _, _) =
+        crate::sources::with_no_cache(true, resolve_base_with_hit("TP53 S183Y", None))
+            .await
+            .expect("the record's spelling of the request resolves with its note");
+    server.abort();
+
+    assert_eq!(variant.id, "chr17:g.7576902G>T");
+    assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ser183Tyr"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_001126115.1"));
+    assert_eq!(
+        variant.protein_numbering_note.as_deref(),
+        Some(
+            "Numbering note: resolved on NM_001126115.1 as p.Ser183Tyr; the \
+             requested S183Y could not be checked against MANE numbering."
+        )
+    );
+    let requests = requests.lock().expect("lock requests").join("\n");
+    assert!(
+        requests.contains("%22TP53%22"),
+        "the gene-to-accession lookup must still run: {requests}"
+    );
+    assert!(
+        !requests.contains("GET /uniprotkb/P04637.json"),
+        "the UniProt leg points at the dead port, so it cannot reach this fixture: {requests}"
+    );
+}

@@ -44,7 +44,7 @@ SEARCH_RESPONSE = json.loads(
 )
 BRAF_MISSENSE_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_missense_20260805.json").read_bytes()
 BRAF_REVEL_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_bytes()
-BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_v600e_20260806.json").read_bytes()
+BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/query_braf_v600e_20261009.json").read_bytes()
 BRAF_V600E_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch38_20260806.json").read_bytes()
 BRAF_V600E_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch37_20261007.json").read_bytes()
 GRID1_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch37_20260806.json").read_bytes()
@@ -66,7 +66,11 @@ RS334_GRCH38_RESPONSE = {
     "dbsnp": {"rsid": "rs334"},
     "clinvar": {"gene": {"symbol": "HBB"}},
 }
-MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
+# Ticket 2042: the August MYD88 reply (search_myd88_l265p_20260806.json)
+# carried no ClinVar or SnpEff section — its gene+protein query would now
+# refuse with no protein change to name — so the recurrence card replays the
+# reply re-captured with the current query shape.
+MYD88_L265P_CURRENT_RESPONSE = (ROOT / "testdata/sources/myvariant/query_myd88_l265p_20261009.json").read_bytes()
 TP53_G105S_RESPONSE = (ROOT / "testdata/sources/myvariant/search_tp53_g105s_20261003.json").read_bytes()
 # Ticket 1297: recorded gene+protein queries whose alias spans several
 # genomic variants. Only the DICER1 ClinVar record names one of its three.
@@ -110,6 +114,13 @@ TP53_S183Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_s183y_20261
 BRCA1_S1587F_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1587f_20261009.json").read_bytes()
 BRCA1_S1551Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1551y_20261009.json").read_bytes()
 BRCA1_S395T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s395t_20261009.json").read_bytes()
+# Ticket 2042: recorded ClinVar-free BRCA1 queries whose requested position
+# lies past the canonical protein's 1863 residues. Y1866D's response carries
+# ClinVar's MANE name (p.Tyr1845Asp on NM_007294.4); Q1878R's SnpEff list
+# carries 48 feature_type:interaction protein-structure rows beside the
+# transcript rows.
+BRCA1_Y1866D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_y1866d_20261009.json").read_bytes()
+BRCA1_Q1878R_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_q1878r_20261009.json").read_bytes()
 # The reference-residue check reads the gene's canonical (MANE Select)
 # protein sequence from UniProt; the records are minimized to the accession,
 # the sequence, and the MANE-Select cross-reference whose RefSeq mRNA names
@@ -119,6 +130,13 @@ BRCA1_S395T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s395t_202
 UNIPROT_P04637_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p04637_20261008.json").read_bytes()
 # Ticket 2035 finding 4: BRCA1's residue checks read P38398.
 UNIPROT_P38398_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p38398_20261009.json").read_bytes()
+# Ticket 2042: the legacy GWAS Catalog REST endpoint retired upstream
+# (HTTP 410 since 2026-10), so the offline lane cannot reach it. The two
+# somatic variants whose re-captured replies now carry rsIDs (BRAF V600E,
+# MYD88 L265P) have no germline GWAS associations either way, so the
+# fixture answers their by-rsID association reads with the committed
+# empty page instead of the dead source's hard failure.
+GWAS_ASSOCIATIONS_EMPTY = (ROOT / "testdata/sources/gwas/associations_empty.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 # Ticket 1291: the switch never reproduced live (the recorded
 # reproduction runs' efetch calls all answered within 1.4 s), so this
@@ -541,7 +559,7 @@ class Handler(BaseHTTPRequestHandler):
                 send_json(self, 200, BRAF_V600E_RESPONSE)
                 return
             if "dbnsfp.genename:MYD88" in query and 'dbnsfp.hgvsp:"p.L265P"' in query:
-                send_json(self, 200, MYD88_L265P_RESPONSE)
+                send_json(self, 200, json.loads(MYD88_L265P_CURRENT_RESPONSE))
                 return
             if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.G105S"' in query:
                 send_json(self, 200, TP53_G105S_RESPONSE)
@@ -612,6 +630,12 @@ class Handler(BaseHTTPRequestHandler):
             if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S395T"':
                 send_json(self, 200, json.loads(BRCA1_S395T_RESPONSE))
                 return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.Y1866D"':
+                send_json(self, 200, json.loads(BRCA1_Y1866D_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.Q1878R"':
+                send_json(self, 200, json.loads(BRCA1_Q1878R_RESPONSE))
+                return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return
 
@@ -620,6 +644,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/uniprotkb/P38398.json" and not parse_qs(parsed.query):
             send_json(self, 200, UNIPROT_P38398_RESPONSE)
+            return
+        if parsed.path.startswith("/gwas/rest/api/singleNucleotidePolymorphisms/") and parsed.path.endswith("/associations"):
+            send_json(self, 200, GWAS_ASSOCIATIONS_EMPTY)
             return
 
         if parsed.path in CANCERHOTSPOTS_RESPONSES:
@@ -720,6 +747,7 @@ PY
   printf 'export BIOMCP_VARIANTVALIDATOR_BASE_URL=%q\n' "$base_url"
   printf 'export BIOMCP_CLINGEN_CAR_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_UNIPROT_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_GWAS_BASE=%q\n' "$base_url/gwas/rest/api"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
