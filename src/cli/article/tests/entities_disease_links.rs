@@ -1,3 +1,9 @@
+//! Ticket 2047's article disease-row links: the recorded PubTator3 reply
+//! for PMID 37887282 and the recorded MyDisease crosswalk replies pin the
+//! four live-defect rows, so a MeSH identifier opens the named disease's
+//! ontology card or keeps the v0.9.1 search command — never a bare
+//! crosswalk get.
+
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
