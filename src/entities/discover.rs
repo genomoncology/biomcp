@@ -3826,6 +3826,30 @@ mod tests {
     }
 
     #[test]
+    fn a_gene_shaped_query_never_types_a_drug_label_as_a_gene() {
+        // Ticket 2047: `get drug 5-FU` refuses, and the alias fallback's
+        // candidate list named "Fluorouracil (Gene, MESH:D005472)" because
+        // the heuristic typed the MESH drug label as a gene. Only a
+        // gene-symbol-shaped label (BRCA1) may take the Gene type from a
+        // gene-shaped query.
+        let fluorouracil = concept_from_ols(
+            &ols_doc("mesh", "Fluorouracil", "MESH:D005472", &["5-FU"]),
+            "5-FU",
+        );
+        assert_ne!(
+            fluorouracil.primary_type,
+            DiscoverType::Gene,
+            "a drug label is never typed as a gene"
+        );
+
+        let symbol = concept_from_ols(
+            &ols_doc("ncit", "BRCA1", "NCIT:C164709", &[]),
+            "5-FU",
+        );
+        assert_eq!(symbol.primary_type, DiscoverType::Gene);
+    }
+
+    #[test]
     fn umbrella_disease_queries_stay_ambiguous_and_search_oriented() {
         let result = build_result(
             "diabetes",
