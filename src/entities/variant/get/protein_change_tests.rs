@@ -442,7 +442,6 @@ fn protein_change_resolution_notes_the_numbering_when_the_hit_does_not_spell_the
         ProteinHitBuilder::default()
             .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
             .with_snpeff("NM_000546.5", "c.743G>A", Some("p.Arg248Gln"))
-            .with_snpeff("NM_001126115.1", "c.347G>A", Some("p.Arg116Gln"))
             .hit(
                 "chr17:g.7577538C>T",
                 "TP53",
@@ -1096,6 +1095,7 @@ fn protein_change_resolution_refuses_a_lookalike_without_facts() {
         ProteinHitBuilder::default()
             .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
             .with_snpeff("NM_000546.5", "c.743G>A", Some("p.Arg248Gln"))
+            .with_snpeff("NM_001126115.1", "c.347G>A", Some("p.Arg116Gln"))
             .hit(
                 "chr17:g.7577538C>T",
                 "TP53",
