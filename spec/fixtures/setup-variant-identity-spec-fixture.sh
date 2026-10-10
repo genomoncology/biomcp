@@ -66,7 +66,11 @@ RS334_GRCH38_RESPONSE = {
     "dbsnp": {"rsid": "rs334"},
     "clinvar": {"gene": {"symbol": "HBB"}},
 }
-MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
+# Ticket 2042: the August MYD88 reply (search_myd88_l265p_20260806.json)
+# carried no ClinVar or SnpEff section — its gene+protein query would now
+# refuse with no protein change to name — so the recurrence card replays the
+# reply re-captured with the current query shape.
+MYD88_L265P_CURRENT_RESPONSE = (ROOT / "testdata/sources/myvariant/query_myd88_l265p_20261009.json").read_bytes()
 TP53_G105S_RESPONSE = (ROOT / "testdata/sources/myvariant/search_tp53_g105s_20261003.json").read_bytes()
 # Ticket 1297: recorded gene+protein queries whose alias spans several
 # genomic variants. Only the DICER1 ClinVar record names one of its three.
@@ -414,12 +418,6 @@ class Handler(BaseHTTPRequestHandler):
                 return
             send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
             return
-        # Ticket 2042: the MYD88 L265P capture carries no SnpEff annotation
-        # and no ClinVar name, so its gene+protein form now refuses; the
-        # recorded hit still serves the recurrence card by coordinate.
-        if parsed.path == "/v1/variant/chr3:g.38182641T%3EC":
-            send_json(self, 200, json.loads(MYD88_L265P_RESPONSE)["hits"][0])
-            return
         if parsed.path == "/refsnp/334":
             send_json(self, 200, {
                 "primary_snapshot_data": {"placements_with_allele": [{
@@ -554,7 +552,7 @@ class Handler(BaseHTTPRequestHandler):
                 send_json(self, 200, BRAF_V600E_RESPONSE)
                 return
             if "dbnsfp.genename:MYD88" in query and 'dbnsfp.hgvsp:"p.L265P"' in query:
-                send_json(self, 200, MYD88_L265P_RESPONSE)
+                send_json(self, 200, json.loads(MYD88_L265P_CURRENT_RESPONSE))
                 return
             if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.G105S"' in query:
                 send_json(self, 200, TP53_G105S_RESPONSE)
