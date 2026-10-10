@@ -597,8 +597,8 @@ fn refuse_or_note_with_facts(
         if mane_transcript.is_some() {
             return Ok(None);
         }
-        return transform::variant::canonical_transcript(hit, mane_transcript, Some(change))
-            .map(|transcript| unchecked_numbering_note(&transcript, &protein, change));
+        return Ok(transform::variant::canonical_transcript(hit, mane_transcript, Some(change))
+            .map(|transcript| unchecked_numbering_note(&transcript, &protein, change)));
     }
     let Some(transcript) =
         transform::variant::canonical_transcript(hit, mane_transcript, Some(change))

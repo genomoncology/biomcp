@@ -1049,7 +1049,7 @@ impl<'de> Visitor<'de> for InteractionFeatureTypeVisitor {
         Ok(value.trim().eq_ignore_ascii_case("interaction"))
     }
 
-    fn visit_string<E>(self, value: String) -> Result<Self::Value, E> {
+    fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Self::Value, E> {
         self.visit_str(&value)
     }
 
