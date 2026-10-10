@@ -743,7 +743,7 @@ fn rybrevant_keeps_the_identity_records_name_over_the_naked_product_row() {
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
 }
 
-/// `q=niraparib` recorded 2026-10-13 (ticket 2043): the niraparib record
+/// `q=niraparib` recorded 2026-10-10 (ticket 2043): the niraparib record
 /// carries the Akeega combination rows first and Zejula's own rows after
 /// them. NDC rows deduplicated to first occurrences; the abiraterone
 /// record's product rows trimmed to one; the fieldless text-only hits

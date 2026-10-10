@@ -5,7 +5,7 @@
 
 use super::*;
 
-// The live openFDA label answers below were recorded 2026-10-13 (ticket
+// The live openFDA label answers below were recorded 2026-10-10 (ticket
 // 2043) from `api.fda.gov/drug/label.json` with the drug card's search
 // plan, with each kept section's text cut to its first indication or its
 // opening words. Rows the choice rule never reads were removed and the
@@ -286,7 +286,7 @@ const DARZALEX_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
-// The live MyChem answers below were recorded 2026-10-13 (ticket 2043)
+// The live MyChem answers below were recorded 2026-10-10 (ticket 2043)
 // from `mychem.info/v1/query?q=<name>` with the `get` field list. Hits
 // that carry no name field were dropped, product rows deduplicated to
 // first occurrences and long synonym lists trimmed, as each header notes.
@@ -770,7 +770,7 @@ async fn darzalex_resolves_daratumumab_through_the_pairings_plain_ingredient() {
 }
 
 /// The OLS4 answer for a brand whose only concept match is a non-exact
-/// regimen-shaped label, recorded 2026-10-13 from the live `q=Ambifton`
+/// regimen-shaped label, recorded 2026-10-10 from the live `q=Ambifton`
 /// shape: no label or synonym equals the query, so the discover rescue
 /// must decline and `get` keeps the honest refusal. This pin bites when
 /// the rescue's exact-match requirement on its top result is removed

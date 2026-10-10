@@ -187,8 +187,7 @@ const ERLOTINIB_LABEL_BODY: &str = r#"{
 }"#;
 
 /// The live openFDA label answer for the niraparib search, recorded
-/// The live openFDA label answer for the niraparib search, recorded
-/// 2026-10-09 (ticket 2037) and repinned 2026-10-13 for ticket 2043:
+/// 2026-10-09 (ticket 2037) and repinned 2026-10-10 for ticket 2043:
 /// the Akeega combination record promoted ahead of Zejula's own record,
 /// the order openFDA serves whenever Akeega's label is the newer one,
 /// so the fixture pins the choice rule instead of that day's
