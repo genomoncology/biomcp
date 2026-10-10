@@ -789,7 +789,7 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
     // returns zero rows prints the working form in the Markdown footer, and
     // that form must keep the caller's explicit `--hgvsp` and
     // `--significance` flags.
-    let outcome = refused_zero_row_search_outcome([
+    let outcome = refused_zero_row_search_outcome(&[
         "biomcp",
         "search",
         "variant",
@@ -826,7 +826,7 @@ async fn refused_zero_row_markdown_hint_keeps_the_consequence_flag_end_to_end() 
     // The Markdown footer arm passes the note's consequence beside the
     // hgvsp: replacing the consequence argument with None at the Markdown
     // call site passes every other test (ticket 2047).
-    let outcome = refused_zero_row_search_outcome([
+    let outcome = refused_zero_row_search_outcome(&[
         "biomcp",
         "search",
         "variant",
@@ -857,7 +857,7 @@ async fn refused_zero_row_json_next_command_keeps_both_caller_flags_end_to_end()
     // hgvsp and consequence beside the explicit filters: replacing either
     // flag with None at the JSON call site passes every other test
     // (ticket 2047).
-    let outcome = refused_zero_row_search_outcome([
+    let outcome = refused_zero_row_search_outcome(&[
         "biomcp",
         "--json",
         "search",
