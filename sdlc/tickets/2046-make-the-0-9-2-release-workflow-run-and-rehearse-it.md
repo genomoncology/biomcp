@@ -40,7 +40,7 @@ Red probes, both run through `yr` on the build host and deleted after:
 - `probe/2046-red-a` at `be6cf1024` (`ac4c6739a` plus the new tests): the whole-workflow duplicate-key check failed on the real duplicated `with:` keys, and the docker-run variable check failed on the smoke reading `${TAG#v}` with no `-e TAG`, through the broken quotes. This is the Proof line's failing-on-`ac4c6739a` test.
 - `probe/2046-red-b` at `595e33cba` (the merged tree plus the new tests, fixes withheld): the two new landing-shape coverage tests failed (the `Land tickets/2042-fix` and `Land 2044 and 2045:` subjects escaped the gate), the changelog-refresh ticket set failed against the pre-fix changelog, and the provenance suite failed on the `pypi-build` checkout hash, which the `fetch-depth` block had silently drifted.
 
-The captured container script's tag mechanics hold: with `TAG` in the environment the trimmed-line comparison exits 0 on a `biomcp 0.9.2` line, and with `TAG` unset the script fails on an unbound variable under `set -u` instead of silently comparing garbage — verified through `yr` on the build host against the pushed branch.
+The captured container script's tag mechanics hold, verified through `yr` on the build host against the pushed branch: with `TAG=v0.9.2` in the environment the trimmed-line comparison exits 0 on a `biomcp 0.9.2` line, and without a tag value the script exits 1 instead of comparing garbage (with TAG absent entirely it dies on the unbound variable the Evidence line records).
 
 ## Candidate
 
