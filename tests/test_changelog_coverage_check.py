@@ -594,3 +594,41 @@ def test_dated_and_yearly_records_do_not_count_as_tickets(tmp_path: Path, monkey
     # 2000 and above count — the cap is gone (2026-09-29 review).
     assert found == {"1265", "0843", "1255", "2000", "2027"}, found
 
+def test_carried_tickets_from_another_release_line_do_not_demand_bullets() -> None:
+    """A v0.9.x tag covers milestone 0.9.x tickets only (2046).
+
+    The 1.0 planning records landed mid-cycle complete on their own
+    line; the coverage gate must not demand 0.9.2 bullets for them.
+    """
+    class Git:
+        def __init__(self, replies: dict[str, str]) -> None:
+            self.replies = replies
+
+        def __call__(self, *args: str) -> str:
+            key = " ".join(args)
+            if key not in self.replies:
+                raise AssertionError(f"unexpected git call: {key}")
+            return self.replies[key]
+
+    zero_nine = "Status: complete.\nMilestone: 0.9.2\n"
+    one_zero = "Status: complete.\nMilestone: 1.0\n"
+    no_milestone = "Status: complete.\n"
+    original = _MODULE.run_git
+    _MODULE.run_git = Git(
+        {
+            "diff --name-only --diff-filter=A v0.9.1 v0.9.2 -- sdlc/tickets/": (
+                "sdlc/tickets/1200-zero.md\n"
+                "sdlc/tickets/2100-one.md\n"
+                "sdlc/tickets/2200-none.md\n"
+            ),
+            "show v0.9.2:sdlc/tickets/1200-zero.md": zero_nine,
+            "show v0.9.2:sdlc/tickets/2100-one.md": one_zero,
+            "show v0.9.2:sdlc/tickets/2200-none.md": no_milestone,
+        }
+    )
+    try:
+        found = _MODULE.completed_status_tickets("v0.9.1", "v0.9.2")
+    finally:
+        _MODULE.run_git = original
+    assert found == {"1200", "2200"}, found
+    assert "2100" not in found
