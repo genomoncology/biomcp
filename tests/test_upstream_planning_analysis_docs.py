@@ -1580,7 +1580,7 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     runbook_prerequisites = _normalize_ws(_markdown_section(runbook, "Prerequisites"))
     runbook_premerge = _normalize_ws(_markdown_section(runbook, "Pre-Merge Checks"))
     contributing_hook = _normalize_ws(
-        _markdown_section(contributing, "Local Pre-Commit Hook", level=3)
+        _markdown_section(contributing, "Pre-Commit Hook", level=3)
     )
     march_profiles = _normalize_ws(
         _markdown_section(technical, "March Validation Profiles", level=4)
@@ -1611,9 +1611,10 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert ".march/code-review-log.md" in runbook_premerge
     assert ".march/code-review-log.md" in contributing_hook
 
-    assert "opt in" in contributing_hook
-    assert "does not install it automatically" in contributing_hook
-    assert "`scripts/install-pre-commit-hook`" in contributing_hook
+    assert "withdrawn" in contributing_hook
+    assert "never run `scripts/install-pre-commit-hook`" in contributing_hook
+    assert "build machine" in contributing_hook
+    assert "CI stays the merge gate" in contributing_hook
     assert "`scripts/pre-commit`" in contributing_hook
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in contributing_hook
     assert "`cargo fmt --check`" in contributing_hook

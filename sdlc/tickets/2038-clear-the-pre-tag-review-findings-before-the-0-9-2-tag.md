@@ -135,3 +135,14 @@ First remove the queue report so main is green. Then 2036 and 2037, and the code
   prints the checker's loud notice that the guard runs on inert example
   placeholders only. Ian's action: add the `PM_FORBIDDEN_NAMES` secret
   holding the local declaration's JSON.
+
+## Accepted gap recorded 2026-10-10 (finding 21, 2035 #22)
+
+- Gene routing can time out on a machine with a full cache. With an
+  844 MB cache, each client build spent about 3.4 seconds walking the
+  cache (about 290,000 file opens), which uses up the 2.5-second
+  routing deadline, so `search variant "SCN5A brugada"` read the
+  phrase as a condition. `search gene SCN5A` took 3.4 seconds on the
+  same machine where 0.8.25 takes 0.3. Accepted as a pre-existing gap
+  that predates the reviewed range; no 0.9.2 change, and the cache
+  walk belongs to a future ticket if the deadline keeps missing.
