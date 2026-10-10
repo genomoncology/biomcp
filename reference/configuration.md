@@ -81,8 +81,9 @@ official symbol, and refuses aliases, so phrases such as 'HCC liver cancer'
 whole-phrase condition search; no offline gene list ships with BioMCP. The
 `discover` path keeps its separate symbol/alias lookup. A refused, ambiguous,
 timed-out, or unavailable lookup keeps the whole phrase as the condition
-search and prints the explicit `-g`/`--condition` working form when that
-search returns zero rows, because refusal beats wrong routing. `off` restores
+search and prints the condition search without the leading word when that
+search returns zero rows, because the gene filter needs the official symbol
+the lookup did not confirm. `off` restores
 the whole-phrase condition search without the routing lookup.
 
 ## Internal and Measurement Controls
