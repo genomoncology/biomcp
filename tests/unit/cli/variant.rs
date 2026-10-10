@@ -691,12 +691,7 @@ fn gene_first_working_form_quotes_multi_word_conditions() {
         "biomcp search variant --condition \"V600E melanoma\""
     );
     assert_eq!(
-        gene_first_working_form(
-            "melanoma",
-            Some("V600E"),
-            Some("missense_variant"),
-            &[],
-        ),
+        gene_first_working_form("melanoma", Some("V600E"), Some("missense_variant"), &[],),
         "biomcp search variant --condition melanoma --hgvsp V600E \
          --consequence missense_variant"
     );
