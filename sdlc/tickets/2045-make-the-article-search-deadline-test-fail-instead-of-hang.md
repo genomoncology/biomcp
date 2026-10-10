@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 21630b5eb, accept
+
 ## Outcome
 
 A bare `cargo test` run of the article-search deadline test fails at a bounded time with the test's name. It never hangs the runner waiting on a reply that never arrives.
