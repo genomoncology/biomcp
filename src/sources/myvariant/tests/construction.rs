@@ -46,7 +46,6 @@ fn q(plan: &crate::sources::RequestPlan) -> &str {
 
 // ---- query_plan (free-form /query) ----
 
-#[test]
 /// Ticket 2042/2047: both MyVariant projections must request
 /// `snpeff.ann.feature_type`. Without the field the provider returns
 /// protein-structure rows untyped, the projection cannot skip interaction
