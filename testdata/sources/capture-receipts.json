@@ -3650,6 +3650,78 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes recorded from the public provider response (HTTP 200) with the production query shape the CLI sends (ticket 2042 re-captures the stale August reply, which carried no ClinVar or SnpEff section)."
       }
+    },
+    {
+      "path": "mydisease/query_xref_mesh_d008175.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D008175%22+OR+disease_ontology.xrefs.mesh%3A%22D008175%22+OR+umls.mesh%3A%22D008175%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "6043cf6e74a70d31f5dc428779f6f61fa1f196d4f94de02e8f647465806e9b1b",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
+    {
+      "path": "mydisease/query_xref_mesh_d000230.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D000230%22+OR+disease_ontology.xrefs.mesh%3A%22D000230%22+OR+umls.mesh%3A%22D000230%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "b5398dd29a4b865a4415294fc6bfbeaab68e83123b457d0e8145e8f2e0aec228",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
+    {
+      "path": "mydisease/query_xref_mesh_d000236.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D000236%22+OR+disease_ontology.xrefs.mesh%3A%22D000236%22+OR+umls.mesh%3A%22D000236%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "63d6fffd9808ab5d90714acb09325ef7809f778003a6baf3975f39efec557fe4",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
+    {
+      "path": "mydisease/query_xref_mesh_d002289.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D002289%22+OR+disease_ontology.xrefs.mesh%3A%22D002289%22+OR+umls.mesh%3A%22D002289%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "d89e8b86829e9af87a1df20971991251b32765c5fdc3a624828d2188a19d2efe",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
+    {
+      "path": "mydisease/query_xref_mesh_d009369.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28mondo.xrefs.mesh%3A%22D009369%22+OR+disease_ontology.xrefs.mesh%3A%22D009369%22+OR+umls.mesh%3A%22D009369%22%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "257e8756d958485f986a76899b8db08681bd90b45113c267438f6fd0f491758d",
+        "minimization_or_redaction": "Recorded as served; no fields removed and no redaction applied.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response for the exact request URL recorded above."
+      }
+    },
+    {
+      "path": "gwas/associations_retired_410_body.txt",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "GWAS Catalog",
+        "request": "https://www.ebi.ac.uk/gwas/rest/api/singleNucleotidePolymorphisms/rs121913529/associations?projection=associationByStudy&page=0&size=20",
+        "captured_at": "2026-10-10T14:05:00Z",
+        "sha256": "994286a7e14d3241c58791f3f82e2411bdb5799d069d7ab275500503f27984be",
+        "minimization_or_redaction": "Recorded as served; the body is the retirement notice the endpoint returns with HTTP 410, and no bytes were changed.",
+        "provider_origin_statement": "Bytes were recorded from the public GWAS Catalog response for the exact request URL recorded above."
+      }
     }
   ],
   "fixture_key_contract": {
