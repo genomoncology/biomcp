@@ -742,14 +742,11 @@ impl Drop for SearchEnvRestore {
     }
 }
 
-#[tokio::test]
-#[serial_test::serial(source_env)]
-async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
-    // Ticket 2044, end to end: a refused gene-first phrase whose search
-    // returns zero rows prints the working form, and that form must keep
-    // the caller's explicit `--hgvsp` and `--significance` flags. The
-    // myvariant fixture answers an empty page and gene routing is off, so
-    // the oracle refuses BRUGADA deterministically offline.
+/// Run a refused zero-row variant search end to end against a local
+/// myvariant fixture that answers an empty page, with gene routing off so
+/// the oracle refuses BRUGADA deterministically offline. Returns the CLI
+/// outcome. Callers own the source_env serial-test key.
+async fn refused_zero_row_search_outcome(args: &[&str]) -> crate::cli::CommandOutcome {
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -772,14 +769,27 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
         .prefix("biomcp-test-variant-search-hint-")
         .tempdir()
         .expect("temp cache dir");
-    // SAFETY: this test owns the source_env serial-test key.
+    // SAFETY: this helper owns the source_env serial-test key.
     let _myvariant = unsafe { SearchEnvRestore::set("BIOMCP_MYVARIANT_BASE", &base) };
-    // SAFETY: this test owns the source_env serial-test key.
+    // SAFETY: this helper owns the source_env serial-test key.
     let _cache = unsafe { SearchEnvRestore::set("BIOMCP_CACHE_DIR", cache.path()) };
-    // SAFETY: this test owns the source_env serial-test key.
+    // SAFETY: this helper owns the source_env serial-test key.
     let _routing = unsafe { SearchEnvRestore::set("BIOMCP_VARIANT_QUERY_GENE_ROUTING", "off") };
 
-    let cli = Cli::try_parse_from([
+    let cli = Cli::try_parse_from(args).expect("parse refused search");
+    let outcome = run_outcome(cli).await.expect("zero-row search outcome");
+    server.abort();
+    outcome
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
+    // Ticket 2044, end to end: a refused gene-first phrase whose search
+    // returns zero rows prints the working form in the Markdown footer, and
+    // that form must keep the caller's explicit `--hgvsp` and
+    // `--significance` flags.
+    let outcome = refused_zero_row_search_outcome(&[
         "biomcp",
         "search",
         "variant",
@@ -789,9 +799,7 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
         "--significance",
         "benign",
     ])
-    .expect("parse refused search");
-    let outcome = run_outcome(cli).await.expect("zero-row search outcome");
-    server.abort();
+    .await;
 
     assert_eq!(outcome.stream, OutputStream::Stdout);
     assert_eq!(outcome.exit_code, 0);
@@ -809,6 +817,70 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
         ),
         "the working form keeps every explicit flag: {}",
         outcome.text
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn refused_zero_row_markdown_hint_keeps_the_consequence_flag_end_to_end() {
+    // The Markdown footer arm passes the note's consequence beside the
+    // hgvsp: replacing the consequence argument with None at the Markdown
+    // call site passes every other test (ticket 2047).
+    let outcome = refused_zero_row_search_outcome(&[
+        "biomcp",
+        "search",
+        "variant",
+        "BRUGADA syndrome",
+        "--hgvsp",
+        "V600E",
+        "--consequence",
+        "missense_variant",
+        "--significance",
+        "benign",
+    ])
+    .await;
+
+    assert!(
+        outcome.text.contains(
+            "biomcp search variant --condition syndrome --hgvsp V600E \
+             --consequence missense_variant --significance benign"
+        ),
+        "the Markdown working form keeps the consequence flag: {}",
+        outcome.text
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn refused_zero_row_json_next_command_keeps_both_caller_flags_end_to_end() {
+    // The JSON arm (the zero-row next-commands entry) passes the note's
+    // hgvsp and consequence beside the explicit filters: replacing either
+    // flag with None at the JSON call site passes every other test
+    // (ticket 2047).
+    let outcome = refused_zero_row_search_outcome(&[
+        "biomcp",
+        "--json",
+        "search",
+        "variant",
+        "BRUGADA syndrome",
+        "--hgvsp",
+        "V600E",
+        "--consequence",
+        "missense_variant",
+        "--significance",
+        "benign",
+    ])
+    .await;
+
+    let value: serde_json::Value = serde_json::from_str(&outcome.text).expect("valid search json");
+    let commands = value["_meta"]["next_commands"]
+        .as_array()
+        .expect("next commands array");
+    assert_eq!(commands.len(), 1, "zero rows carry only the working form");
+    assert_eq!(
+        commands[0],
+        "biomcp search variant --condition syndrome --hgvsp V600E \
+         --consequence missense_variant --significance benign"
     );
 }
 

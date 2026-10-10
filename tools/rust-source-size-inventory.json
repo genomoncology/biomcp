@@ -137,13 +137,13 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1273,
+      "baseline_lines": 1284,
       "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2047",
-        "delta": 170,
-        "reason": "The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache; the dead rescue cache is gone and both rescue sites call the resolution directly (2047)",
-        "removal_condition": "Shrink when the label choice moves into label.rs entirely and the rescue cache folds into the discover client."
+        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2044",
+        "delta": 181,
+        "reason": "Poison-recovery scoping plus the guarded label fallback call with its oversize and no-match settle reasons, and the label section outcome completion in the base resolution path. Ticket 2031: the openFDA identity fallback for queries no MyChem name matches, the refusal that names what the text search matched, the discover rescue guard that adopts only name-matched canonical candidates, and the honest description of what the openFDA candidate path guarantees. Ticket 2037: the guarded discover rescue also runs before a name-miss refusal, so a brand MyChem holds only on a nameless record resolves instead of refusing. | Ticket 2038: the WHO card degrade seam applies WHO bundle readiness to the card with the serialized who_note and its degradation note. | Ticket 2043: The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
+        "removal_condition": "Revisit when the trial-alias cache moves behind a type, the panic arm shrinks, and the label outcome settles in a dedicated section owner module. | Fold the WHO degrade seam and who_note into the WHO section owner when the drug card is next decomposed. | Shrink when the label choice moves into label.rs entirely and the rescue cache folds into the discover client."
       }
     },
     {

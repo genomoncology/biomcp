@@ -4,6 +4,64 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+D
+
+## 2047 finding: the observed hang's real location
+
+Ticket 2047 reopened the location question: every deadline test already
+runs inside a 60-second tokio watchdog, so the 180-second bound on the
+held reply cannot change any existing test's result, and the red test is
+built to hang rather than reproduce the observed one. The investigation
+ran on the build machine under the checkout lock (branch
+`probe/2047c-hang`, main with the 180-second bound reverted).
+
+- A live specimen of the observed hang was still on the build host: a
+  nextest archive run from 2026-10-07 whose single-test child
+  `--exact entities::article::search::tests::deadline::single_backend_deadline_keeps_fetched_rows_and_names_the_source
+  --nocapture` had sat idle for 2 days 12 hours with zero CPU after its
+  `/tmp/nextest-archive-*` tree was deleted. Its parent nextest never
+  killed it: the per-test kill budget reached the archived run only with
+  `e4f10fad3` on 2026-10-09, after this run started. Both orphans were
+  killed at the end of this investigation.
+- The specimen's state, captured from `/proc` and gdb: six threads — the
+  main thread, the test thread, and four `tokio-rt-worker` threads — all
+  parked in `futex_do_wait`, none runnable, no timer due. The test thread
+  was still inside its `#[tokio::test]` body: the future never completed
+  and no watchdog ever fired. With every worker parked, a tokio timer
+  cannot fire at any bound, which is why the 60-second watchdog and the
+  180-second hold bound are both inert against this hang: it sat outside
+  every timer's reach, not just outside the timed body.
+- The wait that blocked: the pre-2026-10-08 held reply
+  (`std::sync::Mutex<std::sync::mpsc::Receiver<()>>` with a blocking
+  `lock().recv()`) ran inside `tokio::spawn`, parking a runtime worker
+  thread per held connection. The client's 30-second timeout made the
+  held leg error and retry (three retries), and each retry opened a new
+  connection whose server-side handler parked another worker on the
+  unbounded std receive. Four attempts parked all four workers of the
+  tests' four-worker runtime, freezing every timer — including the
+  client timeout that would have broken the cycle. The run then waited
+  forever with no CPU.
+- The fix location: ticket 2030's `925f8a0e1` (2026-10-08, "Wait on
+  async primitives in the article fixture holds") replaced the std
+  mutex and receiver with a tokio mutex and mpsc receiver, so a hold
+  parks an async task instead of a worker and the runtime's timers keep
+  firing. That commit's message names the exact mechanism ("four held
+  connections froze every timer on the deadline tests' four-worker
+  runtime"). The observed hang class is closed on main by that commit,
+  one day before this ticket was filed.
+- Reproduction on current main: twenty-five bare runs of the deadline
+  module (`--no-default-features --locked --lib`, cold target dir, fix
+  reverted on the probe branch) and one bare full-lib run all finished
+  green (11 tests in 12–16 seconds; the full run 418 seconds with two
+  unrelated `sources::tests` network flakes). No hang reproduced with
+  the async holds in place.
+- The 180-second bound stays. It is inert for every legitimate test
+  (every search deadline and watchdog sits at 60–120 seconds, far under
+  it), it changed no existing test's result, and it is the only bound a
+  bare run has for the residual class this ticket's red test models: a
+  held reply whose caller outlives its test with no sender left. The
+  observed hang needed none of it — it needed workers that never park,
+  which ticket 2030 delivered.
 
 ## Outcome
 
