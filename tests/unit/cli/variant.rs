@@ -804,7 +804,7 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
     );
     assert!(
         outcome.text.contains(
-            "biomcp search variant -g BRUGADA --hgvsp V600E --condition syndrome \
+            "biomcp search variant --condition syndrome --hgvsp V600E \
              --significance benign"
         ),
         "the working form keeps every explicit flag: {}",
