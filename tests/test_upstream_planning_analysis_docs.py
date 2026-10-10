@@ -673,7 +673,10 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "Live public-upstream confidence is opt-in through `make verify`"
         in technical_ws
     )
-    assert "v0.9.0 is the latest published release." in release_pipeline_section
+    assert "v0.9.1 is the latest published release." in release_pipeline_section
+    assert "the 0.9.2 release candidate at Cargo `0.9.2` and Python `0.9.2`" in (
+        release_pipeline_section
+    )
     assert (
         "Package versions are committed metadata, not values stamped from tags."
         in release_pipeline_section

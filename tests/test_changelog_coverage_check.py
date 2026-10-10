@@ -291,6 +291,64 @@ def test_same_ticket_across_all_three_shapes_counts_once(tmp_path: Path) -> None
     assert "covers all 1 tickets" in result.stdout
 
 
+def test_land_branch_subject_ticket_requires_a_bullet(tmp_path: Path) -> None:
+    # 2042 landed as "Land tickets/2042-fix": the Land shape can
+    # name its branch, and the gate must count that subject too.
+    result = _run(
+        tmp_path,
+        subjects=["Land tickets/2042-fix"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "2042" in result.stderr
+
+
+def test_land_branch_subject_passes_with_a_described_bullet(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Land tickets/2042-fix"],
+        changelog="# C\n\n## Unreleased\n\n- Checked protein numbering without canonical facts. (2042)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_land_subject_without_a_colon_still_counts_its_leading_ticket(
+    tmp_path: Path,
+) -> None:
+    # "Land 2044 and 2045: ..." carried two tickets with no colon
+    # after the first number; the leading number is the landing.
+    result = _run(
+        tmp_path,
+        subjects=["Land 2044 and 2045: MCP errors carry no local path"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "2044" in result.stderr
+
+
+def test_land_subject_without_a_colon_passes_with_a_described_bullet(
+    tmp_path: Path,
+) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Land 2044 and 2045: MCP errors carry no local path"],
+        changelog="# C\n\n## Unreleased\n\n- Kept every flag in the refused hint. (2044)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_both_land_shapes_count_once_each(tmp_path: Path) -> None:
+    # The two Land spellings of one landing are one ticket; the
+    # branch-named subject does not double-count it.
+    result = _run(
+        tmp_path,
+        subjects=["Land tickets/2042-fix", "Land 2042: same ticket again"],
+        changelog="# C\n\n## Unreleased\n\n- Checked protein numbering. (2042)\n",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "covers all 1 tickets" in result.stdout
+
+
 def test_completed_status_ticket_demands_a_bullet(tmp_path: Path) -> None:
     # A ticket file added in the range whose status reads complete
     # demands a bullet with no Land subject and no record: 2010
@@ -536,3 +594,41 @@ def test_dated_and_yearly_records_do_not_count_as_tickets(tmp_path: Path, monkey
     # 2000 and above count — the cap is gone (2026-09-29 review).
     assert found == {"1265", "0843", "1255", "2000", "2027"}, found
 
+def test_carried_tickets_from_another_release_line_do_not_demand_bullets() -> None:
+    """A v0.9.x tag covers milestone 0.9.x tickets only (2046).
+
+    The 1.0 planning records landed mid-cycle complete on their own
+    line; the coverage gate must not demand 0.9.2 bullets for them.
+    """
+    class Git:
+        def __init__(self, replies: dict[str, str]) -> None:
+            self.replies = replies
+
+        def __call__(self, *args: str) -> str:
+            key = " ".join(args)
+            if key not in self.replies:
+                raise AssertionError(f"unexpected git call: {key}")
+            return self.replies[key]
+
+    zero_nine = "Status: complete.\nMilestone: 0.9.2\n"
+    one_zero = "Status: complete.\nMilestone: 1.0\n"
+    no_milestone = "Status: complete.\n"
+    original = _MODULE.run_git
+    _MODULE.run_git = Git(
+        {
+            "diff --name-only --diff-filter=A v0.9.1 v0.9.2 -- sdlc/tickets/": (
+                "sdlc/tickets/1200-zero.md\n"
+                "sdlc/tickets/2100-one.md\n"
+                "sdlc/tickets/2200-none.md\n"
+            ),
+            "show v0.9.2:sdlc/tickets/1200-zero.md": zero_nine,
+            "show v0.9.2:sdlc/tickets/2100-one.md": one_zero,
+            "show v0.9.2:sdlc/tickets/2200-none.md": no_milestone,
+        }
+    )
+    try:
+        found = _MODULE.completed_status_tickets("v0.9.1", "v0.9.2")
+    finally:
+        _MODULE.run_git = original
+    assert found == {"1200", "2200"}, found
+    assert "2100" not in found

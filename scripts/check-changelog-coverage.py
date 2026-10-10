@@ -11,10 +11,14 @@ import sys
 
 MERGE_TICKET = re.compile(r"^Merge .*\btickets/([0-9]+)-")
 # Landings pushed straight to main carry the ticket in the subject
-# itself: "Land 1299: make the article search deadline honest". Only
-# the leading number counts, so a Land subject that mentions another
-# ticket in its text does not pull that ticket in.
-LAND_TICKET = re.compile(r"^Land ([0-9]+):")
+# itself: "Land 1299: make the article search deadline honest" and
+# "Land 2044 and 2045: MCP errors carry no local path" (a landing
+# may name several tickets, so no colon is required right after the
+# number). Only the leading number counts, so a Land subject that
+# mentions another ticket in its text does not pull that ticket in.
+LAND_TICKET = re.compile(r"^Land ([0-9]+)(?![0-9])")
+# A landing may name its branch instead: "Land tickets/2042-fix".
+LAND_BRANCH_TICKET = re.compile(r"^Land tickets/([0-9]+)-")
 # Ticket files only: sdlc/tickets/NNNN-*.md. The archive/ and
 # drafts/ subdirectories hold dead tickets and never count.
 TICKET_FILE = re.compile(r"^sdlc/tickets/([0-9]+)-")
@@ -59,7 +63,11 @@ def landing_subject_tickets(previous: str, tag: str) -> set[str]:
     return {
         match.group(1)
         for subject in subjects
-        for match in (MERGE_TICKET.match(subject), LAND_TICKET.match(subject))
+        for match in (
+            MERGE_TICKET.match(subject),
+            LAND_TICKET.match(subject),
+            LAND_BRANCH_TICKET.match(subject),
+        )
         if match is not None
     }
 
@@ -103,16 +111,28 @@ def completed_status_tickets(previous: str, tag: str) -> set[str]:
     names = run_git(
         "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/tickets/"
     ).splitlines()
+    # The tag's own release line: a v0.9.2 tag covers milestone 0.9.x
+    # tickets only. Carried tickets from another line (the 1.0
+    # planning records landed mid-cycle) complete on their own line
+    # and never demand a bullet here.
+    line = re.match(r"v(\d+)\.(\d+)", tag)
+    line_prefix = f"{line.group(1)}.{line.group(2)}" if line else None
     found: set[str] = set()
     for name in names:
         match = TICKET_FILE.match(name)
         if match is None:
             continue
+        content = run_git("show", f"{tag}:{name}")
         # The status is read at the tag, not at the add commit: a
         # ticket filed mid-cycle and closed later counts once it
         # reads complete at the release.
-        if status_token(run_git("show", f"{tag}:{name}")) == "complete":
-            found.add(match.group(1))
+        if status_token(content) != "complete":
+            continue
+        if line_prefix is not None:
+            milestone = re.search(r"^Milestone:\s*(\S+)", content, re.MULTILINE)
+            if milestone is not None and not milestone.group(1).startswith(line_prefix):
+                continue
+        found.add(match.group(1))
     return found
 
 

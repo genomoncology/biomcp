@@ -297,6 +297,10 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
+      # The tag decides the version every smoke must print, read the
+      # same way check-release-versions.py reads it (v prefix
+      # stripped), so a binary printing anything else fails the leg.
+      TAG: ${{ inputs.tag || github.ref_name }}
     needs: [pypi-build]
     if: github.event_name == 'push'
     strategy:
@@ -347,7 +351,12 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/wheel-venv"
           "$RUNNER_TEMP/wheel-venv/${{ matrix.python }}" -m pip install "$RUNNER_TEMP"/wheel/*.whl
-          "$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}" --version
+          expected="${TAG#v}"
+          printed="$("$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}" --version)"
+          printf '%s\n' "$printed"
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp $expected" ]; then
+            echo "wheel --version must print exactly 'biomcp $expected', got: $printed" >&2; exit 1
+          fi
 
       # Prove the glibc floor at runtime: install and run the wheel
       # inside the same manylinux_2_28 environment users on RHEL 8 or
@@ -355,9 +364,19 @@ jobs:
       - name: Run the wheel inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
-          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" "${{ matrix.container }}" bash -euo pipefail -c '
+          # The tag rides in with -e (ticket 2046): docker passes no
+          # job environment into the container, and the script reads
+          # ${TAG#v} under `set -u`. Only double quotes live inside
+          # the single-quoted script, so nothing closes it early.
+          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" -e TAG "${{ matrix.container }}" bash -euo pipefail -c '
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
-            /opt/python/cp312-cp312/bin/biomcp --version
+            printed="$(/opt/python/cp312-cp312/bin/biomcp --version)"
+            printf "%s\n" "$printed"
+            expected="${TAG#v}"
+            actual="$(printf "%s" "$printed" | tr -d "\015\012")"
+            if [ "$actual" != "biomcp $expected" ]; then
+              echo "wheel --version must print exactly biomcp $expected, got: $printed" >&2; exit 1
+            fi
             stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"
             case "$stats" in
               "{"*) ;;
@@ -527,7 +546,7 @@ jobs:
     # a failed container or tarball job is burned for good — PyPI
     # never accepts the same version twice. Every build and smoke
     # job must pass first, so a failed tag run can be deleted and
-    # retried without losing 0.9.1.
+    # retried without publishing the version.
     needs: [pypi-build, wheel-smoke, docs-live, build, container-publish]
     if: github.event_name == 'push'
     permissions:
@@ -711,7 +730,11 @@ jobs:
         run: |
           IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
           docker pull --platform linux/amd64 "$IMAGE"
-          docker run --rm --platform linux/amd64 "$IMAGE" --version
+          printed="$(docker run --rm --platform linux/amd64 "$IMAGE" --version)"
+          printf '%s\n' "$printed"
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp ${VERSION}" ]; then
+            echo "$IMAGE --version must print exactly 'biomcp ${VERSION}', got: $printed" >&2; exit 1
+          fi
           UID_IN_CONTAINER="$(docker run --rm --platform linux/amd64 --entrypoint id "$IMAGE" -u)"
           if [ "$UID_IN_CONTAINER" = "0" ]; then
             echo "$IMAGE runs as root" >&2
@@ -730,7 +753,11 @@ jobs:
         run: |
           IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
           docker pull --platform linux/arm64 "$IMAGE"
-          docker run --rm --platform linux/arm64 "$IMAGE" --version
+          printed="$(docker run --rm --platform linux/arm64 "$IMAGE" --version)"
+          printf '%s\n' "$printed"
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp ${VERSION}" ]; then
+            echo "$IMAGE --version must print exactly 'biomcp ${VERSION}', got: $printed" >&2; exit 1
+          fi
           UID_IN_CONTAINER="$(docker run --rm --platform linux/arm64 --entrypoint id "$IMAGE" -u)"
           if [ "$UID_IN_CONTAINER" = "0" ]; then
             echo "$IMAGE runs as root" >&2
