@@ -113,11 +113,11 @@ impl TestHttpFixture {
                             // and closes the connection. The caller waiting
                             // on the reply then fails instead of hanging
                             // the runner (ticket 2045).
-                            let _ = tokio::time::timeout(
-                                crate::test_support::watchdog(180),
-                                release.lock().await.recv().await,
-                            )
-                            .await;
+                            let _ =
+                                tokio::time::timeout(crate::test_support::watchdog(180), async {
+                                    release.lock().await.recv().await;
+                                })
+                                .await;
                         }
                     }
                 });
