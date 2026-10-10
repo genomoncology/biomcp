@@ -1126,7 +1126,7 @@ async fn protein_change_uniprot_fixture_server()
                     .expect("lock requests")
                     .push(request.clone());
                 let body: &[u8] = if request.starts_with("GET /v1/query?")
-                    && request.contains("dbnsfp.genename:TP53")
+                    && request.contains("dbnsfp.genename%3ATP53")
                     && request.contains("p.S183Y")
                 {
                     TP53_S183Y_RESPONSE
@@ -1156,7 +1156,9 @@ async fn protein_change_uniprot_fixture_server()
 /// before any answer prints (ticket 2036): with UniProt reachable the
 /// request refuses naming Ser at 183, and the request log shows the
 /// up-front UniProt read. Skipping that read fails this test (ticket 2042
-/// re-pins the wiring).
+/// re-pins the wiring). The no-cache scope matches the CLI's `--no-cache`
+/// (the environment alone does not bypass the disk cache for client
+/// construction).
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn protein_change_get_checks_the_canonical_protein_before_answering() {
@@ -1167,7 +1169,7 @@ async fn protein_change_get_checks_the_canonical_protein_before_answering() {
     env.set("BIOMCP_UNIPROT_BASE", &base);
     env.set("BIOMCP_CACHE_MODE", "off");
 
-    let error = resolve_base_with_hit("TP53 S183Y", None)
+    let error = crate::sources::with_no_cache(true, resolve_base_with_hit("TP53 S183Y", None))
         .await
         .expect_err("an isoform-only spelling of a MANE-numbered request refuses");
     server.abort();
@@ -1183,7 +1185,7 @@ async fn protein_change_get_checks_the_canonical_protein_before_answering() {
         "the canonical-protein read must run up front: {requests}"
     );
     assert!(
-        requests.contains("dbnsfp.genename:TP53"),
+        requests.contains("p.S183Y"),
         "the MyVariant alias search must run: {requests}"
     );
 }
@@ -1202,9 +1204,12 @@ async fn protein_change_get_notes_unchecked_numbering_when_uniprot_is_unreachabl
     env.set("BIOMCP_UNIPROT_BASE", "http://127.0.0.1:9");
     env.set("BIOMCP_CACHE_MODE", "off");
 
-    let (variant, _, _) = resolve_base_with_hit("TP53 S183Y", None)
-        .await
-        .expect("the record's spelling of the request resolves with its note");
+    let (variant, _, _) = crate::sources::with_no_cache(
+        true,
+        resolve_base_with_hit("TP53 S183Y", None),
+    )
+    .await
+    .expect("the record's spelling of the request resolves with its note");
     server.abort();
 
     assert_eq!(variant.id, "chr17:g.7576902G>T");
@@ -1219,7 +1224,7 @@ async fn protein_change_get_notes_unchecked_numbering_when_uniprot_is_unreachabl
     );
     let requests = requests.lock().expect("lock requests").join("\n");
     assert!(
-        requests.contains("symbol:"),
+        requests.contains("%22TP53%22"),
         "the gene-to-accession lookup must still run: {requests}"
     );
     assert!(

@@ -1263,10 +1263,22 @@ impl<'de> Visitor<'de> for AnnotationSetVisitor {
         // about 48 protein-structure rows per transcript row, and dropping
         // the whole list for their count left the answer with no protein
         // change at all (ticket 2042). A bounded count of them still caps
-        // the deserialization work a hostile array can force.
+        // the deserialization work a hostile array can force. Once the
+        // retained rows reach the bound the tail is drained without
+        // projecting it, so the projection counters keep their meaning.
         let mut annotations = Vec::with_capacity(MAX_SNPEFF_ANNOTATIONS);
         let mut interactions = 0_usize;
         loop {
+            if annotations.len() == MAX_SNPEFF_ANNOTATIONS {
+                if seq.next_element::<IgnoredAny>()?.is_some() {
+                    while seq.next_element::<IgnoredAny>()?.is_some() {}
+                    return Ok(incomplete_snpeff());
+                }
+                return Ok(MyVariantSnpeff {
+                    ann: annotations,
+                    complete: true,
+                });
+            }
             match seq.next_element_seed(AnnotationSeed)? {
                 Some(ProjectedAnnotation::Interaction) => {
                     interactions += 1;
@@ -1276,10 +1288,6 @@ impl<'de> Visitor<'de> for AnnotationSetVisitor {
                     }
                 }
                 Some(ProjectedAnnotation::Valid(annotation)) => {
-                    if annotations.len() == MAX_SNPEFF_ANNOTATIONS {
-                        while seq.next_element::<IgnoredAny>()?.is_some() {}
-                        return Ok(incomplete_snpeff());
-                    }
                     annotations.push(annotation);
                 }
                 Some(ProjectedAnnotation::Invalid) => {
