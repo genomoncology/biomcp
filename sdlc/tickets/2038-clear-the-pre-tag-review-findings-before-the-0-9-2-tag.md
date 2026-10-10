@@ -4,11 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
-Reviews: revision e4148351d, accept
 
-Reviews: revision 2c7b709aa, accept
 
-Reviews: revision c907cdd60, accept
 
 ## Outcome
 
@@ -152,3 +149,15 @@ First remove the queue report so main is green. Then 2036 and 2037, and the code
   same machine where 0.8.25 takes 0.3. Accepted as a pre-existing gap
   that predates the reviewed range; no 0.9.2 change, and the cache
   walk belongs to a future ticket if the deadline keeps missing.
+
+## Candidate-split reviews (2026-10-10)
+
+- Code review (contributing-record head e4148351d): ACCEPT 2026-10-10,
+  recorded through pm and normalized here; fresh reviewer, both records
+  branches verified.
+- Code review (docs head 2c7b709aa): ACCEPT 2026-10-10, recorded
+  through pm and normalized here; all six doc fixes verified against
+  code with one report-only stale-header note.
+- Code review (size-inventory head c907cdd60): ACCEPT 2026-10-10,
+  recorded through pm and normalized here; the seven ticket strings
+  normalized with no count changes.

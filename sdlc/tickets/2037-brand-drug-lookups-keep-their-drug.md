@@ -4,7 +4,6 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
-Reviews: revision 730f4ae19, accept
 
 ## Outcome
 
@@ -44,3 +43,10 @@ deferral) does not satisfy the landed-head requirement: it predates the
 landing and the clean-release ruling now overrides the deferral it
 endorsed. A fresh review of the landed head `ec8a72d0d` follows with
 2043's label work, recorded through pm.
+
+## Landed-head review (2026-10-10)
+
+- Code re-review (review-note head 730f4ae19): ACCEPT 2026-10-10,
+  recorded through pm and normalized here. The note marks the earlier
+  pre-landing verdict as not satisfying the landed-head rule; the
+  landed head itself is reviewed under 2043's branch.
