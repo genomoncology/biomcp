@@ -9,6 +9,15 @@ pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_RELEASE_TICKETS = {
+    "0.9.2": {
+        1287,
+        1288,
+        1289,
+        *range(1290, 1307),
+        2010,
+        *range(2016, 2025),
+        *range(2029, 2038),
+    },
     "0.9.1": {
         1202, 1205, 1213, 1214, 1219, 1220, 1221, 1222, 1223, 1224, 1225, 1226, 1227, 1228, 1229, 1230, 1231, 1232, 1233, 1234, 1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243, 1244, 1245, 1246, 1247, 1248, 1249, 1250, 1251, 1252, 1254, 1255, 1256, 1257, 1258, 1259, 1261, 1263, 1264, 1265, 1266, 1267, 1268, 1269, 1270, 1275, 1276, 1278, 1279, 1280, 1281, 1282, 1283, 1284, 1285, 1286, 1287,
     },
@@ -185,6 +194,25 @@ PUBLISHED_V0_8_25_CHANGELOG_BLOCK_SHA256 = (
 )
 
 EXPECTED_RELEASE_MARKERS = {
+    "0.9.2": {
+        "fixes": [
+            "current ClinVar classification",
+            "whole label sections",
+            "one- and two-letter abbreviations",
+        ],
+        "new_features": [
+            "official gene symbol",
+            "pinned runner image",
+        ],
+        "docs": [
+            "gene-symbol-first routing",
+            "OpenCitations fallback",
+        ],
+        "internal": [
+            "changelog test",
+            "process level",
+        ],
+    },
     "0.9.1": {
         "fixes": [
             "panicking tool call",
