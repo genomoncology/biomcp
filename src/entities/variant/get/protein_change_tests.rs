@@ -33,6 +33,17 @@ impl ProteinHitBuilder {
         self
     }
 
+    /// A SnpEff protein-structure row (`feature_type: interaction`, a PDB
+    /// chain feature naming no transcript of its own — ticket 2042).
+    fn with_interaction(mut self, feature_id: &str, coding: &str) -> Self {
+        self.snpeff_annotations.push(serde_json::json!({
+            "feature_id": feature_id,
+            "feature_type": "interaction",
+            "hgvs_c": coding,
+        }));
+        self
+    }
+
     fn hit(self, id: &str, gene: &str, aliases: &str) -> crate::sources::myvariant::MyVariantHit {
         let annotations = self.snpeff_annotations.clone();
         serde_json::from_value(serde_json::json!({
@@ -491,12 +502,19 @@ fn protein_change_resolution_resolves_the_requested_numbering_without_a_marker()
 }
 
 /// Canonical-protein facts as the committed UniProt captures carry them:
-/// the accession, the residue at the requested position, and the record's
-/// MANE-Select cross-reference (ticket 2036).
-fn canonical_facts(accession: &str, residue: Option<char>, mane: &str) -> CanonicalProteinFacts {
+/// the accession, the residue at the requested position (None when the
+/// position lies past the sequence's end), the sequence's length, and the
+/// record's MANE-Select cross-reference (tickets 2036 and 2042).
+fn canonical_facts(
+    accession: &str,
+    residue: Option<char>,
+    sequence_length: u32,
+    mane: &str,
+) -> CanonicalProteinFacts {
     CanonicalProteinFacts {
         accession: accession.into(),
         residue,
+        sequence_length: Some(sequence_length),
         mane_transcript: Some(mane.into()),
     }
 }
@@ -525,7 +543,7 @@ fn protein_change_resolution_refuses_an_isoform_spelling_of_a_mane_numbered_requ
             ),
     ];
 
-    let facts = canonical_facts("P04637", Some('S'), "NM_000546.6");
+    let facts = canonical_facts("P04637", Some('S'), 393, "NM_000546.6");
     let resolved = resolve_protein_change_hit(
         "TP53 S183Y",
         "TP53",
@@ -587,7 +605,7 @@ fn protein_change_resolution_refuses_a_long_isoform_spelling_of_a_mane_numbered_
             ),
     ];
 
-    let facts = canonical_facts("P38398", Some('S'), "NM_007294.4");
+    let facts = canonical_facts("P38398", Some('S'), 1863, "NM_007294.4");
     let resolved = resolve_protein_change_hit(
         "BRCA1 S1587F",
         "BRCA1",
@@ -725,7 +743,7 @@ fn protein_change_resolution_pins_the_true_other_transcript_numbering_note() {
     let resolved = resolve_protein_change_hit("TP53 R116Q", "TP53", "R116Q", hits, mane.as_deref())
         .expect("a unique provider hit resolves");
 
-    let facts = canonical_facts("P04637", Some('S'), "NM_000546.6");
+    let facts = canonical_facts("P04637", Some('S'), 393, "NM_000546.6");
     let note = refuse_or_note_with_facts(
         "TP53 R116Q",
         "TP53",
@@ -899,4 +917,277 @@ fn mane_numbering_refusal_names_the_residue_and_the_lookalike() {
         !message.contains("one candidate's exact form"),
         "the retry line must not point at the known-differing candidate: {message}"
     );
+}
+
+/// Recorded BRCA1 Y1866D shape (query_brca1_y1866d_20261009.json): the
+/// request's position 1866 lies past the 1863 residues of the canonical
+/// protein P38398, so no residue comparison can run — but a position the
+/// protein cannot hold proves by itself that the request follows another
+/// numbering. The answer keeps the MANE headline (ClinVar 869017 names
+/// NM_007294.4 p.Tyr1845Asp) and prints the other-transcript note instead
+/// of resolving silently (ticket 2042).
+#[test]
+fn protein_change_resolution_notes_a_position_past_the_canonical_protein_end() {
+    let hits = vec![
+        ProteinHitBuilder::default()
+            .clinvar(869017, "NM_007294.4(BRCA1):c.5533T>G (p.Tyr1845Asp)")
+            .with_snpeff("NM_007300.3", "c.5596T>G", Some("p.Tyr1866Asp"))
+            .with_snpeff("NM_007298.3", "c.2221T>G", Some("p.Tyr741Asp"))
+            .with_snpeff("NM_007294.3", "c.5533T>G", Some("p.Tyr1845Asp"))
+            .hit(
+                "chr17:g.41197754A>C",
+                "BRCA1",
+                "p.Tyr1845Asp, p.Y1845D, p.Y1866D, p.Tyr1866Asp",
+            ),
+    ];
+    let mane = transform::variant::clinvar_mane_transcript(&hits);
+    assert_eq!(mane.as_deref(), Some("NM_007294.4"));
+
+    let resolved =
+        resolve_protein_change_hit("BRCA1 Y1866D", "BRCA1", "Y1866D", hits, mane.as_deref())
+            .expect("a unique provider hit resolves before the numbering check");
+    let facts = canonical_facts("P38398", None, 1863, "NM_007294.4");
+    let note = refuse_or_note_with_facts(
+        "BRCA1 Y1866D",
+        "BRCA1",
+        "Y1866D",
+        &resolved,
+        mane.as_deref(),
+        &facts,
+    )
+    .expect("a position past the canonical end prints its note");
+    assert_eq!(
+        note,
+        Some(
+            "Numbering note: resolved on NM_007294.4 as p.Tyr1845Asp; the \
+             requested Y1866D follows another transcript's numbering."
+                .to_string(),
+        )
+    );
+}
+
+/// Recorded BRCA1 Q1878R shape (query_brca1_q1878r_20261009.json): the
+/// ClinVar-less hit's SnpEff list carries 48 protein-structure
+/// interaction rows beside the transcript rows, and the request's
+/// position 1878 again lies past the canonical protein's 1863 residues.
+/// The MANE-Select cross-reference (NM_007294.4) headlines
+/// p.Gln1857Arg and the past-the-end note prints (ticket 2042); the
+/// interaction rows must not cost the record its whole annotation list.
+#[test]
+fn protein_change_resolution_notes_a_many_row_record_past_the_protein_end() {
+    let mut builder = ProteinHitBuilder::default();
+    for index in 0..48 {
+        builder = builder.with_interaction(
+            &format!("1JNX:X_182{index}-X_1857:NM_007294.3"),
+            "c.5570A>G",
+        );
+    }
+    let hits = vec![builder
+        .with_snpeff("NM_007300.3", "c.5633A>G", Some("p.Gln1878Arg"))
+        .with_snpeff("NM_007298.3", "c.2258A>G", Some("p.Gln753Arg"))
+        .with_snpeff("NM_007297.3", "c.5429A>G", Some("p.Gln1810Arg"))
+        .with_snpeff("NM_007294.3", "c.5570A>G", Some("p.Gln1857Arg"))
+        .hit(
+            "chr17:g.41197717T>C",
+            "BRCA1",
+            "p.Gln1878Arg, p.Q1878R, p.Q1857R, p.Gln1857Arg",
+        )];
+    assert_eq!(transform::variant::clinvar_mane_transcript(&hits), None);
+
+    let resolved = resolve_protein_change_hit("BRCA1 Q1878R", "BRCA1", "Q1878R", hits, None)
+        .expect("a unique provider hit resolves before the numbering check");
+    let facts = canonical_facts("P38398", None, 1863, "NM_007294.4");
+    let note = refuse_or_note_with_facts(
+        "BRCA1 Q1878R",
+        "BRCA1",
+        "Q1878R",
+        &resolved,
+        facts.mane_transcript.as_deref(),
+        &facts,
+    )
+    .expect("a position past the canonical end prints its note");
+    assert_eq!(
+        note,
+        Some(
+            "Numbering note: resolved on NM_007294.4 as p.Gln1857Arg; the \
+             requested Q1878R follows another transcript's numbering."
+                .to_string(),
+        )
+    );
+    let variant = transform::variant::from_myvariant_hit_with_mane(
+        &resolved,
+        facts.mane_transcript.as_deref(),
+        Some("Q1878R"),
+    );
+    assert_eq!(variant.hgvs_p.as_deref(), Some("p.Gln1857Arg"));
+    assert_eq!(variant.transcript.as_deref(), Some("NM_007294.4"));
+}
+
+/// Recorded TP53 S183Y shape with UniProt unreachable (ticket 2042): the
+/// canonical facts never arrive, so the residue check cannot run. The
+/// headline still spells the request (the shorter isoform's
+/// p.Ser183Tyr), so the answer resolves under a note that says plainly
+/// the numbering could not be checked against MANE — never silently.
+#[test]
+fn protein_change_resolution_notes_unchecked_numbering_without_facts() {
+    let hits = vec![
+        ProteinHitBuilder::default()
+            .rsid("rs2073157445")
+            .with_snpeff("NM_000546.5", "c.944C>A", Some("p.Ser315Tyr"))
+            .with_snpeff("NM_001126115.1", "c.548C>A", Some("p.Ser183Tyr"))
+            .with_snpeff("NM_001276697.1", "c.467C>A", Some("p.Ser156Tyr"))
+            .hit(
+                "chr17:g.7576902G>T",
+                "TP53",
+                "p.S183Y, p.S156Y, p.S315Y, p.Ser315Tyr, p.Ser183Tyr",
+            ),
+    ];
+    let resolved = resolve_protein_change_hit("TP53 S183Y", "TP53", "S183Y", hits, None)
+        .expect("a unique provider hit resolves before the numbering check");
+    let note = refuse_or_note_without_facts("TP53 S183Y", "TP53", "S183Y", &resolved, None)
+        .expect("an unchecked spelling of the request resolves with its note");
+    assert_eq!(
+        note,
+        Some(
+            "Numbering note: resolved on NM_001126115.1 as p.Ser183Tyr; the \
+             requested S183Y could not be checked against MANE numbering."
+                .to_string(),
+        )
+    );
+}
+
+/// Recorded TP53 R116Q shape with the canonical facts unavailable (ticket
+/// 2042): the headline names a different change (p.Arg248Gln), and
+/// without the residue check BioMCP cannot tell a MANE-numbered request
+/// that no record names from another transcript's numbering — so it
+/// refuses rather than return the lookalike with no note at all.
+#[test]
+fn protein_change_resolution_refuses_a_lookalike_without_facts() {
+    let hits = vec![
+        ProteinHitBuilder::default()
+            .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
+            .with_snpeff("NM_000546.5", "c.743G>A", Some("p.Arg248Gln"))
+            .hit(
+                "chr17:g.7577538C>T",
+                "TP53",
+                "p.Arg248Gln, p.R116Q, p.R248Q",
+            ),
+    ];
+    let mane = transform::variant::clinvar_mane_transcript(&hits);
+    assert_eq!(mane.as_deref(), Some("NM_000546.6"));
+    let resolved = resolve_protein_change_hit("TP53 R116Q", "TP53", "R116Q", hits, mane.as_deref())
+        .expect("a unique provider hit resolves before the numbering check");
+    let error = refuse_or_note_without_facts(
+        "TP53 R116Q",
+        "TP53",
+        "R116Q",
+        &resolved,
+        mane.as_deref(),
+    )
+        .expect_err("a differing headline refuses when the numbering cannot be checked");
+    let BioMcpError::InvalidArgument(message) = &error else {
+        panic!("the unchecked lookalike refuses as invalid argument, got: {error}");
+    };
+    for expected in [
+        "No MANE-numbered variant matches 'TP53 R116Q'",
+        "the canonical (MANE Select) protein could not be read",
+        "the only alias match is p.Arg248Gln on NM_000546.6",
+        "- chr17:g.7577538C>T (ClinVar VariationID 12356)",
+        "Retry `biomcp get variant` with a transcript-qualified HGVS naming 'R116Q'",
+    ] {
+        assert!(
+            message.contains(expected),
+            "missing {expected:?} in: {message}"
+        );
+    }
+    assert!(
+        !message.contains("follows another transcript's numbering"),
+        "the refusal must not claim a numbering it could not check: {message}"
+    );
+}
+
+/// The same S183Y shape with the canonical facts in hand but no MANE
+/// transcript named by the record: the residue check passes (P04637 has
+/// Ser at 183) while nothing marks the headline transcript as MANE, so
+/// the answer keeps the spelled request and says plainly the numbering
+/// could not be checked against MANE (ticket 2042).
+#[test]
+fn protein_change_resolution_notes_unchecked_numbering_without_a_mane_transcript() {
+    let hits = vec![
+        ProteinHitBuilder::default()
+            .rsid("rs2073157445")
+            .with_snpeff("NM_000546.5", "c.944C>A", Some("p.Ser315Tyr"))
+            .with_snpeff("NM_001126115.1", "c.548C>A", Some("p.Ser183Tyr"))
+            .with_snpeff("NM_001276697.1", "c.467C>A", Some("p.Ser156Tyr"))
+            .hit(
+                "chr17:g.7576902G>T",
+                "TP53",
+                "p.S183Y, p.S156Y, p.S315Y, p.Ser315Tyr, p.Ser183Tyr",
+            ),
+    ];
+    let resolved = resolve_protein_change_hit("TP53 S183Y", "TP53", "S183Y", hits, None)
+        .expect("a unique provider hit resolves before the numbering check");
+    let facts = CanonicalProteinFacts {
+        accession: "P04637".into(),
+        residue: Some('S'),
+        sequence_length: Some(393),
+        mane_transcript: None,
+    };
+    let note = refuse_or_note_with_facts(
+        "TP53 S183Y",
+        "TP53",
+        "S183Y",
+        &resolved,
+        None,
+        &facts,
+    )
+    .expect("an unmarked MANE transcript prints the unchecked note");
+    assert_eq!(
+        note,
+        Some(
+            "Numbering note: resolved on NM_001126115.1 as p.Ser183Tyr; the \
+             requested S183Y could not be checked against MANE numbering."
+                .to_string(),
+        )
+    );
+}
+
+/// A protein-change request whose resolved record names no protein change
+/// on any headline transcript refuses instead of answering a bare genomic
+/// variant (ticket 2042): nothing can carry the numbering story.
+#[test]
+fn protein_change_resolution_refuses_a_hit_without_any_protein_change() {
+    let hits = vec![ProteinHitBuilder::default()
+        .rsid("rs9999001")
+        .hit(
+            "chr17:g.41197717T>C",
+            "BRCA1",
+            "p.Q1878R, p.Q1857R",
+        )];
+    let resolved = resolve_protein_change_hit("BRCA1 Q1878R", "BRCA1", "Q1878R", hits, None)
+        .expect("a unique provider hit resolves before the numbering check");
+    let facts = canonical_facts("P38398", None, 1863, "NM_007294.4");
+    let error = refuse_or_note_with_facts(
+        "BRCA1 Q1878R",
+        "BRCA1",
+        "Q1878R",
+        &resolved,
+        facts.mane_transcript.as_deref(),
+        &facts,
+    )
+    .expect_err("a record with no protein change refuses");
+    let BioMcpError::InvalidArgument(message) = &error else {
+        panic!("the protein-change-less hit refuses as invalid argument, got: {error}");
+    };
+    for expected in [
+        "No protein change answers 'BRCA1 Q1878R'",
+        "carries no protein change on any transcript",
+        "- chr17:g.41197717T>C (rs9999001)",
+        "Retry `biomcp get variant` with a transcript-qualified HGVS naming 'Q1878R'",
+    ] {
+        assert!(
+            message.contains(expected),
+            "missing {expected:?} in: {message}"
+        );
+    }
 }
