@@ -1614,3 +1614,161 @@ def test_the_decision_case_accepts_exactly_zero_three_and_catchall() -> None:
         f"the decision case must have exactly 0), 3) and *), found {arms}"
     )
     assert '3|*)' not in block, "a widened stay arm would swallow script errors"
+
+
+# ---------------------------------------------------------------------------
+# Ticket 2046. GitHub refuses to run a workflow whose YAML repeats a
+# mapping key (release runs 38049457592 and 38041251226 died in zero
+# seconds as "workflow file issue" with no jobs), while PyYAML keeps
+# only the last key — so every contract above, which reads the parsed
+# document, is blind to a duplicate. And the manylinux wheel smoke
+# reads ${TAG#v} inside its container script (run 38049457592's
+# ancestors), but `docker run` passes no job environment into the
+# container, so under `set -u` the leg fails with an unbound variable.
+# ---------------------------------------------------------------------------
+
+
+class DuplicateWorkflowKey(AssertionError):
+    """A mapping key appears twice in the workflow document."""
+
+
+class _StrictLoader(yaml.SafeLoader):
+    """SafeLoader plus duplicate-key detection."""
+
+
+def _construct_mapping_without_duplicates(loader, node, deep=False):
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            raise DuplicateWorkflowKey(f"duplicate YAML key {key!r}")
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_StrictLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_mapping_without_duplicates,
+)
+
+
+def _load_workflow_strictly(text: str) -> dict:
+    return yaml.load(text, Loader=_StrictLoader)
+
+
+def test_no_mapping_key_appears_twice_anywhere_in_the_release_workflow() -> None:
+    """The strict parse must succeed; the plain parse above cannot
+    see a duplicate because PyYAML keeps the last key silently."""
+    text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    parsed = _load_workflow_strictly(text)
+    assert set(parsed["jobs"]) == set(EXPECTED_NEEDS), (
+        "the strict parse must agree with the job set the contract pins"
+    )
+
+
+def test_the_strict_parse_rejects_the_duplicated_with_shape_github_refused(
+    tmp_path: Path,
+) -> None:
+    """Red proof: the duplicated `with:` blocks that stopped release
+    runs 38049457592 and 38041251226 must fail this check, while the
+    ordinary SafeLoader parse of the same text keeps the last key and
+    stays quiet."""
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    original = "        with:\n          ref: ${{ inputs.tag || github.ref_name }}\n"
+    duplicated = workflow.replace(
+        original,
+        original + "        with:\n          fetch-depth: 0\n",
+        1,
+    )
+    assert duplicated != workflow, "the checkout with: block moved; replant it"
+    with pytest.raises(DuplicateWorkflowKey):
+        _load_workflow_strictly(duplicated)
+    assert "fetch-depth: 0" in yaml.safe_load(duplicated)["jobs"]["build"]["steps"][0][
+        "with"
+    ], "the quiet parse must keep the last key, which is why the check exists"
+
+
+# Variables a container runtime provides on its own; everything else
+# a container script reads must arrive through -e/--env on the docker
+# command line, because docker passes no job environment through.
+CONTAINER_PROVIDED_VARS = frozenset({"HOME"})
+
+DOCKER_C_MARKER = "bash -euo pipefail -c '"
+
+
+def _docker_c_scripts(workflow_text: str):
+    """Yield (docker command, container script) for every
+    `docker run ... bash -euo pipefail -c '...'` in the workflow.
+
+    The container scripts use single quotes nowhere inside (that was
+    the run-38041251226 break), so the first `'` after the marker
+    closes the script; the extraction below would mis-split the day
+    one comes back, which the double-quote rule keeps from shipping.
+    """
+    remainder = workflow_text
+    while True:
+        start = remainder.find("docker run")
+        if start == -1:
+            return
+        after = remainder[start:]
+        marker = after.find(DOCKER_C_MARKER)
+        if marker == -1:
+            # A docker run without a -c script (plain image commands).
+            remainder = remainder[start + len("docker run") :]
+            continue
+        command = after[:marker]
+        script_start = marker + len(DOCKER_C_MARKER)
+        close = after.find("'", script_start)
+        assert close != -1, "a docker -c script never closes its quote"
+        yield command, after[script_start:close]
+        remainder = after[close:]
+
+
+def _container_script_external_reads(script: str) -> set[str]:
+    """Variable names the script reads but does not set itself.
+
+    `${{ ... }}` templates are rendered by GitHub before docker runs,
+    so the container never sees them; assignments (`name=`, `for name
+    in`) and the runtime-provided names stay out of the result.
+    """
+    without_templates = re.sub(r"\$\{\{[^}]*\}\}", "", script)
+    reads = set(re.findall(r"\$\{([A-Za-z_][A-Za-z0-9_]*)", without_templates))
+    reads |= set(re.findall(r"\$([A-Za-z_][A-Za-z0-9_]*)", without_templates))
+    assigned = set(re.findall(r"(?:^|[\s;(&])([A-Za-z_][A-Za-z0-9_]*)=", script))
+    assigned |= set(re.findall(r"\bfor\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b", script))
+    return reads - assigned - CONTAINER_PROVIDED_VARS
+
+
+def _assert_docker_scripts_receive_their_variables(workflow_text: str) -> None:
+    offenders = []
+    for command, script in _docker_c_scripts(workflow_text):
+        passed = set(
+            re.findall(r"(?:-e|--env)[ =]([A-Za-z_][A-Za-z0-9_]*)", command)
+        )
+        missing = sorted(_container_script_external_reads(script) - passed)
+        if missing:
+            offenders.append(f"reads {missing} but the docker line passes none of them")
+    assert not offenders, (
+        "every variable a docker-run container script reads must be passed "
+        "in with -e or --env: docker shares no job environment with the "
+        "container, and the scripts run under set -u; " + "; ".join(offenders)
+    )
+
+
+def test_docker_run_container_scripts_receive_every_variable_they_read() -> None:
+    """Ticket 2046: the manylinux wheel smoke read ${TAG#v} with TAG
+    never passed in, so every Linux smoke leg died on an unbound
+    variable once the tag comparison landed."""
+    _assert_docker_scripts_receive_their_variables(
+        RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    )
+
+
+def test_the_docker_variable_check_catches_a_dropped_tag_pass() -> None:
+    """Red proof: removing the `-e TAG` the smoke now carries must
+    fail the check, naming the variable."""
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    assert ' -e TAG "' in workflow, "the manylinux smoke no longer passes -e TAG"
+    broken = workflow.replace(' -e TAG "', '"', 1)
+    with pytest.raises(AssertionError, match=r"reads \['TAG'\]"):
+        _assert_docker_scripts_receive_their_variables(broken)

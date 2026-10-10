@@ -291,6 +291,64 @@ def test_same_ticket_across_all_three_shapes_counts_once(tmp_path: Path) -> None
     assert "covers all 1 tickets" in result.stdout
 
 
+def test_land_branch_subject_ticket_requires_a_bullet(tmp_path: Path) -> None:
+    # 2042 landed as "Land tickets/2042-fix": the Land shape can
+    # name its branch, and the gate must count that subject too.
+    result = _run(
+        tmp_path,
+        subjects=["Land tickets/2042-fix"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "2042" in result.stderr
+
+
+def test_land_branch_subject_passes_with_a_described_bullet(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Land tickets/2042-fix"],
+        changelog="# C\n\n## Unreleased\n\n- Checked protein numbering without canonical facts. (2042)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_land_subject_without_a_colon_still_counts_its_leading_ticket(
+    tmp_path: Path,
+) -> None:
+    # "Land 2044 and 2045: ..." carried two tickets with no colon
+    # after the first number; the leading number is the landing.
+    result = _run(
+        tmp_path,
+        subjects=["Land 2044 and 2045: MCP errors carry no local path"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "2044" in result.stderr
+
+
+def test_land_subject_without_a_colon_passes_with_a_described_bullet(
+    tmp_path: Path,
+) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Land 2044 and 2045: MCP errors carry no local path"],
+        changelog="# C\n\n## Unreleased\n\n- Kept every flag in the refused hint. (2044)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_both_land_shapes_count_once_each(tmp_path: Path) -> None:
+    # The two Land spellings of one landing are one ticket; the
+    # branch-named subject does not double-count it.
+    result = _run(
+        tmp_path,
+        subjects=["Land tickets/2042-fix", "Land 2042: same ticket again"],
+        changelog="# C\n\n## Unreleased\n\n- Checked protein numbering. (2042)\n",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "covers all 1 tickets" in result.stdout
+
+
 def test_completed_status_ticket_demands_a_bullet(tmp_path: Path) -> None:
     # A ticket file added in the range whose status reads complete
     # demands a bullet with no Land subject and no record: 2010
