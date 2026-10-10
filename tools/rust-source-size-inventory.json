@@ -137,14 +137,9 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1284,
-      "floor_lines": 1103,
-      "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2044",
-        "delta": 181,
-        "reason": "Poison-recovery scoping plus the guarded label fallback call with its oversize and no-match settle reasons, and the label section outcome completion in the base resolution path. Ticket 2031: the openFDA identity fallback for queries no MyChem name matches, the refusal that names what the text search matched, the discover rescue guard that adopts only name-matched canonical candidates, and the honest description of what the openFDA candidate path guarantees. Ticket 2037: the guarded discover rescue also runs before a name-miss refusal, so a brand MyChem holds only on a nameless record resolves instead of refusing. | Ticket 2038: the WHO card degrade seam applies WHO bundle readiness to the card with the serialized who_note and its degradation note. | Ticket 2043: The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Revisit when the trial-alias cache moves behind a type, the panic arm shrinks, and the label outcome settles in a dedicated section owner module. | Fold the WHO degrade seam and who_note into the WHO section owner when the drug card is next decomposed. | Shrink when the label choice moves into label.rs entirely and the rescue cache folds into the discover client."
-      }
+      "baseline_lines": 1273,
+      "floor_lines": 1273,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/drug/label.rs",
@@ -338,14 +333,9 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1626,
-      "floor_lines": 1561,
-      "authorized_increase": {
-        "ticket": "1241, 1300 | 2021, 2038, 2044",
-        "delta": 65,
-        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, bundle-error naming, and the label_note field on Drug test cards. | The error JSON recovery borrows from the projection so a recovery can name a runtime location. | Ticket 2038: the who_pq sync-failure JSON test pins the path-free error.recovery. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Shrink when the drug card model is next refactored and the label note moves into the label section payload. | Fold the borrowed recovery into the shared error-response shape when the projection redesign lands. | Move the WHO sync-failure error-shape test out of the production render module when the error JSON tests consolidate."
-      }
+      "baseline_lines": 1598,
+      "floor_lines": 1598,
+      "authorized_increase": null
     },
     {
       "path": "src/render/markdown/article/tests.rs",
@@ -559,14 +549,9 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1701,
-      "floor_lines": 1335,
-      "authorized_increase": {
-        "ticket": "1263, 2016, 2022, 2035, 2038, 2044, 2047",
-        "delta": 366,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: the ClinVar-preferred MANE transcript helper and the MANE-aware SnpEff annotation ranking. Ticket 2035 finding 4: the ClinVar-free ranking tier that headlines the annotation naming the requested change; finding 21: the versioned MANE marker so answers show ClinVar's current RefSeq accession where the SnpEff build lags. | Ticket 2038: the shared day-shape rule through crate::utils::date::is_day_shaped for the ClinVar fallback age label. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost. | Ticket 2047: the isoform-annotation finder that names the transcript spelling a requested change.",
-        "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module."
-      }
+      "baseline_lines": 1252,
+      "floor_lines": 1252,
+      "authorized_increase": null
     }
   ]
 }
