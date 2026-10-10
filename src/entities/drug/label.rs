@@ -892,13 +892,7 @@ fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) ->
     } else {
         (Vec::new(), Vec::new())
     };
-    if extract_openfda_values_from_result(result, "brand_name")
-        .iter()
-        .any(|brand| brand.trim().to_ascii_lowercase() == requested)
-        || element_brands.iter().any(|brand| *brand == requested)
-    {
-        return LABEL_RANK_BRAND_MATCH;
-    }
+    let _ = &element_brands;
     if !requested.is_empty()
         && (generic_name_matches(result, |name| {
             !is_combination_product_name(name) && (name == requested || name == card)
