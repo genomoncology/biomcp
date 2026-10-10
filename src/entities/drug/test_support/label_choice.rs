@@ -551,12 +551,11 @@ const IMATINIB_EXACT_BODY: &str = r#"{
  ]
 }"#;
 
-fn assert_label_data_with_set_id(drug: &super::super::Drug, set_id: &str) {
-
-// The live MyChem answers below were recorded 2026-10-10 (ticket 2043)
-// from `mychem.info/v1/query?q=<name>` with the `get` field list. Hits
-// that carry no name field were dropped, product rows deduplicated to
-// first occurrences and long synonym lists trimmed, as each header notes.
+// The live MyChem answers below were recorded 2026-10-10 (tickets 2043
+// and 2047) from `mychem.info/v1/query?q=<name>` with the `get` field
+// list. Hits that carry no name field were dropped, product rows
+// deduplicated to first occurrences and long synonym lists trimmed, as
+// each header notes.
 
 /// `q=herceptin`: the brand lives on a naked NDC row pairing HERCEPTIN
 /// with Trastuzumab, beside the Hylecto combination row and two records
