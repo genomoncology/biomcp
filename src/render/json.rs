@@ -641,7 +641,7 @@ fn match_tier_name(match_tier: crate::entities::discover::MatchTier) -> &'static
 }
 
 #[cfg(test)]
-#[path = "../../../tests/unit/render/json_error.rs"]
+#[path = "../../tests/unit/render/json_error.rs"]
 mod json_error_tests;
 
 #[cfg(test)]
