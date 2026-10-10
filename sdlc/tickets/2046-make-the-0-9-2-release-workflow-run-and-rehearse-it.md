@@ -42,6 +42,8 @@ Red probes, both run through `yr` on the build host and deleted after:
 
 The captured container script's tag mechanics hold, verified through `yr` on the build host against the pushed branch: with `TAG=v0.9.2` in the environment the trimmed-line comparison exits 0 on a `biomcp 0.9.2` line, and without a tag value the script exits 1 instead of comparing garbage (with TAG absent entirely it dies on the unbound variable the Evidence line records).
 
+Verification: CI caught two real test bugs on the way green, each fixed with its own commit — run 38057186451 at `7e10466b8` failed the planted-duplicate proof (its quiet-parse assertion checked a string against dict keys), and run 38059743925 at `745779e9e` failed `test_technical_and_ux_docs_match_current_cli_and_workflow_contracts`, which still pinned `v0.9.0 is the latest published release` in the Release Pipeline section; the pin now states the corrected facts. At head `06b9f24fa`, under the checkout lock with the head verified stable before and after: `make lint` green, and the full offline pytest lane including `needs_binary` green at 1252 passed, 3 skipped. The Rust nextest stage hangs on the three `cli::update` archive tests on the shared build host (240-second slow-timeout kill, reproduced serially), the flake ticket 2044's verification records for this box; CI ran that stage green on this branch's heads.
+
 ## Candidate
 
 The final head of `tickets/2046-work` — the commit that carries this record — is the 0.9.2 tag candidate. The rehearsal in `genomoncology/biomcp-release-rehearsal` is the coordinator's step after this branch lands on main, per the task split that filed this lane.
