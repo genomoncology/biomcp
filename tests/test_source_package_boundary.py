@@ -73,6 +73,12 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
             path == private_root or path.startswith(f"{private_root}/")
             for path in paths
         )
+    # Test tooling stays out of the shipped source package (ticket 2044):
+    # the nextest configuration under .config/ gates local runs, not the
+    # published crate, and the file cap counts the runtime boundary only.
+    assert not any(
+        path == ".config" or path.startswith(".config/") for path in paths
+    )
     for required in (
         "docs/sources/gencc.md",
         "src/entities/gene/gencc.rs",
