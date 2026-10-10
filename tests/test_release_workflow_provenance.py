@@ -292,6 +292,8 @@ ALLOWED_STEP_IFS = {
     # so the shipped wheels report their commit. The two wheel-smoke
     # install/run steps were re-pinned 2026-10-10 (ticket 2038,
     # finding 5): both now compare the printed --version with the tag.
+    # The container smoke was re-pinned again 2026-10-10 (ticket 2046):
+    # the tag now rides in with -e TAG.
 PINNED_STEPS: dict[tuple[str, str], str] = {
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "435261111ae8c13c6efd4c0122d30af2df68e5cbc57a7e92ccd1568897ae4024",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
@@ -304,7 +306,7 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
     ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "31c21258330a6cd50375ed048c75f98f26c3ee177c75124ba5e30c39bf5b9107",
+    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "aa05d59785ad1869b7a0dd819d3040b1a87092e6cbe0e0c7d40a8518856b6ebd",
     ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
     ("docs-live", "Check out the gate helper"): "afce43fafcab696d9cef03f29b0c43b6c9849baf126b749e198bdb9d83555430",
     ("docs-live", "Resolve the tag commit"): "b52e25a4026bed9172a0eff4b90f6a706ec984875307d7e89f9d450878a96e44",
@@ -1666,21 +1668,32 @@ def test_no_mapping_key_appears_twice_anywhere_in_the_release_workflow() -> None
     )
 
 
-def test_the_strict_parse_rejects_the_duplicated_with_shape_github_refused(
-    tmp_path: Path,
-) -> None:
+def test_the_strict_parse_rejects_the_duplicated_with_shape_github_refused() -> None:
     """Red proof: the duplicated `with:` blocks that stopped release
     runs 38049457592 and 38041251226 must fail this check, while the
     ordinary SafeLoader parse of the same text keeps the last key and
     stays quiet."""
     workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-    original = "        with:\n          ref: ${{ inputs.tag || github.ref_name }}\n"
+    # Anchored on the build job's checkout (the comment that follows
+    # it) so the plant cannot land inside version-check's with: block,
+    # which legitimately carries fetch-depth.
+    original = (
+        "        with:\n"
+        "          ref: ${{ inputs.tag || github.ref_name }}\n"
+        "\n"
+        "      # Ticket 2024: the build steps run tools/with-build-identity so"
+    )
     duplicated = workflow.replace(
         original,
-        original + "        with:\n          fetch-depth: 0\n",
+        "        with:\n"
+        "          ref: ${{ inputs.tag || github.ref_name }}\n"
+        "        with:\n"
+        "          fetch-depth: 0\n"
+        "\n"
+        "      # Ticket 2024: the build steps run tools/with-build-identity so",
         1,
     )
-    assert duplicated != workflow, "the checkout with: block moved; replant it"
+    assert duplicated != workflow, "the build checkout with: block moved; replant it"
     with pytest.raises(DuplicateWorkflowKey):
         _load_workflow_strictly(duplicated)
     assert "fetch-depth: 0" in yaml.safe_load(duplicated)["jobs"]["build"]["steps"][0][
@@ -1696,32 +1709,31 @@ CONTAINER_PROVIDED_VARS = frozenset({"HOME"})
 DOCKER_C_MARKER = "bash -euo pipefail -c '"
 
 
-def _docker_c_scripts(workflow_text: str):
-    """Yield (docker command, container script) for every
-    `docker run ... bash -euo pipefail -c '...'` in the workflow.
+def _docker_c_scripts(parsed: dict):
+    """Yield (where, docker command, container script) for every step
+    whose run drives `docker run ... bash -euo pipefail -c '...'`.
 
-    The container scripts use single quotes nowhere inside (that was
-    the run-38041251226 break), so the first `'` after the marker
-    closes the script; the extraction below would mis-split the day
-    one comes back, which the double-quote rule keeps from shipping.
+    The script runs to the step's last quote, so a single quote that
+    sneaks back inside a container script (the run-38041251226
+    break) stretches the extracted script instead of hiding the text
+    after it, and the variable scan below reports the script it
+    would truly run.
     """
-    remainder = workflow_text
-    while True:
-        start = remainder.find("docker run")
-        if start == -1:
-            return
-        after = remainder[start:]
-        marker = after.find(DOCKER_C_MARKER)
-        if marker == -1:
-            # A docker run without a -c script (plain image commands).
-            remainder = remainder[start + len("docker run") :]
-            continue
-        command = after[:marker]
-        script_start = marker + len(DOCKER_C_MARKER)
-        close = after.find("'", script_start)
-        assert close != -1, "a docker -c script never closes its quote"
-        yield command, after[script_start:close]
-        remainder = after[close:]
+    for job_id, job in parsed["jobs"].items():
+        for step in job.get("steps", []):
+            run = str(step.get("run", ""))
+            start = run.find("docker run")
+            if start == -1 or DOCKER_C_MARKER not in run:
+                # Steps without a -c script (plain image commands)
+                # share no environment question with this check.
+                continue
+            marker = run.index(DOCKER_C_MARKER)
+            where = f"{job_id}/{step.get('name') or step.get('uses')}"
+            yield (
+                where,
+                run[start:marker],
+                run[marker + len(DOCKER_C_MARKER) :].rpartition("'")[0],
+            )
 
 
 def _container_script_external_reads(script: str) -> set[str]:
@@ -1739,15 +1751,15 @@ def _container_script_external_reads(script: str) -> set[str]:
     return reads - assigned - CONTAINER_PROVIDED_VARS
 
 
-def _assert_docker_scripts_receive_their_variables(workflow_text: str) -> None:
+def _assert_docker_scripts_receive_their_variables(parsed: dict) -> None:
     offenders = []
-    for command, script in _docker_c_scripts(workflow_text):
+    for where, command, script in _docker_c_scripts(parsed):
         passed = set(
             re.findall(r"(?:-e|--env)[ =]([A-Za-z_][A-Za-z0-9_]*)", command)
         )
         missing = sorted(_container_script_external_reads(script) - passed)
         if missing:
-            offenders.append(f"reads {missing} but the docker line passes none of them")
+            offenders.append(f"{where} reads {missing} with no -e or --env for them")
     assert not offenders, (
         "every variable a docker-run container script reads must be passed "
         "in with -e or --env: docker shares no job environment with the "
@@ -1759,16 +1771,18 @@ def test_docker_run_container_scripts_receive_every_variable_they_read() -> None
     """Ticket 2046: the manylinux wheel smoke read ${TAG#v} with TAG
     never passed in, so every Linux smoke leg died on an unbound
     variable once the tag comparison landed."""
-    _assert_docker_scripts_receive_their_variables(
-        RELEASE_WORKFLOW.read_text(encoding="utf-8")
-    )
+    _assert_docker_scripts_receive_their_variables(_load_release_pipeline())
 
 
 def test_the_docker_variable_check_catches_a_dropped_tag_pass() -> None:
     """Red proof: removing the `-e TAG` the smoke now carries must
     fail the check, naming the variable."""
-    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-    assert ' -e TAG "' in workflow, "the manylinux smoke no longer passes -e TAG"
-    broken = workflow.replace(' -e TAG "', '"', 1)
+    parsed = _load_release_pipeline()
+    step = _step_by_name(
+        parsed, "wheel-smoke", "Run the wheel inside the manylinux 2_28 container"
+    )
+    run = str(step["run"])
+    assert ' -e TAG "' in run, "the manylinux smoke no longer passes -e TAG"
+    step["run"] = run.replace(' -e TAG "', '"', 1)
     with pytest.raises(AssertionError, match=r"reads \['TAG'\]"):
-        _assert_docker_scripts_receive_their_variables(broken)
+        _assert_docker_scripts_receive_their_variables(parsed)

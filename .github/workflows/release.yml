@@ -104,9 +104,6 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          # Ticket 2038: with-build-identity resolves the exact tag, so
-          # the clone must carry it for the version to be plain at the tag.
-          fetch-depth: 0
           ref: ${{ inputs.tag || github.ref_name }}
 
       # Ticket 2024: the build steps run tools/with-build-identity so
@@ -223,9 +220,6 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          # Ticket 2038: with-build-identity resolves the exact tag, so
-          # the clone must carry it for the version to be plain at the tag.
-          fetch-depth: 0
           ref: ${{ inputs.tag || github.ref_name }}
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -370,7 +364,11 @@ jobs:
       - name: Run the wheel inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
-          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" "${{ matrix.container }}" bash -euo pipefail -c '
+          # The tag rides in with -e (ticket 2046): docker passes no
+          # job environment into the container, and the script reads
+          # ${TAG#v} under `set -u`. Only double quotes live inside
+          # the single-quoted script, so nothing closes it early.
+          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" -e TAG "${{ matrix.container }}" bash -euo pipefail -c '
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
             printed="$(/opt/python/cp312-cp312/bin/biomcp --version)"
             printf "%s\n" "$printed"
@@ -548,7 +546,7 @@ jobs:
     # a failed container or tarball job is burned for good — PyPI
     # never accepts the same version twice. Every build and smoke
     # job must pass first, so a failed tag run can be deleted and
-    # retried without losing 0.9.1.
+    # retried without publishing the version.
     needs: [pypi-build, wheel-smoke, docs-live, build, container-publish]
     if: github.event_name == 'push'
     permissions:
@@ -667,10 +665,6 @@ jobs:
     steps:
       - name: Check out the packaging ref
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          # Ticket 2038: with-build-identity resolves the exact tag, so
-          # the clone must carry it for the version to be plain at the tag.
-          fetch-depth: 0
 
       - name: Resolve the image version and source revision
         env:
