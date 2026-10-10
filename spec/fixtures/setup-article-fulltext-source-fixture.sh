@@ -971,6 +971,27 @@ class Handler(BaseHTTPRequestHandler):
                     return
             send_json(self, 200, {"total": 0, "hits": []})
             return
+        if (
+            decoded_path == "/query"
+            and "Bachmann-Bupp syndrome" in query.get("q", [""])[0].replace("\\", "")
+        ):
+            # The article stage exports BIOMCP_MYDISEASE_BASE, so the raw
+            # MCP diagnostic page's disease-term resolution reads this
+            # fixture instead of the disease-survival fixture that served
+            # it before (ticket 2047). Same reply, same provenance.
+            send_json(self, 200, {
+                "total": 1,
+                "hits": [{
+                    "_id": "MONDO:0033642",
+                    "disease_ontology": {
+                        "name": "Bachmann-Bupp syndrome",
+                        "synonyms": {"exact": [
+                            "neurodevelopmental disorder with alopecia and brain abnormalities"
+                        ]},
+                    },
+                }],
+            })
+            return
 
         if (
             decoded_path == "/search"

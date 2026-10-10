@@ -98,7 +98,7 @@ because `get gene` takes symbols, not NCBI Gene identifiers.
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
-  | mustmatch '/\| NSCLC \| 16 \| `biomcp search disease --query "NSCLC"` \|/'
+  | mustmatch '/\| NSCLC \| 16 \| `biomcp search disease --query NSCLC` \|/'
 ```
 
 ```bash
