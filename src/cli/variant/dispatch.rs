@@ -442,9 +442,17 @@ async fn render_variant_search_outcome(
     pagination.has_more = page.has_more.unwrap_or(pagination.has_more);
     let zero_row_note = gene_first_note.as_ref().filter(|_| results.is_empty());
     let zero_row_command = zero_row_note.map(|note| match note {
-        GeneFirstNote::Refused { condition, .. } => {
-            gene_first_working_form(condition, &explicit_filters)
-        }
+        GeneFirstNote::Refused {
+            condition,
+            hgvsp,
+            consequence,
+            ..
+        } => gene_first_working_form(
+            condition,
+            hgvsp.as_deref(),
+            consequence.as_deref(),
+            &explicit_filters,
+        ),
         GeneFirstNote::Routed { alternative, .. } => alternative.clone(),
     });
     if json_output {
@@ -487,10 +495,20 @@ async fn render_variant_search_outcome(
         _ => body,
     };
     let body = match zero_row_note {
-        Some(GeneFirstNote::Refused { gene, condition }) => format!(
+        Some(GeneFirstNote::Refused {
+            gene,
+            condition,
+            hgvsp,
+            consequence,
+        }) => format!(
             "{body}\n\nNo variants matched the phrase as a condition. Try the condition \
              without {gene}: {}",
-            gene_first_working_form(condition, &explicit_filters)
+            gene_first_working_form(
+                condition,
+                hgvsp.as_deref(),
+                consequence.as_deref(),
+                &explicit_filters,
+            )
         ),
         Some(GeneFirstNote::Routed {
             parsed,

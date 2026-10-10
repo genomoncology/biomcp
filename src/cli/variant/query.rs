@@ -103,7 +103,15 @@ pub(super) enum GeneFirstNote {
     /// condition, so the hint names the condition search without the
     /// leading word, the form the phrase search never tried (the gene
     /// filter needs the official symbol the oracle did not confirm).
-    Refused { gene: String, condition: String },
+    /// The note keeps the explicit `--hgvsp` and `--consequence` flags in
+    /// the spelling the search applied, so the working form repeats every
+    /// filter instead of dropping them (ticket 2044).
+    Refused {
+        gene: String,
+        condition: String,
+        hgvsp: Option<String>,
+        consequence: Option<String>,
+    },
     /// The oracle confirmed the official symbol: the phrase was routed, so
     /// the hint states the parsed form and the same filters with the
     /// condition dropped, which differs from the command that ran.
@@ -168,21 +176,25 @@ pub(super) fn apply_gene_first_routing(
         None => {
             // Refusal keeps the whole phrase, protein change included, so
             // the condition search and the working form see the original
-            // remainder.
+            // remainder. The note carries the explicit flags in the
+            // normalized spelling the search applied, so the refused hint
+            // repeats them beside the other explicit filters (ticket 2044).
             let remainder = match protein_change.as_deref() {
                 Some(change) => format!("{change} {condition}"),
                 None => condition.clone(),
             };
             (
                 VariantSearchPlan::finalize(ResolvedVariantQuery {
-                    hgvsp: hgvsp_flag,
-                    consequence: consequence_flag,
+                    hgvsp: hgvsp_flag.clone(),
+                    consequence: consequence_flag.clone(),
                     condition: Some(format!("{gene} {remainder}")),
                     ..Default::default()
                 }),
                 Some(GeneFirstNote::Refused {
                     gene,
                     condition: remainder,
+                    hgvsp: hgvsp_flag.as_deref().map(normalize_search_hgvsp),
+                    consequence: consequence_flag,
                 }),
             )
         }
@@ -205,17 +217,27 @@ pub(super) fn gene_first_parsed_form(gene: &str, hgvsp: Option<&str>, condition:
 /// the whole phrase as the condition, and the gene filter needs an official
 /// symbol the oracle did not confirm, so the condition alone is the looser
 /// form that can still return rows (ticket 2038, following 2022 and 2035's
-/// smaller items).
+/// smaller items). The form carries every filter the condition search
+/// applied, the caller's `--hgvsp` and `--consequence` flags included in
+/// the spelling the search used (ticket 2044).
 pub(super) fn gene_first_working_form(
     condition: &str,
+    hgvsp: Option<&str>,
+    consequence: Option<&str>,
     explicit_filters: &ExplicitFilterFlags,
 ) -> String {
-    let command = crate::next_command::NextCommand::biomcp().args([
+    let mut command = crate::next_command::NextCommand::biomcp().args([
         "search",
         "variant",
         "--condition",
         condition,
     ]);
+    if let Some(hgvsp) = hgvsp {
+        command = command.args(["--hgvsp", hgvsp]);
+    }
+    if let Some(consequence) = consequence {
+        command = command.args(["--consequence", consequence]);
+    }
     append_explicit_filters(command, explicit_filters).render_shell()
 }
 

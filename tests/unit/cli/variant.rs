@@ -425,6 +425,8 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
         Some(GeneFirstNote::Refused {
             gene: "BRUGADA".into(),
             condition: "syndrome".into(),
+            hgvsp: None,
+            consequence: None,
         })
     );
 
@@ -486,11 +488,16 @@ fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
         Some("BRUGADA V600E melanoma")
     );
     assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+    // The refused note keeps the explicit flag in the normalized spelling
+    // the condition search applied, so the working form repeats it
+    // (ticket 2044).
     assert_eq!(
         note,
         Some(GeneFirstNote::Refused {
             gene: "BRUGADA".into(),
             condition: "V600E melanoma".into(),
+            hgvsp: Some("V600E".into()),
+            consequence: None,
         })
     );
 }
@@ -616,24 +623,82 @@ fn apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints() {
         Some(GeneFirstNote::Refused {
             gene: "BRUGADA".into(),
             condition: "syndrome".into(),
+            hgvsp: None,
+            consequence: None,
         })
     );
     assert_eq!(
-        gene_first_working_form("syndrome", &filters),
+        gene_first_working_form("syndrome", None, None, &filters),
         "biomcp search variant --condition syndrome --significance benign \
          --tumor-site skin --max-frequency 0.01 --min-cadd 20 --review-status 2"
     );
 }
 
 #[test]
+fn refused_zero_row_hint_keeps_the_explicit_hgvsp_and_consequence_flags() {
+    // Ticket 2044: the refused zero-row hint used to drop an explicit
+    // `--hgvsp` or `--consequence` flag because the note carried only the
+    // gene and condition and the hint passed `None` for the flag. The
+    // finding's case: `search variant "BRUGADA syndrome" --hgvsp V600E
+    // --significance benign` pointed at a working form without the flags.
+    let filters = [("--significance", "benign".to_string())];
+
+    let (resolved, note) = apply_gene_first_routing(
+        "BRUGADA".into(),
+        None,
+        "syndrome".into(),
+        None,
+        Some("V600E".into()),
+        Some("missense_variant".into()),
+        &filters,
+    );
+    assert_eq!(resolved.gene, None);
+    assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+    assert_eq!(resolved.consequence.as_deref(), Some("missense_variant"));
+    let GeneFirstNote::Refused {
+        gene,
+        condition,
+        hgvsp,
+        consequence,
+    } = note.expect("the refused phrase carries its note")
+    else {
+        panic!("the refused note is the Refused shape")
+    };
+    assert_eq!(hgvsp.as_deref(), Some("V600E"));
+    assert_eq!(consequence.as_deref(), Some("missense_variant"));
+    // The dispatch hint renders the note's flags, exactly as both call
+    // sites do (the JSON next-commands entry and the Markdown footer).
+    assert_eq!(
+        gene_first_working_form(
+            &condition,
+            hgvsp.as_deref(),
+            consequence.as_deref(),
+            &filters,
+        ),
+        "biomcp search variant --condition syndrome --hgvsp V600E \
+         --consequence missense_variant --significance benign"
+    );
+}
+
+#[test]
 fn gene_first_working_form_quotes_multi_word_conditions() {
     assert_eq!(
-        gene_first_working_form("Brugada syndrome", &[]),
+        gene_first_working_form("Brugada syndrome", None, None, &[]),
         "biomcp search variant --condition \"Brugada syndrome\""
     );
     assert_eq!(
-        gene_first_working_form("V600E melanoma", &[]),
+        gene_first_working_form("V600E melanoma", None, None, &[]),
         "biomcp search variant --condition \"V600E melanoma\""
+    );
+    assert_eq!(
+        gene_first_working_form(
+            "melanoma",
+            Some("V600E"),
+            Some("missense_variant"),
+            &[],
+        ),
+        "biomcp search variant --condition melanoma --hgvsp V600E \
+         --consequence missense_variant"
     );
 }
 
@@ -652,6 +717,104 @@ fn split_leading_protein_change_takes_only_a_leading_change() {
     // A remainder that is only the protein change belongs to the exact
     // "GENE CHANGE" form, not the gene-first split.
     assert_eq!(split_leading_protein_change("V600E"), None);
+}
+
+/// Restores search-source environment variables after one test; the
+/// setter shares the `source_env` serial group, which serializes every
+/// other test that mutates provider variables.
+struct SearchEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl SearchEnvRestore {
+    /// SAFETY: callers hold the source_env serial-test process-wide lock.
+    unsafe fn set(name: &'static str, value: impl AsRef<std::ffi::OsStr>) -> Self {
+        let prior = std::env::var_os(name);
+        unsafe { std::env::set_var(name, value) };
+        Self(vec![(name, prior)])
+    }
+}
+
+impl Drop for SearchEnvRestore {
+    fn drop(&mut self) {
+        // SAFETY: see SearchEnvRestore::set.
+        unsafe {
+            for (name, value) in self.0.drain(..).rev() {
+                match value {
+                    Some(value) => std::env::set_var(name, value),
+                    None => std::env::remove_var(name),
+                }
+            }
+        }
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
+    // Ticket 2044, end to end: a refused gene-first phrase whose search
+    // returns zero rows prints the working form, and that form must keep
+    // the caller's explicit `--hgvsp` and `--significance` flags. The
+    // myvariant fixture answers an empty page and gene routing is off, so
+    // the oracle refuses BRUGADA deterministically offline.
+    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind myvariant fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let server = tokio::spawn(async move {
+        let body = r#"{"total":0,"hits":[]}"#;
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let mut request = [0_u8; 8192];
+            let _ = stream.read(&mut request).await;
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = stream.write_all(response.as_bytes()).await;
+        }
+    });
+    let cache = tempfile::Builder::new()
+        .prefix("biomcp-test-variant-search-hint-")
+        .tempdir()
+        .expect("temp cache dir");
+    // SAFETY: this test owns the source_env serial-test key.
+    let _myvariant = unsafe { SearchEnvRestore::set("BIOMCP_MYVARIANT_BASE", &base) };
+    // SAFETY: this test owns the source_env serial-test key.
+    let _cache = unsafe { SearchEnvRestore::set("BIOMCP_CACHE_DIR", cache.path()) };
+    // SAFETY: this test owns the source_env serial-test key.
+    let _routing = unsafe { SearchEnvRestore::set("BIOMCP_VARIANT_QUERY_GENE_ROUTING", "off") };
+
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "search",
+        "variant",
+        "BRUGADA syndrome",
+        "--hgvsp",
+        "V600E",
+        "--significance",
+        "benign",
+    ])
+    .expect("parse refused search");
+    let outcome = run_outcome(cli).await.expect("zero-row search outcome");
+    server.abort();
+
+    assert_eq!(outcome.stream, OutputStream::Stdout);
+    assert_eq!(outcome.exit_code, 0);
+    assert!(
+        outcome
+            .text
+            .contains("No variants matched the phrase as a condition"),
+        "the refused zero-row hint prints: {}",
+        outcome.text
+    );
+    assert!(
+        outcome.text.contains(
+            "biomcp search variant -g BRUGADA --hgvsp V600E --condition syndrome \
+             --significance benign"
+        ),
+        "the working form keeps every explicit flag: {}",
+        outcome.text
+    );
 }
 
 #[test]

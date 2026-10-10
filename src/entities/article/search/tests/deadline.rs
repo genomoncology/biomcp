@@ -490,6 +490,35 @@ fn deadline_recognition_covers_the_io_cancellation_shape() {
     assert!(!is_search_deadline_error(&other_io));
 }
 
+#[tokio::test(start_paused = true)]
+async fn held_fixture_replies_self_release_at_their_own_bound() {
+    // Ticket 2045: a held reply modeled a hung source by parking on an
+    // async gate that no test-owned timer bounded, so a bare `cargo test`
+    // run that lost its test (or its sender) waited on the reply forever;
+    // nextest's slow-timeout covered only itself. The hold now carries its
+    // own scaled bound above every legitimate test bound: it self-releases,
+    // closes the connection, and the caller waiting on the reply fails
+    // with this test's name instead of hanging. Paused time advances the
+    // bound at once, so the proof needs no wall-clock minutes.
+    let (_release_tx, hold) = held_reply_gate();
+    let fixture =
+        TestHttpFixture::spawn(move |_request| TestHttpReply::Hold(Arc::clone(&hold))).await;
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get(format!("{}/never-released", fixture.base))
+        .send()
+        .await;
+
+    // The hold's own bound released the connection: the caller sees the
+    // closed socket as an error naming this test, never a reply and never
+    // a wait without end.
+    assert!(
+        response.is_err(),
+        "the self-released hold closes the connection before any reply"
+    );
+}
+
 #[serial_test::serial(source_env)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn deep_offset_is_refused_on_every_sort_before_any_request() {
