@@ -895,7 +895,7 @@ fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) ->
     if extract_openfda_values_from_result(result, "brand_name")
         .iter()
         .any(|brand| brand.trim().to_ascii_lowercase() == requested)
-        || element_brands.iter().any(|brand| *brand == requested)
+        || element_brands.contains(&requested)
     {
         return LABEL_RANK_BRAND_MATCH;
     }
