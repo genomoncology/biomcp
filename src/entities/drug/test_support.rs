@@ -329,13 +329,13 @@ async fn label_fallback_fetch_error_stays_an_error() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn label_elements_oversize_response_settles_as_no_match_with_reason() {
+async fn label_elements_oversize_response_settles_as_unavailable_with_reason() {
     let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Oversize).await;
 
-    // Ticket 1300 second review: an identity-field fallback response past
-    // the body read limit can never succeed on retry, so it settles as an
-    // empty outcome that names the oversize reason instead of an unavailable
-    // retry hint.
+    // Ticket 2033 finding 8: an identity-field fallback response past
+    // the body read limit can never succeed, and it is a provider-side
+    // failure rather than a source-confirmed zero, so it settles as an
+    // unavailable outcome that names the oversize reason.
     let drug = label_fallback_fixture_drug(&base, "fixture-drug", &["label"]).await;
     let outcome = drug
         .section_outcomes
@@ -343,7 +343,7 @@ async fn label_elements_oversize_response_settles_as_no_match_with_reason() {
         .expect("label outcome completed");
     assert_eq!(
         outcome.outcome(),
-        crate::entities::section_outcome::SectionOutcomeState::Empty
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
     );
     assert_eq!(
         outcome.message(),
