@@ -44,7 +44,7 @@ SEARCH_RESPONSE = json.loads(
 )
 BRAF_MISSENSE_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_missense_20260805.json").read_bytes()
 BRAF_REVEL_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_bytes()
-BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_v600e_20260806.json").read_bytes()
+BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/query_braf_v600e_20261009.json").read_bytes()
 BRAF_V600E_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch38_20260806.json").read_bytes()
 BRAF_V600E_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch37_20261007.json").read_bytes()
 GRID1_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch37_20260806.json").read_bytes()
