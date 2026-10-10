@@ -855,7 +855,7 @@ async fn populate_common_sections(
         } else if label_response.is_some() {
             SectionOutcome::empty_with_reason("OpenFDA label", NO_LABEL_TEXT_NOTE)
         } else if label_elements_oversize {
-            SectionOutcome::empty_with_reason("OpenFDA label", ELEMENTS_SEARCH_OVERSIZE_NOTE)
+            SectionOutcome::unavailable(ELEMENTS_SEARCH_OVERSIZE_NOTE)
         } else {
             SectionOutcome::empty_with_reason("OpenFDA label", NO_SPL_RECORD_NOTE)
         };

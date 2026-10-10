@@ -12,7 +12,8 @@ protein change splits before routing, so `BRAF V600E melanoma` reads as gene,
 protein change, and condition instead of `condition='V600E melanoma'`.
 Refusal beats wrong routing: an uppercase non-gene first token such as BRUGADA
 is refused, the whole phrase stays a condition search, and a zero-row refusal
-prints the explicit `-g`/`--condition` working form. A routed search that
+prints the condition search without the leading word, since the gene filter
+needs the official symbol the oracle did not confirm. A routed search that
 returns nothing prints the parsed form and the same filters with the condition
 dropped, so the hint never repeats the command that returned nothing. These rows
 replay recorded MyGene and MyVariant responses through the routine fixture
@@ -21,7 +22,7 @@ bases.
 | phrase | count | filters | working_form | str:label |
 |---|---|---|---|---|
 | SCN5A Brugada | 3 | condition,gene | none | official symbol routes |
-| BRUGADA syndrome | 0 | condition | biomcp search variant -g BRUGADA --condition syndrome | uppercase non-gene word refuses |
+| BRUGADA syndrome | 0 | condition | biomcp search variant --condition syndrome | uppercase non-gene word refuses |
 | brugada syndrome | 1 | condition | none | non-gene phrase keeps condition search |
 | HCC liver cancer | 1 | condition | none | alias abbreviation refuses (HYCC1) |
 | MODY diabetes | 1 | condition | none | alias abbreviation refuses (HNF4A) |
@@ -30,7 +31,7 @@ bases.
 
 ```bash each_row="Variant Gene-Symbol First Free-Text Routing"
 biomcp --json --no-cache search variant '{{phrase}}' --limit 3 \
-  | jq -c '{count: .count, filters: (.filter_evaluation | keys | join(",")), working_form: (._meta.next_commands | map(select(startswith("biomcp search variant -g"))) | join(";") | if . == "" then "none" else . end)}' \
+  | jq -c '{count: .count, filters: (.filter_evaluation | keys | join(",")), working_form: (._meta.next_commands | map(select(startswith("biomcp search variant"))) | join(";") | if . == "" then "none" else . end)}' \
   | mustmatch like '{"count":{{count}},"filters":"{{filters}}","working_form":"{{working_form}}"}'
 ```
 
@@ -45,8 +46,8 @@ jq -cn --argjson routed "$routed" --argjson explicit "$explicit" \
   | mustmatch like '{"routed_count":true,"same_rows_as_explicit_form":true}'
 ```
 
-Markdown states the routing in its query line, and a refused zero names the
-working form instead of leaving the gene symbol swallowed.
+Markdown states the routing in its query line, and a refused zero names a
+working alternative instead of leaving the reader with nothing.
 
 ```bash
 biomcp --no-cache search variant 'SCN5A Brugada' --limit 3 \
@@ -59,7 +60,7 @@ Query: gene=SCN5A, condition=Brugada'
 biomcp --no-cache search variant 'BRUGADA syndrome' --limit 3 \
   | grep -E '^Query:|^No variants matched the phrase' \
   | mustmatch like 'Query: condition=BRUGADA syndrome
-No variants matched the phrase as a condition. If BRUGADA is a gene symbol, try the working form: biomcp search variant -g BRUGADA --condition syndrome'
+No variants matched the phrase as a condition. Try the condition without BRUGADA: biomcp search variant --condition syndrome'
 ```
 
 An alias abbreviation that resolves uniquely to one official symbol still
