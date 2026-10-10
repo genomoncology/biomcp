@@ -130,6 +130,13 @@ BRCA1_Q1878R_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_q1878r_2
 UNIPROT_P04637_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p04637_20261008.json").read_bytes()
 # Ticket 2035 finding 4: BRCA1's residue checks read P38398.
 UNIPROT_P38398_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p38398_20261009.json").read_bytes()
+# Ticket 2042: the legacy GWAS Catalog REST endpoint retired upstream
+# (HTTP 410 since 2026-10), so the offline lane cannot reach it. The two
+# somatic variants whose re-captured replies now carry rsIDs (BRAF V600E,
+# MYD88 L265P) have no germline GWAS associations either way, so the
+# fixture answers their by-rsID association reads with the committed
+# empty page instead of the dead source's hard failure.
+GWAS_ASSOCIATIONS_EMPTY = (ROOT / "testdata/sources/gwas/associations_empty.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 # Ticket 1291: the switch never reproduced live (the recorded
 # reproduction runs' efetch calls all answered within 1.4 s), so this
@@ -638,6 +645,9 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/uniprotkb/P38398.json" and not parse_qs(parsed.query):
             send_json(self, 200, UNIPROT_P38398_RESPONSE)
             return
+        if parsed.path.startswith("/gwas/rest/api/singleNucleotidePolymorphisms/") and parsed.path.endswith("/associations"):
+            send_json(self, 200, GWAS_ASSOCIATIONS_EMPTY)
+            return
 
         if parsed.path in CANCERHOTSPOTS_RESPONSES:
             send_json(self, 200, CANCERHOTSPOTS_RESPONSES[parsed.path])
@@ -737,6 +747,7 @@ PY
   printf 'export BIOMCP_VARIANTVALIDATOR_BASE_URL=%q\n' "$base_url"
   printf 'export BIOMCP_CLINGEN_CAR_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_UNIPROT_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_GWAS_BASE=%q\n' "$base_url/gwas/rest/api"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
