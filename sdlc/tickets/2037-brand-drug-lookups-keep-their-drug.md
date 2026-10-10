@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 730f4ae19, accept
+
 ## Outcome
 
 `biomcp get drug <brand>` returns the drug that brand names, with that product's label, or an honest refusal. A brand that resolved in v0.9.1 still resolves. A card never takes another product's name or label.
