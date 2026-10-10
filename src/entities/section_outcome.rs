@@ -99,10 +99,18 @@ impl SectionOutcome {
     }
 
     pub fn unavailable(message: &'static str) -> Self {
+        Self::unavailable_message(message)
+    }
+
+    /// An unavailable outcome whose reason is built at runtime — the
+    /// retired-endpoint degrade carries the provider's own retirement
+    /// wording (ticket 2047). Bounded and safety-checked like every other
+    /// public message.
+    pub fn unavailable_message(message: impl Into<String>) -> Self {
         Self {
             outcome: SectionOutcomeState::Unavailable,
             sources: Vec::new(),
-            message: Some(bounded_message(message)),
+            message: Some(bounded_message(&message.into())),
         }
     }
 

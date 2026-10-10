@@ -16,7 +16,7 @@ pub(crate) fn truncate_article_annotations(
 /// other row stays off the map, so its entity row keeps the v0.9.1 search
 /// command. One identifier resolves once, no matter how many mention texts
 /// share it, and a crosswalk that cannot be read changes no row's command.
-pub(super) async fn verified_disease_get_commands(
+pub(crate) async fn verified_disease_get_commands(
     annotations: Option<&crate::entities::article::ArticleAnnotations>,
 ) -> std::collections::HashMap<String, String> {
     use futures::future::join_all;

@@ -7,6 +7,7 @@
 //! command instead of a confidently wrong get.
 
 use crate::error::BioMcpError;
+use crate::transform;
 
 /// Fold a final-word plural conservatively: `Neoplasms` to `neoplasm`,
 /// `Adenomas` to `adenoma`. Words whose final `s` is part of the spelling

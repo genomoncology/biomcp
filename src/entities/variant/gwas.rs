@@ -538,7 +538,7 @@ pub(in crate::entities::variant) fn mark_gwas_unavailable(variant: &mut Variant,
     variant.gwas_unavailable_reason = Some(reason.to_string());
     variant
         .section_outcomes
-        .complete("gwas", SectionOutcome::unavailable(reason));
+        .complete("gwas", SectionOutcome::unavailable_message(reason));
 }
 
 /// The degrade note a `source_unavailable` error carries: the error's own
