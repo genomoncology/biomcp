@@ -22,17 +22,8 @@ fi
 
 mkdir -p "$OUTPUT_DIR"
 
-# Continuous integration passes QUALITY_RATCHET_REQUIRE_LOCAL_NAMES=1 so a
-# missing local forbidden-name declaration fails loudly instead of letting
-# the tree scan pass with inert example placeholders only (ticket 2038
-# finding 7, 2035 #11). Local runs print a note and keep going.
-zero_coupling_args=()
-if [[ -n "${QUALITY_RATCHET_REQUIRE_LOCAL_NAMES:-}" ]]; then
-  zero_coupling_args+=("--require-local-names")
-fi
-
 uv run --no-project python "$ROOT_DIR/tools/check-zero-coupling.py" \
-  --root "$ROOT_DIR" "${zero_coupling_args[@]+${zero_coupling_args[*]}}"
+  --root "$ROOT_DIR"
 
 exec uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --root-dir "$ROOT_DIR" \

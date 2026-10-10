@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
-use std::collections::HashSet;
-use std::sync::OnceLock;
+use std::collections::{HashMap, HashSet};
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
 use regex::Regex;
@@ -359,13 +359,36 @@ impl DiscoverConfidence {
     }
 }
 
+static ALIAS_FALLBACK_MEMO: OnceLock<Mutex<HashMap<String, DiscoverResult>>> = OnceLock::new();
+
+fn alias_fallback_memo() -> &'static Mutex<HashMap<String, DiscoverResult>> {
+    ALIAS_FALLBACK_MEMO.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
 pub(crate) async fn resolve_query(
     query: &str,
     mode: DiscoverMode,
 ) -> Result<DiscoverResult, BioMcpError> {
     let request = DiscoverRequest::new(query, mode)?;
     let ols_client = crate::sources::ols4::OlsClient::new()?;
-    resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await
+    if mode != DiscoverMode::AliasFallback {
+        return resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await;
+    }
+    // A refusal pays this resolution twice: the entity rescue runs it once
+    // and the CLI alias fallback runs it again. The memo serves the second
+    // caller from the first answer, so the refusal path runs the discover
+    // round once per query per process (ticket 2047). Only settled answers
+    // are memoized; a transient source error still retries, and the mapping
+    // is stable for a process's lifetime the way the trial-alias cache is.
+    let key = query.trim().to_ascii_lowercase();
+    if let Some(cached) = crate::utils::sync::recover_poison(alias_fallback_memo().lock()).get(&key)
+    {
+        return Ok(cached.clone());
+    }
+    let result =
+        resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await?;
+    crate::utils::sync::recover_poison(alias_fallback_memo().lock()).insert(key, result.clone());
+    Ok(result)
 }
 
 pub(crate) async fn resolve_query_with_options(
@@ -1712,7 +1735,9 @@ fn heuristic_type(label: &str, query: &str) -> DiscoverType {
         || text.contains("injection")
     {
         DiscoverType::Drug
-    } else if looks_like_gene_query(query) && crate::sources::is_valid_gene_symbol(label) {
+    } else if looks_like_gene_query(query)
+        && crate::entities::gene::looks_like_symbol(label.trim())
+    {
         DiscoverType::Gene
     } else if text.contains("syndrome")
         || text.contains("disease")
@@ -3823,6 +3848,31 @@ mod tests {
 
         assert_eq!(result.concepts.len(), 1);
         assert_eq!(result.concepts[0].primary_type, DiscoverType::Drug);
+    }
+
+    #[test]
+    fn a_gene_shaped_query_never_types_a_drug_label_as_a_gene() {
+        // Ticket 2047: `get drug 5-FU` refuses, and the alias fallback's
+        // candidate list named "Fluorouracil (Gene, MESH:D005472)" because
+        // the heuristic typed the MESH drug label as a gene — the loose
+        // format check accepted any alphanumeric word once the query looked
+        // gene-shaped. Only a gene-symbol-shaped label (BRCA1) may take the
+        // Gene type from a gene-shaped query.
+        let fluorouracil = concept_from_ols(
+            &ols_doc("mesh", "Fluorouracil", "MESH:D005472", &["5-FU"]),
+            "5-FU",
+        );
+        assert_ne!(
+            fluorouracil.primary_type,
+            DiscoverType::Gene,
+            "a drug label is never typed as a gene"
+        );
+
+        let symbol = concept_from_ols(
+            &ols_doc("ncit", "BRCA1", "NCIT:C164709", &[]),
+            "5-FU",
+        );
+        assert_eq!(symbol.primary_type, DiscoverType::Gene);
     }
 
     #[test]

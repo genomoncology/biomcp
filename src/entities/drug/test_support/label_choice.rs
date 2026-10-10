@@ -262,8 +262,10 @@ const BEVACIZUMAB_BIOSIMILAR_PAGE_BODY: &str = r#"{
  ]
 }"#;
 
-/// Search `Darzalex` (live total 1): the only current daratumumab label is
-/// the under-the-skin DARZALEX FASPRO pairing.
+/// Search `Darzalex` (live total 1): the only record the openfda-field
+/// search reaches is the under-the-skin DARZALEX FASPRO pairing, because
+/// the plain DARZALEX record (set `a4d0efe9`, published 2026-09-24) ships
+/// with an empty `openfda` block. Recorded 2026-10-10 (ticket 2047).
 const DARZALEX_LABEL_BODY: &str = r#"{
  "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
  "results": [
@@ -285,6 +287,271 @@ const DARZALEX_LABEL_BODY: &str = r#"{
   }
  ]
 }"#;
+
+/// The openFDA product-data-elements answers for `darzalex` and
+/// `daratumumab` (identical live answers, total 2, recorded 2026-10-10,
+/// ticket 2047): the FASPRO pairing record with a populated `openfda`
+/// block, and the plain intravenous DARZALEX record whose `openfda` block
+/// is empty — its only identity is the element line, whose first entry
+/// opens "DARZALEX Daratumumab DARATUMUMAB DARATUMUMAB". Section text
+/// trimmed for the fixture.
+const DARZALEX_ELEMENTS_BODY: &str = r#"{
+ "meta": {"results": {"skip": 0, "limit": 5, "total": 2}},
+ "results": [
+  {
+   "set_id": "4bb241af-4299-4373-8762-2d6709515db0",
+   "effective_time": "20260903",
+   "openfda": {
+    "brand_name": ["Darzalex Faspro"],
+    "generic_name": ["DARATUMUMAB AND HYALURONIDASE-FIHJ (HUMAN RECOMBINANT)"],
+    "route": ["SUBCUTANEOUS"],
+    "substance_name": ["DARATUMUMAB", "HYALURONIDASE (HUMAN RECOMBINANT)"]
+   },
+   "spl_product_data_elements": [
+    "Darzalex Faspro daratumumab and hyaluronidase-fihj (human recombinant) DARATUMUMAB DARATUMUMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) METHIONINE HISTIDINE HYDROCHLORIDE MONOHYDRATE POLYSORBATE 20 SORBITOL WATER HISTIDINE colorless to yellow"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE DARZALEX FASPRO is a combination of daratumumab, a CD38-directed cytolytic antibody, and hyaluronidase, an endoglycosidase, indicated for the treatment of adult patients with: multiple myeloma in combination with bortezomib, lenalidomide, and dexamethasone for induction and consolidation in newly diagnosed patients who are eligible for autologous stem cell transplant \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Hypersensitivity and Other Administration Reactions : Permanently discontinue DARZALEX FASPRO for life-threatenin \u2026[recorded reply trimmed for the fixture]"
+   ]
+  },
+  {
+   "set_id": "a4d0efe9-5e54-467e-9eb4-56fa7d53b60b",
+   "effective_time": "20260908",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "DARZALEX Daratumumab DARATUMUMAB DARATUMUMAB ACETIC ACID SODIUM ACETATE SODIUM CHLORIDE MANNITOL POLYSORBATE 20 WATER Darzalex IV Daratumumab DARATUMUMAB DARATUMUMAB HISTIDINE HISTIDINE HYDROCHLORIDE MONOHYDRATE METHIONINE POLYSORBATE 20 SORBITOL WATER colorless to yellow"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE DARZALEX is indicated for the treatment of adult patients with multiple myeloma: in combination with lenalidomide and dexamethasone in newly diagnosed patients who are ineligible for autologous stem cell transplant and in patients with relapsed or refractory multiple myelom \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Infusion-related reactions : Interrupt DARZALEX infusion for infusion-related reactions of any severity. Permanently disc \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+/// The MyChem answer for `q=phesgo` (recorded 2026-10-10, ticket 2047): the
+/// brand lives only on naked NDC rows whose ingredient line is the
+/// three-name combination.
+const PHESGO_CAPTURE: &str = r#"
+{
+  "total": 2,
+  "hits": [
+    {
+      "_id": "50242-245",
+      "_score": 17.141884,
+      "ndc": {"nonproprietaryname": "pertuzumab, trastuzumab, and hyaluronidase-zzxf", "proprietaryname": "Phesgo"}
+    },
+    {
+      "_id": "50242-260",
+      "_score": 17.141884,
+      "ndc": {"nonproprietaryname": "pertuzumab, trastuzumab, and hyaluronidase-zzxf", "proprietaryname": "Phesgo"}
+    }
+  ]
+}
+"#;
+
+/// The openFDA product-data-elements answer for `phesgo` (live total 1,
+/// recorded 2026-10-10, ticket 2047): PHESGO's own record carries an empty
+/// `openfda` block; its element concatenates the two strengths, each
+/// opening "Phesgo pertuzumab, trastuzumab, and hyaluronidase-zzxf".
+/// Section text trimmed for the fixture.
+const PHESGO_ELEMENTS_BODY: &str = r#"{
+ "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
+ "results": [
+  {
+   "set_id": "27dd5e6b-72cd-458d-a015-cf4dab5800da",
+   "effective_time": "20260521",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "Phesgo pertuzumab, trastuzumab, and hyaluronidase-zzxf PERTUZUMAB PERTUZUMAB TRASTUZUMAB TRASTUZUMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) HISTIDINE HISTIDINE HYDROCHLORIDE TREHALOSE DIHYDRATE SUCROSE POLYSORBATE 20 METHIONINE WATER Phesgo pertuzumab, trastuzumab, and hyaluronidase-zzxf PERTUZUMAB PERTUZUMAB TRASTUZUMAB TRASTUZUMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) HISTIDINE HISTIDINE HYDROCHLORIDE TREHALOSE DIHYDRATE SUCROSE POLYSORBATE 20 METHIONINE WATER"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE PHESGO is a combination of pertuzumab and trastuzumab, HER2/neu receptor antagonists, and hyaluronidase, an endoglycosidase, indicated for: Use in combination with chemotherapy as: neoadjuvant treatment of patients with HER2-positive, locally advanced, inflammatory, or early stage breast cancer (either greater than 2 cm in diameter or node positive) as part of a complete treatment regimen for early breast cancer. ( 1.1 ) adjuvant treatment of patients with HER2-positive early breast cancer at high risk of recurrence ( 1.1 ) 1.1 Early Breast Cancer (EBC) PHESGO is indicated for use in combination with chemotherapy for the neoadjuvant treatment of adult patients with HER2-positive, locally advanced, inflammatory, or early stage breast cancer (either greater than 2 cm in diameter or node positive) as part of a complete treatment regimen for early breast cancer [see Dosage and Administration (2.2) and Clinical Studies (14.2) ] . the adjuvant treatment of adult patients with HER2-positive early breast cancer at high risk of recurrence \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "boxed_warning": [
+    "WARNING: CARDIOMYOPATHY, EMBRYO-FETAL TOXICITY, and PULMONARY TOXICITY \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Exacerbation of Chemotherapy-Induced Neutropenia. ( 5.4 ) Hypersensitivity and Administration-Related Reactions (ARRs): Mon \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+/// The MyChem answer for `q=opdualag` (recorded 2026-10-10, ticket 2047):
+/// the brand lives only on a naked NDC row whose ingredient line is the
+/// two-name combination.
+const OPDUALAG_CAPTURE: &str = r#"
+{
+  "total": 2,
+  "hits": [
+    {"_id": "C5577555", "_score": 17.676718},
+    {
+      "_id": "0003-7125",
+      "_score": 17.668518,
+      "ndc": {"nonproprietaryname": "nivolumab and relatlimab-rmbw", "proprietaryname": "OPDUALAG"}
+    }
+  ]
+}
+"#;
+
+/// `q=nivolumab`: the DrugBank/UNII identity record (recorded 2026-10-10,
+/// ticket 2047; synonym list trimmed to the first entries).
+const NIVOLUMAB_CAPTURE: &str = r#"
+{
+  "total": 24,
+  "hits": [
+    {
+      "_id": "31YO63LBSN",
+      "_score": 21.201801,
+      "drugbank": {"id": "DB09035", "name": "Nivolumab", "synonyms": ["ABP 206", "NIVO", "Nivolumab"]},
+      "drugcentral": {"synonyms": ["nivolumab", "opdivo"]},
+      "unii": {"unii": "31YO63LBSN", "display_name": "NIVOLUMAB"}
+    }
+  ]
+}
+"#;
+
+/// The openFDA label answer for `Opdualag` (live total 1, recorded
+/// 2026-10-10, ticket 2047): the combination product's own record.
+const OPDUALAG_LABEL_BODY: &str = r#"{
+ "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
+ "results": [
+  {
+   "set_id": "b22c9d83-3256-4e17-85f7-f331a504adc6",
+   "effective_time": "20260608",
+   "openfda": {
+    "brand_name": ["OPDUALAG"],
+    "generic_name": ["NIVOLUMAB AND RELATLIMAB-RMBW"],
+    "route": ["INTRAVENOUS"],
+    "substance_name": ["NIVOLUMAB", "RELATLIMAB-RMBW"]
+   },
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE OPDUALAG\u2122 is indicated for the treatment of adult and pediatric patients 12 years of age and older with unresectable or metastatic melanoma \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Immune-Mediated Adverse Reactions \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+/// The MyChem answer for `q=Gleevec` (recorded 2026-10-10, ticket 2047):
+/// the imatinib identity record, with its 32 merged NDC product rows
+/// removed for the fixture so the card names the plain ingredient the
+/// ticket's brand-tier shape needs; live answers carry generic-labeler
+/// rows ("Imatinib Mesylate") plus two Gleevec rows, whose pairing would
+/// name the card "imatinib mesylate" instead. DrugCentral synonyms trimmed
+/// to the entries the selection reads.
+const GLEEVEC_CAPTURE: &str = r#"
+{
+  "total": 3,
+  "hits": [
+    {
+      "_id": "KTUFNOKKBVMGRW-UHFFFAOYSA-N",
+      "_score": 24.06284,
+      "chebi": {"name": "imatinib"},
+      "chembl": {"pref_name": "IMATINIB"},
+      "drugbank": {"id": "DB00619", "name": "Imatinib", "synonyms": ["Imatinib", "Imatinibum"]},
+      "drugcentral": {"synonyms": ["imatinib", "gleevec"]},
+      "unii": {"unii": "BKJ8M8G5HI", "display_name": "IMATINIB"}
+    }
+  ]
+}
+"#;
+
+/// Search `Gleevec` (live total 1, recorded 2026-10-10, ticket 2047):
+/// Gleevec's own record.
+const GLEEVEC_LABEL_BODY: &str = r#"{
+ "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
+ "results": [
+  {
+   "set_id": "211ef2da-2868-4a77-8055-1cb2cd78e24b",
+   "effective_time": "20260713",
+   "openfda": {
+    "brand_name": ["Gleevec"],
+    "generic_name": ["IMATINIB MESYLATE"],
+    "route": ["ORAL"],
+    "substance_name": ["IMATINIB MESYLATE"]
+   },
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE Gleevec is a kinase inhibitor indicated for the treatment of: Newly diagnosed adult and pediatric patients with Philadelphia chromosome positive chronic myeloid leukemia (Ph+ CML) in chronic phase. ( 1.1 ) Patients with Philadelphia chromosome positive chronic myeloid leukemia (Ph+ CML) in blast crisis (BC), accelerated phase (AP), or in chronic phase (CP) after failure of interferon-alpha therap \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Edema and severe fluid retention have occurred. Weigh patients regularly and manage unexpected rapid weight gain by drug interruption and diuretics \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+/// Search `imatinib` (live total 22, recorded 2026-10-10, ticket 2047):
+/// the newest records are generic labelers. The rows kept are the leading
+/// generic-labeler record ("Imatinib Mesylate"/"IMATINIB MESYLATE", the
+/// qualified salt form) and the plain-ingredient twin a1787fad whose
+/// generic name is exactly "IMATINIB" — the record the brand tier exists
+/// to beat; the three rows between them were removed for the fixture.
+/// Section text trimmed.
+const IMATINIB_GENERIC_PAGE_BODY: &str = r#"{
+ "meta": {"results": {"skip": 0, "limit": 5, "total": 22}},
+ "results": [
+  {
+   "set_id": "0291eca5-7a1d-4a79-30be-252224d96509",
+   "effective_time": "20260908",
+   "openfda": {
+    "brand_name": ["Imatinib Mesylate"],
+    "generic_name": ["IMATINIB MESYLATE"],
+    "route": ["ORAL"],
+    "substance_name": ["IMATINIB MESYLATE"]
+   },
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE Imatinib mesylate is a kinase inhibitor indicated for the treatment of \u2026[recorded reply trimmed for the fixture]"
+   ]
+  },
+  {
+   "set_id": "a1787fad-3612-43e1-98fa-ce62361e0b3c",
+   "effective_time": "20260715",
+   "openfda": {
+    "brand_name": ["Imatinib Mesylate"],
+    "generic_name": ["IMATINIB"],
+    "route": ["ORAL"],
+    "substance_name": ["IMATINIB MESYLATE"]
+   },
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE Imatinib mesylate tablets are a kinase inhibitor indicated for the treatment of \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+/// The exact-field escalation for the card name `IMATINIB` (live total 4,
+/// recorded 2026-10-10, ticket 2047): every answer is a generic labeler
+/// whose generic name is exactly "IMATINIB"; the three rows after the
+/// first were removed for the fixture. Section text trimmed.
+const IMATINIB_EXACT_BODY: &str = r#"{
+ "meta": {"results": {"skip": 0, "limit": 5, "total": 4}},
+ "results": [
+  {
+   "set_id": "a1787fad-3612-43e1-98fa-ce62361e0b3c",
+   "effective_time": "20260715",
+   "openfda": {
+    "brand_name": ["Imatinib Mesylate"],
+    "generic_name": ["IMATINIB"],
+    "route": ["ORAL"],
+    "substance_name": ["IMATINIB MESYLATE"]
+   },
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE Imatinib mesylate tablets are a kinase inhibitor indicated for the treatment of \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+fn assert_label_data_with_set_id(drug: &super::super::Drug, set_id: &str) {
 
 // The live MyChem answers below were recorded 2026-10-10 (ticket 2043)
 // from `mychem.info/v1/query?q=<name>` with the `get` field list. Hits
@@ -745,27 +1012,203 @@ async fn bevacizumab_escalates_past_the_biosimilar_page_to_avastin() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn darzalex_resolves_daratumumab_through_the_pairings_plain_ingredient() {
-    let (base, server) = name_resolution_fixture_server(
+async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
+    let (base, server) = name_resolution_fixture_server_with_elements(
         vec![
             ("Darzalex".to_string(), DARZALEX_CAPTURE.to_string()),
             ("daratumumab".to_string(), DARATUMUMAB_CAPTURE.to_string()),
         ],
-        vec![("Darzalex".to_string(), DARZALEX_LABEL_BODY.to_string())],
+        vec![
+            ("Darzalex".to_string(), DARZALEX_LABEL_BODY.to_string()),
+            ("daratumumab".to_string(), DARZALEX_LABEL_BODY.to_string()),
+        ],
+        Vec::new(),
+        vec![
+            ("Darzalex".to_string(), DARZALEX_ELEMENTS_BODY.to_string()),
+            ("daratumumab".to_string(), DARZALEX_ELEMENTS_BODY.to_string()),
+        ],
+    )
+    .await;
+
+    // Tickets 2043 and 2047: the identity fallback still resolves the brand
+    // to the plain ingredient the Faspro pairing names, and the label
+    // choice takes the plain intravenous DARZALEX record. openFDA's
+    // field-scoped search reaches only the Faspro pairing — the plain
+    // record's openfda block is empty — so the elements escalation must
+    // rank the sparse record's own element identity (brand DARZALEX,
+    // ingredient daratumumab) over the unconfirmed pairing fallback. The
+    // card's brands include Darzalex itself, read off the element line.
+    let drug = name_resolution_fixture_drug(&base, "Darzalex").await;
+    assert_eq!(drug.name, "daratumumab");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09331"));
+    assert_label_data_with_set_id(&drug, "a4d0efe9-5e54-467e-9eb4-56fa7d53b60b");
+    assert!(
+        drug.brand_names
+            .iter()
+            .any(|brand| brand.eq_ignore_ascii_case("Darzalex")),
+        "the card's brands include Darzalex itself: {:?}",
+        drug.brand_names
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
+    let (base, server) = name_resolution_fixture_server_with_elements(
+        vec!["daratumumab".to_string(), DARATUMUMAB_CAPTURE.to_string()],
+        vec!["daratumumab".to_string(), DARZALEX_LABEL_BODY.to_string()],
+        Vec::new(),
+        vec!["daratumumab".to_string(), DARZALEX_ELEMENTS_BODY.to_string()],
+    )
+    .await;
+
+    // Ticket 2047: the ingredient query also takes the plain DARZALEX label
+    // — never the under-the-skin pairing — even though only the pairing
+    // answers the field-scoped search and the plain record's identity
+    // lives on its element line alone.
+    let drug = name_resolution_fixture_drug(&base, "daratumumab").await;
+    assert_eq!(drug.name, "daratumumab");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09331"));
+    assert_label_data_with_set_id(&drug, "a4d0efe9-5e54-467e-9eb4-56fa7d53b60b");
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn phesgo_resolves_its_own_label_and_safety_line() {
+    let (base, server) = name_resolution_fixture_server_with_elements(
+        vec!["Phesgo".to_string(), PHESGO_CAPTURE.to_string()],
+        Vec::new(),
+        Vec::new(),
+        vec![
+            ("Phesgo".to_string(), PHESGO_ELEMENTS_BODY.to_string()),
+            (
+                "pertuzumab, trastuzumab, and hyaluronidase-zzxf".to_string(),
+                PHESGO_ELEMENTS_BODY.to_string(),
+            ),
+        ],
+    )
+    .await;
+
+    let root = crate::test_support::TempDirGuard::new("phesgo-ddinter");
+    let missing_ddinter = root.path().join("missing-ddinter");
+    let cache_root = crate::test_support::TempDirGuard::new("phesgo-cache");
+    let _cache_mode = crate::sources::test_cache_mode::off();
+    let mut env = RequiredLabelFixtureEnv(Vec::new());
+    env.set(
+        "BIOMCP_CACHE_DIR",
+        cache_root.path().to_string_lossy().as_ref(),
+    );
+    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_OPENFDA_BASE", &base);
+    env.set("BIOMCP_OLS4_BASE", &base);
+    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
+    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+    env.set(
+        "BIOMCP_DDINTER_DIR",
+        missing_ddinter.to_str().expect("UTF-8 fixture path"),
+    );
+
+    // Ticket 2047: MyChem holds Phesgo only on naked combination rows, so
+    // the card carries the three-name ingredient line, and openFDA's
+    // field-scoped search cannot see PHESGO's own record at all — its
+    // openfda block is empty. The elements search reaches it and its
+    // element line's leading brand ("Phesgo …") pins the choice, so the
+    // card keeps its own label, brand and safety line instead of an empty
+    // label outcome. The pairing split must leave the comma-list
+    // combination whole: splitting it at " and " mangles the line to
+    // "pertuzumab, trastuzumab,".
+    let drug = super::super::get(
+        "Phesgo",
+        &["label".to_string(), "safety".to_string()],
+    )
+    .await
+    .expect("Phesgo settles a card");
+    assert_eq!(drug.name, "pertuzumab, trastuzumab, and hyaluronidase-zzxf");
+    assert_label_data_with_set_id(&drug, "27dd5e6b-72cd-458d-a015-cf4dab5800da");
+    assert!(
+        drug.brand_names
+            .iter()
+            .any(|brand| brand.eq_ignore_ascii_case("Phesgo")),
+        "the card's brands include Phesgo itself: {:?}",
+        drug.brand_names
+    );
+    assert!(
+        drug.us_safety_warnings
+            .as_deref()
+            .is_some_and(|text| text.contains("WARNINGS AND PRECAUTIONS")),
+        "the Phesgo safety line reached the card"
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_non_hyaluronidase_combination_never_becomes_another_products_card() {
+    let (base, server) = name_resolution_fixture_server_with_elements(
+        vec![
+            ("Opdualag".to_string(), OPDUALAG_CAPTURE.to_string()),
+            ("nivolumab".to_string(), NIVOLUMAB_CAPTURE.to_string()),
+        ],
+        vec!["Opdualag".to_string(), OPDUALAG_LABEL_BODY.to_string()],
+        Vec::new(),
         Vec::new(),
     )
     .await;
 
-    // Ticket 2043: the only current daratumumab label is the under-the-skin
-    // Faspro pairing, whose generic name is "daratumumab and
-    // hyaluronidase-fihj"; the identity fallback resolves the brand to the
-    // plain ingredient that pairing names. On main the combination string
-    // itself was the candidate, no MyChem record named it, and the card
-    // stayed sparse.
-    let drug = name_resolution_fixture_drug(&base, "Darzalex").await;
-    assert_eq!(drug.name, "daratumumab");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09331"));
-    assert_label_data_with_set_id(&drug, "4bb241af-4299-4373-8762-2d6709515db0");
+    // Ticket 2047, the Opdualag trap: openFDA's identity candidate reads the
+    // first label row's generic name, "nivolumab and relatlimab-rmbw". That
+    // is a two-drug combination, not an under-the-skin hyaluronidase
+    // pairing, so the plain-ingredient split must leave it whole — the
+    // candidate's own MyChem answer names nothing (the fixture's 404), the
+    // card keeps the combination's name, and the brand-tier label choice
+    // still serves Opdualag's own label. Splitting at " and " instead
+    // renames the card to nivolumab (DB09035) and carries another
+    // product's identity.
+    let drug = name_resolution_fixture_drug(&base, "Opdualag").await;
+    assert_eq!(drug.name, "nivolumab and relatlimab-rmbw");
+    assert_eq!(drug.drugbank_id, None);
+    assert!(
+        !drug.name.eq_ignore_ascii_case("nivolumab"),
+        "the combination never becomes the nivolumab card"
+    );
+    assert_label_data_with_set_id(&drug, "b22c9d83-3256-4e17-85f7-f331a504adc6");
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
+    let (base, server) = name_resolution_fixture_server_with_elements(
+        vec!["Gleevec".to_string(), GLEEVEC_CAPTURE.to_string()],
+        vec![
+            ("Gleevec".to_string(), GLEEVEC_LABEL_BODY.to_string()),
+            ("imatinib".to_string(), IMATINIB_GENERIC_PAGE_BODY.to_string()),
+            ("IMATINIB".to_string(), IMATINIB_EXACT_BODY.to_string()),
+        ],
+        Vec::new(),
+        Vec::new(),
+    )
+    .await;
+
+    // Ticket 2047, the 2043 gap: a brand whose plain-ingredient twin is
+    // another labeler's product. The card names the plain ingredient
+    // (imatinib), Gleevec's own record carries the salt generic
+    // ("IMATINIB MESYLATE"), and the generic-labeler pages hold records
+    // whose generic name is exactly "IMATINIB" — a plain-ingredient match
+    // the brand query must beat. Only the brand tier (openfda.brand_name
+    // equals the query) keeps Gleevec's own label: deleting that tier or
+    // passing the card's name instead of the user's query serves the
+    // generic labeler's record (set a1787fad or 0291eca5) instead.
+    let drug = name_resolution_fixture_drug(&base, "Gleevec").await;
+    assert_eq!(drug.name, "imatinib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00619"));
+    // Deleting the brand tier serves the plain-ingredient twin (a1787fad)
+    // and passing the card name instead of the query serves the newest
+    // generic labeler (0291eca5); both mutations fail this pin.
+    assert_label_data_with_set_id(&drug, "211ef2da-2868-4a77-8055-1cb2cd78e24b");
     server.abort();
 }
 

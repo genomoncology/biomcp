@@ -569,6 +569,38 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
     out
 }
 
+/// The brand that opens each SPL product data element entry, as written:
+/// the only brand identity a record with an empty `openfda` block carries
+/// ("DARZALEX Daratumumab DARATUMUMAB …" names DARZALEX), so a card whose
+/// chosen label is a sparse record still lists its own brand (ticket 2047).
+pub(super) fn element_leading_brand_names(label_response: &serde_json::Value) -> Vec<String> {
+    let Some(results) = label_response.get("results").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
+    for result in results {
+        if !is_sparse_identity_record(result) {
+            continue;
+        }
+        for element in spl_product_data_elements(result) {
+            let brand = element
+                .split_whitespace()
+                .next()
+                .unwrap_or_default()
+                .trim_matches(|c: char| matches!(c, ',' | ';' | ':' | '.'))
+                .trim();
+            if brand.is_empty() {
+                continue;
+            }
+            if seen.insert(brand.to_ascii_lowercase()) {
+                out.push(brand.to_string());
+            }
+        }
+    }
+    out
+}
+
 /// Lowercased alphanumeric tokens, so hyphenated and punctuated identity
 /// names compare by word rather than by raw substring.
 fn identity_tokens(value: &str) -> Vec<String> {
@@ -769,12 +801,23 @@ fn is_combination_product_name(name: &str) -> bool {
 /// The plain ingredient of an under-the-skin pairing: subcutaneous antibody
 /// products carry one "ingredient and hyaluronidase-xxxx" generic name, and
 /// the ingredient before "and" is the drug itself ("daratumumab and
-/// hyaluronidase-fihj" names daratumumab). A comma-list combination names
-/// no single plain ingredient and returns the whole name (ticket 2043).
+/// hyaluronidase-fihj" names daratumumab). The split serves only that
+/// two-name hyaluronidase pairing shape: a comma-list combination
+/// ("pertuzumab, trastuzumab, and hyaluronidase-zzxf") and any other
+/// "X and Y" product ("nivolumab and relatlimab-rmbw") name no single
+/// plain ingredient, so the whole name stands and a combination never
+/// becomes another product's card name (tickets 2043 and 2047).
 pub(super) fn plain_paired_ingredient_name(name: &str) -> &str {
     let lower = name.to_ascii_lowercase();
-    match lower.find(" and ") {
-        Some(index) => name[..index].trim(),
+    match lower.find(" and hyaluronidase") {
+        Some(index) => {
+            let plain = name[..index].trim();
+            if plain.contains(" and ") || plain.contains(',') {
+                name.trim()
+            } else {
+                plain
+            }
+        }
         None => name.trim(),
     }
 }
@@ -798,30 +841,87 @@ fn generic_name_matches(result: &serde_json::Value, matches: impl Fn(&str) -> bo
         })
 }
 
+/// The brand and established-name identity a sparse record's SPL product
+/// data elements carry, the only identity such a record has: each
+/// per-strength entry opens "BRAND ESTABLISHED [ESTABLISHED repeats]
+/// excipients…" ("DARZALEX Daratumumab DARATUMUMAB DARATUMUMAB ACETIC ACID…"
+/// names the DARZALEX brand and the daratumumab ingredient), so the entry
+/// head's leading token is the brand and its recurring name run after it is
+/// the established name. A head that carries only the brand token (an
+/// "X and hyaluronidase" combination whose second name never recurs) names
+/// no established ingredient, so it contributes no brand either (ticket
+/// 2047).
+fn sparse_element_identity_names(result: &serde_json::Value) -> (Vec<String>, Vec<String>) {
+    let mut brands = Vec::new();
+    let mut generics = Vec::new();
+    for run in spl_product_data_elements(result)
+        .iter()
+        .flat_map(|element| spl_element_identity_heads(element))
+    {
+        let Some((brand, established)) = run.split_first() else {
+            continue;
+        };
+        if established.is_empty() {
+            continue;
+        }
+        brands.push(brand.clone());
+        let mut tokens: Vec<&String> = Vec::new();
+        for token in established {
+            if !tokens.contains(&token) {
+                tokens.push(token);
+            }
+        }
+        generics.push(tokens.into_iter().cloned().collect::<Vec<_>>().join(" "));
+    }
+    (brands, generics)
+}
+
+/// Whether a record's identity fields are the sparse shape whose only
+/// identity is the SPL product data element line: no `openfda` generic or
+/// brand name at all (the plain DARZALEX and PHESGO records ship this way).
+fn is_sparse_identity_record(result: &serde_json::Value) -> bool {
+    extract_openfda_values_from_result(result, "generic_name").is_empty()
+        && extract_openfda_values_from_result(result, "brand_name").is_empty()
+}
+
 fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) -> u8 {
     let requested = requested.trim().to_ascii_lowercase();
     let card = card.trim().to_ascii_lowercase();
+    let (element_brands, element_generics) = if is_sparse_identity_record(result) {
+        sparse_element_identity_names(result)
+    } else {
+        (Vec::new(), Vec::new())
+    };
     if extract_openfda_values_from_result(result, "brand_name")
         .iter()
         .any(|brand| brand.trim().to_ascii_lowercase() == requested)
+        || element_brands.iter().any(|brand| *brand == requested)
     {
         return LABEL_RANK_BRAND_MATCH;
     }
     if !requested.is_empty()
-        && generic_name_matches(result, |name| {
+        && (generic_name_matches(result, |name| {
             !is_combination_product_name(name) && (name == requested || name == card)
-        })
+        }) || element_generics.iter().any(|name| {
+            !is_combination_product_name(name) && (name == &requested || name == &card)
+        }))
     {
         return LABEL_RANK_PLAIN_INGREDIENT;
     }
     if !requested.is_empty()
-        && generic_name_matches(result, |name| {
+        && (generic_name_matches(result, |name| {
             !is_combination_product_name(name)
                 && (name.starts_with(&format!("{requested} "))
                     || name.starts_with(&format!("{requested}-"))
                     || name.starts_with(&format!("{card} "))
                     || name.starts_with(&format!("{card}-")))
-        })
+        }) || element_generics.iter().any(|name| {
+            !is_combination_product_name(name)
+                && (name.starts_with(&format!("{requested} "))
+                    || name.starts_with(&format!("{requested}-"))
+                    || name.starts_with(&format!("{card} "))
+                    || name.starts_with(&format!("{card}-")))
+        }))
     {
         return LABEL_RANK_QUALIFIED_FORM;
     }
@@ -859,15 +959,60 @@ fn choose_label_response(
     Some((chosen_response, best_rank))
 }
 
+/// The sparse-record escalation for the label choice: a plain product's
+/// current record can carry no `openfda` identity block at all (the plain
+/// DARZALEX and PHESGO records ship that way), so no field-scoped search
+/// or tier ever sees it and the field-scoped answer serves the
+/// under-the-skin pairing instead. The product-data-elements search
+/// reaches the sparse record, the identity guard keeps only records whose
+/// own names match the searched name, and the element-derived identity
+/// ranks them, so a record that outranks the unconfirmed fallback serves
+/// before it (ticket 2047). A fetch error skips the escalation; the final
+/// elements fallback re-runs the card's own query and settles its errors
+/// there.
+async fn sparse_elements_choice(
+    client: &OpenFdaClient,
+    requested_name: &str,
+    card_name: &str,
+    fallback_rank: u8,
+) -> Result<Option<serde_json::Value>, BioMcpError> {
+    let mut names: Vec<&str> = Vec::new();
+    for name in [requested_name, card_name] {
+        if !names
+            .iter()
+            .any(|seen| seen.trim().eq_ignore_ascii_case(name.trim()))
+            && !name.trim().is_empty()
+        {
+            names.push(name);
+        }
+    }
+    for name in names {
+        let Ok(Some(response)) = client.label_elements_search(name).await else {
+            continue;
+        };
+        let Some(filtered) = filter_label_response_to_identity(&response, name) else {
+            continue;
+        };
+        if let Some((chosen, rank)) = choose_label_response(filtered, requested_name, card_name)
+            && rank > fallback_rank
+        {
+            return Ok(Some(chosen));
+        }
+    }
+    Ok(None)
+}
+
 /// Field-scoped label lookup with the two-sided label choice and the
-/// sparse-metadata elements fallback (tickets 2043 and 1300).
+/// sparse-metadata elements fallback (tickets 2043, 1300 and 2047).
 ///
 /// The request's own name runs first, the card's canonical name second,
 /// and a brand-equal or plain-ingredient record locks the answer. When the
 /// newest-first page holds only biosimilars and qualified forms, the
 /// exact-field escalation asks for the plain product's own record
-/// directly; a surviving qualified form (a salt or a proper-name suffix
-/// such as "amivantamab-vmjw") serves next, and openFDA's own order is the
+/// directly, and the sparse-record elements escalation reaches a plain
+/// product whose record carries no `openfda` identity block at all; a
+/// surviving qualified form (a salt or a proper-name suffix such as
+/// "amivantamab-vmjw") serves next, and openFDA's own order is the
 /// last resort, so a brand keeps a biosimilar's label only when nothing
 /// else answers. `NoSplRecord` means openFDA answered and no SPL record for
 /// the drug exists; real fetch errors surface as `Err`, except the oversize
@@ -879,6 +1024,7 @@ pub(super) async fn lookup_label_response(
     card_name: &str,
 ) -> Result<LabelLookup, BioMcpError> {
     let mut fallback: Option<serde_json::Value> = None;
+    let mut fallback_rank = LABEL_RANK_OPENFDA_ORDER;
     let mut queries: Vec<&str> = Vec::new();
     for query in [requested_name, card_name] {
         if !queries
@@ -899,7 +1045,10 @@ pub(super) async fn lookup_label_response(
         if rank >= LABEL_RANK_PLAIN_INGREDIENT {
             return Ok(LabelLookup::Response(chosen));
         }
-        fallback = fallback.or(Some(chosen));
+        if fallback.is_none() {
+            fallback_rank = rank;
+            fallback = Some(chosen);
+        }
     }
     if let Ok(Some(response)) = client
         .label_generic_exact_search(&card_name.trim().to_ascii_uppercase())
@@ -907,6 +1056,11 @@ pub(super) async fn lookup_label_response(
         && label_response_has_result(&response)
     {
         return Ok(LabelLookup::Response(response));
+    }
+    if let Some(chosen) =
+        sparse_elements_choice(client, requested_name, card_name, fallback_rank).await?
+    {
+        return Ok(LabelLookup::Response(chosen));
     }
     if let Some(fallback) = fallback {
         return Ok(LabelLookup::Response(fallback));

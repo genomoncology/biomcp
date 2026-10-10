@@ -16,7 +16,7 @@ Safety (OpenFDA FAERS): unavailable
 {% endif -%}
 {% endif -%}
 {% endif -%}
-{% if show_label_section -%}
+{% if show_label_section and (source_states.label.status or label or label_missing_reason) -%}
 ## FDA Label
 
 {% if source_states.label.status %}{{ source_states.label.status }}
