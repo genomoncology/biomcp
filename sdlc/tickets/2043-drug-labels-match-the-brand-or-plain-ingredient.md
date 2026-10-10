@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision bf8861a2a, accept
+
 ## Outcome
 
 `biomcp get drug <brand>` shows that brand's own label. `biomcp get drug <ingredient>` shows the plain single-ingredient product, never a combination, biosimilar or under-the-skin form, and names the card for that ingredient. This finishes the label half of 2037's Outcome: "with that product's label" and "a card never takes another product's name or label".
