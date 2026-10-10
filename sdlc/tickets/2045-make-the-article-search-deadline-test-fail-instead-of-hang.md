@@ -20,7 +20,7 @@ Proof, run on the build machine under the checkout lock through `yr`:
 
 - Main plus the planted test (branch `probe/2044-red`, no fix): the bare test binary run `timeout 240 .../biomcp_cli entities::article::search::tests::deadline::held_fixture_replies_self_release_at_their_own_bound --exact` never finished — the harness printed "has been running for over 60 seconds" and the outer timeout killed it at 241 seconds with exit 124. On main the hold has no timer, so paused time cannot advance and the run waits on the reply forever: the hang this ticket names, reproduced deterministically.
 - A bare run of the deadline module on main itself (no planted test) passed in 17 seconds (`cargo test --no-default-features --locked --lib entities::article::search::tests::deadline`, 10 tests green). The deadlock Ian's ruling names is intermittent, so the planted hang above is the deterministic evidence.
-- On the fix branch the same planted test fails the hold's timer at once under paused time and passes, and the deadline module's whole bare run stays bounded — recorded below in the fix-lane verification.
+- On the fix branch the same planted test fails the hold's timer at once under paused time and passes, and the deadline module's whole bare run stays bounded — verified: the planted test passes offline in the fresh lib-test build, and the bare run `cargo test --no-default-features --locked --lib entities::article::search::tests::deadline` finished with 11 tests green (the ten plus the bound test) in 15.16 seconds of test time on the build machine under the checkout lock. `make lint` passes at the fix head and branch CI run 38025131267 is green on every job.
 
 ## Evidence
 
