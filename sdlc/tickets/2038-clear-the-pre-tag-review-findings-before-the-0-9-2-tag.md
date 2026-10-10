@@ -4,7 +4,6 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
-Reviews: revision 9ca6cd18e, accept
 
 ## Outcome
 
@@ -160,3 +159,7 @@ First remove the queue report so main is green. Then 2036 and 2037, and the code
 - Code review (size-inventory head c907cdd60): ACCEPT 2026-10-10,
   recorded through pm and normalized here; the seven ticket strings
   normalized with no count changes.
+
+- Code review (drug-label-variant-hint head 9ca6cd18e): ACCEPT 2026-10-10,
+  recorded through pm and normalized here; the oversize settle and the
+  condition-form refused hint verified with their biting tests.

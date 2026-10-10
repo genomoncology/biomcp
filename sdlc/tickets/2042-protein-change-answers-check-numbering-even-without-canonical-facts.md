@@ -4,7 +4,6 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
-Reviews: revision b177354f1, accept
 
 ## Outcome
 
@@ -82,3 +81,12 @@ Deferred from the ticket's Changes list: caching the gene-to-accession
 lookup and the UniProt record; naming the isoform in the refusal text
 and keeping its line breaks in text mode. Both stay open for the 0.9.2
 cleanup lane.
+
+## Landed-head review (2026-10-10)
+
+- Code review (whole landed content, head b177354f1): ACCEPT 2026-10-10,
+  recorded through pm and normalized here. The three paths verified with
+  file:line evidence; every 2036 keep holds; the build record names heads
+  and red-to-green proof. Report-only P2s: CI green named the code head,
+  the promised timings dropped with the caching deferral, and the
+  build-record deferrals supersede the ticket's Defers line.
