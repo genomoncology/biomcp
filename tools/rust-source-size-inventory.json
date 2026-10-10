@@ -96,7 +96,7 @@
       "baseline_lines": 1432,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144, 1293, 1296 | 1299 | 1144, 1293, 1296",
+        "ticket": "1144, 1293, 1296, 1299",
         "delta": 118,
         "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them. | Re-export the article-search deadline budget and error text for the exact-keyword lookup and the public error projection | Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
         "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary. | Return to the prior baseline when the deadline seam moves to the sources layer | Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
@@ -107,7 +107,7 @@
       "baseline_lines": 6303,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, 1292, 1297 | 1299",
+        "ticket": "1150, 1292, 1297, 1299",
         "delta": 1475,
         "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Ticket 1292: the article entry refuses a bare ClinVar VariationID instead of silently resolving an empty identity. Ticket 1297: the folded-scope bare-VariationID refusal test. | cursorMark fixture adaptation in the strict-leg deadline test after ticket 1298 changed the Europe PMC wire",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed. | the deadline fixtures move to recorded captures"
@@ -129,7 +129,7 @@
       "baseline_lines": 4060,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "1243 | 1299 | 1243",
+        "ticket": "1243, 1299",
         "delta": 366,
         "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it | Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
         "removal_condition": "None; the boxing is the point. | Return to the prior baseline when the OLS client gains an unconditional deadline constructor | None; the boxing is the point."
@@ -140,10 +140,10 @@
       "baseline_lines": 1284,
       "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038, 2043",
+        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2044",
         "delta": 181,
-        "reason": "The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache.",
-        "removal_condition": "Shrink when the label choice moves into label.rs entirely and the rescue cache folds into the discover client."
+        "reason": "Poison-recovery scoping plus the guarded label fallback call with its oversize and no-match settle reasons, and the label section outcome completion in the base resolution path. Ticket 2031: the openFDA identity fallback for queries no MyChem name matches, the refusal that names what the text search matched, the discover rescue guard that adopts only name-matched canonical candidates, and the honest description of what the openFDA candidate path guarantees. Ticket 2037: the guarded discover rescue also runs before a name-miss refusal, so a brand MyChem holds only on a nameless record resolves instead of refusing. | Ticket 2038: the WHO card degrade seam applies WHO bundle readiness to the card with the serialized who_note and its degradation note. | Ticket 2043: The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
+        "removal_condition": "Revisit when the trial-alias cache moves behind a type, the panic arm shrinks, and the label outcome settles in a dedicated section owner module. | Fold the WHO degrade seam and who_note into the WHO section owner when the drug card is next decomposed. | Shrink when the label choice moves into label.rs entirely and the rescue cache folds into the discover client."
       }
     },
     {
@@ -316,14 +316,9 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1626,
-      "floor_lines": 1561,
-      "authorized_increase": {
-        "ticket": "1241, 1300 | 2021, 2038, 2044",
-        "delta": 65,
-        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, bundle-error naming, and the label_note field on Drug test cards. | The error JSON recovery borrows from the projection so a recovery can name a runtime location. | Ticket 2038: the who_pq sync-failure JSON test pins the path-free error.recovery. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Shrink when the drug card model is next refactored and the label note moves into the label section payload. | Fold the borrowed recovery into the shared error-response shape when the projection redesign lands. | Move the WHO sync-failure error-shape test out of the production render module when the error JSON tests consolidate."
-      }
+      "baseline_lines": 1598,
+      "floor_lines": 1598,
+      "authorized_increase": null
     },
     {
       "path": "src/render/markdown/article/tests.rs",
@@ -341,7 +336,7 @@
       "baseline_lines": 1074,
       "floor_lines": 954,
       "authorized_increase": {
-        "ticket": "1254, 1300 | 2021, 2038, 2044",
+        "ticket": "1254, 1300, 2021, 2038, 2044",
         "delta": 120,
         "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it; the Drug markdown test cards gained the label section pointer and missing-reason tests. | The degraded WHO search section states its reason instead of a bare no-results line; the test pins that wording. | Ticket 2038: the who_note field on the WHO regulatory test cards and the degraded WHO search section tests. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
         "removal_condition": "Shrink when the card fixtures share a builder. | Fold drug search markdown empty-state tests into shared fixtures when the search render tests consolidate. | Fold the WHO degrade tests into shared card fixtures when the drug markdown tests consolidate."
@@ -485,7 +480,7 @@
       "baseline_lines": 1048,
       "floor_lines": 959,
       "authorized_increase": {
-        "ticket": "1143, 1302 | 1143 | 1143, 1302",
+        "ticket": "1143, 1302",
         "delta": 89,
         "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier. | The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. | The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier.",
         "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
@@ -507,7 +502,7 @@
       "baseline_lines": 1300,
       "floor_lines": 1117,
       "authorized_increase": {
-        "ticket": "1196, 1304 | 1196 | 1196, 1304 | 2021, 2038, 2044",
+        "ticket": "1196, 1304, 2021, 2038, 2044",
         "delta": 183,
         "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The per-file sync failure carries its public reason, the failure sentences feed the final sync error, and the sync-failure reason prefix and recovery sentence name themselves, the recovery naming the resolved data directory. | Ticket 2038: the WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY constant for the projected surfaces. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
         "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed. | Fold the per-file sync reports into one shared sync wrapper when the sync layer is next decomposed. | Fold the projected recovery constant into the shared sync-error shape when the sync layer is next decomposed."
@@ -529,22 +524,17 @@
       "baseline_lines": 1324,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038, 2043",
+        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2044",
         "delta": 324,
-        "reason": "Combination names no longer count as qualified forms or canonical names of one requested ingredient.",
-        "removal_condition": "Shrink when the name-matching helpers split into their own module."
+        "reason": "Anchor-only synonym fold, the end-to-end identity tests, and the label_note field on the merged drug card. Ticket 2031: the exact-name selection tiers with the leading-qualified fallback, the all-row name collectors (NDC established and proprietary names, openFDA values, DrugCentral synonyms), and the matched-canonical card-name choice. Ticket 2037: the brand-paired nonproprietary name collector with its identity-bearing-hit guard, so a brand card takes the name its own product row pairs instead of another product's row or the brand string itself. | Ticket 2038: the who_note field on the merged drug card. | Ticket 2043: Combination names no longer count as qualified forms or canonical names of one requested ingredient. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
+        "removal_condition": "Split the merge tests into a dedicated tests submodule. | Fold the who_note field into the WHO section owner when the merged drug card is next decomposed. | Shrink when the name-matching helpers split into their own module."
       }
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1659,
-      "floor_lines": 1335,
-      "authorized_increase": {
-        "ticket": "1263, 2016, 2022, 2035, 2038, 2044",
-        "delta": 324,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: the ClinVar-preferred MANE transcript helper and the MANE-aware SnpEff annotation ranking. Ticket 2035 finding 4: the ClinVar-free ranking tier that headlines the annotation naming the requested change; finding 21: the versioned MANE marker so answers show ClinVar's current RefSeq accession where the SnpEff build lags. | Ticket 2038: the shared day-shape rule through crate::utils::date::is_day_shaped for the ClinVar fallback age label. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module."
-      }
+      "baseline_lines": 1210,
+      "floor_lines": 1210,
+      "authorized_increase": null
     }
   ]
 }
