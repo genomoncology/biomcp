@@ -28,7 +28,11 @@ fn fold_one_word(word: &str) -> &str {
         && !word.ends_with("ss")
         && !word.ends_with("us")
         && !word.ends_with("is");
-    foldable.then(|| &word[..word.len() - 1]).unwrap_or(word)
+    if foldable {
+        &word[..word.len() - 1]
+    } else {
+        word
+    }
 }
 
 /// An article disease row's concept name holds a hit exactly when a name,

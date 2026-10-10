@@ -83,7 +83,7 @@ fn annotation_identity(
         AnnotationKind::Disease | AnnotationKind::Chemical => {
             let (namespace, identifier) = registry_identity(infons.identifier.as_deref()?)?;
             let name = (kind == AnnotationKind::Disease)
-                .then(|| infons.name.as_deref())
+                .then_some(infons.name.as_deref())
                 .flatten()
                 .map(str::trim)
                 .filter(|name| !name.is_empty() && name.len() <= MAX_IDENTIFIER_BYTES)
