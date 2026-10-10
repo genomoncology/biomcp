@@ -48,7 +48,10 @@ so all five rows carry the gene-plus-HGVS form that names one allele: one
 rsID can name several alleles (rs121913529 names three KRAS codon-12
 alleles), the article may mention only one of them, and BioMCP has no
 offline rsID-to-alleles table, so the row's own gene-plus-change pair is the
-form that always names the row's allele.
+form that always names the row's allele. A row with no gene annotation and
+no protein change keeps its rsID link, and one rsID can name several
+alleles, so a gene-less single-mention row can print an rsID that opens a
+different allele; BioMCP has no allele-specific form for that row.
 
 ## Compact JSON Omits Passage Positions
 
