@@ -992,6 +992,20 @@ class Handler(BaseHTTPRequestHandler):
                 }],
             })
             return
+        if decoded_path == "/disease/MONDO:0033642":
+            # The detail leg of the diagnostic page's disease-term
+            # resolution (ticket 2047): the same record the survival
+            # fixture serves, kept in the article stage's own fixture.
+            send_json(self, 200, {
+                "_id": "MONDO:0033642",
+                "disease_ontology": {
+                    "name": "Bachmann-Bupp syndrome",
+                    "synonyms": {"exact": [
+                        "neurodevelopmental disorder with alopecia and brain abnormalities"
+                    ]},
+                },
+            })
+            return
 
         if (
             decoded_path == "/search"
