@@ -4,6 +4,7 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+
 ## Outcome
 
 The 2038 code-lane changes on main meet Ian's terminal-only WHO decision on every surface, keep every explicit filter on every hint path, carry honest per-file size records, and landed through green CI with a recorded review of the landed head.
@@ -52,3 +53,11 @@ Landed on `tickets/2044-fix` from main `22459d8c1`, 2026-10-10. One commit per i
 At head `1ccf7c625`: `make lint` green (fmt, clippy, deny, quality ratchet with the restored inventory, test-wait ratchet); all four new Rust tests green offline in a forced-fresh lib-test build (the MCP WHO test, both refused-hint tests, and the held-reply bound test — the article deadline module's bare run stayed green too); `test_cargo_source_package_keeps_the_runtime_boundary` green at 1,408 files with `.config` excluded; `tests/test_provider_network_policy.py` carries the held-reply proof's one raw loopback client in its fail-closed inventory. Branch CI run 38025131267 green on every job.
 
 The build machine's full offline pytest lane could not go green this session for reasons that reproduce on main itself: the shared checkout is being mutated by concurrent lanes (an untracked `src/entities/drug/test_support/label_choice.rs` appeared and vanished mid-run, inflating one package count), `/tmp` sits under the health contract's floor, and under that load the cli::update archive tests and the package tarball test time out or race — each was rerun serially and passed, and the same tarball test fails on the `probe/2044-red` main-equivalent branch today. CI on clean runners is the gate that went green.
+
+## Landed-head review (2026-10-10)
+
+- Code review (fix lane, head 21630b5eb): ACCEPT 2026-10-10, recorded
+  through pm and normalized here. All five items verified with red-on-
+  main probes recorded; one report-only P2 on duplicated segments
+  inside compound inventory reasons (the updater's long-standing
+  compounding; collapses on the next authorize).
