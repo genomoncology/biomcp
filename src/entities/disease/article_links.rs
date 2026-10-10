@@ -6,7 +6,6 @@
 //! the concept name exactly, so every other row keeps the v0.9.1 search
 //! command instead of a confidently wrong get.
 
-use crate::error::BioMcpError;
 use crate::transform;
 
 /// Fold a final-word plural conservatively: `Neoplasms` to `neoplasm`,
@@ -54,7 +53,8 @@ fn crosswalk_hit_holds_name(name: &str, hit: &crate::sources::mydisease::MyDisea
     }
     labels.into_iter().any(|label| {
         let label = super::resolution::normalize_disease_text(&label);
-        let label_forms = [label, singular_final_word(&label)];
+        let singular = singular_final_word(&label);
+        let label_forms = [label, singular];
         name_forms.iter().any(|name| label_forms.contains(name))
     })
 }
