@@ -93,13 +93,13 @@
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1432,
+      "baseline_lines": 1439,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144, 1293, 1296 | 1299 | 1144, 1293, 1296",
-        "delta": 118,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them. | Re-export the article-search deadline budget and error text for the exact-keyword lookup and the public error projection | Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
-        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary. | Return to the prior baseline when the deadline seam moves to the sources layer | Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
+        "ticket": "1144, 1293, 1296 | 1299 | 1144, 1293, 1296, 2047",
+        "delta": 125,
+        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them. | Re-export the article-search deadline budget and error text for the exact-keyword lookup and the public error projection | Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them. | Ticket 2047: the disease rows carry PubTator3's concept name beside the identifier so a follow-up link can match it exactly.",
+        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary. | Return to the prior baseline when the deadline seam moves to the sources layer | Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary. | Fold the annotation row model into the transform module when the entity rows gain another provider field."
       }
     },
     {
@@ -227,24 +227,24 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1962,
+      "baseline_lines": 2035,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016, 2035, 2036, 2042",
-        "delta": 834,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its MANE or ClinVar-named transcript spells the change; the MANE stem from the query's ClinVar-preferred names, the numbering note, and the MANE-numbering refusal. Ticket 2035 findings 4 and 21: the residue check runs before any note prints (refuse when the request's numbering is valid on MANE, note when it provably differs, stay silent when unverifiable) and the refusal retry names the requested change instead of the known-differing candidate. Ticket 2036: the canonical-protein facts fetch (accession, requested-position residue, MANE-Select transcript) runs before any non-MANE annotation is accepted, so the refuse-or-note decision splits into the async wrapper and the pure facts decision. Ticket 2042: the canonical facts carry the sequence length so a position past the protein's end proves another numbering, and the no-facts decision (unchecked note, could-not-check refusal, no-protein-change refusal) splits out of the wrapper.",
-        "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms."
+        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016, 2035, 2036, 2042, 2047",
+        "delta": 907,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its MANE or ClinVar-named transcript spells the change; the MANE stem from the query's ClinVar-preferred names, the numbering note, and the MANE-numbering refusal. Ticket 2035 findings 4 and 21: the residue check runs before any note prints (refuse when the request's numbering is valid on MANE, note when it provably differs, stay silent when unverifiable) and the refusal retry names the requested change instead of the known-differing candidate. Ticket 2036: the canonical-protein facts fetch (accession, requested-position residue, MANE-Select transcript) runs before any non-MANE annotation is accepted, so the refuse-or-note decision splits into the async wrapper and the pure facts decision. Ticket 2042: the canonical facts carry the sequence length so a position past the protein's end proves another numbering, and the no-facts decision (unchecked note, could-not-check refusal, no-protein-change refusal) splits out of the wrapper. | Ticket 2047: the proven other-numbering arm prints its note instead of resolving an isoform spelling silently, the refusals name the isoform that spells the request, and the protein-change-absent wording claims only what the record headlined.",
+        "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms. | Fold the refusal message builders into a shared module when the numbering decisions move out of get.rs."
       }
     },
     {
       "path": "src/entities/variant/get/protein_change_tests.rs",
-      "baseline_lines": 1181,
+      "baseline_lines": 1380,
       "floor_lines": 902,
       "authorized_increase": {
-        "ticket": "2042",
-        "delta": 279,
-        "reason": "The past-the-end, unchecked-numbering, no-facts-refusal, no-MANE-transcript, and no-protein-change decision tests with the many-interaction-row record shape.",
-        "removal_condition": "Fold the recorded SnpEff shapes into a shared builder when the decision tests grow another provider shape."
+        "ticket": "2042, 2047",
+        "delta": 478,
+        "reason": "The past-the-end, unchecked-numbering, no-facts-refusal, no-MANE-transcript, and no-protein-change decision tests with the many-interaction-row record shape. | Ticket 2047: the proven other-numbering note, the H1883D past-the-end shape, and both protein-change-absent arms with the no-bare-candidate-list refusal text.",
+        "removal_condition": "Fold the recorded SnpEff shapes into a shared builder when the decision tests grow another provider shape. | Fold the recorded SnpEff shapes into a shared builder when the decision tests grow another provider shape."
       }
     },
     {
@@ -327,13 +327,13 @@
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1345,
+      "baseline_lines": 1354,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1144, 1201, 1296, 2018",
-        "delta": 138,
-        "reason": "Pin the graph pagination footer and shared continuation command; ticket 1201 adds the header parameter to every article render context literal; ticket 1296 pins entity rows printing get commands by accepted identifier while gene and chemical rows keep their text searches; ticket 2018 pins the multi-allele rsID row printing the gene-qualified protein-change command.",
-        "removal_condition": "Extract graph and entities renderer tests when a package-neutral module split can preserve the exact source package boundary."
+        "ticket": "1144, 1201, 1296, 2018, 2047",
+        "delta": 147,
+        "reason": "Pin the graph pagination footer and shared continuation command; ticket 1201 adds the header parameter to every article render context literal; ticket 1296 pins entity rows printing get commands by accepted identifier while gene and chemical rows keep their text searches; ticket 2018 pins the multi-allele rsID row printing the gene-qualified protein-change command. | Ticket 2047: the entities rows pin the verified crosswalk get and the v0.9.1 search fallback with no bare MeSH get.",
+        "removal_condition": "Extract graph and entities renderer tests when a package-neutral module split can preserve the exact source package boundary. | Fold the entities table expectations into a shared fixture when the row commands gain another bucket."
       }
     },
     {
@@ -349,13 +349,13 @@
     },
     {
       "path": "src/render/markdown/related.rs",
-      "baseline_lines": 1140,
+      "baseline_lines": 1141,
       "floor_lines": 1123,
       "authorized_increase": {
-        "ticket": "1202",
-        "delta": 17,
-        "reason": "Cell-line next commands beside the other entity related-command builders (ticket 1202, +17).",
-        "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed."
+        "ticket": "1202, 2047",
+        "delta": 18,
+        "reason": "Cell-line next commands beside the other entity related-command builders (ticket 1202, +17). | Ticket 2047: the annotation command wrapper carries the verified disease get.",
+        "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed. | Inline the wrapper when the verified-command thread moves into the support module."
       }
     },
     {
@@ -537,13 +537,13 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1659,
+      "baseline_lines": 1697,
       "floor_lines": 1335,
       "authorized_increase": {
-        "ticket": "1263, 2016, 2022, 2035, 2038, 2044",
-        "delta": 324,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: the ClinVar-preferred MANE transcript helper and the MANE-aware SnpEff annotation ranking. Ticket 2035 finding 4: the ClinVar-free ranking tier that headlines the annotation naming the requested change; finding 21: the versioned MANE marker so answers show ClinVar's current RefSeq accession where the SnpEff build lags. | Ticket 2038: the shared day-shape rule through crate::utils::date::is_day_shaped for the ClinVar fallback age label. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module."
+        "ticket": "1263, 2016, 2022, 2035, 2038, 2044, 2047",
+        "delta": 362,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: the ClinVar-preferred MANE transcript helper and the MANE-aware SnpEff annotation ranking. Ticket 2035 finding 4: the ClinVar-free ranking tier that headlines the annotation naming the requested change; finding 21: the versioned MANE marker so answers show ClinVar's current RefSeq accession where the SnpEff build lags. | Ticket 2038: the shared day-shape rule through crate::utils::date::is_day_shaped for the ClinVar fallback age label. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost. | Ticket 2047: the isoform-annotation finder that names the transcript spelling a requested change.",
+        "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module."
       }
     }
   ]

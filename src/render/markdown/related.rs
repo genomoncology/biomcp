@@ -758,8 +758,9 @@ pub(super) enum ArticleAnnotationBucket {
 pub(super) fn article_annotation_command(
     bucket: ArticleAnnotationBucket,
     annotation: &crate::entities::article::AnnotationCount,
+    verified_disease_get: Option<&str>,
 ) -> Option<String> {
-    article_support::article_annotation_command(bucket, annotation)
+    article_support::article_annotation_command(bucket, annotation, verified_disease_get)
 }
 
 pub(super) fn trial_results_search_command(trial: &Trial) -> Option<String> {

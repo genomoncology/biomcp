@@ -32,7 +32,15 @@ impl UniProtClient {
     pub fn new() -> Result<Self, BioMcpError> {
         let base = crate::sources::env_base(UNIPROT_BASE, UNIPROT_BASE_ENV);
         Ok(Self {
-            client: crate::sources::streaming_http_client(base.as_ref(), UNIPROT_BASE_ENV)?,
+            // The shared client carries BioMCP's HTTP cache, so the
+            // gene-to-accession search and the canonical-protein record
+            // serve from cache between runs: UniProt marks its JSON
+            // `Cache-Control: public, max-age=43200`, and the uncached
+            // streaming client cost the residue check 0.35–1.2 s on every
+            // gene+protein request (ticket 2042's deferred caching, landed
+            // by 2047). `--no-cache` still bypasses the cache through the
+            // shared stack's own no-cache path.
+            client: crate::sources::shared_client()?,
             base,
         })
     }

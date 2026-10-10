@@ -27,9 +27,9 @@ by the shared article fixture.
 ```bash
 ../../tools/biomcp-ci --json article entities 30738221 \
   | jq '.annotations.diseases == [
-      {"text":"NSCLC","count":16,"namespace":"MESH","identifier":"MESH:D002289"},
-      {"text":"tumor","count":3,"namespace":"MESH","identifier":"MESH:D009369"},
-      {"text":"Non-Small Cell Lung Cancer","count":1,"namespace":"MESH","identifier":"MESH:D002289"}
+      {"text":"NSCLC","count":16,"namespace":"MESH","identifier":"MESH:D002289","name":"Carcinoma Non-Small-Cell Lung"},
+      {"text":"tumor","count":3,"namespace":"MESH","identifier":"MESH:D009369","name":"Neoplasms"},
+      {"text":"Non-Small Cell Lung Cancer","count":1,"namespace":"MESH","identifier":"MESH:D002289","name":"Carcinoma Non-Small-Cell Lung"}
     ] and (.annotations.mutations | map({text, namespace, identifier}) == [
       {"text":"G12A","namespace":"HGVS","identifier":"KRAS p.G12A"},
       {"text":"G12C","namespace":"HGVS","identifier":"KRAS p.G12C"},
@@ -75,21 +75,35 @@ provider's document-global character offsets, one span per counted mention.
   | mustmatch 'true'
 ```
 
-## Rows Print a Get Command by Identifier Where BioMCP Accepts It
+## Rows Print a Get Command Only Where BioMCP Can Name the Record
 
-Disease MeSH identifiers resolve through the disease crosswalk and variant
-rsIDs or gene-plus-HGVS forms parse as exact variant input, so those rows open
-the record directly. Gene rows keep the text search because `get gene` takes
-symbols, not NCBI Gene identifiers.
+A disease row's MeSH identifier opens a card only when the MyDisease
+crosswalk holds exactly one hit naming the identifier's PubTator3 concept
+name, so the link names that hit's ontology ID; anything else keeps the
+v0.9.1 search command, because several MONDO records crosswalk one broad
+MeSH descriptor and a bare identifier opens whichever card sorts first —
+`MESH:D008175` for "Lung Cancers" opened lung benign neoplasm. The
+`tumor` row's descriptor `MESH:D009369` names `Neoplasms`, and exactly one
+record holds that name, so the row links the ontology ID. The `NSCLC`
+rows' descriptor `MESH:D002289` names `Carcinoma Non-Small-Cell Lung`,
+which no crosswalk hit spells, so those rows keep their text search.
+Variant rsIDs and gene-plus-HGVS forms parse as exact variant input, so
+those rows still open the record directly. Gene rows keep the text search
+because `get gene` takes symbols, not NCBI Gene identifiers.
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
-  | mustmatch '/\| NSCLC \| 16 \| `biomcp get disease MESH:D002289` \|/'
+  | mustmatch '/\| tumor \| 3 \| `biomcp get disease MONDO:0005070` \|/'
 ```
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
-  | mustmatch '/\| tumor \| 3 \| `biomcp get disease MESH:D009369` \|/'
+  | mustmatch '/\| NSCLC \| 16 \| `biomcp search disease --query "NSCLC"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 30738221 \
+  | mustmatch not '/get disease MESH:/'
 ```
 
 ```bash

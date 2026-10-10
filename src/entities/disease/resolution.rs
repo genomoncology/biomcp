@@ -502,7 +502,7 @@ pub(super) fn disease_candidate_score(query: &str, candidate_label: &str) -> i32
     score
 }
 
-fn collect_json_strings(value: &serde_json::Value, out: &mut Vec<String>) {
+pub(super) fn collect_json_strings(value: &serde_json::Value, out: &mut Vec<String>) {
     match value {
         serde_json::Value::String(v) => {
             let v = v.trim();

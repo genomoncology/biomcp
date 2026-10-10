@@ -26,8 +26,8 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
             ..Default::default()
         }],
     };
-    let markdown =
-        article_entities_markdown("22663011", Some(&annotations), Some(5)).expect("markdown");
+    let markdown = article_entities_markdown("22663011", Some(&annotations), Some(5), &|_| None)
+        .expect("markdown");
     assert!(markdown.contains("`biomcp search gene -q BRAF`"));
     assert!(markdown.contains("`biomcp search gene -q \"serine-threonine protein kinase\"`"));
     assert!(!markdown.contains("`biomcp get gene serine-threonine protein kinase`"));
@@ -93,12 +93,19 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
             },
         ],
     };
-    let markdown =
-        article_entities_markdown("30738221", Some(&annotations), Some(10)).expect("markdown");
+    let markdown = article_entities_markdown(
+        "30738221",
+        Some(&annotations),
+        Some(10),
+        &|row| (row.identifier.as_deref() == Some("MESH:D002289"))
+            .then(|| "biomcp get disease MONDO:0005233".to_string()),
+    )
+    .expect("markdown");
 
-    // Disease MeSH and OMIM identifiers open the record directly.
-    assert!(markdown.contains("`biomcp get disease MESH:D002289`"));
-    assert!(markdown.contains("`biomcp get disease OMIM:155601`"));
+    // A verified crosswalk hit opens the named disease; an unverified
+    // crosswalk identifier keeps the v0.9.1 search command (ticket 2047).
+    assert!(markdown.contains("`biomcp get disease MONDO:0004905`"));
+    assert!(markdown.contains("`biomcp search disease --query melanoma`"));
     // Variant rsIDs and accepted HGVS expressions resolve exactly.
     assert!(markdown.contains("`biomcp get variant rs121913530`"));
     assert!(markdown.contains("`biomcp get variant \"NM_004333.6:c.1799T>A\"`"));
@@ -110,6 +117,8 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
     assert!(!markdown.contains("get gene 3845"));
     assert!(!markdown.contains("get drug MESH:D087240"));
     assert!(!markdown.contains("get disease NSCLC"));
+    assert!(!markdown.contains("get disease MESH:"));
+    assert!(!markdown.contains("get disease OMIM:"));
 }
 
 #[test]

@@ -32,11 +32,11 @@ fixture; the fixture answers only the recorded queries.
 | DICER1 p.Met1483Ile | ok | chr14:g.95562808C>T | 0 |
 | BRCA1 S1551Y | ok | chr17:g.41226371G>T | 0 |
 | BRCA1 S395T | ok | chr17:g.41246365A>T | 0 |
-| TP53 R209Q | invalid_argument | none | 1 |
-| TP53 G112D | invalid_argument | none | 1 |
-| TP53 R174H | invalid_argument | none | 1 |
-| TP53 S183Y | invalid_argument | none | 1 |
-| BRCA1 S1587F | invalid_argument | none | 1 |
+| TP53 R209Q | invalid_argument | none | 0 |
+| TP53 G112D | invalid_argument | none | 0 |
+| TP53 R174H | invalid_argument | none | 0 |
+| TP53 S183Y | invalid_argument | none | 0 |
+| BRCA1 S1587F | invalid_argument | none | 0 |
 | EGFR M766I | invalid_argument | none | 3 |
 
 ```bash each_row="Variant Protein-Change Resolution"
@@ -154,7 +154,9 @@ refusing as conflicting records. The recorded DICER1 response ranks the
 ClinVar-less variant `chr14:g.95562808C>A` first, so a first-match pick
 answers the wrong variant; the row proves the ClinVar-named
 `chr14:g.95562808C>T` (VariationID 577152, rs1454569806) wins among three
-true matches. A refusal names every candidate with a working input form.
+true matches. An ambiguity refusal still names every candidate with a
+working input form; a numbering refusal names the isoform that spells the
+request instead of a bare candidate list (ticket 2042).
 
 ```bash run id=protein-change-ambiguity-refusal exit=2
 biomcp --json --no-cache get variant 'EGFR M766I'
@@ -177,7 +179,7 @@ biomcp --json --no-cache get variant 'TP53 R209Q'
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R209Q': the gene's canonical protein (UniProt P04637) has Arg at 209, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Arg248Gln on NM_000546.6 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.7577538C>T (ClinVar VariationID 12356; rs11540652)\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'R209Q', or search the spelling: biomcp search variant -g TP53 --hgvsp R209Q."
+    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R209Q': the gene's canonical protein (UniProt P04637) has Arg at 209, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Arg248Gln on NM_000546.6 — a different change; the request is spelled p.Arg209Gln on NM_001126118.1, another transcript. BioMCP refuses rather than return the wrong variant.\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'R209Q', or search the spelling: biomcp search variant -g TP53 --hgvsp R209Q."
   }
 }
 ```
@@ -190,7 +192,7 @@ biomcp --json --no-cache get variant 'TP53 S183Y'
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 S183Y': the gene's canonical protein (UniProt P04637) has Ser at 183, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Ser315Tyr on NM_000546.6 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.7576902G>T (rs2073157445)\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'S183Y', or search the spelling: biomcp search variant -g TP53 --hgvsp S183Y."
+    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 S183Y': the gene's canonical protein (UniProt P04637) has Ser at 183, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Ser315Tyr on NM_000546.6 — a different change; the request is spelled p.Ser183Tyr on NM_001126115.1, another transcript. BioMCP refuses rather than return the wrong variant.\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'S183Y', or search the spelling: biomcp search variant -g TP53 --hgvsp S183Y."
   }
 }
 ```
@@ -203,7 +205,7 @@ biomcp --json --no-cache get variant 'BRCA1 S1587F'
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: No MANE-numbered variant matches 'BRCA1 S1587F': the gene's canonical protein (UniProt P38398) has Ser at 1587, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Ser1566Phe on NM_007294.4 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.41223234G>A (rs1060502325)\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'S1587F', or search the spelling: biomcp search variant -g BRCA1 --hgvsp S1587F."
+    "message": "Invalid argument: No MANE-numbered variant matches 'BRCA1 S1587F': the gene's canonical protein (UniProt P38398) has Ser at 1587, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Ser1566Phe on NM_007294.4 — a different change; the request is spelled p.Ser1587Phe on NM_007300.3, another transcript. BioMCP refuses rather than return the wrong variant.\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'S1587F', or search the spelling: biomcp search variant -g BRCA1 --hgvsp S1587F."
   }
 }
 ```
@@ -228,7 +230,7 @@ BIOMCP_UNIPROT_BASE=http://127.0.0.1:9 biomcp --json --no-cache get variant 'TP5
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R116Q': the canonical (MANE Select) protein could not be read, so the requested numbering could not be checked, and the only alias match is p.Arg248Gln on NM_000546.6 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.7577538C>T (ClinVar VariationID 12356; rs11540652)\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'R116Q', or search the spelling: biomcp search variant -g TP53 --hgvsp R116Q."
+    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R116Q': the canonical (MANE Select) protein could not be read, so the requested numbering could not be checked, and the only alias match is p.Arg248Gln on NM_000546.6 — a different change; the request is spelled p.Arg116Gln on NM_001126115.1, another transcript. BioMCP refuses rather than return the wrong variant.\nRetry `biomcp get variant` with a transcript-qualified HGVS naming 'R116Q', or search the spelling: biomcp search variant -g TP53 --hgvsp R116Q."
   }
 }
 ```

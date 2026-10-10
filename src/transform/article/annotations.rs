@@ -41,15 +41,18 @@ fn annotation_kind(kind: &str) -> Option<AnnotationKind> {
 }
 
 /// A PubTator3 identifier paired with the namespace that names its registry.
-/// The namespace spelling matches the identifier form BioMCP can type back in.
-type AnnotationIdentity = (&'static str, String);
+/// The namespace spelling matches the identifier form BioMCP can type back in,
+/// and `name` carries the registry concept's own name for disease rows
+/// (`MESH:D008175` → `Lung Neoplasms`), which a follow-up link can match
+/// exactly (ticket 2047).
+type AnnotationIdentity = (&'static str, String, Option<String>);
 
 fn clean_identifier(value: &str) -> Option<&str> {
     let value = value.trim();
     (!value.is_empty() && value != "-" && value.len() <= MAX_IDENTIFIER_BYTES).then_some(value)
 }
 
-fn registry_identity(identifier: &str) -> Option<AnnotationIdentity> {
+fn registry_identity(identifier: &str) -> Option<(&'static str, String)> {
     let identifier = clean_identifier(identifier)?;
     let upper = identifier.to_ascii_uppercase();
     if let Some(rest) = upper.strip_prefix("MESH:") {
@@ -66,7 +69,9 @@ fn registry_identity(identifier: &str) -> Option<AnnotationIdentity> {
 /// the gene-qualified HGVS expression whenever the row's own annotations
 /// carry a gene and a protein change, the rsID while the document shows that
 /// rsID naming one change and the row lacks that pair, and the HGVS
-/// expression otherwise.
+/// expression otherwise. Disease rows also keep PubTator3's concept name for
+/// the identifier, which the disease crosswalk matches exactly instead of
+/// opening whatever card a bare MeSH identifier happens to hit (ticket 2047).
 fn annotation_identity(
     kind: AnnotationKind,
     infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
@@ -74,9 +79,17 @@ fn annotation_identity(
 ) -> Option<AnnotationIdentity> {
     match kind {
         AnnotationKind::Gene => clean_identifier(infons.identifier.as_deref()?)
-            .map(|identifier| ("NCBIGene", identifier.to_string())),
+            .map(|identifier| ("NCBIGene", identifier.to_string(), None)),
         AnnotationKind::Disease | AnnotationKind::Chemical => {
-            registry_identity(infons.identifier.as_deref()?)
+            let (namespace, identifier) =
+                registry_identity(infons.identifier.as_deref()?)?;
+            let name = (kind == AnnotationKind::Disease)
+                .then(|| infons.name.as_deref())
+                .flatten()
+                .map(str::trim)
+                .filter(|name| !name.is_empty() && name.len() <= MAX_IDENTIFIER_BYTES)
+                .map(str::to_string);
+            Some((namespace, identifier, name))
         }
         AnnotationKind::Mutation => mutation_identity(infons, mutation_context),
     }
@@ -123,18 +136,18 @@ fn mutation_identity(
         && is_protein_hgvs(hgvs)
         && let Some(form) = mutation_context.gene_qualified_change(infons, hgvs)
     {
-        return Some(("HGVS", form));
+        return Some(("HGVS", form, None));
     }
     if let Some(rsid) = first_rsid(infons) {
         if !mutation_context
             .multi_allele_rsids
             .contains(&rsid.to_ascii_lowercase())
         {
-            return Some(("rsID", rsid.to_string()));
+            return Some(("rsID", rsid.to_string(), None));
         }
         let hgvs = infons.hgvs.as_deref().and_then(clean_identifier)?;
         if !is_protein_hgvs(hgvs) {
-            return Some(("HGVS", hgvs.to_string()));
+            return Some(("HGVS", hgvs.to_string(), None));
         }
         // A shared rsID with a protein change reached here because no
         // gene-qualified exact form exists, so no typed-back form names the
@@ -145,7 +158,7 @@ fn mutation_identity(
         .hgvs
         .as_deref()
         .and_then(clean_identifier)
-        .map(|hgvs| ("HGVS", hgvs.to_string()))
+        .map(|hgvs| ("HGVS", hgvs.to_string(), None))
 }
 
 /// Document-wide facts that disambiguate mutation identities: the gene symbol
@@ -283,6 +296,7 @@ struct AnnotationTally {
     first_seen_order: usize,
     namespace: Option<&'static str>,
     identifier: Option<String>,
+    name: Option<String>,
     positions: Vec<AnnotationPosition>,
 }
 
@@ -300,14 +314,18 @@ fn push_annotation_count(
     }
     let key = (
         t.to_ascii_lowercase(),
-        identity.as_ref().map(|(_, identifier)| identifier.clone()),
+        identity.as_ref().map(|(_, identifier, _)| identifier.clone()),
     );
     let entry = map.entry(key).or_insert_with(|| AnnotationTally {
         text: t.to_string(),
         count: 0,
         first_seen_order: order,
-        namespace: identity.as_ref().map(|(namespace, _)| *namespace),
-        identifier: identity.as_ref().map(|(_, identifier)| identifier.clone()),
+        namespace: identity.as_ref().map(|(namespace, _, _)| *namespace),
+        identifier: identity.as_ref().map(|(_, identifier, _)| identifier.clone()),
+        // One registry identifier carries one concept name; a row that lost
+        // its name to an earlier mention of the same identifier keeps the
+        // first one seen (ticket 2047).
+        name: identity.and_then(|(_, _, name)| name),
         positions: Vec::new(),
     });
     entry.count += 1;
@@ -331,6 +349,7 @@ fn finalize_counts(map: HashMap<AnnotationKey, AnnotationTally>) -> Vec<Annotati
                     count: tally.count,
                     namespace: tally.namespace.map(str::to_string),
                     identifier: tally.identifier,
+                    name: tally.name,
                     positions: tally.positions,
                 },
                 tally.first_seen_order,

@@ -64,7 +64,7 @@ flags.
 biomcp article entities 22663011
 ```
 
-Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections. JSON rows carry each annotation's identifier and namespace, such as `NCBIGene 3845` for KRAS or `MESH:D002289` for NSCLC, and rows print `get disease MESH:...` or `get variant rs...` commands where BioMCP accepts the identifier. Add `--full` for passage positions in JSON.
+Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections. JSON rows carry each annotation's identifier and namespace, such as `NCBIGene 3845` for KRAS or `MESH:D002289` for NSCLC, and rows print `get variant rs...` commands where BioMCP accepts the identifier. A disease row prints `get disease <ontology-id>` only when the disease crosswalk holds exactly one record naming the identifier's concept name; otherwise the row prints a `search disease` command, because a bare MeSH identifier can open the wrong disease card. Add `--full` for passage positions in JSON.
 
 ```bash
 biomcp get article 27083046 fulltext

@@ -97,6 +97,38 @@ impl GwasClient {
         .map(Some)
     }
 
+    /// The legacy by-rsID associations endpoint retired upstream (HTTP 410
+    /// since 2026-10; a retiring gateway can answer 404 the same way), so
+    /// those statuses name the retired endpoint rather than an empty
+    /// result. The reader keeps a 200 empty page as "no associations" and
+    /// degrades the retired class with the honest gap note instead of the
+    /// hard failure the live source now returns (ticket 2047).
+    async fn get_json_by_rsid<T: DeserializeOwned>(
+        &self,
+        req: reqwest_middleware::RequestBuilder,
+    ) -> Result<Option<T>, BioMcpError> {
+        let resp = req
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GWAS,
+            ))
+            .await?;
+        let status = resp.status();
+        if status == StatusCode::GONE || status == StatusCode::NOT_FOUND {
+            return Err(retired_gwas_endpoint_error());
+        }
+        let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::GWAS),
+        )
+        .await?;
+        Self::decode_json_optional(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GWAS,
+            ))
+        })
+    }
+
     async fn get_json_optional<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
@@ -140,7 +172,7 @@ impl GwasClient {
         let req = self.request_no_store(&plan);
 
         let Some(resp): Option<GwasAssociationsResponse> = self
-            .get_json_optional(req)
+            .get_json_by_rsid(req)
             .await
             .map_err(remap_gwas_error)?
         else {
@@ -279,6 +311,22 @@ fn gwas_status_is_transient(message: &str) -> bool {
     };
 
     status == 408 || status == 429 || (500..=599).contains(&status)
+}
+
+/// The honest gap note for the retired legacy endpoint (ticket 2047): the
+/// by-rsID associations read is gone upstream, not temporarily flaky, so
+/// the variant degrades with this reason instead of the transient wording.
+fn retired_gwas_endpoint_error() -> BioMcpError {
+    BioMcpError::SourceUnavailable {
+        source_name: "GWAS Catalog".to_string(),
+        reason: "The legacy GWAS Catalog REST endpoint that serves rsID \
+             associations retired upstream (HTTP 410), so GWAS association \
+             data is unavailable until the v2 endpoint is wired."
+            .to_string(),
+        suggestion: "See the GWAS Catalog v2 migration guide, or retry the \
+             association search: biomcp search gwas --trait <text>"
+            .to_string(),
+    }
 }
 
 fn normalize_rsid(value: &str) -> Result<String, BioMcpError> {

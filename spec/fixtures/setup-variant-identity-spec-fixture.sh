@@ -130,13 +130,12 @@ BRCA1_Q1878R_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_q1878r_2
 UNIPROT_P04637_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p04637_20261008.json").read_bytes()
 # Ticket 2035 finding 4: BRCA1's residue checks read P38398.
 UNIPROT_P38398_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p38398_20261009.json").read_bytes()
-# Ticket 2042: the legacy GWAS Catalog REST endpoint retired upstream
-# (HTTP 410 since 2026-10), so the offline lane cannot reach it. The two
-# somatic variants whose re-captured replies now carry rsIDs (BRAF V600E,
-# MYD88 L265P) have no germline GWAS associations either way, so the
-# fixture answers their by-rsID association reads with the committed
-# empty page instead of the dead source's hard failure.
-GWAS_ASSOCIATIONS_EMPTY = (ROOT / "testdata/sources/gwas/associations_empty.json").read_bytes()
+# Ticket 2042/2047: the legacy GWAS Catalog REST endpoint retired upstream
+# (HTTP 410 since 2026-10), so the offline lane cannot reach it. The
+# fixture replays the retired endpoint's own 410 reply so the offline lane
+# exercises the same degrade the live source answers with (the honest gap
+# note), instead of the committed empty page that masked the live shape.
+GWAS_RETIRED_410_BODY = (ROOT / "testdata/sources/gwas/associations_retired_410_body.txt").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 # Ticket 1291: the switch never reproduced live (the recorded
 # reproduction runs' efetch calls all answered within 1.4 s), so this
@@ -326,6 +325,14 @@ def send_json(handler, status, payload):
 def send_xml(handler, status, payload):
     handler.send_response(status)
     handler.send_header("Content-Type", "application/xml")
+    handler.send_header("Content-Length", str(len(payload)))
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+
+def send_body(handler, status, content_type, payload):
+    handler.send_response(int(status.split(" ", 1)[0]))
+    handler.send_header("Content-Type", content_type)
     handler.send_header("Content-Length", str(len(payload)))
     handler.end_headers()
     handler.wfile.write(payload)
@@ -646,7 +653,7 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, UNIPROT_P38398_RESPONSE)
             return
         if parsed.path.startswith("/gwas/rest/api/singleNucleotidePolymorphisms/") and parsed.path.endswith("/associations"):
-            send_json(self, 200, GWAS_ASSOCIATIONS_EMPTY)
+            send_body(self, "410 Gone", "text/plain; charset=utf-8", GWAS_RETIRED_410_BODY)
             return
 
         if parsed.path in CANCERHOTSPOTS_RESPONSES:
