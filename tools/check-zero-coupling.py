@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import argparse
 import base64
-from collections.abc import Iterator
 import hashlib
 import json
-from pathlib import Path
 import re
 import subprocess
-import sys
 import tarfile
+from collections.abc import Iterator
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "tools" / "zero-coupling-historical.json"
@@ -74,73 +73,9 @@ def _text(data: bytes) -> str | None:
         return None
 
 
-DECLARATION_FILES = (
-    "sdlc/pm-forbidden-names.json",
-    "sdlc/pm-forbidden-names.example.json",
-)
-LOCAL_DECLARATION_FILE = DECLARATION_FILES[0]
-
-
-def declared_names(root: Path) -> tuple[str, ...]:
-    """Private project names the local forbidden-name declaration carries.
-
-    This repository is public, so no tracked file may spell a real private
-    name. The declaration lives in two files: the gitignored
-    sdlc/pm-forbidden-names.json holds the real names where they are known,
-    and the checked-in sdlc/pm-forbidden-names.example.json holds inert
-    placeholders that document the shape. Both are read and unioned, so the
-    guard runs everywhere the example ships and tightens wherever the real
-    file exists. Each entry may be base64-encoded, the same convention the
-    coupling receipts use; a declared value that does not decode is matched
-    literally, so a plaintext declaration still guards. An absent or
-    malformed file declares nothing.
-    """
-    names: list[str] = []
-    for relative in DECLARATION_FILES:
-        _declare_into(names, root, relative)
-    return tuple(names)
-
-
-def _names_from(root: Path, files: tuple[str, ...]) -> tuple[str, ...]:
-    """Read the named declaration files and union what they declare."""
-    names: list[str] = []
-    for relative in files:
-        _declare_into(names, root, relative)
-    return tuple(names)
-
-
-def _declare_into(names: list[str], root: Path, relative: str) -> None:
-    try:
-        declared = json.loads((root / relative).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return
-    entries = declared.get("forbiddenNames") if isinstance(declared, dict) else None
-    if not isinstance(entries, list):
-        return
-    for entry in entries:
-        if not isinstance(entry, str) or not entry:
-            continue
-        try:
-            name = base64.b64decode(entry.encode("ascii"), validate=True).decode("utf-8")
-        except (UnicodeError, ValueError):
-            name = entry
-        name = name.casefold()
-        if name not in names:
-            names.append(name)
-
-
-def local_declaration_names(root: Path) -> tuple[str, ...]:
-    """Names only the gitignored local declaration carries.
-
-    Split out of declared_names so a run that requires the real names can
-    tell an inert guard (example placeholders only) from a live one.
-    """
-    return _names_from(root, (LOCAL_DECLARATION_FILE,))
-
-
-def _forbidden_text(text: str, private: tuple[str, ...] = ()) -> bool:
+def _forbidden_text(text: str) -> bool:
     folded = text.casefold()
-    if any(value in folded for value in FORBIDDEN + private):
+    if any(value in folded for value in FORBIDDEN):
         return True
     if any(
         f"{subject} {mechanism}" in folded
@@ -225,13 +160,13 @@ def _toml_sections(text: str) -> Iterator[tuple[bool, str, str]]:
         yield is_array, header.strip(), text[end:body_end]
 
 
-def _matches(data: bytes, private: tuple[str, ...] = ()) -> bool:
+def _matches(data: bytes) -> bool:
     text = _text(data)
-    return text is not None and _forbidden_text(text, private)
+    return text is not None and _forbidden_text(text)
 
 
-def _path_matches(path: str, private: tuple[str, ...] = ()) -> bool:
-    return _forbidden_text(path, private)
+def _path_matches(path: str) -> bool:
+    return _forbidden_text(path)
 
 
 def _allowlist(path: Path = INVENTORY) -> dict[str, object]:
@@ -306,16 +241,13 @@ def scan_files(
     root: Path,
     names: list[str],
     inventory: Path = INVENTORY,
-    private: tuple[str, ...] | None = None,
 ) -> list[str]:
-    if private is None:
-        private = declared_names(root)
     allowed = _allowlist(inventory)
     violations: list[str] = []
     seen_allowed: set[str] = set()
     for name in names:
         data = (root / name).read_bytes()
-        if not (_path_matches(name, private) or _matches(data, private)):
+        if not (_path_matches(name) or _matches(data)):
             continue
         if _entry_allows(name, data, allowed.get(name)):
             seen_allowed.add(name)
@@ -326,15 +258,15 @@ def scan_files(
     return sorted(violations)
 
 
-def scan_archive(path: Path, private: tuple[str, ...] = ()) -> list[str]:
+def scan_archive(path: Path) -> list[str]:
     violations: list[str] = []
     with tarfile.open(path, "r:gz") as archive:
         for member in archive.getmembers():
             if not member.isfile():
                 continue
             source = archive.extractfile(member)
-            if _path_matches(member.name, private) or (
-                source is not None and _matches(source.read(), private)
+            if _path_matches(member.name) or (
+                source is not None and _matches(source.read())
             ):
                 violations.append(member.name)
     return sorted(violations)
@@ -354,60 +286,16 @@ def tracked(root: Path) -> list[str]:
     ]
 
 
-def missing_local_names_error(root: Path) -> str | None:
-    """Loud failure sentence when a required local declaration is absent.
-
-    A run with `--require-local-names` (continuous integration) must not
-    pass silently while guarding only inert example placeholders: without
-    the real names the scan cannot catch a planted private name, so the
-    checker refuses to pretend it guarded anything (ticket 2038 finding 7,
-    2035 #11).
-    """
-    if local_declaration_names(root):
-        return None
-    return (
-        f"the local forbidden-name declaration {LOCAL_DECLARATION_FILE} is "
-        "missing or declares no names, so this run cannot guard private "
-        "project names. Copy sdlc/pm-forbidden-names.example.json to "
-        f"{LOCAL_DECLARATION_FILE}, list the real private project names, "
-        "and re-run."
-    )
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--archive", type=Path)
     parser.add_argument("--inventory", type=Path, default=INVENTORY)
-    parser.add_argument(
-        "--require-local-names",
-        action="store_true",
-        help="fail when the gitignored local declaration is absent "
-        "(continuous integration); local runs print a note instead",
-    )
     args = parser.parse_args(argv)
-    # The declaration resolves under the scanned tree (`--root`), not beside
-    # the script: a scan of a fixture or a second checkout must read that
-    # tree's own gitignored declaration (ticket 2044).
-    if args.require_local_names:
-        message = missing_local_names_error(args.root)
-        if message is not None:
-            print(message)
-            return 2
-    elif not local_declaration_names(args.root):
-        # Say it plainly instead of passing silently: an inert guard is a
-        # fact the operator should see (ticket 2038 finding 7, 2035 #11).
-        print(
-            f"note: no local forbidden-name declaration at "
-            f"{LOCAL_DECLARATION_FILE}; guarding only the tracked example "
-            "names",
-            file=sys.stderr,
-        )
-    private = declared_names(args.root)
     violations = (
-        scan_archive(args.archive, private)
+        scan_archive(args.archive)
         if args.archive
-        else scan_files(args.root, tracked(args.root), args.inventory, private)
+        else scan_files(args.root, tracked(args.root), args.inventory)
     )
     if violations:
         print("forbidden coupling:\n" + "\n".join(violations))

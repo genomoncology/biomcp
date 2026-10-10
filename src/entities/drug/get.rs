@@ -374,21 +374,11 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
     SparseDrugDiscoverRescue::AliasFallback
 }
 
-/// The discover rescue for one query, run at most once per card lookup:
-/// the name-miss path and the sparse-card path can both need it, and a
-/// refusal that runs both must not pay the OLS4 lookup twice (ticket
-/// 2043).
-async fn cached_discover_rescue(
-    cache: &mut Option<SparseDrugDiscoverRescue>,
-    name: &str,
-) -> SparseDrugDiscoverRescue {
-    if let Some(cached) = cache {
-        return cached.clone();
-    }
-    let value = discover_sparse_drug_rescue(name).await;
-    *cache = Some(value.clone());
-    value
-}
+/// The discover rescue for one query. It runs at exactly one site per card
+/// lookup — the name-miss arm returns before the sparse-card arm can run —
+/// and the refusal's second discover round is the CLI alias fallback, whose
+/// repeat `resolve_query`'s per-process memo serves without another OLS4
+/// lookup (tickets 2043 and 2047).
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TrialAliasSource {
@@ -727,7 +717,6 @@ pub(super) async fn resolve_drug_base(
     }
 
     let mut selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
-    let mut discover_rescue: Option<SparseDrugDiscoverRescue> = None;
     if selected.is_empty() {
         // The MyChem full-text query matched only other drugs' records. The
         // query may still be a real brand whose identity openFDA knows, so
@@ -751,7 +740,7 @@ pub(super) async fn resolve_drug_base(
                 // label and lives in MyChem only on a record with no name,
                 // so resolve it through the guarded discover rescue before
                 // refusing (ticket 2037).
-                let rescue = match cached_discover_rescue(&mut discover_rescue, name).await {
+                let rescue = match discover_sparse_drug_rescue(name).await {
                     SparseDrugDiscoverRescue::Canonical(candidate) => {
                         named_drug_response(&candidate)
                             .await
@@ -791,7 +780,7 @@ pub(super) async fn resolve_drug_base(
     }
 
     if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
-        match cached_discover_rescue(&mut discover_rescue, name).await {
+        match discover_sparse_drug_rescue(name).await {
             SparseDrugDiscoverRescue::Canonical(candidate) => {
                 // Adopt the canonical candidate only when its own MyChem
                 // record names it; a sparse card that matched the query by

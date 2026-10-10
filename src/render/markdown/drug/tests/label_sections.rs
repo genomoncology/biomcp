@@ -134,3 +134,31 @@ fn missing_label_reason_prints_from_the_label_section_outcome() {
         "{markdown}"
     );
 }
+
+#[test]
+fn a_card_without_label_content_prints_no_fda_label_heading() {
+    // Ticket 2047: every drug card printed an empty "## FDA Label" heading
+    // on the default card (CLI and MCP render the same template) because the
+    // heading gated only on the section being shown. The heading now prints
+    // only when label content, a label status, or a missing-label reason
+    // exists; v0.9.1 printed no heading at all.
+    let mut drug = label_drug("pertuzumab, trastuzumab, and hyaluronidase-zzxf", None);
+    drug.label = None;
+    drug.label_set_id = None;
+
+    let markdown = drug_markdown_with_region(&drug, &[], DrugRegion::Us, false).expect("markdown");
+    assert!(!markdown.contains("## FDA Label"), "{markdown}");
+
+    // A requested label section that honestly found nothing keeps the
+    // heading, because the reason line is the section's content.
+    drug.section_outcomes.complete(
+        "label",
+        crate::entities::section_outcome::SectionOutcome::empty_with_reason(
+            "OpenFDA label",
+            "No openFDA SPL label record matched this drug.",
+        ),
+    );
+    let markdown = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, false)
+        .expect("markdown");
+    assert!(markdown.contains("## FDA Label"), "{markdown}");
+}

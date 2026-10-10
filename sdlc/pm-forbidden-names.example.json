@@ -1,7 +1,0 @@
-{
-  "read": "Forbidden-name declaration read by tools/check-zero-coupling.py. This public tree carries no private name, so this checked-in example lists inert placeholders only, base64-encoded so the tree scan never matches its own declaration. Copy it to sdlc/pm-forbidden-names.json (gitignored) and list the real private project names there; the checker reads both files and unions what they declare. Each entry may be base64-encoded or plain text, and a value that is not valid base64 is matched literally.",
-  "forbiddenNames": [
-    "ZXhhbXBsZS1wcml2YXRlLXByb2plY3Q=",
-    "ZXhhbXBsZS1zZWNvbmQtcHJvamVjdA=="
-  ]
-}

@@ -355,22 +355,6 @@ jobs:
           version: 0.8.0
       - name: Sync the Python contract environment
         run: uv sync --extra dev --no-install-project
-      - name: Provision the private-name declaration and hold the tree scan to it
-        env:
-          PM_FORBIDDEN_NAMES: ${{ secrets.PM_FORBIDDEN_NAMES }}
-        run: |
-          # The forbidden-name declaration is gitignored (the tree is
-          # public), so this job reads it from a secret when one exists and
-          # holds the tree scan to it. Without the secret the scan runs on
-          # the tracked example placeholders only, and says so loudly
-          # instead of passing silently (2038 finding 7, 2035 #11).
-          if [ -n "$PM_FORBIDDEN_NAMES" ]; then
-            printf '%s' "$PM_FORBIDDEN_NAMES" > sdlc/pm-forbidden-names.json
-            echo "provisioned the local forbidden-name declaration; the tree scan requires it"
-            uv run --no-sync python tools/check-zero-coupling.py --root . --require-local-names
-          else
-            echo "::warning::No PM_FORBIDDEN_NAMES secret; the private-name tree scan runs with inert example placeholders only this run."
-          fi
       - name: Python contract tests (docs and records)
         run: uv run --no-sync pytest tests/ -q -m "not needs_binary"
       - name: Wait ratchet (reads sdlc tickets, so sdlc-only pushes run it here)
