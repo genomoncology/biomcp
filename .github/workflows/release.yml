@@ -104,6 +104,10 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          # Ticket 2038: with-build-identity resolves the exact tag, so
+          # the clone must carry it for the version to be plain at the tag.
+          fetch-depth: 0
+        with:
           ref: ${{ inputs.tag || github.ref_name }}
 
       # Ticket 2024: the build steps run tools/with-build-identity so
@@ -219,6 +223,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          # Ticket 2038: with-build-identity resolves the exact tag, so
+          # the clone must carry it for the version to be plain at the tag.
+          fetch-depth: 0
         with:
           ref: ${{ inputs.tag || github.ref_name }}
 
@@ -354,10 +362,9 @@ jobs:
           expected="${TAG#v}"
           printed="$("$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}" --version)"
           printf '%s\n' "$printed"
-          case "$printed" in
-            "biomcp $expected "*) ;;
-            *) echo "wheel --version must print 'biomcp $expected (...)', got: $printed" >&2; exit 1 ;;
-          esac
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp $expected" ]; then
+            echo "wheel --version must print exactly 'biomcp $expected', got: $printed" >&2; exit 1
+          fi
 
       # Prove the glibc floor at runtime: install and run the wheel
       # inside the same manylinux_2_28 environment users on RHEL 8 or
@@ -369,10 +376,11 @@ jobs:
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
             printed="$(/opt/python/cp312-cp312/bin/biomcp --version)"
             printf "%s\n" "$printed"
-            case "$printed" in
-              "biomcp '"${TAG#v}"' "*) ;;
-              *) echo "wheel --version must print biomcp '"${TAG#v}"', got: $printed" >&2; exit 1 ;;
-            esac
+            expected="$(printf '%s' "${TAG#v}")"
+            actual="$(printf '%s' "$printed" | tr -d '\r\n')"
+            if [ "$actual" != "biomcp $expected" ]; then
+              echo "wheel --version must print exactly biomcp $expected, got: $printed" >&2; exit 1
+            fi
             stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"
             case "$stats" in
               "{"*) ;;
@@ -661,6 +669,10 @@ jobs:
     steps:
       - name: Check out the packaging ref
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          # Ticket 2038: with-build-identity resolves the exact tag, so
+          # the clone must carry it for the version to be plain at the tag.
+          fetch-depth: 0
 
       - name: Resolve the image version and source revision
         env:
@@ -728,10 +740,9 @@ jobs:
           docker pull --platform linux/amd64 "$IMAGE"
           printed="$(docker run --rm --platform linux/amd64 "$IMAGE" --version)"
           printf '%s\n' "$printed"
-          case "$printed" in
-            "biomcp ${VERSION} "*) ;;
-            *) echo "$IMAGE --version must print 'biomcp ${VERSION} (...)', got: $printed" >&2; exit 1 ;;
-          esac
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp ${VERSION}" ]; then
+            echo "$IMAGE --version must print exactly 'biomcp ${VERSION}', got: $printed" >&2; exit 1
+          fi
           UID_IN_CONTAINER="$(docker run --rm --platform linux/amd64 --entrypoint id "$IMAGE" -u)"
           if [ "$UID_IN_CONTAINER" = "0" ]; then
             echo "$IMAGE runs as root" >&2
@@ -752,10 +763,9 @@ jobs:
           docker pull --platform linux/arm64 "$IMAGE"
           printed="$(docker run --rm --platform linux/arm64 "$IMAGE" --version)"
           printf '%s\n' "$printed"
-          case "$printed" in
-            "biomcp ${VERSION} "*) ;;
-            *) echo "$IMAGE --version must print 'biomcp ${VERSION} (...)', got: $printed" >&2; exit 1 ;;
-          esac
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp ${VERSION}" ]; then
+            echo "$IMAGE --version must print exactly 'biomcp ${VERSION}', got: $printed" >&2; exit 1
+          fi
           UID_IN_CONTAINER="$(docker run --rm --platform linux/arm64 --entrypoint id "$IMAGE" -u)"
           if [ "$UID_IN_CONTAINER" = "0" ]; then
             echo "$IMAGE runs as root" >&2
