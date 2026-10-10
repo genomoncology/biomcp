@@ -16,9 +16,9 @@ EXPECTED_RELEASE_TICKETS = {
         *range(1290, 1307),
         2010,
         *range(2016, 2025),
-        # 2039 is the open shared-product-name case the corrected
-        # 2031 bullet names; 2042, 2043 and 2044 landed after 2038.
-        *range(2029, 2040),
+        # 2042, 2043 and 2044 landed after 2038; the corrected 2031
+        # bullet also names open ticket 2039 in plain words.
+        *range(2029, 2039),
         2042,
         2043,
         2044,
@@ -204,6 +204,7 @@ EXPECTED_RELEASE_MARKERS = {
             "current ClinVar classification",
             "whole label sections",
             "one- and two-letter abbreviations",
+            "ticket 2039 tracks",
         ],
         "new_features": [
             "official gene symbol",
