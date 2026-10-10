@@ -6,6 +6,8 @@ Milestone: 0.9.2
 
 Reviews: revision e4148351d, accept
 
+Reviews: revision 2c7b709aa, accept
+
 ## Outcome
 
 Every finding below is fixed, or carries a recorded reason in this ticket, before 0.9.2 is tagged. A fresh rehearsal in the public scratch repository passes on the tag candidate.
