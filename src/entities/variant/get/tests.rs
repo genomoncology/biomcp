@@ -764,13 +764,16 @@ fn population_status_json_keeps_explicit_null_exome_and_genome_results() {
 #[test]
 fn gwas_only_request_returns_variant_when_gwas_is_unavailable() {
     let mut variant = gwas_only_variant_stub("rs7903146");
-    mark_gwas_unavailable(&mut variant);
+    mark_gwas_unavailable(
+        &mut variant,
+        "GWAS association data is temporarily unavailable.",
+    );
 
     assert_eq!(variant.id, "rs7903146");
     assert!(variant.gwas.is_empty());
     assert_eq!(
         variant.gwas_unavailable_reason.as_deref(),
-        Some("GWAS association data temporarily unavailable.")
+        Some("GWAS association data is temporarily unavailable.")
     );
     assert_eq!(variant.supporting_pmids, None);
 }

@@ -266,6 +266,48 @@ pub(crate) fn mane_annotation_names_change(
         })
 }
 
+/// The record's annotation that spells the requested change on a transcript
+/// other than the MANE one — the isoform a refusal must name so the reader
+/// sees where the request is actually spelled (tickets 2042 and 2047).
+/// Protein-structure rows (`feature_type: interaction`) carry no transcript
+/// of their own, so only transcript-shaped features answer. Returns the
+/// transcript and its spelling of the request.
+pub(crate) fn isoform_annotation_naming_change(
+    hit: &MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> Option<(String, String)> {
+    let mane_stem = mane_transcript.map(accession_stem);
+    hit.snpeff.as_ref()?.ann.iter().find_map(|ann| {
+        let feature = ann.feature_id.as_deref()?.trim();
+        if feature.is_empty() || !looks_like_transcript(feature) {
+            return None;
+        }
+        if mane_stem.is_some_and(|mane| accession_stem(feature) == mane) {
+            return None;
+        }
+        let raw = ann
+            .hgvs_p
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())?;
+        let normalized = crate::entities::variant::normalize_protein_change(raw)?;
+        crate::entities::variant::protein_changes_equivalent(change, &normalized)
+            .then(|| (feature.to_string(), raw.to_string()))
+    })
+}
+
+/// A SnpEff feature that names a transcript: RefSeq accessions (`NM_`,
+/// `NR_`, `XM_`) and Ensembl transcripts (`ENST`). Protein-structure
+/// features such as `1JNX:X_1820-X_1857:NM_007294.3` do not count.
+fn looks_like_transcript(feature: &str) -> bool {
+    let stem = accession_stem(feature);
+    stem.starts_with("NM_")
+        || stem.starts_with("NR_")
+        || stem.starts_with("XM_")
+        || stem.starts_with("ENST")
+}
+
 fn legacy_name(gene: &str, protein: Option<&str>) -> Option<String> {
     let gene = gene.trim();
     let normalized = normalize_protein_change(protein?)?;

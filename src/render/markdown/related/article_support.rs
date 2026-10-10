@@ -50,8 +50,10 @@ pub(super) fn exact_variant_article_follow_up(
 pub(super) fn article_annotation_command(
     bucket: ArticleAnnotationBucket,
     annotation: &AnnotationCount,
+    verified_disease_get: Option<&str>,
 ) -> Option<String> {
-    if let Some(command) = article_annotation_get_command(bucket, annotation) {
+    if let Some(command) = article_annotation_get_command(bucket, annotation, verified_disease_get)
+    {
         return Some(command);
     }
 
@@ -69,13 +71,20 @@ pub(super) fn article_annotation_command(
     })
 }
 
-/// A `get` command only when BioMCP accepts that identifier: disease MeSH and
-/// OMIM identifiers resolve through the disease crosswalk, and variant rsIDs
-/// or HGVS expressions parse as exact variant input. Gene rows keep the text
-/// search because `get gene` takes symbols, not NCBI Gene identifiers.
+/// A `get` command only when BioMCP can name the record it opens: variant
+/// rsIDs or HGVS expressions parse as exact variant input, and a disease
+/// crosswalk identifier opens a card only through the caller's verified
+/// command — the crosswalk lookup that found exactly one hit holding the
+/// identifier's PubTator3 concept name (ticket 2047). An unverified MeSH or
+/// OMIM identifier stays a text search, because several MONDO records
+/// crosswalk one broad MeSH descriptor and a bare identifier opens whichever
+/// card sorts first (`MESH:D008175` for "Lung Cancers" opened lung benign
+/// neoplasm). Gene rows keep the text search because `get gene` takes
+/// symbols, not NCBI Gene identifiers.
 fn article_annotation_get_command(
     bucket: ArticleAnnotationBucket,
     annotation: &AnnotationCount,
+    verified_disease_get: Option<&str>,
 ) -> Option<String> {
     let identifier = annotation.identifier.as_deref()?.trim();
     if identifier.is_empty() {
@@ -85,7 +94,7 @@ fn article_annotation_get_command(
     match (bucket, annotation.namespace.as_deref()) {
         (ArticleAnnotationBucket::Disease, Some("MESH"))
         | (ArticleAnnotationBucket::Disease, Some("OMIM")) => {
-            Some(format!("biomcp get disease {identifier}"))
+            verified_disease_get.map(str::to_string)
         }
         (ArticleAnnotationBucket::Mutation, Some("rsID"))
             if matches!(
@@ -118,12 +127,14 @@ pub(super) fn ranked_article_annotation_commands(
         return Vec::new();
     }
 
+    // A card's related block has no verified crosswalk behind it, so its
+    // disease rows keep the search command (ticket 2047).
     let normalized_title = normalize_match_text(title);
     let mut ranked = rows
         .iter()
         .enumerate()
         .filter_map(|(index, row)| {
-            let command = article_annotation_command(bucket, row)?;
+            let command = article_annotation_command(bucket, row, None)?;
             let normalized_text = normalize_match_text(&row.text);
             let title_hit =
                 !normalized_text.is_empty() && normalized_title.contains(normalized_text.as_str());

@@ -634,6 +634,13 @@ pub struct AnnotationCount {
     /// `MESH:D002289`, or `rs121913529`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
+    /// The name PubTator3 assigns the identifier's registry concept, for
+    /// example `Lung Neoplasms` beside `MESH:D008175`. A disease link opens
+    /// the named disease only when a crosswalk hit holds this exact name
+    /// (ticket 2047); absent when the mention carries no identifier or the
+    /// row is not a disease.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     /// Mention spans as document-global character offsets. Present only when
     /// the caller asked for positions.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

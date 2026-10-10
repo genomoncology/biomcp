@@ -60,6 +60,16 @@ POW_INTERSTITIAL = source_bytes("pmc_article/pmc3040717-supplementary-tables-pow
 PUBTATOR_20516115 = source_bytes("pubtator/export_20516115.json")
 PUBTATOR_30738221 = source_bytes("pubtator/export_30738221.json")
 PUBTATOR_37887282 = source_bytes("pubtator/export_37887282.json")
+# Ticket 2047: recorded MyDisease crosswalk replies for the article
+# entities disease rows. The by-descriptor lookups verify a link only when
+# exactly one hit holds the descriptor's PubTator3 concept name.
+MYDISEASE_XREF_RESPONSES = {
+    "D002289": source_bytes("mydisease/query_xref_mesh_d002289.json"),
+    "D009369": source_bytes("mydisease/query_xref_mesh_d009369.json"),
+    "D000230": source_bytes("mydisease/query_xref_mesh_d000230.json"),
+    "D000236": source_bytes("mydisease/query_xref_mesh_d000236.json"),
+    "D008175": source_bytes("mydisease/query_xref_mesh_d008175.json"),
+}
 MYGENE_GENE_SYMBOLS_3845 = source_bytes("mygene/gene_symbols_3845_20261008.json")
 EUROPEPMC_20516115 = source_bytes("europepmc/search_pmid_20516115.json")
 PMC_OA_3040717_VERSIONS = source_bytes("pmc_oa/pmc3040717-versions.xml")
@@ -951,6 +961,52 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, pubtator_payload(pmids[0]))
             return
 
+        if decoded_path == "/query" and "xrefs.mesh" in self.path:
+            # Ticket 2047: the MyDisease crosswalk behind an article
+            # entities disease row. The MeSH descriptor digits stay intact
+            # through URL encoding, so they name the recorded reply.
+            for descriptor, payload in MYDISEASE_XREF_RESPONSES.items():
+                if descriptor in self.path:
+                    send_bytes(self, 200, payload, "application/json")
+                    return
+            send_json(self, 200, {"total": 0, "hits": []})
+            return
+        if (
+            decoded_path == "/query"
+            and "Bachmann-Bupp syndrome" in query.get("q", [""])[0].replace("\\", "")
+        ):
+            # The article stage exports BIOMCP_MYDISEASE_BASE, so the raw
+            # MCP diagnostic page's disease-term resolution reads this
+            # fixture instead of the disease-survival fixture that served
+            # it before (ticket 2047). Same reply, same provenance.
+            send_json(self, 200, {
+                "total": 1,
+                "hits": [{
+                    "_id": "MONDO:0033642",
+                    "disease_ontology": {
+                        "name": "Bachmann-Bupp syndrome",
+                        "synonyms": {"exact": [
+                            "neurodevelopmental disorder with alopecia and brain abnormalities"
+                        ]},
+                    },
+                }],
+            })
+            return
+        if decoded_path == "/disease/MONDO:0033642":
+            # The detail leg of the diagnostic page's disease-term
+            # resolution (ticket 2047): the same record the survival
+            # fixture serves, kept in the article stage's own fixture.
+            send_json(self, 200, {
+                "_id": "MONDO:0033642",
+                "disease_ontology": {
+                    "name": "Bachmann-Bupp syndrome",
+                    "synonyms": {"exact": [
+                        "neurodevelopmental disorder with alopecia and brain abnormalities"
+                    ]},
+                },
+            })
+            return
+
         if (
             decoded_path == "/search"
             and query.get("query") == ["EXT_ID:20516115 AND SRC:MED"]
@@ -1753,6 +1809,7 @@ printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url" >"$env_file"
 printf 'export BIOMCP_CACHE_DIR=%q\n' "$fixture_root/cache" >>"$env_file"
 printf 'export BIOMCP_PUBTATOR_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_MYGENE_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export BIOMCP_MYDISEASE_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_EUROPEPMC_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_PUBMED_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_PMC_OA_BASE=%q\n' "$base_url" >>"$env_file"

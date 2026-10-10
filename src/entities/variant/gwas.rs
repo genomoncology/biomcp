@@ -503,7 +503,7 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     let client = match GwasClient::new() {
         Ok(client) => client,
         Err(err) if err.code() == "source_unavailable" => {
-            mark_gwas_unavailable(variant);
+            mark_gwas_unavailable(variant, &gwas_unavailable_reason(&err));
             return Ok(());
         }
         Err(err) => return Err(err),
@@ -511,7 +511,7 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     let associations = match client.associations_by_rsid(&rsid, 20).await {
         Ok(associations) => associations,
         Err(err) if err.code() == "source_unavailable" => {
-            mark_gwas_unavailable(variant);
+            mark_gwas_unavailable(variant, &gwas_unavailable_reason(&err));
             return Ok(());
         }
         Err(err) => return Err(err),
@@ -533,13 +533,25 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     Ok(())
 }
 
-pub(in crate::entities::variant) fn mark_gwas_unavailable(variant: &mut Variant) {
+pub(in crate::entities::variant) fn mark_gwas_unavailable(variant: &mut Variant, reason: &str) {
     variant.supporting_pmids = None;
-    variant.gwas_unavailable_reason = Some("GWAS association data temporarily unavailable.".into());
-    variant.section_outcomes.complete(
-        "gwas",
-        SectionOutcome::unavailable("GWAS association data is temporarily unavailable."),
-    );
+    variant.gwas_unavailable_reason = Some(reason.to_string());
+    variant
+        .section_outcomes
+        .complete("gwas", SectionOutcome::unavailable_message(reason));
+}
+
+/// The degrade note a `source_unavailable` error carries: the error's own
+/// reason when the source stated one (the retired legacy endpoint names its
+/// retirement, ticket 2047), and the transient wording otherwise.
+fn gwas_unavailable_reason(err: &BioMcpError) -> String {
+    const TRANSIENT: &str = "GWAS association data is temporarily unavailable.";
+    match err {
+        BioMcpError::SourceUnavailable { reason, .. } if !reason.trim().is_empty() => {
+            reason.clone()
+        }
+        _ => TRANSIENT.to_string(),
+    }
 }
 
 fn collect_supporting_pmids(rows: &[VariantGwasAssociation]) -> Vec<String> {

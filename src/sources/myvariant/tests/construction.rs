@@ -46,6 +46,24 @@ fn q(plan: &crate::sources::RequestPlan) -> &str {
 
 // ---- query_plan (free-form /query) ----
 
+/// Ticket 2042/2047: both MyVariant projections must request
+/// `snpeff.ann.feature_type`. Without the field the provider returns
+/// protein-structure rows untyped, the projection cannot skip interaction
+/// rows without counting them against the 32-row bound, and a many-row
+/// record (BRCA1 Q1878R's 48 interaction rows) loses its whole SnpEff
+/// list — the headline drops its protein change. Dropping the field from
+/// either list must fail here.
+#[test]
+fn field_lists_request_snpeff_feature_type_in_get_and_search() {
+    for fields in [MYVARIANT_FIELDS_GET, MYVARIANT_FIELDS_SEARCH] {
+        let requested = fields.split(',').map(str::trim).collect::<Vec<_>>();
+        assert!(
+            requested.contains(&"snpeff.ann.feature_type"),
+            "the {fields} projection must request snpeff.ann.feature_type"
+        );
+    }
+}
+
 #[test]
 fn query_plan_sets_path_and_core_query_params() {
     let plan =

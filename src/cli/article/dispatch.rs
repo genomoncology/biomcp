@@ -413,10 +413,22 @@ pub(in crate::cli) async fn handle_command(
 
                 crate::render::json::to_pretty(&ArticleEntitiesResponse { pmid, annotations })?
             } else {
+                // A disease row's MeSH or OMIM identifier opens a card only
+                // when the crosswalk holds exactly one hit naming the
+                // identifier's PubTator3 concept name; every other disease
+                // row keeps the v0.9.1 search command instead of a
+                // confidently wrong get (ticket 2047).
+                let verified_disease_get_commands =
+                    super::verified_disease_get_commands(annotations.as_ref()).await;
                 crate::render::markdown::article_entities_markdown(
                     article.pmid.as_deref().unwrap_or(&pmid),
                     annotations.as_ref(),
                     Some(limit),
+                    &|row| {
+                        row.identifier.as_deref().and_then(|identifier| {
+                            verified_disease_get_commands.get(identifier).cloned()
+                        })
+                    },
                 )?
             }
         }

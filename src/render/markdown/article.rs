@@ -202,6 +202,7 @@ pub fn article_entities_markdown(
     pmid: &str,
     annotations: Option<&ArticleAnnotations>,
     limit: Option<usize>,
+    verified_disease_get_commands: &dyn Fn(&AnnotationCount) -> Option<String>,
 ) -> Result<String, BioMcpError> {
     #[derive(serde::Serialize)]
     struct EntityRow {
@@ -223,28 +224,36 @@ pub fn article_entities_markdown(
             ann.genes
                 .iter()
                 .filter_map(|g| {
-                    let command = article_annotation_command(ArticleAnnotationBucket::Gene, g)?;
+                    let command =
+                        article_annotation_command(ArticleAnnotationBucket::Gene, g, None)?;
                     Some(row(g, command))
                 })
                 .collect::<Vec<_>>(),
             ann.diseases
                 .iter()
                 .filter_map(|d| {
-                    let command = article_annotation_command(ArticleAnnotationBucket::Disease, d)?;
+                    let verified = verified_disease_get_commands(d);
+                    let command = article_annotation_command(
+                        ArticleAnnotationBucket::Disease,
+                        d,
+                        verified.as_deref(),
+                    )?;
                     Some(row(d, command))
                 })
                 .collect::<Vec<_>>(),
             ann.chemicals
                 .iter()
                 .filter_map(|c| {
-                    let command = article_annotation_command(ArticleAnnotationBucket::Chemical, c)?;
+                    let command =
+                        article_annotation_command(ArticleAnnotationBucket::Chemical, c, None)?;
                     Some(row(c, command))
                 })
                 .collect::<Vec<_>>(),
             ann.mutations
                 .iter()
                 .filter_map(|m| {
-                    let command = article_annotation_command(ArticleAnnotationBucket::Mutation, m)?;
+                    let command =
+                        article_annotation_command(ArticleAnnotationBucket::Mutation, m, None)?;
                     Some(row(m, command))
                 })
                 .collect::<Vec<_>>(),

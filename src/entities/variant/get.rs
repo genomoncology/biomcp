@@ -485,19 +485,26 @@ fn refuse_or_note_without_facts(
     hit: &crate::sources::myvariant::MyVariantHit,
     mane_transcript: Option<&str>,
 ) -> Result<Option<String>, BioMcpError> {
-    let candidate = protein_change_candidate(hit);
     let Some(protein) =
         transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))
     else {
         return Err(protein_change_absent_refusal_message(
-            id, gene, change, &candidate,
+            id,
+            gene,
+            change,
+            hit,
+            mane_transcript,
         ));
     };
     let Some(transcript) =
         transform::variant::canonical_transcript(hit, mane_transcript, Some(change))
     else {
         return Err(protein_change_absent_refusal_message(
-            id, gene, change, &candidate,
+            id,
+            gene,
+            change,
+            hit,
+            mane_transcript,
         ));
     };
     if protein_changes_equivalent(change, &protein) {
@@ -513,7 +520,8 @@ fn refuse_or_note_without_facts(
         change,
         &protein,
         &transcript,
-        &candidate,
+        hit,
+        mane_transcript,
     ))
 }
 
@@ -562,13 +570,47 @@ fn refuse_or_note_with_facts(
                 id,
                 gene,
                 change,
-                &protein_change_candidate(hit),
+                hit,
+                mane_transcript,
             ));
         }
         return Ok(None);
     };
     if residue != from {
-        return Ok(protein_change_numbering_note(hit, change, mane_transcript));
+        // The canonical protein holds a different residue at the requested
+        // position, so the request follows another transcript's numbering —
+        // proven by the record, not guessed. The answer must say so instead
+        // of resolving an isoform spelling silently (ticket 2042): the
+        // standard note when the headline names a different change, and an
+        // equivalent headline's own note naming the transcript it resolved
+        // on; a record that cannot name its transcript or its protein change
+        // refuses rather than resolve with nothing to say.
+        if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
+            return Ok(Some(note));
+        }
+        let transcript =
+            transform::variant::canonical_transcript(hit, mane_transcript, Some(change));
+        let protein =
+            transform::variant::canonical_protein_change(hit, mane_transcript, Some(change));
+        return Ok(Some(match (transcript.as_deref(), protein.as_deref()) {
+            (Some(transcript), Some(protein)) => format!(
+                "Numbering note: resolved on {transcript} as {protein}; the requested \
+                 {change} follows another transcript's numbering."
+            ),
+            (Some(transcript), None) => format!(
+                "Numbering note: the requested {change} follows another transcript's \
+                 numbering; the record names no protein change on {transcript}."
+            ),
+            (None, _) => {
+                return Err(protein_change_absent_refusal_message(
+                    id,
+                    gene,
+                    change,
+                    hit,
+                    mane_transcript,
+                ));
+            }
+        }));
     }
     let Some(reference) = super::amino_acid_three_letter(residue) else {
         return Ok(None);
@@ -577,14 +619,15 @@ fn refuse_or_note_with_facts(
         transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))
     else {
         // The request's numbering is valid on the canonical protein, but the
-        // record names no protein change on any headline transcript: a
-        // protein-change request must not resolve to a bare genomic variant
-        // (ticket 2042).
+        // record offers no protein change on a transcript BioMCP can
+        // headline: a protein-change request must not resolve to a bare
+        // genomic variant (ticket 2042).
         return Err(protein_change_absent_refusal_message(
             id,
             gene,
             change,
-            &protein_change_candidate(hit),
+            hit,
+            mane_transcript,
         ));
     };
     if protein_changes_equivalent(change, &protein) {
@@ -616,15 +659,36 @@ fn refuse_or_note_with_facts(
         position,
         &protein,
         &transcript,
-        &protein_change_candidate(hit),
+        hit,
+        mane_transcript,
     ))
+}
+
+/// The sentence that names the isoform spelling the request (ticket 2042's
+/// refusal-text deferral): when the record spells the requested change on a
+/// transcript other than the MANE one, the refusal says where, so the
+/// reader sees the request is a real spelling — on another numbering —
+/// instead of a bare candidate line that collapses in text mode.
+fn isoform_spelling_sentence(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> String {
+    match transform::variant::isoform_annotation_naming_change(hit, change, mane_transcript) {
+        Some((transcript, protein)) => {
+            format!("; the request is spelled {protein} on {transcript}, another transcript")
+        }
+        None => String::new(),
+    }
 }
 
 /// The refusal text for a request whose numbering is valid on the MANE
 /// protein while no matching record names it there (tickets 2033 finding 3
 /// and 2036). The retry line names the requested change, not the candidate:
 /// the candidate is already known to be a different change, so retrying its
-/// exact form cannot answer the request (ticket 2035 finding 21).
+/// exact form cannot answer the request (ticket 2035 finding 21). The
+/// message names the isoform that spells the request and carries no bare
+/// `Candidates:` list (ticket 2042).
 #[allow(clippy::too_many_arguments)]
 fn mane_numbering_refusal_message(
     id: &str,
@@ -635,15 +699,16 @@ fn mane_numbering_refusal_message(
     position: u32,
     protein: &str,
     transcript: &str,
-    candidate: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
 ) -> BioMcpError {
+    let isoform = isoform_spelling_sentence(hit, change, mane_transcript);
     BioMcpError::InvalidArgument(format!(
         "No MANE-numbered variant matches '{id}': the gene's canonical protein \
          (UniProt {accession}) has {reference} at {position}, so the requested \
          numbering is valid there, but no matching record names that change; \
          the only alias match is {protein} on {transcript} — a different \
-         change. BioMCP refuses rather than return the wrong variant.\n\
-Candidates:\n- {candidate}\n\
+         change{isoform}. BioMCP refuses rather than return the wrong variant.\n\
 Retry `biomcp get variant` with a transcript-qualified HGVS naming \
 '{change}', or search the spelling: biomcp search variant -g {gene} \
 --hgvsp {change}.",
@@ -661,15 +726,16 @@ fn unchecked_numbering_refusal_message(
     change: &str,
     protein: &str,
     transcript: &str,
-    candidate: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
 ) -> BioMcpError {
+    let isoform = isoform_spelling_sentence(hit, change, mane_transcript);
     BioMcpError::InvalidArgument(format!(
         "No MANE-numbered variant matches '{id}': the canonical (MANE Select) \
          protein could not be read, so the requested numbering could not be \
          checked, and the only alias match is {protein} on {transcript} — a \
-         different change. BioMCP refuses rather than return the wrong \
+         different change{isoform}. BioMCP refuses rather than return the wrong \
          variant.\n\
-Candidates:\n- {candidate}\n\
 Retry `biomcp get variant` with a transcript-qualified HGVS naming \
 '{change}', or search the spelling: biomcp search variant -g {gene} \
 --hgvsp {change}.",
@@ -677,20 +743,27 @@ Retry `biomcp get variant` with a transcript-qualified HGVS naming \
 }
 
 /// The refusal for a protein-change request whose resolved record names no
-/// protein change on any headline transcript (ticket 2042): a bare genomic
-/// variant cannot carry the numbering story the request asked for.
+/// protein change on a transcript BioMCP can headline (ticket 2042): a bare
+/// genomic variant cannot carry the numbering story the request asked for.
+/// The wording claims only what the record showed — a record can carry
+/// protein changes on rows that cannot be headlined (no transcript feature
+/// or no coding spelling), so "no protein change on any transcript" would
+/// overclaim — and it still names the isoform that spells the request when
+/// one exists.
 fn protein_change_absent_refusal_message(
     id: &str,
     gene: &str,
     change: &str,
-    candidate: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
 ) -> BioMcpError {
+    let isoform = isoform_spelling_sentence(hit, change, mane_transcript);
     BioMcpError::InvalidArgument(format!(
-        "No protein change answers '{id}': the matching record carries no \
-         protein change on any transcript, so the requested {change} could \
-         not be checked against MANE numbering. BioMCP refuses rather than \
-         return a genomic variant with no protein change.\n\
-Candidates:\n- {candidate}\n\
+        "No protein change answers '{id}': the matching record offers no \
+         protein change on a transcript BioMCP can headline{isoform}, so the \
+         requested {change} could not be checked against MANE numbering. \
+         BioMCP refuses rather than return a genomic variant with no protein \
+         change.\n\
 Retry `biomcp get variant` with a transcript-qualified HGVS naming \
 '{change}', or search the spelling: biomcp search variant -g {gene} \
 --hgvsp {change}.",
