@@ -4,7 +4,6 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
-Reviews: revision 21630b5eb, accept
 
 ## Outcome
 
@@ -33,3 +32,10 @@ Filed 2026-10-10 from Ian's ruling (decisions/2026-10-09-biomcp-0-9-2-is-a-clean
 - Changes: the test's own wait carries its own bound (a timeout on the held reply at the test level, or the deadline firing ends the wait), so even a bare run fails in bounded time with the test's name.
 - Proof: a bare `cargo test` run of the deadline module on the build machine, under the checkout lock, finishes with a failure naming the test inside minutes instead of hanging.
 - Defers: nothing.
+
+## Landed-head review (2026-10-10)
+
+- Code review (2045 item at head 21630b5eb): ACCEPT 2026-10-10,
+  recorded through pm and normalized here. The held-reply watchdog
+  bound and its paused-time pin verified; the bare-run proof (241 s
+  kill on main, 15.16 s green on the fix) recorded in this ticket.

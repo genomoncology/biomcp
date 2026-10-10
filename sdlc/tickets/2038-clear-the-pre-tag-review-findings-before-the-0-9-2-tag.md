@@ -4,7 +4,6 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
-Reviews: revision b9d4bf8d9, accept
 
 ## Outcome
 
@@ -164,3 +163,15 @@ First remove the queue report so main is green. Then 2036 and 2037, and the code
 - Code review (drug-label-variant-hint head 9ca6cd18e): ACCEPT 2026-10-10,
   recorded through pm and normalized here; the oversize settle and the
   condition-form refused hint verified with their biting tests.
+
+## Version-bump review (2026-10-10)
+
+- Code review (version-changelog head b9d4bf8d9): ACCEPT 2026-10-10,
+  recorded through pm and normalized here. Every version file reads
+  0.9.2, the changelog dated, the bullet fixes truthful, the scratch-tag
+  gates pass; the Docs bullet depends on the docs branch already landed
+  in Group A. The release-smoke review's P0 (a version pattern that
+  could never match) and P1 (shallow checkouts missing the tag ref)
+  were fixed on the branch and re-verified: the exact-line comparison,
+  the fetch-depth 0 build checkouts, and the re-pinned step hashes with
+  the provenance suite green and CI green at the fixed head.

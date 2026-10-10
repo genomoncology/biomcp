@@ -4,7 +4,6 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
-Reviews: revision bf8861a2a, accept
 
 ## Outcome
 
@@ -51,3 +50,13 @@ Filed 2026-10-09 from the independent review of ticket 2037 as landed on main at
 - Live sweep, 2026-10-10, branch binary on yellow, live sources, `BIOMCP_CACHE_MODE=off`: Keytruda→pembrolizumab DB09037 9333c79b, pembrolizumab→9333c79b, Herceptin→trastuzumab DB00072 492dbdb2, trastuzumab→492dbdb2, Rybrevant→amivantamab DB16695 1466c070, amivantamab→1466c070, Zejula→niraparib DB11793 b7f675e2, niraparib→niraparib DB11793 b7f675e2, Avastin→bevacizumab DB00112 939b5d1f, bevacizumab→939b5d1f, Rituxan→rituximab DB00073 b172773b (Rituxan's own record, was Ruxience), rituximab→b172773b, Darzalex→daratumumab DB09331 4bb241af (the only current daratumumab label; was a refusal). Keeps held: Tarceva→erlotinib hydrochloride DB00530 ab6f3cb3, Lartruvo→DB06043, Portrazza→DB09559, Lumoxiti→DB12688, Lonsurf→"trifluridine and tipiracil" DB00432, Tagrisso→DB09330, Gleevec→imatinib mesylate DB00619 with GLEEVEC's own record 211ef2da (was a generic labeler's), terfenadine→DB00342 with the honest empty label, mannitol→DB00742, and 5-FU and Ara-C refuse honestly.
 - The branch-head verdict for this ticket must also cover 2037's landed head (`ec8a72d0d` content), because 2037 landed with no recorded verdict on that head and this branch re-reads it; the fresh 2037 landed-head verdict rides with this branch's.
 - Residual, accepted: the label choice ranks only what openFDA returns plus the one exact-field escalation, so a plain product whose record carries no `openfda.generic_name` block (the sparse-metadata shape ticket 1300 handles) still resolves through the elements fallback rather than the brand tiers, and a query for a plain product that has no label of its own (for example the only label being an under-the-skin pairing) still shows that pairing's label.
+
+## Landed-head review (2026-10-10)
+
+- Code review (label rule, head bf8861a2a; the reviewed content head
+  41acc461f with the record-date correction folded): ACCEPT 2026-10-10,
+  recorded through pm and normalized here. The two-sided label rule
+  verified with file:line evidence, twelve biting tests that fail on
+  main, every 2037 keep holding, and the 2037 landed head covered
+  (rescue order and brand-paired naming intact). The P1 record dates
+  were corrected and the P2 duplicate comment dropped before landing.
