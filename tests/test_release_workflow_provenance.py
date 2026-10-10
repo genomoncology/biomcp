@@ -289,7 +289,9 @@ ALLOWED_STEP_IFS = {
     # the same commit as the deliberate workflow edit it records.
     # The two pypi-build build steps were re-pinned 2026-10-08
     # (ticket 2024): both now route through tools/with-build-identity
-    # so the shipped wheels report their commit.
+    # so the shipped wheels report their commit. The two wheel-smoke
+    # install/run steps were re-pinned 2026-10-10 (ticket 2038,
+    # finding 5): both now compare the printed --version with the tag.
 PINNED_STEPS: dict[tuple[str, str], str] = {
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "435261111ae8c13c6efd4c0122d30af2df68e5cbc57a7e92ccd1568897ae4024",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
@@ -301,8 +303,8 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("pypi-build", "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"): "b9b6cca0e685928f03d3f444bac8c0825b2ee3510663d6503c24525218de1e23",
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
-    ("wheel-smoke", "Install the wheel into a clean venv"): "362a4ba663ff744574ec1f229c6ecd32e1f0f308ae95f0000f79efbf089bf6f9",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "d5495643fdb712f52fbaa636b5198909e890806d92a309d073dfc1bb328cffc4",
+    ("wheel-smoke", "Install the wheel into a clean venv"): "941aa2252d78ec8d6a258d88857c1e922f18489d60bfd34287e9d2de3be398b4",
+    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "311f74c8033560a975c32557cf90984636d1c4cd86bdd175307697a2a0ad11ec",
     ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
     ("docs-live", "Check out the gate helper"): "afce43fafcab696d9cef03f29b0c43b6c9849baf126b749e198bdb9d83555430",
     ("docs-live", "Resolve the tag commit"): "b52e25a4026bed9172a0eff4b90f6a706ec984875307d7e89f9d450878a96e44",
