@@ -126,24 +126,46 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4060,
+      "baseline_lines": 4106,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "1243 | 1299 | 1243",
-        "delta": 366,
-        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it | Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
-        "removal_condition": "None; the boxing is the point. | Return to the prior baseline when the OLS client gains an unconditional deadline constructor | None; the boxing is the point."
+        "ticket": "1243 | 1299 | 1243 | 2047",
+        "delta": 412,
+        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it | Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | The alias-fallback resolution is memoized per process so a drug refusal pays one discover round instead of two",
+        "removal_condition": "None; the boxing is the point. | Return to the prior baseline when the OLS client gains an unconditional deadline constructor | None; the boxing is the point. | Return to the prior baseline when the CLI alias fallback shares the entity rescue's resolution without a memo"
       }
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1284,
+      "baseline_lines": 1273,
       "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038, 2043",
-        "delta": 181,
-        "reason": "The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache.",
+        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2047",
+        "delta": 170,
+        "reason": "The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache; the dead rescue cache is gone and both rescue sites call the resolution directly (2047)",
         "removal_condition": "Shrink when the label choice moves into label.rs entirely and the rescue cache folds into the discover client."
+      }
+    },
+    {
+      "path": "src/entities/drug/label.rs",
+      "baseline_lines": 1092,
+      "floor_lines": 938,
+      "authorized_increase": {
+        "ticket": "2047",
+        "delta": 154,
+        "reason": "The sparse-record elements escalation, the element-derived identity ranks, and the hyaluronidase-scoped pairing split.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share."
+      }
+    },
+    {
+      "path": "src/entities/drug/test_support/label_choice.rs",
+      "baseline_lines": 1323,
+      "floor_lines": 875,
+      "authorized_increase": {
+        "ticket": "2047",
+        "delta": 448,
+        "reason": "Recorded-reply fixtures for the plain DARZALEX, PHESGO, OPDUALAG and GLEEVEC label choices.",
+        "removal_condition": "Shrink when the recorded label bodies move to testdata files."
       }
     },
     {
