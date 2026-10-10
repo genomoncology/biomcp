@@ -238,11 +238,11 @@
     },
     {
       "path": "src/entities/variant/get/protein_change_tests.rs",
-      "baseline_lines": 1380,
+      "baseline_lines": 1396,
       "floor_lines": 902,
       "authorized_increase": {
         "ticket": "2042, 2047",
-        "delta": 478,
+        "delta": 494,
         "reason": "The past-the-end, unchecked-numbering, no-facts-refusal, no-MANE-transcript, and no-protein-change decision tests with the many-interaction-row record shape. | Ticket 2047: the proven other-numbering note, the H1883D past-the-end shape, and both protein-change-absent arms with the no-bare-candidate-list refusal text.",
         "removal_condition": "Fold the recorded SnpEff shapes into a shared builder when the decision tests grow another provider shape. | Fold the recorded SnpEff shapes into a shared builder when the decision tests grow another provider shape."
       }
@@ -250,10 +250,10 @@
     {
       "path": "src/entities/variant/get/tests.rs",
       "floor_lines": 965,
-      "baseline_lines": 1232,
+      "baseline_lines": 1235,
       "authorized_increase": {
-        "ticket": "1292, 2016, 2042",
-        "delta": 267,
+        "ticket": "1292, 2016, 2042, 2047",
+        "delta": 270,
         "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary. Ticket 2016: protein-change resolution sidecar tests and the protein_numbering_note fields on the Variant test literals. Ticket 2042: the protein-change wiring tests over a recorded S183Y response with a live and an unreachable UniProt leg.",
         "removal_condition": "Split the transcript-alias fixture tests when a package-neutral module extraction can preserve the exact source package boundary."
       }
@@ -327,11 +327,11 @@
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1354,
+      "baseline_lines": 1351,
       "floor_lines": 1207,
       "authorized_increase": {
         "ticket": "1144, 1201, 1296, 2018, 2047",
-        "delta": 147,
+        "delta": 144,
         "reason": "Pin the graph pagination footer and shared continuation command; ticket 1201 adds the header parameter to every article render context literal; ticket 1296 pins entity rows printing get commands by accepted identifier while gene and chemical rows keep their text searches; ticket 2018 pins the multi-allele rsID row printing the gene-qualified protein-change command. | Ticket 2047: the entities rows pin the verified crosswalk get and the v0.9.1 search fallback with no bare MeSH get.",
         "removal_condition": "Extract graph and entities renderer tests when a package-neutral module split can preserve the exact source package boundary. | Fold the entities table expectations into a shared fixture when the row commands gain another bucket."
       }
@@ -537,11 +537,11 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1697,
+      "baseline_lines": 1701,
       "floor_lines": 1335,
       "authorized_increase": {
         "ticket": "1263, 2016, 2022, 2035, 2038, 2044, 2047",
-        "delta": 362,
+        "delta": 366,
         "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: the ClinVar-preferred MANE transcript helper and the MANE-aware SnpEff annotation ranking. Ticket 2035 finding 4: the ClinVar-free ranking tier that headlines the annotation naming the requested change; finding 21: the versioned MANE marker so answers show ClinVar's current RefSeq accession where the SnpEff build lags. | Ticket 2038: the shared day-shape rule through crate::utils::date::is_day_shaped for the ClinVar fallback age label. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost. | Ticket 2047: the isoform-annotation finder that names the transcript spelling a requested change.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module. | Remove the day-shape reading when the ClinVar fallback age label moves into its own rendering module."
       }
