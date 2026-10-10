@@ -187,7 +187,12 @@ fn snpeff_interaction_rows_are_skipped_and_transcript_rows_kept() {
     let snpeff = lone.snpeff.expect("present SnpEff section");
     assert!(snpeff.complete);
     assert!(snpeff.ann.is_empty());
-    for feature_type in [json!(7), json!(["interaction"]), json!({}), json!(" Interaction ")] {
+    for feature_type in [
+        json!(7),
+        json!(["interaction"]),
+        json!({}),
+        json!(" Interaction "),
+    ] {
         let kept: MyVariantHit = serde_json::from_value(json!({
             "_id": "x",
             "snpeff": {"ann": [

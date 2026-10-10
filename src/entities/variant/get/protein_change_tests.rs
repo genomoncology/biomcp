@@ -982,16 +982,18 @@ fn protein_change_resolution_notes_a_many_row_record_past_the_protein_end() {
             "c.5570A>G",
         );
     }
-    let hits = vec![builder
-        .with_snpeff("NM_007300.3", "c.5633A>G", Some("p.Gln1878Arg"))
-        .with_snpeff("NM_007298.3", "c.2258A>G", Some("p.Gln753Arg"))
-        .with_snpeff("NM_007297.3", "c.5429A>G", Some("p.Gln1810Arg"))
-        .with_snpeff("NM_007294.3", "c.5570A>G", Some("p.Gln1857Arg"))
-        .hit(
-            "chr17:g.41197717T>C",
-            "BRCA1",
-            "p.Gln1878Arg, p.Q1878R, p.Q1857R, p.Gln1857Arg",
-        )];
+    let hits = vec![
+        builder
+            .with_snpeff("NM_007300.3", "c.5633A>G", Some("p.Gln1878Arg"))
+            .with_snpeff("NM_007298.3", "c.2258A>G", Some("p.Gln753Arg"))
+            .with_snpeff("NM_007297.3", "c.5429A>G", Some("p.Gln1810Arg"))
+            .with_snpeff("NM_007294.3", "c.5570A>G", Some("p.Gln1857Arg"))
+            .hit(
+                "chr17:g.41197717T>C",
+                "BRCA1",
+                "p.Gln1878Arg, p.Q1878R, p.Q1857R, p.Gln1857Arg",
+            ),
+    ];
     assert_eq!(transform::variant::clinvar_mane_transcript(&hits), None);
 
     let resolved = resolve_protein_change_hit("BRCA1 Q1878R", "BRCA1", "Q1878R", hits, None)
@@ -1077,14 +1079,9 @@ fn protein_change_resolution_refuses_a_lookalike_without_facts() {
     assert_eq!(mane.as_deref(), Some("NM_000546.6"));
     let resolved = resolve_protein_change_hit("TP53 R116Q", "TP53", "R116Q", hits, mane.as_deref())
         .expect("a unique provider hit resolves before the numbering check");
-    let error = refuse_or_note_without_facts(
-        "TP53 R116Q",
-        "TP53",
-        "R116Q",
-        &resolved,
-        mane.as_deref(),
-    )
-        .expect_err("a differing headline refuses when the numbering cannot be checked");
+    let error =
+        refuse_or_note_without_facts("TP53 R116Q", "TP53", "R116Q", &resolved, mane.as_deref())
+            .expect_err("a differing headline refuses when the numbering cannot be checked");
     let BioMcpError::InvalidArgument(message) = &error else {
         panic!("the unchecked lookalike refuses as invalid argument, got: {error}");
     };
@@ -1133,15 +1130,8 @@ fn protein_change_resolution_notes_unchecked_numbering_without_a_mane_transcript
         sequence_length: Some(393),
         mane_transcript: None,
     };
-    let note = refuse_or_note_with_facts(
-        "TP53 S183Y",
-        "TP53",
-        "S183Y",
-        &resolved,
-        None,
-        &facts,
-    )
-    .expect("an unmarked MANE transcript prints the unchecked note");
+    let note = refuse_or_note_with_facts("TP53 S183Y", "TP53", "S183Y", &resolved, None, &facts)
+        .expect("an unmarked MANE transcript prints the unchecked note");
     assert_eq!(
         note,
         Some(
@@ -1157,13 +1147,11 @@ fn protein_change_resolution_notes_unchecked_numbering_without_a_mane_transcript
 /// variant (ticket 2042): nothing can carry the numbering story.
 #[test]
 fn protein_change_resolution_refuses_a_hit_without_any_protein_change() {
-    let hits = vec![ProteinHitBuilder::default()
-        .rsid("rs9999001")
-        .hit(
-            "chr17:g.41197717T>C",
-            "BRCA1",
-            "p.Q1878R, p.Q1857R",
-        )];
+    let hits = vec![ProteinHitBuilder::default().rsid("rs9999001").hit(
+        "chr17:g.41197717T>C",
+        "BRCA1",
+        "p.Q1878R, p.Q1857R",
+    )];
     let resolved = resolve_protein_change_hit("BRCA1 Q1878R", "BRCA1", "Q1878R", hits, None)
         .expect("a unique provider hit resolves before the numbering check");
     let facts = canonical_facts("P38398", None, 1863, "NM_007294.4");

@@ -461,7 +461,9 @@ async fn refuse_or_note_numbering_mismatch(
         None if mane_transcript.is_some() => {
             match canonical_protein_facts(gene, Some(position)).await {
                 Some(facts) => facts,
-                None => return refuse_or_note_without_facts(id, gene, change, hit, mane_transcript),
+                None => {
+                    return refuse_or_note_without_facts(id, gene, change, hit, mane_transcript);
+                }
             }
         }
         None => return refuse_or_note_without_facts(id, gene, change, hit, mane_transcript),
@@ -488,24 +490,22 @@ fn refuse_or_note_without_facts(
         transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))
     else {
         return Err(protein_change_absent_refusal_message(
-            id,
-            gene,
-            change,
-            &candidate,
+            id, gene, change, &candidate,
         ));
     };
     let Some(transcript) =
         transform::variant::canonical_transcript(hit, mane_transcript, Some(change))
     else {
         return Err(protein_change_absent_refusal_message(
-            id,
-            gene,
-            change,
-            &candidate,
+            id, gene, change, &candidate,
         ));
     };
     if protein_changes_equivalent(change, &protein) {
-        return Ok(Some(unchecked_numbering_note(&transcript, &protein, change)));
+        return Ok(Some(unchecked_numbering_note(
+            &transcript,
+            &protein,
+            change,
+        )));
     }
     Err(unchecked_numbering_refusal_message(
         id,
@@ -548,7 +548,10 @@ fn refuse_or_note_with_facts(
         // so the other-transcript note prints; a sequence the record never
         // carried proves nothing either way (ticket 2035 finding 21) and the
         // answer stays silent.
-        if facts.sequence_length.is_some_and(|length| position > length) {
+        if facts
+            .sequence_length
+            .is_some_and(|length| position > length)
+        {
             // The note names the headline's own transcript and spelling; a
             // record that cannot name one refuses like the no-protein-change
             // case below instead of resolving silently.

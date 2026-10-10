@@ -227,22 +227,22 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1957,
+      "baseline_lines": 1960,
       "floor_lines": 1128,
       "authorized_increase": {
         "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016, 2035, 2036, 2042",
-        "delta": 829,
+        "delta": 832,
         "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its MANE or ClinVar-named transcript spells the change; the MANE stem from the query's ClinVar-preferred names, the numbering note, and the MANE-numbering refusal. Ticket 2035 findings 4 and 21: the residue check runs before any note prints (refuse when the request's numbering is valid on MANE, note when it provably differs, stay silent when unverifiable) and the refusal retry names the requested change instead of the known-differing candidate. Ticket 2036: the canonical-protein facts fetch (accession, requested-position residue, MANE-Select transcript) runs before any non-MANE annotation is accepted, so the refuse-or-note decision splits into the async wrapper and the pure facts decision. Ticket 2042: the canonical facts carry the sequence length so a position past the protein's end proves another numbering, and the no-facts decision (unchecked note, could-not-check refusal, no-protein-change refusal) splits out of the wrapper.",
         "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms."
       }
     },
     {
       "path": "src/entities/variant/get/protein_change_tests.rs",
-      "baseline_lines": 1193,
+      "baseline_lines": 1181,
       "floor_lines": 902,
       "authorized_increase": {
         "ticket": "2042",
-        "delta": 291,
+        "delta": 279,
         "reason": "The past-the-end, unchecked-numbering, no-facts-refusal, no-MANE-transcript, and no-protein-change decision tests with the many-interaction-row record shape.",
         "removal_condition": "Fold the recorded SnpEff shapes into a shared builder when the decision tests grow another provider shape."
       }
