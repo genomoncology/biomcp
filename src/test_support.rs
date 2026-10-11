@@ -37,7 +37,7 @@ pub(crate) struct FixtureEnv {
 impl FixtureEnv {
     pub(crate) fn new() -> Self {
         let cache_dir = TempDirGuard::new("fixture-cache");
-        let mut saved = vec![("BIOMCP_CACHE_DIR", std::env::var_os("BIOMCP_CACHE_DIR"))];
+        let saved = vec![("BIOMCP_CACHE_DIR", std::env::var_os("BIOMCP_CACHE_DIR"))];
         // SAFETY: callers hold the serial-test process-wide environment lock.
         unsafe {
             std::env::set_var(

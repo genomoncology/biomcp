@@ -242,7 +242,7 @@ async fn label_fallback_fixture_drug(base: &str, name: &str, sections: &[&str]) 
 #[serial_test::serial(source_env)]
 async fn label_fetch_failures_settle_as_unavailable_outcomes() {
     let (base, server) = required_label_failure_server().await;
-    let (_env, _ddinter) = drug_fixture_env(base, "required-label-ddinter-counter");
+    let (_env, _ddinter) = drug_fixture_env(&base, "required-label-ddinter-counter");
 
     // Ticket 1300: a requested label section whose fetch failed settles as
     // an unavailable outcome instead of aborting the card, and the provider's
@@ -693,7 +693,7 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
     )
     .await;
 
-    let (_env, _ddinter) = drug_fixture_env(base, "refusal-ddinter");
+    let (_env, _ddinter) = drug_fixture_env(&base, "refusal-ddinter");
 
     // Ticket 2031: when no record names the query and openFDA's identity
     // fields cannot resolve it either, the lookup refuses and says which
@@ -777,7 +777,7 @@ async fn a_refusal_runs_the_discover_resolution_once_for_both_callers() {
             });
         }
     });
-    let (_env, _ddinter) = drug_fixture_env(base, "refusal-once-ddinter");
+    let (_env, _ddinter) = drug_fixture_env(&base, "refusal-once-ddinter");
 
     let err = crate::cli::execute(vec![
         "biomcp".to_string(),
@@ -794,7 +794,6 @@ async fn a_refusal_runs_the_discover_resolution_once_for_both_callers() {
         "the alias fallback answered the refusal: {message}"
     );
     task.abort();
-    drop(env);
 
     let requests = requests
         .lock()
