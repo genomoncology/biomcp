@@ -1,6 +1,6 @@
 # 2048 — Make pm review records pass the contract test and close landed tickets
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
