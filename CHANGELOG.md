@@ -3,6 +3,7 @@
 ## 0.9.2 — 2026-10-10
 
 ### Fixes
+- A rehearsal can no longer publish anywhere but the production repository: the wheel upload and the Homebrew push carry repository guards, the container image and its source label follow the repository running the workflow, and the changelog gate reads a bullet's closing ticket group wherever punctuation trails it. (2049)
 
 - `get variant` now states the current ClinVar classification in its headline when the `clinvar` section answers from NCBI ClinVar, and the quick default view names its cached copy and prints the command that returns the current classification. (1290)
 - When NCBI ClinVar drops, the degraded ClinVar section now names NCBI ClinVar and the reason it failed (timeout, rate limit, or provider error) and dates the MyVariant.info fallback copy by its newest evaluation. (1291)
@@ -50,6 +51,8 @@
 - The guides match the shipped behavior: the variant guide explains gene-symbol-first routing, the article guide states the 60-second search deadline, the deep-offset refusal and the OpenCitations fallback, the drug guide names the sections that keep their caps, and the ClinVar source page and the variant-structure blog post show the current headline format. (1290, 1293, 1300, 1301, 1302)
 
 ### Internal
+- A drug's product rows count against a request only when the record owns the name and the label's ingredient fits the card, the sparse-record reader keeps multi-word brands, a refusal's discover rescue stops at two seconds, and short abbreviations behave the same in any letter case; the tests share one scratch-cache helper so they run at the same speed on any machine. (2050)
+- The ticket tool's own review records pass unchanged, every ask in the inbox is answered through the tool, and the 0.9.2 tickets carry no wrapped or hand-normalized text. (2051)
 - A held test reply that nothing releases now ends on its own at a bound above every real test wait, so a run that loses its caller fails at a named test instead of sitting forever. (2045)
 - The release workflow's smoke legs now compare the printed version with the tag exactly, the workflow lint refuses duplicate option keys and variables a container script never receives, and the changelog gate covers every landing shape and stays inside the tag's own release line. (2046)
 - Records written by the ticket tool now pass the repository's review contract unchanged, and every landed ticket closes through the tool that recorded it. (2048)
