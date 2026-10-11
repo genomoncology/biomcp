@@ -192,10 +192,6 @@
     "repo": "agents",
     "name": "biomcp"
   },
-  "lanesTable": {
-    "file": "planning/lanes.md",
-    "heading": "Lanes"
-  },
   "milestones": {
     "file": "planning/milestones.md",
     "values": [
