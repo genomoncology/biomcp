@@ -720,7 +720,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/genomoncology/biomcp:${{ env.VERSION }}
+          tags: ghcr.io/${{ github.repository }}:${{ env.VERSION }}
           build-args: |
             SOURCE_SHA=${{ env.SOURCE_SHA }}
             VERSION=${{ env.VERSION }}
@@ -728,7 +728,7 @@ jobs:
 
       - name: Smoke the linux/amd64 image from the registry
         run: |
-          IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY}:${VERSION}"
           docker pull --platform linux/amd64 "$IMAGE"
           printed="$(docker run --rm --platform linux/amd64 "$IMAGE" --version)"
           printf '%s\n' "$printed"
@@ -751,7 +751,7 @@ jobs:
 
       - name: Smoke the linux/arm64 image from the registry
         run: |
-          IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY}:${VERSION}"
           docker pull --platform linux/arm64 "$IMAGE"
           printed="$(docker run --rm --platform linux/arm64 "$IMAGE" --version)"
           printf '%s\n' "$printed"
@@ -814,7 +814,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          IMAGE="ghcr.io/genomoncology/biomcp"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY}"
           VERSION="${TAG#v}"
           # A failed query must fail the job, not read as "no
           # published releases" and move latest (third go-request
