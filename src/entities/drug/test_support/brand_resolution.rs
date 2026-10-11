@@ -480,3 +480,164 @@ async fn a_brand_two_exact_drugs_answer_refuses_instead_of_picking_one() {
     );
     server.abort();
 }
+
+/// The live openFDA label answer for the "Pain Relief" identity search,
+/// recorded 2026-10-10 (ticket 2039) and trimmed to the openFDA blocks: no
+/// label carries the shelf name as its own brand, and 1,252 labels merely
+/// mention it, so no row's record owns the requested name.
+const PAIN_RELIEF_LABEL_BODY: &str = r#"{
+ "meta": {
+  "results": {
+   "skip": 0,
+   "limit": 5,
+   "total": 1252
+  }
+ },
+ "results": [
+  {
+   "openfda": {
+    "brand_name": ["4% Lidocaine Pain Relief Patch"],
+    "generic_name": ["LIDOCAINE 4%"]
+   }
+  },
+  {
+   "openfda": {
+    "brand_name": ["Pain Relief Extra Strength"],
+    "generic_name": ["ACETAMINOPHEN"]
+   }
+  },
+  {
+   "openfda": {
+    "brand_name": ["MUCINEX INSTASOOTHE SORE THROAT PLUS PAIN RELIEF"],
+    "generic_name": ["HEXYLRESORCINOL"]
+   }
+  }
+ ]
+}"#;
+
+/// The live openFDA label answer for the "Sleep Aid" identity search,
+/// recorded 2026-10-10 (ticket 2039) and trimmed to the openFDA blocks: two
+/// labels carry the shelf name as their own brand and pair it with
+/// different ingredients (doxylamine succinate and diphenhydramine), so the
+/// name owns no one drug through openFDA either.
+const SLEEP_AID_LABEL_BODY: &str = r#"{
+ "meta": {
+  "results": {
+   "skip": 0,
+   "limit": 5,
+   "total": 249
+  }
+ },
+ "results": [
+  {
+   "openfda": {
+    "brand_name": ["Nighttime Sleep Aid Berry Flavor"],
+    "generic_name": ["DIPHENHYDRAMINE HYDROCHLORIDE"]
+   }
+  },
+  {
+   "openfda": {
+    "brand_name": ["SLEEP AID"],
+    "generic_name": ["DOXYLAMINE SUCCINATE"]
+   }
+  },
+  {
+   "openfda": {
+    "brand_name": ["Sleep Aid"],
+    "generic_name": ["DIPHENHYDRAMINE HCL"]
+   }
+  }
+ ]
+}"#;
+
+/// The env a refusal test needs: the name-resolution fixture base with the
+/// shared HTTP client's cache walk pointed at its own tree (ticket 2039).
+async fn shared_name_refusal_drug(name: &str, base: &str) -> crate::error::BioMcpError {
+    let root = crate::test_support::TempDirGuard::new("shared-name-ddinter");
+    let missing_ddinter = root.path().join("missing-ddinter");
+    let cache_root = crate::test_support::TempDirGuard::new("shared-name-cache");
+    let _cache_mode = crate::sources::test_cache_mode::off();
+    let mut env = RequiredLabelFixtureEnv(Vec::new());
+    env.set(
+        "BIOMCP_CACHE_DIR",
+        cache_root.path().to_string_lossy().as_ref(),
+    );
+    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_OPENFDA_BASE", base);
+    env.set("BIOMCP_OLS4_BASE", base);
+    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
+    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
+    env.set(
+        "BIOMCP_DDINTER_DIR",
+        missing_ddinter.to_str().expect("UTF-8 fixture path"),
+    );
+    super::super::get(name, &["label".to_string()])
+        .await
+        .expect_err("a shared product name must refuse, never fuse")
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn pain_relief_refuses_naming_the_drugs_that_share_the_name() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "Pain Relief".to_string(),
+            crate::transform::drug::shared_name_tests::PAIN_RELIEF_CAPTURE.to_string(),
+        )],
+        vec![(
+            "Pain Relief".to_string(),
+            PAIN_RELIEF_LABEL_BODY.to_string(),
+        )],
+        Vec::new(),
+    )
+    .await;
+
+    // Ticket 2039: the shelf name brands unrelated drugs' products, MyChem
+    // carries it on each of their records, and openFDA holds no label whose
+    // own brand is "Pain Relief". No record owns the name, so the card
+    // refuses and names drugs the text search matched instead of fusing
+    // acetaminophen's identifiers with other drugs' targets.
+    let err = shared_name_refusal_drug("Pain Relief", &base).await;
+    let message = err.to_string();
+    assert!(
+        message.contains("No drug card matches \"Pain Relief\""),
+        "{message}"
+    );
+    assert!(
+        message.contains("acetaminophen"),
+        "the refusal names a drug the text search matched: {message}"
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn sleep_aid_refuses_when_openfdas_own_brands_disagree() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "Sleep Aid".to_string(),
+            crate::transform::drug::shared_name_tests::SLEEP_AID_CAPTURE.to_string(),
+        )],
+        vec![("Sleep Aid".to_string(), SLEEP_AID_LABEL_BODY.to_string())],
+        Vec::new(),
+    )
+    .await;
+
+    // Ticket 2039: MyChem refuses the shelf name because diphenhydramine's
+    // and doxylamine's records pair it with different ingredients, and the
+    // openFDA identity fallback refuses too, because its two labels that
+    // carry "Sleep Aid" as their own brand pair it with different
+    // ingredients. The refusal names the matched drugs.
+    let err = shared_name_refusal_drug("Sleep Aid", &base).await;
+    let message = err.to_string();
+    assert!(
+        message.contains("No drug card matches \"Sleep Aid\""),
+        "{message}"
+    );
+    assert!(
+        message.contains("diphenhydramine"),
+        "the refusal names a drug the text search matched: {message}"
+    );
+    server.abort();
+}
