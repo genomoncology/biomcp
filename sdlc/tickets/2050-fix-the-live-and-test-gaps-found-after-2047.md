@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 1cdc15b, accept
+
 ## Outcome
 
 Every drug, disease, trial and variant answer that 0.9.2 changed is right on live sources for the cases below, a refusal never waits on a slow outside service, and each 2039 and 2040 rule has a test that fails when the rule is removed and runs the same on any machine. The fixes stay general rules with no lists of product, brand or gene names.
