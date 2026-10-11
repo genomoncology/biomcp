@@ -85,7 +85,10 @@ pub(crate) fn clinical_reading_phrase(requested: &str) -> Option<String> {
     clinical_reading(requested).map(|reading| {
         format!(
             "Clinical reading: '{}' {} {} ({})",
-            requested.trim(), reading.relation, reading.label, reading.ontology_id
+            requested.trim(),
+            reading.relation,
+            reading.label,
+            reading.ontology_id
         )
     })
 }
@@ -881,10 +884,7 @@ fn ambiguity_reason(requested: &str, holders: &[MyDiseaseHit], short_token: bool
             holders.len()
         )
     } else {
-        format!(
-            "{} diseases carry it as their exact name",
-            holders.len()
-        )
+        format!("{} diseases carry it as their exact name", holders.len())
     }
 }
 

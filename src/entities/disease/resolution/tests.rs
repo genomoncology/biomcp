@@ -210,7 +210,10 @@ fn mf_refusal_names_the_myelofibrosis_reading() {
         ),
         "{message}"
     );
-    assert!(message.contains("get disease \"myelofibrosis\""), "{message}");
+    assert!(
+        message.contains("get disease \"myelofibrosis\""),
+        "{message}"
+    );
     // The pointer is not a candidate: no myelofibrosis line joins the
     // holder list.
     assert!(!message.contains("- myelofibrosis"), "{message}");
