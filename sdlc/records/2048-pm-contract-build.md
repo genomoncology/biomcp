@@ -1,0 +1,3 @@
+# 2048 build record — pm records pass the contract and landed tickets close
+
+Landed 2026-10-11. The review-status contract accepts pm's own Reviews: revision line, so no ticket record is edited by script; every 0.9.2 verdict since is recorded through pm ticket review, and the landed tickets (2036, 2037, 2039, 2040, 2042 through 2047) closed through pm ticket land, each with a landed-head verdict from a reviewer who ran the gates. The landed branches and worktrees are gone, pm's 2026-10-07 asks are answered inside their messages, the malformed inbox replies carry headers, and the hard wraps, filed dates and the 1300 milestone are corrected.
