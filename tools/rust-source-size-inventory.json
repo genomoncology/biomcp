@@ -126,47 +126,42 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4106,
+      "baseline_lines": 4174,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "1243 | 1299 | 1243 | 2047",
-        "delta": 412,
-        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it | Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | The alias-fallback resolution is memoized per process so a drug refusal pays one discover round instead of two",
-        "removal_condition": "None; the boxing is the point. | Return to the prior baseline when the OLS client gains an unconditional deadline constructor | None; the boxing is the point. | Return to the prior baseline when the CLI alias fallback shares the entity rescue's resolution without a memo"
+        "ticket": "2050",
+        "delta": 480,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1278,
+      "baseline_lines": 1293,
       "floor_lines": 1273,
       "authorized_increase": {
-        "ticket": "2039",
-        "delta": 5,
-        "reason": "The openFDA identity fallback reads only exact-brand rows and refuses when their ingredients disagree.",
-        "removal_condition": "Shrink when the identity fallback moves into the search module beside its helper."
+        "ticket": "2050",
+        "delta": 20,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
       "path": "src/entities/drug/label.rs",
-      "baseline_lines": 1092,
+      "baseline_lines": 1164,
       "floor_lines": 938,
       "authorized_increase": {
-        "ticket": "2047",
-        "delta": 154,
-        "reason": "The sparse-record elements escalation, the element-derived identity ranks, and the hyaluronidase-scoped pairing split.",
-        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share."
+        "ticket": "2050",
+        "delta": 226,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
       "path": "src/entities/drug/test_support/label_choice.rs",
-      "baseline_lines": 1323,
-      "floor_lines": 875,
-      "authorized_increase": {
-        "ticket": "2047",
-        "delta": 448,
-        "reason": "Recorded-reply fixtures for the plain DARZALEX, PHESGO, OPDUALAG and GLEEVEC label choices.",
-        "removal_condition": "Shrink when the recorded label bodies move to testdata files."
-      }
+      "baseline_lines": 1287,
+      "floor_lines": 1287,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/gene.rs",
@@ -271,13 +266,13 @@
     },
     {
       "path": "src/entities/variant/get/tests.rs",
+      "baseline_lines": 1236,
       "floor_lines": 965,
-      "baseline_lines": 1235,
       "authorized_increase": {
-        "ticket": "1292, 2016, 2042, 2047",
-        "delta": 270,
-        "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary. Ticket 2016: protein-change resolution sidecar tests and the protein_numbering_note fields on the Variant test literals. Ticket 2042: the protein-change wiring tests over a recorded S183Y response with a live and an unreachable UniProt leg.",
-        "removal_condition": "Split the transcript-alias fixture tests when a package-neutral module extraction can preserve the exact source package boundary."
+        "ticket": "2050",
+        "delta": 271,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
@@ -355,13 +350,13 @@
     },
     {
       "path": "src/render/markdown/drug/tests.rs",
-      "baseline_lines": 1074,
+      "baseline_lines": 1149,
       "floor_lines": 954,
       "authorized_increase": {
-        "ticket": "1254, 1300 | 2021, 2038, 2044",
-        "delta": 120,
-        "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it; the Drug markdown test cards gained the label section pointer and missing-reason tests. | The degraded WHO search section states its reason instead of a bare no-results line; the test pins that wording. | Ticket 2038: the who_note field on the WHO regulatory test cards and the degraded WHO search section tests. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Shrink when the card fixtures share a builder. | Fold drug search markdown empty-state tests into shared fixtures when the search render tests consolidate. | Fold the WHO degrade tests into shared card fixtures when the drug markdown tests consolidate."
+        "ticket": "2050",
+        "delta": 195,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
@@ -377,13 +372,13 @@
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
-      "baseline_lines": 1106,
+      "baseline_lines": 1166,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1155, 1290",
-        "delta": 106,
-        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, hostile inline-sanitization regressions, and significance provenance render contexts beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Split variant-search renderer tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+        "ticket": "2050",
+        "delta": 166,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
@@ -532,24 +527,24 @@
     },
     {
       "path": "src/transform/disease.rs",
-      "baseline_lines": 1121,
+      "baseline_lines": 1154,
       "floor_lines": 1050,
       "authorized_increase": {
-        "ticket": "1256",
-        "delta": 71,
-        "reason": "The seeded gene-association helper and its tests.",
-        "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+        "ticket": "2050",
+        "delta": 104,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
       "path": "src/transform/drug.rs",
-      "baseline_lines": 1389,
+      "baseline_lines": 1431,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2039",
-        "delta": 389,
-        "reason": "Combination names no longer count as qualified forms or canonical names of one requested ingredient, and a product name several unrelated drugs share now refuses instead of fusing their records.",
-        "removal_condition": "Shrink when the name-matching helpers split into their own module."
+        "ticket": "2050",
+        "delta": 431,
+        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
+        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
       }
     },
     {
