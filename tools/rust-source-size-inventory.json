@@ -137,9 +137,14 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1273,
+      "baseline_lines": 1278,
       "floor_lines": 1273,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2039",
+        "delta": 5,
+        "reason": "The openFDA identity fallback reads only exact-brand rows and refuses when their ingredients disagree.",
+        "removal_condition": "Shrink when the identity fallback moves into the search module beside its helper."
+      }
     },
     {
       "path": "src/entities/drug/label.rs",
@@ -538,12 +543,12 @@
     },
     {
       "path": "src/transform/drug.rs",
-      "baseline_lines": 1324,
+      "baseline_lines": 1389,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038, 2043",
-        "delta": 324,
-        "reason": "Combination names no longer count as qualified forms or canonical names of one requested ingredient.",
+        "ticket": "1254, 1300, 2031, 2037, 2038, 2043, 2039",
+        "delta": 389,
+        "reason": "Combination names no longer count as qualified forms or canonical names of one requested ingredient, and a product name several unrelated drugs share now refuses instead of fusing their records.",
         "removal_condition": "Shrink when the name-matching helpers split into their own module."
       }
     },

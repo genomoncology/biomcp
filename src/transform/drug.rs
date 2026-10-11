@@ -218,6 +218,23 @@ fn hit_canonical_names(hit: &MyChemHit) -> Vec<String> {
     out
 }
 
+/// The names the record itself states as its own product and identity
+/// names: `hit_all_names` without the DrugBank and DrugCentral synonym
+/// lists. A foreign synonym may extend the query ("Terfenadine
+/// carboxylate" is fexofenadine's synonym, never terfenadine's salt form),
+/// so the qualified-form tier reads only names the record owns (ticket
+/// 2039).
+fn hit_own_names(hit: &MyChemHit) -> Vec<String> {
+    let mut out = hit_canonical_names(hit);
+    for value in ndc_proprietary_names(hit) {
+        out.push(normalize_name(value));
+    }
+    for value in openfda_brand_names(hit) {
+        out.push(normalize_name(value));
+    }
+    out
+}
+
 fn drug_type_from_hit(hit: &MyChemHit) -> Option<String> {
     let v = hit
         .chembl
@@ -524,9 +541,17 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
     // mentions the term. Only a hit whose own name, brand, or synonym equals
     // the query identifies the drug; when no exact name exists, a qualified
     // form of the same drug (salt, hydrate: "edetate disodium anhydrous")
-    // still does. Nothing else is admitted, and there is no all-hits
-    // fallback: the caller refuses honestly instead of merging another
-    // drug's record.
+    // still does, and a foreign synonym never does. Nothing else is
+    // admitted, and there is no all-hits fallback: the caller refuses
+    // honestly instead of merging another drug's record.
+    //
+    // Ticket 2039: several unrelated drugs can share one product name
+    // ("Pain Relief" brands acetaminophen, lidocaine and ibuprofen products
+    // alike), and a name several drugs share names no one drug. Every
+    // identity-bearing hit votes for the drug its own record says the name
+    // means; disagreeing votes refuse the whole tier, so one drug's
+    // identifiers never merge with another's targets or label, and records
+    // that agree (one product's ingredient rows) still merge.
     let mut out: Vec<&MyChemHit> = hits
         .iter()
         .filter(|h| hit_all_names(h).iter().any(|n| n == &target))
@@ -535,11 +560,13 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
         out = hits
             .iter()
             .filter(|h| {
-                hit_all_names(h)
+                hit_own_names(h)
                     .iter()
                     .any(|n| name_extends_request(n, &target))
             })
             .collect();
+    } else if shared_name_votes_disagree(&out, name) {
+        return Vec::new();
     }
 
     // Prefer richer hits first (more sources).
@@ -621,6 +648,41 @@ fn hit_has_identity(hit: &MyChemHit) -> bool {
             .and_then(|c| c.molecule_chembl_id.as_deref())
             .is_some()
         || unii_id(hit).is_some()
+}
+
+/// The drug this hit says the requested name means: the ingredient its own
+/// NDC row pairs with the requested product name, else the first canonical
+/// name that matches the request, else the record's leading canonical
+/// identity name (ticket 2039). Every value arrives normalized, so votes
+/// compare by equality.
+fn hit_resolution_vote(hit: &MyChemHit, requested: &str) -> Option<String> {
+    brand_paired_nonproprietary_name(hit, requested)
+        .or_else(|| canonical_name_matching_request(hit, requested))
+        .or_else(|| hit_canonical_names(hit).into_iter().next())
+}
+
+/// Whether the exact tier's identity-bearing hits disagree about which
+/// drug the requested name means (ticket 2039). Only identity-bearing hits
+/// vote: a bare product row shares a record with nothing, so it never
+/// decides the name, and zero voters (a naked-row-only tier, the Keytruda
+/// shape) never disagree. Records of one product vote the same paired
+/// ingredient, so Lonsurf's two ingredient records still merge.
+fn shared_name_votes_disagree(out: &[&MyChemHit], requested: &str) -> bool {
+    let mut first: Option<String> = None;
+    for hit in out {
+        if !hit_has_identity(hit) {
+            continue;
+        }
+        let Some(vote) = hit_resolution_vote(hit, requested) else {
+            continue;
+        };
+        match &first {
+            None => first = Some(vote),
+            Some(seen) if seen == &vote => {}
+            Some(_) => return true,
+        }
+    }
+    false
 }
 
 pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
@@ -880,6 +942,9 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
 
 #[cfg(test)]
 pub(crate) mod name_resolution_tests;
+
+#[cfg(test)]
+pub(crate) mod shared_name_tests;
 
 #[cfg(test)]
 mod tests {
