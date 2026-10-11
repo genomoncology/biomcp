@@ -1129,4 +1129,6 @@ pub(super) async fn count_all_with_ctgov_client(
 }
 
 #[cfg(test)]
+mod abbreviation_note_tests;
+#[cfg(test)]
 mod tests;
