@@ -1,6 +1,6 @@
 # 2044 — Clear the 2038 code-lane review findings
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
