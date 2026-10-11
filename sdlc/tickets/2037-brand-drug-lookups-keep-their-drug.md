@@ -1,6 +1,6 @@
 # 2037 — Brand drug lookups keep their drug
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
