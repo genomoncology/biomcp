@@ -605,7 +605,7 @@ pub(super) fn openfda_label_generic_names(
 
     let mut exact_brand: Vec<String> = Vec::new();
     let mut every_row: Vec<String> = Vec::new();
-    let mut push_unique = |out: &mut Vec<String>, generic: String| {
+    let push_unique = |out: &mut Vec<String>, generic: String| {
         if !out.iter().any(|seen| seen == &generic) {
             out.push(generic);
         }
