@@ -1,6 +1,6 @@
 # 2040 — refuse trial search without a limit on the default source
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
