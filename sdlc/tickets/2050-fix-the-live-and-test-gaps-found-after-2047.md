@@ -1,6 +1,6 @@
 # 2050 — Fix the live and test gaps found after 2047
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
