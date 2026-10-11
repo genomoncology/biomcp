@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 7c1faf778, accept
+
 ## Outcome
 
 The release workflow that the 0.9.2 tag will run loads on GitHub, every smoke leg checks the version it claims to check, the changelog says only what landed, and one rehearsal in the public scratch repo runs the exact candidate workflow end to end before the real tag.
