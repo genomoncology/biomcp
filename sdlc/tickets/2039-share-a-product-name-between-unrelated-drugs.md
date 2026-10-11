@@ -1,6 +1,6 @@
 # 2039 — share a product name between unrelated drugs
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
