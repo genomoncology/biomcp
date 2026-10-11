@@ -387,7 +387,7 @@ mod tests {
         );
         assert!(whole.permanent());
 
-        let long = SectionOutcome::unavailable_message(&format!(
+        let long = SectionOutcome::unavailable_message(format!(
             "{} {}",
             "word ".repeat(31),
             "elephants dance"
