@@ -240,9 +240,8 @@ fn a_foreign_synonym_never_satisfies_the_leading_name_tier() {
     // leads with the query is fexofenadine's synonym "Terfenadine
     // carboxylate" — another drug's synonym, not a salt form of the
     // requested drug — so nothing resolves and the caller refuses.
-    let capture = hits(
-        serde_json::from_str(FEXOFENADINE_TEXT_ONLY_CAPTURE).expect("valid capture"),
-    );
+    let capture =
+        hits(serde_json::from_str(FEXOFENADINE_TEXT_ONLY_CAPTURE).expect("valid capture"));
     let selected = select_hits_for_name(&capture, "terfenadine");
     assert!(
         selected.is_empty(),
