@@ -34,4 +34,8 @@ Recorded before coding, live against the sources.
 
 ## Build status
 
-- Built on branch `tickets/2040-work`.
+- Built on branch `tickets/2040-work`, head `c878134f5` (main `517cd2246` merged in), pushed 2026-10-11.
+- Red-on-main probes recorded in Research above, run through `yr`. The new Rust tests cannot even compile against main's surface (they call the new resolver surface and pin the note text), and the recorded probes show the exact behavior gaps the tests pin.
+- The build host's warm 183 MB BioMCP HTTP cache makes every production-client test crawl (one refusal test ran 47 to 80 seconds against it and 0.03 seconds with a scratch cache); the gates were verified with `XDG_CACHE_HOME` pointed at a scratch directory, which matches CI's cold-cache runners. The warm-cache walk cost is a host finding worth its own ticket.
+- Verified remotely through `yr` at the head: `make lint` green (the first runs failed the formatter and the source-size ratchet; the ratchet demanded extracting the new ambiguity surface into `src/entities/disease/resolution/ambiguity.rs`, and the ctgov size baseline moved to its measured 1134 lines through the updater); `make test` green (4160 Rust tests, 1251 Python tests including the needs_binary lane, strict docs build); `make spec` green, including the changed `spec/entity/trial.md` and `spec/entity/disease.md` pages.
+- CI run 38108549755 at the head is green on every job (repository-contracts, changes, release-panic, windows-contracts, stress-lane, canonical-gates, full-features), watched with `gh run watch --exit-status`. The first run at the merged tree (38106345151) failed the canonical gate's changelog ticket-set pin (2040 was missing from the expected 0.9.2 set) and the package file-count pin (two new packaged modules, 1415 to 1417); both pins now carry the measured values.
