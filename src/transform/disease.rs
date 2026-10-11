@@ -690,6 +690,19 @@ pub fn name_from_mydisease_hit(hit: &MyDiseaseHit) -> String {
                 .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
         })
+        .or_else(|| {
+            // The search response carries no `mondo.name` for some records
+            // (the "lung neoplasm" record answers with `mondo.label`
+            // alone), and a card titled by its ontology ID names no disease
+            // (ticket 2050).
+            hit.mondo
+                .as_ref()
+                .and_then(|v| v.get("label"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+        })
         .unwrap_or_else(|| hit.id.clone())
 }
 
@@ -829,6 +842,26 @@ mod tests {
     fn clean_definition_strips_wrapping_quotes_and_refs() {
         let raw = "\"Example definition.\" [url:http\\://example.com]";
         assert_eq!(clean_definition(raw), "Example definition.");
+    }
+
+    /// Ticket 2050: some records answer the search with `mondo.label` and
+    /// no `mondo.name` at all (the live MONDO:0021117 "lung neoplasm"
+    /// record), and a card titled by its ontology ID names no disease.
+    #[test]
+    fn name_from_mydisease_hit_falls_back_to_the_mondo_label() {
+        let hit: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0021117",
+            "mondo": {"label": "lung neoplasm"}
+        }))
+        .expect("valid hit");
+        assert_eq!(name_from_mydisease_hit(&hit), "lung neoplasm");
+
+        let named: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005105",
+            "mondo": {"name": "malignant melanoma", "label": "melanoma"}
+        }))
+        .expect("valid hit");
+        assert_eq!(name_from_mydisease_hit(&named), "malignant melanoma");
     }
 
     #[test]

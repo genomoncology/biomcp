@@ -248,12 +248,14 @@ async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
             "myotonia fluctuans (MONDO:0020481)".to_string(),
         ]
     );
-    let reading = ambiguity
-        .clinical_reading
-        .expect("the pointer table carries MF");
-    assert_eq!(reading.label, "myelofibrosis");
-    assert_eq!(reading.ontology_id, "MONDO:0009692");
-    assert_eq!(reading.relation, "also names");
+    // A short abbreviation behaves the same in any letter case (ticket
+    // 2050): `mf` names the same holders `MF` does.
+    let lowercase = resolve_abbreviated_disease_ambiguity(&client, "mf")
+        .await
+        .expect("the lowercase lookup should not error")
+        .expect("a short token grounds in any letter case");
+    assert_eq!(lowercase.requested, "mf");
+    assert_eq!(lowercase.holders, ambiguity.holders);
 
     // A full-word condition never grounds through this surface, and a
     // token the resolver would resolve yields no ambiguity.
@@ -266,8 +268,8 @@ async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
     let requests = requests.lock().expect("lock fixture requests").clone();
     assert_eq!(
         requests.len(),
-        1,
-        "only the abbreviation-shaped condition reaches MyDisease: {requests:?}"
+        2,
+        "only abbreviation-shaped conditions reach MyDisease: {requests:?}"
     );
 }
 

@@ -3,7 +3,7 @@
 
 use super::{
     DirectNameResolution, MyDiseaseClient, holder_display_label, is_abbreviation_shaped_token,
-    is_short_abbreviation_token, resolve_disease_hit_by_name_direct,
+    resolve_disease_hit_by_name_direct, single_holder_is_short_token,
 };
 use crate::sources::mydisease::MyDiseaseHit;
 
@@ -143,8 +143,6 @@ pub(crate) struct AbbreviationAmbiguity {
     pub(crate) reason: String,
     /// The named holders, one `label (ontology id)` per entry.
     pub(crate) holders: Vec<String>,
-    /// A clinical reading no source record holds, from the pointer table.
-    pub(crate) clinical_reading: Option<ClinicalAbbreviationReading>,
 }
 
 /// The refusal the default trial source would get from `get disease`,
@@ -165,11 +163,10 @@ pub(crate) async fn resolve_abbreviated_disease_ambiguity(
         DirectNameResolution::AmbiguousAbbreviation { requested, holders } => {
             // Several holders explain the refusal on their own; the
             // short-token reason is for the single-holder case like `MM`.
-            let short_token = holders.len() == 1 && is_short_abbreviation_token(&requested);
+            let short_token = single_holder_is_short_token(holders.len(), &requested);
             Ok(Some(AbbreviationAmbiguity {
                 reason: ambiguity_reason(&requested, &holders, short_token),
                 holders: holders.iter().map(holder_display_line).collect(),
-                clinical_reading: clinical_reading(&requested),
                 requested,
             }))
         }

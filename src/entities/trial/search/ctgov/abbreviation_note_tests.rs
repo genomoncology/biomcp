@@ -64,9 +64,8 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
         .to_string();
     let (ctgov_base, ctgov_requests, ctgov_server) = ctgov_json_fixture(ctgov_body).await;
 
-    let _ctgov_env = CtGovFixtureEnv::set(&ctgov_base);
-    let mut restore = TrialSearchEnvRestore::new();
-    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+    let mut env = ctgov_fixture_env(&ctgov_base);
+    env.set("BIOMCP_MYDISEASE_BASE", &disease_base);
 
     let page = super::super::search_page(
         &TrialSearchFilters {
@@ -82,7 +81,7 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
     tokio::task::yield_now().await;
     ctgov_server.abort();
     disease_server.abort();
-    drop(restore);
+    drop(env);
 
     let note = page
         .partial_note
@@ -148,9 +147,8 @@ async fn default_source_skips_the_ambiguity_note_for_full_words() {
     })
     .await;
 
-    let _ctgov_env = CtGovFixtureEnv::set(&ctgov_base);
-    let mut restore = TrialSearchEnvRestore::new();
-    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+    let mut env = ctgov_fixture_env(&ctgov_base);
+    env.set("BIOMCP_MYDISEASE_BASE", &disease_base);
 
     let page = super::super::search_page(
         &TrialSearchFilters {
@@ -166,7 +164,7 @@ async fn default_source_skips_the_ambiguity_note_for_full_words() {
     tokio::task::yield_now().await;
     ctgov_server.abort();
     disease_server.abort();
-    drop(restore);
+    drop(env);
 
     assert!(
         page.partial_note.is_none(),
@@ -179,5 +177,71 @@ async fn default_source_skips_the_ambiguity_note_for_full_words() {
     assert!(
         disease_requests.is_empty(),
         "no MyDisease request for a full-word condition: {disease_requests:?}"
+    );
+}
+
+/// Ticket 2050: a short abbreviation grounds in any letter case, so
+/// `search trial -c mf` prints the same note `MF` prints instead of
+/// silently returning the keyword search.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn default_source_notes_the_lowercase_abbreviation_like_the_uppercase() {
+    let mf_hits =
+        include_str!("../../../../../testdata/sources/mydisease/query_mf.json").to_string();
+    let (disease_base, disease_requests, disease_server) =
+        mydisease_json_fixture(move |request| request.contains("/query?").then(|| mf_hits.clone()))
+            .await;
+    let (ctgov_base, ctgov_requests, ctgov_server) =
+        ctgov_json_fixture(r#"{"totalCount":0,"studies":[]}"#.to_string()).await;
+
+    let mut env = ctgov_fixture_env(&ctgov_base);
+    env.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+
+    let page = super::super::search_page(
+        &TrialSearchFilters {
+            condition: Some("mf".into()),
+            ..Default::default()
+        },
+        1,
+        0,
+        None,
+    )
+    .await
+    .expect("the lowercase keyword search still runs");
+    tokio::task::yield_now().await;
+    ctgov_server.abort();
+    disease_server.abort();
+    drop(env);
+
+    let note = page
+        .partial_note
+        .expect("the lowercase abbreviation grounds like the uppercase");
+    assert!(note.contains("plain keyword search for 'mf'"), "{note}");
+    assert!(
+        note.contains("an ambiguous abbreviation: 2 diseases hold it as an exact name or synonym"),
+        "{note}"
+    );
+    assert!(
+        note.contains("Clinical reading: 'mf' also names myelofibrosis (MONDO:0009692)"),
+        "{note}"
+    );
+    let disease_requests = disease_requests
+        .lock()
+        .expect("lock MyDisease fixture requests")
+        .clone();
+    assert_eq!(
+        disease_requests.len(),
+        1,
+        "one grounding query for the lowercase abbreviation: {disease_requests:?}"
+    );
+    let ctgov_requests = ctgov_requests
+        .lock()
+        .expect("lock CTGov fixture requests")
+        .clone();
+    assert!(
+        ctgov_requests
+            .iter()
+            .any(|line| line.contains("query.cond=mf")),
+        "the registry request stays the raw keyword search: {ctgov_requests:?}"
     );
 }

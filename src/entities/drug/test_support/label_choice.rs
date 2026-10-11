@@ -773,7 +773,7 @@ const DARATUMUMAB_CAPTURE: &str = r#"
 }
 "#;
 
-fn assert_label_data_with_set_id(drug: &super::super::Drug, set_id: &str) {
+pub(super) fn assert_label_data_with_set_id(drug: &super::super::Drug, set_id: &str) {
     assert_eq!(drug.label_set_id.as_deref(), Some(set_id));
     let outcome = drug
         .section_outcomes
@@ -1096,25 +1096,7 @@ async fn phesgo_resolves_its_own_label_and_safety_line() {
     )
     .await;
 
-    let root = crate::test_support::TempDirGuard::new("phesgo-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("phesgo-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_OLS4_BASE", &base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = super::drug_fixture_env(base.as_str(), "phesgo-ddinter");
 
     // Ticket 2047: MyChem holds Phesgo only on naked combination rows, so
     // the card carries the three-name ingredient line, and openFDA's
@@ -1246,25 +1228,7 @@ async fn a_contains_tier_ols_match_never_adopts_a_card() {
     )
     .await;
 
-    let root = crate::test_support::TempDirGuard::new("ambifton-contains-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("ambifton-contains-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_OLS4_BASE", &base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = super::drug_fixture_env(base.as_str(), "ambifton-contains-ddinter");
 
     // The regimen-shaped concept is a drug with a canonical id but only a
     // non-exact (prefix-tier) match, so the guard declines and the refusal

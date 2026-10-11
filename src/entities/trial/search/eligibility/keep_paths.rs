@@ -68,7 +68,7 @@ async fn verify_against_fixture(
     studies: Vec<CtGovStudy>,
 ) -> (Vec<CtGovStudy>, DetailVerificationReport) {
     let (base, server) = detail_fixture(fail_ids, empty_criteria_ids, criteria_text).await;
-    let _env = crate::entities::trial::test_support::CtGovFixtureEnv::set(&base);
+    let _env = crate::entities::trial::test_support::ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let keywords = vec!["MSI-H".to_string()];
     let outcome = verify_detail_filters(&client, studies, None, &keywords).await;

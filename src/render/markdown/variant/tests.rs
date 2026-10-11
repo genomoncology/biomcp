@@ -632,6 +632,66 @@ fn variant_markdown_renders_gwas_unavailable_message() {
     assert!(!markdown.contains("No GWAS associations found for this variant."));
 }
 
+/// Ticket 2050: the retired-endpoint gap renders once. The section state
+/// line carries the reason, so the template's own reason line stays silent
+/// instead of printing the same words a second time under it.
+#[test]
+fn variant_markdown_renders_the_gwas_gap_reason_once() {
+    let reason = "GWAS association data is temporarily unavailable.";
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "rs7903146",
+        "gene": "TCF7L2",
+        "rsid": "rs7903146",
+        "gwas": [],
+        "gwas_unavailable_reason": reason,
+        "section_outcomes": {
+            "gwas": {"outcome": "unavailable", "sources": [], "message": reason}
+        }
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &["gwas".to_string()]).expect("rendered markdown");
+    assert_eq!(
+        markdown.matches(reason).count(),
+        1,
+        "the reason prints exactly once: {markdown}"
+    );
+}
+
+/// Ticket 2050: a permanent unavailability (the retired by-rsID endpoint)
+/// names its whole gap and offers no retry, because no retry reaches a
+/// retired endpoint, and the reason never cuts mid-word.
+#[test]
+fn variant_markdown_offers_no_retry_for_a_retired_gwas_endpoint() {
+    let reason = crate::sources::gwas::RETIRED_ENDPOINT_REASON;
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "rs121913529",
+        "gene": "TP53",
+        "rsid": "rs121913529",
+        "gwas": [],
+        "gwas_unavailable_reason": reason,
+        "section_outcomes": {
+            "gwas": {"outcome": "unavailable", "sources": [], "message": reason, "permanent": true}
+        }
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &["gwas".to_string()]).expect("rendered markdown");
+    assert!(
+        markdown.contains("until the v2 endpoint is wired."),
+        "the reason survives whole: {markdown}"
+    );
+    assert_eq!(
+        markdown.matches(reason).count(),
+        1,
+        "the reason prints exactly once: {markdown}"
+    );
+    assert!(
+        !markdown.contains("Retry:"),
+        "a retired endpoint offers no retry command: {markdown}"
+    );
+}
+
 #[test]
 fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
     let results = vec![

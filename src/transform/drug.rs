@@ -122,15 +122,21 @@ fn openfda_brand_name(hit: &MyChemHit) -> Option<&str> {
 }
 
 fn best_name_from_hit(hit: &MyChemHit) -> Option<String> {
+    // The record's own single-source identity names outrank the merged NDC
+    // product rows (ticket 2050): a record carrying hundreds of products'
+    // rows still names itself, so an unrelated product's ingredient line
+    // ("diphenhydramine hydrochloride zinc acetate" on the diphenhydramine
+    // record) never becomes the card's name, while a naked product row —
+    // whose established line is all it has — keeps naming itself.
     let candidates: [Option<&str>; 8] = [
-        ndc_nonproprietaryname(hit),
         openfda_generic_name(hit),
-        openfda_brand_name(hit),
         hit.drugbank.as_ref().and_then(|d| d.name.as_deref()),
         hit.chembl.as_ref().and_then(|c| c.pref_name.as_deref()),
         hit.gtopdb.as_ref().and_then(|g| g.name.as_deref()),
         unii_display_name(hit),
         chebi_name(hit),
+        ndc_nonproprietaryname(hit),
+        openfda_brand_name(hit),
     ];
 
     candidates
@@ -186,34 +192,47 @@ fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
     out
 }
 
+/// One canonical identity name with its provenance: a merged NDC product
+/// row's established name (`product_row`) belongs to one of the many
+/// products MyChem folded into the ingredient's record, while every other
+/// canonical name is the record's own single-source name.
+struct CanonicalName {
+    name: String,
+    product_row: bool,
+}
+
 /// The hit's own identity names, in canonical preference order: every NDC
 /// established name (MyChem merges product rows into the ingredient's
 /// record, so one record carries many products' names), every openFDA
 /// generic name, the DrugBank name, the ChEMBL preferred name, the GtoPdb
 /// name, the UNII display name, and the ChEBI name. Brand names are kept
 /// out: a brand query canonicalizes to the generic identity (ticket 2031).
-fn hit_canonical_names(hit: &MyChemHit) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
+fn hit_canonical_names(hit: &MyChemHit) -> Vec<CanonicalName> {
+    let mut out: Vec<CanonicalName> = Vec::new();
     for value in ndc_nonproprietary_names(hit) {
-        out.push(normalize_name(value));
+        out.push(CanonicalName {
+            name: normalize_name(value),
+            product_row: true,
+        });
     }
     for value in openfda_generic_names(hit) {
-        out.push(normalize_name(value));
+        out.push(CanonicalName {
+            name: normalize_name(value),
+            product_row: false,
+        });
     }
-    if let Some(v) = hit.drugbank.as_ref().and_then(|d| d.name.as_deref()) {
-        out.push(normalize_name(v));
-    }
-    if let Some(v) = hit.chembl.as_ref().and_then(|c| c.pref_name.as_deref()) {
-        out.push(normalize_name(v));
-    }
-    if let Some(v) = hit.gtopdb.as_ref().and_then(|g| g.name.as_deref()) {
-        out.push(normalize_name(v));
-    }
-    if let Some(v) = unii_display_name(hit) {
-        out.push(normalize_name(v));
-    }
-    if let Some(v) = chebi_name(hit) {
-        out.push(normalize_name(v));
+    let own: [Option<&str>; 5] = [
+        hit.drugbank.as_ref().and_then(|d| d.name.as_deref()),
+        hit.chembl.as_ref().and_then(|c| c.pref_name.as_deref()),
+        hit.gtopdb.as_ref().and_then(|g| g.name.as_deref()),
+        unii_display_name(hit),
+        chebi_name(hit),
+    ];
+    for value in own.into_iter().flatten() {
+        out.push(CanonicalName {
+            name: normalize_name(value),
+            product_row: false,
+        });
     }
     out
 }
@@ -225,7 +244,10 @@ fn hit_canonical_names(hit: &MyChemHit) -> Vec<String> {
 /// so the qualified-form tier reads only names the record owns (ticket
 /// 2039).
 fn hit_own_names(hit: &MyChemHit) -> Vec<String> {
-    let mut out = hit_canonical_names(hit);
+    let mut out: Vec<String> = hit_canonical_names(hit)
+        .into_iter()
+        .map(|entry| entry.name)
+        .collect();
     for value in ndc_proprietary_names(hit) {
         out.push(normalize_name(value));
     }
@@ -600,11 +622,31 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
 /// drug the query actually matched (ticket 2031). Brand names are not
 /// candidates; a brand that matches while no canonical name does falls back
 /// to the generic identity instead.
+///
+/// A merged NDC product row's name counts as the record's own only when it
+/// equals the request, when the request itself names a product or brand the
+/// record carries (ticket 2050): one record holds many products' rows, so a
+/// request naming one product ("advil", "headache relief") takes that
+/// product's own pairing instead of another row's wider name ("advil pm",
+/// "tension headache relief"). An ingredient request keeps the
+/// qualified-form rule ("imatinib mesylate" still matches "imatinib",
+/// ticket 2037), and every non-product canonical name keeps the loose rule.
 fn canonical_name_matching_request(hit: &MyChemHit, requested: &str) -> Option<String> {
     let target = normalize_name(requested);
+    let request_names_a_carried_product = ndc_proprietary_names(hit)
+        .iter()
+        .chain(openfda_brand_names(hit).iter())
+        .any(|name| normalize_name(name) == target);
     hit_canonical_names(hit)
         .into_iter()
-        .find(|name| name_matches_requested(name, &target))
+        .find(|entry| {
+            if entry.product_row && request_names_a_carried_product {
+                entry.name == target
+            } else {
+                name_matches_requested(&entry.name, &target)
+            }
+        })
+        .map(|entry| entry.name)
 }
 
 /// The nonproprietary name MyChem pairs with the requested brand on one
@@ -658,7 +700,12 @@ fn hit_has_identity(hit: &MyChemHit) -> bool {
 fn hit_resolution_vote(hit: &MyChemHit, requested: &str) -> Option<String> {
     brand_paired_nonproprietary_name(hit, requested)
         .or_else(|| canonical_name_matching_request(hit, requested))
-        .or_else(|| hit_canonical_names(hit).into_iter().next())
+        .or_else(|| {
+            hit_canonical_names(hit)
+                .into_iter()
+                .next()
+                .map(|entry| entry.name)
+        })
 }
 
 /// Whether the exact tier's identity-bearing hits disagree about which

@@ -503,7 +503,7 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     let client = match GwasClient::new() {
         Ok(client) => client,
         Err(err) if err.code() == "source_unavailable" => {
-            mark_gwas_unavailable(variant, &gwas_unavailable_reason(&err));
+            mark_gwas_unavailable(variant, &gwas_unavailable_reason(&err), false);
             return Ok(());
         }
         Err(err) => return Err(err),
@@ -511,7 +511,11 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     let associations = match client.associations_by_rsid(&rsid, 20).await {
         Ok(associations) => associations,
         Err(err) if err.code() == "source_unavailable" => {
-            mark_gwas_unavailable(variant, &gwas_unavailable_reason(&err));
+            mark_gwas_unavailable(
+                variant,
+                &gwas_unavailable_reason(&err),
+                crate::sources::gwas::is_retired_endpoint_error(&err),
+            );
             return Ok(());
         }
         Err(err) => return Err(err),
@@ -533,12 +537,19 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     Ok(())
 }
 
-pub(in crate::entities::variant) fn mark_gwas_unavailable(variant: &mut Variant, reason: &str) {
+pub(in crate::entities::variant) fn mark_gwas_unavailable(
+    variant: &mut Variant,
+    reason: &str,
+    permanent: bool,
+) {
     variant.supporting_pmids = None;
     variant.gwas_unavailable_reason = Some(reason.to_string());
-    variant
-        .section_outcomes
-        .complete("gwas", SectionOutcome::unavailable_message(reason));
+    let outcome = if permanent {
+        SectionOutcome::unavailable_permanent(reason)
+    } else {
+        SectionOutcome::unavailable_message(reason)
+    };
+    variant.section_outcomes.complete("gwas", outcome);
 }
 
 /// The degrade note a `source_unavailable` error carries: the error's own

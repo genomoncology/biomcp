@@ -149,16 +149,19 @@ fn section_render_contexts_with_recovery(
                     "**{} status ({}):** {label} — {message}",
                     row.label, providers
                 );
+                let retry_recovers = !outcome.is_some_and(|value| value.permanent());
                 if matches!(
                     state,
                     SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
-                ) && let Some(command) = match recovery {
-                    Some(entries) => entries
-                        .iter()
-                        .find(|entry| entry.section == row.key)
-                        .map(|entry| entry.command.clone()),
-                    None => section_recovery_command(entity, identity, row.key),
-                } {
+                ) && retry_recovers
+                    && let Some(command) = match recovery {
+                        Some(entries) => entries
+                            .iter()
+                            .find(|entry| entry.section == row.key)
+                            .map(|entry| entry.command.clone()),
+                        None => section_recovery_command(entity, identity, row.key),
+                    }
+                {
                     let _ = write!(rendered, "\nRetry: {}", markdown_code_span(&command));
                 }
                 rendered

@@ -271,7 +271,7 @@ No cBioPortal frequency data available.
 ## GWAS (GWAS Catalog)
 {% if source_states.gwas.status %}{{ source_states.gwas.status }}
 {% endif -%}
-{% if gwas_unavailable_reason -%}
+{% if gwas_unavailable_reason and not source_states.gwas.status -%}
 {{ gwas_unavailable_reason }}
 {% elif source_states.gwas.payload_allowed and gwas -%}
 | rsID | Trait | p-value | Effect | Confidence | Risk AF | Risk Allele | Study | PMID | Author |

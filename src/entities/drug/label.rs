@@ -573,6 +573,9 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
 /// the only brand identity a record with an empty `openfda` block carries
 /// ("DARZALEX Daratumumab DARATUMUMAB …" names DARZALEX), so a card whose
 /// chosen label is a sparse record still lists its own brand (ticket 2047).
+/// One reader serves every consumer of the element line's brand (ticket
+/// 2050), so a multi-word brand ("Herceptin Hylecta") stays whole wherever
+/// it is read.
 pub(super) fn element_leading_brand_names(label_response: &serde_json::Value) -> Vec<String> {
     let Some(results) = label_response.get("results").and_then(|v| v.as_array()) else {
         return Vec::new();
@@ -583,18 +586,9 @@ pub(super) fn element_leading_brand_names(label_response: &serde_json::Value) ->
         if !is_sparse_identity_record(result) {
             continue;
         }
-        for element in spl_product_data_elements(result) {
-            let brand = element
-                .split_whitespace()
-                .next()
-                .unwrap_or_default()
-                .trim_matches(|c: char| matches!(c, ',' | ';' | ':' | '.'))
-                .trim();
-            if brand.is_empty() {
-                continue;
-            }
+        for brand in sparse_element_identity_names(result).0 {
             if seen.insert(brand.to_ascii_lowercase()) {
-                out.push(brand.to_string());
+                out.push(brand);
             }
         }
     }
@@ -609,6 +603,16 @@ fn identity_tokens(value: &str) -> Vec<String> {
         .filter(|token| !token.is_empty())
         .map(str::to_ascii_lowercase)
         .collect()
+}
+
+/// Whether two token runs read the same, ignoring letter case: element
+/// lines mix "DARZALEX Daratumumab DARATUMUMAB" spellings of one name.
+fn tokens_equal_ignore_case(left: &[String], right: &[String]) -> bool {
+    left.len() == right.len()
+        && left
+            .iter()
+            .zip(right)
+            .all(|(l, r)| l.eq_ignore_ascii_case(r))
 }
 
 fn result_identity_values(result: &serde_json::Value) -> Vec<String> {
@@ -636,6 +640,17 @@ fn spl_product_data_elements(result: &serde_json::Value) -> Vec<&str> {
     elements.iter().filter_map(|v| v.as_str()).collect()
 }
 
+/// The element's identity tokens as written, so the brand run keeps its
+/// original spelling while every structural comparison stays
+/// case-insensitive.
+fn element_tokens(element: &str) -> Vec<String> {
+    element
+        .split(|ch: char| !ch.is_ascii_alphanumeric())
+        .filter(|token| !token.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
 /// The identity token runs of one SPL product data element.
 ///
 /// A real element concatenates one entry per strength, and every entry
@@ -644,14 +659,12 @@ fn spl_product_data_elements(result: &serde_json::Value) -> Vec<&str> {
 /// across strengths and raw repetition cannot separate names from
 /// excipients. Entries split where the element's leading two-token name
 /// window recurs, which is each next strength's opening. Within one entry
-/// the identity is the leading name run: the entry's first token, then the
-/// established name's tokens, which the entry spells out and then lists
-/// again whole or componentwise, so the longest prefix of the remaining
-/// tokens that recurs later marks them. The run ends at the first token the
-/// name never repeats, which is the entry's first inactive excipient or
-/// strength code.
-fn spl_element_identity_heads(element: &str) -> Vec<Vec<String>> {
-    let tokens = identity_tokens(element);
+/// the identity is the leading name run: the entry's brand tokens, then
+/// the established name's tokens, which the entry spells out and then
+/// lists again whole or componentwise, so the longest prefix of the
+/// remaining tokens that recurs later marks them.
+fn spl_element_identity_heads(element: &str) -> Vec<(Vec<String>, Vec<String>)> {
+    let tokens = element_tokens(element);
     if tokens.is_empty() {
         return Vec::new();
     }
@@ -659,47 +672,61 @@ fn spl_element_identity_heads(element: &str) -> Vec<Vec<String>> {
     let mut heads = Vec::new();
     let mut entry_start = 0;
     for position in 1..=(tokens.len() - window) {
-        if tokens[position..position + window] == tokens[..window] {
-            heads.push(entry_name_run(&tokens[entry_start..position]));
+        if tokens_equal_ignore_case(&tokens[position..position + window], &tokens[..window]) {
+            heads.push(entry_identity_run(&tokens[entry_start..position]));
             entry_start = position;
         }
     }
-    heads.push(entry_name_run(&tokens[entry_start..]));
+    heads.push(entry_identity_run(&tokens[entry_start..]));
     heads
 }
 
-/// The leading identity run of one element entry: the first token, then the
-/// recurring established-name tokens, ending at the first token the name
-/// never repeats.
-fn entry_name_run(entry: &[String]) -> Vec<String> {
-    if entry.is_empty() {
-        return Vec::new();
-    }
+/// The leading identity runs of one element entry: the brand tokens, then
+/// the established name's tokens. The established name recurs in the entry
+/// — the entry spells it out and then repeats it — so the first token that
+/// recurs later marks where the established name begins, and every token
+/// before it belongs to the brand: a multi-word brand stays whole
+/// ("Herceptin Hylecta Trastuzumab and hyaluronidase-oysk TRASTUZUMAB …"
+/// names HERCEPTIN HYLECTA over trastuzumab, ticket 2050). An entry whose
+/// tokens never recur names no established ingredient, so it contributes
+/// neither brand nor generic.
+fn entry_identity_run(entry: &[String]) -> (Vec<String>, Vec<String>) {
+    let Some(start) = (1..entry.len()).find(|&position| {
+        entry[position + 1..]
+            .iter()
+            .any(|later| later.eq_ignore_ascii_case(&entry[position]))
+    }) else {
+        return (Vec::new(), Vec::new());
+    };
+    let brand = entry[..start].to_vec();
+    let tail = &entry[start..];
     let mut name_end = 1;
     loop {
         let end = name_end + 1;
-        if end > entry.len() {
+        if end > tail.len() {
             break;
         }
-        let prefix = &entry[1..end];
-        let recurs = entry[end..]
+        let prefix = &tail[..end];
+        let recurs = tail[end..]
             .windows(prefix.len())
-            .any(|window| window == prefix);
+            .any(|window| tokens_equal_ignore_case(window, prefix));
         if !recurs {
             break;
         }
         name_end = end;
     }
-    let name: std::collections::HashSet<&str> =
-        entry[1..name_end].iter().map(String::as_str).collect();
-    let mut run = vec![entry[0].clone()];
-    for token in &entry[1..] {
-        if !name.contains(token.as_str()) {
+    let name: std::collections::HashSet<String> = tail[..name_end]
+        .iter()
+        .map(|token| token.to_ascii_lowercase())
+        .collect();
+    let mut established: Vec<String> = Vec::new();
+    for token in tail {
+        if !name.contains(&token.to_ascii_lowercase()) {
             break;
         }
-        run.push(token.clone());
+        established.push(token.clone());
     }
-    run
+    (brand, established)
 }
 
 /// Whether a broad-search result is the requested drug's own record.
@@ -722,12 +749,13 @@ pub(super) fn label_result_matches_identity(result: &serde_json::Value, name: &s
     identity_runs.extend(
         spl_product_data_elements(result)
             .iter()
-            .flat_map(|element| spl_element_identity_heads(element)),
+            .flat_map(|element| spl_element_identity_heads(element))
+            .map(|(brand, established)| brand.into_iter().chain(established).collect::<Vec<_>>()),
     );
     identity_runs.into_iter().any(|tokens| {
         tokens
             .windows(name_tokens.len())
-            .any(|window| window == name_tokens.as_slice())
+            .any(|window| tokens_equal_ignore_case(window, &name_tokens))
     })
 }
 
@@ -832,42 +860,88 @@ const LABEL_RANK_PLAIN_INGREDIENT: u8 = 2;
 const LABEL_RANK_QUALIFIED_FORM: u8 = 1;
 const LABEL_RANK_OPENFDA_ORDER: u8 = 0;
 
-fn generic_name_matches(result: &serde_json::Value, matches: impl Fn(&str) -> bool) -> bool {
-    extract_openfda_values_from_result(result, "generic_name")
-        .iter()
-        .any(|name| {
-            let lower = name.trim().to_ascii_lowercase();
-            !lower.is_empty() && matches(&lower)
-        })
+/// The generic names one label result states for its drug: the openFDA
+/// generic names, plus the established names a sparse record's element line
+/// carries (ticket 2047).
+fn label_result_generic_names(result: &serde_json::Value) -> Vec<String> {
+    let mut names = extract_openfda_values_from_result(result, "generic_name");
+    if is_sparse_identity_record(result) {
+        names.extend(sparse_element_identity_names(result).1);
+    }
+    names
+}
+
+/// Whether a generic name is a qualified form of the requested or card
+/// drug: the stem followed by more words (a salt, hydrate or suffix form).
+fn generic_extends_stem(name: &str, requested: &str, card: &str) -> bool {
+    [requested, card].into_iter().any(|stem| {
+        !stem.is_empty()
+            && (name.starts_with(&format!("{stem} ")) || name.starts_with(&format!("{stem}-")))
+    })
+}
+
+/// The ingredient words one generic line names: tokens split at punctuation
+/// and the combination joiner, so "A, B and C" and "A, B, C" compare by
+/// the ingredients they name rather than by their separators.
+fn ingredient_word_set(name: &str) -> std::collections::BTreeSet<String> {
+    identity_tokens(name)
+        .into_iter()
+        .filter(|token| token != "and")
+        .collect()
+}
+
+/// Whether a brand-equal label's generic name fits the card (ticket 2050):
+/// a brand alone never confirms a record, because the brand-equal label may
+/// be another product's — a shelf name on a card it shares no ingredient
+/// with. The generic fits when it names the requested or card drug (equal,
+/// a qualified form, or the plain side of a hyaluronidase pairing), or when
+/// its ingredient words meet the card's own — either side containing the
+/// other, because a sparse record's element line spells a combination's
+/// ingredients differently than the card's NDC line does.
+fn generic_name_fits_card(generic: &str, requested: &str, card: &str) -> bool {
+    let plain = plain_paired_ingredient_name(generic)
+        .trim()
+        .to_ascii_lowercase();
+    if plain.is_empty() {
+        return false;
+    }
+    if plain == requested || plain == card || generic_extends_stem(&plain, requested, card) {
+        return true;
+    }
+    let generic_words = ingredient_word_set(&plain);
+    let card_stems = [card.trim(), plain_paired_ingredient_name(card).trim()];
+    card_stems.into_iter().any(|stem| {
+        !stem.is_empty() && {
+            let stem_words = ingredient_word_set(stem);
+            generic_words.is_subset(&stem_words) || stem_words.is_subset(&generic_words)
+        }
+    })
 }
 
 /// The brand and established-name identity a sparse record's SPL product
 /// data elements carry, the only identity such a record has: each
 /// per-strength entry opens "BRAND ESTABLISHED [ESTABLISHED repeats]
 /// excipients…" ("DARZALEX Daratumumab DARATUMUMAB DARATUMUMAB ACETIC ACID…"
-/// names the DARZALEX brand and the daratumumab ingredient), so the entry
-/// head's leading token is the brand and its recurring name run after it is
-/// the established name. A head that carries only the brand token (an
-/// "X and hyaluronidase" combination whose second name never recurs) names
-/// no established ingredient, so it contributes no brand either (ticket
-/// 2047).
+/// names the DARZALEX brand and the daratumumab ingredient; "Herceptin
+/// Hylecta Trastuzumab and hyaluronidase-oysk TRASTUZUMAB …" names the
+/// HERCEPTIN HYLECTA brand and the trastuzumab pairing, ticket 2050), so
+/// the entry head's leading tokens are the brand and its recurring name
+/// run after them is the established name. An entry that names no
+/// established ingredient contributes no brand either (ticket 2047).
 fn sparse_element_identity_names(result: &serde_json::Value) -> (Vec<String>, Vec<String>) {
     let mut brands = Vec::new();
     let mut generics = Vec::new();
-    for run in spl_product_data_elements(result)
+    for (brand, established) in spl_product_data_elements(result)
         .iter()
         .flat_map(|element| spl_element_identity_heads(element))
     {
-        let Some((brand, established)) = run.split_first() else {
-            continue;
-        };
-        if established.is_empty() {
+        if brand.is_empty() || established.is_empty() {
             continue;
         }
-        brands.push(brand.clone());
+        brands.push(brand.join(" "));
         let mut tokens: Vec<&String> = Vec::new();
-        for token in established {
-            if !tokens.contains(&token) {
+        for token in &established {
+            if !tokens.iter().any(|seen| seen.eq_ignore_ascii_case(token)) {
                 tokens.push(token);
             }
         }
@@ -887,41 +961,39 @@ fn is_sparse_identity_record(result: &serde_json::Value) -> bool {
 fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) -> u8 {
     let requested = requested.trim().to_ascii_lowercase();
     let card = card.trim().to_ascii_lowercase();
-    let (element_brands, element_generics) = if is_sparse_identity_record(result) {
-        sparse_element_identity_names(result)
+    let element_brands = if is_sparse_identity_record(result) {
+        sparse_element_identity_names(result).0
     } else {
-        (Vec::new(), Vec::new())
+        Vec::new()
     };
-    if extract_openfda_values_from_result(result, "brand_name")
+    let brand_equal = extract_openfda_values_from_result(result, "brand_name")
         .iter()
         .any(|brand| brand.trim().to_ascii_lowercase() == requested)
-        || element_brands.contains(&requested)
+        || element_brands
+            .iter()
+            .any(|brand| brand.trim().eq_ignore_ascii_case(&requested));
+    if brand_equal
+        && label_result_generic_names(result)
+            .iter()
+            .any(|generic| generic_name_fits_card(generic, &requested, &card))
     {
         return LABEL_RANK_BRAND_MATCH;
     }
+    let generics = label_result_generic_names(result)
+        .iter()
+        .map(|name| name.trim().to_ascii_lowercase())
+        .collect::<Vec<_>>();
     if !requested.is_empty()
-        && (generic_name_matches(result, |name| {
-            !is_combination_product_name(name) && (name == requested || name == card)
-        }) || element_generics.iter().any(|name| {
-            !is_combination_product_name(name) && (name == &requested || name == &card)
-        }))
+        && generics
+            .iter()
+            .any(|name| !is_combination_product_name(name) && (name == &requested || name == &card))
     {
         return LABEL_RANK_PLAIN_INGREDIENT;
     }
     if !requested.is_empty()
-        && (generic_name_matches(result, |name| {
-            !is_combination_product_name(name)
-                && (name.starts_with(&format!("{requested} "))
-                    || name.starts_with(&format!("{requested}-"))
-                    || name.starts_with(&format!("{card} "))
-                    || name.starts_with(&format!("{card}-")))
-        }) || element_generics.iter().any(|name| {
-            !is_combination_product_name(name)
-                && (name.starts_with(&format!("{requested} "))
-                    || name.starts_with(&format!("{requested}-"))
-                    || name.starts_with(&format!("{card} "))
-                    || name.starts_with(&format!("{card}-")))
-        }))
+        && generics.iter().any(|name| {
+            !is_combination_product_name(name) && generic_extends_stem(name, &requested, &card)
+        })
     {
         return LABEL_RANK_QUALIFIED_FORM;
     }

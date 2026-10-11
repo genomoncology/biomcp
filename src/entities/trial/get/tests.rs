@@ -422,12 +422,12 @@ async fn get_rejects_non_nct_id_with_format_hint() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn ctgov_eligibility_provenance_exists_only_for_explicit_text() {
-    use crate::entities::trial::test_support::{CtGovFixtureEnv, ctgov_json_fixture};
+    use crate::entities::trial::test_support::{ctgov_fixture_env, ctgov_json_fixture};
 
     let recorded =
         include_str!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
     let (base, _, server) = ctgov_json_fixture(recorded).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let explicit = get(
         "NCT02576665",
         &["eligibility".to_string()],
@@ -466,7 +466,7 @@ async fn ctgov_eligibility_provenance_exists_only_for_explicit_text() {
                 .remove("eligibilityModule");
         }
         let (base, _, server) = ctgov_json_fixture(serde_json::to_string(&body).unwrap()).await;
-        let _env = CtGovFixtureEnv::set(&base);
+        let _env = ctgov_fixture_env(&base);
         let trial = get(
             "NCT02576665",
             &["eligibility".to_string()],

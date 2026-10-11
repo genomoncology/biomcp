@@ -767,6 +767,7 @@ fn gwas_only_request_returns_variant_when_gwas_is_unavailable() {
     mark_gwas_unavailable(
         &mut variant,
         "GWAS association data is temporarily unavailable.",
+        false,
     );
 
     assert_eq!(variant.id, "rs7903146");

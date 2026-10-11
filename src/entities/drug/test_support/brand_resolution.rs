@@ -447,25 +447,7 @@ async fn a_brand_two_exact_drugs_answer_refuses_instead_of_picking_one() {
     )
     .await;
 
-    let root = crate::test_support::TempDirGuard::new("ambifton-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("ambifton-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_OLS4_BASE", &base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = super::drug_fixture_env(base.as_str(), "ambifton-ddinter");
 
     // With the guard intact the two exact canonical drugs compete, the
     // rescue declines, and the refusal names the miss. Unguarded, the
@@ -550,28 +532,36 @@ const SLEEP_AID_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
+/// `q=doxylamine succinate` (recorded 2026-10-11, ticket 2050): the
+/// doxylamine identity record with its own pairing row, trimmed to the
+/// fields the selection reads. The openFDA identity fallback orders its
+/// candidates by the label page, and doxylamine succinate is the first
+/// candidate for the "Sleep Aid" search above; the refusal stands only
+/// because two candidates answer, so this reply exists to fail the test
+/// the moment the fallback starts adopting the first candidate instead of
+/// refusing.
+const DOXYLAMINE_SUCCINATE_CAPTURE: &str = r#"
+{
+  "total": 1,
+  "hits": [
+    {
+      "_id": "HCFDWZZGGLSKEP-UHFFFAOYSA-N",
+      "_score": 56.14622,
+      "drugbank": {"id": "DB00366", "name": "Doxylamine"},
+      "chembl": {"molecule_chembl_id": "CHEMBL1004", "pref_name": "DOXYLAMINE"},
+      "ndc": [
+        {"nonproprietaryname": "Doxylamine succinate", "proprietaryname": "Sleep Aid"}
+      ],
+      "unii": {"unii": "XZV7JAA763", "display_name": "DOXYLAMINE"}
+    }
+  ]
+}
+"#;
+
 /// The env a refusal test needs: the name-resolution fixture base with the
 /// shared HTTP client's cache walk pointed at its own tree (ticket 2039).
 async fn shared_name_refusal_drug(name: &str, base: &str) -> crate::error::BioMcpError {
-    let root = crate::test_support::TempDirGuard::new("shared-name-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("shared-name-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", base);
-    env.set("BIOMCP_OLS4_BASE", base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = super::drug_fixture_env(base, "shared-name-ddinter");
     super::super::get(name, &["label".to_string()])
         .await
         .expect_err("a shared product name must refuse, never fuse")
@@ -615,10 +605,16 @@ async fn pain_relief_refuses_naming_the_drugs_that_share_the_name() {
 #[serial_test::serial(source_env)]
 async fn sleep_aid_refuses_when_openfdas_own_brands_disagree() {
     let (base, server) = name_resolution_fixture_server(
-        vec![(
-            "Sleep Aid".to_string(),
-            crate::transform::drug::shared_name_tests::SLEEP_AID_CAPTURE.to_string(),
-        )],
+        vec![
+            (
+                "Sleep Aid".to_string(),
+                crate::transform::drug::shared_name_tests::SLEEP_AID_CAPTURE.to_string(),
+            ),
+            (
+                "doxylamine succinate".to_string(),
+                DOXYLAMINE_SUCCINATE_CAPTURE.to_string(),
+            ),
+        ],
         vec![("Sleep Aid".to_string(), SLEEP_AID_LABEL_BODY.to_string())],
         Vec::new(),
     )
@@ -628,7 +624,10 @@ async fn sleep_aid_refuses_when_openfdas_own_brands_disagree() {
     // and doxylamine's records pair it with different ingredients, and the
     // openFDA identity fallback refuses too, because its two labels that
     // carry "Sleep Aid" as their own brand pair it with different
-    // ingredients. The refusal names the matched drugs.
+    // ingredients. The refusal names the matched drugs. The doxylamine
+    // succinate reply pins the fallback's refusal (ticket 2050): adopting
+    // the first of the two candidates would resolve a card and fail this
+    // test.
     let err = shared_name_refusal_drug("Sleep Aid", &base).await;
     let message = err.to_string();
     assert!(

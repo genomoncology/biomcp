@@ -98,11 +98,11 @@ impl GwasClient {
     }
 
     /// The legacy by-rsID associations endpoint retired upstream (HTTP 410
-    /// since 2026-10; a retiring gateway can answer 404 the same way), so
-    /// those statuses name the retired endpoint rather than an empty
-    /// result. The reader keeps a 200 empty page as "no associations" and
-    /// degrades the retired class with the honest gap note instead of the
-    /// hard failure the live source now returns (ticket 2047).
+    /// since 2026-10), so that status names the retired endpoint rather
+    /// than an empty result. A 404 keeps meaning no associations for the
+    /// rsID (ticket 2050), the way a 200 empty page does, and only the
+    /// retired class degrades with the honest gap note instead of the hard
+    /// failure the live source now returns (ticket 2047).
     async fn get_json_by_rsid<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
@@ -113,7 +113,7 @@ impl GwasClient {
             ))
             .await?;
         let status = resp.status();
-        if status == StatusCode::GONE || status == StatusCode::NOT_FOUND {
+        if status == StatusCode::GONE {
             return Err(retired_gwas_endpoint_error());
         }
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
@@ -314,17 +314,25 @@ fn gwas_status_is_transient(message: &str) -> bool {
 /// The honest gap note for the retired legacy endpoint (ticket 2047): the
 /// by-rsID associations read is gone upstream, not temporarily flaky, so
 /// the variant degrades with this reason instead of the transient wording.
+/// The reason fits the section-outcome message bound whole, so no renderer
+/// cuts it mid-word, and it names no retry because no retry reaches a
+/// retired endpoint (ticket 2050).
+pub(crate) const RETIRED_ENDPOINT_REASON: &str = "The legacy GWAS Catalog by-rsID endpoint retired upstream (HTTP 410); GWAS association data is unavailable until the v2 endpoint is wired.";
+
 fn retired_gwas_endpoint_error() -> BioMcpError {
     BioMcpError::SourceUnavailable {
         source_name: "GWAS Catalog".to_string(),
-        reason: "The legacy GWAS Catalog REST endpoint that serves rsID \
-             associations retired upstream (HTTP 410), so GWAS association \
-             data is unavailable until the v2 endpoint is wired."
-            .to_string(),
-        suggestion: "See the GWAS Catalog v2 migration guide, or retry the \
-             association search: biomcp search gwas --trait <text>"
-            .to_string(),
+        reason: RETIRED_ENDPOINT_REASON.to_string(),
+        suggestion:
+            "Search associations by trait or gene instead: biomcp search gwas --trait <text>"
+                .to_string(),
     }
+}
+
+/// Whether an error is the retired-endpoint degrade: no retry recovers it,
+/// so the variant's GWAS section offers no retry command (ticket 2050).
+pub(crate) fn is_retired_endpoint_error(err: &BioMcpError) -> bool {
+    matches!(err, BioMcpError::SourceUnavailable { reason, .. } if reason == RETIRED_ENDPOINT_REASON)
 }
 
 fn normalize_rsid(value: &str) -> Result<String, BioMcpError> {

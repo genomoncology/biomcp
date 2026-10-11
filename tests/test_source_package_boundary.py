@@ -20,7 +20,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # Ticket 1145 raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar.
-MAX_PACKAGE_FILES = 1_418  # tickets 2039 and 2040 add the shared-name capture-test module and the trial abbreviation modules
+MAX_PACKAGE_FILES = 1_419  # tickets 2039, 2040 and 2050 add the shared-name capture-test module, the trial abbreviation modules, and the product-name gap replies
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 

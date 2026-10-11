@@ -522,6 +522,11 @@ fn merge_mychem_hits_keeps_the_imatinib_mesylate_established_name() {
 
     let drug = merge_mychem_hits(&[&imatinib], "imatinib");
     assert_eq!(drug.name, "imatinib mesylate");
+    // Ticket 2050: an ingredient request keeps the qualified-form rule only
+    // when it does not itself name a product the record carries; a request
+    // that names the salt still names the salt.
+    let salt = merge_mychem_hits(&[&imatinib], "imatinib mesylate");
+    assert_eq!(salt.name, "imatinib mesylate");
 }
 
 /// `q=Tarceva` recorded 2026-10-09 (ticket 2037): MyChem holds the brand only
