@@ -538,13 +538,13 @@
     },
     {
       "path": "src/transform/drug.rs",
-      "baseline_lines": 1431,
+      "baseline_lines": 1436,
       "floor_lines": 1000,
       "authorized_increase": {
         "ticket": "2050",
-        "delta": 431,
-        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
-        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
+        "delta": 436,
+        "reason": "The request-names-a-carried-product check that scopes the product-name equality rule, and the recorded-reply tests for the product-name gaps.",
+        "removal_condition": "Shrink when the carried-product check folds into the canonical name entry builder."
       }
     },
     {
