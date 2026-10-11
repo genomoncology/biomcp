@@ -1,6 +1,6 @@
 # 2046 — Make the 0.9.2 release workflow run and rehearse it
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
