@@ -153,7 +153,7 @@ async fn sparse_multi_word_brand_label(
     )
     .await;
     let drug = name_resolution_fixture_drug(&base, brand).await;
-    assert_label_data_with_set_id(&drug, set_id);
+    super::label_choice::assert_label_data_with_set_id(&drug, set_id);
     assert!(
         drug.brand_names
             .iter()
