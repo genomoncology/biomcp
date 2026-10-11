@@ -803,6 +803,30 @@ const HEADACHE_RELIEF_CAPTURE: &str = r#"
 }
 "#;
 
+/// The OTC label bodies carry no numbered indication subsections, so their
+/// summary rows stay empty while the raw section text reaches the card.
+fn assert_label_set_id_and_text(drug: &super::super::Drug, set_id: &str, needle: &str) {
+    assert_eq!(drug.label_set_id.as_deref(), Some(set_id));
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Data
+    );
+    assert!(
+        drug.label.as_ref().is_some_and(|label| {
+            !label.indication_summary.is_empty()
+                || label
+                    .indications
+                    .as_deref()
+                    .is_some_and(|text| text.contains(needle))
+        }),
+        "the chosen label's text reached the card"
+    );
+}
+
 /// Ticket 2050: the merged "Tension Headache Relief" product row used to
 /// name the acetaminophen card because its name ends with the request. A
 /// product name now counts only when it equals the request, so the card
@@ -835,7 +859,7 @@ async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
         "the merged Tension Headache Relief row never names the card: {}",
         drug.name
     );
-    super::label_choice::assert_label_data_with_set_id(&drug, "a876daa7-ade3-497d-87bb-46d6e4dc185a");
+    assert_label_set_id_and_text(&drug, "a876daa7-ade3-497d-87bb-46d6e4dc185a", "minor aches and pains");
     server.abort();
 }
 
@@ -938,9 +962,10 @@ async fn advil_names_the_ingredient_it_pairs_not_the_merged_pm_row() {
         "the merged Advil PM row never names the card: {}",
         drug.name
     );
-    super::label_choice::assert_label_data_with_set_id(
+    assert_label_set_id_and_text(
         &drug,
         "1f01c10a-9434-91a4-2ee4-352315a6b610",
+        "minor aches and pains",
     );
     server.abort();
 }
@@ -1036,9 +1061,10 @@ async fn nighttime_sleep_aid_names_the_record_not_another_products_row() {
         "another product's ingredient line never names the card: {}",
         drug.name
     );
-    super::label_choice::assert_label_data_with_set_id(
+    assert_label_set_id_and_text(
         &drug,
         "514aa6b5-c33b-494c-e063-6294a90a7ace",
+        "occasional sleeplessness",
     );
     server.abort();
 }
