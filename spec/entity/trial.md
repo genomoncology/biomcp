@@ -104,9 +104,57 @@ fixture; the refusal names every holder exactly as `get disease MF` does.
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: Ambiguous disease abbreviation 'MF': 2 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- mycosis fungoides (MONDO:0009691)\n- myotonia fluctuans (MONDO:0020481)\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MF\"` to see every match."
+    "message": "Invalid argument: Ambiguous disease abbreviation 'MF': 2 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- mycosis fungoides (MONDO:0009691)\n- myotonia fluctuans (MONDO:0020481)\nClinical reading: 'MF' also names myelofibrosis (MONDO:0009692); try `biomcp get disease \"myelofibrosis\"`.\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MF\"` to see every match."
   }
 }
+```
+
+## The Default Source Names the Ambiguous Abbreviation It Searched
+
+Ticket 2040. The default ClinicalTrials.gov source has no disease
+grounding, so an ambiguous abbreviation still runs the registry's own
+keyword search — the search that mixes myelofibrosis and mycosis
+fungoides trials. The page must say so plainly instead of leaving the
+user to guess: the note names the holders `get disease` refuses with and
+the clinical reading the source cannot see. These rows replay the
+recorded MyDisease `MF` response through the routine disease fixture;
+the registry side is the live ClinicalTrials.gov keyword search.
+
+```bash
+"$BIOMCP_BIN" --json search trial -c MF --limit 1 \
+  | jq -r '._meta.notes[0] // "missing note"' \
+  | grep -F "ClinicalTrials.gov search ran a plain keyword search for 'MF', an ambiguous abbreviation: 2 diseases hold it as an exact name or synonym" \
+  | mustmatch like 'ambiguous abbreviation'
+```
+
+```bash
+"$BIOMCP_BIN" --json search trial -c MF --limit 1 \
+  | jq -r '._meta.notes[0] // "missing note"' \
+  | grep -F "Clinical reading: 'MF' also names myelofibrosis (MONDO:0009692)" \
+  | mustmatch like 'also names myelofibrosis'
+```
+
+The note changes nothing about the search itself: the registry keyword
+results still return.
+
+```bash
+"$BIOMCP_BIN" --json search trial -c MF --limit 1 \
+  | jq -r '(.results | length) >= 1' \
+  | mustmatch 'true'
+```
+
+## Overlong NCI Conditions Truncate With a Note
+
+A condition longer than the 512 bytes the disease lookup accepts used
+to fail the whole NCI search outright. The search now runs on the
+truncated prefix and says so in the note.
+
+```bash
+long_condition="$(printf 'm%.0s' $(seq 1 600))"
+"$BIOMCP_BIN" --json search trial -c "$long_condition" --source nci --limit 1 \
+  | jq -r '._meta.notes[0] // "missing note"' \
+  | grep -F 'NCI trial search used at most the first 512 bytes of the condition' \
+  | mustmatch like 'truncated condition'
 ```
 
 ## Complete JSON Conditions and Disclosed Markdown Abbreviation

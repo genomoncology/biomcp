@@ -179,6 +179,26 @@ disease fixture.
   | mustmatch like '{{outcome}}'
 ```
 
+Ticket 2040: the refusal also names a clinical reading no indexed source
+record holds, as a pointer line that never joins the candidates. `MM`
+points at multiple myeloma and `MF` points at myelofibrosis — the
+reading the ClinicalTrials.gov corpus carries most (28 of the first 50
+`MF` trials list a myelofibrosis condition, against 6 for mycosis
+fungoides, measured 2026-10-11) — because MyDisease, the Disease
+Ontology entry, and the NCI Thesaurus synonym lists hold `MM` and `MF`
+on no myeloma or myelofibrosis record at all (checked live 2026-10-11).
+
+```bash
+"$BIOMCP_BIN" --json --no-cache get disease MF \
+  | jq -r '.error.message' \
+  | grep -F "Clinical reading: 'MF' also names myelofibrosis (MONDO:0009692)" \
+  | mustmatch like 'also names myelofibrosis'
+"$BIOMCP_BIN" --json --no-cache get disease MM \
+  | jq -r '.error.message' \
+  | grep -F "Clinical reading: 'MM' usually means multiple myeloma (MONDO:0009693)" \
+  | mustmatch like 'usually means multiple myeloma'
+```
+
 A refusal names every holder with a working retry form.
 
 ```bash run id=ambiguous-abbreviation-cad-refusal exit=2

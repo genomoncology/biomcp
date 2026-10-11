@@ -408,6 +408,10 @@ REACTOME_PARTICIPANTS = fixture("reactome/participants_r_hsa_5673001_20260811.js
 REACTOME_EVENTS = fixture("reactome/events_r_hsa_5673001_20260811.json")
 WIKIPATHWAYS_SEARCH = b'{"result":[]}'
 NCI_MELANOMA = fixture("nci_cts/search_melanoma_20260811.json")
+# Ticket 2040: the NCI truncation row sends a 600-byte condition; the
+# disease lookup truncates it to 512 bytes before the keyword request.
+NCI_TRUNCATED_KEYWORD = "m" * 512
+NCI_TRUNCATED_EMPTY = b'{"total":0,"data":[]}'
 
 
 def send(handler, status, body, content_type="application/json"):
@@ -692,6 +696,9 @@ class Handler(BaseHTTPRequestHandler):
             query = parse_qs(parsed.query)
             if query == {"keyword": ["melanoma"], "size": ["1"], "from": ["0"]}:
                 send(self, 200, NCI_MELANOMA)
+                return
+            if query == {"keyword": [NCI_TRUNCATED_KEYWORD], "size": ["1"], "from": ["0"]}:
+                send(self, 200, NCI_TRUNCATED_EMPTY)
                 return
 
         send(self, 404, b'{"error":"fixture route not found"}')

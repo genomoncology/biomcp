@@ -3,6 +3,11 @@
 use super::fallback::resolve_disease_hit_via_discover_fallback;
 use super::*;
 
+mod ambiguity;
+pub(crate) use ambiguity::{
+    AbbreviationAmbiguity, clinical_reading_phrase, resolve_abbreviated_disease_ambiguity,
+};
+
 const EXACT_RESOLUTION_QUERY_SIZE: usize = 50;
 const MAX_EXACT_SYNONYMS: usize = 20;
 const MAX_PROVIDER_TERM_BYTES: usize = 256;
@@ -12,29 +17,6 @@ const MAX_PROVIDER_TERM_BYTES: usize = 256;
 /// oncology means Hodgkin disease. A single source holder is not evidence
 /// for a token this short, so resolution refuses (ticket 2017).
 const SHORT_ABBREVIATION_MAX_LEN: usize = 2;
-
-/// Abbreviations whose common clinical meaning the source cannot see.
-/// MyDisease holds `MM` on Miyoshi muscular dystrophy alone, and no
-/// myeloma record carries `MM` in any indexed field (checked live
-/// 2026-10-08), so the exact-holder list alone hides the disease
-/// oncology usually means. The refusal stands; this table only adds a
-/// pointer line naming the reading. Curated abbreviation preferences
-/// stay deferred (ticket 2032).
-const CLINICAL_ABBREVIATION_READINGS: &[(&str, &str, &str)] =
-    &[("MM", "multiple myeloma", "MONDO:0009693")];
-
-fn clinical_reading_line(requested: &str) -> Option<String> {
-    let requested = requested.trim();
-    CLINICAL_ABBREVIATION_READINGS
-        .iter()
-        .find(|(token, _, _)| token.eq_ignore_ascii_case(requested))
-        .map(|(_, label, ontology_id)| {
-            format!(
-                "Clinical reading: '{requested}' usually means {label} ({ontology_id}); \
-try `biomcp get disease \"{label}\"`."
-            )
-        })
-}
 
 fn is_short_abbreviation_token(token: &str) -> bool {
     let token = token.trim();
@@ -790,10 +772,7 @@ fn holder_display_label(hit: &MyDiseaseHit) -> Option<String> {
 fn abbreviation_candidate_lines(holders: &[MyDiseaseHit]) -> String {
     holders
         .iter()
-        .map(|hit| match holder_display_label(hit) {
-            Some(label) => format!("- {label} ({})\n", hit.id),
-            None => format!("- {} (no label in the search response)\n", hit.id),
-        })
+        .map(|hit| format!("- {}\n", ambiguity::holder_display_line(hit)))
         .collect()
 }
 
@@ -804,21 +783,8 @@ fn ambiguous_abbreviation_error(
 ) -> BioMcpError {
     let abbreviation = is_abbreviation_shaped_token(requested);
     let subject = if abbreviation { "abbreviation" } else { "name" };
-    let reason = if short_token {
-        format!(
-            "the source holds it on {} disease{}, but a token this short cannot name one disease reliably",
-            holders.len(),
-            if holders.len() == 1 { "" } else { "s" },
-        )
-    } else if abbreviation {
-        format!(
-            "{} diseases hold it as an exact name or synonym",
-            holders.len()
-        )
-    } else {
-        format!("{} diseases carry it as their exact name", holders.len())
-    };
-    let reading = clinical_reading_line(requested)
+    let reason = ambiguity::ambiguity_reason(requested, holders, short_token);
+    let reading = ambiguity::clinical_reading_line(requested)
         .map(|line| format!("{line}\n"))
         .unwrap_or_default();
     BioMcpError::InvalidArgument(format!(
