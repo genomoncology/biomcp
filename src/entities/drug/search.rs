@@ -606,7 +606,7 @@ pub(super) fn openfda_exact_brand_generic_names(
         let brand_names = extract_openfda_values_from_result(result, "brand_name");
         if !brand_names
             .iter()
-            .map(str::trim)
+            .map(|brand| brand.trim())
             .any(|brand| brand.eq_ignore_ascii_case(query))
         {
             continue;
