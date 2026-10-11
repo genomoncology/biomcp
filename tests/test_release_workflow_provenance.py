@@ -1796,13 +1796,17 @@ def test_image_references_and_publish_guards_come_from_the_repository() -> None:
     import yaml
 
     release = yaml.safe_load((WORKFLOWS / "release.yml").read_text(encoding="utf-8"))
-    rendered = WORKFLOWS / "release.yml"
-    text = rendered.read_text(encoding="utf-8")
+    text = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
     for line in text.splitlines():
-        if "ghcr.io/" in line:
-            assert "${{" in line or "$" in line.replace("$$", ""), (
-                f"hardcoded image reference: {line.strip()}"
+        if "ghcr.io/" in line and "registry: ghcr.io" not in line:
+            assert "ghcr.io/${{ github.repository }}" in line or (
+                "ghcr.io/${GITHUB_REPOSITORY}" in line
+            ), (
+                f"image reference not derived from the repository: {line.strip()}"
             )
+    assert (
+        'if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then' in text
+    ), "the production-only publish guards are missing"
     for job_name in ("pypi-publish", "homebrew-tap"):
         job = release["jobs"][job_name]
         for step in job["steps"]:

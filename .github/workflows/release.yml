@@ -612,9 +612,9 @@ jobs:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
-            echo "rehearsal: rendering the formula dry instead of pushing"
+            echo "rehearsal: checking the formula inputs instead of pushing"
             VERSION="${TAG#v}"
-            echo "formula for ${VERSION} would install from the production URLs"
+          test -n "$VERSION" && echo "formula ${VERSION} reads the release checksums from dist/"
             exit 0
           fi
           if [ -z "$HOMEBREW_TAP_TOKEN" ]; then

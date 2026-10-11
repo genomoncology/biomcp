@@ -199,13 +199,13 @@ def described_tickets(section: str) -> set[str]:
         # group names it. The closing group sits at the bullet's end and
         # reads (NNNN), (NNNN, MMMM) or (NNNN and MMMM); a number in the
         # prose ("ticket 2039 tracks") is not coverage.
-        stripped = text.strip()
+        stripped = text.strip().rstrip(" .,;")
         closing = ""
         if stripped.endswith(")") and "(" in stripped:
             opening = stripped.rindex("(")
             closing = stripped[opening:]
         group = (
-            [n for n in re.findall(r"[0-9]+", closing)]
+            re.findall(r"[0-9]+", closing)
             if closing
             and re.fullmatch(
                 r"\(\s*[0-9]+(?:\s*(?:,|and)\s*[0-9]+)*\s*\)", closing
@@ -213,10 +213,7 @@ def described_tickets(section: str) -> set[str]:
             else []
         )
         for ticket in group:
-            remainder = closing.group(0).join("") if False else text
-            remainder = re.sub(
-                rf"\b{re.escape(ticket)}\b", "", remainder
-            )
+            remainder = re.sub(rf"\b{re.escape(ticket)}\b", "", text)
             # A bare number list is not a description: remove every
             # remaining bare number token and the separators around
             # them, then require at least three word characters of
