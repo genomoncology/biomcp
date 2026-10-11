@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision e0c8d1030, accept
+
 ## Outcome
 
 A rehearsal in the scratch repo runs the real `release.yml` from tag to the public-release step and passes, and nothing in it can publish to production PyPI, the production Homebrew tap or the production image. The run ID is recorded on the candidate SHA. The 0.9.2 changelog is true and the coverage check catches a missing bullet.
