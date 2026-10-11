@@ -583,13 +583,15 @@ pub(super) fn search_results_from_openfda_label_response(
     out
 }
 
-/// The generic names of the label rows whose own brand name equals the
-/// query (ticket 2039): only such a row's record owns the requested
-/// product name, so a row that merely mentions the name ("Pain Relief
-/// Extra Strength" for "Pain Relief") never contributes. Order is
-/// preserved and values deduplicate case-insensitively, so the caller can
-/// refuse when they name more than one distinct ingredient.
-pub(super) fn openfda_exact_brand_generic_names(
+/// The generic names of the label rows that may own the requested product
+/// name (ticket 2039): the rows whose own brand equals the query when any
+/// row carries it (the "Keytruda" rows, never the QLEX combination), and
+/// every row otherwise — the ticket-2043 pairing shape, where the only
+/// label a brand family holds pairs a qualified brand ("Darzalex Faspro")
+/// with its plain ingredient. Order is preserved and values deduplicate
+/// case-insensitively, so the caller can refuse when they name more than
+/// one distinct ingredient.
+pub(super) fn openfda_label_generic_names(
     label_response: &serde_json::Value,
     query: &str,
 ) -> Vec<String> {
@@ -601,16 +603,14 @@ pub(super) fn openfda_exact_brand_generic_names(
         return Vec::new();
     };
 
-    let mut out: Vec<String> = Vec::new();
-    for result in results {
-        let brand_names = extract_openfda_values_from_result(result, "brand_name");
-        if !brand_names
-            .iter()
-            .map(|brand| brand.trim())
-            .any(|brand| brand.eq_ignore_ascii_case(query))
-        {
-            continue;
+    let mut exact_brand: Vec<String> = Vec::new();
+    let mut every_row: Vec<String> = Vec::new();
+    let mut push_unique = |out: &mut Vec<String>, generic: String| {
+        if !out.iter().any(|seen| seen == &generic) {
+            out.push(generic);
         }
+    };
+    for result in results {
         let Some(generic) = extract_openfda_values_from_result(result, "generic_name")
             .into_iter()
             .next()
@@ -619,11 +619,20 @@ pub(super) fn openfda_exact_brand_generic_names(
         else {
             continue;
         };
-        if !out.iter().any(|seen| seen == &generic) {
-            out.push(generic);
+        push_unique(&mut every_row, generic.clone());
+        let owns_brand = extract_openfda_values_from_result(result, "brand_name")
+            .iter()
+            .map(|brand| brand.trim())
+            .any(|brand| brand.eq_ignore_ascii_case(query));
+        if owns_brand {
+            push_unique(&mut exact_brand, generic);
         }
     }
-    out
+    if !exact_brand.is_empty() {
+        exact_brand
+    } else {
+        every_row
+    }
 }
 
 async fn try_resolve_drug_identity(

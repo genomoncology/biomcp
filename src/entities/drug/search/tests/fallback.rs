@@ -121,10 +121,10 @@ fn openfda_label_fallback_is_first_page_only() {
 }
 
 #[test]
-fn openfda_exact_brand_generic_names_take_only_rows_that_own_the_brand() {
-    // Ticket 2039: the recorded "Pain Relief" label page — every row merely
-    // mentions the shelf name inside a longer brand, so no row's record owns
-    // the name and no generic name is offered.
+fn openfda_label_generic_names_read_a_disagreeing_page_with_no_owner() {
+    // Ticket 2039: the recorded "Pain Relief" label page — no row carries
+    // the shelf name as its own brand, and the rows name unrelated
+    // ingredients, so every generic name survives and the caller refuses.
     let response = serde_json::json!({
         "results": [
             {
@@ -142,15 +142,48 @@ fn openfda_exact_brand_generic_names_take_only_rows_that_own_the_brand() {
         ]
     });
 
-    let names = openfda_exact_brand_generic_names(&response, "Pain Relief");
-    assert!(names.is_empty());
+    let names = openfda_label_generic_names(&response, "Pain Relief");
+    assert_eq!(names.len(), 2);
+    assert!(names.contains(&"lidocaine 4%".to_string()));
+    assert!(names.contains(&"acetaminophen".to_string()));
 }
 
 #[test]
-fn openfda_exact_brand_generic_names_keep_disagreeing_ingredients_apart() {
+fn openfda_label_generic_names_prefer_the_rows_that_own_the_brand() {
+    // Ticket 2039: the Keytruda shape — the rows whose own brand equals the
+    // query own the name, so the QLEX combination row never contributes.
+    let response = serde_json::json!({
+        "results": [
+            {
+                "openfda": {
+                    "brand_name": ["KEYTRUDA QLEX"],
+                    "generic_name": ["Pembrolizumab and berahyaluronidase alfa-pmph"]
+                }
+            },
+            {
+                "openfda": {
+                    "brand_name": ["Keytruda"],
+                    "generic_name": ["Pembrolizumab"]
+                }
+            },
+            {
+                "openfda": {
+                    "brand_name": ["KEYTRUDA"],
+                    "generic_name": ["PEMBROLIZUMAB"]
+                }
+            }
+        ]
+    });
+
+    let names = openfda_label_generic_names(&response, " Keytruda ");
+    assert_eq!(names, vec!["pembrolizumab".to_string()]);
+}
+
+#[test]
+fn openfda_label_generic_names_keep_disagreeing_owners_apart() {
     // Ticket 2039: the recorded "Sleep Aid" label page — two labels carry
     // the shelf name as their own brand and pair it with different
-    // ingredients, so both generic names survive and the caller can refuse.
+    // ingredients, so both generic names survive and the caller refuses.
     let response = serde_json::json!({
         "results": [
             {
@@ -174,7 +207,7 @@ fn openfda_exact_brand_generic_names_keep_disagreeing_ingredients_apart() {
         ]
     });
 
-    let names = openfda_exact_brand_generic_names(&response, "sleep aid");
+    let names = openfda_label_generic_names(&response, "sleep aid");
     assert_eq!(
         names,
         vec![
@@ -185,26 +218,25 @@ fn openfda_exact_brand_generic_names_keep_disagreeing_ingredients_apart() {
 }
 
 #[test]
-fn openfda_exact_brand_generic_names_deduplicate_one_ingredients_rows() {
-    // Ticket 2039: one brand whose every own-brand row pairs the same
-    // ingredient offers exactly that ingredient, the Keytruda shape.
+fn openfda_label_generic_names_take_a_lone_pairing_label() {
+    // Ticket 2043's Darzalex shape, kept honest by ticket 2039: no row
+    // carries the plain brand itself, and the page holds one label whose
+    // qualified brand pairs the family with one plain ingredient, so that
+    // lone generic name resolves the name.
     let response = serde_json::json!({
         "results": [
             {
                 "openfda": {
-                    "brand_name": ["Keytruda"],
-                    "generic_name": ["Pembrolizumab"]
-                }
-            },
-            {
-                "openfda": {
-                    "brand_name": ["KEYTRUDA"],
-                    "generic_name": ["PEMBROLIZUMAB"]
+                    "brand_name": ["Darzalex Faspro"],
+                    "generic_name": ["DARATUMUMAB AND HYALURONIDASE-FIHJ (HUMAN RECOMBINANT)"]
                 }
             }
         ]
     });
 
-    let names = openfda_exact_brand_generic_names(&response, " Keytruda ");
-    assert_eq!(names, vec!["pembrolizumab".to_string()]);
+    let names = openfda_label_generic_names(&response, "Darzalex");
+    assert_eq!(
+        names,
+        vec!["daratumumab and hyaluronidase-fihj (human recombinant)".to_string()]
+    );
 }

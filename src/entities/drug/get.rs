@@ -24,7 +24,7 @@ use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
     populate_top_adverse_event_preview,
 };
-use super::search::{openfda_exact_brand_generic_names, search_page};
+use super::search::{openfda_label_generic_names, search_page};
 use super::targets::{enrich_indications, enrich_targets};
 use super::{
     DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CELL_LINES, DRUG_SECTION_CIVIC,
@@ -273,23 +273,21 @@ enum SparseDrugDiscoverRescue {
 }
 
 /// A secondary identity resolution through openFDA's field-scoped label
-/// search (ticket 2031): only a label row whose own brand name equals the
-/// query owns the requested product name, and the candidate is the plain
-/// ingredient that row's generic names — an under-the-skin pairing still
-/// resolves to the plain ingredient it names (Darzalex to daratumumab,
-/// ticket 2043). Ticket 2039: a product name several distinct ingredients
-/// answer ("Sleep Aid" labels both doxylamine and diphenhydramine) names
-/// no one drug, and a row that merely mentions the name ("Pain Relief
-/// Extra Strength") belongs to another product, so either way no
-/// candidate resolves and the caller refuses. Some label records carry no
-/// openFDA identity block at all, so this path can miss (a brand MyChem
-/// itself carries, such as TAGRISSO on `drugcentral.synonyms`/
-/// `ndc.proprietaryname`, resolves through the MyChem record instead).
+/// search (ticket 2031): the candidate is the plain ingredient the labels
+/// the search serves agree on — an under-the-skin pairing still resolves
+/// to the plain ingredient it names (Darzalex to daratumumab, ticket
+/// 2043). Ticket 2039: a product name several distinct ingredients answer
+/// ("Sleep Aid" labels both doxylamine and diphenhydramine) names no one
+/// drug, so no candidate resolves and the caller refuses. Some label
+/// records carry no openFDA identity block at all, so this path can miss
+/// (a brand MyChem itself carries, such as TAGRISSO on
+/// `drugcentral.synonyms`/`ndc.proprietaryname`, resolves through the
+/// MyChem record instead).
 async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
     let client = OpenFdaClient::new().ok()?;
     let response = client.label_search(name).await.ok()??;
     let mut candidates: Vec<String> = Vec::new();
-    for generic in openfda_exact_brand_generic_names(&response, name) {
+    for generic in openfda_label_generic_names(&response, name) {
         let plain = plain_paired_ingredient_name(&generic).to_string();
         if plain.is_empty() || plain.eq_ignore_ascii_case(name) {
             continue;
