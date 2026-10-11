@@ -51,3 +51,19 @@ Filed 2026-10-11 from the independent review of main at `75fabdb20`.
   the twine check for the upload, the dry input check for the tap, the
   docs-live stub (biomcp.org serves the production repository), and the
   scratch gh-pages seeded for the Pages workflow.
+
+## Final rehearsal (2026-10-12)
+
+- The queue emptied (only the 1.0-line tickets remain) and the final
+  rehearsal ran on the true final candidate: run 38174801040 in
+  genomoncology/biomcp-release-rehearsal at tag v0.9.2 = 91dbbeaec —
+  all 22 jobs success: five platform builds, five wheel smokes each
+  printing exactly biomcp 0.9.2, both container platforms with the
+  derived image name, the guarded pypi-publish (all five wheels passed
+  the credential-free check), the guarded homebrew input check, and
+  publish-release. PyPI still serves 0.9.1 as latest. The scratch
+  release and tag were deleted after the run.
+- Gates on the exact final tree: ci.yml run 38174800939-equivalent
+  green on commit 91dbbeaec; the changelog gate at a scratch v0.9.2
+  tag covers all 52 tickets; the release-versions gate passes; the
+  offline suite passes 866 tests on the build host.
