@@ -7,11 +7,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 async fn mydisease_json_fixture(
     respond: impl Fn(&str) -> Option<String> + Send + Sync + 'static,
-) -> (
-    String,
-    Arc<Mutex<Vec<String>>>,
-    tokio::task::JoinHandle<()>,
-) {
+) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind synthetic MyDisease fixture");
@@ -57,17 +53,15 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
     let mf_hits =
         include_str!("../../../../../testdata/sources/mydisease/query_mf.json").to_string();
     let (disease_base, disease_requests, disease_server) =
-        mydisease_json_fixture(move |request| {
-            request.contains("/query?").then(|| mf_hits.clone())
-        })
-        .await;
+        mydisease_json_fixture(move |request| request.contains("/query?").then(|| mf_hits.clone()))
+            .await;
     let ctgov_body = r#"{"totalCount":1,"studies":[{
         "protocolSection": {
             "identificationModule": {"nctId": "NCT00000010", "briefTitle": "Fixture MF trial"},
             "statusModule": {"overallStatus": "RECRUITING"}
         }
     }]}"#
-    .to_string();
+        .to_string();
     let (ctgov_base, ctgov_requests, ctgov_server) = ctgov_json_fixture(ctgov_body).await;
 
     let _ctgov_env = CtGovFixtureEnv::set(&ctgov_base);
@@ -102,7 +96,9 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
         "{note}"
     );
     assert!(
-        note.contains("Holders: mycosis fungoides (MONDO:0009691), myotonia fluctuans (MONDO:0020481)"),
+        note.contains(
+            "Holders: mycosis fungoides (MONDO:0009691), myotonia fluctuans (MONDO:0020481)"
+        ),
         "{note}"
     );
     assert!(
@@ -110,7 +106,9 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
         "{note}"
     );
     assert!(
-        note.contains("Results may mix several conditions' trials; retry with the full disease name"),
+        note.contains(
+            "Results may mix several conditions' trials; retry with the full disease name"
+        ),
         "{note}"
     );
     assert_eq!(page.results.len(), 1, "the keyword results stay returned");

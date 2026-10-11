@@ -2,9 +2,8 @@
 //! surface the default trial source consumes (ticket 2040).
 
 use super::{
-    DirectNameResolution, MyDiseaseClient, holder_display_label,
-    is_abbreviation_shaped_token, is_short_abbreviation_token,
-    resolve_disease_hit_by_name_direct,
+    DirectNameResolution, MyDiseaseClient, holder_display_label, is_abbreviation_shaped_token,
+    is_short_abbreviation_token, resolve_disease_hit_by_name_direct,
 };
 use crate::sources::mydisease::MyDiseaseHit;
 
