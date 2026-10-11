@@ -892,12 +892,12 @@ fn ingredient_word_set(name: &str) -> std::collections::BTreeSet<String> {
 
 /// Whether a brand-equal label's generic name fits the card (ticket 2050):
 /// a brand alone never confirms a record, because the brand-equal label may
-/// be another product's — a plain-ingredient label sitting on a combination
-/// card, or a combination label on a plain card. The generic fits when it
-/// names the requested or card drug (equal, a qualified form, or the plain
-/// side of a hyaluronidase pairing), or when it carries the same ingredient
-/// words as the card or the card's plain side, so a combination card keeps
-/// its own combination label.
+/// be another product's — a shelf name on a card it shares no ingredient
+/// with. The generic fits when it names the requested or card drug (equal,
+/// a qualified form, or the plain side of a hyaluronidase pairing), or when
+/// its ingredient words meet the card's own — either side containing the
+/// other, because a sparse record's element line spells a combination's
+/// ingredients differently than the card's NDC line does.
 fn generic_name_fits_card(generic: &str, requested: &str, card: &str) -> bool {
     let plain = plain_paired_ingredient_name(generic)
         .trim()
@@ -908,10 +908,14 @@ fn generic_name_fits_card(generic: &str, requested: &str, card: &str) -> bool {
     if plain == requested || plain == card || generic_extends_stem(&plain, requested, card) {
         return true;
     }
+    let generic_words = ingredient_word_set(&plain);
     let card_stems = [card.trim(), plain_paired_ingredient_name(card).trim()];
-    card_stems
-        .into_iter()
-        .any(|stem| !stem.is_empty() && ingredient_word_set(&plain) == ingredient_word_set(stem))
+    card_stems.into_iter().any(|stem| {
+        !stem.is_empty() && {
+            let stem_words = ingredient_word_set(stem);
+            generic_words.is_subset(&stem_words) || stem_words.is_subset(&generic_words)
+        }
+    })
 }
 
 /// The brand and established-name identity a sparse record's SPL product
