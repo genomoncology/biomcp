@@ -4,6 +4,8 @@ Filed 2026-10-05 from the EGFR-wiki intake message of 2026-10-04 (asks 1 and 3),
 
 Status: complete.
 
+Milestone: 0.9.2
+
 ## Build status
 
 - Built on branch `tickets/1300-drug-label-sections`, sha `149cee54b`, 2026-10-07. Two review cycles. Cycle 1: FIX, one P1 (raw label+safety dedup compared whole label warnings against capped safety warnings, printing over-cap warnings twice). Cycle 2: ACCEPT — the dedup compares the Markdown projection on both sides, pinned by an over-cap test that fails on the old code; verified against the branch's own gefitinib capture.

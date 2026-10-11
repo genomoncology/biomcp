@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 7c1faf778, accept
+
 ## Outcome
 
 `biomcp get variant "GENE change"` returns the requested change on the MANE transcript, an honest refusal, or a match whose note truthfully names the other numbering. It never returns a variant whose change matches the request only on a shorter or longer isoform, with no note. The headline shows the MANE transcript and its current version.
