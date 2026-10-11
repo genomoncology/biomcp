@@ -1,6 +1,6 @@
 # 2051 — Answer pm and tidy the 0.9.2 records
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
