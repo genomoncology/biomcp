@@ -1,6 +1,6 @@
 # 2047 — Fix the live and test gaps in the landed 0.9.2 work
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
