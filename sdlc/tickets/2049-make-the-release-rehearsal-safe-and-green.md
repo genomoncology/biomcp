@@ -41,11 +41,12 @@ Filed 2026-10-11 from the independent review of main at `75fabdb20`.
   (all five 0.9.2 wheels PASSED twine), homebrew checked its inputs
   without pushing, and publish-release completed. PyPI still serves
   0.9.1 as latest after the run.
-- The review chain: the first pass at f62a2160a found two blockers
+- Verdict chain: the first pass at f62a2160a found two blockers
   (the guard test missing the tagged production image name; the
-  coverage gate losing period-trailed closing groups); both were fixed
+  coverage gate losing period-trailed closing groups). Both were fixed
   at 4b0642209 and re-verified by the same reviewer with the mutation
-  rerun and the v0.9.1 gate passing; the final verdict is accept.
+  rerun and the v0.9.1 gate passing, and the final verdict reads
+  as an accept on the whole landed change.
 - Stated rehearsal differences, all recorded in the workflow comments:
   the twine check for the upload, the dry input check for the tap, the
   docs-live stub (biomcp.org serves the production repository), and the
