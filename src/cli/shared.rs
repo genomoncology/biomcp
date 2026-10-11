@@ -475,14 +475,10 @@ pub(super) async fn try_alias_fallback_outcome(
             );
             Ok(None)
         }
-        Err(_elapsed) => {
-            warn!(
-                query = query.trim(),
-                entity = requested_entity.cli_name(),
-                "alias fallback discovery timed out; the refusal prints without it"
-            );
-            Ok(None)
-        }
+        // A timed-out round stays silent: the refusal prints without the
+        // suggestion, which is a normal degradation under load, not a
+        // diagnostic worth a stderr line on an otherwise clean refusal.
+        Err(_elapsed) => Ok(None),
     }
 }
 
