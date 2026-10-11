@@ -6,6 +6,8 @@ Milestone: 0.9.2
 
 D
 
+Reviews: revision 7c1faf778, accept
+
 ## 2047 finding: the observed hang's real location
 
 Ticket 2047 reopened the location question: every deadline test already
