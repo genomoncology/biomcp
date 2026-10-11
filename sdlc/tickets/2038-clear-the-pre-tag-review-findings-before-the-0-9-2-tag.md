@@ -1,6 +1,6 @@
 # 2038 — Clear the pre-tag review findings before the 0.9.2 tag
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
