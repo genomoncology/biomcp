@@ -762,9 +762,11 @@ pub(super) async fn resolve_drug_base(
                 // refuses here rather than wait on the slow outside service
                 // (ticket 2050).
                 let rescue = match discover_sparse_drug_rescue_bounded(name).await {
-                    SparseDrugDiscoverRescue::Canonical(candidate) => named_drug_response(&candidate)
-                        .await
-                        .map(|candidate_resp| (candidate, candidate_resp)),
+                    Some(SparseDrugDiscoverRescue::Canonical(candidate)) => {
+                        named_drug_response(&candidate)
+                            .await
+                            .map(|candidate_resp| (candidate, candidate_resp))
+                    }
                     _ => None,
                 };
                 match rescue {

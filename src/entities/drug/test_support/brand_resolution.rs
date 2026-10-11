@@ -447,7 +447,7 @@ async fn a_brand_two_exact_drugs_answer_refuses_instead_of_picking_one() {
     )
     .await;
 
-    let (_env, _ddinter) = super::drug_fixture_env(base, "ambifton-ddinter");
+    let (_env, _ddinter) = super::drug_fixture_env(base.as_str(), "ambifton-ddinter");
 
     // With the guard intact the two exact canonical drugs compete, the
     // rescue declines, and the refusal names the miss. Unguarded, the
@@ -561,7 +561,7 @@ const DOXYLAMINE_SUCCINATE_CAPTURE: &str = r#"
 /// The env a refusal test needs: the name-resolution fixture base with the
 /// shared HTTP client's cache walk pointed at its own tree (ticket 2039).
 async fn shared_name_refusal_drug(name: &str, base: &str) -> crate::error::BioMcpError {
-    let (_env, _ddinter) = super::drug_fixture_env(base, "shared-name-ddinter");
+    let (_env, _ddinter) = super::drug_fixture_env(base.as_str(), "shared-name-ddinter");
     super::super::get(name, &["label".to_string()])
         .await
         .expect_err("a shared product name must refuse, never fuse")
