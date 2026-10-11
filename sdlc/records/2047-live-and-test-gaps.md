@@ -1,0 +1,3 @@
+# 2047 build record — the live and test gaps in the landed 0.9.2 work fixed
+
+Landed 2026-10-10 in three lanes: the drug cards (Darzalex takes the plain DARZALEX label, no empty FDA Label heading, 5-FU refuses in half the time with no gene mislabel, Phesgo resolves with its own label under the hyaluronidase-only pairing scope, Opdualag keeps its own card), the article disease links (a get command only when the crosswalk names the concept; otherwise the v0.9.1 search), the GWAS 410 degradation, the 2042 completions, and the private-name scan removed per Ian's ruling. Reviews: each lane head (7360e29dd, 829ad9c9c, 33306882f) accepted by gate-running reviewers; the merged tree landed green on main.

@@ -1,0 +1,3 @@
+# 2046 build record — the 0.9.2 release workflow runs and the candidate is named
+
+Landed 2026-10-10: the workflow lints clean (single option keys, the container smoke receives its variables), the smoke legs compare the printed version with the tag exactly, the changelog gate covers every landing shape and stays inside the tag's own release line, and the version files read 0.9.2 with the dated changelog. The rehearsal run ID is the coordinator's step on the landed candidate, recorded in ticket 2046. Reviews: the lane head d1001a1a4 reviewed with the coverage-gate blocker found and fixed by the milestone scoping at e19de56ff; the landed head on main at 7c1faf778 accepted by a gate-running reviewer who ran the provenance suite, the workflow lint, and the tag gates.

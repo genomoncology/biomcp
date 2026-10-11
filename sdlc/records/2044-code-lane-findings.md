@@ -1,0 +1,3 @@
+# 2044 build record — the 2038 code-lane review findings cleared
+
+Landed 2026-10-10: MCP errors carry the public projection so a WHO failure names no local path, the refused zero-row hint keeps every explicit flag in both arms, the nextest config left the package, the size inventory history was restored through the updater, and the checker reads its inputs under the scanned root. The 2047 lane finished the open Changes (variant.rs floor by real shrink, the json test move, the multi-file updater). Reviews: branch head 21630b5eb accept; the landed head on main at 7c1faf778 accepted by a gate-running reviewer who ran the mutation-catching tests.
