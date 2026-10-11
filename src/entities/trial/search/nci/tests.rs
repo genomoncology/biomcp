@@ -391,7 +391,7 @@ async fn nci_keyword_degrade_note_reaches_the_search_page() {
     })
     .await;
 
-    let mut restore = TrialSearchEnvRestore(Vec::new());
+    let mut restore = TrialSearchEnvRestore::new();
     // The NCI client constructor demands NCI_API_KEY even against a
     // fixture base (CI runs keyless), so pin a fixture key like the
     // trial get tests do; the fixture ignores it.
@@ -484,7 +484,7 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
     let (nci_base, nci_requests, nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
-    let mut restore = TrialSearchEnvRestore(Vec::new());
+    let mut restore = TrialSearchEnvRestore::new();
     // The NCI client constructor demands NCI_API_KEY even against a
     // fixture base (CI runs keyless); the fixture ignores it.
     restore.set("NCI_API_KEY", "fixture-key");
@@ -552,7 +552,7 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
     let (nci_base, nci_requests, nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
-    let mut restore = TrialSearchEnvRestore(Vec::new());
+    let mut restore = TrialSearchEnvRestore::new();
     restore.set("NCI_API_KEY", "fixture-key");
     restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
     restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
@@ -616,7 +616,7 @@ async fn nci_overlong_condition_truncates_instead_of_failing() {
     let (nci_base, nci_requests, nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
-    let mut restore = TrialSearchEnvRestore(Vec::new());
+    let mut restore = TrialSearchEnvRestore::new();
     restore.set("NCI_API_KEY", "fixture-key");
     restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
     restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);

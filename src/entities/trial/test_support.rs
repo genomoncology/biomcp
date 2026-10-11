@@ -14,6 +14,10 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 pub(super) struct TrialSearchEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
 
 impl TrialSearchEnvRestore {
+    pub(super) fn new() -> Self {
+        Self(Vec::new())
+    }
+
     pub(super) fn set(&mut self, key: &'static str, value: &str) {
         self.0.push((key, std::env::var_os(key)));
         // SAFETY: this test holds the serial-test process-wide environment lock.

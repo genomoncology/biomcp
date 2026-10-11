@@ -1191,7 +1191,7 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
     let (ctgov_base, ctgov_requests, ctgov_server) = ctgov_json_fixture(ctgov_body).await;
 
     let _ctgov_env = CtGovFixtureEnv::set(&ctgov_base);
-    let mut restore = TrialSearchEnvRestore(Vec::new());
+    let mut restore = TrialSearchEnvRestore::new();
     restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
 
     let page = super::super::search_page(
@@ -1272,7 +1272,7 @@ async fn default_source_skips_the_ambiguity_note_for_full_words() {
     .await;
 
     let _ctgov_env = CtGovFixtureEnv::set(&ctgov_base);
-    let mut restore = TrialSearchEnvRestore(Vec::new());
+    let mut restore = TrialSearchEnvRestore::new();
     restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
 
     let page = super::super::search_page(
