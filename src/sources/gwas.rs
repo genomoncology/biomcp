@@ -323,8 +323,9 @@ fn retired_gwas_endpoint_error() -> BioMcpError {
     BioMcpError::SourceUnavailable {
         source_name: "GWAS Catalog".to_string(),
         reason: RETIRED_ENDPOINT_REASON.to_string(),
-        suggestion: "Search associations by trait or gene instead: biomcp search gwas --trait <text>"
-            .to_string(),
+        suggestion:
+            "Search associations by trait or gene instead: biomcp search gwas --trait <text>"
+                .to_string(),
     }
 }
 

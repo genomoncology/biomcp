@@ -252,11 +252,10 @@ impl<'de> Deserialize<'de> for SectionOutcome {
                         .as_deref()
                         .is_some_and(|message| !message.trim().is_empty())
             }
-            SectionOutcomeState::Unavailable => {
-                value.sources.is_empty() && value.message.is_some()
-            }
+            SectionOutcomeState::Unavailable => value.sources.is_empty() && value.message.is_some(),
         };
-        let permanent_is_valid = !value.permanent || value.outcome == SectionOutcomeState::Unavailable;
+        let permanent_is_valid =
+            !value.permanent || value.outcome == SectionOutcomeState::Unavailable;
         if !sources_are_valid || !message_is_valid || !shape_is_valid || !permanent_is_valid {
             return Err(D::Error::custom(
                 "invalid section outcome state/source/message combination",
@@ -382,7 +381,9 @@ mod tests {
         );
         assert_eq!(
             whole.message(),
-            Some("The legacy GWAS Catalog by-rsID endpoint retired upstream (HTTP 410); GWAS association data is unavailable until the v2 endpoint is wired.")
+            Some(
+                "The legacy GWAS Catalog by-rsID endpoint retired upstream (HTTP 410); GWAS association data is unavailable until the v2 endpoint is wired."
+            )
         );
         assert!(whole.permanent());
 

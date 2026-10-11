@@ -216,10 +216,7 @@ async fn default_source_notes_the_lowercase_abbreviation_like_the_uppercase() {
     let note = page
         .partial_note
         .expect("the lowercase abbreviation grounds like the uppercase");
-    assert!(
-        note.contains("plain keyword search for 'mf'"),
-        "{note}"
-    );
+    assert!(note.contains("plain keyword search for 'mf'"), "{note}");
     assert!(
         note.contains("an ambiguous abbreviation: 2 diseases hold it as an exact name or synonym"),
         "{note}"

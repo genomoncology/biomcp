@@ -391,12 +391,9 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
 /// card it already holds. A timeout leaves nothing memoized, so the refusal
 /// text stays honest about what the sources answered.
 async fn discover_sparse_drug_rescue_bounded(name: &str) -> Option<SparseDrugDiscoverRescue> {
-    tokio::time::timeout(
-        DISCOVER_RESCUE_TIMEOUT,
-        discover_sparse_drug_rescue(name),
-    )
-    .await
-    .ok()
+    tokio::time::timeout(DISCOVER_RESCUE_TIMEOUT, discover_sparse_drug_rescue(name))
+        .await
+        .ok()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -651,10 +651,7 @@ async fn a_slow_discover_round_never_holds_the_refusal_hostage() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind slow OLS4 fixture");
-    let ols_base = format!(
-        "http://{}",
-        listener.local_addr().expect("fixture address")
-    );
+    let ols_base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let ols_server = tokio::spawn(async move {
         while let Ok((mut stream, _)) = listener.accept().await {
             tokio::spawn(async move {
@@ -859,7 +856,11 @@ async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
         "the merged Tension Headache Relief row never names the card: {}",
         drug.name
     );
-    assert_label_set_id_and_text(&drug, "a876daa7-ade3-497d-87bb-46d6e4dc185a", "minor aches and pains");
+    assert_label_set_id_and_text(
+        &drug,
+        "a876daa7-ade3-497d-87bb-46d6e4dc185a",
+        "minor aches and pains",
+    );
     server.abort();
 }
 

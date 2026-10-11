@@ -984,9 +984,9 @@ fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) ->
         .map(|name| name.trim().to_ascii_lowercase())
         .collect::<Vec<_>>();
     if !requested.is_empty()
-        && generics.iter().any(|name| {
-            !is_combination_product_name(name) && (name == &requested || name == &card)
-        })
+        && generics
+            .iter()
+            .any(|name| !is_combination_product_name(name) && (name == &requested || name == &card))
     {
         return LABEL_RANK_PLAIN_INGREDIENT;
     }

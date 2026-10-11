@@ -730,8 +730,7 @@ fn is_abbreviation_shaped_token(token: &str) -> bool {
     let token = token.trim();
     !token.is_empty()
         && !token.chars().any(char::is_whitespace)
-        && (token.chars().all(|ch| ch.is_ascii_uppercase())
-            || is_short_abbreviation_token(token))
+        && (token.chars().all(|ch| ch.is_ascii_uppercase()) || is_short_abbreviation_token(token))
 }
 
 /// Whether the refusal's short-token reason applies: several holders

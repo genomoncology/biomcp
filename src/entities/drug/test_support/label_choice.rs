@@ -467,7 +467,6 @@ const TECENTRIQ_HYBREZA_ELEMENTS_BODY: &str = r#"{
  ]
 }"#;
 
-
 /// The MyChem answers for the multi-word sparse brands, recorded 2026-10-11
 /// (ticket 2050) from `mychem.info/v1/query?q=<name>` with the `get` field
 /// list: each brand lives on a naked NDC row whose nonproprietary line is

@@ -2702,8 +2702,8 @@ mod tests {
         DiscoverConcept, DiscoverConfidence, DiscoverIntent, DiscoverMode, DiscoverOptions,
         DiscoverRequest, DiscoverResult, DiscoverType, MatchTier, OLS4_TIMEOUT,
         alias_fallback_memo, alias_fallback_memo_key, apply_discover_options, build_result,
-        classify_alias_fallback, concept_from_ols, generate_commands, merge_candidate,
-        memoize_alias_fallback, normalize_primary_id, ols_doc_identifier,
+        classify_alias_fallback, concept_from_ols, generate_commands, memoize_alias_fallback,
+        merge_candidate, normalize_primary_id, ols_doc_identifier,
         resolve_exact_article_keyword_entity_from_ols_docs, symptom_disease_lookup_query,
         typed_gene_identity_concept,
     };
@@ -4110,8 +4110,7 @@ mod tests {
             "a full memo cleared instead of growing past its bound: {}",
             guard.len()
         );
-        assert!(guard
-            .contains_key(&alias_fallback_memo_key("http://fixture", "overflow")));
+        assert!(guard.contains_key(&alias_fallback_memo_key("http://fixture", "overflow")));
         drop(guard);
         crate::utils::sync::recover_poison(memo.lock()).clear();
     }
