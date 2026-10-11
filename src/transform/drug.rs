@@ -624,18 +624,23 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
 /// to the generic identity instead.
 ///
 /// A merged NDC product row's name counts as the record's own only when it
-/// equals the request (ticket 2050): one record carries many products'
-/// rows, so a product name that merely starts or ends with the request
-/// ("advil pm" for "advil", "tension headache relief" for "headache
-/// relief") names another product, never the requested drug. The record's
-/// own single-source names keep the qualified-form rule ("imatinib
-/// mesylate" still matches "imatinib").
+/// equals the request, when the request itself names a product or brand the
+/// record carries (ticket 2050): one record holds many products' rows, so a
+/// request naming one product ("advil", "headache relief") takes that
+/// product's own pairing instead of another row's wider name ("advil pm",
+/// "tension headache relief"). An ingredient request keeps the
+/// qualified-form rule ("imatinib mesylate" still matches "imatinib",
+/// ticket 2037), and every non-product canonical name keeps the loose rule.
 fn canonical_name_matching_request(hit: &MyChemHit, requested: &str) -> Option<String> {
     let target = normalize_name(requested);
+    let request_names_a_carried_product = ndc_proprietary_names(hit)
+        .iter()
+        .chain(openfda_brand_names(hit).iter())
+        .any(|name| normalize_name(name) == target);
     hit_canonical_names(hit)
         .into_iter()
         .find(|entry| {
-            if entry.product_row {
+            if entry.product_row && request_names_a_carried_product {
                 entry.name == target
             } else {
                 name_matches_requested(&entry.name, &target)

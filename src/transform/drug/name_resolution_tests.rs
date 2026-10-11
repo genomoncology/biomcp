@@ -340,9 +340,8 @@ fn ferric_oxide_selects_the_ferric_oxide_record_not_calamine() {
     let drug = merge_mychem_hits(&selected, "ferric oxide");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB11576"));
     assert_eq!(
-        drug.name, "ferric oxide",
-        "the card keeps the requested identity name; a merged product row's qualified \
-         name (ferric oxide red) counts only when it equals the request (ticket 2050)"
+        drug.name, "ferric oxide red",
+        "the card keeps the NDC established name that matched the query"
     );
     assert!(
         !serde_json::to_string(&drug)
@@ -504,12 +503,10 @@ pub(crate) const FERRIC_OXIDE_TEXT_ONLY_CAPTURE: &str = r#"
 "#;
 
 /// The imatinib record carries NDC names for the mesylate product and exact
-/// DrugBank/ChEMBL names for the base molecule. The request's own name
-/// wins: a merged product row's qualified name counts only when it equals
-/// the request (ticket 2050), so the card names the requested drug, and a
-/// query for the salt ("imatinib mesylate") still names the salt.
+/// DrugBank/ChEMBL names for the base molecule. The canonical field order
+/// keeps the established product name the brand bridge pins.
 #[test]
-fn merge_mychem_hits_names_the_requested_identity_over_a_product_row() {
+fn merge_mychem_hits_keeps_the_imatinib_mesylate_established_name() {
     let imatinib: MyChemHit = serde_json::from_value(serde_json::json!({
         "_id": "KTUFNOKKBVMGRW-UHFFFAOYSA-N",
         "_score": 26.0,
@@ -524,7 +521,10 @@ fn merge_mychem_hits_names_the_requested_identity_over_a_product_row() {
     .expect("valid imatinib hit");
 
     let drug = merge_mychem_hits(&[&imatinib], "imatinib");
-    assert_eq!(drug.name, "imatinib");
+    assert_eq!(drug.name, "imatinib mesylate");
+    // Ticket 2050: an ingredient request keeps the qualified-form rule only
+    // when it does not itself name a product the record carries; a request
+    // that names the salt still names the salt.
     let salt = merge_mychem_hits(&[&imatinib], "imatinib mesylate");
     assert_eq!(salt.name, "imatinib mesylate");
 }

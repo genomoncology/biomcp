@@ -126,6 +126,14 @@ fn provider_terms(hit: &MyDiseaseHit) -> (Vec<String>, Vec<String>, bool) {
     (names, synonyms, malformed_synonyms)
 }
 
+/// Whether a provider names the record itself (a Disease Ontology or MONDO
+/// `name`): the display name falls back to the MONDO label (ticket 2050),
+/// but the search tie-break keeps its labelled-first ordering on provider
+/// names alone, so a label-only record never leapfrogs a named one.
+fn hit_is_provider_named(hit: &MyDiseaseHit) -> bool {
+    canonical_name(hit).is_some()
+}
+
 fn canonical_name(hit: &MyDiseaseHit) -> Option<String> {
     let (names, _, _) = provider_terms(hit);
     names
@@ -670,12 +678,12 @@ pub(super) fn rerank_disease_search_hits(
             (
                 best_disease_candidate_score(query, &candidate.hit),
                 disease_exact_rank(&display_name, query),
-                // Ties among equal holders resolve to the labelled record
-                // first, then the shorter canonical name: `MDS` ranks
+                // Ties among equal holders resolve to the provider-named
+                // record first, then the shorter canonical name: `MDS` ranks
                 // myelodysplastic syndrome above Miller-Dieker lissencephaly,
-                // and unlabelled abbreviation holders must not surface above
-                // labelled ones (ticket 2017).
-                hit_label(&candidate.hit).is_none() as u8,
+                // and label-only abbreviation holders must not surface above
+                // named ones (ticket 2017).
+                !hit_is_provider_named(&candidate.hit) as u8,
                 normalize_disease_text(&display_name).len(),
                 candidate.first_seen_query_idx,
                 candidate.first_seen_upstream_idx,
