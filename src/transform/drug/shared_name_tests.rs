@@ -7,8 +7,8 @@
 //! stay, NDC rows deduplicate to the rows the assertions read, and unused
 //! fields are removed.
 
-use super::{merge_mychem_hits, select_hits_for_name};
 use super::name_resolution_tests::hits;
+use super::{merge_mychem_hits, select_hits_for_name};
 
 /// `q=Pain Relief`: the store-shelf product name is carried exactly by
 /// records of unrelated drugs, each pairing it with its own ingredient on
