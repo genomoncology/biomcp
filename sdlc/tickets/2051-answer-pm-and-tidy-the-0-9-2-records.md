@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 55b059c, accept
+
 ## Outcome
 
 `pm daily` shows no unanswered asks, every 0.9.2 verdict names the tree that landed, the 0.9.2 tickets hold no hard wraps or status text, and no landed branch or worktree is left.
