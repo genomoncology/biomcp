@@ -21,6 +21,61 @@ impl TempDirGuard {
     }
 }
 
+/// One shared environment guard for source-fixture tests (ticket 2050):
+/// every `set` restores on drop, and the guard itself always points the
+/// shared HTTP client's cache at a fresh scratch directory with cache mode
+/// off, so a test never reads the machine's own cache — the 2040 trial
+/// tests read a 183 MB host cache and hit the suite's time limit before
+/// this guard existed. Every fixture env copy in the tree routes through
+/// this one type, so no test decides on its own what to isolate.
+pub(crate) struct FixtureEnv {
+    saved: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    _cache_dir: TempDirGuard,
+    _cache_mode: crate::sources::TestCacheModeGuard,
+}
+
+impl FixtureEnv {
+    pub(crate) fn new() -> Self {
+        let cache_dir = TempDirGuard::new("fixture-cache");
+        let mut saved = vec![("BIOMCP_CACHE_DIR", std::env::var_os("BIOMCP_CACHE_DIR"))];
+        // SAFETY: callers hold the serial-test process-wide environment lock.
+        unsafe {
+            std::env::set_var(
+                "BIOMCP_CACHE_DIR",
+                cache_dir.path().to_string_lossy().as_ref(),
+            );
+        }
+        Self {
+            saved,
+            _cache_dir: cache_dir,
+            _cache_mode: crate::sources::test_cache_mode::off(),
+        }
+    }
+
+    pub(crate) fn set(&mut self, key: &'static str, value: &str) {
+        self.saved.push((key, std::env::var_os(key)));
+        // SAFETY: this test holds the serial-test process-wide environment
+        // lock.
+        unsafe { std::env::set_var(key, value) };
+    }
+}
+
+impl Drop for FixtureEnv {
+    fn drop(&mut self) {
+        for (key, value) in self.saved.drain(..).rev() {
+            // SAFETY: this test holds the serial-test process-wide
+            // environment lock.
+            unsafe {
+                if let Some(value) = value {
+                    std::env::set_var(key, value)
+                } else {
+                    std::env::remove_var(key)
+                }
+            }
+        }
+    }
+}
+
 /// Build a watchdog deadline duration, stretched by
 /// `BIOMCP_TEST_TIMEOUT_SCALE` (read once per process, default 1.0) so a
 /// slow or loaded gate host can widen every marked watchdog at once.

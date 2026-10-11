@@ -361,9 +361,35 @@ impl DiscoverConfidence {
 
 static ALIAS_FALLBACK_MEMO: OnceLock<Mutex<HashMap<String, DiscoverResult>>> = OnceLock::new();
 
+/// The alias-fallback memo's size bound: a long-running MCP server must not
+/// keep every answer for the process's lifetime, so a full memo clears and
+/// refills instead of growing without end (ticket 2050).
+const ALIAS_FALLBACK_MEMO_CAP: usize = 512;
+
 fn alias_fallback_memo() -> &'static Mutex<HashMap<String, DiscoverResult>> {
     ALIAS_FALLBACK_MEMO.get_or_init(|| Mutex::new(HashMap::new()))
 }
+
+/// The memo key for one query against one source address: two fixtures (or
+/// two deployments) that point OLS4 at different addresses never share an
+/// answer, because the address is part of the key (ticket 2050).
+fn alias_fallback_memo_key(base_url: &str, query: &str) -> String {
+    format!("{base_url}\u{0}{}", query.trim().to_ascii_lowercase())
+}
+
+fn memoize_alias_fallback(key: String, result: &DiscoverResult) {
+    let mut memo = crate::utils::sync::recover_poison(alias_fallback_memo().lock());
+    if memo.len() >= ALIAS_FALLBACK_MEMO_CAP {
+        memo.clear();
+    }
+    memo.insert(key, result.clone());
+}
+
+/// The time budget one discover round gets on a refusal path (ticket 2050):
+/// the entity rescue and the CLI alias fallback both give up when the
+/// outside service cannot answer within it, so a slow OLS4 round never
+/// holds a refusal hostage.
+pub(crate) const REFUSAL_DISCOVER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
 
 pub(crate) async fn resolve_query(
     query: &str,
@@ -379,15 +405,16 @@ pub(crate) async fn resolve_query(
     // caller from the first answer, so the refusal path runs the discover
     // round once per query per process (ticket 2047). Only settled answers
     // are memoized; a transient source error still retries, and the mapping
-    // is stable for a process's lifetime the way the trial-alias cache is.
-    let key = query.trim().to_ascii_lowercase();
+    // is bounded and keyed by the source address the way the trial-alias
+    // cache is keyed by name (ticket 2050).
+    let key = alias_fallback_memo_key(ols_client.base_url(), query);
     if let Some(cached) = crate::utils::sync::recover_poison(alias_fallback_memo().lock()).get(&key)
     {
         return Ok(cached.clone());
     }
     let result =
         resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await?;
-    crate::utils::sync::recover_poison(alias_fallback_memo().lock()).insert(key, result.clone());
+    memoize_alias_fallback(key, &result);
     Ok(result)
 }
 
@@ -2671,11 +2698,12 @@ fn alias_candidates(result: &DiscoverResult) -> Vec<AliasCandidateSummary> {
 #[cfg(test)]
 mod tests {
     use super::{
-        AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept, DiscoverConfidence,
-        DiscoverIntent, DiscoverMode, DiscoverOptions, DiscoverRequest, DiscoverResult,
-        DiscoverType, MatchTier, OLS4_TIMEOUT, apply_discover_options, build_result,
+        ALIAS_FALLBACK_MEMO_CAP, AliasFallbackDecision, ConceptSource, ConceptXref,
+        DiscoverConcept, DiscoverConfidence, DiscoverIntent, DiscoverMode, DiscoverOptions,
+        DiscoverRequest, DiscoverResult, DiscoverType, MatchTier, OLS4_TIMEOUT,
+        alias_fallback_memo, alias_fallback_memo_key, apply_discover_options, build_result,
         classify_alias_fallback, concept_from_ols, generate_commands, merge_candidate,
-        normalize_primary_id, ols_doc_identifier,
+        memoize_alias_fallback, normalize_primary_id, ols_doc_identifier,
         resolve_exact_article_keyword_entity_from_ols_docs, symptom_disease_lookup_query,
         typed_gene_identity_concept,
     };
@@ -4045,6 +4073,47 @@ mod tests {
             full: false,
             article_search: None,
         }
+    }
+
+    #[test]
+    fn alias_fallback_memo_keys_carry_the_source_address() {
+        // Ticket 2050: two deployments or fixtures that point OLS4 at
+        // different addresses never share an answer, and one address
+        // shares across letter case only.
+        assert_ne!(
+            alias_fallback_memo_key("http://fixture-a/ols4", "  Keytruda "),
+            alias_fallback_memo_key("http://fixture-b/ols4", "keytruda")
+        );
+        assert_eq!(
+            alias_fallback_memo_key("http://fixture-a/ols4", "  Keytruda "),
+            alias_fallback_memo_key("http://fixture-a/ols4", "keytruda")
+        );
+    }
+
+    #[test]
+    fn alias_fallback_memo_stays_bounded() {
+        let memo = alias_fallback_memo();
+        crate::utils::sync::recover_poison(memo.lock()).clear();
+        for index in 0..ALIAS_FALLBACK_MEMO_CAP {
+            crate::utils::sync::recover_poison(memo.lock()).insert(
+                alias_fallback_memo_key("http://fixture", &format!("query-{index}")),
+                bounded_result(Vec::new()),
+            );
+        }
+        memoize_alias_fallback(
+            alias_fallback_memo_key("http://fixture", "overflow"),
+            &bounded_result(Vec::new()),
+        );
+        let guard = crate::utils::sync::recover_poison(memo.lock());
+        assert!(
+            guard.len() <= ALIAS_FALLBACK_MEMO_CAP,
+            "a full memo cleared instead of growing past its bound: {}",
+            guard.len()
+        );
+        assert!(guard
+            .contains_key(&alias_fallback_memo_key("http://fixture", "overflow")));
+        drop(guard);
+        crate::utils::sync::recover_poison(memo.lock()).clear();
     }
 
     fn bounded_concept(label: &str, id: &str) -> DiscoverConcept {

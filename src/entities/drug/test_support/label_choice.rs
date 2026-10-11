@@ -383,6 +383,204 @@ const PHESGO_ELEMENTS_BODY: &str = r#"{
  ]
 }"#;
 
+const HERCEPTIN_HYLECTA_ELEMENTS_BODY: &str = r#"{
+ "meta": {
+  "results": {
+   "skip": 0,
+   "limit": 10,
+   "total": 1
+  }
+ },
+ "results": [
+  {
+   "set_id": "ebf30894-41cf-480c-8bc3-56f592a13813",
+   "effective_time": "20260529",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "Herceptin Hylecta Trastuzumab and hyaluronidase-oysk TRASTUZUMAB TRASTUZUMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) HISTIDINE HYDROCHLORIDE MONOHYDRATE HISTIDINE TREHALOSE DIHYDRATE POLYSORBATE 20 METHIONINE WATER"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE HERCEPTIN HYLECTA is a combination of trastuzumab, a HER2/neu receptor antagonist, and hyaluronidase, an endoglycosidase, indicated in adults for: The treatment of HER2-overexpressing breast cancer. ( 1.1 , 1.2 ) Select patients for therapy based on an FDA \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "boxed_warning": [
+    "WARNING: CARDIOMYOPATHY, EMBRYO-FETAL TOXICITY, and PULMONARY TOXICITY WARNING: CARDIOMYOPATHY, EMBRYO-FETAL TOXICITY, and PULMONARY TOXICITY See full prescribing information for complete boxed warning. Cardiomyopathy: HERCEPTIN HYLECTA can result in subclinical and clinical card \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Exacerbation of Chemotherapy-Induced Neutropenia. ( 5.4 , 6.1 ) Hypersensitivity and Administration-Related Reactions (ARRs): Severe ARRs, including anaphylaxis, have been reported with HERCEPTIN HYLECTA. Monitor patients for systemic hypersensitivity r \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+const RITUXAN_HYCELA_ELEMENTS_BODY: &str = r#"{
+ "meta": {
+  "results": {
+   "skip": 0,
+   "limit": 10,
+   "total": 1
+  }
+ },
+ "results": [
+  {
+   "set_id": "3e5b7e82-f018-4eaf-ae78-d6145a906b20",
+   "effective_time": "20251215",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "Rituxan Hycela rituximab and hyaluronidase RITUXIMAB RITUXIMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) HISTIDINE HISTIDINE HYDROCHLORIDE MONOHYDRATE TREHALOSE DIHYDRATE METHIONINE POLYSORBATE 80 WATER Rituxan Hycela rituximab and hyaluronidase RITUXIMAB RITUXIMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) HISTIDINE HISTIDINE HYDROCHLORIDE MONOHYDRATE TREHALOSE DIHYDRATE METHIONINE POLYSORBATE 80 WATER"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE RITUXAN HYCELA is a combination of rituximab, a CD20-directed cytolytic antibody, and hyaluronidase human, an endoglycosidase, indicated for the treatment of adult patients with: Follicular Lymphoma (FL) ( 1.1 ) Relapsed or refractory, follicular lymphoma  \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "boxed_warning": [
+    "WARNING: SEVERE MUCOCUTANEOUS REACTIONS, HEPATITIS B VIRUS REACTIVATION and PROGRESSIVE MULTIFOCAL LEUKOENCEPHALOPATHY WARNING: SEVERE MUCOCUTANEOUS REACTIONS, HEPATITIS B VIRUS REACTIVATION and PROGRESSIVE MULTIFOCAL LEUKOENCEPHALOPATHY See full prescribing information for compl \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Hypersensitivity and other administration reactions: Local cutaneous reactions may occur more than 24 hours after administration. Interrupt injection if severe reaction develops. Premedicate before injection. ( 5.4 ) Tumor lysis syndrome: Administer agg \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+const TECENTRIQ_HYBREZA_ELEMENTS_BODY: &str = r#"{
+ "meta": {
+  "results": {
+   "skip": 0,
+   "limit": 10,
+   "total": 1
+  }
+ },
+ "results": [
+  {
+   "set_id": "a617b089-ce66-464b-987b-b45d029b4d6f",
+   "effective_time": "20260520",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "Tecentriq Hybreza atezolizumab and hyaluronidase-tqjs ATEZOLIZUMAB ATEZOLIZUMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) HISTIDINE SUCROSE POLYSORBATE 20 METHIONINE ACETIC ACID WATER"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE TECENTRIQ HYBREZA is a combination of atezolizumab, a programmed death-ligand 1 (PD-L1) blocking antibody, and hyaluronidase, an endoglycosidase indicated: Non-Small Cell Lung Cancer (NSCLC) as adjuvant treatment following resection and platinum-based chem \u2026[recorded reply trimmed for the fixture]"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Immune-Mediated Adverse Reactions Immune-mediated adverse reactions, which may be severe or fatal, can occur in any organ system or tissue, including the following: immune-mediated pneumonitis, immune-mediated colitis, immune-mediated hepatitis, immune- \u2026[recorded reply trimmed for the fixture]"
+   ]
+  }
+ ]
+}"#;
+
+
+/// The MyChem answers for the multi-word sparse brands, recorded 2026-10-11
+/// (ticket 2050) from `mychem.info/v1/query?q=<name>` with the `get` field
+/// list: each brand lives on a naked NDC row whose nonproprietary line is
+/// the hyaluronidase pairing.
+const HERCEPTIN_HYLECTA_CAPTURE: &str = r#"
+{
+  "total": 1,
+  "hits": [
+    {
+      "_id": "50242-077",
+      "_score": 17.670006,
+      "ndc": {"nonproprietaryname": "Trastuzumab and hyaluronidase-oysk", "proprietaryname": "Herceptin Hylecta"}
+    }
+  ]
+}
+"#;
+
+const RITUXAN_HYCELA_CAPTURE: &str = r#"
+{
+  "total": 2,
+  "hits": [
+    {
+      "_id": "50242-108",
+      "_score": 17.670006,
+      "ndc": {"nonproprietaryname": "rituximab and hyaluronidase", "proprietaryname": "Rituxan Hycela"}
+    }
+  ]
+}
+"#;
+
+const TECENTRIQ_HYBREZA_CAPTURE: &str = r#"
+{
+  "total": 1,
+  "hits": [
+    {
+      "_id": "50242-933",
+      "_score": 17.670006,
+      "ndc": {"nonproprietaryname": "atezolizumab and hyaluronidase-tqjs", "proprietaryname": "Tecentriq Hybreza"}
+    }
+  ]
+}
+"#;
+
+/// Ticket 2050: a sparse record whose only identity is the element line can
+/// carry a multi-word brand. The element opens "BRAND BRAND ESTABLISHED …",
+/// and one reader keeps the whole leading brand run, so the identity guard
+/// confirms the record for the queried name and the brand tier serves the
+/// label. On main the reader took the first word alone, so these three
+/// brands printed "No openFDA SPL label record matched this drug."
+async fn sparse_multi_word_brand_label(
+    brand: &str,
+    capture: &str,
+    elements: &str,
+    set_id: &str,
+) -> (super::super::Drug, tokio::task::JoinHandle<()>) {
+    let (base, server) = name_resolution_fixture_server_with_elements(
+        vec![(brand.to_string(), capture.to_string())],
+        Vec::new(),
+        Vec::new(),
+        vec![(brand.to_string(), elements.to_string())],
+    )
+    .await;
+    let drug = name_resolution_fixture_drug(&base, brand).await;
+    assert_label_data_with_set_id(&drug, set_id);
+    assert!(
+        drug.brand_names
+            .iter()
+            .any(|name| name.eq_ignore_ascii_case(brand)),
+        "the card's brands include the whole multi-word brand: {:?}",
+        drug.brand_names
+    );
+    (drug, server)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn herceptin_hylecta_keeps_its_multi_word_brand_and_own_label() {
+    let (_drug, server) = sparse_multi_word_brand_label(
+        "Herceptin Hylecta",
+        HERCEPTIN_HYLECTA_CAPTURE,
+        HERCEPTIN_HYLECTA_ELEMENTS_BODY,
+        "ebf30894-41cf-480c-8bc3-56f592a13813",
+    )
+    .await;
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn rituxan_hycela_keeps_its_multi_word_brand_and_own_label() {
+    let (_drug, server) = sparse_multi_word_brand_label(
+        "Rituxan Hycela",
+        RITUXAN_HYCELA_CAPTURE,
+        RITUXAN_HYCELA_ELEMENTS_BODY,
+        "3e5b7e82-f018-4eaf-ae78-d6145a906b20",
+    )
+    .await;
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn tecentriq_hybreza_keeps_its_multi_word_brand_and_own_label() {
+    let (_drug, server) = sparse_multi_word_brand_label(
+        "Tecentriq Hybreza",
+        TECENTRIQ_HYBREZA_CAPTURE,
+        TECENTRIQ_HYBREZA_ELEMENTS_BODY,
+        "a617b089-ce66-464b-987b-b45d029b4d6f",
+    )
+    .await;
+    server.abort();
+}
+
 /// The MyChem answer for `q=opdualag` (recorded 2026-10-10, ticket 2047):
 /// the brand lives only on a naked NDC row whose ingredient line is the
 /// two-name combination.
@@ -773,7 +971,7 @@ const DARATUMUMAB_CAPTURE: &str = r#"
 }
 "#;
 
-fn assert_label_data_with_set_id(drug: &super::super::Drug, set_id: &str) {
+pub(super) fn assert_label_data_with_set_id(drug: &super::super::Drug, set_id: &str) {
     assert_eq!(drug.label_set_id.as_deref(), Some(set_id));
     let outcome = drug
         .section_outcomes
@@ -1096,25 +1294,7 @@ async fn phesgo_resolves_its_own_label_and_safety_line() {
     )
     .await;
 
-    let root = crate::test_support::TempDirGuard::new("phesgo-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("phesgo-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_OLS4_BASE", &base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = super::drug_fixture_env(base, "phesgo-ddinter");
 
     // Ticket 2047: MyChem holds Phesgo only on naked combination rows, so
     // the card carries the three-name ingredient line, and openFDA's
@@ -1246,25 +1426,7 @@ async fn a_contains_tier_ols_match_never_adopts_a_card() {
     )
     .await;
 
-    let root = crate::test_support::TempDirGuard::new("ambifton-contains-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("ambifton-contains-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_OLS4_BASE", &base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = super::drug_fixture_env(base, "ambifton-contains-ddinter");
 
     // The regimen-shaped concept is a drug with a canonical id but only a
     // non-exact (prefix-tier) match, so the guard declines and the refusal

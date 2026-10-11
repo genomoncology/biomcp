@@ -73,34 +73,40 @@ pub(super) fn who_api_row(product_id: &str, inn: &str) -> WhoPrequalificationEnt
     }
 }
 
-struct RequiredLabelFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+/// The drug fixture env (ticket 2050): the one shared scratch-cache guard
+/// carrying every source base a name-resolution test touches — MyChem,
+/// openFDA, the discover rescue's OLS4 and its HPO/UMLS lookups, the pacing
+/// origin, and a missing DDInter tree — so no drug fixture test decides on
+/// its own what to isolate. The DDInter guard must outlive the env's use.
+fn drug_fixture_env(
+    base: &str,
+    ddinter_label: &str,
+) -> (
+    crate::test_support::FixtureEnv,
+    crate::test_support::TempDirGuard,
+) {
+    let root = crate::test_support::TempDirGuard::new(ddinter_label);
+    let missing_ddinter = root.path().join("missing-ddinter");
+    let mut env = crate::test_support::FixtureEnv::new();
+    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_OPENFDA_BASE", base);
+    // The guarded discover rescue reaches OLS4 and the HPO alias lookup it
+    // carries; both stay on the fixture so no name-resolution test leaves
+    // it (ticket 2037).
+    env.set("BIOMCP_OLS4_BASE", base);
+    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
+    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
+    env.set(
+        "BIOMCP_DDINTER_DIR",
+        missing_ddinter.to_str().expect("UTF-8 fixture path"),
+    );
+    (env, root)
+}
 
 #[cfg(test)]
 mod brand_resolution;
 mod label_choice;
-
-impl RequiredLabelFixtureEnv {
-    fn set(&mut self, name: &'static str, value: &str) {
-        self.0.push((name, std::env::var_os(name)));
-        // SAFETY: the test holds serial_test's process-wide environment lock.
-        unsafe { std::env::set_var(name, value) };
-    }
-}
-
-impl Drop for RequiredLabelFixtureEnv {
-    fn drop(&mut self) {
-        for (name, prior) in self.0.drain(..).rev() {
-            // SAFETY: the test holds serial_test's process-wide environment lock.
-            unsafe {
-                if let Some(value) = prior {
-                    std::env::set_var(name, value);
-                } else {
-                    std::env::remove_var(name);
-                }
-            }
-        }
-    }
-}
 
 async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -225,25 +231,7 @@ async fn label_fallback_failure_server(
 }
 
 async fn label_fallback_fixture_drug(base: &str, name: &str, sections: &[&str]) -> super::Drug {
-    let root = crate::test_support::TempDirGuard::new("label-fallback-ddinter-counter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    // Point the shared HTTP client's cache walk at the fixture's own tree:
-    // walking the machine cache root can outlast the test (see the discover
-    // fixture's note on client construction).
-    let cache_root = crate::test_support::TempDirGuard::new("label-fallback-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", base);
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = drug_fixture_env(base, "label-fallback-ddinter-counter");
     let sections: Vec<String> = sections.iter().map(|value| value.to_string()).collect();
     super::get(name, &sections)
         .await
@@ -254,27 +242,7 @@ async fn label_fallback_fixture_drug(base: &str, name: &str, sections: &[&str]) 
 #[serial_test::serial(source_env)]
 async fn label_fetch_failures_settle_as_unavailable_outcomes() {
     let (base, server) = required_label_failure_server().await;
-    let root = crate::test_support::TempDirGuard::new("required-label-ddinter-counter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    // The guard bypasses every cache for the test without latching the
-    // process mode the way the former `BIOMCP_CACHE_MODE=off` set did
-    // (ticket 1261).
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    // Point the shared HTTP client's cache walk at the fixture's own tree:
-    // walking the machine cache root can outlast the test.
-    let cache_root = crate::test_support::TempDirGuard::new("required-label-cache");
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = drug_fixture_env(base, "required-label-ddinter-counter");
 
     // Ticket 1300: a requested label section whose fetch failed settles as
     // an unavailable outcome instead of aborting the card, and the provider's
@@ -663,30 +631,7 @@ async fn name_resolution_fixture_server_with_elements(
 }
 
 async fn name_resolution_fixture_drug(base: &str, name: &str) -> super::Drug {
-    let root = crate::test_support::TempDirGuard::new("name-resolution-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    // Point the shared HTTP client's cache walk at the fixture's own tree
-    // (see the discover fixture's note on client construction).
-    let cache_root = crate::test_support::TempDirGuard::new("name-resolution-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", base);
-    // The guarded discover rescue reaches OLS4 and the HPO alias lookup it
-    // carries; both stay on the fixture so no name-resolution test leaves
-    // it (ticket 2037).
-    env.set("BIOMCP_OLS4_BASE", base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = drug_fixture_env(base, "name-resolution-ddinter");
     super::get(name, &["label".to_string()])
         .await
         .expect("name-resolution fixture settles a card")
@@ -748,25 +693,7 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
     )
     .await;
 
-    let root = crate::test_support::TempDirGuard::new("refusal-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("refusal-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_OLS4_BASE", &base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = drug_fixture_env(base, "refusal-ddinter");
 
     // Ticket 2031: when no record names the query and openFDA's identity
     // fields cannot resolve it either, the lookup refuses and says which
@@ -850,25 +777,7 @@ async fn a_refusal_runs_the_discover_resolution_once_for_both_callers() {
             });
         }
     });
-    let root = crate::test_support::TempDirGuard::new("refusal-once-ddinter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    let cache_root = crate::test_support::TempDirGuard::new("refusal-once-cache");
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.path().to_string_lossy().as_ref(),
-    );
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_OLS4_BASE", &base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = drug_fixture_env(base, "refusal-once-ddinter");
 
     let err = crate::cli::execute(vec![
         "biomcp".to_string(),

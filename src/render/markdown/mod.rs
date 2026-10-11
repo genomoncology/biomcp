@@ -152,7 +152,8 @@ fn section_render_contexts_with_recovery(
                 if matches!(
                     state,
                     SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
-                ) && let Some(command) = match recovery {
+                ) && !outcome.is_some_and(|value| value.permanent())
+                && let Some(command) = match recovery {
                     Some(entries) => entries
                         .iter()
                         .find(|entry| entry.section == row.key)

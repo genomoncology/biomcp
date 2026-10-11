@@ -1,10 +1,12 @@
-//! The retired legacy by-rsID endpoint (ticket 2047): upstream retired the
-//! GWAS Catalog REST API in 2026-10 with HTTP 410, so a live
+//! The retired legacy by-rsID endpoint (tickets 2047 and 2050): upstream
+//! retired the GWAS Catalog REST API in 2026-10 with HTTP 410, so a live
 //! `get variant <rsid> all` hard-failed on the dead source. The reader
-//! degrades the retired class (410, and a 404 the same way) with the honest
-//! gap note instead of failing the whole variant answer.
+//! degrades only the retired class (410) with the honest gap note instead
+//! of failing the whole variant answer, while a 404 keeps meaning no
+//! associations for the rsID the way it always did.
 
 use super::super::*;
+use crate::test_support::FixtureEnv;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -15,29 +17,6 @@ macro_rules! retired_body {
             "/testdata/sources/gwas/associations_retired_410_body.txt"
         ))
     };
-}
-
-struct GwasBaseEnv(Option<std::ffi::OsString>);
-
-impl GwasBaseEnv {
-    fn set(&mut self, value: &str) {
-        self.0 = std::env::var_os("BIOMCP_GWAS_BASE");
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var("BIOMCP_GWAS_BASE", value) };
-    }
-}
-
-impl Drop for GwasBaseEnv {
-    fn drop(&mut self) {
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe {
-            if let Some(value) = self.0.take() {
-                std::env::set_var("BIOMCP_GWAS_BASE", value);
-            } else {
-                std::env::remove_var("BIOMCP_GWAS_BASE");
-            }
-        }
-    }
 }
 
 async fn retired_endpoint_server(
@@ -78,20 +57,17 @@ async fn retired_endpoint_server(
 async fn associations_by_rsid_against(
     status_line: &'static str,
 ) -> (
-    BioMcpError,
+    Result<Vec<GwasAssociation>, BioMcpError>,
     Arc<Mutex<Vec<String>>>,
     tokio::task::JoinHandle<()>,
 ) {
     let (base, requests, server) = retired_endpoint_server(status_line).await;
-    let mut env = GwasBaseEnv(None);
-    env.set(&base);
+    let mut env = FixtureEnv::new();
+    env.set("BIOMCP_GWAS_BASE", &base);
     let client = GwasClient::new().expect("client against fixture");
-    let error = client
-        .associations_by_rsid("rs121913529", 20)
-        .await
-        .expect_err("the retired endpoint degrades as an error, not an empty page");
+    let result = client.associations_by_rsid("rs121913529", 20).await;
     drop(env);
-    (error, requests, server)
+    (result, requests, server)
 }
 
 /// The live shape: 410 Gone names the retired endpoint, so the reader
@@ -100,12 +76,13 @@ async fn associations_by_rsid_against(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
-    let (error, requests, server) = associations_by_rsid_against("410 Gone").await;
+    let (result, requests, server) = associations_by_rsid_against("410 Gone").await;
     server.abort();
+    let error = result.expect_err("the retired endpoint degrades as an error");
     assert_eq!(error.code(), "source_unavailable");
     let detail = format!("{error:?}");
     assert!(
-        detail.contains("legacy GWAS Catalog REST endpoint"),
+        detail.contains("legacy GWAS Catalog by-rsID endpoint"),
         "{detail}"
     );
     assert!(detail.contains("retired upstream"), "{detail}");
@@ -115,17 +92,23 @@ async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
         requests.contains("/singleNucleotidePolymorphisms/rs121913529/associations"),
         "the by-rsID read must run before it degrades: {requests}"
     );
+    assert!(
+        crate::sources::gwas::is_retired_endpoint_error(&error),
+        "the retired degrade marks itself permanent so no retry is offered"
+    );
 }
 
-/// A gateway that answers the retired endpoint with 404 degrades the same
-/// way: the legacy by-rsID route is gone, and that status no longer reads
-/// as an empty association page for this endpoint (ticket 2047).
+/// A 404 keeps meaning no associations for the rsID (ticket 2050): before
+/// 2047's landing it always did, and the retired-endpoint degrade must not
+/// swallow it, because a missing rsID is an answer, not a retired route.
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn not_found_by_rsid_endpoint_degrades_with_the_retirement_note() {
-    let (error, _requests, server) = associations_by_rsid_against("404 Not Found").await;
+async fn not_found_by_rsid_endpoint_means_no_associations() {
+    let (result, _requests, server) = associations_by_rsid_against("404 Not Found").await;
     server.abort();
-    assert_eq!(error.code(), "source_unavailable");
-    let detail = format!("{error:?}");
-    assert!(detail.contains("retired upstream"), "{detail}");
+    let associations = result.expect("a 404 settles as no associations");
+    assert!(
+        associations.is_empty(),
+        "a 404 carries no association rows: {associations:?}"
+    );
 }

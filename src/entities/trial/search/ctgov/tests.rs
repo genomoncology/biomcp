@@ -670,7 +670,7 @@ fn count_all_returns_exact_for_no_post_filters() {
 async fn count_all_keeps_an_omitted_provider_total_unknown() {
     // Synthetic first-page envelope reproducing receipted provider optionality.
     let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     for filters in [
         TrialSearchFilters {
@@ -705,7 +705,7 @@ async fn count_all_keeps_an_omitted_provider_total_unknown() {
 #[serial_test::serial(source_env)]
 async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() {
     let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         condition: Some("melanoma".into()),
@@ -727,7 +727,7 @@ async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() 
 #[serial_test::serial(source_env)]
 async fn alias_union_returns_the_traversal_limit_reason_at_its_cap() {
     let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         condition: Some("melanoma".into()),
@@ -1073,7 +1073,7 @@ async fn apply_post_filters_with_age(
     studies: Vec<CtGovStudy>,
 ) -> (Vec<CtGovStudy>, DetailVerificationReport) {
     let (base, server) = failing_detail_fixture().await;
-    let _env = crate::entities::trial::test_support::CtGovFixtureEnv::set(&base);
+    let _env = crate::entities::trial::test_support::ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         criteria: Some("MSI-H".into()),

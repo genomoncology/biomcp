@@ -503,10 +503,12 @@ pub(crate) const FERRIC_OXIDE_TEXT_ONLY_CAPTURE: &str = r#"
 "#;
 
 /// The imatinib record carries NDC names for the mesylate product and exact
-/// DrugBank/ChEMBL names for the base molecule. The canonical field order
-/// keeps the established product name the brand bridge pins.
+/// DrugBank/ChEMBL names for the base molecule. The request's own name
+/// wins: a merged product row's qualified name counts only when it equals
+/// the request (ticket 2050), so the card names the requested drug, and a
+/// query for the salt ("imatinib mesylate") still names the salt.
 #[test]
-fn merge_mychem_hits_keeps_the_imatinib_mesylate_established_name() {
+fn merge_mychem_hits_names_the_requested_identity_over_a_product_row() {
     let imatinib: MyChemHit = serde_json::from_value(serde_json::json!({
         "_id": "KTUFNOKKBVMGRW-UHFFFAOYSA-N",
         "_score": 26.0,
@@ -521,7 +523,9 @@ fn merge_mychem_hits_keeps_the_imatinib_mesylate_established_name() {
     .expect("valid imatinib hit");
 
     let drug = merge_mychem_hits(&[&imatinib], "imatinib");
-    assert_eq!(drug.name, "imatinib mesylate");
+    assert_eq!(drug.name, "imatinib");
+    let salt = merge_mychem_hits(&[&imatinib], "imatinib mesylate");
+    assert_eq!(salt.name, "imatinib mesylate");
 }
 
 /// `q=Tarceva` recorded 2026-10-09 (ticket 2037): MyChem holds the brand only

@@ -11,62 +11,16 @@ pub(super) use serde_json::json;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-pub(super) struct TrialSearchEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+pub(super) use crate::test_support::FixtureEnv;
 
-impl TrialSearchEnvRestore {
-    pub(super) fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    pub(super) fn set(&mut self, key: &'static str, value: &str) {
-        self.0.push((key, std::env::var_os(key)));
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var(key, value) };
-    }
-}
-
-impl Drop for TrialSearchEnvRestore {
-    fn drop(&mut self) {
-        for (key, value) in self.0.drain(..).rev() {
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(value) = value {
-                    std::env::set_var(key, value)
-                } else {
-                    std::env::remove_var(key)
-                }
-            }
-        }
-    }
-}
-
-pub(super) struct CtGovFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl CtGovFixtureEnv {
-    pub(super) fn set(base: &str) -> Self {
-        let mut prior = Vec::new();
-        for key in ["BIOMCP_CTGOV_BASE", "BIOMCP_TEST_UNPACED_ORIGIN"] {
-            prior.push((key, std::env::var_os(key)));
-            // SAFETY: callers hold the serial-test process-wide environment lock.
-            unsafe { std::env::set_var(key, base) };
-        }
-        Self(prior)
-    }
-}
-
-impl Drop for CtGovFixtureEnv {
-    fn drop(&mut self) {
-        for (key, previous) in self.0.drain(..).rev() {
-            // SAFETY: callers hold the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(previous) = previous {
-                    std::env::set_var(key, previous);
-                } else {
-                    std::env::remove_var(key);
-                }
-            }
-        }
-    }
+/// The CTGov fixture env: the shared scratch-cache guard with the registry
+/// and its pacing origin pointed at the fixture (ticket 2050: one shared
+/// helper, never a per-test copy).
+pub(super) fn ctgov_fixture_env(base: &str) -> FixtureEnv {
+    let mut env = FixtureEnv::new();
+    env.set("BIOMCP_CTGOV_BASE", base);
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
+    env
 }
 
 pub(super) async fn ctgov_json_fixture(

@@ -338,6 +338,13 @@ fn normalized_discover_drug_label(value: &str) -> String {
     value.trim().trim_matches('.').to_ascii_lowercase()
 }
 
+/// The discover rescue runs against OLS4 with no deadline of its own, and a
+/// slow round there must never hold a refusal hostage: the rescue gives up
+/// after the refusal-path budget and the caller refuses without it
+/// (ticket 2050).
+const DISCOVER_RESCUE_TIMEOUT: std::time::Duration =
+    crate::entities::discover::REFUSAL_DISCOVER_TIMEOUT;
+
 async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
     let Ok(result) = crate::entities::discover::resolve_query(
         name,
@@ -379,11 +386,18 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
     SparseDrugDiscoverRescue::AliasFallback
 }
 
-/// The discover rescue for one query. It runs at exactly one site per card
-/// lookup — the name-miss arm returns before the sparse-card arm can run —
-/// and the refusal's second discover round is the CLI alias fallback, whose
-/// repeat `resolve_query`'s per-process memo serves without another OLS4
-/// lookup (tickets 2043 and 2047).
+/// The discover rescue inside its time budget: `None` when it ran out, so
+/// the name-miss arm refuses without it and the sparse-card arm keeps the
+/// card it already holds. A timeout leaves nothing memoized, so the refusal
+/// text stays honest about what the sources answered.
+async fn discover_sparse_drug_rescue_bounded(name: &str) -> Option<SparseDrugDiscoverRescue> {
+    tokio::time::timeout(
+        DISCOVER_RESCUE_TIMEOUT,
+        discover_sparse_drug_rescue(name),
+    )
+    .await
+    .ok()
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TrialAliasSource {
@@ -744,16 +758,14 @@ pub(super) async fn resolve_drug_base(
                 // names: a withdrawn brand such as Tarceva holds no openFDA
                 // label and lives in MyChem only on a record with no name,
                 // so resolve it through the guarded discover rescue before
-                // refusing (ticket 2037).
-                let rescue = match discover_sparse_drug_rescue(name).await {
-                    SparseDrugDiscoverRescue::Canonical(candidate) => {
-                        named_drug_response(&candidate)
-                            .await
-                            .map(|candidate_resp| (candidate, candidate_resp))
-                    }
-                    SparseDrugDiscoverRescue::AliasFallback | SparseDrugDiscoverRescue::None => {
-                        None
-                    }
+                // refusing (ticket 2037). A rescue that runs out of time
+                // refuses here rather than wait on the slow outside service
+                // (ticket 2050).
+                let rescue = match discover_sparse_drug_rescue_bounded(name).await {
+                    SparseDrugDiscoverRescue::Canonical(candidate) => named_drug_response(&candidate)
+                        .await
+                        .map(|candidate_resp| (candidate, candidate_resp)),
+                    _ => None,
                 };
                 match rescue {
                     Some((candidate, candidate_resp)) => {
@@ -785,21 +797,25 @@ pub(super) async fn resolve_drug_base(
     }
 
     if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
-        match discover_sparse_drug_rescue(name).await {
-            SparseDrugDiscoverRescue::Canonical(candidate) => {
-                // Adopt the canonical candidate only when its own MyChem
-                // record names it; a sparse card that matched the query by
-                // name stays put instead of becoming a name-only card
-                // rebuilt from another record's text hits (ticket 2031).
-                if let Some(fallback_resp) = named_drug_response(&candidate).await {
-                    lookup_name = candidate;
-                    resp = fallback_resp;
-                    selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
-                    drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+        // A timed-out rescue keeps the sparse card the query already named
+        // (ticket 2050): the card never waits on the slow outside service.
+        if let Some(rescue) = discover_sparse_drug_rescue_bounded(name).await {
+            match rescue {
+                SparseDrugDiscoverRescue::Canonical(candidate) => {
+                    // Adopt the canonical candidate only when its own MyChem
+                    // record names it; a sparse card that matched the query by
+                    // name stays put instead of becoming a name-only card
+                    // rebuilt from another record's text hits (ticket 2031).
+                    if let Some(fallback_resp) = named_drug_response(&candidate).await {
+                        lookup_name = candidate;
+                        resp = fallback_resp;
+                        selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+                        drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+                    }
                 }
+                SparseDrugDiscoverRescue::AliasFallback => return Err(original_not_found()),
+                SparseDrugDiscoverRescue::None => {}
             }
-            SparseDrugDiscoverRescue::AliasFallback => return Err(original_not_found()),
-            SparseDrugDiscoverRescue::None => {}
         }
     }
 

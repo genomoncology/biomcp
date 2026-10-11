@@ -1,5 +1,80 @@
 use super::*;
 
+/// Ticket 2050: a sparse card carries no DrugBank ID, type, approval,
+/// brand or route, and the US header has no FAERS events — the header then
+/// prints no filler for any of them: no `DrugBank ID: -`, no `Safety
+/// (OpenFDA FAERS): unavailable`, and no blank lines where the empty fields
+/// sit (the Herceptin Hylecta card printed four).
+#[test]
+fn drug_markdown_header_drops_empty_fields_instead_of_printing_fillers() {
+    let drug = Drug {
+        section_outcomes: Default::default(),
+        name: "pertuzumab, trastuzumab, and hyaluronidase-zzxf".to_string(),
+        drugbank_id: None,
+        chembl_id: None,
+        unii: None,
+        drug_type: None,
+        mechanism: None,
+        mechanisms: Vec::new(),
+        approval_date: None,
+        approval_date_raw: None,
+        approval_date_display: None,
+        approval_summary: None,
+        brand_names: vec!["Phesgo".to_string()],
+        route: None,
+        targets: Vec::new(),
+        variant_targets: Vec::new(),
+        target_family: None,
+        target_family_name: None,
+        indications: Vec::new(),
+        interactions: Vec::new(),
+        interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
+        pharm_classes: Vec::new(),
+        top_adverse_events: Vec::new(),
+        faers_query: None,
+        label: None,
+        label_set_id: None,
+        shortage: None,
+        approvals: None,
+        fda_orphan_designations: None,
+        us_safety_warnings: None,
+        us_boxed_warning: None,
+        ema_regulatory: None,
+        ema_safety: None,
+        ema_shortage: None,
+        who_prequalification: None,
+        who_note: None,
+        civic: None,
+        cell_lines: None,
+    };
+
+    let markdown = drug_markdown(&drug, &[]).expect("markdown");
+    assert!(
+        !markdown.contains("DrugBank ID:"),
+        "an absent DrugBank ID prints no line: {markdown}"
+    );
+    assert!(
+        !markdown.contains("Safety (OpenFDA FAERS): unavailable"),
+        "a FAERS miss prints no unavailable filler: {markdown}"
+    );
+    assert!(
+        !markdown.contains("Safety (OpenFDA FAERS)"),
+        "no FAERS line at all without events: {markdown}"
+    );
+    assert!(
+        markdown.contains("Brand Names (DrugBank): Phesgo"),
+        "the one filled field still prints: {markdown}"
+    );
+    assert!(
+        !markdown.contains("\n\n\n"),
+        "no stacked blank lines between dropped header fields: {markdown}"
+    );
+}
+
 #[test]
 fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback() {
     let mut section_outcomes = crate::entities::drug::default_drug_section_outcomes();

@@ -2,34 +2,9 @@ use super::*;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-struct DiseaseCardFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl DiseaseCardFixtureEnv {
-    fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    fn set(&mut self, key: &'static str, value: &str) {
-        self.0.push((key, std::env::var_os(key)));
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var(key, value) };
-    }
-}
-
-impl Drop for DiseaseCardFixtureEnv {
-    fn drop(&mut self) {
-        for (key, previous) in self.0.drain(..).rev() {
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(value) = previous {
-                    std::env::set_var(key, value);
-                } else {
-                    std::env::remove_var(key);
-                }
-            }
-        }
-    }
-}
+/// The disease fixture env: the one shared scratch-cache guard (ticket
+/// 2050), so the card tests never read the machine's own cache.
+type DiseaseCardFixtureEnv = crate::test_support::FixtureEnv;
 
 fn disease_card_fixture_response(body: &str) -> Vec<u8> {
     format!(
@@ -563,7 +538,10 @@ async fn abbreviation_fixture_server()
                     .expect("lock fixture requests")
                     .push(request.clone());
                 let body = if request.contains("/query?") {
-                    if request.contains("MF") {
+                    // A short abbreviation grounds in any letter case
+                    // (ticket 2050), so the fixture answers `mf` and `MF`
+                    // with the same recorded reply.
+                    if request.contains("MF") || request.contains("mf") {
                         recorded_mydisease!("query_mf.json")
                     } else if request.contains("MM") {
                         recorded_mydisease!("query_mm.json")
@@ -641,6 +619,34 @@ async fn get_disease_mf_refuses_instead_of_mixing_two_diseases() {
         "{error}"
     );
     assert!(error.contains("search disease"), "{error}");
+}
+
+/// Ticket 2050: a short abbreviation behaves the same in any letter case.
+/// Lowercase `mf` used to resolve straight to mycosis fungoides while `MF`
+/// refused; both must refuse with the same candidates and the same
+/// clinical-reading pointer.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_lowercase_mf_refuses_like_uppercase() {
+    let error = get_disease_card_or_error("mf")
+        .await
+        .expect_err("mf holds on two diseases and must refuse like MF");
+    assert!(
+        error.contains("Ambiguous disease abbreviation 'mf'"),
+        "{error}"
+    );
+    assert!(
+        error.contains("mycosis fungoides (MONDO:0009691)"),
+        "{error}"
+    );
+    assert!(
+        error.contains("myotonia fluctuans (MONDO:0020481)"),
+        "{error}"
+    );
+    assert!(
+        error.contains("Clinical reading: 'mf' also names myelofibrosis"),
+        "{error}"
+    );
 }
 
 #[tokio::test]

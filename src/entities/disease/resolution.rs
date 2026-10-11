@@ -719,16 +719,26 @@ fn is_non_human_record(hit: &MyDiseaseHit) -> bool {
 }
 
 /// A token shaped like an abbreviation — one word, all ASCII capitals
-/// (`MF`, `CAD`, `NSCLC`) — is ambiguous when several diseases hold it as
-/// an exact name or synonym. Any other shape is a full word, and a full
-/// word is ambiguous only when several records carry it as their exact
-/// NAME: a record that merely shares the word as a synonym does not stop
-/// `get disease myeloma` from reaching multiple myeloma (ticket 2017).
+/// (`MF`, `CAD`, `NSCLC`), or one word of at most two letters in any letter
+/// case (`mf` names the same diseases `MF` does, ticket 2050) — is ambiguous
+/// when several diseases hold it as an exact name or synonym. Any other
+/// shape is a full word, and a full word is ambiguous only when several
+/// records carry it as their exact NAME: a record that merely shares the
+/// word as a synonym does not stop `get disease myeloma` from reaching
+/// multiple myeloma (ticket 2017).
 fn is_abbreviation_shaped_token(token: &str) -> bool {
     let token = token.trim();
     !token.is_empty()
         && !token.chars().any(char::is_whitespace)
-        && token.chars().all(|ch| ch.is_ascii_uppercase())
+        && (token.chars().all(|ch| ch.is_ascii_uppercase())
+            || is_short_abbreviation_token(token))
+}
+
+/// Whether the refusal's short-token reason applies: several holders
+/// explain a refusal on their own, but a single holder alone cannot carry a
+/// token this short (`MM`, ticket 2017).
+fn single_holder_is_short_token(holders: usize, requested: &str) -> bool {
+    holders == 1 && is_short_abbreviation_token(requested)
 }
 
 /// Diseases in a candidate set that hold `query` as an exact holder,
@@ -804,7 +814,7 @@ pub(crate) async fn resolve_disease_hit_by_name(
         DirectNameResolution::AmbiguousAbbreviation { requested, holders } => {
             // Several holders explain the refusal on their own; the
             // short-token reason is for the single-holder case like `MM`.
-            let short_token = holders.len() == 1 && is_short_abbreviation_token(&requested);
+            let short_token = single_holder_is_short_token(holders.len(), &requested);
             return Err(ambiguous_abbreviation_error(
                 &requested,
                 &holders,
