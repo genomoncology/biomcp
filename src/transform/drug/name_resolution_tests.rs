@@ -340,8 +340,9 @@ fn ferric_oxide_selects_the_ferric_oxide_record_not_calamine() {
     let drug = merge_mychem_hits(&selected, "ferric oxide");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB11576"));
     assert_eq!(
-        drug.name, "ferric oxide red",
-        "the card keeps the NDC established name that matched the query"
+        drug.name, "ferric oxide",
+        "the card keeps the requested identity name; a merged product row's qualified \
+         name (ferric oxide red) counts only when it equals the request (ticket 2050)"
     );
     assert!(
         !serde_json::to_string(&drug)
