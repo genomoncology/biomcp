@@ -1,6 +1,6 @@
 # 2043 — Drug labels match the brand or the plain ingredient
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
