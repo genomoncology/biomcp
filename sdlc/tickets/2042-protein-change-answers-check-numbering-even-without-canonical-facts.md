@@ -1,6 +1,6 @@
 # 2042 — Protein-change answers check numbering even without canonical facts
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
