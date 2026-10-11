@@ -985,7 +985,9 @@
     "via": null,
     "bioMcp_surfaces": [
       "search disease",
-      "get disease <id>"
+      "get disease <id>",
+      "search trial (condition abbreviation note)",
+      "search trial --source nci (condition grounding)"
     ],
     "bioMcp_auth": "none",
     "env_var": null,

@@ -11,6 +11,31 @@ pub(super) use serde_json::json;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
+pub(super) struct TrialSearchEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl TrialSearchEnvRestore {
+    pub(super) fn set(&mut self, key: &'static str, value: &str) {
+        self.0.push((key, std::env::var_os(key)));
+        // SAFETY: this test holds the serial-test process-wide environment lock.
+        unsafe { std::env::set_var(key, value) };
+    }
+}
+
+impl Drop for TrialSearchEnvRestore {
+    fn drop(&mut self) {
+        for (key, value) in self.0.drain(..).rev() {
+            // SAFETY: this test holds the serial-test process-wide environment lock.
+            unsafe {
+                if let Some(value) = value {
+                    std::env::set_var(key, value)
+                } else {
+                    std::env::remove_var(key)
+                }
+            }
+        }
+    }
+}
+
 pub(super) struct CtGovFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
 
 impl CtGovFixtureEnv {

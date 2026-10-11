@@ -22,6 +22,31 @@ struct NciDiseaseGrounding {
     degrade_note: Option<String>,
 }
 
+/// MyDisease's query endpoint refuses inputs over 512 bytes, and that
+/// refusal used to fail the whole NCI search (ticket 2040: conditions
+/// over 512 bytes failed outright). The condition now truncates to the
+/// longest prefix the lookup accepts, with a note keeping the
+/// truncation visible.
+const NCI_CONDITION_GROUNDING_LIMIT_BYTES: usize = 512;
+
+fn truncate_condition_for_grounding(condition: &str) -> (&str, bool) {
+    if condition.len() <= NCI_CONDITION_GROUNDING_LIMIT_BYTES {
+        return (condition, false);
+    }
+    let mut end = NCI_CONDITION_GROUNDING_LIMIT_BYTES;
+    while end > 0 && !condition.is_char_boundary(end) {
+        end -= 1;
+    }
+    (&condition[..end], true)
+}
+
+fn nci_truncation_note() -> String {
+    format!(
+        "NCI trial search used at most the first {NCI_CONDITION_GROUNDING_LIMIT_BYTES} bytes of the condition \
+(the disease lookup accepts no more); results reflect the truncated condition."
+    )
+}
+
 fn nci_keyword_degrade_note(condition: &str, reason: &str) -> String {
     format!(
         "NCI trial search used a plain keyword search for '{condition}' because {reason}; \
@@ -33,24 +58,25 @@ async fn resolve_nci_disease_filter_with_client(
     client: &MyDiseaseClient,
     condition: Option<&str>,
 ) -> Result<Option<NciDiseaseGrounding>, BioMcpError> {
-    let Some(condition) = condition.map(str::trim).filter(|value| !value.is_empty()) else {
+    let Some(requested) = condition.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
+    let (condition, truncated) = truncate_condition_for_grounding(requested);
 
-    match resolve_disease_hit_by_name(client, condition).await {
-        Ok(hit) => Ok(Some(nci_disease_grounding_from_hit(condition, hit))),
+    let mut grounding = match resolve_disease_hit_by_name(client, condition).await {
+        Ok(hit) => Some(nci_disease_grounding_from_hit(condition, hit)),
         // The 2017 refusal rejects the condition itself; a keyword search
         // for the raw token would mix the same holders' trials behind a
         // note, so trial search returns the refusal and its choices
         // instead of degrading (ticket 2032).
-        Err(err @ BioMcpError::InvalidArgument(_)) => Err(err),
-        Err(BioMcpError::NotFound { .. }) => Ok(Some(NciDiseaseGrounding {
+        Err(err @ BioMcpError::InvalidArgument(_)) => return Err(err),
+        Err(BioMcpError::NotFound { .. }) => Some(NciDiseaseGrounding {
             filter: NciDiseaseFilter::Keyword(condition.to_string()),
             degrade_note: Some(nci_keyword_degrade_note(
                 condition,
                 "it does not ground to a disease concept in MyDisease",
             )),
-        })),
+        }),
         Err(err) => {
             warn!(
                 condition,
@@ -62,15 +88,28 @@ async fn resolve_nci_disease_filter_with_client(
                 .lines()
                 .next()
                 .unwrap_or("disease grounding failed");
-            Ok(Some(NciDiseaseGrounding {
+            Some(NciDiseaseGrounding {
                 filter: NciDiseaseFilter::Keyword(condition.to_string()),
                 degrade_note: Some(nci_keyword_degrade_note(
                     condition,
                     &format!("disease grounding failed ({reason})"),
                 )),
-            }))
+            })
         }
+    };
+    // The truncation note applies whether grounding succeeded on the
+    // truncated text or degraded to a keyword search: the search ran on
+    // fewer bytes than the caller sent.
+    if truncated
+        && let Some(grounding) = grounding.as_mut()
+    {
+        let truncation = nci_truncation_note();
+        grounding.degrade_note = Some(match grounding.degrade_note.take() {
+            Some(existing) => format!("{truncation} {existing}"),
+            None => truncation,
+        });
     }
+    Ok(grounding)
 }
 
 fn nci_disease_grounding_from_hit(condition: &str, hit: MyDiseaseHit) -> NciDiseaseGrounding {

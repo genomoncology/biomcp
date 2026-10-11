@@ -165,6 +165,111 @@ fn clinical_reading_pointer_is_a_pointer_not_a_candidate() {
     assert!(!untouched.contains("Clinical reading"), "{untouched}");
 }
 
+fn mf_holder_hits() -> Vec<MyDiseaseHit> {
+    vec![
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0009691",
+            "disease_ontology": {
+                "name": "mycosis fungoides",
+                "synonyms": {"exact": ["MF"]}
+            }
+        }))
+        .expect("mycosis fungoides holder"),
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0020481",
+            "mondo": {
+                "label": "myotonia fluctuans",
+                "synonym": {"exact": ["MF"]}
+            }
+        }))
+        .expect("myotonia fluctuans holder"),
+    ]
+}
+
+/// Ticket 2040: the MF refusal kept hiding myelofibrosis because no
+/// indexed source record holds `MF` on a myelofibrosis record (checked
+/// live 2026-10-11 against MyDisease, the Disease Ontology entry, and
+/// the NCI Thesaurus synonym lists). The pointer names the reading the
+/// registry corpus carries most, with the ontology ID `get disease
+/// "myelofibrosis"` resolves to; it stays a pointer line, never a
+/// candidate.
+#[test]
+fn mf_refusal_names_the_myelofibrosis_reading() {
+    let message = ambiguous_abbreviation_error("MF", &mf_holder_hits(), false).to_string();
+    assert!(
+        message.contains("- mycosis fungoides (MONDO:0009691)\n"),
+        "{message}"
+    );
+    assert!(
+        message.contains("- myotonia fluctuans (MONDO:0020481)\n"),
+        "{message}"
+    );
+    assert!(
+        message.contains(
+            "Clinical reading: 'MF' also names myelofibrosis (MONDO:0009692)"
+        ),
+        "{message}"
+    );
+    assert!(message.contains("get disease \"myelofibrosis\""), "{message}");
+    // The pointer is not a candidate: no myelofibrosis line joins the
+    // holder list.
+    assert!(!message.contains("- myelofibrosis"), "{message}");
+}
+
+/// Ticket 2040: the default trial source asks for the refusal's data,
+/// not its error. An abbreviation-shaped condition that would refuse in
+/// `get disease` yields the holders, the reason, and the clinical
+/// reading; anything else yields nothing.
+#[tokio::test]
+async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
+    let (client, requests, server) = exact_resolution_fixture(|request| {
+        if request.contains("/query?") {
+            include_str!("../../../../../testdata/sources/mydisease/query_mf.json")
+        } else {
+            r#"{"total":0,"hits":[]}"#
+        }
+    })
+    .await;
+
+    let ambiguity = resolve_abbreviated_disease_ambiguity(&client, "MF")
+        .await
+        .expect("the MF lookup should not error")
+        .expect("the recorded MF response must read as ambiguous");
+    assert_eq!(ambiguity.requested, "MF");
+    assert_eq!(
+        ambiguity.reason,
+        "2 diseases hold it as an exact name or synonym"
+    );
+    assert_eq!(
+        ambiguity.holders,
+        vec![
+            "mycosis fungoides (MONDO:0009691)".to_string(),
+            "myotonia fluctuans (MONDO:0020481)".to_string(),
+        ]
+    );
+    let reading = ambiguity
+        .clinical_reading
+        .expect("the pointer table carries MF");
+    assert_eq!(reading.label, "myelofibrosis");
+    assert_eq!(reading.ontology_id, "MONDO:0009692");
+    assert_eq!(reading.relation, "also names");
+
+    // A full-word condition never grounds through this surface, and a
+    // token the resolver would resolve yields no ambiguity.
+    let plain_word = resolve_abbreviated_disease_ambiguity(&client, "melanoma")
+        .await
+        .expect("full words never ground here");
+    assert!(plain_word.is_none());
+
+    server.abort();
+    let requests = requests.lock().expect("lock fixture requests").clone();
+    assert_eq!(
+        requests.len(),
+        1,
+        "only the abbreviation-shaped condition reaches MyDisease: {requests:?}"
+    );
+}
+
 #[test]
 fn normalize_disease_id_basic() {
     assert_eq!(

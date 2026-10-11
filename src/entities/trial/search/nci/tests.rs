@@ -2,6 +2,7 @@
 
 use super::super::validate_trial_search;
 use super::*;
+use crate::entities::trial::test_support::TrialSearchEnvRestore;
 use crate::entities::trial::TrialSource;
 use crate::sources::nci_cts::NciCtsClient;
 use std::sync::{
@@ -468,31 +469,6 @@ async fn json_server(
     (base, requests, task)
 }
 
-struct TrialSearchEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl TrialSearchEnvRestore {
-    fn set(&mut self, key: &'static str, value: &str) {
-        self.0.push((key, std::env::var_os(key)));
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var(key, value) };
-    }
-}
-
-impl Drop for TrialSearchEnvRestore {
-    fn drop(&mut self) {
-        for (key, value) in self.0.drain(..).rev() {
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(value) = value {
-                    std::env::set_var(key, value)
-                } else {
-                    std::env::remove_var(key)
-                }
-            }
-        }
-    }
-}
-
 /// Ticket 2032: `--condition MF` grounds through the same resolver as
 /// `get disease`. When the resolver refuses the abbreviation, the NCI
 /// search returns the refusal with its named candidates and never sends
@@ -543,6 +519,12 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
     );
     assert!(
         message.contains("myotonia fluctuans (MONDO:0020481)"),
+        "{message}"
+    );
+    // Ticket 2040: the refusal also names the myelofibrosis reading the
+    // source cannot see, while keeping the refusal itself intact.
+    assert!(
+        message.contains("'MF' also names myelofibrosis (MONDO:0009692)"),
         "{message}"
     );
     let requests = nci_requests
@@ -615,6 +597,82 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
             .iter()
             .any(|line| line.contains("keyword=ungroundable")),
         "the NCI request stays a keyword search: {requests:?}"
+    );
+}
+
+/// Ticket 2040: a condition over 512 bytes used to fail the whole NCI
+/// search with "Query is too long" before any provider request. It now
+/// truncates to the longest prefix the disease lookup accepts, keeps
+/// searching, and says so in the page note.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn nci_overlong_condition_truncates_instead_of_failing() {
+    let (disease_base, disease_requests, disease_server) = json_server(|request| {
+        request
+            .contains("/query?")
+            .then(|| (200, r#"{"total":0,"hits":[]}"#.to_string()))
+    })
+    .await;
+    let (nci_base, nci_requests, nci_server) =
+        json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
+
+    let mut restore = TrialSearchEnvRestore(Vec::new());
+    restore.set("NCI_API_KEY", "fixture-key");
+    restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
+    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+    restore.set("BIOMCP_OLS4_BASE", "://unavailable-discover-fixture");
+    restore.set("BIOMCP_UMLS_BASE", "://unavailable-discover-fixture");
+    restore.set("BIOMCP_MEDLINEPLUS_BASE", "://unavailable-discover-fixture");
+
+    let condition = "m".repeat(600);
+    let page = super::super::search_page(
+        &TrialSearchFilters {
+            source: TrialSource::NciCts,
+            condition: Some(condition.clone()),
+            ..Default::default()
+        },
+        1,
+        0,
+        None,
+    )
+    .await
+    .expect("the truncated search still runs");
+    tokio::task::yield_now().await;
+    nci_server.abort();
+    disease_server.abort();
+    drop(restore);
+
+    let note = page
+        .partial_note
+        .expect("the truncation note reaches the page");
+    assert!(
+        note.contains("used at most the first 512 bytes of the condition"),
+        "{note}"
+    );
+    assert!(note.contains("plain keyword search"), "{note}");
+    let disease_requests = disease_requests
+        .lock()
+        .expect("lock MyDisease fixture requests")
+        .clone();
+    assert_eq!(
+        disease_requests.len(),
+        1,
+        "the truncated condition grounds once: {disease_requests:?}"
+    );
+    assert!(
+        disease_requests[0].contains(&"m".repeat(512)),
+        "the grounding query carries the 512-byte prefix: {}",
+        &disease_requests[0][..140]
+    );
+    let nci_requests = nci_requests
+        .lock()
+        .expect("lock NCI fixture requests")
+        .clone();
+    assert_eq!(nci_requests.len(), 1, "the NCI keyword search runs: {nci_requests:?}");
+    assert!(
+        nci_requests[0].contains(&format!("keyword={}", "m".repeat(512))),
+        "the NCI keyword uses the truncated condition: {}",
+        &nci_requests[0][..140]
     );
 }
 

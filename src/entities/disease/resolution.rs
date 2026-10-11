@@ -13,27 +13,92 @@ const MAX_PROVIDER_TERM_BYTES: usize = 256;
 /// for a token this short, so resolution refuses (ticket 2017).
 const SHORT_ABBREVIATION_MAX_LEN: usize = 2;
 
-/// Abbreviations whose common clinical meaning the source cannot see.
-/// MyDisease holds `MM` on Miyoshi muscular dystrophy alone, and no
-/// myeloma record carries `MM` in any indexed field (checked live
-/// 2026-10-08), so the exact-holder list alone hides the disease
-/// oncology usually means. The refusal stands; this table only adds a
-/// pointer line naming the reading. Curated abbreviation preferences
-/// stay deferred (ticket 2032).
-const CLINICAL_ABBREVIATION_READINGS: &[(&str, &str, &str)] =
-    &[("MM", "multiple myeloma", "MONDO:0009693")];
+/// A clinical reading an abbreviation names that no indexed source
+/// record holds. `relation` states how strongly oncology holds the
+/// reading (`usually means` for the default reading, `also names` when
+/// the holders already offer one clinical reading and the pointer adds
+/// another).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ClinicalAbbreviationReading {
+    pub(crate) token: &'static str,
+    pub(crate) relation: &'static str,
+    pub(crate) label: &'static str,
+    pub(crate) ontology_id: &'static str,
+}
 
-fn clinical_reading_line(requested: &str) -> Option<String> {
+/// Abbreviations whose clinical meaning the source cannot see, with the
+/// sources checked and measured for each entry (ticket 2040). The
+/// refusal stands on the source holders alone; this table only adds a
+/// pointer line naming a reading no holder carries.
+///
+/// - `MM` → multiple myeloma (MONDO:0009693): MyDisease holds `MM` on
+///   Miyoshi muscular dystrophy (MONDO:0009685) alone. Checked live
+///   2026-10-08 and again 2026-10-11: `mondo.synonym.exact:"MM"` and
+///   `disease_ontology.synonyms.exact:"MM"` return no myeloma record,
+///   the MONDO:0009693 synonym list carries no `MM`, and the NCI
+///   Thesaurus synonym list for Multiple Myeloma (NCIT:C3242, via EBI
+///   OLS4) carries no `MM`. Measured on the ClinicalTrials.gov registry
+///   2026-10-11: of the first 50 trials matching `query.cond=MM`, 30
+///   list a myeloma condition, so myeloma is the reading the registry
+///   corpus itself carries.
+/// - `MF` → myelofibrosis (MONDO:0009692, the record `get disease
+///   "myelofibrosis"` resolves to through its Disease Ontology name):
+///   MyDisease holds `MF` on mycosis fungoides (MONDO:0009691) and
+///   myotonia fluctuans (MONDO:0020481) alone. Checked live
+///   2026-10-11: no myelofibrosis record carries `MF` in
+///   `mondo.synonym.exact` or `disease_ontology.synonyms.exact`, the
+///   Disease Ontology entry (DOID:4971) lists no `MF`, and the NCI
+///   Thesaurus synonym lists for Myelofibrosis (NCIT:C3248) and Primary
+///   Myelofibrosis (NCIT:C2862, via EBI OLS4) list no `MF`. Measured on
+///   the ClinicalTrials.gov registry 2026-10-11: of the first 50 trials
+///   matching `query.cond=MF`, 28 list a myelofibrosis condition
+///   against 6 for mycosis fungoides, so myelofibrosis is the reading
+///   the trial corpus carries most. Curated abbreviation preferences
+///   stay deferred (ticket 2032).
+const CLINICAL_ABBREVIATION_READINGS: &[ClinicalAbbreviationReading] = &[
+    ClinicalAbbreviationReading {
+        token: "MM",
+        relation: "usually means",
+        label: "multiple myeloma",
+        ontology_id: "MONDO:0009693",
+    },
+    ClinicalAbbreviationReading {
+        token: "MF",
+        relation: "also names",
+        label: "myelofibrosis",
+        ontology_id: "MONDO:0009692",
+    },
+];
+
+fn clinical_reading(requested: &str) -> Option<ClinicalAbbreviationReading> {
     let requested = requested.trim();
     CLINICAL_ABBREVIATION_READINGS
         .iter()
-        .find(|(token, _, _)| token.eq_ignore_ascii_case(requested))
-        .map(|(_, label, ontology_id)| {
-            format!(
-                "Clinical reading: '{requested}' usually means {label} ({ontology_id}); \
-try `biomcp get disease \"{label}\"`."
-            )
-        })
+        .copied()
+        .find(|reading| reading.token.eq_ignore_ascii_case(requested))
+}
+
+/// The pointer phrase both the `get disease` refusal and the default
+/// trial source's keyword-search note use (ticket 2040), so one reading
+/// keeps one wording across surfaces.
+pub(crate) fn clinical_reading_phrase(requested: &str) -> Option<String> {
+    clinical_reading(requested).map(|reading| {
+        format!(
+            "Clinical reading: '{}' {} {} ({})",
+            requested.trim(), reading.relation, reading.label, reading.ontology_id
+        )
+    })
+}
+
+fn clinical_reading_line(requested: &str) -> Option<String> {
+    clinical_reading(requested).map(|reading| {
+        let requested = requested.trim();
+        format!(
+            "Clinical reading: '{requested}' {} {} ({}); \
+try `biomcp get disease "{}"`.",
+            reading.relation, reading.label, reading.ontology_id, reading.label
+        )
+    })
 }
 
 fn is_short_abbreviation_token(token: &str) -> bool {
@@ -787,14 +852,88 @@ fn holder_display_label(hit: &MyDiseaseHit) -> Option<String> {
     })
 }
 
+fn holder_display_line(hit: &MyDiseaseHit) -> String {
+    match holder_display_label(hit) {
+        Some(label) => format!("{label} ({})", hit.id),
+        None => format!("{} (no label in the search response)", hit.id),
+    }
+}
+
 fn abbreviation_candidate_lines(holders: &[MyDiseaseHit]) -> String {
     holders
         .iter()
-        .map(|hit| match holder_display_label(hit) {
-            Some(label) => format!("- {label} ({})\n", hit.id),
-            None => format!("- {} (no label in the search response)\n", hit.id),
-        })
+        .map(|hit| format!("- {}\n", holder_display_line(hit)))
         .collect()
+}
+
+/// Why the requested token cannot name one disease: several holders, or
+/// a token too short for even one holder to be evidence.
+fn ambiguity_reason(requested: &str, holders: &[MyDiseaseHit], short_token: bool) -> String {
+    if short_token {
+        format!(
+            "the source holds it on {} disease{}, but a token this short cannot name one disease reliably",
+            holders.len(),
+            if holders.len() == 1 { "" } else { "s" },
+        )
+    } else if is_abbreviation_shaped_token(requested) {
+        format!(
+            "{} diseases hold it as an exact name or synonym",
+            holders.len()
+        )
+    } else {
+        format!(
+            "{} diseases carry it as their exact name",
+            holders.len()
+        )
+    }
+}
+
+/// What the refusal knows about an ambiguous abbreviation, exposed so
+/// the default ClinicalTrials.gov trial source can say plainly what its
+/// keyword search ran on instead of leaving the user to guess (ticket
+/// 2040).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct AbbreviationAmbiguity {
+    pub(crate) requested: String,
+    /// Why the token cannot name one disease (the refusal's reason text).
+    pub(crate) reason: String,
+    /// The named holders, one `label (ontology id)` per entry.
+    pub(crate) holders: Vec<String>,
+    /// A clinical reading no source record holds, from the pointer table.
+    pub(crate) clinical_reading: Option<ClinicalAbbreviationReading>,
+}
+
+/// The refusal the default trial source would get from `get disease`,
+/// as data instead of an error: `Some` when the token is an
+/// abbreviation-shaped condition the disease resolver refuses (several
+/// holders, or a holder too short to count), `None` for anything else.
+/// Only abbreviation-shaped tokens reach the resolver, so ordinary
+/// condition words add no grounding request (ticket 2040).
+pub(crate) async fn resolve_abbreviated_disease_ambiguity(
+    client: &MyDiseaseClient,
+    requested: &str,
+) -> Result<Option<AbbreviationAmbiguity>, BioMcpError> {
+    let requested = requested.trim();
+    if !is_abbreviation_shaped_token(requested) {
+        return Ok(None);
+    }
+    match resolve_disease_hit_by_name_direct(client, requested).await? {
+        DirectNameResolution::AmbiguousAbbreviation {
+            requested,
+            holders,
+        } => {
+            // Several holders explain the refusal on their own; the
+            // short-token reason is for the single-holder case like `MM`.
+            let short_token = holders.len() == 1 && is_short_abbreviation_token(&requested);
+            Ok(Some(AbbreviationAmbiguity {
+                reason: ambiguity_reason(&requested, &holders, short_token),
+                holders: holders.iter().map(holder_display_line).collect(),
+                clinical_reading: clinical_reading(&requested),
+                requested,
+            }))
+        }
+        DirectNameResolution::Resolved(_) | DirectNameResolution::Unresolved => Ok(None),
+    }
 }
 
 fn ambiguous_abbreviation_error(
@@ -804,20 +943,7 @@ fn ambiguous_abbreviation_error(
 ) -> BioMcpError {
     let abbreviation = is_abbreviation_shaped_token(requested);
     let subject = if abbreviation { "abbreviation" } else { "name" };
-    let reason = if short_token {
-        format!(
-            "the source holds it on {} disease{}, but a token this short cannot name one disease reliably",
-            holders.len(),
-            if holders.len() == 1 { "" } else { "s" },
-        )
-    } else if abbreviation {
-        format!(
-            "{} diseases hold it as an exact name or synonym",
-            holders.len()
-        )
-    } else {
-        format!("{} diseases carry it as their exact name", holders.len())
-    };
+    let reason = ambiguity_reason(requested, holders, short_token);
     let reading = clinical_reading_line(requested)
         .map(|line| format!("{line}\n"))
         .unwrap_or_default();

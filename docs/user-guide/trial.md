@@ -28,6 +28,13 @@ Condition searches send the supplied label literally.
 biomcp search trial -c "Rett Syndrome" --limit 20
 ```
 
+An abbreviation-shaped condition such as `MF` stays a literal keyword
+search, because the registry holds it on several diseases, but the
+response says so in its note: it names the diseases that hold the token
+and the clinical reading the trial corpus carries most, so a mixed result
+set is never a mystery. `get disease MF` refuses the same token with the
+same candidates.
+
 ### Status values
 
 `--status` accepts eight normalized recruitment states: `recruiting`,

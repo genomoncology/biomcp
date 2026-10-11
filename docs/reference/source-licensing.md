@@ -606,7 +606,7 @@ Reviewed on: `2026-09-27`
 
 ### MyDisease.info
 
-- BioMCP surfaces: `search disease; get disease <id>`
+- BioMCP surfaces: `search disease; get disease <id>; search trial (condition abbreviation note); search trial --source nci (condition grounding)`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
