@@ -583,6 +583,49 @@ pub(super) fn search_results_from_openfda_label_response(
     out
 }
 
+/// The generic names of the label rows whose own brand name equals the
+/// query (ticket 2039): only such a row's record owns the requested
+/// product name, so a row that merely mentions the name ("Pain Relief
+/// Extra Strength" for "Pain Relief") never contributes. Order is
+/// preserved and values deduplicate case-insensitively, so the caller can
+/// refuse when they name more than one distinct ingredient.
+pub(super) fn openfda_exact_brand_generic_names(
+    label_response: &serde_json::Value,
+    query: &str,
+) -> Vec<String> {
+    let query = query.trim();
+    if query.is_empty() {
+        return Vec::new();
+    }
+    let Some(results) = label_response.get("results").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+
+    let mut out: Vec<String> = Vec::new();
+    for result in results {
+        let brand_names = extract_openfda_values_from_result(result, "brand_name");
+        if !brand_names
+            .iter()
+            .map(str::trim)
+            .any(|brand| brand.eq_ignore_ascii_case(query))
+        {
+            continue;
+        }
+        let Some(generic) = extract_openfda_values_from_result(result, "generic_name")
+            .into_iter()
+            .next()
+            .map(|generic| generic.trim().to_ascii_lowercase())
+            .filter(|generic| !generic.is_empty())
+        else {
+            continue;
+        };
+        if !out.iter().any(|seen| seen == &generic) {
+            out.push(generic);
+        }
+    }
+    out
+}
+
 async fn try_resolve_drug_identity(
     name: &str,
 ) -> Option<crate::sources::mychem::MyChemQueryResponse> {
