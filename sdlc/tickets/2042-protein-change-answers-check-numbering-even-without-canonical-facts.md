@@ -29,65 +29,12 @@ Filed 2026-10-09 from the independent review of ticket 2036 as landed on main at
 
 ## Build outcome (2026-10-10)
 
-Branch `tickets/2042-fix` from main `22459d8c1`. Three new receipted
-MyVariant captures serve the rows offline (BRCA1 Y1866D, BRCA1 Q1878R —
-both with the current query shape including `snpeff.ann.feature_type`),
-and two stale August replies were re-captured because the provider now
-returns richer records than they hold: the MYD88 L265P and BRAF V600E
-query replies carried no ClinVar or SnpEff section, so their answers had
-been passing with no protein story at all.
+Branch `tickets/2042-fix` from main `22459d8c1`. Three new receipted MyVariant captures serve the rows offline (BRCA1 Y1866D, BRCA1 Q1878R — both with the current query shape including `snpeff.ann.feature_type`), and two stale August replies were re-captured because the provider now returns richer records than they hold: the MYD88 L265P and BRAF V600E query replies carried no ClinVar or SnpEff section, so their answers had been passing with no protein story at all.
 
-Red first: commit `7ce2055d7` (captures, fixture routes and spec rows
-only, main source) ran the two pages in a private worktree on the build
-host inside the offline sandbox — the protein page went 27 passed /
-5 failed, exactly the three paths: `BRCA1 Y1866D` answered
-`p.Tyr1845Asp` on NM_007294.4 with note `no` (position 1866 past the
-1863 residues of P38398), `BRCA1 Q1878R` answered with `hgvs_p` null
-(48 interaction rows dropped the whole SnpEff list), `TP53 S183Y` with
-UniProt on a dead port resolved `p.Ser183Tyr` on NM_001126115.1 with no
-note, and `TP53 R116Q` on the dead port resolved the lookalike with exit
-0 where the row expects the could-not-check refusal. Re-confirmed red at
-`eff023024`.
+Red first: commit `7ce2055d7` (captures, fixture routes and spec rows only, main source) ran the two pages in a private worktree on the build host inside the offline sandbox — the protein page went 27 passed / 5 failed, exactly the three paths: `BRCA1 Y1866D` answered `p.Tyr1845Asp` on NM_007294.4 with note `no` (position 1866 past the 1863 residues of P38398), `BRCA1 Q1878R` answered with `hgvs_p` null (48 interaction rows dropped the whole SnpEff list), `TP53 S183Y` with UniProt on a dead port resolved `p.Ser183Tyr` on NM_001126115.1 with no note, and `TP53 R116Q` on the dead port resolved the lookalike with exit 0 where the row expects the could-not-check refusal. Re-confirmed red at `eff023024`.
 
-Green: the fix — the canonical facts now carry the sequence length, so a
-requested position the protein cannot hold prints the other-transcript
-note without a residue to compare; the no-facts decision
-(`refuse_or_note_without_facts`) either resolves the request's own
-spelling under a note saying plainly the numbering could not be checked
-against MANE, refuses a headline naming a different change, or refuses a
-record carrying no protein change; the same unchecked note covers facts
-that arrive without a MANE transcript; and the SnpEff projection reads
-`feature_type`, skips interaction rows without counting them against the
-32-row bound (a 256-row cap still bounds hostile arrays), and requests
-the field in both MyVariant field lists. The final head `eaf3743f5`
-passes: the protein page 32/32, `variant.md` 111 passed / 1 skipped,
-targeted nextest (`protein_change + snpeff + mane + uniprot +
-transcript_alias`) green, `make lint` green after two ratchet updates
-(the receipts digest the coupling allowlist carries; the get.rs,
-myvariant.rs and sidecar-test baselines carry ticket-2042
-authorizations), and `make test` (full offline pytest including
-`needs_binary` plus the strict docs build) green — all through `yr` in
-private worktrees on the build host. CI run 38032094745 is green on
-`eaf3743f5`.
+Green: the fix — the canonical facts now carry the sequence length, so a requested position the protein cannot hold prints the other-transcript note without a residue to compare; the no-facts decision (`refuse_or_note_without_facts`) either resolves the request's own spelling under a note saying plainly the numbering could not be checked against MANE, refuses a headline naming a different change, or refuses a record carrying no protein change; the same unchecked note covers facts that arrive without a MANE transcript; and the SnpEff projection reads `feature_type`, skips interaction rows without counting them against the 32-row bound (a 256-row cap still bounds hostile arrays), and requests the field in both MyVariant field lists. The final head `eaf3743f5` passes: the protein page 32/32, `variant.md` 111 passed / 1 skipped, targeted nextest (`protein_change + snpeff + mane + uniprot + transcript_alias`) green, `make lint` green after two ratchet updates (the receipts digest the coupling allowlist carries; the get.rs, myvariant.rs and sidecar-test baselines carry ticket-2042 authorizations), and `make test` (full offline pytest including `needs_binary` plus the strict docs build) green — all through `yr` in private worktrees on the build host. CI run 38032094745 is green on `eaf3743f5`.
 
-Two discoveries worth their own follow-up. The legacy GWAS Catalog REST
-endpoint retired upstream (HTTP 410 since 2026-10): live
-`get variant <rsid-carrying variant> all` now hard-fails on the dead
-source, and the offline fixture answers the by-rsID association reads
-with the committed empty page so the routine lane keeps running. And the
-2036 review's latency finding stands: the UniProt read is still
-uncached.
+Two discoveries worth their own follow-up. The legacy GWAS Catalog REST endpoint retired upstream (HTTP 410 since 2026-10): live `get variant <rsid-carrying variant> all` now hard-fails on the dead source, and the offline fixture answers the by-rsID association reads with the committed empty page so the routine lane keeps running. And the 2036 review's latency finding stands: the UniProt read is still uncached.
 
-Deferred from the ticket's Changes list: caching the gene-to-accession
-lookup and the UniProt record; naming the isoform in the refusal text
-and keeping its line breaks in text mode. Both stay open for the 0.9.2
-cleanup lane.
-
-## Landed-head review (2026-10-10)
-
-- Code review (whole landed content, head b177354f1): ACCEPT 2026-10-10,
-  recorded through pm and normalized here. The three paths verified with
-  file:line evidence; every 2036 keep holds; the build record names heads
-  and red-to-green proof. Report-only P2s: CI green named the code head,
-  the promised timings dropped with the caching deferral, and the
-  build-record deferrals supersede the ticket's Defers line.
+Deferred from the ticket's Changes list: caching the gene-to-accession lookup and the UniProt record; naming the isoform in the refusal text and keeping its line breaks in text mode. Both stay open for the 0.9.2 cleanup lane.

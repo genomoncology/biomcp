@@ -31,52 +31,19 @@ Filed 2026-10-09 from the pre-tag review of main at `e71ac046b` (ticket 2038, fi
 
 ## Build outcome (2026-10-09)
 
-Branch `tickets/2036-pre-tag` from main `203daec02`. The
-`variant-protein-change-resolution` spec page gained the S183Y and S1587F
-refusal rows (byte-exact messages), the S1551Y and S395T resolution rows,
-and the I1568N headline moved to the MANE-Select current version
-(NM_007294.4). Four new receipted MyVariant captures serve the rows
-offline through the variant-identity fixture, and the two minimized
-UniProt captures keep the record's MANE-Select cross-reference
-(`mane_select_transcript`) with the provider response otherwise unchanged.
+Branch `tickets/2036-pre-tag` from main `203daec02`. The `variant-protein-change-resolution` spec page gained the S183Y and S1587F refusal rows (byte-exact messages), the S1551Y and S395T resolution rows, and the I1568N headline moved to the MANE-Select current version (NM_007294.4). Four new receipted MyVariant captures serve the rows offline through the variant-identity fixture, and the two minimized UniProt captures keep the record's MANE-Select cross-reference (`mane_select_transcript`) with the provider response otherwise unchanged.
 
-Red first: commit `adb7dec32` (captures, fixture and spec rows only, main
-source) ran the spec page in an isolated worktree on the build host —
-16 passed, 11 failed. The failures were exactly the probe rows: S183Y
-and S1587F resolved the isoform spelling with no note (`chr17:g.7576902G>T`
-p.Ser183Tyr on NM_001126115.1; `chr17:g.41223234G>A` p.Ser1587Phe on
-NM_007300.3), S1551Y and S395T refused with two candidates, I1568N
-headlined NM_007294.3, and the two refusal blocks exited 0. Every
-pre-existing row passed on the same commit.
+Red first: commit `adb7dec32` (captures, fixture and spec rows only, main source) ran the spec page in an isolated worktree on the build host — 16 passed, 11 failed. The failures were exactly the probe rows: S183Y and S1587F resolved the isoform spelling with no note (`chr17:g.7576902G>T` p.Ser183Tyr on NM_001126115.1; `chr17:g.41223234G>A` p.Ser1587Phe on NM_007300.3), S1551Y and S395T refused with two candidates, I1568N headlined NM_007294.3, and the two refusal blocks exited 0. Every pre-existing row passed on the same commit.
 
-Green: commit `e3a47eeb1` (the fix) — the same page passes 27/27, and
-the same 27 pass on the final head `6b0fb754`. The fix reads the gene's
-canonical protein from UniProt up front whenever the response carries no
-ClinVar MANE marker (none is fetched when it does), takes the
-MANE-Select cross-reference as the MANE transcript with its current
-version, passes that marker into `resolve_protein_change_hit` so the MANE
-annotation headlines a hit ahead of the change-naming isoform, and runs
-the refuse-or-note decision on every resolved hit. The decision split
-into a pure function (`refuse_or_note_with_facts`) that the unit tests
-pin offline: the two recorded refusals, the two MANE-named resolutions,
-the R116Q true-note pin, and the MANE-Select reader (63 targeted tests
-pass via nextest: `test(protein_change) + test(mane) + test(uniprot)`).
+Green: commit `e3a47eeb1` (the fix) — the same page passes 27/27, and the same 27 pass on the final head `6b0fb754`. The fix reads the gene's canonical protein from UniProt up front whenever the response carries no ClinVar MANE marker (none is fetched when it does), takes the MANE-Select cross-reference as the MANE transcript with its current version, passes that marker into `resolve_protein_change_hit` so the MANE annotation headlines a hit ahead of the change-naming isoform, and runs the refuse-or-note decision on every resolved hit. The decision split into a pure function (`refuse_or_note_with_facts`) that the unit tests pin offline: the two recorded refusals, the two MANE-named resolutions, the R116Q true-note pin, and the MANE-Select reader (63 targeted tests pass via nextest: `test(protein_change) + test(mane) + test(uniprot)`).
 
-`make lint` passes on `6b0fb754` after two ratchet updates: the
-capture-receipts digest the coupling allowlist carries, and the get.rs
-source-size authorization (+95 lines, ticket 2036 appended).
+`make lint` passes on `6b0fb754` after two ratchet updates: the capture-receipts digest the coupling allowlist carries, and the get.rs source-size authorization (+95 lines, ticket 2036 appended).
 
-Verification ran through `yr` in isolated git worktrees on the build
-host: an earlier run against the shared checkout picked up another
-lane's checkout mid-run (its page rows answered from a stale page and
-binary), so the recorded runs above each start from a private worktree
-at the pushed commit.
+Verification ran through `yr` in isolated git worktrees on the build host: an earlier run against the shared checkout picked up another lane's checkout mid-run (its page rows answered from a stale page and binary), so the recorded runs above each start from a private worktree at the pushed commit.
 
 ### Live sample (2026-10-09, fixed binary `6b0fb754`, live providers)
 
-ClinVar-free gene+protein queries across the four genes; none resolves
-an isoform-only spelling. TP53 refusals name the MANE spelling on
-NM_000546.6; BRCA1 refusals name it on NM_007294.4.
+ClinVar-free gene+protein queries across the four genes; none resolves an isoform-only spelling. TP53 refusals name the MANE spelling on NM_000546.6; BRCA1 refusals name it on NM_007294.4.
 
 | query | answer |
 |---|---|
@@ -100,6 +67,4 @@ NM_000546.6; BRCA1 refusals name it on NM_007294.4.
 | BRCA2 I2944V | resolves chr13:g.32953529A>G p.Ile2944Val on NM_000059.4 (current; MyVariant carried NM_000059.3), no note |
 | ATM E1979D | refuses: two true matches, no ClinVar record names one |
 
-Gaps: none deferred. The full `make test`/`make spec` lanes and CI run
-with the coordinator's gate; the recorded runs above are the page, the
-targeted nextest scopes, and `make lint`.
+Gaps: none deferred. The full `make test`/`make spec` lanes and CI run with the coordinator's gate; the recorded runs above are the page, the targeted nextest scopes, and `make lint`.
