@@ -1,6 +1,6 @@
 # 2036 — Protein-change requests never resolve to an isoform-only match
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
