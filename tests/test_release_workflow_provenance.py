@@ -356,12 +356,12 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
     "pypi-publish": [
         "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
         "Install pinned uv",
-        "Publish to PyPI with trusted publishing",
+        "Publish to PyPI with trusted publishing (production only)",
     ],
     "homebrew-tap": [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "Download checksums from the release",
-        "Update Homebrew tap",
+        "Update Homebrew tap (production only)",
     ],
     "build": [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
@@ -1788,3 +1788,31 @@ def test_the_docker_variable_check_catches_a_dropped_tag_pass() -> None:
     step["run"] = run.replace(' -e TAG "', '"', 1)
     with pytest.raises(AssertionError, match=r"reads \['TAG'\]"):
         _assert_docker_scripts_receive_their_variables(parsed)
+
+def test_image_references_and_publish_guards_come_from_the_repository() -> None:
+    """Ticket 2049: no production image name is written in, and the
+    production-only publish steps (PyPI upload, Homebrew push) carry a
+    repository guard so a rehearsal can never publish to production."""
+    import yaml
+
+    release = yaml.safe_load((WORKFLOWS / "release.yml").read_text(encoding="utf-8"))
+    rendered = WORKFLOWS / "release.yml"
+    text = rendered.read_text(encoding="utf-8")
+    for line in text.splitlines():
+        if "ghcr.io/" in line:
+            assert "${{" in line or "$" in line.replace("$$", ""), (
+                f"hardcoded image reference: {line.strip()}"
+            )
+    for job_name in ("pypi-publish", "homebrew-tap"):
+        job = release["jobs"][job_name]
+        for step in job["steps"]:
+            run = step.get("run", "")
+            if "uv publish" in run or "git clone" in run and "homebrew" in run:
+                assert "genomoncology/biomcp" in run, (
+                    f"{job_name}/{step.get('name')}: the production-only step "
+                    "must name the production repository in its guard"
+                )
+                assert '"$GITHUB_REPOSITORY" != "genomoncology/biomcp"' in run, (
+                    f"{job_name}/{step.get('name')}: the guard must compare "
+                    "GITHUB_REPOSITORY before touching production"
+                )

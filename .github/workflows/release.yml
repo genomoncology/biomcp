@@ -566,8 +566,18 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
 
-      - name: Publish to PyPI with trusted publishing
-        run: uv publish --trusted-publishing always dist/*
+      - name: Publish to PyPI with trusted publishing (production only)
+        # Ticket 2049: the upload runs only in the production repository;
+        # anywhere else (the release rehearsal) a token cannot mint and a
+        # credential-free metadata check runs instead, so publish-release
+        # still gates on this job.
+        run: |
+          if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
+            echo "rehearsal: checking wheel metadata instead of uploading"
+            uvx twine check dist/*
+            exit 0
+          fi
+          uv publish --trusted-publishing always dist/*
 
   homebrew-tap:
     # The tap formula points at release tarballs, so the release
@@ -597,10 +607,16 @@ jobs:
           mkdir -p dist
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "*.sha256" --dir dist
 
-      - name: Update Homebrew tap
+      - name: Update Homebrew tap (production only)
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
+          if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
+            echo "rehearsal: rendering the formula dry instead of pushing"
+            VERSION="${TAG#v}"
+            echo "formula for ${VERSION} would install from the production URLs"
+            exit 0
+          fi
           if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
             echo "HOMEBREW_TAP_TOKEN is not configured; skip tap update."
             exit 0
@@ -725,6 +741,7 @@ jobs:
             SOURCE_SHA=${{ env.SOURCE_SHA }}
             VERSION=${{ env.VERSION }}
             CREATED=${{ env.CREATED }}
+            IMAGE_SOURCE=https://github.com/${{ github.repository }}
 
       - name: Smoke the linux/amd64 image from the registry
         run: |

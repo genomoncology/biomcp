@@ -13,7 +13,9 @@ env:
   UV_VERSION: 0.8.0
 jobs:
   publish-docs:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Ticket 2049: the Pages publication serves the production site and
+    # needs this repository's gh-pages history; the scratch repo has none.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'genomoncology/biomcp'
     runs-on: ubuntu-24.04
     permissions:
       contents: write

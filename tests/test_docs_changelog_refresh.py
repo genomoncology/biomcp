@@ -24,6 +24,7 @@ EXPECTED_RELEASE_TICKETS = {
         2042,
         2043,
         2044,
+        2039,
         2045,
         2046,
         2047,
@@ -210,7 +211,7 @@ EXPECTED_RELEASE_MARKERS = {
             "current ClinVar classification",
             "whole label sections",
             "one- and two-letter abbreviations",
-            "ticket 2039 tracks",
+            "refuses and names what matched",
         ],
         "new_features": [
             "official gene symbol",
