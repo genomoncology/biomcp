@@ -706,14 +706,11 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
         message.contains("No drug card matches \"ferric oxide\""),
         "{message}"
     );
-    assert!(
-        message.contains("zinc oxide, titanium dioxide"),
-        "{message}"
-    );
-    assert!(
-        message.contains("calamine and pramoxine hydrochloride"),
-        "{message}"
-    );
+    // Ticket 2050: the matched-drug names are the records' own identity
+    // names (zinc oxide, pramocaine), never another product's merged
+    // ingredient line.
+    assert!(message.contains("zinc oxide"), "{message}");
+    assert!(message.contains("pramocaine"), "{message}");
     assert!(
         message.contains("biomcp search drug -q \"ferric oxide\""),
         "{message}"
