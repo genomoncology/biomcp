@@ -1,6 +1,6 @@
 # 2049 — Make the release rehearsal safe and green
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
