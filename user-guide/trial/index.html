@@ -4580,6 +4580,12 @@
 <p>Condition searches send the supplied label literally.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Rett Syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
 </code></pre></div>
+<p>An abbreviation-shaped condition such as <code>MF</code> stays a literal keyword
+search, because the registry holds it on several diseases, but the
+response says so in its note: it names the diseases that hold the token
+and the clinical reading the trial corpus carries most, so a mixed result
+set is never a mystery. <code>get disease MF</code> refuses the same token with the
+same candidates.</p>
 <h3 id="status-values">Status values<a class="headerlink" href="#status-values" title="Permanent link">&para;</a></h3>
 <p><code>--status</code> accepts eight normalized recruitment states: <code>recruiting</code>,
 <code>not_yet_recruiting</code>, <code>enrolling_by_invitation</code>, <code>active_not_recruiting</code>,
