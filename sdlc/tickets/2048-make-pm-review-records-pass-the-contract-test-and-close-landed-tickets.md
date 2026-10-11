@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 90ae537e7, accept
+
 ## Outcome
 
 `pm ticket review` records a verdict that the repository contracts read as valid, so no ticket record is edited by script. pm shows every 0.9.2 verdict. Every landed 0.9.2 ticket has a verdict on its landed head and is closed through pm. Landed branches and worktrees are gone.
