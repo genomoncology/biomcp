@@ -386,7 +386,11 @@ mod tests {
         );
         assert!(whole.permanent());
 
-        let long = SectionOutcome::unavailable_message(&format!("{} {}", "word ".repeat(40), "truncated tail"));
+        let long = SectionOutcome::unavailable_message(&format!(
+            "{} {}",
+            "word ".repeat(31),
+            "elephants dance"
+        ));
         let message = long.message().expect("bounded message");
         assert!(!long.permanent());
         assert!(
