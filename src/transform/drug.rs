@@ -882,6 +882,9 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
 pub(crate) mod name_resolution_tests;
 
 #[cfg(test)]
+pub(crate) mod shared_name_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

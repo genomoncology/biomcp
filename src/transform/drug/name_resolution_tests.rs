@@ -10,7 +10,7 @@
 use super::{merge_mychem_hits, select_hits_for_name};
 use crate::sources::mychem::MyChemHit;
 
-fn hits(value: serde_json::Value) -> Vec<MyChemHit> {
+pub(crate) fn hits(value: serde_json::Value) -> Vec<MyChemHit> {
     value
         .get("hits")
         .and_then(|hits| hits.as_array())
