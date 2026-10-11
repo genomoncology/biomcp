@@ -24,3 +24,27 @@ Filed 2026-10-11 from the independent review of main at `75fabdb20`.
 - Changes: run the upload step of pypi-publish and the push step of homebrew-tap only when `github.repository == 'genomoncology/biomcp'`, with `twine check` and a dry formula render otherwise, so publish-release runs in the rehearsal; add a provenance test that every `ghcr.io/` reference and the publish guards come from the repository name; skip the docs-edge job outside the production repo; pass the image source as a build argument; wait for the CI workflow on the exact SHA (`gh run list --workflow ci.yml --commit SHA`) before tagging; add a 2039 bullet, rewrite the 2031 sentence and its pin, move the three loose bullets under Internal; make the coverage check count only the closing `(NNNN, …)` group; delete the scratch repo's draft release and package before each rehearsal.
 - Proof: a provenance test that fails when the production image name or an unguarded upload is put back; a changelog test that fails when a closed ticket's number appears only in prose; a green rehearsal run on the candidate SHA in genomoncology/biomcp-release-rehearsal, run ID recorded here, with PyPI still showing 0.9.1 afterwards.
 - Defers: nothing.
+
+## Build status (2026-10-11)
+
+- Landed through merge e0c8d1030 (branch tickets/2049-rehearsal-safety
+  at 4b0642209 over main). CI green on the exact merge (run 38141311569,
+  the ci.yml workflow on commit e0c8d1030).
+- Green rehearsal: run 38143192187 in genomoncology/biomcp-release-rehearsal
+  on the candidate tag v0.9.2 = e0c8d1030, every job success through
+  publish-release: all five platform builds, all five wheel smokes
+  (each printed exactly `biomcp 0.9.2` and passed the exact comparison),
+  both container platforms, the derived image name pushed to the scratch
+  namespace, the guarded pypi-publish ran the credential-free check
+  (all five 0.9.2 wheels PASSED twine), homebrew checked its inputs
+  without pushing, and publish-release completed. PyPI still serves
+  0.9.1 as latest after the run.
+- The review chain: the first pass at f62a2160a found two blockers
+  (the guard test missing the tagged production image name; the
+  coverage gate losing period-trailed closing groups); both were fixed
+  at 4b0642209 and re-verified by the same reviewer with the mutation
+  rerun and the v0.9.1 gate passing; the final verdict is accept.
+- Stated rehearsal differences, all recorded in the workflow comments:
+  the twine check for the upload, the dry input check for the tap, the
+  docs-live stub (biomcp.org serves the production repository), and the
+  scratch gh-pages seeded for the Pages workflow.
