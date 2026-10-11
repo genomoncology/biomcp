@@ -224,7 +224,7 @@ fn mf_refusal_names_the_myelofibrosis_reading() {
 async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
     let (client, requests, server) = exact_resolution_fixture(|request| {
         if request.contains("/query?") {
-            include_str!("../../../../../testdata/sources/mydisease/query_mf.json")
+            include_str!("../../../../testdata/sources/mydisease/query_mf.json")
         } else {
             r#"{"total":0,"hits":[]}"#
         }

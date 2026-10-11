@@ -95,7 +95,7 @@ fn clinical_reading_line(requested: &str) -> Option<String> {
         let requested = requested.trim();
         format!(
             "Clinical reading: '{requested}' {} {} ({}); \
-try `biomcp get disease "{}"`.",
+try `biomcp get disease \"{}\"`.",
             reading.relation, reading.label, reading.ontology_id, reading.label
         )
     })
