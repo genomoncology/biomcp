@@ -170,7 +170,7 @@ fn stale_serve_env(env: &mut DiseaseCardFixtureEnv, cache_root: &std::path::Path
 async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
     let (base, _requests, server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-card-cache");
-    let mut env = DiseaseCardFixtureEnv::new();
+    let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
 
     let first = crate::cli::execute(vec![
@@ -220,7 +220,7 @@ async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
 async fn stale_search_json_carries_the_cache_age_in_the_meta_notes() {
     let (base, _requests, server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-search-cache");
-    let mut env = DiseaseCardFixtureEnv::new();
+    let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
 
     let first = crate::cli::execute(vec![
@@ -282,7 +282,7 @@ async fn a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels() {
     // and proves both channels.
     let (base, _requests, server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-mcp-cache");
-    let mut env = DiseaseCardFixtureEnv::new();
+    let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
 
     let fresh_card = crate::cli::execute_mcp(vec![

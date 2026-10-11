@@ -31,11 +31,23 @@ impl TempDirGuard {
 pub(crate) struct FixtureEnv {
     saved: Vec<(&'static str, Option<std::ffi::OsString>)>,
     _cache_dir: TempDirGuard,
-    _cache_mode: crate::sources::TestCacheModeGuard,
+    _cache_mode: Option<crate::sources::TestCacheModeGuard>,
 }
 
 impl FixtureEnv {
     pub(crate) fn new() -> Self {
+        Self::scratch_cache(Some(crate::sources::test_cache_mode::off()))
+    }
+
+    /// A guard for tests that exercise the cache itself: the scratch cache
+    /// directory still isolates the test from the machine's cache, but the
+    /// cache mode stays whatever the environment selects, so a test can
+    /// seed its own entries and serve them back stale.
+    pub(crate) fn scratch_cache_only() -> Self {
+        Self::scratch_cache(None)
+    }
+
+    fn scratch_cache(cache_mode: Option<crate::sources::TestCacheModeGuard>) -> Self {
         let cache_dir = TempDirGuard::new("fixture-cache");
         let saved = vec![("BIOMCP_CACHE_DIR", std::env::var_os("BIOMCP_CACHE_DIR"))];
         // SAFETY: callers hold the serial-test process-wide environment lock.
@@ -48,7 +60,7 @@ impl FixtureEnv {
         Self {
             saved,
             _cache_dir: cache_dir,
-            _cache_mode: crate::sources::test_cache_mode::off(),
+            _cache_mode: cache_mode,
         }
     }
 
