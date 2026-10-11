@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision b6891d0f5, accept
+
 ## Outcome
 
 `search trial -c ABBR` on the default ClinicalTrials.gov source either refuses the ambiguous abbreviation the way the NCI source does, or says plainly that it ran a keyword search on an ambiguous short form. The user is never left to guess.
