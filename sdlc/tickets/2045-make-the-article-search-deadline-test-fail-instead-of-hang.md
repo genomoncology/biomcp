@@ -1,6 +1,6 @@
 # 2045 — make the article search deadline test fail instead of hang
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
