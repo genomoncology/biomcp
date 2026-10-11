@@ -10,7 +10,7 @@ Milestone: 0.9.2
 
 ## Evidence
 
-Filed 2026-10-10 from ticket 2038 (the pre-tag review), carrying 2031's deferral and 2035 finding 20: `get drug "Pain Relief"` gives a card carrying acetaminophen's DB00316 with TRPV1 targets through `hit_all_names` (`src/transform/drug.rs`); the leading-name fallback can admit another drug's synonym such as Terfenadine carboxylate.
+Filed 2026-10-09 from ticket 2038 (the pre-tag review), carrying 2031's deferral and 2035 finding 20: `get drug "Pain Relief"` gives a card carrying acetaminophen's DB00316 with TRPV1 targets through `hit_all_names` (`src/transform/drug.rs`); the leading-name fallback can admit another drug's synonym such as Terfenadine carboxylate.
 
 - Starts from: the 2031 landing (merge 548f0b854).
 - Keeps: the name, brand and synonym admission rule.
