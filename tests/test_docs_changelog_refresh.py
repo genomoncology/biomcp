@@ -24,6 +24,7 @@ EXPECTED_RELEASE_TICKETS = {
         2042,
         2043,
         2044,
+        2039,
         2045,
         2046,
         2047,
@@ -210,7 +211,7 @@ EXPECTED_RELEASE_MARKERS = {
             "current ClinVar classification",
             "whole label sections",
             "one- and two-letter abbreviations",
-            "ticket 2039 tracks",
+            "refuses and names what matched",
         ],
         "new_features": [
             "official gene symbol",
@@ -1036,3 +1037,31 @@ def test_public_docs_surface_local_study_analytics() -> None:
     assert "data_clinical_patient.txt" in cli_reference
     for command in study_commands:
         assert command in cli_reference
+
+def test_the_live_release_section_describes_every_ticket_it_names() -> None:
+    """Ticket 2049: the coverage gate's own view of the live section.
+
+    A bullet whose closing group trails a period must still count, and
+    prose numbers must not, exactly as the gate will judge at the tag.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "gate", Path(__file__).resolve().parents[1] / "scripts" / "check-changelog-coverage.py"
+    )
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    content = Path(__file__).resolve().parents[1].joinpath("CHANGELOG.md").read_text(encoding="utf-8")
+    match = re.search(
+        r"^## 0\.9\.2 —[\s\S]*?(?=^## |\Z)", content, re.MULTILINE
+    )
+    assert match is not None
+    section = match.group(0)
+    described = gate.described_tickets(section)
+    mentioned = set(re.findall(r"\((\d{4})(?:,\s*\d{4})*\)", section))
+    mentioned |= set(
+        n for group in re.findall(r"\(([\d,\s]+)\)", section)
+        for n in re.findall(r"\d+", group)
+    )
+    missing = sorted(mentioned - described)
+    assert not missing, f"the live 0.9.2 section loses coverage for {missing}"

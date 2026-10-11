@@ -3,6 +3,7 @@ FROM ${RUNTIME_IMAGE}
 
 ARG TARGETARCH
 ARG SOURCE_SHA
+ARG IMAGE_SOURCE=https://github.com/genomoncology/biomcp
 ARG VERSION
 ARG CREATED
 
@@ -17,7 +18,7 @@ COPY --chmod=0755 dist/container/${TARGETARCH}/biomcp /usr/local/bin/biomcp
 COPY dist/container/${TARGETARCH}/biomcp.sha256 /tmp/biomcp.sha256
 RUN cd /usr/local/bin && sha256sum -c /tmp/biomcp.sha256 && rm /tmp/biomcp.sha256
 
-LABEL org.opencontainers.image.source="https://github.com/genomoncology/biomcp" \
+LABEL org.opencontainers.image.source="${IMAGE_SOURCE}" \
       org.opencontainers.image.revision="${SOURCE_SHA}" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.licenses="MIT" \

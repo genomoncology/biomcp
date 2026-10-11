@@ -195,11 +195,25 @@ def described_tickets(section: str) -> set[str]:
     if current:
         bullets.append(" ".join(current))
     for text in bullets:
-        for ticket in re.findall(r"(?<![0-9])([0-9]+)(?![0-9])", text):
-            marker = re.compile(
-                rf"(?:\(#?{re.escape(ticket)}\)|#{re.escape(ticket)}\b|\b{re.escape(ticket)}\b)"
+        # Ticket 2049: a bullet covers a ticket when the bullet's closing
+        # group names it. The closing group sits at the bullet's end and
+        # reads (NNNN), (NNNN, MMMM) or (NNNN and MMMM); a number in the
+        # prose ("ticket 2039 tracks") is not coverage.
+        stripped = text.strip().rstrip(" .,;")
+        closing = ""
+        if stripped.endswith(")") and "(" in stripped:
+            opening = stripped.rindex("(")
+            closing = stripped[opening:]
+        group = (
+            re.findall(r"[0-9]+", closing)
+            if closing
+            and re.fullmatch(
+                r"\(\s*[0-9]+(?:\s*(?:,|and)\s*[0-9]+)*\s*\)", closing
             )
-            remainder = marker.sub("", text)
+            else []
+        )
+        for ticket in group:
+            remainder = re.sub(rf"\b{re.escape(ticket)}\b", "", text)
             # A bare number list is not a description: remove every
             # remaining bare number token and the separators around
             # them, then require at least three word characters of

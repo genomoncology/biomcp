@@ -1,9 +1,6 @@
 # Changelog
 
 ## 0.9.2 — 2026-10-10
-- A held test reply that nothing releases now ends on its own at a bound above every real test wait, so a run that loses its caller fails at a named test instead of sitting forever. (2045)
-- The release workflow's smoke legs now compare the printed version with the tag exactly, the workflow lint refuses duplicate option keys and variables a container script never receives, and the changelog gate covers every landing shape and stays inside the tag's own release line. (2046)
-- Records written by the ticket tool now pass the repository's review contract unchanged, and every landed ticket closes through the tool that recorded it. (2048)
 
 ### Fixes
 
@@ -27,7 +24,8 @@
 - A failed WHO Prequalification export now degrades every caller honestly: drug search names the reason on the card, in JSON and through MCP, `who sync` names the failing file and its missing column, and a partial sync reports each file's outcome with a nonzero exit instead of claiming it synchronized. (2021)
 - Article search now refuses a deep offset window on every sort order, names the deadline as the error whenever any source hit it, and full-text rendering joins small-caps and styled text such as "T ABLE" and "PD L1" without splitting the words. (2023)
 - Every variant row in `article entities` that carries a gene symbol and a protein change now prints the gene-plus-change command, including when the article mentions only one allele of an rsID that names several. (2029)
-- `get drug NAME` now returns the named drug: a record counts when the query matches its name, one of its brand names, a listed synonym, or the leading words of a longer name for the same drug such as a salt form; brand queries such as TAGRISSO resolve through the record the brand lives on; and a card never takes its name from an unrelated product's packaging row. A product name that several drugs share can still return one drug's identifiers with another's targets, which ticket 2039 tracks. (2031)
+- `get drug NAME` now returns the named drug: a record counts when the query matches its name, one of its brand names, a listed synonym, or the leading words of a longer name for the same drug such as a salt form; brand queries such as TAGRISSO resolve through the record the brand lives on; and a card never takes its name from an unrelated product's packaging row. A product name that several drugs share refuses and names what matched instead of returning one drug's card carrying another's identifiers. (2031, 2039)
+- A name several unrelated drugs share, such as "Pain Relief", refuses and names what matched; a name owned by exactly one drug resolves to that drug's own card, and a synonym belonging to another drug never answers for it. (2039)
 - An ambiguous disease refusal now includes the oncology reading a clinician likely means, so `get disease MM` lists multiple myeloma; trial search refuses the same ambiguous condition with its choices on the NCI source only, and the default ClinicalTrials.gov source still runs its keyword search. (2032)
 - Variant rows in `article entities` keep the gene-plus-change command even when the article spells the gene as K-ras or K-RAS, resolving the official gene symbol from the row's gene identifier when no symbol-shaped mention exists. (2034)
 - A gene-plus-protein-change request now resolves on the standard MANE Select transcript with its current version: it never returns a variant whose change matches only on a shorter or longer protein isoform without a note, it refuses and names the standard transcript's own spelling when only an isoform alias spells the request, and it resolves the one candidate the standard transcript names when exactly one exists. (2036)
@@ -52,6 +50,9 @@
 - The guides match the shipped behavior: the variant guide explains gene-symbol-first routing, the article guide states the 60-second search deadline, the deep-offset refusal and the OpenCitations fallback, the drug guide names the sections that keep their caps, and the ClinVar source page and the variant-structure blog post show the current headline format. (1290, 1293, 1300, 1301, 1302)
 
 ### Internal
+- A held test reply that nothing releases now ends on its own at a bound above every real test wait, so a run that loses its caller fails at a named test instead of sitting forever. (2045)
+- The release workflow's smoke legs now compare the printed version with the tag exactly, the workflow lint refuses duplicate option keys and variables a container script never receives, and the changelog gate covers every landing shape and stays inside the tag's own release line. (2046)
+- Records written by the ticket tool now pass the repository's review contract unchanged, and every landed ticket closes through the tool that recorded it. (2048)
 
 - The `who sync` report moved into its own module, bringing its command file back under the repository's line limit and retiring the entry that had allowed the overage. (2010)
 - The release check that every fixed ticket has a changelog bullet now counts every way a change can land — merge commits, `Land NNNN:` subjects, ticket files marked complete, and build records — so a ticket cannot ship undescribed, and a push that changes only the changelog now runs the changelog test instead of skipping as documentation. (2019)
