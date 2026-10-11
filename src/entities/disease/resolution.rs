@@ -918,10 +918,7 @@ pub(crate) async fn resolve_abbreviated_disease_ambiguity(
         return Ok(None);
     }
     match resolve_disease_hit_by_name_direct(client, requested).await? {
-        DirectNameResolution::AmbiguousAbbreviation {
-            requested,
-            holders,
-        } => {
+        DirectNameResolution::AmbiguousAbbreviation { requested, holders } => {
             // Several holders explain the refusal on their own; the
             // short-token reason is for the single-holder case like `MM`.
             let short_token = holders.len() == 1 && is_short_abbreviation_token(&requested);

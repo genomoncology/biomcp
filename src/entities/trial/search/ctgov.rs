@@ -5,10 +5,10 @@ use std::collections::{HashMap, HashSet};
 use futures::future::join_all;
 use tracing::warn;
 
+use crate::entities::SearchPage;
 use crate::entities::disease::{
     AbbreviationAmbiguity, clinical_reading_phrase, resolve_abbreviated_disease_ambiguity,
 };
-use crate::entities::SearchPage;
 use crate::entities::drug::{TrialAlias, TrialAliasSource, resolve_trial_aliases_with_sources};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams, CtGovStudy};

@@ -2,8 +2,8 @@
 
 use super::super::validate_trial_search;
 use super::*;
-use crate::entities::trial::test_support::TrialSearchEnvRestore;
 use crate::entities::trial::TrialSource;
+use crate::entities::trial::test_support::TrialSearchEnvRestore;
 use crate::sources::nci_cts::NciCtsClient;
 use std::sync::{
     Arc, Mutex,
@@ -669,7 +669,8 @@ async fn nci_overlong_condition_truncates_instead_of_failing() {
         .expect("lock NCI fixture requests")
         .clone();
     assert_eq!(
-        nci_requests.len(), 1,
+        nci_requests.len(),
+        1,
         "the NCI keyword search runs: {nci_requests:?}"
     );
     assert!(

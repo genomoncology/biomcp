@@ -205,9 +205,7 @@ fn mf_refusal_names_the_myelofibrosis_reading() {
         "{message}"
     );
     assert!(
-        message.contains(
-            "Clinical reading: 'MF' also names myelofibrosis (MONDO:0009692)"
-        ),
+        message.contains("Clinical reading: 'MF' also names myelofibrosis (MONDO:0009692)"),
         "{message}"
     );
     assert!(
