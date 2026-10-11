@@ -100,9 +100,7 @@ async fn resolve_nci_disease_filter_with_client(
     // The truncation note applies whether grounding succeeded on the
     // truncated text or degraded to a keyword search: the search ran on
     // fewer bytes than the caller sent.
-    if truncated
-        && let Some(grounding) = grounding.as_mut()
-    {
+    if truncated && let Some(grounding) = grounding.as_mut() {
         let truncation = nci_truncation_note();
         grounding.degrade_note = Some(match grounding.degrade_note.take() {
             Some(existing) => format!("{truncation} {existing}"),

@@ -668,7 +668,10 @@ async fn nci_overlong_condition_truncates_instead_of_failing() {
         .lock()
         .expect("lock NCI fixture requests")
         .clone();
-    assert_eq!(nci_requests.len(), 1, "the NCI keyword search runs: {nci_requests:?}");
+    assert_eq!(
+        nci_requests.len(), 1,
+        "the NCI keyword search runs: {nci_requests:?}"
+    );
     assert!(
         nci_requests[0].contains(&format!("keyword={}", "m".repeat(512))),
         "the NCI keyword uses the truncated condition: {}",
