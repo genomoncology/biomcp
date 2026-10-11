@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 7c1faf778, accept
+
 ## Outcome
 
 Every user-facing answer that 0.9.2 changed is right on live sources, every fix the 0.9.2 records claim has a test that fails when the fix is removed, and the open items 2042, 2043 and 2044 left behind are done.
