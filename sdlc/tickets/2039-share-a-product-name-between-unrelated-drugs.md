@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision ea5b22f5f, accept
+
 ## Outcome
 
 `get drug` with a product name that several drugs share never returns one drug's identifiers fused with another's targets or label. The card names what the record itself says, or refuses.
