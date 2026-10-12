@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 49049c1, accept
+
 ## Outcome
 
 An agent that reads `AGENTS.md` runs targeted tests while it works, runs the full gates once before landing, and treats a slow test as a defect. BioMCP holds no trace of the retired March tool outside its history.
