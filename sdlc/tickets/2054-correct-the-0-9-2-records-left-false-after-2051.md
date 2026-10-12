@@ -17,5 +17,7 @@ Filed 2026-10-11 from the independent review of main at `b039ac3e7`. Trimmed 202
 - Leftovers on the coordinator's machine: `/tmp/rehearsal-clone`, `/tmp/2050-live`, about 72 old review and lane report files in `/tmp`, and the probe branches `probe/2044-red`, `probe/2050-mutation-get299` and `probe/2050-red-main`. On the build host: the landed worktree `/tmp/2036-green/repo`, the 6.3 GB `~/gate-biomcp` clone, the branches `measure-*`, `yr-branch` and `yr-main`, and about 118 old log and script files in the home folder.
 
 - Starts from: main.
+- Keeps: nothing.
 - Changes: answer the open ask with `pm answer`; release the 16 reservations, or let pm's own sweep release them if that lands first; delete the leftovers above once nothing needs them.
 - Proof: `pm inbox` and `pm daily` show no open ask and no abandoned reservation.
+- Defers: nothing.
