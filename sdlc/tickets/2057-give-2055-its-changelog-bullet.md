@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 0b5a738, accept
+
 ## Outcome
 
 The 0.9.2 changelog describes ticket 2055's landing, so the release gate that counts closing ticket groups passes at the tag.
