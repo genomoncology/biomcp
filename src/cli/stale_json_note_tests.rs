@@ -416,8 +416,7 @@ async fn a_stale_clingen_prefetch_note_reaches_the_gene_card() {
     );
 }
 
-/// `--no-cache` must reach the spawned ClinGen prefetch (ticket
-/// 1268): the first run persists the fixture answers; after the
+/// `--no-cache` must reach the spawned ClinGen prefetch: the first run persists the fixture answers; after the
 /// server dies, a `--no-cache` run must fail rather than read the
 /// cached entries — which is exactly what a leaked flag would do.
 #[tokio::test]

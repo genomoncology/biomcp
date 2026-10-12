@@ -148,19 +148,14 @@
     },
     {
       "path": "src/entities/drug/label.rs",
-      "baseline_lines": 1309,
-      "floor_lines": 938,
-      "authorized_increase": {
-        "ticket": "2052",
-        "delta": 371,
-        "reason": "the comment sweep states rules without ticket numbers, shifting line counts and one dead-code reason",
-        "removal_condition": "ticket 2052 lands or its review rejects the sweep"
-      }
+      "baseline_lines": 1303,
+      "floor_lines": 1303,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/drug/test_support/label_choice.rs",
-      "baseline_lines": 1289,
-      "floor_lines": 1289,
+      "baseline_lines": 1288,
+      "floor_lines": 1288,
       "authorized_increase": null
     },
     {
@@ -244,14 +239,14 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 2032,
-      "floor_lines": 2032,
+      "baseline_lines": 2026,
+      "floor_lines": 2026,
       "authorized_increase": null
     },
     {
       "path": "src/entities/variant/get/protein_change_tests.rs",
-      "baseline_lines": 1394,
-      "floor_lines": 1394,
+      "baseline_lines": 1392,
+      "floor_lines": 1392,
       "authorized_increase": null
     },
     {
@@ -284,8 +279,8 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1480,
-      "floor_lines": 1480,
+      "baseline_lines": 1479,
+      "floor_lines": 1479,
       "authorized_increase": null
     },
     {
@@ -358,14 +353,9 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1917,
-      "floor_lines": 1847,
-      "authorized_increase": {
-        "ticket": "1256, 1290, 1300, 2016, 2038, 2044",
-        "delta": 70,
-        "reason": "The DisGeNET seed contribution, the significance provenance fields, and the label row's move from payload presence to the registered section outcome. Ticket 2016: one protein_numbering_note field on the test literal. | Ticket 2038: the who_note field on the provenance rows. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures. | Fold the who_note provenance field into the shared section-owner shape when the provenance model is next decomposed."
-      }
+      "baseline_lines": 1916,
+      "floor_lines": 1916,
+      "authorized_increase": null
     },
     {
       "path": "src/sources/cbioportal_study.rs",
@@ -430,8 +420,8 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2833,
-      "floor_lines": 2833,
+      "baseline_lines": 2826,
+      "floor_lines": 2826,
       "authorized_increase": null
     },
     {
@@ -503,14 +493,14 @@
     },
     {
       "path": "src/transform/drug.rs",
-      "baseline_lines": 1705,
-      "floor_lines": 1705,
+      "baseline_lines": 1698,
+      "floor_lines": 1698,
       "authorized_increase": null
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1252,
-      "floor_lines": 1252,
+      "baseline_lines": 1251,
+      "floor_lines": 1251,
       "authorized_increase": null
     }
   ]

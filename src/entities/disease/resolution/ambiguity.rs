@@ -24,8 +24,7 @@ pub(crate) struct ClinicalAbbreviationReading {
 /// sources checked and measured for each entry. The
 /// refusal stands on the source holders alone; this table only adds a
 /// pointer line naming a reading no holder carries.
-///
-/// - `MM` → multiple myeloma (MONDO:0009693): MyDisease holds `MM` on
+/// `MM` → multiple myeloma (MONDO:0009693): MyDisease holds `MM` on
 ///   Miyoshi muscular dystrophy (MONDO:0009685) alone. Checked live
 ///   2026-10-08 and again 2026-10-11: `mondo.synonym.exact:"MM"` and
 ///   `disease_ontology.synonyms.exact:"MM"` return no myeloma record,
@@ -35,7 +34,7 @@ pub(crate) struct ClinicalAbbreviationReading {
 ///   2026-10-11: of the first 50 trials matching `query.cond=MM`, 30
 ///   list a myeloma condition, so myeloma is the reading the registry
 ///   corpus itself carries.
-/// - `MF` → myelofibrosis (MONDO:0009692, the record `get disease
+/// `MF` → myelofibrosis (MONDO:0009692, the record `get disease
 ///   "myelofibrosis"` resolves to through its Disease Ontology name):
 ///   MyDisease holds `MF` on mycosis fungoides (MONDO:0009691) and
 ///   myotonia fluctuans (MONDO:0020481) alone. Checked live
@@ -134,8 +133,7 @@ pub(super) fn holder_display_line(hit: &MyDiseaseHit) -> String {
 
 /// What the refusal knows about an ambiguous abbreviation, exposed so
 /// the default ClinicalTrials.gov trial source can say plainly what its
-/// keyword search ran on instead of leaving the user to guess (ticket
-/// 2040).
+/// keyword search ran on instead of leaving the user to guess.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct AbbreviationAmbiguity {
     pub(crate) requested: String,

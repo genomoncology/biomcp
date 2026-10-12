@@ -419,8 +419,7 @@ pub enum BioMcpError {
     /// A source endpoint that no longer exists upstream: no retry can
     /// reach it, so callers degrade permanently instead of offering a
     /// retry. The type carries the fact; the sentence the card prints
-    /// travels in the `reason` from the one place that states it (ticket
-    /// 2052).
+    /// travels in the `reason` from the one place that states it.
     SourceEndpointRetired {
         source_name: String,
         reason: String,

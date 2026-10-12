@@ -1,5 +1,4 @@
-//! One wall-clock deadline for a whole article search invocation (ticket
-//! 1293): candidate legs plus every enrichment pass share a single
+//! One wall-clock deadline for a whole article search invocation: candidate legs plus every enrichment pass share a single
 //! `VariantArticleDeadline` propagated through the existing task-local seam.
 //! These helpers wrap that deadline around source legs and translate its
 //! terminal state into `source_status` rows and `SourceUnavailable` errors.

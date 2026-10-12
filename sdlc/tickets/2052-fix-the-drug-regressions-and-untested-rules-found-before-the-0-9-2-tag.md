@@ -174,13 +174,24 @@ list in 0.8–19.2 s.
 
 ### Comment sweep
 
-Per Ian's mid-lane direction, code comments in `src/`, `templates/` and
-the test trees no longer name ticket numbers: every comment that leaned
-on one now states the rule or fact alone (572 automated rewrites plus
-hand edits; zero ticket references remain in comment lines, verified by
-grep). Assertion strings, python docstrings and the sdlc record keep
-their references — only comments changed, and fmt, clippy and the
-targeted suites stayed green through the sweep.
+Per Ian's mid-lane direction, code comments in `src/`, `templates/`,
+the test trees and the gate scripts under `tools/` no longer name ticket
+numbers: every comment that leaned on one now states the rule or fact
+alone. The first pass (572 automated rewrites plus hand edits) was
+single-line and left 31 references split across continuation lines plus
+a handful of single-line leftovers; the review caught them, and the
+finished sweep joins comment blocks before checking, removes the
+split parentheticals, and repairs the one sentence the first pass
+corrupted (the `plain_paired_ingredient_name` doc comment). Verified
+with the continuation-line-aware check: zero ticket references remain in
+comment scope. Two python files keep numbers in comments that narrate
+their own changelog fixtures (`test_changelog_coverage_check.py`,
+`test_docs_changelog_refresh.py`) — those numbers are the fixture
+content the gate reasons about, like a PMID, not a justification leaned
+on. Assertion strings, python docstrings and the sdlc record keep their
+references as before; fmt, clippy and the targeted suites (Rust drug /
+article-graph / clinvar / template lanes, 465 tests, plus the four
+touched python files, 76 tests) stayed green through the sweep.
 
 ### Residual risks
 

@@ -278,8 +278,7 @@ async fn a_retired_endpoint_degrades_the_rendered_gwas_section_with_no_retry() {
     );
 }
 
-/// The retirement is a typed fact, not a sentence comparison (ticket
-/// 2052): the error class carries it, and the reason text lives once.
+/// The retirement is a typed fact, not a sentence comparison: the error class carries it, and the reason text lives once.
 #[test]
 fn the_retired_error_class_is_the_one_fact_of_retirement() {
     let retired = BioMcpError::SourceEndpointRetired {

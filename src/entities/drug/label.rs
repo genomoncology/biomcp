@@ -82,7 +82,6 @@ pub(crate) fn markdown_label_view(label: &DrugLabel, label_set_id: Option<&str>)
 }
 
 /// Whether the Markdown view cuts any label section it carries.
-///
 /// The short-form pointer may only print when the output actually omits
 /// content, so a view whose sections all fit the cap points nowhere.
 pub(crate) fn markdown_label_view_truncates(label: &DrugLabel) -> bool {
@@ -573,8 +572,7 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
 /// the only brand identity a record with an empty `openfda` block carries
 /// ("DARZALEX Daratumumab DARATUMUMAB …" names DARZALEX), so a card whose
 /// chosen label is a sparse record still lists its own brand.
-/// One reader serves every consumer of the element line's brand (ticket
-/// 2050), so a multi-word brand ("Herceptin Hylecta") stays whole wherever
+/// One reader serves every consumer of the element line's brand, so a multi-word brand ("Herceptin Hylecta") stays whole wherever
 /// it is read.
 pub(super) fn element_leading_brand_names(label_response: &serde_json::Value) -> Vec<String> {
     let Some(results) = label_response.get("results").and_then(|v| v.as_array()) else {
@@ -652,7 +650,6 @@ fn element_tokens(element: &str) -> Vec<String> {
 }
 
 /// The identity token runs of one SPL product data element.
-///
 /// A real element concatenates one entry per strength, and every entry
 /// opens with the same names ("TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB
 /// MANNITOL ... AZ;40 TAGRISSO ..."), so an inactive excipient repeats
@@ -683,7 +680,7 @@ fn spl_element_identity_heads(element: &str) -> Vec<(Vec<String>, Vec<String>)> 
 
 /// The leading identity runs of one element entry: the brand tokens, then
 /// the established name's tokens. The established name recurs in the entry
-/// — the entry spells it out and then repeats it — so the first token that
+/// the entry spells it out and then repeats it — so the first token that
 /// recurs later marks where the established name begins, and every token
 /// before it belongs to the brand: a multi-word brand stays whole
 /// ("Herceptin Hylecta Trastuzumab and hyaluronidase-oysk TRASTUZUMAB …"
@@ -730,7 +727,6 @@ fn entry_identity_run(entry: &[String]) -> (Vec<String>, Vec<String>) {
 }
 
 /// Whether a broad-search result is the requested drug's own record.
-///
 /// A broad search for one drug routinely ranks other drugs' labels first
 /// because their section text mentions the queried name. A result only
 /// counts when the requested name matches the record's own identity fields
@@ -890,9 +886,9 @@ fn run_qualifies_listed_ingredient(name: &str, ingredients: &[String]) -> bool {
 /// record lists as two established ingredients is a true two-drug
 /// combination ("nivolumab and relatlimab-rmbw" over [nivolumab,
 /// relatlimab-rmbw] names no single plain ingredient, so the whole name
-/// stands and a combination never becomes another product's card name,
-/// And 2047), a comma-list combination names none, and a
-/// record that lists neither half supports no split at all.
+/// stands and a combination never becomes another product's card name.
+/// A comma-list combination names none, and a record that lists neither
+/// half supports no split at all.
 pub(super) fn plain_paired_ingredient_name<'a>(name: &'a str, ingredients: &[String]) -> &'a str {
     let Some((left, right)) = split_pairing_name(name) else {
         return name.trim();
@@ -914,14 +910,13 @@ pub(super) fn plain_paired_ingredient_name<'a>(name: &'a str, ingredients: &[Str
     }
 }
 
-/// The rank tiers of one label result for the requested drug (ticket
-/// 2043). The request decides between the two sides of the rule: a brand
+/// The rank tiers of one label result for the requested drug. The request decides between the two sides of the rule: a brand
 /// query takes the record whose own brand name equals it, and an ingredient
 /// query takes the plain single-ingredient product's record, never a
 /// combination, biosimilar or under-the-skin form. A brand whose labels
 /// name a family of the brand's products ("Motrin IB" for Motrin) takes
 /// that family's plain-ingredient record before any other plain record
-///, and brand equality reads the whole word set, because
+///and brand equality reads the whole word set, because
 /// labelers write the same brand's words in different orders ("TYLENOL
 /// Extra Strength" for "Extra Strength Tylenol").
 const LABEL_RANK_BRAND_MATCH: u8 = 4;
@@ -1210,7 +1205,6 @@ async fn sparse_elements_choice(
 
 /// Field-scoped label lookup with the two-sided label choice and the
 /// sparse-metadata elements fallback.
-///
 /// The request's own name runs first, the card's canonical name second,
 /// and a brand-equal or plain-ingredient record locks the answer. When the
 /// newest-first page holds only biosimilars and qualified forms, the

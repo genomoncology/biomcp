@@ -212,8 +212,7 @@ pub(crate) fn canonical_protein_change(
         .and_then(|annotation| annotation.protein)
 }
 
-/// The transcript whose numbering the headline protein change uses (ticket
-/// 2016's numbering note).
+/// The transcript whose numbering the headline protein change uses.
 pub(crate) fn canonical_transcript(
     hit: &MyVariantHit,
     mane_transcript: Option<&str>,

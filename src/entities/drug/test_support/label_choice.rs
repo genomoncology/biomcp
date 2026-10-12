@@ -5,8 +5,7 @@
 
 use super::*;
 
-// The live openFDA label answers below were recorded 2026-10-10 (ticket
-// 2043) from `api.fda.gov/drug/label.json` with the drug card's search
+// The live openFDA label answers below were recorded 2026-10-10 from `api.fda.gov/drug/label.json` with the drug card's search
 // plan, with each kept section's text cut to its first indication or its
 // opening words. Rows the choice rule never reads were removed and the
 // removal is noted per body; the kept rows keep their live order and
@@ -401,7 +400,7 @@ const OPDUALAG_CAPTURE: &str = r#"
 "#;
 
 /// `q=nivolumab`: the DrugBank/UNII identity record (recorded 2026-10-10,
-///; synonym list trimmed to the first entries).
+///synonym list trimmed to the first entries).
 const NIVOLUMAB_CAPTURE: &str = r#"
 {
   "total": 24,
@@ -1071,7 +1070,7 @@ async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
     .await;
 
     // The ingredient query also takes the plain DARZALEX label
-    // — never the under-the-skin pairing — even though only the pairing
+    // never the under-the-skin pairing — even though only the pairing
     // answers the field-scoped search and the plain record's identity
     // lives on its element line alone.
     let drug = name_resolution_fixture_drug(&base, "daratumumab").await;

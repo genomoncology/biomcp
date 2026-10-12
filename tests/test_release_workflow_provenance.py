@@ -275,7 +275,6 @@ ALLOWED_STEP_IFS = {
 # `set +o errexit`, `trap -- 'exit 0' EXIT`, `|| exit $((0))`, or any
 # other spelling changes the step's text and fails the hash. The
 # patterns are gone on purpose — structure closed the class.
-#
 # Hash pinning: each load-bearing step is serialized from the parsed
 # workflow (so YAML folding cannot hide a change), its `run` body is
 # normalized to trivial whitespace (per-line trailing space stripped,
@@ -288,7 +287,7 @@ ALLOWED_STEP_IFS = {
     # steps, pinned 2026-09-27. Update a hash only in
     # the same commit as the deliberate workflow edit it records.
     # The two pypi-build build steps were re-pinned 2026-10-08
-    #: both now route through tools/with-build-identity
+    #both now route through tools/with-build-identity
     # so the shipped wheels report their commit. The two wheel-smoke
     # install/run steps were re-pinned 2026-10-10: both now compare the printed --version with the tag.
     # The container smoke was re-pinned again 2026-10-10:
@@ -940,8 +939,7 @@ def _retarget_matrix_os(job: str, key: str, value: str, os_name: str):
 HASH_DRIFT = "step text drifted from its pinned hash"
 
 PIPELINE_MUTATIONS = {
-    # --- Leak spellings the old phrase bans never named (ticket
-    # --- 1258): each edits a pinned step, so the hash fails.
+    # Leak spellings the old phrase bans never named: each edits a pinned step, so the hash fails.
     "or_echo_skip_on_the_venv_smoke": (
         _mutate_run(
             "wheel-smoke",
@@ -1239,9 +1237,9 @@ PIPELINE_MUTATIONS = {
         ),
         "step text drifted from its pinned hash",
     ),
-    # --- Round three: expression envs, hijack
-    # --- variable names, workflow-level PATH/ENV, and a new first
-    # --- step in pypi-publish itself.
+    # Round three: expression envs, hijack
+    # variable names, workflow-level PATH/ENV, and a new first
+    # step in pypi-publish itself.
     "expression_env_carrying_bash_env": (
         lambda parsed: parsed["jobs"]["wheel-smoke"].update(
             {"env": 'FAKE_EXPRESSION{ "BASH_ENV": "/tmp/poison.sh" }'}

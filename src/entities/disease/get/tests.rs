@@ -2,8 +2,7 @@ use super::*;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-/// The disease fixture env: the one shared scratch-cache guard (ticket
-/// 2050), so the card tests never read the machine's own cache.
+/// The disease fixture env: the one shared scratch-cache guard, so the card tests never read the machine's own cache.
 type DiseaseCardFixtureEnv = crate::test_support::FixtureEnv;
 
 fn disease_card_fixture_response(body: &str) -> Vec<u8> {
@@ -40,7 +39,7 @@ async fn disease_card_fixture_server()
                     r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
                     // The embedded DisGeNET block seeds the card's genes
-                    //: with Open Targets unreachable these
+                    //with Open Targets unreachable these
                     // genes must carry DisGeNET's name, not Open Targets'.
                     r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
                 } else if request.contains("query.cond=Medulloblastoma") {
@@ -539,7 +538,7 @@ async fn abbreviation_fixture_server()
                     .push(request.clone());
                 let body = if request.contains("/query?") {
                     // A short abbreviation grounds in any letter case
-                    //, so the fixture answers `mf` and `MF`
+                    //so the fixture answers `mf` and `MF`
                     // with the same recorded reply.
                     if request.contains("MF") || request.contains("mf") {
                         recorded_mydisease!("query_mf.json")

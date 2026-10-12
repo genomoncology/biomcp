@@ -628,8 +628,7 @@ async fn cold_and_flu_still_refuses_across_distinct_combination_products() {
     server.abort();
 }
 
-/// A combination card shows product-level identifiers or none (ticket
-/// 2052): the merged records are one ingredient's records, so the
+/// A combination card shows product-level identifiers or none: the merged records are one ingredient's records, so the
 /// combination card keeps none of that ingredient's stable identifier,
 /// approval date or chemical synonyms. Recorded from the live "advil pm"
 /// shape (2026-10-11).

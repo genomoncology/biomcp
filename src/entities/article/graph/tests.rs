@@ -1952,7 +1952,7 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
         [
             ("semantic_scholar", "rate_limited"),
             // The citing PMID resolved through a Europe PMC search, so the
-            // row names that phase instead of claiming no request (1306).
+            // row names that phase instead of claiming no request.
             ("europe_pmc_jats", "searched_for_doi_resolution"),
             ("opencitations", "available"),
         ]
@@ -2022,7 +2022,7 @@ async fn citation_evidence_reuses_the_resolved_citing_seed_when_the_cited_seed_i
         [
             ("semantic_scholar", "rate_limited"),
             // No Europe PMC search ran: the citing side was reused and the
-            // cited side is a DOI (1306).
+            // cited side is a DOI.
             ("europe_pmc_jats", "not_requested"),
             ("opencitations", "available"),
         ]
@@ -2057,7 +2057,7 @@ async fn citation_evidence_names_a_malformed_identifier_when_the_matched_row_fai
     .unwrap_err();
 
     // The summary names the malformed row, never provider unavailability:
-    // the index answered and matched the pair (1306).
+    // the index answered and matched the pair.
     let projection = error.public_projection();
     assert_eq!(
         projection.message,

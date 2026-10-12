@@ -318,8 +318,7 @@ fn hit_canonical_names(hit: &MyChemHit) -> Vec<CanonicalName> {
 /// names: `hit_all_names` without the DrugBank and DrugCentral synonym
 /// lists. A foreign synonym may extend the query ("Terfenadine
 /// carboxylate" is fexofenadine's synonym, never terfenadine's salt form),
-/// so the qualified-form tier reads only names the record owns (ticket
-/// 2039).
+/// so the qualified-form tier reads only names the record owns.
 fn hit_own_names(hit: &MyChemHit) -> Vec<String> {
     let mut out: Vec<String> = hit_canonical_names(hit)
         .into_iter()
@@ -553,8 +552,7 @@ fn name_matches_requested(candidate: &str, requested: &str) -> bool {
 /// normalized to lowercase. A combination is another product, never a
 /// qualified form or canonical name of one requested ingredient — salts
 /// and hydrates qualify ("niraparib tosylate"), combinations do not
-/// ("niraparib tosylate monohydrate and abiraterone acetate", ticket
-/// 2043).
+/// ("niraparib tosylate monohydrate and abiraterone acetate").
 fn names_second_ingredient(candidate: &str) -> bool {
     candidate.contains(" and ") || candidate.contains(',')
 }
@@ -612,7 +610,7 @@ pub(crate) fn brand_spellings_for_request(hits: &[&MyChemHit], requested: &str) 
 /// words (salt, hydrate, strength). The request merely appearing inside a
 /// longer name does not identify the drug — "Zinc Oxide, Ferric Oxide Red,
 /// and Pramoxine Hydrochloride" is not ferric oxide's record
-/// — and neither does a combination name.
+/// and neither does a combination name.
 fn name_extends_request(candidate: &str, requested: &str) -> bool {
     candidate.starts_with(&format!("{requested} ")) && !names_second_ingredient(candidate)
 }
@@ -692,7 +690,6 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
     // still does, and a foreign synonym never does. Nothing else is
     // admitted, and there is no all-hits fallback: the caller refuses
     // honestly instead of merging another drug's record.
-    //
     // Several unrelated drugs can share one product name
     // ("Pain Relief" brands acetaminophen, lidocaine and ibuprofen products
     // alike), and a name several drugs share names no one drug. Every
@@ -700,7 +697,6 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
     // means; disagreeing votes refuse the whole tier, so one drug's
     // identifiers never merge with another's targets or label, and records
     // that agree (one product's ingredient rows) still merge.
-    //
     // A query that equals one record's own established name
     // (a non-product canonical name: "acetaminophen" is the acetaminophen
     // record's DrugBank name) selects that record over identity-bearing
@@ -792,7 +788,6 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
 /// drug the query actually matched. Brand names are not
 /// candidates; a brand that matches while no canonical name does falls back
 /// to the generic identity instead.
-///
 /// A merged NDC product row's name counts as the record's own only when it
 /// equals the request, when the request itself names a product or brand the
 /// record carries: one record holds many products' rows, so a
@@ -835,8 +830,7 @@ fn canonical_name_matching_request(hit: &MyChemHit, requested: &str) -> Option<S
 /// rows sit first. A brand card takes the name its own product row carries,
 /// never another product's row. The row name arrives with its
 /// trailing strength stripped: a product row's strength is the product's,
-/// never the card's ("aspirin 81 mg" pairs the brand with aspirin, ticket
-/// 2052).
+/// never the card's ("aspirin 81 mg" pairs the brand with aspirin).
 fn brand_paired_nonproprietary_name(hit: &MyChemHit, requested: &str) -> Option<String> {
     let target = normalize_name(strip_trailing_strength(requested.trim()));
     let ndc = hit.ndc.as_ref()?;
@@ -909,9 +903,8 @@ fn hit_names_itself(hit: &MyChemHit, target: &str) -> bool {
 /// Whether one of the hit's own established names is a qualified form of
 /// one of the given names, or the reverse: salt and base records of one
 /// drug name the same drug either way ("erlotinib hydrochloride" and
-/// "erlotinib"), so they merge instead of competing (the qualified-form
-/// qualified-form rule, kept through the self-named narrowing, ticket
-/// 2052).
+/// "erlotinib"), so they merge instead of competing: the qualified-form
+/// rule, kept through the self-named narrowing.
 fn hit_names_a_qualified_form_of(hit: &MyChemHit, names: &[String]) -> bool {
     hit_canonical_names(hit).iter().any(|entry| {
         !entry.product_row
@@ -923,7 +916,7 @@ fn hit_names_a_qualified_form_of(hit: &MyChemHit, names: &[String]) -> bool {
 }
 
 /// What the exact tier's identity-bearing hits say the requested name means
-///. Only identity-bearing hits vote: a bare product
+///Only identity-bearing hits vote: a bare product
 /// row shares a record with nothing, so it never decides the name, and zero
 /// voters (a naked-row-only tier, the Keytruda shape) never disagree. The
 /// plain votes decide first: a combination vote is a product mention on
@@ -1108,7 +1101,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     continue;
                 }
                 // The full synonym list feeds DDInter identity matching
-                //; the card keeps the three-brand cap, so
+                //the card keeps the three-brand cap, so
                 // the loop does not break here.
                 if ddinter_synonyms.len() < 32 {
                     ddinter_synonyms.push(synonym.to_string());

@@ -31,9 +31,7 @@ pub(crate) fn parse_external_xml(
     // Depth is counted in the pre-parse scan, not after parsing: the
     // acceptance nesting-bomb test proved roxmltree's own parse
     // recurses per open tag, so the rejection must happen before
-    // Document::parse or the parser stack overflows first (ticket
-    // 1243; the ticket's post-parse-walk plan was revised on that
-    // evidence). Comments, CDATA, and processing instructions are
+    // Document::parse or the parser stack overflows first. Comments, CDATA, and processing instructions are
     // skipped wholesale below and never move the counter.
     let mut depth: u32 = 0;
     while index < bytes.len() {

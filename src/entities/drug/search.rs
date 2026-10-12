@@ -586,7 +586,7 @@ pub(super) fn search_results_from_openfda_label_response(
 /// The generic names of the label rows that may own the requested product
 /// name: the rows whose own brand equals the query when any
 /// row carries it (the "Keytruda" rows, never the QLEX combination), and
-/// every row otherwise — the ticket-2043 pairing shape, where the only
+/// every row otherwise — the pairing shape, where the only
 /// label a brand family holds pairs a qualified brand with its plain
 /// ingredient, deduplicated so the caller can refuse distinct answers.
 #[cfg(test)]

@@ -713,8 +713,7 @@ pub(super) fn rerank_disease_search_hits(
 /// MONDO:0005583 is `non-human animal disease`; every veterinary MONDO
 /// record descends from it, including the venom-database `myeloma` that
 /// once made `get disease myeloma` refuse. BioMCP answers clinicians, so a
-/// non-human record never counts toward disease-name ambiguity (ticket
-/// 2017).
+/// non-human record never counts toward disease-name ambiguity.
 const NON_HUMAN_ANIMAL_DISEASE_ID: &str = "MONDO:0005583";
 
 fn is_non_human_record(hit: &MyDiseaseHit) -> bool {
@@ -775,8 +774,7 @@ fn exact_token_holder_ids<'a>(
 
 /// A display label for a refusal candidate. `hit_label` already falls
 /// back to the ontology `label`, so MONDO records with no
-/// `name` still name the disease instead of printing a bare ID (ticket
-/// 2017: `CAD` refused listing `MONDO:0018922` with no label).
+/// `name` still name the disease instead of printing a bare ID.
 fn holder_display_label(hit: &MyDiseaseHit) -> Option<String> {
     hit_label(hit)
 }

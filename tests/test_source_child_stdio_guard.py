@@ -551,7 +551,7 @@ def test_guard_passes_safe_shapes() -> None:
         "cmd.kill_on_drop(true).stdin(Stdio::null())\n"
         "    .stdout(Stdio::piped()).stderr(Stdio::piped());\n",
         # .output() with explicit non-inheriting setters: the
-        # exemption is closed (1264) — a bare .output() with an
+        # exemption is closed — a bare .output() with an
         # .stderr(Stdio::inherit()) before it still inherits.
         "let smoke = std::process::Command::new(&stage_path)\n"
         '    .arg("version")\n'

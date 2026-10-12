@@ -5361,8 +5361,8 @@ mod tests {
     #[tokio::test]
     async fn article_search_refuses_a_bare_clinvar_variation_id() {
         // A bare ClinVar VariationID carries no article-search alias, so the
-        // search refuses it before any provider call. Ticket
-        // 1292 turns this into a dedicated guard message; both spellings
+        // search refuses it before any provider call. A dedicated
+        // guard message covers it; both spellings
         // refuse with "Unrecognized variant format" naming the input, so this
         // assertion stays green through that merge.
         let error = search_variant_articles_with_deadline(

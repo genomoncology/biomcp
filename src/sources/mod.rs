@@ -249,8 +249,7 @@ where
 
 /// Run a command future inside the stale-serve scope and append the
 /// text note to a non-JSON text outcome, mirroring what
-/// `run_outcome_on_current_stack` does for the CLI path (ticket
-/// 1256). MCP callers use this so the task-local exists on their
+/// `run_outcome_on_current_stack` does for the CLI path. MCP callers use this so the task-local exists on their
 /// drive thread too.
 pub(crate) async fn run_command_with_stale_serve_notes<F>(
     fut: F,
@@ -664,8 +663,7 @@ fn resolve_cache_mode(
 /// A plain function returning the scoped future. Taking the future
 /// by value inside an `async fn` kept the generator holding both the
 /// `Scope` future and the inner future's state, doubling the dispatch
-/// future's size; returning the scope directly keeps one copy (ticket
-/// 1243).
+/// future's size; returning the scope directly keeps one copy.
 /// Re-enter the parent command's no-cache scope inside a spawned
 /// task (2026-09-28 review): `tokio::spawn` drops the NO_CACHE
 /// task-local the way it drops the stale-serve scope, so a prefetch
@@ -699,7 +697,6 @@ pub(crate) fn cache_is_bypassed() -> bool {
 }
 
 /// Whether cache reads ignore entry expiry (`BIOMCP_CACHE_MODE=infinite`).
-///
 /// Reads the process mode through [`current_cache_mode`] like every other
 /// cache-mode reader: the test override applies here too, and the
 /// once-read environment mode keeps this check in agreement with the HTTP
@@ -761,8 +758,7 @@ pub(crate) fn s2_api_key() -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-// --- Request-construction seam (Tier-2 substrate) ----------------------------
-//
+// Request-construction seam (Tier-2 substrate) ----------------------------
 // A source client builds a pure `RequestPlan` in a `*_plan()` function (no network,
 // no client, no env — directly assertable by a Tier-2 test), then hands it to
 // `request_from_plan()` to get a live `RequestBuilder`. The send path (cache mode,
@@ -988,13 +984,12 @@ fn next_retry_sleep(
 }
 
 /// Returns a shared HTTP client with retry and caching middleware.
-///
-/// - Retry: 3 attempts with exponential backoff for transient errors
-/// - Retry log level: `DEBUG` — retry attempts are suppressed at the default `WARN` verbosity and
+/// Retry: 3 attempts with exponential backoff for transient errors
+/// Retry log level: `DEBUG` — retry attempts are suppressed at the default `WARN` verbosity and
 ///   visible with `RUST_LOG=debug`
-/// - Cache: Disk-based HTTP cache under the resolved canonical cache root
+/// Cache: Disk-based HTTP cache under the resolved canonical cache root
 ///   (`BIOMCP_CACHE_DIR`, `cache.toml`, or XDG default)
-/// - Cache TTL: `Cache-Control: max-stale=86400` makes “no caching headers” responses usable for 24h
+/// Cache TTL: `Cache-Control: max-stale=86400` makes “no caching headers” responses usable for 24h
 #[derive(Clone, Copy)]
 pub(crate) enum SharedHttpClientKind {
     Default,
@@ -1665,7 +1660,6 @@ pub(crate) fn is_semantic_scholar_shared_pool_rate_limit_error(
 }
 
 /// Returns a shared HTTP client without middleware.
-///
 /// Use this for requests with streaming bodies (e.g., multipart) that cannot be cloned and therefore
 /// cannot pass through the retry/cache middleware stack.
 pub(crate) fn streaming_http_client(
@@ -1681,7 +1675,6 @@ pub(crate) fn streaming_http_client(
 }
 
 /// Retry wrapper for streaming requests that bypass middleware.
-///
 /// `build_request` is invoked on each attempt so non-cloneable request bodies
 /// can be reconstructed safely.
 pub(crate) async fn retry_middleware_send<F, Fut>(

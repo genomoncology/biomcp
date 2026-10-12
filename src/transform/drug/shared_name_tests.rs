@@ -1,9 +1,8 @@
-//! Recorded-capture pins for product names several unrelated drugs share
-//!.
+//! Recorded-capture pins for product names several unrelated drugs share.
 //!
 //! Every capture below was recorded 2026-10-10 from
 //! `mychem.info/v1/query?q=<name>` with the `get` field list, trimmed the
-//! same way as the ticket-2031 captures: only the hits the assertions read
+//! same way as the shared-name captures: only the hits the assertions read
 //! stay, NDC rows deduplicate to the rows the assertions read, and unused
 //! fields are removed.
 

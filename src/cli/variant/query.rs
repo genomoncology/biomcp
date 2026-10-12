@@ -1,5 +1,4 @@
 //! Pure positional-query resolution for `search variant`.
-//!
 //! Keeps the parser chain in one module: the exact forms parse
 //! first, a gene-symbol-shaped first token becomes an oracle-validated
 //! candidate, and everything else falls through to a condition search.
@@ -69,7 +68,6 @@ pub(super) fn parse_exon_deletion_phrase(query: &str) -> Option<(String, String)
 
 /// Split a free-text variant query whose first token has the exact-form
 /// gene-token shape into a gene-first candidate.
-///
 /// The shape alone does not make the token a gene: `is_exact_gene_token`
 /// accepts any uppercase word, so the caller must confirm the token against
 /// the gene-symbol oracle before routing anything.
@@ -84,7 +82,7 @@ pub(super) fn split_gene_first_candidate(query: &str) -> Option<(String, String)
 }
 
 /// Split a protein change off the front of a gene-first remainder
-///, so `BRAF V600E melanoma` reads as gene=BRAF,
+///so `BRAF V600E melanoma` reads as gene=BRAF,
 /// hgvsp=V600E, condition=melanoma instead of condition=`V600E melanoma`.
 /// A remainder that is only the protein change never reaches this split;
 /// the exact "GENE CHANGE" form parses it earlier in the chain.
@@ -121,13 +119,11 @@ pub(super) enum GeneFirstNote {
 /// The explicit filter flags a gene-first phrase keeps, stated in the
 /// command line's own spelling (`--significance benign`, `--max-frequency
 /// 0.01`, ...) so a zero-row hint repeats exactly what the caller typed
-///. Used behind
+///Used behind
 /// a reference, like a slice.
 pub(super) type ExplicitFilterFlags = [(&'static str, String)];
 
-/// Apply the gene-symbol oracle verdict to a gene-first candidate (tickets
-/// 1301 and 2022).
-///
+/// Apply the gene-symbol oracle verdict to a gene-first candidate.
 /// A confirmed official symbol routes the first token to the gene filter, a
 /// leading protein change to the hgvsp filter, and the rest to the
 /// condition. Refusal, ambiguity, and preference `off` all keep today's
@@ -285,7 +281,6 @@ const VARIANT_QUERY_GENE_ROUTING_ENV: &str = "BIOMCP_VARIANT_QUERY_GENE_ROUTING"
 const GENE_FIRST_ROUTING_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(2_500);
 
 /// How a free-text variant query's gene-symbol first token is recognized.
-///
 /// `mygene` is the supported default because no offline gene list ships with
 /// BioMCP and MyGene's unique entrez-backed official-symbol confirmation is
 /// the lookup this routing uses; unlike the `discover` path's symbol/alias

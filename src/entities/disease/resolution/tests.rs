@@ -76,8 +76,7 @@ fn holder_hits() -> Vec<MyDiseaseHit> {
 #[test]
 fn holder_counting_leaves_nonhuman_records_out() {
     // `CAD` is an abbreviation-shaped token, so synonym holders count —
-    // but the veterinary record never counts toward the refusal (ticket
-    // 2017: `myeloma` refused because a venom-database record held it).
+    // but the veterinary record never counts toward the refusal.
     let ids = exact_token_holder_ids("CAD", &holder_hits());
     assert_eq!(ids, ["MONDO:0005000".to_string()]);
 }
@@ -248,8 +247,7 @@ async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
             "myotonia fluctuans (MONDO:0020481)".to_string(),
         ]
     );
-    // A short abbreviation behaves the same in any letter case (ticket
-    // 2050): `mf` names the same holders `MF` does.
+    // A short abbreviation behaves the same in any letter case: `mf` names the same holders `MF` does.
     let lowercase = resolve_abbreviated_disease_ambiguity(&client, "mf")
         .await
         .expect("the lowercase lookup should not error")

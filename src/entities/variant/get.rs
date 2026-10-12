@@ -228,16 +228,14 @@ struct ProteinChangeContext {
 /// chr17:g.7578526C>T through a shorter isoform). A hit carries the query
 /// only when the transcript BioMCP headlines for it — the ClinVar-named,
 /// MANE, change-naming, or first-NM_ SnpEff annotation — spells the
-/// requested change; ClinVar presence breaks ties among those hits (ticket
-/// 1297) but never outranks the named change itself. Resolve
+/// requested change; ClinVar presence breaks ties among those hits but never outranks the named change itself. Resolve
 /// a single provider hit, a single carrying hit, or the one ClinVar record
 /// names among the true matches; otherwise refuse with every candidate and
 /// a working input form.
-///
 /// `mane_transcript` is the query's MANE marker: the transcript stem
 /// ClinVar's preferred names agree on, or the canonical record's
 /// MANE-Select cross-reference when the response carries no ClinVar name
-///. The marker decides which annotation headlines a hit, so
+///The marker decides which annotation headlines a hit, so
 /// it must reach this resolver before any hit is accepted: a ClinVar-free
 /// cohort where exactly one candidate names the change on MANE
 /// (`BRCA1 S1551Y`) resolves here, while the change-naming tier alone would
@@ -367,8 +365,7 @@ fn requested_reference_residue(change: &str) -> Option<(char, u32)> {
     Some((normalized.as_bytes()[0] as char, position))
 }
 
-/// The gene's canonical (MANE Select) protein facts from UniProt (tickets
-/// 2033 finding 3 and 2036): the accession, the reference residue at the
+/// The gene's canonical (MANE Select) protein facts from UniProt: the accession, the reference residue at the
 /// requested position (None when the request names no position or the
 /// position falls outside the sequence), and the MANE Select transcript
 /// with its current RefSeq version from the record's MANE-Select
@@ -417,8 +414,7 @@ async fn canonical_protein_facts(
 }
 
 /// A resolved hit whose headline does not spell the request on the MANE
-/// transcript. Decide the numbering story before anything prints (ticket
-/// 2035 finding 4): when the gene's canonical protein carries the requested
+/// transcript. Decide the numbering story before anything prints: when the gene's canonical protein carries the requested
 /// reference residue at the requested position and no annotation on the
 /// marked MANE transcript spells the request, the request's own numbering
 /// is valid on MANE while the hit names a different change — the
@@ -428,12 +424,10 @@ async fn canonical_protein_facts(
 /// `p.Ser315Tyr`), so `get variant` refuses rather than return the
 /// lookalike. When the check instead
 /// finds a different residue at the position, the request really does
-/// follow another transcript's numbering and the answer says so (ticket
-/// 2016). When the request names no residue, or the sequence lookup is
+/// follow another transcript's numbering and the answer says so. When the request names no residue, or the sequence lookup is
 /// unavailable, nothing is proven either way — and an unverified
 /// other-transcript claim is exactly the false note this rule removes
-/// — so the answer stays silent.
-///
+/// so the answer stays silent.
 /// `prefetched` carries facts an earlier step already fetched (a
 /// ClinVar-free response needs them before resolution); a
 /// `None` with no MANE marker means the lookup already ran and failed, so

@@ -1079,7 +1079,7 @@ fn agreeing_record_level_classification_drops_the_cached_copy_note() {
     assert!(variant.significance_note.is_none());
 }
 
-/// Recorded provider shapes for the ticket-2042 wiring tests: the S183Y
+/// Recorded provider shapes for the protein-numbering wiring tests: the S183Y
 /// MyVariant query (query_tp53_s183y_20261009.json) and the minimized
 /// UniProt record (get_p04637_20261008.json) with Ser at 183 and the
 /// MANE-Select cross-reference NM_000546.6. The MyGene TP53→P04637

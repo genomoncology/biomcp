@@ -113,7 +113,7 @@ STATE_AND_RESOLUTION = re.compile(
     re.IGNORECASE,
 )
 
-# pm's own verdict line (2048): `pm ticket review` writes exactly
+# pm's own verdict line: `pm ticket review` writes exactly
 # "Reviews: revision <sha>, accept|findings" at the top of the ticket,
 # and pm reads verdicts only from that line, so the contract accepts it
 # as a valid record rather than forcing a hand-rewrite.

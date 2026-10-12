@@ -1,5 +1,4 @@
-//! Sidecar tests for the gene+protein change resolution choice (tickets
-//! 1297 and 2016). Hit shapes come from the recorded MyVariant.info captures
+//! Sidecar tests for the gene+protein change resolution choice. Hit shapes come from the recorded MyVariant.info captures
 //! named per test; each records the decisive fields only.
 
 use super::*;
@@ -215,7 +214,7 @@ fn protein_change_resolution_headlines_the_mane_transcript_of_the_query() {
 fn protein_change_resolution_resolves_a_past_insert_change_on_mane_numbering() {
     // Recorded BRCA1 I1568N hit (query_brca1_i1568n_20261007.json) composed
     // with the recorded ClinVar 55588 lookalike (query_brca1_a314t_20261007
-    // .json): past the isoform insert NM_007300 numbers the residue 21
+    // json): past the isoform insert NM_007300 numbers the residue 21
     // higher than MANE Select NM_007294 (p.Ile1589Asn vs p.Ile1568Asn).
     // With the query's ClinVar-preferred stem marking NM_007294, the true
     // hit names the requested I1568N and resolves; the first-NM_ rule would
@@ -471,7 +470,7 @@ fn protein_change_resolution_resolves_the_requested_numbering_without_a_marker()
     // Recorded BRCA1 I1568N shape (query_brca1_i1568n_20261007.json): the
     // single ClinVar-less response carries no MANE marker, and the
     // annotation naming the request is the signal
-    // — NM_007294's p.Ile1568Asn spells the request, so the answer resolves
+    // NM_007294's p.Ile1568Asn spells the request, so the answer resolves
     // on MANE Select numbering with no note instead of answering p.Ile1589Asn
     // on the first NM_ (NM_007300.3) with a note claiming the request
     // follows another transcript's numbering.
@@ -591,7 +590,7 @@ fn protein_change_resolution_refuses_an_isoform_spelling_of_a_mane_numbered_requ
 /// `p.Ser1566Phe`. UniProt P38398 has Ser at 1587 as well as at 1566, so
 /// the request's numbering is valid on the canonical protein and no record
 /// names that change on MANE: the answer refuses, naming the MANE spelling
-///, instead of resolving `p.Ser1587Phe` on NM_007300.3.
+///instead of resolving `p.Ser1587Phe` on NM_007300.3.
 #[test]
 fn protein_change_resolution_refuses_a_long_isoform_spelling_of_a_mane_numbered_request() {
     let hits = vec![
@@ -1083,8 +1082,7 @@ fn protein_change_resolution_notes_unchecked_numbering_without_facts() {
     );
 }
 
-/// Recorded TP53 R116Q shape with the canonical facts unavailable (ticket
-/// 2042): the headline names a different change (p.Arg248Gln), and
+/// Recorded TP53 R116Q shape with the canonical facts unavailable: the headline names a different change (p.Arg248Gln), and
 /// without the residue check BioMCP cannot tell a MANE-numbered request
 /// that no record names from another transcript's numbering — so it
 /// refuses rather than return the lookalike with no note at all.

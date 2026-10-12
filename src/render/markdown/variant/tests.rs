@@ -1167,7 +1167,7 @@ fn gwas_search_markdown_renders_result_row() {
 
 #[test]
 fn a_variant_card_prints_no_blank_line_for_an_absent_numbering_note() {
-    // The protein-numbering note line (2042) printed a blank
+    // The protein-numbering note line printed a blank
     // line whenever no note existed, so every variant card carried an empty
     // line after "Transcript:". The note's own newline now travels inside
     // the conditional.
