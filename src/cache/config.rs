@@ -136,7 +136,7 @@ fn resolve_cache_config_from_parts_with_max_age(
 }
 
 fn default_cache_root() -> PathBuf {
-    // A test build never reads the machine's own cache (ticket 2052): a
+    // A test build never reads the machine's own cache: a
     // developer host can hold hundreds of megabytes of cached source
     // bodies, and the suite's time limits assume the small default graph.
     // The per-process folder under the OS temp dir gives every test the
@@ -418,7 +418,7 @@ mod tests {
     use std::str::FromStr;
     use std::time::Duration;
 
-    /// Ticket 2052: a test build's default cache root is a per-process
+    /// A test build's default cache root is a per-process
     /// folder under the OS temp dir, never the machine's own platform
     /// cache directory, so a test without a hand-written cache guard cannot
     /// read a developer host's hundreds of megabytes of cached bodies.

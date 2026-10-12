@@ -216,7 +216,7 @@ pub(crate) async fn get_with_context(
     // term for the missing label before enrichment would re-resolve the
     // abbreviation in Open Targets and CIViC and attach another disease's
     // genes, so the substitution stays display-only and the sections see the
-    // record's own terms (ticket 2017). A term the record does not hold as a
+    // record's own terms. A term the record does not hold as a
     // synonym keeps the previous behavior: the caller's phrase is the best
     // identity the record can offer.
     let requested = name_or_id.trim();

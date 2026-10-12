@@ -703,7 +703,7 @@ fn drugsfda_failure_state_matrix() {
 
 #[test]
 fn unreadable_who_bundle_degrades_the_card_section_without_a_local_path() {
-    // Ticket 2038 finding 7, 2035 #6: with WHO broken, `get drug <name>
+    // 2035 #6: with WHO broken, `get drug <name>
     // regulatory` must not error outright carrying a local data path. The
     // card degrades: the WHO section is omitted with a note that names the
     // gap, and the note carries no local path, so JSON and MCP callers

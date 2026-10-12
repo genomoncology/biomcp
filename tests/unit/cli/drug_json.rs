@@ -425,7 +425,7 @@ fn drug_search_json_all_region_keeps_empty_buckets() {
 fn drug_search_json_all_region_carries_the_who_degrade_note() {
     // A lost WHO section is not a negative finding: the envelope names the
     // source and the failing export file the same way the Markdown and MCP
-    // surfaces do (ticket 2021).
+    // surfaces do.
     let json = drug_search_json(
         crate::entities::drug::DrugSearchPageWithRegion::All {
             us: crate::entities::SearchPage::offset(Vec::new(), Some(0)).into(),

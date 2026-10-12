@@ -180,8 +180,8 @@ fn is_unicode_16_0_format(scalar: char) -> bool {
 }
 
 /// Provider display text passes through this operation exactly once at the
-/// Markdown leaf; ticket 1186 freezes the policy. No second escape surface.
-// dead-code reason: Ticket 1186 freezes the Unicode-16 provider sanitizer; ticket 1142 is the first consumer.
+/// Markdown leaf; the policy is frozen. No second escape surface.
+// dead-code reason: Freezes the Unicode-16 provider sanitizer.
 #[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn sanitize_provider_inline(value: &str) -> String {
     // 1. NFC normalization.

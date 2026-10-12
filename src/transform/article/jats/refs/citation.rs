@@ -1,4 +1,4 @@
-//! Pure structural citation-evidence extraction for ticket 1145.
+//! Pure structural citation-evidence extraction.
 
 use roxmltree::{Node, NodeType};
 

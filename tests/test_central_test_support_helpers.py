@@ -68,7 +68,7 @@ def line_number(contents: str, offset: int) -> int:
 
 
 def is_allowed_runtime_temp_scratch(relative_path: str, match: re.Match[str]) -> bool:
-    # Ticket 2052: a test build's default cache root is a runtime scratch
+    # A test build's default cache root is a runtime scratch
     # the process shares, not a fixture a test owns, so no RAII guard can
     # outlive it; the OS temp cleaner handles the folder the way it handles
     # the benchmark scratch.

@@ -1064,7 +1064,7 @@ mod tests {
     #[test]
     fn drug_interaction_note_covers_the_zero_rows_wordings() {
         // The covered-zero-rows arm must read as coverage information,
-        // not a clean bill (ticket 1254).
+        // not a clean bill.
         let mut drug: crate::entities::drug::Drug =
             serde_json::from_value(serde_json::json!({"name": "dabigatran"})).expect("drug");
         drug.interaction_coverage_status = Some(

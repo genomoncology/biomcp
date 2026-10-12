@@ -41,7 +41,7 @@ fn set_all_modified(root: &std::path::Path, mtime: std::time::SystemTime) {
 
 #[test]
 fn cached_index_freshness_follows_the_cached_basis_not_the_files() {
-    // Through cached_index_for_root itself (ticket 1254): the basis is
+    // Through cached_index_for_root itself: the basis is
     // captured at load, so replacing the bundle afterwards cannot flip
     // a loaded index's label — in either direction.
     let root = tempfile::tempdir().expect("tempdir");
@@ -68,7 +68,7 @@ fn cached_index_freshness_follows_the_cached_basis_not_the_files() {
 #[test]
 fn cached_index_freshness_keeps_a_fresh_load_fresh_after_aging_the_files() {
     // The other direction: a basis captured fresh stays fresh even
-    // after the files on disk age past the window (ticket 1254). The
+    // after the files on disk age past the window. The
     // server outlives the bundle files; only sync evicts the cache.
     let root = tempfile::tempdir().expect("tempdir");
     write_valid_bundle(root.path());

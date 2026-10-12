@@ -1,4 +1,4 @@
-//! Ticket 1205: the drug cell-lines section and its row helper arguments. Pure:
+//! The drug cell-lines section and its row helper arguments. Pure:
 //! recorded counts and pure inputs. No network, no server.
 
 use super::*;

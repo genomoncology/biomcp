@@ -84,7 +84,7 @@ async fn fluorouracil_synonym_takes_the_plain_ingredient_card_and_label() {
     )
     .await;
 
-    // Ticket 2052: the request spells the synonym the record's secondary
+    // The request spells the synonym the record's secondary
     // database titles carry, and the card still takes the plain
     // ingredient's name with its own label (v0.9.1 named the card
     // "5-fluorouracil" and printed no label, because the lookup searched
@@ -187,7 +187,7 @@ async fn motrin_resolves_to_the_ingredient_its_labels_mostly_name() {
     )
     .await;
 
-    // Ticket 2052: MyChem's Motrin rows pair the PM combination first, so
+    // MyChem's Motrin rows pair the PM combination first, so
     // the merged card names the combination, and the brand's own labels —
     // mostly plain ibuprofen records — resolve the card to that one
     // ingredient (v0.9.2-dev named the card "ibuprofen and diphenhydramine
@@ -291,7 +291,7 @@ async fn acetaminophen_takes_the_plain_ingredient_card_and_label() {
     )
     .await;
 
-    // Ticket 2052: an ingredient query takes the plain ingredient's name
+    // An ingredient query takes the plain ingredient's name
     // and label. The other records' combination rows are product mentions,
     // not identity claims, so the record that is acetaminophen decides the
     // tier (v0.9.2-dev refused: "could not map 'acetaminophen' to a single
@@ -389,7 +389,7 @@ async fn tylenol_resolves_to_the_plain_ingredient_its_labels_mostly_name() {
     )
     .await;
 
-    // Ticket 2052: a brand whose labels mostly name one ingredient
+    // A brand whose labels mostly name one ingredient
     // resolves to it. The acetaminophen record's plain vote decides the
     // tier over the other records' combination mentions, and the label
     // choice takes the plain acetaminophen record of the family (v0.9.2-dev
@@ -467,7 +467,7 @@ async fn aspirin_card_names_the_ingredient_not_a_product_rows_strength() {
     )
     .await;
 
-    // Ticket 2052: a card name never carries a product row's strength —
+    // A card name never carries a product row's strength —
     // the row "Aspirin 81 mg/Aspirin" pairs the brand with the ingredient
     // aspirin, not with a strength-sized fragment of it (v0.9.2-dev named
     // the card "aspirin 81 mg").
@@ -503,7 +503,7 @@ const QLEX_MYCHEM_MISS: &str = r#"
 /// 2026-10-11): the KEYTRUDA QLEX record, whose generic names the
 /// under-the-skin pairing with a qualified form of a listed ingredient —
 /// the record's own ingredient list is what makes the plain side the
-/// ingredient, never a name string (ticket 2052).
+/// ingredient, never a name string.
 const QLEX_LABEL_BODY: &str = r#"{
  "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
  "results": [
@@ -561,7 +561,7 @@ async fn qlex_pairing_derives_the_plain_ingredient_from_the_records_own_list() {
     )
     .await;
 
-    // Ticket 2052: "berahyaluronidase alfa-pmph" is a qualified form of
+    // "berahyaluronidase alfa-pmph" is a qualified form of
     // the listed ingredient "berahyaluronidase alfa", and pembrolizumab
     // is listed as the plain ingredient itself, so the pairing resolves to
     // pembrolizumab without any code naming the enzyme (the literal
@@ -613,7 +613,7 @@ async fn cold_and_flu_still_refuses_across_distinct_combination_products() {
     .await;
     let (_env, _ddinter) = super::drug_fixture_env(base.as_str(), "cold-and-flu-ddinter");
 
-    // Ticket 2039, kept honest by ticket 2052: a shelf name several
+    // Kept honest by the shared-name rule: a shelf name several
     // distinct combination products share names no one drug, so the
     // records' combination votes disagree as ingredient sets and the
     // query refuses instead of merging one combination's card.

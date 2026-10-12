@@ -144,7 +144,7 @@ fn record_mane_select_transcript_reads_the_committed_capture() {
     // The minimized P04637 capture (uniprot/get_p04637_20261008.json) keeps
     // the record's MANE-Select cross-reference: its RefSeqNucleotideId names
     // the MANE transcript with the current version while MyVariant's SnpEff
-    // build still headlines NM_000546.5 (ticket 2036).
+    // build still headlines NM_000546.5.
     let bytes = include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/uniprot/get_p04637_20261008.json"

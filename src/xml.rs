@@ -7,7 +7,7 @@ pub(crate) const ARTICLE_XML_NODE_LIMIT: u32 = 1_000_000;
 /// blocking-thread stacks through the recursive JATS and ClinVar
 /// walkers. Measured: the deepest tracked fixture nests 9 levels
 /// (VAERS responses); JATS publisher markup stays an order below
-/// this cap (ticket 1243).
+/// this cap.
 pub(crate) const EXTERNAL_XML_DEPTH_LIMIT: u32 = 64;
 
 #[derive(Debug, thiserror::Error)]

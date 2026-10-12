@@ -72,8 +72,7 @@ pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
             if let Some(section_names) = &capability.sections {
                 // No `uniqueItems` here: adverse-event accepts duplicate
                 // sections, and a flat descriptive root may never narrow
-                // below its widest branch (ticket 1258; the one-sided
-                // constraint is a named clash in merge_property).
+                // below its widest branch.
                 // Per-entity duplicate rejection stays body-side,
                 // enforced by `reject_duplicate_sections`.
                 let sections =

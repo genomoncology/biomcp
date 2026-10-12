@@ -1157,10 +1157,9 @@ async fn protein_change_uniprot_fixture_server()
 }
 
 /// The ClinVar-free S183Y response must reach the canonical-protein check
-/// before any answer prints (ticket 2036): with UniProt reachable the
+/// before any answer prints: with UniProt reachable the
 /// request refuses naming Ser at 183, and the request log shows the
-/// up-front UniProt read. Skipping that read fails this test (ticket 2042
-/// re-pins the wiring). The no-cache scope matches the CLI's `--no-cache`
+/// up-front UniProt read. Skipping that read fails this test. The no-cache scope matches the CLI's `--no-cache`
 /// (the environment alone does not bypass the disk cache for client
 /// construction).
 #[tokio::test]
@@ -1195,7 +1194,7 @@ async fn protein_change_get_checks_the_canonical_protein_before_answering() {
 }
 
 /// With UniProt unreachable the same request still cannot resolve silently
-/// (ticket 2042): the answer keeps the record's spelling of the request
+///: the answer keeps the record's spelling of the request
 /// (p.Ser183Tyr on NM_001126115.1) under a note that says plainly the
 /// numbering could not be checked against MANE.
 #[tokio::test]

@@ -16,7 +16,7 @@ macro_rules! fixture {
 
 const URL: &str = "https://pharmacodb.ca/graphql";
 
-// Ticket 1205 acceptance 1: the client parses each recorded fixture and maps the
+// The client parses each recorded fixture and maps the
 // two upstream miss messages to `None`.
 
 #[test]
@@ -102,7 +102,7 @@ fn another_graphql_error_is_a_source_error_naming_the_url_and_the_operation() {
     assert!(message.contains("experiments"), "got: {message}");
 }
 
-// Ticket 1205 acceptance 11: an HTML body served with HTTP 200 is a provider
+// An HTML body served with HTTP 200 is a provider
 // error that names the URL and the operation, and no row survives it.
 
 #[test]
@@ -134,7 +134,7 @@ fn an_html_body_served_with_http_200_is_a_provider_error() {
     }
 }
 
-// Ticket 1205 acceptance 1 and 2: the counts projection sums per dataset in name
+// And 2: the counts projection sums per dataset in name
 // order, and the row projection keeps every published metric as it stands.
 
 #[test]

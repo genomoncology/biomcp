@@ -100,7 +100,7 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
     .expect("markdown");
 
     // A verified crosswalk hit opens the named disease; an unverified
-    // crosswalk identifier keeps the v0.9.1 search command (ticket 2047).
+    // crosswalk identifier keeps the v0.9.1 search command.
     assert!(markdown.contains("`biomcp get disease MONDO:0005233`"));
     assert!(markdown.contains("`biomcp search disease --query melanoma`"));
     // Variant rsIDs and accepted HGVS expressions resolve exactly.

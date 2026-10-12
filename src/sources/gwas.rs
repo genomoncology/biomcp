@@ -100,9 +100,9 @@ impl GwasClient {
     /// The legacy by-rsID associations endpoint retired upstream (HTTP 410
     /// since 2026-10), so that status names the retired endpoint rather
     /// than an empty result. A 404 keeps meaning no associations for the
-    /// rsID (ticket 2050), the way a 200 empty page does, and only the
+    /// rsID, the way a 200 empty page does, and only the
     /// retired class degrades with the honest gap note instead of the hard
-    /// failure the live source now returns (ticket 2047).
+    /// failure the live source now returns.
     async fn get_json_by_rsid<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
@@ -311,12 +311,12 @@ fn gwas_status_is_transient(message: &str) -> bool {
     status == 408 || status == 429 || (500..=599).contains(&status)
 }
 
-/// The honest gap note for the retired legacy endpoint (ticket 2047): the
+/// The honest gap note for the retired legacy endpoint: the
 /// by-rsID associations read is gone upstream, not temporarily flaky, so
 /// the variant degrades with this reason instead of the transient wording.
 /// The reason fits the section-outcome message bound whole, so no renderer
 /// cuts it mid-word, and it names no retry because no retry reaches a
-/// retired endpoint (ticket 2050). One sentence, stated once (ticket 2052):
+/// retired endpoint. One sentence, stated once:
 /// the typed error carries it, and every reader reads it from the error.
 pub(crate) const RETIRED_ENDPOINT_REASON: &str = "The legacy GWAS Catalog by-rsID endpoint retired upstream (HTTP 410); GWAS association data is unavailable until the v2 endpoint is wired.";
 
@@ -331,8 +331,8 @@ fn retired_gwas_endpoint_error() -> BioMcpError {
 }
 
 /// Whether an error is the retired-endpoint degrade: no retry recovers it,
-/// so the variant's GWAS section offers no retry command (ticket 2050). The
-/// retirement is a typed fact, not a sentence comparison (ticket 2052).
+/// so the variant's GWAS section offers no retry command. The
+/// retirement is a typed fact, not a sentence comparison.
 pub(crate) fn is_retired_endpoint_error(err: &BioMcpError) -> bool {
     match err {
         BioMcpError::SourceEndpointRetired { .. } => true,

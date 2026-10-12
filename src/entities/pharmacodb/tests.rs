@@ -1,4 +1,4 @@
-//! Ticket 1205: the shared PharmacoDB shaping rules, replayed from recorded
+//! The shared PharmacoDB shaping rules, replayed from recorded
 //! fixture bytes and pure inputs. No network, no server.
 
 use super::*;

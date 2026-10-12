@@ -1,4 +1,4 @@
-//! Ticket 1145 citation-evidence extractor tests.
+//! Citation-evidence extractor tests.
 
 use super::super::refs::JatsCitationExtraction;
 use super::super::refs::JatsCitationTargetIds;

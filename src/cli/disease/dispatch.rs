@@ -339,7 +339,7 @@ pub(super) struct DiseaseSearchMeta {
     #[serde(skip_serializing_if = "Option::is_none")]
     workflow_playbook: Option<String>,
     /// Stale-cache and provider-window notes carried to the JSON consumer
-    /// (ticket 1256); empty meta objects never gain a `notes` key.
+    ///; empty meta objects never gain a `notes` key.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     notes: Vec<String>,
 }

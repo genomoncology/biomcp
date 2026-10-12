@@ -2,10 +2,10 @@ use super::run_outcome_inner;
 use crate::cli::Cli;
 use clap::Parser;
 
-/// Future-size probe (ticket 1243). `run_outcome_inner`'s future is the
+/// Future-size probe. `run_outcome_inner`'s future is the
 /// biggest state machine in the CLI: every dispatch arm's locals live in
 /// it, and the 8 MiB execute stack's headroom is set by its size (the
-/// ticket 1225 pin). Future construction is lazy — parsing a minimal CLI
+/// Pin). Future construction is lazy — parsing a minimal CLI
 /// and calling the async fn runs no I/O — so the assert's failure
 /// message reports the measured size without side effects.
 ///
@@ -54,7 +54,7 @@ mod runtime_split {
     use std::time::{Duration, Instant};
 
     /// The MCP path drives on the caller's runtime and builds no
-    /// one-shot runtime of its own. Ticket 1257 rewrote the proof:
+    /// one-shot runtime of its own. A later rewrite changed the proof:
     /// the drive goes through `execute_mcp_cli` — the real MCP entry
     /// (`mcp/shell.rs` calls it), so `for_shared_call` picks the
     /// shared drive under this ambient test runtime exactly as it

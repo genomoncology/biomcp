@@ -268,7 +268,7 @@ mod tests {
     struct TestEnvironment {
         previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
         /// Bypasses every cache for the environment's lifetime without
-        /// latching the process mode (ticket 1261). Replaces the former
+        /// latching the process mode. Replaces the former
         /// `BIOMCP_CACHE_MODE=off` entry, which the once-read could not
         /// forget after the variable was restored.
         // dead-code reason: held-for-drop test cache-mode guard restores the override when the environment drops
@@ -330,7 +330,7 @@ mod tests {
         }
     }
 
-    /// The command future is large (ticket 1191). Test threads keep a smaller
+    /// The command future is large. Test threads keep a smaller
     /// stack than the CLI execute thread, so run each body on a sized thread.
     fn run_with_stack<F: std::future::Future + Send + 'static>(future: F) -> F::Output
     where

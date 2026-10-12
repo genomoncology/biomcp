@@ -73,7 +73,7 @@ pub(super) fn who_api_row(product_id: &str, inn: &str) -> WhoPrequalificationEnt
     }
 }
 
-/// The drug fixture env (ticket 2050): the one shared scratch-cache guard
+/// The drug fixture env: the one shared scratch-cache guard
 /// carrying every source base a name-resolution test touches — MyChem,
 /// openFDA, the discover rescue's OLS4 and its HPO/UMLS lookups, the pacing
 /// origin, and a missing DDInter tree — so no drug fixture test decides on
@@ -92,7 +92,7 @@ fn drug_fixture_env(
     env.set("BIOMCP_OPENFDA_BASE", base);
     // The guarded discover rescue reaches OLS4 and the HPO alias lookup it
     // carries; both stay on the fixture so no name-resolution test leaves
-    // it (ticket 2037).
+    // it.
     env.set("BIOMCP_OLS4_BASE", base);
     env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
     env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
@@ -248,7 +248,7 @@ async fn label_fetch_failures_settle_as_unavailable_outcomes() {
     let (base, server) = required_label_failure_server().await;
     let (_env, _ddinter) = drug_fixture_env(&base, "required-label-ddinter-counter");
 
-    // Ticket 1300: a requested label section whose fetch failed settles as
+    // A requested label section whose fetch failed settles as
     // an unavailable outcome instead of aborting the card, and the provider's
     // error detail never leaks into the settled result.
     for sections in [
@@ -280,7 +280,7 @@ async fn label_fetch_failures_settle_as_unavailable_outcomes() {
 async fn label_fallback_fetch_error_stays_an_error() {
     let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Error).await;
 
-    // Ticket 1300 review: the field-scoped miss must fall through to the
+    // Review: the field-scoped miss must fall through to the
     // identity-field fallback, and a real fallback fetch error settles as an
     // unavailable outcome — never as a silent no-match empty.
     let drug = label_fallback_fixture_drug(&base, "fixture-drug", &["label"]).await;
@@ -305,7 +305,7 @@ async fn label_fallback_fetch_error_stays_an_error() {
 async fn label_elements_oversize_response_settles_as_unavailable_with_reason() {
     let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Oversize).await;
 
-    // Ticket 2033 finding 8: an identity-field fallback response past
+    // An identity-field fallback response past
     // the body read limit can never succeed, and it is a provider-side
     // failure rather than a source-confirmed zero, so it settles as an
     // unavailable outcome that names the oversize reason.
@@ -423,7 +423,7 @@ async fn label_elements_match_server(
 async fn label_elements_fallback_returns_the_own_record_not_an_empty() {
     let (base, server) = label_elements_match_server(ElementsFallbackMatch::Propulsid).await;
 
-    // Ticket 1300 second review: openFDA holds the withdrawn Propulsid
+    // Second review: openFDA holds the withdrawn Propulsid
     // label, so the identity-field fallback must return it even though its
     // openfda fields are empty and another drug's mention ranks in the
     // answer — never settle as an empty outcome for a drug the source has.
@@ -476,7 +476,7 @@ async fn label_elements_fallback_no_match_settles_as_the_honest_empty() {
 }
 
 /// Percent-decode one query-parameter value, so a fixture server can route on
-/// the decoded MyChem `q` term (ticket 2031).
+/// the decoded MyChem `q` term.
 fn decoded_query_param(request_target: &str, key: &str) -> Option<String> {
     let query = request_target.split_once('?')?.1;
     for pair in query.split('&') {
@@ -511,7 +511,7 @@ fn decoded_query_param(request_target: &str, key: &str) -> Option<String> {
 
 /// Extract a quoted field value (`field:"value"`) from a decoded search
 /// parameter, so a fixture server can route the product-data-elements
-/// search on the name it asks for (ticket 2047).
+/// search on the name it asks for.
 fn quoted_search_field_value(term: &str, field: &str) -> Option<String> {
     let marker = format!("{field}:\"");
     let start = term.find(&marker)? + marker.len();
@@ -520,8 +520,7 @@ fn quoted_search_field_value(term: &str, field: &str) -> Option<String> {
     Some(rest[..end].to_string())
 }
 
-/// A fixture server for the name-resolution flows (tickets 2031, 2037 and
-/// 2047): MyChem answers by decoded query term, each openFDA label search
+/// A fixture server for the name-resolution flows: MyChem answers by decoded query term, each openFDA label search
 /// answers with the body the caller registered or a no-match 404 — the
 /// product-data-elements search routes on the quoted name it asks for,
 /// separate from the field-scoped and exact searches — and the OLS4
@@ -654,7 +653,7 @@ async fn terfenadine_returns_terfenadines_card_with_an_honest_empty_label() {
     )
     .await;
 
-    // Ticket 2031: MyChem's text query also returns fexofenadine through its
+    // MyChem's text query also returns fexofenadine through its
     // "Terfenadine carboxylate" synonyms, but only terfenadine's own record
     // (DB00342) may resolve the card; openFDA holds no terfenadine SPL
     // record, so the label settles as the honest empty.
@@ -699,7 +698,7 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
 
     let (_env, _ddinter) = drug_fixture_env(&base, "refusal-ddinter");
 
-    // Ticket 2031: when no record names the query and openFDA's identity
+    // When no record names the query and openFDA's identity
     // fields cannot resolve it either, the lookup refuses and says which
     // other drugs the text search matched.
     let err = super::get("ferric oxide", &["label".to_string()])
@@ -710,7 +709,7 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
         message.contains("No drug card matches \"ferric oxide\""),
         "{message}"
     );
-    // Ticket 2050: the matched-drug names are the records' own identity
+    // The matched-drug names are the records' own identity
     // names (zinc oxide, pramocaine), never another product's merged
     // ingredient line.
     assert!(message.contains("zinc oxide"), "{message}");
@@ -722,7 +721,7 @@ async fn a_text_only_match_refuses_and_names_what_matched() {
     server.abort();
 }
 
-/// Ticket 2047: a drug name miss pays the discover resolution twice on
+/// A drug name miss pays the discover resolution twice on
 /// main — once in the entity refusal's rescue and again in the CLI alias
 /// fallback (which resolves the same query with the cache off). The alias
 /// fallback's per-process memo serves the second caller from the first
@@ -823,7 +822,7 @@ async fn a_brand_query_resolves_through_the_mychem_record_itself() {
     )
     .await;
 
-    // Ticket 2031, fourth-review finding 1: live openFDA returns NOT_FOUND
+    // Fourth-review finding 1: live openFDA returns NOT_FOUND
     // for `openfda.brand_name:"TAGRISSO"` (the label has no openFDA block),
     // so the fixture answers every label search with no match — the brand
     // must resolve through the drugcentral synonyms and NDC proprietary
@@ -838,7 +837,7 @@ async fn a_brand_query_resolves_through_the_mychem_record_itself() {
 /// A TCP server that accepts connections and never answers: a stalled
 /// discover source. Both refusal rounds — the entity rescue inside `get`
 /// and the CLI alias fallback — must bound their discover rounds against
-/// it (ticket 2052).
+/// it.
 async fn stalled_ols4_server() -> (String, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -863,7 +862,7 @@ async fn stalled_ols4_server() -> (String, tokio::task::JoinHandle<()>) {
     (base, task)
 }
 
-/// Ticket 2052: a refusal is two rounds over one discover source — the
+/// A refusal is two rounds over one discover source — the
 /// entity rescue and the CLI alias fallback — and a stalled source must
 /// not collect the refusal budget twice. The CLI refusal against a
 /// stalled source settles inside one budget (about two seconds plus the
@@ -912,7 +911,7 @@ async fn a_stalled_drug_refusal_costs_one_discover_budget() {
 }
 
 /// The CLI alias fallback's own round gives up on the refusal budget
-/// (tickets 2050 and 2052): a gene miss has no entity-side discover
+///: a gene miss has no entity-side discover
 /// rescue, so the alias fallback's bounded round is the whole discover
 /// cost, and the refusal settles inside it. Setting the fallback timeout
 /// to an hour hangs this test past its watchdog.

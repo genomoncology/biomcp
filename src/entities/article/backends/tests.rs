@@ -628,7 +628,7 @@ async fn europepmc_cursor_walk_stops_on_an_absent_cursor_after_a_page_with_rows(
     // stop on that absent cursor. An empty final page would let the
     // empty-page stop end the walk first, so this corpus isolates the
     // absent-cursor stop: removing both cursor stops leaves the cursor
-    // parked on the final page and this count grows past three (ticket 2023).
+    // parked on the final page and this count grows past three.
     let searches = Arc::new(AtomicUsize::new(0));
     let counter = Arc::clone(&searches);
     let fixture = TestHttpFixture::spawn(move |request| {

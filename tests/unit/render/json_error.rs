@@ -1,14 +1,12 @@
 //! Error-shape contract tests for the JSON render surface, living in the
-//! tests tree instead of the production render module (ticket 2044's open
-//! Changes item, done in ticket 2047's lane).
+//! tests tree instead of the production render module.
 
 use super::to_error_json;
 use crate::error::BioMcpError;
 
 #[test]
 fn who_pq_sync_failure_json_recovery_carries_no_local_data_path() {
-    // The WHO local data path is terminal-only (ticket 2038 finding 7,
-    // 2035 #6): `--json who sync` with WHO broken must not put the
+    // The WHO local data path is terminal-only: `--json who sync` with WHO broken must not put the
     // resolved directory in `error.recovery`.
     let error = BioMcpError::SourceUnavailable {
         source_name: "WHO Prequalification".to_string(),

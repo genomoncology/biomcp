@@ -279,7 +279,7 @@ fn decode_archive_bytes_preserves_success_bytes_and_maps_errors() {
 #[test]
 fn parse_archive_manifest_xml_rejects_a_nesting_bomb() {
     // External S3 listing XML clears the shared pre-parse depth scan
-    // before roxmltree's per-open-tag recursion runs (ticket 1255);
+    // before roxmltree's per-open-tag recursion runs;
     // the rejection surfaces as the route's Api error naming the
     // limit.
     let bomb = format!("<ListBucketResult>{}", "<Version>".repeat(100));

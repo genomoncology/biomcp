@@ -554,7 +554,7 @@ pub(in crate::entities::variant) fn mark_gwas_unavailable(
 
 /// The degrade note a `source_unavailable` error carries: the error's own
 /// reason when the source stated one (the retired legacy endpoint names its
-/// retirement through the typed error, tickets 2047 and 2052), and the
+/// retirement through the typed error,), and the
 /// transient wording otherwise.
 fn gwas_unavailable_reason(err: &BioMcpError) -> String {
     const TRANSIENT: &str = "GWAS association data is temporarily unavailable.";

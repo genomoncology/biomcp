@@ -1,11 +1,11 @@
 //! Honest outcome reporting for `biomcp who sync`.
 //!
-//! Ticket 1304: the command names which export files refreshed and which
+//! The command names which export files refreshed and which
 //! refreshes failed, never claims bare success after failed refreshes, and
-//! exits nonzero when required files are missing after the run. Ticket 2021:
+//! exits nonzero when required files are missing after the run. The contract:
 //! a partial run says partial with per-file outcomes and also exits nonzero,
 //! because a report that keeps older files is not a synchronized source.
-//! Split out of `dispatch.rs` under the CLI line cap (ticket 2010's seam).
+//! Split out of `dispatch.rs` under the CLI line cap.
 
 use super::WhoCommand;
 use crate::cli::CommandOutcome;

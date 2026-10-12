@@ -120,7 +120,7 @@ fn who_pq_sync_error_carries_its_detail_and_recovery() {
     // the manual preseed has a destination (1304 post-landing review
     // finding 2; second review finding 17). That sentence stays on the
     // terminal; the projected surfaces carry the path-free spelling
-    // (ticket 2038 finding 7, 2035 #6).
+    //.
     let rendered = err.to_string();
     assert!(!rendered.contains("Run `biomcp who sync`"));
     assert!(rendered.contains("network access"));
@@ -128,7 +128,7 @@ fn who_pq_sync_error_carries_its_detail_and_recovery() {
     assert!(
         rendered.contains("place the three WHO Prequalification CSV exports in /tmp/who-pq-data")
     );
-    // The full reason also reaches the public surface (ticket 2021).
+    // The full reason also reaches the public surface.
     let projection = err.public_projection();
     assert_eq!(
         projection.message,

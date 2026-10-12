@@ -1,5 +1,5 @@
 //! The clinical-reading pointer table and the abbreviation-ambiguity
-//! surface the default trial source consumes (ticket 2040).
+//! surface the default trial source consumes.
 
 use super::{
     DirectNameResolution, MyDiseaseClient, holder_display_label, is_abbreviation_shaped_token,
@@ -21,7 +21,7 @@ pub(crate) struct ClinicalAbbreviationReading {
 }
 
 /// Abbreviations whose clinical meaning the source cannot see, with the
-/// sources checked and measured for each entry (ticket 2040). The
+/// sources checked and measured for each entry. The
 /// refusal stands on the source holders alone; this table only adds a
 /// pointer line naming a reading no holder carries.
 ///
@@ -48,7 +48,7 @@ pub(crate) struct ClinicalAbbreviationReading {
 ///   matching `query.cond=MF`, 28 list a myelofibrosis condition
 ///   against 6 for mycosis fungoides, so myelofibrosis is the reading
 ///   the trial corpus carries most. Curated abbreviation preferences
-///   stay deferred (ticket 2032).
+///   stay deferred.
 const CLINICAL_ABBREVIATION_READINGS: &[ClinicalAbbreviationReading] = &[
     ClinicalAbbreviationReading {
         token: "MM",
@@ -73,7 +73,7 @@ fn clinical_reading(requested: &str) -> Option<ClinicalAbbreviationReading> {
 }
 
 /// The pointer phrase both the `get disease` refusal and the default
-/// trial source's keyword-search note use (ticket 2040), so one reading
+/// trial source's keyword-search note use, so one reading
 /// keeps one wording across surfaces.
 pub(crate) fn clinical_reading_phrase(requested: &str) -> Option<String> {
     clinical_reading(requested).map(|reading| {
@@ -150,7 +150,7 @@ pub(crate) struct AbbreviationAmbiguity {
 /// abbreviation-shaped condition the disease resolver refuses (several
 /// holders, or a holder too short to count), `None` for anything else.
 /// Only abbreviation-shaped tokens reach the resolver, so ordinary
-/// condition words add no grounding request (ticket 2040).
+/// condition words add no grounding request.
 pub(crate) async fn resolve_abbreviated_disease_ambiguity(
     client: &MyDiseaseClient,
     requested: &str,

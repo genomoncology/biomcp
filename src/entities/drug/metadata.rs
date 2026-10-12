@@ -167,7 +167,7 @@ fn route_rank(route: &str) -> usize {
 pub(super) fn apply_openfda_metadata(drug: &mut Drug, label_response: &serde_json::Value) {
     let mut brand_names: Vec<String> = extract_openfda_values(label_response, "brand_name");
     // A sparse record names its brand only on the element line, so the
-    // chosen label's own brand still reaches the card (ticket 2047).
+    // chosen label's own brand still reaches the card.
     brand_names.extend(super::label::element_leading_brand_names(label_response));
     brand_names.extend(
         brand_names

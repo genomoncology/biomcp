@@ -279,7 +279,7 @@ pub struct PublicErrorProjection<'a> {
     pub source: Option<&'static str>,
     // The recovery borrows from the error: a surface recovery that names a
     // runtime location (the WHO sync directory) rides on the error's own
-    // suggestion instead of a second static spelling (ticket 2021).
+    // suggestion instead of a second static spelling.
     pub recovery: Option<&'a str>,
 }
 const EXTERNAL_FAILURE_MESSAGE_MAX_BYTES: usize = 512;
@@ -496,7 +496,7 @@ impl BioMcpError {
             // DDInter parse/read errors are marked with the bundle
             // prefix; only those surface as a bundle-read failure.
             // Unmarked Api errors (download failures) keep the generic
-            // line so upstream body text never leaks (ticket 1254).
+            // line so upstream body text never leaks.
             Self::Api { message, .. }
                 if source == "DDInter"
                     && message.starts_with(crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER) =>
@@ -509,7 +509,7 @@ impl BioMcpError {
                 )
             }
             // An HTML reply where the bundle was expected is a download
-            // failure, not an unreadable bundle (ticket 1256). The
+            // failure, not an unreadable bundle. The
             // content-type is our header, not upstream body text.
             Self::Api { message, .. }
                 if source == "DDInter"
@@ -526,7 +526,7 @@ impl BioMcpError {
             // WHO Prequalification validation failures name the export file
             // and the missing column; every word is composed here, so the
             // marked message surfaces verbatim instead of the generic API
-            // line (ticket 1304, mirroring the DDInter markers).
+            // line.
             Self::Api { message, .. }
                 if source == SourceProvider::WHO_PREQUALIFICATION.label()
                     && message
@@ -668,7 +668,7 @@ impl BioMcpError {
     pub fn public_projection(&self) -> PublicErrorProjection<'_> {
         // The article-search deadline names itself in its reason; carry that
         // sentence and its suggestion instead of the generic source-down
-        // message, so an expired search says what happened (ticket 1299).
+        // message, so an expired search says what happened.
         if let Self::SourceUnavailable { reason, .. } = self.underlying()
             && reason.starts_with(crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX)
         {
@@ -681,12 +681,10 @@ impl BioMcpError {
         // The WHO Prequalification sync failure names its files, and for a
         // validation failure the missing column, in its reason; carry that
         // sentence through instead of the generic source-down message, so a
-        // failed export says what happened (ticket 2021, mirroring the
-        // article deadline reason prefix). The recovery here serves the
+        // failed export says what happened. The recovery here serves the
         // projected surfaces — JSON `error.recovery` and MCP callers — so
         // it carries no local data path; the terminal keeps the sentence
-        // that names the resolved directory (ticket 2038 finding 7,
-        // 2035 #6).
+        // that names the resolved directory.
         if let Self::SourceUnavailable { reason, .. } = self.underlying()
             && reason.starts_with(crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX)
         {
@@ -699,7 +697,7 @@ impl BioMcpError {
         // The citation-evidence surface reports its own refusal summary and
         // its own deadline. Both carry only words this codebase composed, so
         // they can surface verbatim where raw provider text cannot, and
-        // neither fabricates a provider label (ticket 1302).
+        // neither fabricates a provider label.
         if let Self::Api { api, message, .. } = self.underlying()
             && api == crate::entities::article::graph::citation_evidence::CITATION_EVIDENCE_API
         {
@@ -848,8 +846,7 @@ impl fmt::Display for BioMcpError {
                 // The WHO Prequalification sync failure keeps its local data
                 // path on the terminal, which is the only surface allowed
                 // to carry one; JSON and MCP read the path-free recovery
-                // from the projection instead (ticket 2038 finding 7,
-                // 2035 #6).
+                // from the projection instead.
                 if let Self::SourceUnavailable {
                     reason, suggestion, ..
                 } = self.underlying()

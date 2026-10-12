@@ -233,13 +233,13 @@ tokio::task_local! {
     /// Per-command stale-cache serves. Scoped around the command future
     /// (see `with_stale_serve_notes`) so concurrent commands never mix
     /// notes; the value is an `Arc<Mutex<_>>` because the command future
-    /// must stay `Send` across the worker-thread boundary (ticket 1243).
+    /// must stay `Send` across the worker-thread boundary.
     static STALE_SERVE_NOTES: std::sync::Arc<std::sync::Mutex<Vec<StaleServeNote>>>;
 }
 
 /// Scope stale-serve recording around a command future. A plain function
 /// returning the scoped future, mirroring `with_no_cache` so the dispatch
-/// future keeps one copy of its state (ticket 1243).
+/// future keeps one copy of its state.
 pub(crate) fn with_stale_serve_notes<R, F>(fut: F) -> impl Future<Output = R>
 where
     F: Future<Output = R>,
@@ -324,7 +324,7 @@ pub(crate) fn take_stale_serve_sentences() -> Vec<String> {
 /// implies a revalidation failure, because a revalidated response cannot
 /// carry the marker (put strips it). The age is also recorded for the
 /// command's output notes so MCP and JSON consumers see it, not just the
-/// log (ticket 1256).
+/// log.
 fn note_stale_cache_serve(response: &mut reqwest::Response, provider: &'static str) {
     if let Some(value) = response
         .headers()
@@ -527,7 +527,7 @@ pub(crate) const BIOTHINGS_MAX_RESULT_WINDOW: usize = 10_000;
 
 // A RwLock rather than a OnceLock so tests can clear the slot and rerun
 // construction paths regardless of the tests that ran before them in the
-// same process (ticket 2023); production still builds the client once.
+// same process; production still builds the client once.
 static HTTP_CLIENT: std::sync::RwLock<Option<ClientWithMiddleware>> = std::sync::RwLock::new(None);
 
 fn cached_http_client() -> Option<ClientWithMiddleware> {
@@ -583,7 +583,7 @@ fn env_cache_mode() -> Option<CacheMode> {
     })
 }
 
-/// Test-only override slot for the process cache mode (ticket 1261).
+/// Test-only override slot for the process cache mode.
 /// The guard sets the mode on creation and restores the previous value
 /// on drop, so a test cannot latch a mode for the rest of the binary the
 /// way a set-and-restore of `BIOMCP_CACHE_MODE` latched the `OnceLock`
@@ -641,7 +641,7 @@ pub(crate) mod test_cache_mode {
 /// holds one, otherwise the once-read environment mode. Every reader —
 /// the HTTP middleware, the bypass and infinite checks, the FDA orphan
 /// sidecar — goes through here, so no two readers can disagree about
-/// when a mode change takes effect (ticket 1261).
+/// when a mode change takes effect.
 pub(crate) fn current_cache_mode() -> Option<CacheMode> {
     #[cfg(test)]
     if let Some(mode) = test_cache_mode_override() {
@@ -703,8 +703,7 @@ pub(crate) fn cache_is_bypassed() -> bool {
 /// Reads the process mode through [`current_cache_mode`] like every other
 /// cache-mode reader: the test override applies here too, and the
 /// once-read environment mode keeps this check in agreement with the HTTP
-/// middleware (ticket 1261; the earlier per-call environment read let the
-/// two readers disagree about when a change takes effect).
+/// middleware.
 pub(crate) fn cache_is_infinite() -> bool {
     current_cache_mode() == Some(CacheMode::ForceCache)
 }
@@ -2292,7 +2291,7 @@ mod tests {
         }
         // The drop restores whatever the process mode was before the
         // guard, so a test cannot latch `off` for the rest of the binary
-        // (ticket 1261).
+        //.
         let after = current_cache_mode();
         assert_eq!(
             after == Some(CacheMode::NoStore),

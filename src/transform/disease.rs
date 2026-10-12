@@ -549,7 +549,7 @@ const SEEDED_GENE_SOURCE: &str = "DisGeNET (via MyDisease.info)";
 /// bare `associated_genes` list) keeps the seed's source visible to the
 /// card's provenance table and to `assign_top_genes`, so the top-gene
 /// heading credits DisGeNET instead of Open Targets when Open Targets
-/// produced nothing (ticket 1256).
+/// produced nothing.
 fn seeded_gene_associations(
     disgenet: Option<&serde_json::Value>,
     max: usize,
@@ -694,7 +694,7 @@ pub fn name_from_mydisease_hit(hit: &MyDiseaseHit) -> String {
             // The search response carries no `mondo.name` for some records
             // (the "lung neoplasm" record answers with `mondo.label`
             // alone), and a card titled by its ontology ID names no disease
-            // (ticket 2050).
+            //.
             hit.mondo
                 .as_ref()
                 .and_then(|v| v.get("label"))
@@ -844,7 +844,7 @@ mod tests {
         assert_eq!(clean_definition(raw), "Example definition.");
     }
 
-    /// Ticket 2050: some records answer the search with `mondo.label` and
+    /// Some records answer the search with `mondo.label` and
     /// no `mondo.name` at all (the live MONDO:0021117 "lung neoplasm"
     /// record), and a card titled by its ontology ID names no disease.
     #[test]
@@ -882,7 +882,7 @@ mod tests {
     fn from_mydisease_hit_seeds_gene_associations_with_the_disgenet_source() {
         // The embedded DisGeNET block seeds both the gene list and the
         // association rows, so the card's table and `assign_top_genes` can
-        // credit the real source instead of Open Targets (ticket 1256).
+        // credit the real source instead of Open Targets.
         let hit: MyDiseaseHit = serde_json::from_value(serde_json::json!({
             "_id": "MONDO:0005233",
             "disgenet": {

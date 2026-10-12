@@ -1,4 +1,4 @@
-//! Recorded-reply tests for the two-sided label choice (ticket 2043): a
+//! Recorded-reply tests for the two-sided label choice: a
 //! brand query takes its own brand's label, and an ingredient query takes
 //! the plain single-ingredient product's label, never a combination,
 //! biosimilar or under-the-skin form.
@@ -265,7 +265,7 @@ const BEVACIZUMAB_BIOSIMILAR_PAGE_BODY: &str = r#"{
 /// Search `Darzalex` (live total 1): the only record the openfda-field
 /// search reaches is the under-the-skin DARZALEX FASPRO pairing, because
 /// the plain DARZALEX record (set `a4d0efe9`, published 2026-09-24) ships
-/// with an empty `openfda` block. Recorded 2026-10-10 (ticket 2047).
+/// with an empty `openfda` block. Recorded 2026-10-10.
 const DARZALEX_LABEL_BODY: &str = r#"{
  "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
  "results": [
@@ -289,8 +289,8 @@ const DARZALEX_LABEL_BODY: &str = r#"{
 }"#;
 
 /// The openFDA product-data-elements answers for `darzalex` and
-/// `daratumumab` (identical live answers, total 2, recorded 2026-10-10,
-/// ticket 2047): the FASPRO pairing record with a populated `openfda`
+/// `daratumumab` (identical live answers, total 2, recorded 2026-10-10):
+/// the FASPRO pairing record with a populated `openfda`
 /// block, and the plain intravenous DARZALEX record whose `openfda` block
 /// is empty — its only identity is the element line, whose first entry
 /// opens "DARZALEX Daratumumab DARATUMUMAB DARATUMUMAB". Section text
@@ -334,7 +334,7 @@ const DARZALEX_ELEMENTS_BODY: &str = r#"{
  ]
 }"#;
 
-/// The MyChem answer for `q=phesgo` (recorded 2026-10-10, ticket 2047): the
+/// The MyChem answer for `q=phesgo` (recorded 2026-10-10): the
 /// brand lives only on naked NDC rows whose ingredient line is the
 /// three-name combination.
 const PHESGO_CAPTURE: &str = r#"
@@ -356,7 +356,7 @@ const PHESGO_CAPTURE: &str = r#"
 "#;
 
 /// The openFDA product-data-elements answer for `phesgo` (live total 1,
-/// recorded 2026-10-10, ticket 2047): PHESGO's own record carries an empty
+/// recorded 2026-10-10): PHESGO's own record carries an empty
 /// `openfda` block; its element concatenates the two strengths, each
 /// opening "Phesgo pertuzumab, trastuzumab, and hyaluronidase-zzxf".
 /// Section text trimmed for the fixture.
@@ -383,7 +383,7 @@ const PHESGO_ELEMENTS_BODY: &str = r#"{
  ]
 }"#;
 
-/// The MyChem answer for `q=opdualag` (recorded 2026-10-10, ticket 2047):
+/// The MyChem answer for `q=opdualag` (recorded 2026-10-10):
 /// the brand lives only on a naked NDC row whose ingredient line is the
 /// two-name combination.
 const OPDUALAG_CAPTURE: &str = r#"
@@ -401,7 +401,7 @@ const OPDUALAG_CAPTURE: &str = r#"
 "#;
 
 /// `q=nivolumab`: the DrugBank/UNII identity record (recorded 2026-10-10,
-/// ticket 2047; synonym list trimmed to the first entries).
+///; synonym list trimmed to the first entries).
 const NIVOLUMAB_CAPTURE: &str = r#"
 {
   "total": 24,
@@ -418,7 +418,7 @@ const NIVOLUMAB_CAPTURE: &str = r#"
 "#;
 
 /// The openFDA label answer for `Opdualag` (live total 1, recorded
-/// 2026-10-10, ticket 2047): the combination product's own record.
+/// 2026-10-10): the combination product's own record.
 const OPDUALAG_LABEL_BODY: &str = r#"{
  "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
  "results": [
@@ -441,7 +441,7 @@ const OPDUALAG_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
-/// The MyChem answer for `q=Gleevec` (recorded 2026-10-10, ticket 2047):
+/// The MyChem answer for `q=Gleevec` (recorded 2026-10-10):
 /// the imatinib identity record, with its 32 merged NDC product rows
 /// removed for the fixture so the card names the plain ingredient the
 /// ticket's brand-tier shape needs; live answers carry generic-labeler
@@ -465,7 +465,7 @@ const GLEEVEC_CAPTURE: &str = r#"
 }
 "#;
 
-/// Search `Gleevec` (live total 1, recorded 2026-10-10, ticket 2047):
+/// Search `Gleevec` (live total 1, recorded 2026-10-10):
 /// Gleevec's own record.
 const GLEEVEC_LABEL_BODY: &str = r#"{
  "meta": {"results": {"skip": 0, "limit": 5, "total": 1}},
@@ -489,7 +489,7 @@ const GLEEVEC_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
-/// Search `imatinib` (live total 22, recorded 2026-10-10, ticket 2047):
+/// Search `imatinib` (live total 22, recorded 2026-10-10):
 /// the newest records are generic labelers. The rows kept are the leading
 /// generic-labeler record ("Imatinib Mesylate"/"IMATINIB MESYLATE", the
 /// qualified salt form) and the plain-ingredient twin a1787fad whose
@@ -529,7 +529,7 @@ const IMATINIB_GENERIC_PAGE_BODY: &str = r#"{
 }"#;
 
 /// The exact-field escalation for the card name `IMATINIB` (live total 4,
-/// recorded 2026-10-10, ticket 2047): every answer is a generic labeler
+/// recorded 2026-10-10): every answer is a generic labeler
 /// whose generic name is exactly "IMATINIB"; the three rows after the
 /// first were removed for the fixture. Section text trimmed.
 const IMATINIB_EXACT_BODY: &str = r#"{
@@ -551,8 +551,7 @@ const IMATINIB_EXACT_BODY: &str = r#"{
  ]
 }"#;
 
-// The live MyChem answers below were recorded 2026-10-10 (tickets 2043
-// and 2047) from `mychem.info/v1/query?q=<name>` with the `get` field
+// The live MyChem answers below were recorded 2026-10-10 from `mychem.info/v1/query?q=<name>` with the `get` field
 // list. Hits that carry no name field were dropped, product rows
 // deduplicated to first occurrences and long synonym lists trimmed, as
 // each header notes.
@@ -816,7 +815,7 @@ async fn keytruda_takes_keytrudas_own_label_not_the_qlex_pairing() {
     )
     .await;
 
-    // Ticket 2043: the brand query takes its own brand's label. openFDA
+    // The brand query takes its own brand's label. openFDA
     // answers the under-the-skin QLEX combination first, and only the plain
     // KEYTRUDA record's brand name equals the query. On main the card
     // searched its own name, took QLEX's record and stayed a sparse card.
@@ -840,7 +839,7 @@ async fn pembrolizumab_takes_the_plain_keytruda_label() {
     )
     .await;
 
-    // Ticket 2043: the ingredient query takes the plain product's label,
+    // The ingredient query takes the plain product's label,
     // never the under-the-skin combination, even though openFDA answers
     // QLEX first.
     let drug = name_resolution_fixture_drug(&base, "pembrolizumab").await;
@@ -869,7 +868,7 @@ async fn herceptin_takes_herceptins_own_label_not_the_biosimilar() {
     )
     .await;
 
-    // Ticket 2043: Herceptin's own label first, the biosimilar only if no
+    // Herceptin's own label first, the biosimilar only if no
     // other. The card resolves through the openFDA identity fallback and
     // the request's own name travels to the label lookup.
     let drug = name_resolution_fixture_drug(&base, "Herceptin").await;
@@ -892,7 +891,7 @@ async fn trastuzumab_takes_the_plain_herceptin_label_not_the_biosimilar() {
     )
     .await;
 
-    // Ticket 2043: the ingredient query takes the label whose generic name
+    // The ingredient query takes the label whose generic name
     // is exactly the ingredient — Herceptin's record — and never the
     // biosimilar records that answer first.
     let drug = name_resolution_fixture_drug(&base, "trastuzumab").await;
@@ -918,7 +917,7 @@ async fn rybrevant_takes_the_plain_rybrevant_label_not_faspro() {
     )
     .await;
 
-    // Ticket 2043: the brand query takes the record whose brand name
+    // The brand query takes the record whose brand name
     // equals it — the intravenous RYBREVANT record — while openFDA answers
     // the under-the-skin Faspro combination first.
     let drug = name_resolution_fixture_drug(&base, "Rybrevant").await;
@@ -941,7 +940,7 @@ async fn amivantamab_takes_the_plain_rybrevant_label_not_faspro() {
     )
     .await;
 
-    // Ticket 2043: no label's generic name is exactly "amivantamab" — the
+    // No label's generic name is exactly "amivantamab" — the
     // plain product carries the proper-name suffix "amivantamab-vmjw" — so
     // the qualified form serves after the combination is skipped and the
     // exact-field escalation (which openFDA answers with no match) settles
@@ -975,7 +974,7 @@ async fn avastin_takes_avastins_own_label() {
     )
     .await;
 
-    // Ticket 2043: the brand query takes Avastin's own record even though
+    // The brand query takes Avastin's own record even though
     // MyChem holds the brand only on a naked product row and the card
     // resolves through the identity fallback.
     let drug = name_resolution_fixture_drug(&base, "Avastin").await;
@@ -1001,7 +1000,7 @@ async fn bevacizumab_escalates_past_the_biosimilar_page_to_avastin() {
     )
     .await;
 
-    // Ticket 2043: openFDA's newest-first page holds only biosimilars, so
+    // OpenFDA's newest-first page holds only biosimilars, so
     // the exact-field escalation must ask for the plain product's own
     // record before any suffixed biosimilar can serve as the qualified
     // form.
@@ -1035,7 +1034,7 @@ async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
     )
     .await;
 
-    // Tickets 2043 and 2047: the identity fallback still resolves the brand
+    // And 2047: the identity fallback still resolves the brand
     // to the plain ingredient the Faspro pairing names, and the label
     // choice takes the plain intravenous DARZALEX record. openFDA's
     // field-scoped search reaches only the Faspro pairing — the plain
@@ -1071,7 +1070,7 @@ async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
     )
     .await;
 
-    // Ticket 2047: the ingredient query also takes the plain DARZALEX label
+    // The ingredient query also takes the plain DARZALEX label
     // — never the under-the-skin pairing — even though only the pairing
     // answers the field-scoped search and the plain record's identity
     // lives on its element line alone.
@@ -1101,7 +1100,7 @@ async fn phesgo_resolves_its_own_label_and_safety_line() {
 
     let (_env, _ddinter) = super::drug_fixture_env(base.as_str(), "phesgo-ddinter");
 
-    // Ticket 2047: MyChem holds Phesgo only on naked combination rows, so
+    // MyChem holds Phesgo only on naked combination rows, so
     // the card carries the three-name ingredient line, and openFDA's
     // field-scoped search cannot see PHESGO's own record at all — its
     // openfda block is empty. The elements search reaches it and its
@@ -1145,7 +1144,7 @@ async fn a_non_hyaluronidase_combination_never_becomes_another_products_card() {
     )
     .await;
 
-    // Ticket 2047, the Opdualag trap: openFDA's identity candidate reads the
+    // The Opdualag trap: openFDA's identity candidate reads the
     // first label row's generic name, "nivolumab and relatlimab-rmbw". That
     // is a two-drug combination, not an under-the-skin hyaluronidase
     // pairing, so the plain-ingredient split must leave it whole — the
@@ -1183,7 +1182,7 @@ async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
     )
     .await;
 
-    // Ticket 2047, the 2043 gap: a brand whose plain-ingredient twin is
+    // The 2043 gap: a brand whose plain-ingredient twin is
     // another labeler's product. The card names the plain ingredient
     // (imatinib), Gleevec's own record carries the salt generic
     // ("IMATINIB MESYLATE"), and the generic-labeler pages hold records
@@ -1207,7 +1206,7 @@ async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
 /// shape: no label or synonym equals the query, so the discover rescue
 /// must decline and `get` keeps the honest refusal. This pin bites when
 /// the rescue's exact-match requirement on its top result is removed
-/// (ticket 2043's first mutation).
+///.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_contains_tier_ols_match_never_adopts_a_card() {
@@ -1251,7 +1250,7 @@ async fn a_contains_tier_ols_match_never_adopts_a_card() {
 /// The discover rescue's canonical candidate is adopted only through
 /// `named_drug_response`: a candidate whose own MyChem answer holds no
 /// record naming it leaves the sparse card alone. This pin bites when the
-/// adoption skips that check (ticket 2043's second mutation).
+/// adoption skips that check.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn the_rescue_adopts_a_candidate_only_through_its_own_record() {

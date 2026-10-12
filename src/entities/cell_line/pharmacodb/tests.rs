@@ -1,4 +1,4 @@
-//! Ticket 1205: the cell line drug-response section, replayed from recorded
+//! The cell line drug-response section, replayed from recorded
 //! fixtures and pure inputs. No network, no server.
 
 use super::*;

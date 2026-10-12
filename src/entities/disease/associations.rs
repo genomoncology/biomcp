@@ -20,7 +20,7 @@ pub(super) async fn add_genes_section(disease: &mut Disease) -> Result<(), BioMc
     // Targets with one resolves the abbreviation on its ontology and can
     // return another disease's genes. Only multi-word, name-shaped synonyms
     // join by identity; the resolved record's own name and ID come first
-    // (ticket 2017).
+    //.
     let synonym_candidates = disease
         .synonyms
         .iter()
@@ -79,7 +79,7 @@ pub(super) async fn add_genes_section(disease: &mut Disease) -> Result<(), BioMc
             disease.top_gene_scores.truncate(20);
             // Open Targets replaced the gene list wholesale, so the seed
             // rows (DisGeNET via the MyDisease hit) describe a list that
-            // no longer exists — drop them with it (ticket 1256).
+            // no longer exists — drop them with it.
             disease.gene_associations.clear();
             return Ok(());
         }

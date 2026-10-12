@@ -34,7 +34,7 @@ pub struct SectionOutcome {
     #[serde(skip_serializing_if = "Option::is_none")]
     message: Option<String>,
     /// A permanent unavailability (a retired upstream endpoint): no retry
-    /// recovers it, so rendering offers no retry command (ticket 2050).
+    /// recovers it, so rendering offers no retry command.
     #[serde(skip_serializing_if = "not_permanent")]
     permanent: bool,
 }
@@ -115,7 +115,7 @@ impl SectionOutcome {
 
     /// An unavailable outcome whose reason is built at runtime — the
     /// retired-endpoint degrade carries the provider's own retirement
-    /// wording (ticket 2047). Bounded and safety-checked like every other
+    /// wording. Bounded and safety-checked like every other
     /// public message.
     pub fn unavailable_message(message: impl Into<String>) -> Self {
         Self {
@@ -128,7 +128,7 @@ impl SectionOutcome {
 
     /// An unavailable outcome no retry can recover, such as a retired
     /// upstream endpoint: the message names the permanent gap, and
-    /// rendering offers no retry command (ticket 2050).
+    /// rendering offers no retry command.
     pub fn unavailable_permanent(message: impl Into<String>) -> Self {
         Self {
             outcome: SectionOutcomeState::Unavailable,
@@ -164,7 +164,7 @@ impl SectionOutcome {
     }
 
     /// Whether no retry can recover this outcome: rendering offers no
-    /// retry command for it (ticket 2050).
+    /// retry command for it.
     pub fn permanent(&self) -> bool {
         self.permanent
     }
@@ -203,7 +203,7 @@ fn bounded_message(message: &str) -> String {
     if message.chars().count() > 160 {
         message = message.chars().take(160).collect();
         // Cut at the last complete word: no bounded reason ends mid-word
-        // (ticket 2050).
+        //.
         if let Some(boundary) = message.rfind(' ') {
             message.truncate(boundary);
         }
@@ -373,7 +373,7 @@ mod tests {
 
     #[test]
     fn bounded_messages_cut_at_a_word_boundary() {
-        // Ticket 2050: no bounded reason ends mid-word. The retired-endpoint
+        // No bounded reason ends mid-word. The retired-endpoint
         // reason fits the bound whole; a longer one cuts at its last
         // complete word.
         let whole = SectionOutcome::unavailable_permanent(

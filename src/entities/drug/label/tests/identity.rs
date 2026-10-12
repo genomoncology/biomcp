@@ -90,7 +90,7 @@ fn identity_guard_accepts_the_sparse_multistrength_tagrisso_record() {
 
 #[test]
 fn identity_guard_rejects_inactive_ingredients_that_repeat_across_strengths() {
-    // Ticket 1300 second review: the Tagrisso element lists the 40 mg and
+    // Second review: the Tagrisso element lists the 40 mg and
     // 80 mg strengths in one string, so every inactive excipient repeats
     // across strengths. None of them may identify the record.
     let tagrisso = tagrisso_full_row();
@@ -196,7 +196,7 @@ fn identity_guard_accepts_the_sparse_propulsid_record() {
 
 #[test]
 fn identity_guard_rejects_token_sequences_joined_across_fields() {
-    // Ticket 1300 review: a name that spans the end of one identity field and
+    // Review: a name that spans the end of one identity field and
     // the start of another (substance_name "AMIVANTAMAB" followed by the
     // element's "Rybrevant") is not the record's own name sequence.
     let amivantamab = amivantamab_row();
@@ -281,7 +281,7 @@ fn filter_keeps_the_withdrawn_exkivity_record_from_the_mobocertinib_capture() {
     assert!(filter_label_response_to_identity(&response, "itraconazole").is_some());
 }
 
-/// The pairing split reads the record's own ingredient list (ticket 2052):
+/// The pairing split reads the record's own ingredient list:
 /// the plain side is the half the record lists as an established
 /// ingredient while the paired half is only a qualified form of another
 /// listed ingredient — never a name string in code.
@@ -311,7 +311,7 @@ fn pairing_split_derives_the_plain_ingredient_from_the_records_own_list() {
 /// A record that lists both halves as established ingredients names a true
 /// two-drug combination: Opdualag's relatlimab-rmbw is its own ingredient,
 /// and Lonsurf's tipiracil half is a truncated salt of the listed
-/// "tipiracil hydrochloride", so neither splits (tickets 2047 and 2052).
+/// "tipiracil hydrochloride", so neither splits.
 #[test]
 fn a_two_drug_combination_never_splits_to_one_ingredient() {
     let opdualag = vec!["NIVOLUMAB".to_string(), "RELATLIMAB-RMBW".to_string()];
@@ -351,7 +351,7 @@ fn a_two_drug_combination_never_splits_to_one_ingredient() {
     );
 }
 
-/// Ticket 2050's brand-tier guard, pinned (ticket 2052): an exact-brand
+/// Brand-tier guard, pinned: an exact-brand
 /// label whose generic names an unrelated drug never wins the brand tier,
 /// so the plain-ingredient record below it serves instead. Removing the
 /// generic-fits check serves the wrong record.

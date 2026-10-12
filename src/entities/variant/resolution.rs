@@ -23,7 +23,7 @@ fn clinvar_variation_id_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"^([1-9][0-9]{0,9})$").expect("valid regex"))
 }
 
-/// A bare positive integer is a ClinVar VariationID (ticket 1292).
+/// A bare positive integer is a ClinVar VariationID.
 pub(crate) fn parse_clinvar_variation_id(value: &str) -> Option<u64> {
     clinvar_variation_id_re()
         .captures(value.trim())
@@ -550,7 +550,7 @@ fn amino_acid_one_letter(token: &str) -> Option<char> {
 }
 
 /// The three-letter amino-acid name for a one-letter code, for answers that
-/// name a reference residue (ticket 2033 finding 3).
+/// name a reference residue.
 pub(crate) fn amino_acid_three_letter(one: char) -> Option<&'static str> {
     match one.to_ascii_uppercase() {
         'A' => Some("Ala"),
@@ -650,7 +650,7 @@ fn protein_range_deletion_re() -> &'static Regex {
 }
 
 /// Protein-range deletions such as EGFR `E746_A750del` or `p.Glu746_Ala750del`
-/// normalize to the one-letter compact spelling (ticket 1292).
+/// normalize to the one-letter compact spelling.
 fn normalize_protein_range_deletion(value: &str) -> Option<String> {
     let caps = protein_range_deletion_re().captures(value)?;
     let from = amino_acid_one_letter(&caps[1])?;

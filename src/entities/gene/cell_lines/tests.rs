@@ -1,4 +1,4 @@
-//! Ticket 1213: fixture-backed tests for the HPA cell line helper. No network.
+//! Fixture-backed tests for the HPA cell line helper. No network.
 
 use reqwest::StatusCode;
 

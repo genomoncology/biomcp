@@ -44,7 +44,7 @@ fn annotation_kind(kind: &str) -> Option<AnnotationKind> {
 /// The namespace spelling matches the identifier form BioMCP can type back in,
 /// and `name` carries the registry concept's own name for disease rows
 /// (`MESH:D008175` → `Lung Neoplasms`), which a follow-up link can match
-/// exactly (ticket 2047).
+/// exactly.
 type AnnotationIdentity = (&'static str, String, Option<String>);
 
 fn clean_identifier(value: &str) -> Option<&str> {
@@ -71,7 +71,7 @@ fn registry_identity(identifier: &str) -> Option<(&'static str, String)> {
 /// rsID naming one change and the row lacks that pair, and the HGVS
 /// expression otherwise. Disease rows also keep PubTator3's concept name for
 /// the identifier, which the disease crosswalk matches exactly instead of
-/// opening whatever card a bare MeSH identifier happens to hit (ticket 2047).
+/// opening whatever card a bare MeSH identifier happens to hit.
 fn annotation_identity(
     kind: AnnotationKind,
     infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
@@ -327,7 +327,7 @@ fn push_annotation_count(
             .map(|(_, identifier, _)| identifier.clone()),
         // One registry identifier carries one concept name; a row that lost
         // its name to an earlier mention of the same identifier keeps the
-        // first one seen (ticket 2047).
+        // first one seen.
         name: identity.and_then(|(_, _, name)| name),
         positions: Vec::new(),
     });
@@ -369,7 +369,7 @@ fn finalize_counts(map: HashMap<AnnotationKey, AnnotationTally>) -> Vec<Annotati
 /// NCBI Gene ids whose every mention text fails the symbol-shape check while
 /// a mutation row still pairs that gene id with a protein change. Only these
 /// ids can gain a gene-qualified form from an official symbol, so the caller
-/// resolves just them through MyGene (ticket 2034).
+/// resolves just them through MyGene.
 pub(crate) fn gene_ids_needing_official_symbols(doc: &PubTatorDocument) -> Vec<u64> {
     let mut symbol_shaped: HashSet<u64> = HashSet::new();
     let mut mutation_linked: HashSet<u64> = HashSet::new();

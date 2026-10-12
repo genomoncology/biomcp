@@ -1,5 +1,4 @@
-//! The runtime no-store pin for GWAS (ticket 1268 follow-up,
-//! 2026-09-29 second review): reqwest-middleware 0.4.2 exposes
+//! The runtime no-store pin for GWAS: reqwest-middleware 0.4.2 exposes
 //! `RequestBuilder::extensions()` publicly, so the invariant is
 //! proven on the middleware builder the cache layer reads — before
 //! `build()`, which hands off to reqwest and drops the middleware's

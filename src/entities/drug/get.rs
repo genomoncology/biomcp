@@ -273,14 +273,14 @@ enum SparseDrugDiscoverRescue {
 }
 
 /// A secondary identity resolution through openFDA's field-scoped label
-/// search (tickets 2031, 2039, 2043 and 2052): the label records the page
+/// search: the label records the page
 /// holds vote on the drug they name. A record whose own brand equals the
-/// query owns it — only owner rows vote when any exist (ticket 2039) — and
+/// query owns it — only owner rows vote when any exist — and
 /// a vote reads as the plain ingredient the record's own ingredient list
 /// supports, so an under-the-skin pairing still resolves to the plain
-/// ingredient it names (Darzalex to daratumumab, Qlex to pembrolizumab,
-/// ticket 2043) while a true two-drug combination stays whole (Opdualag,
-/// ticket 2047). Votes compare as ingredient word sets, so one product's
+/// ingredient it names (Darzalex to daratumumab, Qlex to pembrolizumab)
+/// while a true two-drug combination stays whole (Opdualag).
+/// Votes compare as ingredient word sets, so one product's
 /// spelling variants count together ("acetaminophen, aspirin, caffeine"
 /// and "acetaminophen, aspirin and caffeine" are one vote).
 ///
@@ -288,10 +288,10 @@ enum SparseDrugDiscoverRescue {
 /// names the drug whether it is a plain ingredient or a combination
 /// product line, and short of that, exactly one plain single-ingredient
 /// vote among combination votes is the brand whose labels mostly name one
-/// ingredient — Motrin's labels name ibuprofen (ticket 2052). Anything
+/// ingredient — Motrin's labels name ibuprofen. Anything
 /// else — several plain ingredients ("Sleep Aid"), several combinations
 /// ("Cold and Flu"), unrelated singles ("Pain Relief") — names no one drug
-/// and the caller refuses (ticket 2039). Some label records carry no
+/// and the caller refuses. Some label records carry no
 /// openFDA identity block at all, so this path can miss (a brand MyChem
 /// itself carries resolves through the MyChem record instead).
 async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
@@ -365,7 +365,7 @@ async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
     }
     // Short of agreement, exactly one plain single-ingredient vote among
     // the combination votes is the brand whose labels mostly name one
-    // ingredient (ticket 2052).
+    // ingredient.
     let mut plain_singles: Vec<&String> = Vec::new();
     for vote in &votes {
         if !vote.contains(" and ") && !vote.contains(',') {
@@ -383,13 +383,13 @@ async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
 }
 
 /// A MyChem response for `name` whose own names match `name`: `None` when
-/// only other drugs' records matched the full-text query (ticket 2031).
+/// only other drugs' records matched the full-text query.
 async fn named_drug_response(name: &str) -> Option<MyChemQueryResponse> {
     let resp = direct_drug_lookup(name).await.ok()?;
     (!transform::drug::select_hits_for_name(&resp.hits, name).is_empty()).then_some(resp)
 }
 
-/// The honest no-match refusal (ticket 2031): name what the MyChem text
+/// The honest no-match refusal: name what the MyChem text
 /// query matched, so a wrong card is never silently substituted.
 fn name_miss_not_found(name: &str, hits: &[MyChemHit]) -> BioMcpError {
     let mut seen = HashSet::new();
@@ -424,7 +424,7 @@ fn normalized_discover_drug_label(value: &str) -> String {
 /// The discover rescue runs against OLS4 with no deadline of its own, and a
 /// slow round there must never hold a refusal hostage: the rescue gives up
 /// after the refusal-path budget and the caller refuses without it
-/// (ticket 2050).
+///.
 const DISCOVER_RESCUE_TIMEOUT: std::time::Duration =
     crate::entities::discover::REFUSAL_DISCOVER_TIMEOUT;
 
@@ -472,7 +472,7 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
 /// The discover rescue inside its time budget: `None` when it ran out, so
 /// the name-miss arm refuses without it and the sparse-card arm keeps the
 /// card it already holds. A timeout remembers the deadline the round
-/// started from (ticket 2052), so the CLI alias-fallback round that
+/// started from, so the CLI alias-fallback round that
 /// follows spends only what is left of the same budget instead of restarting
 /// the clock, while the refusal text stays honest about what the sources
 /// answered.
@@ -828,7 +828,7 @@ pub(super) async fn resolve_drug_base(
         // The MyChem full-text query matched only other drugs' records. The
         // query may still be a real brand whose identity openFDA knows, so
         // resolve it through openFDA's identity fields before refusing
-        // (ticket 2031).
+        //.
         let identity_fallback = match openfda_label_identity_candidate(&lookup_name).await {
             Some(candidate) => named_drug_response(&candidate)
                 .await
@@ -846,9 +846,9 @@ pub(super) async fn resolve_drug_base(
                 // names: a withdrawn brand such as Tarceva holds no openFDA
                 // label and lives in MyChem only on a record with no name,
                 // so resolve it through the guarded discover rescue before
-                // refusing (ticket 2037). A rescue that runs out of time
+                // refusing. A rescue that runs out of time
                 // refuses here rather than wait on the slow outside service
-                // (ticket 2050).
+                //.
                 let rescue = match discover_sparse_drug_rescue_bounded(name).await {
                     Some(SparseDrugDiscoverRescue::Canonical(candidate)) => {
                         named_drug_response(&candidate)
@@ -870,7 +870,7 @@ pub(super) async fn resolve_drug_base(
     }
     let mut drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
 
-    // Ticket 2052: a brand whose labels mostly name one ingredient resolves
+    // A brand whose labels mostly name one ingredient resolves
     // to it. A product request that landed on a combination card — the
     // request names a brand, and the records it merged carry a combination
     // product row — asks the label page what the brand's records name: one
@@ -912,7 +912,7 @@ pub(super) async fn resolve_drug_base(
     }
 
     // A combination card carries no single-ingredient identifier on
-    // purpose (ticket 2052): it is a complete product card, not a sparse
+    // purpose: it is a complete product card, not a sparse
     // one, so the canonical rescue never runs for it and the discover
     // service cannot refuse a product MyChem itself named.
     if !transform::drug::card_names_combination(&drug.name)
@@ -921,14 +921,14 @@ pub(super) async fn resolve_drug_base(
         && drug.unii.is_none()
     {
         // A timed-out rescue keeps the sparse card the query already named
-        // (ticket 2050): the card never waits on the slow outside service.
+        //: the card never waits on the slow outside service.
         if let Some(rescue) = discover_sparse_drug_rescue_bounded(name).await {
             match rescue {
                 SparseDrugDiscoverRescue::Canonical(candidate) => {
                     // Adopt the canonical candidate only when its own MyChem
                     // record names it; a sparse card that matched the query by
                     // name stays put instead of becoming a name-only card
-                    // rebuilt from another record's text hits (ticket 2031).
+                    // rebuilt from another record's text hits.
                     if let Some(fallback_resp) = named_drug_response(&candidate).await {
                         lookup_name = candidate;
                         resp = fallback_resp;
@@ -945,7 +945,7 @@ pub(super) async fn resolve_drug_base(
     // The brand as the resolved record itself spells it: MyChem carries the
     // labeler's own word order for a multi-word brand, and the label lookup
     // follows that spelling to reach records the request's phrase order
-    // never matches (ticket 2052).
+    // never matches.
     let record_brand_spellings = transform::drug::brand_spellings_for_request(&selected, name);
 
     let mut label_response_opt: Option<serde_json::Value> = None;
@@ -958,7 +958,7 @@ pub(super) async fn resolve_drug_base(
         // The label must match the brand or plain ingredient the user asked
         // for, so the request's own name travels with the card's canonical
         // name and the record's own spelling of the requested brand
-        // (tickets 2043 and 2052).
+        //.
         match OpenFdaClient::new() {
             Ok(client) => {
                 match lookup_label_response(&client, name, &drug.name, &record_brand_spellings)
@@ -1198,7 +1198,7 @@ async fn populate_who_sections(
 /// Apply the WHO bundle readiness to the card's WHO section. A readable
 /// bundle fills the section; a bundle that cannot be read degrades the
 /// section with a path-free note instead of failing the whole card, the
-/// way the all-region search degrades (ticket 2038 finding 7, 2035 #6):
+/// way the all-region search degrades:
 /// a JSON or MCP caller still gets the rest of the card, the note names
 /// the WHO gap, and the local data path stays terminal-only.
 fn apply_who_sections_result(

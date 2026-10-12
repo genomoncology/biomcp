@@ -53,7 +53,7 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # cli/health owns the bounded probe client and its stub-client test fixtures.
     # ca_bundle.rs constructs three builders in the process-reentry parse-once test.
     # The article deadline tests construct one raw loopback client for the
-    # held-reply self-release proof (ticket 2045): paused time drives the bound,
+    # held-reply self-release proof: paused time drives the bound,
     # so the client stays raw and loopback-only.
     assert found == Counter(
         {

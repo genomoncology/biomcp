@@ -275,7 +275,7 @@ def _review_records(path: Path) -> list[dict[str, object]]:
         # A review verdict must declare a state (the "awaiting
         # reviewer" hole); a verification verdict states evidence,
         # and its completion words vary with what was run.
-        # Ticket 1269: the review state vocabulary is an allowlist —
+        # The review state vocabulary is an allowlist —
         # the four state tokens, the recorded null states, or the
         # exact recorded null forms. Completion words (done, passed,
         # skipped, merged) state evidence for VERIFICATION lines and
@@ -507,7 +507,7 @@ def test_the_grammar_catches_shapes_it_was_never_told_about(
         "## Review\n\n- Code review: ACCEPT 2026-09-25\n\n- Code review verdict: pending\n"
     )
 
-    # Round-three mutations (ticket 1269): smuggled completion words,
+    # Round-three mutations: smuggled completion words,
     # unknown kinds, table rows, and negated resolutions.
     assert probe("## Review\n\n- Code review: not done\n")
     assert probe("## Review\n\n- Code review: not yet passed\n")

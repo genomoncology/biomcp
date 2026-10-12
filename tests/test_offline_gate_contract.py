@@ -92,7 +92,7 @@ def test_authoritative_linux_job_loads_scoped_apparmor_before_compilation() -> N
     )
     for contract in expected:
         assert contract in canonical
-    # nextest installs as a prebuilt binary now (ticket 1275); the
+    # nextest installs as a prebuilt binary now; the
     # sandbox still loads before any cargo install runs.
     assert canonical.index("tools/run-offline -- true") < canonical.index(
         "cargo install cargo-deny"
@@ -377,7 +377,7 @@ def test_enclosed_runner_revalidates_privilege_and_network_state() -> None:
 
 
 def test_release_panic_contract_runs_in_ci_and_is_pinned() -> None:
-    # Ticket 1257: the release-mode panic-recovery test moved from
+    # The release-mode panic-recovery test moved from
     # the opt-in `make verify` lane onto the canonical CI lane. The
     # job's build and test commands are pinned exactly so a
     # profile swap, a filter change, or a dropped job breaks here

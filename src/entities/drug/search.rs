@@ -584,7 +584,7 @@ pub(super) fn search_results_from_openfda_label_response(
 }
 
 /// The generic names of the label rows that may own the requested product
-/// name (ticket 2039): the rows whose own brand equals the query when any
+/// name: the rows whose own brand equals the query when any
 /// row carries it (the "Keytruda" rows, never the QLEX combination), and
 /// every row otherwise — the ticket-2043 pairing shape, where the only
 /// label a brand family holds pairs a qualified brand with its plain
@@ -814,9 +814,9 @@ pub async fn search_name_query_with_region(
 /// Region-less searches treat the WHO Prequalification bundle as optional:
 /// when its data is absent and the auto-refresh fails, the search degrades
 /// to the U.S. and EU sections with a visible warning instead of aborting,
-/// the way per-source failures degrade elsewhere (ticket 1304, issue #288).
+/// the way per-source failures degrade elsewhere.
 /// The returned note names the source and the reason; every caller surface
-/// (stderr, Markdown, JSON, MCP) reads that one sentence (ticket 2021).
+/// (stderr, Markdown, JSON, MCP) reads that one sentence.
 /// An explicit `--region who` search still fails loudly.
 fn who_ready_for_region(
     query: &str,

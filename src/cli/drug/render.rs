@@ -105,7 +105,7 @@ pub(super) struct DrugSearchRegionBucket<T: serde::Serialize> {
     #[serde(skip_serializing_if = "Option::is_none")]
     continuation_command: Option<String>,
     /// Why this region's result is empty instead of a true negative, when a
-    /// source failure degraded the section (ticket 2021). The note names the
+    /// source failure degraded the section. The note names the
     /// source and the reason, the same sentence Markdown and MCP carry.
     #[serde(skip_serializing_if = "Option::is_none")]
     note: Option<String>,

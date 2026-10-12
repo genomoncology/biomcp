@@ -67,7 +67,7 @@ RICH_ROW = {
 
 PAPERS_BODY = {"offset": 0, "next": 1, "data": [RICH_ROW]}
 
-# The frozen hostile identifier from ticket 1143: admitted (nonblank after
+# The frozen hostile identifier: admitted (nonblank after
 # trim), opaque, and never an article follow-up.
 HOSTILE_ROW = {
     "paperId": "A/?#% \n雪",

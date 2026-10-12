@@ -370,7 +370,7 @@ struct AliasError<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     source: Option<&'static str>,
     // The recovery may name a runtime location, so it borrows from the
-    // projection instead of holding a static spelling (ticket 2021).
+    // projection instead of holding a static spelling.
     #[serde(skip_serializing_if = "Option::is_none")]
     recovery: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1042,7 +1042,7 @@ mod tests {
         assert!(json.contains("\"targets\""));
         assert!(json.contains("\"boxed_warning\": \"WARNING: QT PROLONGATION\""));
         // The coverage status is additive and absent when not populated
-        // (ticket 1241); the synonym list never serializes.
+        //; the synonym list never serializes.
         assert!(
             !json.contains("interaction_coverage_status"),
             "absent coverage must not serialize: {json}"

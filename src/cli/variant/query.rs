@@ -1,6 +1,6 @@
 //! Pure positional-query resolution for `search variant`.
 //!
-//! Ticket 1301 keeps the parser chain in one module: the exact forms parse
+//! Keeps the parser chain in one module: the exact forms parse
 //! first, a gene-symbol-shaped first token becomes an oracle-validated
 //! candidate, and everything else falls through to a condition search.
 
@@ -68,7 +68,7 @@ pub(super) fn parse_exon_deletion_phrase(query: &str) -> Option<(String, String)
 }
 
 /// Split a free-text variant query whose first token has the exact-form
-/// gene-token shape into a gene-first candidate (ticket 1301).
+/// gene-token shape into a gene-first candidate.
 ///
 /// The shape alone does not make the token a gene: `is_exact_gene_token`
 /// accepts any uppercase word, so the caller must confirm the token against
@@ -84,7 +84,7 @@ pub(super) fn split_gene_first_candidate(query: &str) -> Option<(String, String)
 }
 
 /// Split a protein change off the front of a gene-first remainder
-/// (ticket 2022), so `BRAF V600E melanoma` reads as gene=BRAF,
+///, so `BRAF V600E melanoma` reads as gene=BRAF,
 /// hgvsp=V600E, condition=melanoma instead of condition=`V600E melanoma`.
 /// A remainder that is only the protein change never reaches this split;
 /// the exact "GENE CHANGE" form parses it earlier in the chain.
@@ -96,7 +96,7 @@ pub(super) fn split_leading_protein_change(remainder: &str) -> Option<(String, S
     (!condition.is_empty()).then_some((change, condition))
 }
 
-/// What a zero-row gene-first search prints (tickets 1301 and 2022).
+/// What a zero-row gene-first search prints.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum GeneFirstNote {
     /// The oracle refused the first token: the whole phrase ran as a
@@ -105,7 +105,7 @@ pub(super) enum GeneFirstNote {
     /// filter needs the official symbol the oracle did not confirm).
     /// The note keeps the explicit `--hgvsp` and `--consequence` flags in
     /// the spelling the search applied, so the working form repeats every
-    /// filter instead of dropping them (ticket 2044).
+    /// filter instead of dropping them.
     Refused {
         gene: String,
         condition: String,
@@ -121,7 +121,7 @@ pub(super) enum GeneFirstNote {
 /// The explicit filter flags a gene-first phrase keeps, stated in the
 /// command line's own spelling (`--significance benign`, `--max-frequency
 /// 0.01`, ...) so a zero-row hint repeats exactly what the caller typed
-/// (ticket 2022's promise; ticket 2038 finding 7 restored it). Used behind
+///. Used behind
 /// a reference, like a slice.
 pub(super) type ExplicitFilterFlags = [(&'static str, String)];
 
@@ -152,7 +152,7 @@ pub(super) fn apply_gene_first_routing(
             // The alternative keeps every filter the routed search applied
             // except the condition, parsed and explicit flags included, so
             // it differs from the command that ran by exactly the dropped
-            // condition (ticket 2033, finding 13; ticket 2038 finding 7).
+            // condition.
             let alternative = gene_first_alternative_form(
                 &symbol,
                 hgvsp.as_deref(),
@@ -178,7 +178,7 @@ pub(super) fn apply_gene_first_routing(
             // the condition search and the working form see the original
             // remainder. The note carries the explicit flags in the
             // normalized spelling the search applied, so the refused hint
-            // repeats them beside the other explicit filters (ticket 2044).
+            // repeats them beside the other explicit filters.
             let remainder = match protein_change.as_deref() {
                 Some(change) => format!("{change} {condition}"),
                 None => condition.clone(),
@@ -216,10 +216,9 @@ pub(super) fn gene_first_parsed_form(gene: &str, hgvsp: Option<&str>, condition:
 /// condition without the leading word. The search that returned nothing ran
 /// the whole phrase as the condition, and the gene filter needs an official
 /// symbol the oracle did not confirm, so the condition alone is the looser
-/// form that can still return rows (ticket 2038, following 2022 and 2035's
-/// smaller items). The form carries every filter the condition search
+/// form that can still return rows. The form carries every filter the condition search
 /// applied, the caller's `--hgvsp` and `--consequence` flags included in
-/// the spelling the search used (ticket 2044).
+/// the spelling the search used.
 pub(super) fn gene_first_working_form(
     condition: &str,
     hgvsp: Option<&str>,
@@ -264,8 +263,7 @@ fn append_explicit_filters(
 /// already applied every parsed filter, so repeating them repeats the empty
 /// result; the resolved `--hgvsp` filter and any explicit `--consequence`
 /// flag stay beside the caller's other explicit filters, so the command
-/// differs by exactly the dropped condition (tickets 2022, 2033 and 2038
-/// finding 7).
+/// differs by exactly the dropped condition.
 pub(super) fn gene_first_alternative_form(
     gene: &str,
     hgvsp: Option<&str>,
@@ -291,7 +289,7 @@ const GENE_FIRST_ROUTING_TIMEOUT: std::time::Duration = std::time::Duration::fro
 /// `mygene` is the supported default because no offline gene list ships with
 /// BioMCP and MyGene's unique entrez-backed official-symbol confirmation is
 /// the lookup this routing uses; unlike the `discover` path's symbol/alias
-/// lookup, aliases never route (ticket 2022). `off` restores the
+/// lookup, aliases never route. `off` restores the
 /// whole-phrase condition search for operators who must not spend a MyGene
 /// call on routing.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -325,8 +323,8 @@ impl VariantQueryGeneRouting {
     }
 }
 
-/// Confirm a free-text first token is a known gene symbol (ticket 1301).
-/// Ticket 2022 narrows the oracle to official symbols: MyGene's unique
+/// Confirm a free-text first token is a known gene symbol.
+/// Narrows the oracle to official symbols: MyGene's unique
 /// entrez-backed resolution must return the query itself as the official
 /// symbol, so aliases such as HCC (HYCC1), MODY (HNF4A), or HHT (ACVRL1)
 /// no longer route. Refusal, ambiguity, timeout, and MyGene outages all
@@ -547,7 +545,7 @@ pub(super) fn resolve_variant_query(
         && let Some((gene, condition)) = split_gene_first_candidate(&query)
     {
         // A leading protein change belongs to the hgvsp filter, not the
-        // condition (ticket 2022): 'BRAF V600E melanoma' must not become
+        // condition: 'BRAF V600E melanoma' must not become
         // condition='V600E melanoma'.
         let (protein_change, condition) = match split_leading_protein_change(&condition) {
             Some((change, rest)) => (Some(change), rest),

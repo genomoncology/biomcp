@@ -40,7 +40,7 @@ fn query_plan_retrieves_exact_synonym_leaf_fields_for_abbreviations() {
     // MyDisease indexes `mondo.synonym` and `disease_ontology.synonyms` as
     // objects scoped by synonym type, so only the `exact` leaf fields hold
     // tokens. The parent paths match nothing and hid every exact synonym and
-    // abbreviation from the candidate set (ticket 1295). The boosted name
+    // abbreviation from the candidate set. The boosted name
     // clauses keep exact-name parents inside the fetched provider window for
     // broad class names such as `lymphoma` once synonym retrieval widens the
     // candidate pool.

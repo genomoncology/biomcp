@@ -280,8 +280,7 @@ fn render_who_regulatory_block(
     let Some(rows) = rows else {
         // No rows and no note: the section was never requested. With a
         // note, the bundle could not be read, so the heading prints beside
-        // the reason instead of silently disappearing (ticket 2038
-        // finding 7, 2035 #6).
+        // the reason instead of silently disappearing.
         let Some(note) = note else {
             return String::new();
         };

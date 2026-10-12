@@ -106,7 +106,7 @@ fn client_coverage_status_distinguishes_absent_drug_from_empty_matches() {
 #[test]
 fn identity_terms_match_ddinter_rows_through_synonyms() {
     // A row filed under the chemical name is found from the brand name
-    // when the anchor's synonym list carries it (ticket 1241).
+    // when the anchor's synonym list carries it.
     let identity = DdinterIdentity::with_aliases(
         "aspirin",
         Some("Aspirin"),
@@ -158,7 +158,7 @@ fn identity_terms_match_ddinter_rows_through_synonyms() {
 #[test]
 fn bundle_parse_errors_carry_the_read_marker() {
     // Only marked errors render as "bundle could not be read"; the
-    // marker travels with the file detail (ticket 1254).
+    // marker travels with the file detail.
     let body = b"DDInterID_A,Drug_A,DDInterID_B,Drug_B\nDDI1A,aspirin,DDI1B,warfarin\n";
     let error = parse_csv_rows("ddinter_downloads_code_A.csv", body).expect_err("missing column");
     let BioMcpError::Api { message, .. } = &error else {
@@ -172,7 +172,7 @@ fn bundle_parse_errors_carry_the_read_marker() {
 fn html_download_replies_are_download_failures_not_read_failures() {
     // The endpoint answered an HTML page where the CSV bundle was
     // expected: a download failure with our own content-type fact, never
-    // an "unreadable bundle" (ticket 1256).
+    // an "unreadable bundle".
     let header = reqwest::header::HeaderValue::from_static("text/html; charset=utf-8");
     let error = super::super::ensure_csv_content_type(Some(&header)).expect_err("html reply");
     let BioMcpError::Api { message, .. } = &error else {

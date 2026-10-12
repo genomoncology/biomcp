@@ -120,7 +120,7 @@ def test_watchdog_builder_deadlines_do_not_count() -> None:
         "    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);",  # watchdog: synthetic literal
         # The word watchdog( in a comment is not the scaled helper
         # and does not exempt the line; with no `watchdog:` marker
-        # the line counts as an unmarked wait (ticket 1269).
+        # the line counts as an unmarked wait.
         "    let d2 = tokio::time::Instant::now() + Duration::from_secs(5); // mirrors watchdog(60)",
     ]
     count, violations, _ = count_waits(lines, MODULE.RUST_PATTERNS)

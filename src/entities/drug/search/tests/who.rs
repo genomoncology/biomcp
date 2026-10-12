@@ -13,9 +13,9 @@ fn all_region_search_degrades_when_who_pq_data_is_absent_but_explicit_who_fails(
     };
 
     // Region-less searches keep going with an empty WHO bucket and a
-    // visible warning (ticket 1304, issue #288), and the same sentence
+    // visible warning, and the same sentence
     // now reaches the Markdown, JSON and MCP surfaces as the note
-    // (ticket 2021).
+    //.
     let (client, note) = who_ready_for_region("imatinib", DrugRegion::All, Err(unavailable()))
         .expect("all-region search should degrade");
     assert!(client.is_none());

@@ -172,6 +172,16 @@ Sweep timings: every card settles in 0.7–2.7 s (`--no-cache`); refusals
 2.1–2.7 s (one shared discover budget); v0.9.1's debug binary ran the same
 list in 0.8–19.2 s.
 
+### Comment sweep
+
+Per Ian's mid-lane direction, code comments in `src/`, `templates/` and
+the test trees no longer name ticket numbers: every comment that leaned
+on one now states the rule or fact alone (572 automated rewrites plus
+hand edits; zero ticket references remain in comment lines, verified by
+grep). Assertion strings, python docstrings and the sdlc record keep
+their references — only comments changed, and fmt, clippy and the
+targeted suites stayed green through the sweep.
+
 ### Residual risks
 
 - The build host's `make test` occasionally flakes the three

@@ -212,7 +212,7 @@ fn collect_supporting_pmids_dedupes_case_insensitively() {
     );
 }
 
-/// Ticket 2052: "retired" travels as a typed error from the source reader
+/// "retired" travels as a typed error from the source reader
 /// through `add_gwas_section` to the rendered card, and the rendered GWAS
 /// section offers no retry because no retry reaches a retired endpoint.
 /// Forcing the permanent flag off at the degrade site renders the

@@ -68,8 +68,7 @@ pub use self::variant::VariantCommand;
 /// Removes terminal-active controls from a human diagnostic while keeping
 /// its line breaks.
 pub fn sanitize_human_diagnostic(message: &str) -> String {
-    // Error text keeps its line breaks (ticket 2042's refusal-text
-    // deferral): a refusal's retry line starts on its own line instead of
+    // Error text keeps its line breaks: a refusal's retry line starts on its own line instead of
     // collapsing into the sentence before it. Control characters, ANSI
     // escapes, and bidi overrides still strip.
     crate::render::human::sanitize_document(message)

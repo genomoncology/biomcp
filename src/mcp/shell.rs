@@ -319,7 +319,7 @@ fn typed_search_schema(schema: &mut schemars::Schema) {
 /// publish `["string","array"]` with each arm's constraints. The union
 /// never narrows what any branch accepted — a constraint on one side of
 /// a same-type merge is a named clash in `merge_property`, not a quiet
-/// keep (ticket 1258) — and the body stays prescriptive per entity.
+/// keep — and the body stays prescriptive per entity.
 fn merge_branch_properties(branches: &[Value]) -> serde_json::Map<String, Value> {
     let mut properties = serde_json::Map::new();
     for branch in branches {
@@ -345,7 +345,7 @@ fn merge_branch_properties(branches: &[Value]) -> serde_json::Map<String, Value>
 
 /// Constraint keywords that narrow what a schema accepts. A value on
 /// exactly one side of a same-type merge silently narrowed the flat
-/// root until ticket 1258 made it a named clash; the enum/const pair
+/// root until the clash became a named one; the enum/const pair
 /// has its own union rule above.
 const ONE_SIDED_CONSTRAINT_KEYS: [&str; 16] = [
     "uniqueItems",
@@ -550,8 +550,7 @@ impl BioMcpServer {
     /// instead of `Display`, whose richer suggestions can name a local
     /// runtime location (the WHO Prequalification sync failure names the
     /// resolved data directory). The terminal keeps its `Display` hint;
-    /// MCP never carries a local path (ticket 2038 finding 7, ticket
-    /// 2044).
+    /// MCP never carries a local path.
     fn bio_mcp_error_text(error: &crate::error::BioMcpError) -> String {
         let projection = error.public_projection();
         match projection.recovery {
@@ -1923,7 +1922,7 @@ mod tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn mcp_who_region_search_error_carries_no_local_data_path() {
-        // Ticket 2038 finding 7, ticket 2044: when WHO Prequalification
+        // When WHO Prequalification
         // data cannot be prepared, `search drug <name> --region who` fails
         // and the failure's terminal suggestion names the resolved data
         // directory. The MCP error text must come from the public error
@@ -2195,7 +2194,7 @@ mod tests {
             Value::Array(sections)
         );
         // The descriptive root never narrows below adverse-event, the
-        // branch that accepts duplicate sections (ticket 1258): the
+        // branch that accepts duplicate sections: the
         // merged property carries no `uniqueItems`, and duplicate
         // rejection stays body-side per entity.
         assert!(

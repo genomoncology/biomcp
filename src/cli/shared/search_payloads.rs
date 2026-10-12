@@ -151,7 +151,7 @@ pub(in crate::cli) fn search_meta_with_section_sources(
         notes: Vec::new(),
     });
     // Notes must not silently vanish: next commands, section sources, or
-    // a stale-cache note all justify keeping the meta object (ticket 1256).
+    // a stale-cache note all justify keeping the meta object.
     (!meta.next_commands.is_empty() || !section_sources.is_empty() || !meta.notes.is_empty())
         .then(|| meta.with_section_sources(section_sources))
 }
@@ -180,7 +180,7 @@ pub(in crate::cli) fn search_meta_with_workflow(
         })
         .unwrap_or((None, None, None));
     // Stale-cache serves recorded during this command's fetches reach the
-    // JSON consumer here, not only the log (ticket 1256). Draining at
+    // JSON consumer here, not only the log. Draining at
     // payload build time states each note once.
     let notes = crate::sources::take_stale_serve_sentences();
     (!next_commands.is_empty() || suggestions.is_some() || workflow.is_some() || !notes.is_empty())
@@ -244,7 +244,7 @@ pub(in crate::cli) fn search_json_with_data_as_of<T: serde::Serialize>(
         notes: Vec::new(),
     });
     // The caller's notes come first; any stale-cache note the funnel
-    // drained from this command appends after them (ticket 1256).
+    // drained from this command appends after them.
     let mut combined = notes;
     combined.append(&mut meta.notes);
     meta.notes = combined;

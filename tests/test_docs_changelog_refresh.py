@@ -17,7 +17,7 @@ EXPECTED_RELEASE_TICKETS = {
         2010,
         *range(2016, 2025),
         # 2040 landed after 2038; 2042, 2043 and 2044 landed after
-        # that; the corrected 2031 bullet also names open ticket 2039 in
+        # that; the corrected bullet also names the still-open follow-up in
         # plain words.
         *range(2029, 2039),
         2040,

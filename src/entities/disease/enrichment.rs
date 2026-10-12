@@ -634,7 +634,7 @@ pub(super) async fn enrich_base_context(disease: &mut Disease) {
 
     // Open Targets owns the list only when its fetch produced one; when it
     // returned nothing (or failed) the MyDisease-seeded genes survive and
-    // must carry their real source label, not Open Targets' (ticket 1256).
+    // must carry their real source label, not Open Targets'.
     let open_targets_owns = !disease.top_gene_scores.is_empty();
     assign_top_genes(disease, open_targets_owns);
 
@@ -690,7 +690,7 @@ pub(super) async fn apply_requested_sections(
             contributors.push("CIViC");
         }
         // Seeded DisGeNET rows are present data, not a fetch result, so
-        // they contribute whenever they survived (ticket 1256).
+        // they contribute whenever they survived.
         if disease.gene_associations.iter().any(|row| {
             row.source
                 .as_deref()

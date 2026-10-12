@@ -70,7 +70,7 @@ fn label_generic_exact_search_plan_matches_the_plain_ingredient_field() {
     let plan = OpenFdaClient::label_generic_exact_search_plan("bevacizumab", Some("test-key"))
         .expect("exact generic label plan");
 
-    // Ticket 2043: the plain-product escalation matches the exact field —
+    // The plain-product escalation matches the exact field —
     // never a phrase — so a biosimilar-crowded first page cannot hide the
     // plain product's own record.
     assert_eq!(plan.path, "drug/label.json");
@@ -95,7 +95,7 @@ fn label_elements_search_plan_scopes_the_identity_field() {
         plan.query_value("search"),
         Some("spl_product_data_elements:\"osimertinib\"")
     );
-    // Ticket 1300 review: the unfielded full-text phrase answer runs past
+    // Review: the unfielded full-text phrase answer runs past
     // the 8 MiB body read limit (a full-text "cisapride" answer is 16.4 MB),
     // so the fallback queries the identity field with a small limit.
     assert_eq!(plan.query_value("limit"), Some("10"));

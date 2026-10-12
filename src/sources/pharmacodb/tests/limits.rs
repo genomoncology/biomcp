@@ -51,7 +51,7 @@ fn response(body: Vec<u8>) -> reqwest::Response {
         .into()
 }
 
-// Ticket 1205 acceptance 6: the measured worst cases parse, and a body above the
+// The measured worst cases parse, and a body above the
 // cap is refused.
 
 #[test]

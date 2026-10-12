@@ -78,9 +78,9 @@ fn clinvar_preferred_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotati
 /// the gene's MANE Select transcript when one exists, so the transcript
 /// stem ClinVar's preferred names agree on marks the MANE transcript for
 /// the gene, and the accession's version is the current RefSeq one where
-/// the SnpEff build lags it (NM_000546.5 against NM_000546.6, ticket 2035
+/// the SnpEff build lags it (NM_000546.5 against NM_000546.6,
 /// finding 21). A cohort whose ClinVar-preferred stems disagree carries no
-/// marker (ticket 2016).
+/// marker.
 pub(crate) fn clinvar_mane_transcript(hits: &[MyVariantHit]) -> Option<String> {
     let mut marker: Option<(String, String)> = None;
     for hit in hits {
@@ -104,7 +104,7 @@ pub(crate) fn clinvar_mane_transcript(hits: &[MyVariantHit]) -> Option<String> {
 /// when the query response marks one, then the annotation that spells the
 /// requested protein change (a response with no ClinVar name anywhere
 /// still names the request on the transcript it follows — the only MANE
-/// signal a ClinVar-free response carries, ticket 2035 finding 4), then
+/// signal a ClinVar-free response carries), then
 /// the first NM_ transcript (yesterday's rule), then anything else.
 pub(crate) fn selected_snpeff_annotation_index(
     hit: &MyVariantHit,
@@ -169,7 +169,7 @@ fn select_transcript_annotation(
         )?)?;
     let feature = selected.feature_id.clone()?;
     // ClinVar's preferred names carry the current RefSeq accession for the
-    // stem while the SnpEff build lags it (ticket 2035 finding 21), so the
+    // stem while the SnpEff build lags it, so the
     // headline shows the current accession; the coding and protein
     // spellings stay the selected annotation's own.
     let transcript = clinvar_preferred_annotation(hit)
@@ -202,7 +202,7 @@ fn paired_annotation(
 /// ClinVar-named, MANE, change-naming, or first-NM_ SnpEff annotation.
 /// dbNSFP's merged alias list (`dbnsfp.hgvsp`) carries other isoforms'
 /// spellings on other genomic variants, so only this value confirms a
-/// gene+protein query names the hit (ticket 2016).
+/// gene+protein query names the hit.
 pub(crate) fn canonical_protein_change(
     hit: &MyVariantHit,
     mane_transcript: Option<&str>,
@@ -227,7 +227,7 @@ pub(crate) fn canonical_transcript(
 /// hit's ClinVar-preferred annotation when it names that stem — spells the
 /// requested change. The headline annotation picks one isoform; this says
 /// whether the MANE transcript itself names the request, so the numbering
-/// rules never refuse a hit that does name it (ticket 2033 finding 3).
+/// rules never refuse a hit that does name it.
 pub(crate) fn mane_annotation_names_change(
     hit: &MyVariantHit,
     change: &str,
@@ -268,7 +268,7 @@ pub(crate) fn mane_annotation_names_change(
 
 /// The record's annotation that spells the requested change on a transcript
 /// other than the MANE one — the isoform a refusal must name so the reader
-/// sees where the request is actually spelled (tickets 2042 and 2047).
+/// sees where the request is actually spelled.
 /// Protein-structure rows (`feature_type: interaction`) carry no transcript
 /// of their own, so only transcript-shaped features answer. Returns the
 /// transcript and its spelling of the request.
@@ -874,11 +874,11 @@ fn pick_significance(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
 }
 
 /// Newest `last_evaluated` day among the records carrying the shown
-/// classification (ticket 2022), so the headline date belongs to the printed
+/// classification, so the headline date belongs to the printed
 /// term instead of a newer, differently classified record. Only strict
 /// day-shaped dates surface, under the one shared day-shape rule,
 /// `crate::utils::date::is_day_shaped`, which the ClinVar fallback age
-/// label (ticket 1291) reads too.
+/// label reads too.
 fn newest_rcv_evaluation_date(
     rcvs: &[MyVariantClinVarRcv],
     significance: Option<&str>,
@@ -997,7 +997,7 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
 /// ClinVar record still headlines the MANE transcript when the query
 /// response marks one, and with the requested protein change so a
 /// ClinVar-free response still headlines the annotation that names the
-/// request (ticket 2016; ticket 2035 finding 4).
+/// request.
 pub(crate) fn from_myvariant_hit_with_mane(
     hit: &MyVariantHit,
     mane_transcript: Option<&str>,

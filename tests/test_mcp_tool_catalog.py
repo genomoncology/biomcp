@@ -97,7 +97,7 @@ def test_public_inventory_matches_typed_catalog() -> None:
     names = re.findall(r'name:\s*"([a-z_]+)"', catalog)
     assert names == TOOLS
 
-    # Ticket 1145: citation evidence is a CLI/raw-MCP surface only. The typed
+    # Citation evidence is a CLI/raw-MCP surface only. The typed
     # catalog keeps exactly these seven tools and gains no citation-evidence,
     # citation, or reference tool.
     assert len(TOOLS) == 7
@@ -106,7 +106,7 @@ def test_public_inventory_matches_typed_catalog() -> None:
     assert "reference" not in names
     assert "citation-evidence" not in catalog
 
-    # Ticket 1143: the rich author papers mode is a CLI/raw-MPC flag only.
+    # The rich author papers mode is a CLI/raw-MPC flag only.
     # The typed catalog gains no author_papers tool and the typed get tool's
     # schema gains no full field for authors.
     assert "author_papers" not in names

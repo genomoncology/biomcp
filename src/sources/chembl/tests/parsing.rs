@@ -41,7 +41,7 @@ fn target_summary_response_maps_pref_name_and_target_type() {
     assert_eq!(summary.target_type, "PROTEIN FAMILY");
 }
 
-// Ticket 1214: the cell line record, the assay count, and the release.
+// The cell line record, the assay count, and the release.
 
 #[test]
 fn cell_line_response_maps_the_molm13_record() {
@@ -109,7 +109,7 @@ fn status_reports_the_release_name_and_date() {
     assert_eq!(release.released, "2026-05-01");
 }
 
-// Ticket 1214 acceptance 8: an HTML body with HTTP 200 is a provider error.
+// An HTML body with HTTP 200 is a provider error.
 
 #[test]
 fn an_html_body_served_with_http_200_names_the_url() {

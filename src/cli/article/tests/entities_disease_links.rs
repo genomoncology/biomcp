@@ -1,4 +1,4 @@
-//! Ticket 2047's article disease-row links: the recorded PubTator3 reply
+//! Article disease-row links: the recorded PubTator3 reply
 //! for PMID 37887282 and the recorded MyDisease crosswalk replies pin the
 //! four live-defect rows, so a MeSH identifier opens the named disease's
 //! ontology card or keeps the v0.9.1 search command — never a bare
@@ -19,7 +19,7 @@ macro_rules! recorded {
     };
 }
 
-/// Ticket 2047: the recorded PubTator3 reply for PMID 37887282 and the
+/// The recorded PubTator3 reply for PMID 37887282 and the
 /// recorded MyDisease crosswalk replies for its four MeSH descriptors.
 /// The fixture answers only the recorded routes, so the pinned rows cannot
 /// pass vacuously.
@@ -108,7 +108,7 @@ impl Drop for ArticleDiseaseLinkEnv {
     }
 }
 
-/// The four live-defect rows of `article entities 37887282` (ticket 2047):
+/// The four live-defect rows of `article entities 37887282`:
 /// each MeSH descriptor crosswalks to several MONDO records, and the 0.9.2
 /// `get disease MESH:…` link opened the lexicographically first one — lung
 /// benign neoplasm for "Lung Cancers", granular cell carcinoma for

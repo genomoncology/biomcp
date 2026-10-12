@@ -1,4 +1,4 @@
-//! The article disease-row link rule (ticket 2047). A PubTator3 disease
+//! The article disease-row link rule. A PubTator3 disease
 //! row carries a MeSH or OMIM identifier with the concept name PubTator3
 //! assigns it; several MONDO records crosswalk one broad descriptor, and a
 //! bare identifier opens whichever card sorts first. A row's follow-up get
@@ -64,7 +64,7 @@ fn crosswalk_hit_holds_name(name: &str, hit: &crate::sources::mydisease::MyDisea
 }
 
 /// The one crosswalk hit that holds the concept name PubTator3 assigns a
-/// row's MeSH or OMIM identifier (ticket 2047). A link may name a hit's
+/// row's MeSH or OMIM identifier. A link may name a hit's
 /// ontology ID only when exactly one hit holds that name: several MONDO
 /// records crosswalk one broad MeSH descriptor (`MESH:D008175` "Lung
 /// Neoplasms" hits both `lung neoplasm` and `lung benign neoplasm`), and a
@@ -81,7 +81,7 @@ fn exact_named_crosswalk_hit<'a>(
 }
 
 /// The follow-up `get disease` command for an article disease row, or None
-/// when the row must keep the v0.9.1 search command (ticket 2047). The row's
+/// when the row must keep the v0.9.1 search command. The row's
 /// MeSH or OMIM identifier resolves through the MyDisease crosswalk, and the
 /// command names the crosswalk hit that holds the identifier's concept name
 /// exactly; no name, an unreadable crosswalk, or several holders means no

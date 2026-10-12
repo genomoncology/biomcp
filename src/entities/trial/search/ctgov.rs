@@ -291,7 +291,7 @@ fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
     ))
 }
 
-/// Ticket 2040: the default source has no disease grounding, so an
+/// The default source has no disease grounding, so an
 /// ambiguous abbreviation still runs the registry's own keyword search.
 /// The page must say so plainly, naming the holders `get disease` would
 /// offer and the clinical reading the source cannot see, instead of
@@ -914,7 +914,7 @@ pub(super) async fn search_page_with_ctgov_client(
     let condition_query = raw_condition_query(filters);
     // The ambiguity check costs one MyDisease query, and only for an
     // abbreviation-shaped condition; ordinary conditions never ground
-    // here (ticket 2040).
+    // here.
     let abbreviation_note = ctgov_abbreviation_note(filters).await;
     let aliases = resolve_ctgov_intervention_aliases(filters).await?;
 

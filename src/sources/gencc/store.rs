@@ -608,7 +608,7 @@ fn remove_generation_if_unleased(parent: &File, _generations: &Path, name: &str)
         Err(error) => return Err(error),
     };
     // An Invalid lease file means nothing holds this generation, so
-    // removal proceeds; other failures propagate (ticket 1254).
+    // removal proceeds; other failures propagate.
     #[cfg(unix)]
     let leased = match open_existing_at(&directory_handle, "lease.lock") {
         Ok(lease) => Some(lease),
@@ -627,7 +627,7 @@ fn remove_generation_if_unleased(parent: &File, _generations: &Path, name: &str)
     #[cfg(unix)]
     match validate_directory_owner_mode(&directory_handle, true) {
         // A deliberate mismatch is exactly the prune target; only
-        // environmental failures stop the removal (ticket 1254).
+        // environmental failures stop the removal.
         Ok(()) | Err(StoreError::Invalid) => {}
         Err(error) => return Err(error),
     }
@@ -829,7 +829,7 @@ fn remove_dir_owned(_parent: &File, path: &Path, name: &str) -> Result<(), Store
 fn validate_directory_owner_mode(directory: &File, private: bool) -> Result<(), StoreError> {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     // A deliberate mismatch (wrong mode, wrong owner, not a directory)
-    // is Invalid so cleanup prunes the generation (ticket 1254); only
+    // is Invalid so cleanup prunes the generation; only
     // environmental metadata failures stay Unavailable.
     let metadata = directory.metadata().map_err(|error| store_error_for_errno(error.raw_os_error()))?;
     let mode = metadata.permissions().mode() & 0o7777;
@@ -1106,7 +1106,7 @@ mod errno_tests {
     fn permission_and_stale_handle_errnos_map_to_unavailable() {
         // EACCES, ESTALE, and EAGAIN are environmental, not data
         // corruption: a healthy generation hit by them must be
-        // retained, not pruned (decision recorded in ticket 1254).
+        // retained, not pruned (decision recorded in).
         for errno in [libc::EACCES, libc::ESTALE, libc::EAGAIN] {
             assert!(matches!(
                 store_error_for_errno(Some(errno)),
@@ -1117,11 +1117,11 @@ mod errno_tests {
 
     #[test]
     fn an_unreadable_generation_directory_retains_like_a_wrong_owner_one() {
-        // Wrong-owner stand-in (ticket 1257): a directory another uid
+        // Wrong-owner stand-in: a directory another uid
         // owns with no permissions for this process fails the same
         // openat with EACCES, which classifies Unavailable — an
         // environmental cause — so cleanup retains the generation
-        // instead of pruning it (decision recorded in ticket 1254).
+        // instead of pruning it (decision recorded in).
         use std::os::unix::fs::PermissionsExt;
         let temp = tempfile::tempdir().expect("tempdir");
         let generations = temp.path().join("generations");
@@ -1154,7 +1154,7 @@ mod errno_tests {
 
     #[test]
     fn a_regular_file_where_the_generation_belongs_classifies_invalid() {
-        // Not-a-directory (ticket 1257): openat carries O_DIRECTORY,
+        // Not-a-directory: openat carries O_DIRECTORY,
         // so a regular file named as a generation fails with ENOTDIR,
         // a deliberate mismatch that classifies Invalid — the entry
         // is not a generation and removal reports nothing to remove
@@ -1194,7 +1194,7 @@ mod errno_tests {
 
         // The deliberate mismatch prunes: the mode-wrong generation
         // classifies Invalid and remove_generation_if_unleased removes
-        // it even though its lease file is intact (ticket 1254).
+        // it even though its lease file is intact.
         std::fs::set_permissions(&generation, std::fs::Permissions::from_mode(0o755))
             .expect("0755");
         let handle = open_directory_at(&parent, name.as_ref()).expect("reopen generation");

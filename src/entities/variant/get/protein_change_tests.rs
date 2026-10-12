@@ -34,7 +34,7 @@ impl ProteinHitBuilder {
     }
 
     /// A SnpEff protein-structure row (`feature_type: interaction`, a PDB
-    /// chain feature naming no transcript of its own — ticket 2042).
+    /// chain feature naming no transcript of its own —).
     fn with_interaction(mut self, feature_id: &str, coding: &str) -> Self {
         self.snpeff_annotations.push(serde_json::json!({
             "feature_id": feature_id,
@@ -189,7 +189,7 @@ fn protein_change_resolution_headlines_the_mane_transcript_of_the_query() {
     // SnpEff list (NM_007300.3, which numbers residues 21 higher past the
     // isoform insert). The marker carries ClinVar's current accession
     // version (.4) where the SnpEff build lags (.3), so the headline shows
-    // the current accession (ticket 2035 finding 21).
+    // the current accession.
     let hits = vec![
         brca1_a314t_snpeff(ProteinHitBuilder::default()).hit(
             "chr17:g.41246608C>T",
@@ -250,8 +250,7 @@ fn protein_change_resolution_resolves_a_past_insert_change_on_mane_numbering() {
 fn protein_change_resolution_resolves_the_naming_annotation_without_a_marker() {
     // The same recorded I1568N cohort with the lookalike carrying no ClinVar
     // preferred names: nothing in the response marks a MANE transcript, so
-    // the annotation that names the request is the signal (ticket 2035
-    // finding 4) — the true hit headlines NM_007294's p.Ile1568Asn and
+    // the annotation that names the request is the signal — the true hit headlines NM_007294's p.Ile1568Asn and
     // resolves instead of refusing while the data names the change.
     let hits = vec![
         brca1_i1568n_snpeff(ProteinHitBuilder::default()).hit(
@@ -437,7 +436,7 @@ fn protein_change_resolution_notes_the_numbering_when_the_hit_does_not_spell_the
     // numbering (p.Arg116Gln), so the answer must say which numbering
     // matched instead of resolving silently. ClinVar's accession version
     // (.6) is current where the SnpEff build lags (.5), so the note names
-    // the current accession (ticket 2035 finding 21).
+    // the current accession.
     let hits = vec![
         ProteinHitBuilder::default()
             .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
@@ -471,7 +470,7 @@ fn protein_change_resolution_notes_the_numbering_when_the_hit_does_not_spell_the
 fn protein_change_resolution_resolves_the_requested_numbering_without_a_marker() {
     // Recorded BRCA1 I1568N shape (query_brca1_i1568n_20261007.json): the
     // single ClinVar-less response carries no MANE marker, and the
-    // annotation naming the request is the signal (ticket 2035 finding 4)
+    // annotation naming the request is the signal
     // — NM_007294's p.Ile1568Asn spells the request, so the answer resolves
     // on MANE Select numbering with no note instead of answering p.Ile1589Asn
     // on the first NM_ (NM_007300.3) with a note claiming the request
@@ -504,7 +503,7 @@ fn protein_change_resolution_resolves_the_requested_numbering_without_a_marker()
 /// Canonical-protein facts as the committed UniProt captures carry them:
 /// the accession, the residue at the requested position (None when the
 /// position lies past the sequence's end), the sequence's length, and the
-/// record's MANE-Select cross-reference (tickets 2036 and 2042).
+/// record's MANE-Select cross-reference.
 fn canonical_facts(
     accession: &str,
     residue: Option<char>,
@@ -527,7 +526,7 @@ fn canonical_facts(
 /// valid on MANE while the only alias match names a different change: the
 /// canonical-residue check must run before the isoform annotation is
 /// accepted, and the answer refuses instead of resolving `p.Ser183Tyr` on
-/// NM_001126115.1 with no note (ticket 2036).
+/// NM_001126115.1 with no note.
 #[test]
 fn protein_change_resolution_refuses_an_isoform_spelling_of_a_mane_numbered_request() {
     let hits = vec![
@@ -592,7 +591,7 @@ fn protein_change_resolution_refuses_an_isoform_spelling_of_a_mane_numbered_requ
 /// `p.Ser1566Phe`. UniProt P38398 has Ser at 1587 as well as at 1566, so
 /// the request's numbering is valid on the canonical protein and no record
 /// names that change on MANE: the answer refuses, naming the MANE spelling
-/// (ticket 2036), instead of resolving `p.Ser1587Phe` on NM_007300.3.
+///, instead of resolving `p.Ser1587Phe` on NM_007300.3.
 #[test]
 fn protein_change_resolution_refuses_a_long_isoform_spelling_of_a_mane_numbered_request() {
     let hits = vec![
@@ -645,7 +644,7 @@ fn protein_change_resolution_refuses_a_long_isoform_spelling_of_a_mane_numbered_
 /// matches through another isoform's spelling). The MANE marker from the
 /// canonical record's MANE-Select cross-reference resolves the MANE-named
 /// candidate instead of refusing, and the headline shows the current
-/// accession version (ticket 2036).
+/// accession version.
 #[test]
 fn protein_change_resolution_returns_the_mane_named_candidate_of_two_alias_hits() {
     let s1551y_hits = vec![
@@ -733,7 +732,7 @@ fn protein_change_resolution_returns_the_mane_named_candidate_of_two_alias_hits(
 /// the canonical facts are in hand: UniProt P04637 has Ser at 116, not Arg,
 /// so the requested R116Q truly follows another transcript's numbering and
 /// the answer must say which numbering matched. Silencing the note (or
-/// swapping it for a refusal) fails this test (ticket 2036 pins the 2016
+/// swapping it for a refusal) fails this test (the note rule pins the 2016
 /// behavior).
 #[test]
 fn protein_change_resolution_pins_the_true_other_transcript_numbering_note() {
@@ -800,7 +799,7 @@ fn mane_annotation_names_change_reads_the_mane_stem_only() {
     // Recorded BRCA1 I1568N shape (query_brca1_i1568n_20261007.json): the
     // hit's NM_007294 annotation names I1568N even though the first-NM_
     // headline picks NM_007300's p.Ile1589Asn. The marker may carry a
-    // versioned accession (ticket 2035 finding 21); the stem is what
+    // versioned accession; the stem is what
     // matches.
     let hit = brca1_i1568n_snpeff(ProteinHitBuilder::default()).hit(
         "chr17:g.41223228A>T",
@@ -831,7 +830,7 @@ fn mane_annotation_names_change_reads_the_mane_stem_only() {
     // names p.Arg248Gln on NM_000546 and never R209Q there. The response's
     // ClinVar marker must outrank the annotation that names the request on
     // the shorter isoform, or the lookalike would resolve through it
-    // (ticket 2033 finding 3; ticket 2035 finding 4).
+    //.
     let lookalike = ProteinHitBuilder::default()
         .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
         .with_snpeff("NM_000546.5", "c.743G>A", Some("p.Arg248Gln"))
@@ -860,7 +859,7 @@ fn headline_shows_the_current_transcript_version_clinvar_carries() {
     // Recorded BRAF V600E shape (get_braf_v600e_grch38_20260806.json): the
     // hit's own ClinVar preferred names carry NM_004333.6 while the SnpEff
     // build still says NM_004333.4, so the answer headlines the current
-    // MANE accession (ticket 2035 finding 21).
+    // MANE accession.
     let hit: crate::sources::myvariant::MyVariantHit = serde_json::from_value(serde_json::json!({
         "_id": "chr7:g.140453136A>T",
         "dbnsfp": {"genename": "BRAF", "hgvsp": "p.Val600Glu"},
@@ -888,7 +887,7 @@ fn mane_numbering_refusal_names_the_residue_and_the_lookalike() {
     // while the only alias match names p.Arg248Gln — a different change.
     // The refusal must say both facts instead of the other-transcript note,
     // and its retry line names the requested change, because the candidate
-    // is already known to be a different change (ticket 2035 finding 21).
+    // is already known to be a different change.
     // The recorded R209Q record: the ClinVar 12356 hit whose only
     // annotation names p.Arg248Gln on MANE and holds no row spelling
     // R209Q, so the refusal carries no isoform clause either.
@@ -951,7 +950,7 @@ fn mane_numbering_refusal_names_the_residue_and_the_lookalike() {
 /// protein cannot hold proves by itself that the request follows another
 /// numbering. The answer keeps the MANE headline (ClinVar 869017 names
 /// NM_007294.4 p.Tyr1845Asp) and prints the other-transcript note instead
-/// of resolving silently (ticket 2042).
+/// of resolving silently.
 #[test]
 fn protein_change_resolution_notes_a_position_past_the_canonical_protein_end() {
     let hits = vec![
@@ -997,7 +996,7 @@ fn protein_change_resolution_notes_a_position_past_the_canonical_protein_end() {
 /// interaction rows beside the transcript rows, and the request's
 /// position 1878 again lies past the canonical protein's 1863 residues.
 /// The MANE-Select cross-reference (NM_007294.4) headlines
-/// p.Gln1857Arg and the past-the-end note prints (ticket 2042); the
+/// p.Gln1857Arg and the past-the-end note prints; the
 /// interaction rows must not cost the record its whole annotation list.
 #[test]
 fn protein_change_resolution_notes_a_many_row_record_past_the_protein_end() {
@@ -1051,7 +1050,7 @@ fn protein_change_resolution_notes_a_many_row_record_past_the_protein_end() {
     assert_eq!(variant.transcript.as_deref(), Some("NM_007294.4"));
 }
 
-/// Recorded TP53 S183Y shape with UniProt unreachable (ticket 2042): the
+/// Recorded TP53 S183Y shape with UniProt unreachable: the
 /// canonical facts never arrive, so the residue check cannot run. The
 /// headline still spells the request (the shorter isoform's
 /// p.Ser183Tyr), so the answer resolves under a note that says plainly
@@ -1138,7 +1137,7 @@ fn protein_change_resolution_refuses_a_lookalike_without_facts() {
 /// transcript named by the record: the residue check passes (P04637 has
 /// Ser at 183) while nothing marks the headline transcript as MANE, so
 /// the answer keeps the spelled request and says plainly the numbering
-/// could not be checked against MANE (ticket 2042).
+/// could not be checked against MANE.
 #[test]
 fn protein_change_resolution_notes_unchecked_numbering_without_a_mane_transcript() {
     let hits = vec![
@@ -1175,7 +1174,7 @@ fn protein_change_resolution_notes_unchecked_numbering_without_a_mane_transcript
 
 /// A protein-change request whose resolved record names no protein change
 /// on any headline transcript refuses instead of answering a bare genomic
-/// variant (ticket 2042): nothing can carry the numbering story.
+/// variant: nothing can carry the numbering story.
 #[test]
 fn protein_change_resolution_refuses_a_hit_without_any_protein_change() {
     let hits = vec![ProteinHitBuilder::default().rsid("rs9999001").hit(
@@ -1211,7 +1210,7 @@ fn protein_change_resolution_refuses_a_hit_without_any_protein_change() {
     assert!(!message.contains("Candidates:"), "{message}");
 }
 
-/// Ticket 2047: the same refusal with facts that name no MANE transcript
+/// The same refusal with facts that name no MANE transcript
 /// must not claim the record carries no protein change anywhere. The
 /// record's rows carry protein changes on rows without coding spellings,
 /// so none can be headlined; the wording says what BioMCP could not
@@ -1254,7 +1253,7 @@ fn protein_change_absent_refusal_without_a_mane_transcript_claims_only_the_headl
     );
 }
 
-/// Ticket 2047's mid-sequence arm: the request's residue matches the
+/// Mid-sequence arm: the request's residue matches the
 /// canonical protein, so its numbering is valid there, while the record
 /// offers no protein change on a transcript BioMCP can headline. The
 /// refusal must fire on this arm too — the only prior test reached the
@@ -1294,7 +1293,7 @@ fn protein_change_absent_refusal_fires_mid_sequence() {
     );
 }
 
-/// Ticket 2047: with the canonical facts in hand but no MANE
+/// With the canonical facts in hand but no MANE
 /// cross-reference, a request whose reference residue differs from the
 /// canonical protein still resolved its isoform spelling silently — the
 /// residue check had proven another numbering, but the equivalent
@@ -1341,8 +1340,7 @@ fn protein_change_resolution_notes_a_proven_other_numbering_without_a_mane_trans
     );
 }
 
-/// Recorded BRCA1 H1883D shape (ticket 2042's named second past-the-end
-/// probe): the ClinVar-less hit spells the request on the long isoform
+/// Recorded BRCA1 H1883D shape: the ClinVar-less hit spells the request on the long isoform
 /// (NM_007300.3 p.His1883Asp) while MANE Select NM_007294 names
 /// p.His1862Asp, and the request's position 1883 lies past the 1863
 /// residues of P38398. The MANE-Select cross-reference headlines the MANE

@@ -3,7 +3,7 @@
 
 /// Blocking-thread stack headroom above the XML depth cap (the cap is
 /// the control; this is margin for the recursive JATS and ClinVar
-/// walkers that run on blocking threads). Ticket 1243.
+/// walkers that run on blocking threads).
 const BLOCKING_STACK_BYTES: usize = 4 * 1024 * 1024;
 
 /// Per-process count of one-shot runtime constructions. The MCP path
@@ -12,7 +12,7 @@ const BLOCKING_STACK_BYTES: usize = 4 * 1024 * 1024;
 pub(super) static ONE_SHOT_RUNTIMES_BUILT: std::sync::atomic::AtomicUsize =
     std::sync::atomic::AtomicUsize::new(0);
 
-/// Test-only seam for the MCP-path runtime probe (ticket 1257). The
+/// Test-only seam for the MCP-path runtime probe. The
 /// production counter is process-wide, so under a single-process test
 /// runner (`cargo test --lib`) any parallel `run_outcome` test also
 /// bumps it and a delta assertion on it can fail at random. The probe
@@ -27,7 +27,7 @@ pub(super) static ONE_SHOT_RUNTIMES_BUILT: std::sync::atomic::AtomicUsize =
 /// alongside the production counter; the test asserts both so the
 /// seam cannot drift from what production counts.
 /// How the dedicated execute thread drives the command future
-/// (ticket 1243).
+///.
 pub(super) enum WorkerDrive {
     /// The server's long-lived runtime: every MCP tool call reuses it,
     /// so pooled connections and timers survive between calls instead

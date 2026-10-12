@@ -10,7 +10,7 @@ pub(crate) fn truncate_article_annotations(
 }
 
 /// The verified `get disease` command per article disease row identifier
-/// (ticket 2047): a MeSH or OMIM identifier opens a card only when the
+///: a MeSH or OMIM identifier opens a card only when the
 /// MyDisease crosswalk holds exactly one hit naming the identifier's
 /// PubTator3 concept name. Rows that verify use the hit's ontology ID; every
 /// other row stays off the map, so its entity row keeps the v0.9.1 search

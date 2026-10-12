@@ -53,13 +53,13 @@ const DDINTER_BUNDLE: [(&str, &str); 8] = [
 /// Message prefix marking DDInter errors that come from reading or
 /// parsing the bundle itself. Only these render as "bundle could not
 /// be read" (error.rs); download failures keep the generic API line
-/// so no upstream body text leaks (ticket 1254).
+/// so no upstream body text leaks.
 pub(crate) const DDINTER_BUNDLE_READ_MARKER: &str = "DDInter bundle file ";
 
 /// Message prefix marking DDInter download replies that are not the
 /// expected bundle — an HTML page where the CSV should be. Distinct from
 /// the read marker so the public wording names the download, not a
-/// corrupted bundle (ticket 1256). The content-type value comes from the
+/// corrupted bundle. The content-type value comes from the
 /// upstream response header, not the body, so no upstream body text
 /// leaks through it (2026-09-28 review corrected this comment: the
 /// header is upstream's, not ours).
@@ -208,7 +208,7 @@ fn cached_index_map() -> &'static Mutex<HashMap<PathBuf, CachedDdinterIndex>> {
 /// The index plus the freshness basis (the oldest file mtime) captured
 /// at load time. Freshness derives from this basis and the clock, never
 /// from a later re-read: an externally replaced bundle cannot flip a
-/// loaded index's label (ticket 1241).
+/// loaded index's label.
 #[derive(Debug, Clone)]
 struct CachedDdinterIndex {
     index: Arc<DdinterIndex>,
@@ -424,7 +424,7 @@ async fn sync_export(
     if !status.is_success() {
         // A download failure is not a bundle read: no marker, so the
         // generic API line renders, and no upstream body text is
-        // embedded (ticket 1254).
+        // embedded.
         return Err(BioMcpError::Api {
             api: DDINTER_API.to_string(),
             message: format!("{file_name}: HTTP {status}"),
@@ -457,7 +457,7 @@ fn ensure_csv_content_type(
         return Err(BioMcpError::Api {
             api: DDINTER_API.to_string(),
             // No body excerpt: the content-type alone names the failure
-            // and upstream text must not leak (ticket 1254).
+            // and upstream text must not leak.
             message: format!(
                 "{DDINTER_BUNDLE_DOWNLOAD_MARKER}endpoint answered HTML (content-type: {raw}), not the CSV bundle"
             ),

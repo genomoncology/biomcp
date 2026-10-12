@@ -1,4 +1,4 @@
-//! Ticket 1214: the ChEMBL cell line section, replayed from recorded fixtures.
+//! The ChEMBL cell line section, replayed from recorded fixtures.
 
 use super::*;
 use crate::entities::cell_line::{

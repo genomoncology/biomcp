@@ -119,8 +119,8 @@ fn abbreviation_holders_count_name_and_synonym_holds() {
 #[test]
 fn holder_candidate_lines_fill_the_mondo_label() {
     // A record with no `name` in the search response still names itself
-    // through the ontology `label` (ticket 2017: CAD listed
-    // `MONDO:0018922 (no label in the search response)`).
+    // through the ontology `label`: CAD used to list
+    // `MONDO:0018922 (no label in the search response)`.
     let hit: MyDiseaseHit = serde_json::from_value(serde_json::json!({
         "_id": "MONDO:0018922",
         "mondo": {
@@ -133,7 +133,7 @@ fn holder_candidate_lines_fill_the_mondo_label() {
     assert_eq!(lines, "- cold agglutinin disease (MONDO:0018922)\n");
 }
 
-/// Ticket 2032: a refusal names the clinical reading the source cannot
+/// A refusal names the clinical reading the source cannot
 /// see as a pointer line, never as a source candidate, and only for the
 /// abbreviations the table records.
 #[test]
@@ -186,7 +186,7 @@ fn mf_holder_hits() -> Vec<MyDiseaseHit> {
     ]
 }
 
-/// Ticket 2040: the MF refusal kept hiding myelofibrosis because no
+/// The MF refusal kept hiding myelofibrosis because no
 /// indexed source record holds `MF` on a myelofibrosis record (checked
 /// live 2026-10-11 against MyDisease, the Disease Ontology entry, and
 /// the NCI Thesaurus synonym lists). The pointer names the reading the
@@ -217,7 +217,7 @@ fn mf_refusal_names_the_myelofibrosis_reading() {
     assert!(!message.contains("- myelofibrosis"), "{message}");
 }
 
-/// Ticket 2040: the default trial source asks for the refusal's data,
+/// The default trial source asks for the refusal's data,
 /// not its error. An abbreviation-shaped condition that would refuse in
 /// `get disease` yields the holders, the reason, and the clinical
 /// reading; anything else yields nothing.
@@ -430,7 +430,7 @@ fn rerank_disease_search_hits_prefers_canonical_exact_candidate_across_query_var
 
 #[test]
 fn rerank_disease_search_hits_ranks_exact_abbreviation_holder_first() {
-    // Ticket 1295: the source's exact synonym lists hold "NSCLC" for the
+    // The source's exact synonym lists hold "NSCLC" for the
     // parent only; a subtype holds the token inside a longer exact synonym.
     let ranked = rerank_disease_search_hits(
         "NSCLC",
@@ -617,7 +617,7 @@ async fn exact_resolution_rejects_incomplete_query_without_fetching_detail() {
 
 #[tokio::test]
 async fn exact_resolution_refuses_ambiguous_abbreviation_held_by_two_diseases() {
-    // Ticket 1295: "CAD" is an exact synonym of both coronary artery disease
+    // "CAD" is an exact synonym of both coronary artery disease
     // and cold agglutinin disease in the source's own lists. Exact resolution
     // must refuse the abbreviation instead of picking one identity.
     let (client, requests, server) = exact_resolution_fixture(|_| {
@@ -677,7 +677,7 @@ async fn exact_resolution_maps_selected_detail_inconsistency_to_safe_source_erro
 
 #[test]
 fn scored_best_candidate_breaks_ties_on_provider_names_like_rerank() {
-    // Ticket 2052: both disease rankers read the provider-named tie-break.
+    // Both disease rankers read the provider-named tie-break.
     // A record whose only label is the ontology `label` still displays a
     // name, but it is not provider-named, and it must never outrank a named
     // record the way it used to when this ranker read `hit_label` alone.

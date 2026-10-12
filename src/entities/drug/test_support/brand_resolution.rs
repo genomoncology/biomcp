@@ -1,10 +1,10 @@
-//! Recorded-reply tests for brand drug lookups (ticket 2037): the guarded
+//! Recorded-reply tests for brand drug lookups: the guarded
 //! discover rescue before a name-miss refusal, and the brand card named for
 //! its own product row.
 
 use super::*;
 
-/// The live OLS4 answer for `q=Tarceva`, recorded 2026-10-09 (ticket 2037)
+/// The live OLS4 answer for `q=Tarceva`, recorded 2026-10-09
 /// and trimmed to the fields the discover pipeline reads, with descriptions
 /// shortened and each doc's synonym list cut to its Tarceva-bearing entries.
 /// NCIT:C2693 "Erlotinib Hydrochloride" is the only exact synonym match and
@@ -142,7 +142,7 @@ const OLS_TARCEVA_BODY: &str = r#"{
 }"#;
 
 /// The live openFDA label answer for the erlotinib hydrochloride search,
-/// recorded 2026-10-09 (ticket 2037): the newest erlotinib record, with the
+/// recorded 2026-10-09: the newest erlotinib record, with the
 /// section text trimmed for the fixture.
 const ERLOTINIB_LABEL_BODY: &str = r#"{
  "meta": {
@@ -187,7 +187,7 @@ const ERLOTINIB_LABEL_BODY: &str = r#"{
 }"#;
 
 /// The live openFDA label answer for the niraparib search, recorded
-/// 2026-10-09 (ticket 2037) and repinned 2026-10-10 for ticket 2043:
+/// 2026-10-09 and repinned 2026-10-10:
 /// the Akeega combination record promoted ahead of Zejula's own record,
 /// the order openFDA serves whenever Akeega's label is the newer one,
 /// so the fixture pins the choice rule instead of that day's
@@ -285,7 +285,7 @@ async fn tarceva_resolves_erlotinib_through_the_guarded_discover_rescue() {
     )
     .await;
 
-    // Ticket 2037: MyChem holds Tarceva only on a record with no name and
+    // MyChem holds Tarceva only on a record with no name and
     // openFDA holds no Tarceva label, so the guarded discover rescue must
     // run before the name-miss refusal. The rescue's top concept is the
     // merged erlotinib hydrochloride entry (CHEBI:53509 label spelling),
@@ -331,9 +331,9 @@ async fn zejula_returns_niraparib_with_the_zejula_label() {
     )
     .await;
 
-    // Ticket 2037: the Zejula card takes the name its own product row pairs
+    // The Zejula card takes the name its own product row pairs
     // (niraparib), never the Akeega combination row that sits first, and
-    // ticket 2043: the label choice picks Zejula's own record out of the
+    // The label choice picks Zejula's own record out of the
     // Akeega-first page, because only ZEJULA's brand name equals the query
     // and the Akeega generic name is a combination.
     let drug = name_resolution_fixture_drug(&base, "Zejula").await;
@@ -382,7 +382,7 @@ async fn niraparib_names_the_plain_card_and_takes_its_own_label() {
     )
     .await;
 
-    // Ticket 2043: the ingredient query names the card for the plain
+    // The ingredient query names the card for the plain
     // ingredient — never the Akeega combination rows MyChem lists first on
     // the same record — and the label choice picks the record whose generic
     // name is exactly niraparib out of the Akeega-first page.
@@ -422,7 +422,7 @@ async fn niraparib_names_the_plain_card_and_takes_its_own_label() {
 /// Two exact canonical drugs answering one brand: the discover rescue must
 /// refuse to pick between them, so `get` keeps the honest no-match refusal.
 /// This pin bites when the rescue guard's competing-exact check is removed
-/// (ticket 2037).
+///.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_brand_two_exact_drugs_answer_refuses_instead_of_picking_one() {
@@ -464,7 +464,7 @@ async fn a_brand_two_exact_drugs_answer_refuses_instead_of_picking_one() {
 }
 
 /// The live openFDA label answer for the "Pain Relief" identity search,
-/// recorded 2026-10-10 (ticket 2039) and trimmed to the openFDA blocks: no
+/// recorded 2026-10-10 and trimmed to the openFDA blocks: no
 /// label carries the shelf name as its own brand, and 1,252 labels merely
 /// mention it, so no row's record owns the requested name.
 const PAIN_RELIEF_LABEL_BODY: &str = r#"{
@@ -498,7 +498,7 @@ const PAIN_RELIEF_LABEL_BODY: &str = r#"{
 }"#;
 
 /// The live openFDA label answer for the "Sleep Aid" identity search,
-/// recorded 2026-10-10 (ticket 2039) and trimmed to the openFDA blocks: two
+/// recorded 2026-10-10 and trimmed to the openFDA blocks: two
 /// labels carry the shelf name as their own brand and pair it with
 /// different ingredients (doxylamine succinate and diphenhydramine), so the
 /// name owns no one drug through openFDA either.
@@ -532,7 +532,7 @@ const SLEEP_AID_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
-/// `q=doxylamine succinate` (recorded 2026-10-11, ticket 2050): the
+/// `q=doxylamine succinate` (recorded 2026-10-11): the
 /// doxylamine identity record with its own pairing row, trimmed to the
 /// fields the selection reads. The openFDA identity fallback orders its
 /// candidates by the label page, and doxylamine succinate is the first
@@ -559,7 +559,7 @@ const DOXYLAMINE_SUCCINATE_CAPTURE: &str = r#"
 "#;
 
 /// The env a refusal test needs: the name-resolution fixture base with the
-/// shared HTTP client's cache walk pointed at its own tree (ticket 2039).
+/// shared HTTP client's cache walk pointed at its own tree.
 async fn shared_name_refusal_drug(name: &str, base: &str) -> crate::error::BioMcpError {
     let (_env, _ddinter) = super::drug_fixture_env(base, "shared-name-ddinter");
     super::super::get(name, &["label".to_string()])
@@ -583,7 +583,7 @@ async fn pain_relief_refuses_naming_the_drugs_that_share_the_name() {
     )
     .await;
 
-    // Ticket 2039: the shelf name brands unrelated drugs' products, MyChem
+    // The shelf name brands unrelated drugs' products, MyChem
     // carries it on each of their records, and openFDA holds no label whose
     // own brand is "Pain Relief". No record owns the name, so the card
     // refuses and names drugs the text search matched instead of fusing
@@ -620,12 +620,12 @@ async fn sleep_aid_refuses_when_openfdas_own_brands_disagree() {
     )
     .await;
 
-    // Ticket 2039: MyChem refuses the shelf name because diphenhydramine's
+    // MyChem refuses the shelf name because diphenhydramine's
     // and doxylamine's records pair it with different ingredients, and the
     // openFDA identity fallback refuses too, because its two labels that
     // carry "Sleep Aid" as their own brand pair it with different
     // ingredients. The refusal names the matched drugs. The doxylamine
-    // succinate reply pins the fallback's refusal (ticket 2050): adopting
+    // succinate reply pins the fallback's refusal: adopting
     // the first of the two candidates would resolve a card and fail this
     // test.
     let err = shared_name_refusal_drug("Sleep Aid", &base).await;

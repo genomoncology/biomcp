@@ -284,7 +284,7 @@ where
 /// document's own annotations pair the gene with a protein change, but every
 /// mention spells the gene "K-ras" or "K-RAS", so no mention text can head
 /// the exact gene-plus-change form. MyGene answers from the NCBI Gene id
-/// (ticket 2034); a failed lookup keeps the mention-text fallbacks.
+///; a failed lookup keeps the mention-text fallbacks.
 async fn official_gene_symbols_for_spelled_genes(
     doc: &PubTatorDocument,
 ) -> std::collections::HashMap<u64, String> {

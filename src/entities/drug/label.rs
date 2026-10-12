@@ -572,7 +572,7 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
 /// The brand that opens each SPL product data element entry, as written:
 /// the only brand identity a record with an empty `openfda` block carries
 /// ("DARZALEX Daratumumab DARATUMUMAB …" names DARZALEX), so a card whose
-/// chosen label is a sparse record still lists its own brand (ticket 2047).
+/// chosen label is a sparse record still lists its own brand.
 /// One reader serves every consumer of the element line's brand (ticket
 /// 2050), so a multi-word brand ("Herceptin Hylecta") stays whole wherever
 /// it is read.
@@ -687,7 +687,7 @@ fn spl_element_identity_heads(element: &str) -> Vec<(Vec<String>, Vec<String>)> 
 /// recurs later marks where the established name begins, and every token
 /// before it belongs to the brand: a multi-word brand stays whole
 /// ("Herceptin Hylecta Trastuzumab and hyaluronidase-oysk TRASTUZUMAB …"
-/// names HERCEPTIN HYLECTA over trastuzumab, ticket 2050). An entry whose
+/// names HERCEPTIN HYLECTA over trastuzumab). An entry whose
 /// tokens never recur names no established ingredient, so it contributes
 /// neither brand nor generic.
 fn entry_identity_run(entry: &[String]) -> (Vec<String>, Vec<String>) {
@@ -820,7 +820,7 @@ fn is_body_limit_error(error: &BioMcpError) -> bool {
 /// Whether a product name names a combination: a second ingredient joined
 /// by "and" or a comma-separated list. Salts and hydrates ("niraparib
 /// tosylate monohydrate", "erlotinib hydrochloride") are single-ingredient
-/// qualified names, not combinations (ticket 2043).
+/// qualified names, not combinations.
 fn is_combination_product_name(name: &str) -> bool {
     let lower = name.to_ascii_lowercase();
     lower.contains(" and ") || lower.contains(',')
@@ -828,7 +828,7 @@ fn is_combination_product_name(name: &str) -> bool {
 
 /// Split one "A and B" pairing name into its halves: exactly two names,
 /// joined by one " and ", with no comma list on the left ("pertuzumab,
-/// trastuzumab, and hyaluronidase-zzxf" stays whole, ticket 2047).
+/// trastuzumab, and hyaluronidase-zzxf" stays whole).
 fn split_pairing_name(name: &str) -> Option<(&str, &str)> {
     let trimmed = name.trim();
     let mut parts = trimmed.split(" and ");
@@ -879,7 +879,7 @@ fn run_qualifies_listed_ingredient(name: &str, ingredients: &[String]) -> bool {
 }
 
 /// The plain ingredient of an under-the-skin pairing, derived from the
-/// record's own ingredient list (ticket 2052): subcutaneous antibody
+/// record's own ingredient list: subcutaneous antibody
 /// products carry one "ingredient and enzyme" generic name, the record
 /// lists the plain ingredient exactly, and the paired half is only a
 /// qualified form of another listed ingredient — so
@@ -891,7 +891,7 @@ fn run_qualifies_listed_ingredient(name: &str, ingredients: &[String]) -> bool {
 /// combination ("nivolumab and relatlimab-rmbw" over [nivolumab,
 /// relatlimab-rmbw] names no single plain ingredient, so the whole name
 /// stands and a combination never becomes another product's card name,
-/// tickets 2043 and 2047), a comma-list combination names none, and a
+/// And 2047), a comma-list combination names none, and a
 /// record that lists neither half supports no split at all.
 pub(super) fn plain_paired_ingredient_name<'a>(name: &'a str, ingredients: &[String]) -> &'a str {
     let Some((left, right)) = split_pairing_name(name) else {
@@ -921,9 +921,9 @@ pub(super) fn plain_paired_ingredient_name<'a>(name: &'a str, ingredients: &[Str
 /// combination, biosimilar or under-the-skin form. A brand whose labels
 /// name a family of the brand's products ("Motrin IB" for Motrin) takes
 /// that family's plain-ingredient record before any other plain record
-/// (ticket 2052), and brand equality reads the whole word set, because
+///, and brand equality reads the whole word set, because
 /// labelers write the same brand's words in different orders ("TYLENOL
-/// Extra Strength" for "Extra Strength Tylenol", ticket 2052).
+/// Extra Strength" for "Extra Strength Tylenol").
 const LABEL_RANK_BRAND_MATCH: u8 = 4;
 const LABEL_RANK_BRAND_FAMILY: u8 = 3;
 const LABEL_RANK_PLAIN_INGREDIENT: u8 = 2;
@@ -945,7 +945,7 @@ fn brand_names_requested(brand: &str, requested: &str) -> bool {
 
 /// The generic names one label result states for its drug: the openFDA
 /// generic names, plus the established names a sparse record's element line
-/// carries (ticket 2047).
+/// carries.
 pub(super) fn label_result_generic_names(result: &serde_json::Value) -> Vec<String> {
     let mut names = extract_openfda_values_from_result(result, "generic_name");
     if is_sparse_identity_record(result) {
@@ -958,7 +958,7 @@ pub(super) fn label_result_generic_names(result: &serde_json::Value) -> Vec<Stri
 /// substance names, the active-ingredient names, and — for a sparse record
 /// whose only identity is the element line — the established names that
 /// line carries. This is the structural ingredient set the pairing split
-/// reads (ticket 2052).
+/// reads.
 pub(super) fn label_result_ingredient_names(result: &serde_json::Value) -> Vec<String> {
     let mut names = extract_openfda_values_from_result(result, "substance_name");
     if let Some(ingredients) = result.get("active_ingredients").and_then(|v| v.as_array()) {
@@ -993,7 +993,7 @@ pub(super) fn ingredient_word_set(name: &str) -> std::collections::BTreeSet<Stri
         .collect()
 }
 
-/// Whether a brand-equal label's generic name fits the card (ticket 2050):
+/// Whether a brand-equal label's generic name fits the card:
 /// a brand alone never confirms a record, because the brand-equal label may
 /// be another product's — a shelf name on a card it shares no ingredient
 /// with. The generic fits when it names the requested or card drug (equal,
@@ -1033,10 +1033,10 @@ fn generic_name_fits_card(
 /// excipients…" ("DARZALEX Daratumumab DARATUMUMAB DARATUMUMAB ACETIC ACID…"
 /// names the DARZALEX brand and the daratumumab ingredient; "Herceptin
 /// Hylecta Trastuzumab and hyaluronidase-oysk TRASTUZUMAB …" names the
-/// HERCEPTIN HYLECTA brand and the trastuzumab pairing, ticket 2050), so
+/// HERCEPTIN HYLECTA brand and the trastuzumab pairing), so
 /// the entry head's leading tokens are the brand and its recurring name
 /// run after them is the established name. An entry that names no
-/// established ingredient contributes no brand either (ticket 2047).
+/// established ingredient contributes no brand either.
 fn sparse_element_identity_names(result: &serde_json::Value) -> (Vec<String>, Vec<String>) {
     let mut brands = Vec::new();
     let mut generics = Vec::new();
@@ -1096,7 +1096,7 @@ fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) ->
     // The brand-family tier: a brand line that opens with the requested
     // brand ("Motrin IB" for Motrin) on a record whose generic is a plain
     // single ingredient — never a combination — names that family's own
-    // product before any other plain record answers (ticket 2052).
+    // product before any other plain record answers.
     let brand_opens_with_requested = |brand: &str| {
         let brand = brand.trim().to_ascii_lowercase();
         !brand.is_empty() && brand.starts_with(&requested) && brand.len() > requested.len()
@@ -1138,7 +1138,7 @@ fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) ->
 /// highest-ranked result moves to the front and the rest keep openFDA's
 /// order behind it, so every downstream reader of `results[0]` sees the
 /// chosen record. Returns the reordered response with the chosen record's
-/// rank (ticket 2043).
+/// rank.
 fn choose_label_response(
     response: serde_json::Value,
     requested: &str,
@@ -1173,7 +1173,7 @@ fn choose_label_response(
 /// reaches the sparse record, the identity guard keeps only records whose
 /// own names match the searched name, and the element-derived identity
 /// ranks them, so a record that outranks the unconfirmed fallback serves
-/// before it (ticket 2047). A fetch error skips the escalation; the final
+/// before it. A fetch error skips the escalation; the final
 /// elements fallback re-runs the card's own query and settles its errors
 /// there.
 async fn sparse_elements_choice(
@@ -1209,7 +1209,7 @@ async fn sparse_elements_choice(
 }
 
 /// Field-scoped label lookup with the two-sided label choice and the
-/// sparse-metadata elements fallback (tickets 2043, 1300 and 2047).
+/// sparse-metadata elements fallback.
 ///
 /// The request's own name runs first, the card's canonical name second,
 /// and a brand-equal or plain-ingredient record locks the answer. When the
@@ -1233,7 +1233,7 @@ pub(super) async fn lookup_label_response(
     let mut fallback: Option<serde_json::Value> = None;
     let mut fallback_rank = LABEL_RANK_OPENFDA_ORDER;
     let mut queries: Vec<&str> = Vec::new();
-    // Ticket 2052: the label lookup follows the resolved ingredient — the
+    // The label lookup follows the resolved ingredient — the
     // card's own name — as well as the request, and it follows the brand
     // as the resolved record itself spells it: labelers write one brand's
     // words in different orders ("TYLENOL Extra Strength" against the

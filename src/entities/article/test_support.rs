@@ -60,7 +60,7 @@ pub(super) enum TestHttpReply {
 /// The receiver side a held reply waits on: a tokio mpsc receiver under a
 /// tokio mutex, so the wait parks an async task on the runtime instead of a
 /// worker thread, and the runtime's timers keep firing while the hold lasts
-/// (ticket 2030). The hold releases when every clone of the sender side
+///. The hold releases when every clone of the sender side
 /// drops.
 pub(super) type HeldReplyGate = std::sync::Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<()>>>;
 
@@ -103,7 +103,7 @@ impl TestHttpFixture {
                         }
                         TestHttpReply::Hold(release) => {
                             // The hold waits on async primitives, so it never
-                            // parks a runtime worker thread (ticket 2030).
+                            // parks a runtime worker thread.
                             // The wait also carries its own bound, above
                             // every legitimate test bound (the 60 s search
                             // deadline, the 60-120 s watchdogs): nextest
@@ -112,7 +112,7 @@ impl TestHttpFixture {
                             // a hold that outlives its test self-releases
                             // and closes the connection. The caller waiting
                             // on the reply then fails instead of hanging
-                            // the runner (ticket 2045).
+                            // the runner.
                             let _ =
                                 tokio::time::timeout(crate::test_support::watchdog(180), async {
                                     release.lock().await.recv().await;
@@ -139,7 +139,7 @@ impl Drop for TestHttpFixture {
 /// Wrap a fixture-driven test body in a watchdog that names the test. A
 /// future hang fails that test with its own name in the panic message once
 /// the scaled bound expires, instead of stalling the lane until the CI cap
-/// (ticket 2030). The bound stretches with `BIOMCP_TEST_TIMEOUT_SCALE`
+///. The bound stretches with `BIOMCP_TEST_TIMEOUT_SCALE`
 /// like every other watchdog.
 pub(super) async fn hang_guard<T>(
     test: &'static str,

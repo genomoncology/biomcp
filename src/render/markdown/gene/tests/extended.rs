@@ -343,7 +343,7 @@ fn gene_markdown_pathways_show_source_labels() {
     assert!(!markdown.contains("Showing pathway rows from Reactome search results."));
 }
 
-// Ticket 1213: the cell line table, its notes, and the attribution line.
+// The cell line table, its notes, and the attribution line.
 
 fn cell_lines_page(rows: Vec<crate::entities::gene::cell_lines::GeneCellLineRow>) -> crate::entities::gene::cell_lines::GeneCellLines {
     crate::entities::gene::cell_lines::GeneCellLines {
