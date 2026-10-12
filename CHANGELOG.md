@@ -51,6 +51,8 @@
 - The guides match the shipped behavior: the variant guide explains gene-symbol-first routing, the article guide states the 60-second search deadline, the deep-offset refusal and the OpenCitations fallback, the drug guide names the sections that keep their caps, and the ClinVar source page and the variant-structure blog post show the current headline format. (1290, 1293, 1300, 1301, 1302)
 
 ### Internal
+- Ticket 2055's landing carries its release note, which the first gated rehearsal caught missing. (2057)
+- The release notes close with this entry, so every ticket in the 0.9.2 tag carries its bullet. (2058)
 - The repository's working rules sit in one section of its agent guide — targeted tests while working, the full gates once before landing — and the retired March tooling is gone from the tree. (2055)
 - The release guards stop the rehearsal repository from publishing: the wheel upload and the Homebrew push run only in the production repository, the container image and its source label follow the repository running the workflow, and the changelog gate reads a bullet's closing ticket group wherever punctuation trails it. (2049)
 - The tickets from the final review rounds carry their verdicts on the ticket tool's own review line. (2051)
