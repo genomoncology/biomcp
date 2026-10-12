@@ -554,6 +554,57 @@ def test_described_tickets_rejects_label_only_bullets_directly() -> None:
     # Real description words survive the stoplist.
     assert described_tickets("- Restored container publication (1219)") == {"1219"}
 
+
+def test_a_ticket_number_that_appears_only_in_prose_is_not_coverage(
+    tmp_path: Path,
+) -> None:
+    """Ticket 2049's promised check: a number named inside a bullet's
+    prose covers nothing. Reverting the closing-group logic in
+    scripts/check-changelog-coverage.py to counting any number makes
+    this test fail, so the prose rule cannot silently regress."""
+    assert (
+        described_tickets("- The drug card names the brand; ticket 2049 tracks the rest.")
+        == set()
+    )
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/2049-gate'"],
+        changelog=(
+            "# C\n\n## Unreleased\n\n"
+            "- The drug card names the brand; ticket 2049 tracks the rest.\n"
+        ),
+    )
+    assert result.returncode == 1
+    assert "2049" in result.stderr
+
+
+def test_a_period_after_the_closing_group_counts_only_when_the_group_is_real(
+    tmp_path: Path,
+) -> None:
+    """Punctuation trailing the closing group must not hide it
+    (ticket 2049), and a parenthesized number that is not a closing
+    group still covers nothing, period or not."""
+    assert described_tickets("- Reworked the release gates. (1234).") == {"1234"}
+    assert (
+        described_tickets("- Reworked the release gates (1234, see the review).") == set()
+    )
+    covered = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        changelog="# C\n\n## Unreleased\n\n- Reworked the release gates. (1234).\n",
+    )
+    assert covered.returncode == 0, covered.stderr
+    wrong_group = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        changelog=(
+            "# C\n\n## Unreleased\n\n"
+            "- Reworked the release gates (1234, see the review).\n"
+        ),
+    )
+    assert wrong_group.returncode == 1
+    assert "1234" in wrong_group.stderr
+
 def test_dated_and_yearly_records_do_not_count_as_tickets(tmp_path: Path, monkeypatch) -> None:
     """Only ticket-range numbers count, whatever the slug looks like.
 
