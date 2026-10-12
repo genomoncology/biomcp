@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 2f2ed9d, accept
+
 ## Outcome
 
 `biomcp get drug` answers a common single-ingredient drug, its brand, and its spelled-out name with that drug and a label for that drug or that brand. Each rule 2050 added has a test that fails without it, and the test suite never reads the machine's own cache.
