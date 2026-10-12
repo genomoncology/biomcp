@@ -632,7 +632,7 @@ fn variant_markdown_renders_gwas_unavailable_message() {
     assert!(!markdown.contains("No GWAS associations found for this variant."));
 }
 
-/// Ticket 2050: the retired-endpoint gap renders once. The section state
+/// The retired-endpoint gap renders once. The section state
 /// line carries the reason, so the template's own reason line stays silent
 /// instead of printing the same words a second time under it.
 #[test]
@@ -658,7 +658,7 @@ fn variant_markdown_renders_the_gwas_gap_reason_once() {
     );
 }
 
-/// Ticket 2050: a permanent unavailability (the retired by-rsID endpoint)
+/// A permanent unavailability (the retired by-rsID endpoint)
 /// names its whole gap and offers no retry, because no retry reaches a
 /// retired endpoint, and the reason never cuts mid-word.
 #[test]
@@ -1163,4 +1163,44 @@ fn gwas_search_markdown_renders_result_row() {
     assert!(markdown.contains("# GWAS Search: EGFR"));
     assert!(markdown.contains("| rs121434568 | Lung adenocarcinoma |"));
     assert!(markdown.contains("| OR 1.230 |") || markdown.contains("OR 1.230"));
+}
+
+#[test]
+fn a_variant_card_prints_no_blank_line_for_an_absent_numbering_note() {
+    // The protein-numbering note line printed a blank
+    // line whenever no note existed, so every variant card carried an empty
+    // line after "Transcript:". The note's own newline now travels inside
+    // the conditional.
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.100A>T",
+        "gene": "TST",
+        "hgvs_p": "p.Val600Glu",
+        "hgvs_c": "c.1799T>A",
+        "transcript": "NM_1.2",
+        "consequence": "missense_variant"
+    }))
+    .expect("variant fixture");
+
+    let rendered = variant_markdown(&variant, &[]).expect("rendered variant card");
+    assert!(
+        rendered.contains("Transcript: NM_1.2\nConsequence:"),
+        "no blank line sits between the transcript and the next present line: {rendered}"
+    );
+    assert!(
+        !rendered.contains("Transcript: NM_1.2\n\n"),
+        "an absent note prints nothing at all: {rendered}"
+    );
+
+    let with_note: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.100A>T",
+        "gene": "TST",
+        "transcript": "NM_1.2",
+        "protein_numbering_note": "Numbering follows transcript NM_1.2."
+    }))
+    .expect("variant fixture with a note");
+    let rendered = variant_markdown(&with_note, &[]).expect("rendered variant card");
+    assert!(
+        rendered.contains("Transcript: NM_1.2\nNumbering follows transcript NM_1.2.\n"),
+        "a present note still prints on its own line: {rendered}"
+    );
 }

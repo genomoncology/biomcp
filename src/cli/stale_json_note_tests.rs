@@ -1,4 +1,4 @@
-//! End-to-end stale-cache note tests (tickets 1263 and 1268).
+//! End-to-end stale-cache note tests.
 //! What this file proves, exactly: the note reaches article search
 //! JSON and search-all JSON through `_meta.notes` (parsed, not
 //! grepped); the ClinGen prefetch inside `get gene` carries a stale
@@ -370,7 +370,7 @@ const CLINGEN_DOSAGE_BODY: &str = "GENE SYMBOL,HGNC ID,HAPLOINSUFFICIENCY,TRIPLO
 
 /// The ClinGen prefetch runs on a bare `tokio::spawn`, which drops
 /// the command's task-locals; the note scope travels by handle
-/// (ticket 1263) and the no-cache flag with it (ticket 1268). A
+/// and the no-cache flag with it. A
 /// stale ClinGen serve inside the prefetch must reach the gene
 /// card's note. MyGene is served fresh-cacheable for an hour so the
 /// only stale leg is ClinGen.
@@ -416,8 +416,7 @@ async fn a_stale_clingen_prefetch_note_reaches_the_gene_card() {
     );
 }
 
-/// `--no-cache` must reach the spawned ClinGen prefetch (ticket
-/// 1268): the first run persists the fixture answers; after the
+/// `--no-cache` must reach the spawned ClinGen prefetch: the first run persists the fixture answers; after the
 /// server dies, a `--no-cache` run must fail rather than read the
 /// cached entries — which is exactly what a leaked flag would do.
 #[tokio::test]

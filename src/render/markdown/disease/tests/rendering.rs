@@ -770,7 +770,7 @@ fn disease_markdown_renders_survival_summary_and_note() {
 #[test]
 fn disease_markdown_heading_and_provenance_credit_the_disgenet_seed() {
     // Open Targets failed; the MyDisease hit's embedded DisGeNET block
-    // seeded the genes (ticket 1256). The heading, the association table,
+    // seeded the genes. The heading, the association table,
     // and the provenance rows must all say so — none may credit Open
     // Targets for the seed.
     let mut disease = Disease {

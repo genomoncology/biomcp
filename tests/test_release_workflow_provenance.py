@@ -19,7 +19,7 @@ EXPECTED_NEEDS = {
     "docs-live": ["version-check"],
     # PyPI last (2026-09-28): every build and smoke job first.
     "pypi-publish": ["pypi-build", "wheel-smoke", "docs-live", "build", "container-publish"],
-    # Ticket 1266: the release is public before the tap lands.
+    # The release is public before the tap lands.
     "homebrew-tap": [
         "build",
         "docs-live",
@@ -275,7 +275,6 @@ ALLOWED_STEP_IFS = {
 # `set +o errexit`, `trap -- 'exit 0' EXIT`, `|| exit $((0))`, or any
 # other spelling changes the step's text and fails the hash. The
 # patterns are gone on purpose — structure closed the class.
-#
 # Hash pinning: each load-bearing step is serialized from the parsed
 # workflow (so YAML folding cannot hide a change), its `run` body is
 # normalized to trivial whitespace (per-line trailing space stripped,
@@ -285,14 +284,13 @@ ALLOWED_STEP_IFS = {
 # with the step's name and the new hash; deliberate changes update
 # the hash here in the same commit.
     # Steps of the three pipeline jobs plus version-check's gate
-    # steps, pinned 2026-09-27 (ticket 1258). Update a hash only in
+    # steps, pinned 2026-09-27. Update a hash only in
     # the same commit as the deliberate workflow edit it records.
     # The two pypi-build build steps were re-pinned 2026-10-08
-    # (ticket 2024): both now route through tools/with-build-identity
+    #both now route through tools/with-build-identity
     # so the shipped wheels report their commit. The two wheel-smoke
-    # install/run steps were re-pinned 2026-10-10 (ticket 2038,
-    # finding 5): both now compare the printed --version with the tag.
-    # The container smoke was re-pinned again 2026-10-10 (ticket 2046):
+    # install/run steps were re-pinned 2026-10-10: both now compare the printed --version with the tag.
+    # The container smoke was re-pinned again 2026-10-10:
     # the tag now rides in with -e TAG.
 PINNED_STEPS: dict[tuple[str, str], str] = {
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "435261111ae8c13c6efd4c0122d30af2df68e5cbc57a7e92ccd1568897ae4024",
@@ -365,7 +363,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
     ],
     "build": [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
-        # Ticket 2024: the interpreter for tools/with-build-identity,
+        # The interpreter for tools/with-build-identity,
         # which the host build steps run under so the shipped
         # binaries report their commit.
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
@@ -505,7 +503,7 @@ def _step_sha(step: dict) -> str:
     return hashlib.sha256(_canonical_step(step).encode("utf-8")).hexdigest()
 
 EXPECTED_MATRICES = {
-    # Ticket 2024's reopening pinned the moving matrix labels: the
+    # Reopening pinned the moving matrix labels: the
     # x86_64 macOS legs cross-compile on the macos-15 arm64 image and
     # the Windows legs run on windows-2022, so no release job depends
     # on a label GitHub can retarget on its own schedule.
@@ -941,8 +939,7 @@ def _retarget_matrix_os(job: str, key: str, value: str, os_name: str):
 HASH_DRIFT = "step text drifted from its pinned hash"
 
 PIPELINE_MUTATIONS = {
-    # --- Leak spellings the old phrase bans never named (ticket
-    # --- 1258): each edits a pinned step, so the hash fails.
+    # Leak spellings the old phrase bans never named: each edits a pinned step, so the hash fails.
     "or_echo_skip_on_the_venv_smoke": (
         _mutate_run(
             "wheel-smoke",
@@ -1112,7 +1109,7 @@ PIPELINE_MUTATIONS = {
         "matrix entries must be pinned exactly",
     ),
     "windows_build_leg_back_on_the_moving_label": (
-        # Ticket 2024's reopening: windows-latest is a moving label
+        # Reopening: windows-latest is a moving label
         # GitHub retargets on its own schedule; the pin is the fix.
         _retarget_matrix_os(
             "pypi-build", "target", "x86_64-pc-windows-msvc", "windows-latest"
@@ -1240,9 +1237,9 @@ PIPELINE_MUTATIONS = {
         ),
         "step text drifted from its pinned hash",
     ),
-    # --- Round three (ticket 1269): expression envs, hijack
-    # --- variable names, workflow-level PATH/ENV, and a new first
-    # --- step in pypi-publish itself.
+    # Round three: expression envs, hijack
+    # variable names, workflow-level PATH/ENV, and a new first
+    # step in pypi-publish itself.
     "expression_env_carrying_bash_env": (
         lambda parsed: parsed["jobs"]["wheel-smoke"].update(
             {"env": 'FAKE_EXPRESSION{ "BASH_ENV": "/tmp/poison.sh" }'}
@@ -1619,7 +1616,7 @@ def test_the_decision_case_accepts_exactly_zero_three_and_catchall() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Ticket 2046. GitHub refuses to run a workflow whose YAML repeats a
+# GitHub refuses to run a workflow whose YAML repeats a
 # mapping key (release runs 38049457592 and 38041251226 died in zero
 # seconds as "workflow file issue" with no jobs), while PyYAML keeps
 # only the last key — so every contract above, which reads the parsed

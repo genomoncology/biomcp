@@ -214,7 +214,7 @@ fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> St
 /// ClinVar's preferred names or the canonical record's MANE-Select
 /// cross-reference mark (None when neither source carries one), and the
 /// numbering note for a hit whose headline protein change does not spell
-/// the request (tickets 2016 and 2036).
+/// the request.
 struct ProteinChangeContext {
     mane_transcript: Option<String>,
     numbering_note: Option<String>,
@@ -228,16 +228,14 @@ struct ProteinChangeContext {
 /// chr17:g.7578526C>T through a shorter isoform). A hit carries the query
 /// only when the transcript BioMCP headlines for it — the ClinVar-named,
 /// MANE, change-naming, or first-NM_ SnpEff annotation — spells the
-/// requested change; ClinVar presence breaks ties among those hits (ticket
-/// 1297) but never outranks the named change itself (ticket 2016). Resolve
+/// requested change; ClinVar presence breaks ties among those hits but never outranks the named change itself. Resolve
 /// a single provider hit, a single carrying hit, or the one ClinVar record
 /// names among the true matches; otherwise refuse with every candidate and
 /// a working input form.
-///
 /// `mane_transcript` is the query's MANE marker: the transcript stem
 /// ClinVar's preferred names agree on, or the canonical record's
 /// MANE-Select cross-reference when the response carries no ClinVar name
-/// (ticket 2036). The marker decides which annotation headlines a hit, so
+///The marker decides which annotation headlines a hit, so
 /// it must reach this resolver before any hit is accepted: a ClinVar-free
 /// cohort where exactly one candidate names the change on MANE
 /// (`BRCA1 S1551Y`) resolves here, while the change-naming tier alone would
@@ -330,7 +328,7 @@ fn hit_names_requested_change(
 /// does not spell the request (a unique provider hit, or the only named
 /// match): `TP53 R116Q` reaches the `p.Arg248Gln` variant through a shorter
 /// isoform's numbering. The answer must say which numbering matched instead
-/// of silently returning another transcript's spelling (ticket 2016). One
+/// of silently returning another transcript's spelling. One
 /// line, in the ticket's voice: name the transcript, its spelling, and that
 /// the request follows another transcript's numbering.
 fn protein_change_numbering_note(
@@ -367,22 +365,21 @@ fn requested_reference_residue(change: &str) -> Option<(char, u32)> {
     Some((normalized.as_bytes()[0] as char, position))
 }
 
-/// The gene's canonical (MANE Select) protein facts from UniProt (tickets
-/// 2033 finding 3 and 2036): the accession, the reference residue at the
+/// The gene's canonical (MANE Select) protein facts from UniProt: the accession, the reference residue at the
 /// requested position (None when the request names no position or the
 /// position falls outside the sequence), and the MANE Select transcript
 /// with its current RefSeq version from the record's MANE-Select
 /// cross-reference. Any lookup failure returns None and the answer prints
 /// no numbering note: the residue check narrows a note that could be false,
 /// and an unavailable sequence cannot prove the request's numbering either
-/// way (ticket 2035 finding 21).
+/// way.
 struct CanonicalProteinFacts {
     accession: String,
     residue: Option<char>,
     /// The canonical sequence's length, so a requested position beyond it
     /// (`BRCA1 Y1866D` against the 1863-residue P38398) is distinguishable
     /// from an unreadable sequence: a position the protein cannot hold
-    /// proves the request follows another numbering by itself (ticket 2042).
+    /// proves the request follows another numbering by itself.
     sequence_length: Option<u32>,
     mane_transcript: Option<String>,
 }
@@ -417,8 +414,7 @@ async fn canonical_protein_facts(
 }
 
 /// A resolved hit whose headline does not spell the request on the MANE
-/// transcript. Decide the numbering story before anything prints (ticket
-/// 2035 finding 4): when the gene's canonical protein carries the requested
+/// transcript. Decide the numbering story before anything prints: when the gene's canonical protein carries the requested
 /// reference residue at the requested position and no annotation on the
 /// marked MANE transcript spells the request, the request's own numbering
 /// is valid on MANE while the hit names a different change — the
@@ -426,20 +422,18 @@ async fn canonical_protein_facts(
 /// `p.Arg248Gln` through a shorter isoform; `TP53 S183Y` whose only alias
 /// match spells the request on the shorter isoform while MANE names
 /// `p.Ser315Tyr`), so `get variant` refuses rather than return the
-/// lookalike (tickets 2033 finding 3 and 2036). When the check instead
+/// lookalike. When the check instead
 /// finds a different residue at the position, the request really does
-/// follow another transcript's numbering and the answer says so (ticket
-/// 2016). When the request names no residue, or the sequence lookup is
+/// follow another transcript's numbering and the answer says so. When the request names no residue, or the sequence lookup is
 /// unavailable, nothing is proven either way — and an unverified
 /// other-transcript claim is exactly the false note this rule removes
-/// (ticket 2035 finding 21) — so the answer stays silent.
-///
+/// so the answer stays silent.
 /// `prefetched` carries facts an earlier step already fetched (a
-/// ClinVar-free response needs them before resolution, ticket 2036); a
+/// ClinVar-free response needs them before resolution); a
 /// `None` with no MANE marker means the lookup already ran and failed, so
 /// the answer does not retry the dead source — and an answer with no
 /// facts at all must still say so instead of silently resolving another
-/// numbering (ticket 2042): the headline spells the request under a note
+/// numbering: the headline spells the request under a note
 /// that says plainly the numbering could not be checked, or a headline
 /// naming a different change refuses.
 async fn refuse_or_note_numbering_mismatch(
@@ -473,7 +467,7 @@ async fn refuse_or_note_numbering_mismatch(
 
 /// The numbering story when the canonical facts are unavailable — the
 /// gene-to-accession lookup failed, UniProt could not be reached, or the
-/// record carried no sequence (ticket 2042). Nothing can be proven either
+/// record carried no sequence. Nothing can be proven either
 /// way, so no other-numbering claim prints: a headline that spells the
 /// request resolves under a note saying plainly the numbering could not be
 /// checked against MANE, and a headline naming a different change refuses
@@ -527,7 +521,7 @@ fn refuse_or_note_without_facts(
 
 /// The note for a resolved answer whose numbering could not be checked
 /// against MANE: the canonical record was unreadable, or it named no MANE
-/// transcript (ticket 2042). One spelling for both reasons — the answer
+/// transcript. One spelling for both reasons — the answer
 /// says plainly what it could not do, and claims nothing else.
 fn unchecked_numbering_note(transcript: &str, protein: &str, change: &str) -> String {
     format!(
@@ -537,7 +531,7 @@ fn unchecked_numbering_note(transcript: &str, protein: &str, change: &str) -> St
 }
 
 /// The numbering decision once the canonical protein facts are in hand —
-/// pure, so the recorded shapes pin it offline (ticket 2036).
+/// pure, so the recorded shapes pin it offline.
 fn refuse_or_note_with_facts(
     id: &str,
     gene: &str,
@@ -552,9 +546,9 @@ fn refuse_or_note_with_facts(
     let Some(residue) = facts.residue else {
         // No residue to compare: a requested position the canonical protein
         // cannot hold proves the request follows another numbering without
-        // one (`BRCA1 Y1866D` past the 1863 residues of P38398, ticket 2042),
+        // one (`BRCA1 Y1866D` past the 1863 residues of P38398),
         // so the other-transcript note prints; a sequence the record never
-        // carried proves nothing either way (ticket 2035 finding 21) and the
+        // carried proves nothing either way and the
         // answer stays silent.
         if facts
             .sequence_length
@@ -580,7 +574,7 @@ fn refuse_or_note_with_facts(
         // The canonical protein holds a different residue at the requested
         // position, so the request follows another transcript's numbering —
         // proven by the record, not guessed. The answer must say so instead
-        // of resolving an isoform spelling silently (ticket 2042): the
+        // of resolving an isoform spelling silently: the
         // standard note when the headline names a different change, and an
         // equivalent headline's own note naming the transcript it resolved
         // on; a record that cannot name its transcript or its protein change
@@ -621,7 +615,7 @@ fn refuse_or_note_with_facts(
         // The request's numbering is valid on the canonical protein, but the
         // record offers no protein change on a transcript BioMCP can
         // headline: a protein-change request must not resolve to a bare
-        // genomic variant (ticket 2042).
+        // genomic variant.
         return Err(protein_change_absent_refusal_message(
             id,
             gene,
@@ -636,7 +630,7 @@ fn refuse_or_note_with_facts(
         // transcript's own spelling (the caller already returned for a
         // MANE-named change); without one the headline may still be another
         // isoform's spelling of the request, so the answer says plainly the
-        // numbering could not be checked against MANE (ticket 2042).
+        // numbering could not be checked against MANE.
         if mane_transcript.is_some() {
             return Ok(None);
         }
@@ -664,8 +658,7 @@ fn refuse_or_note_with_facts(
     ))
 }
 
-/// The sentence that names the isoform spelling the request (ticket 2042's
-/// refusal-text deferral): when the record spells the requested change on a
+/// The sentence that names the isoform spelling the request: when the record spells the requested change on a
 /// transcript other than the MANE one, the refusal says where, so the
 /// reader sees the request is a real spelling — on another numbering —
 /// instead of a bare candidate line that collapses in text mode.
@@ -683,12 +676,11 @@ fn isoform_spelling_sentence(
 }
 
 /// The refusal text for a request whose numbering is valid on the MANE
-/// protein while no matching record names it there (tickets 2033 finding 3
-/// and 2036). The retry line names the requested change, not the candidate:
+/// protein while no matching record names it there. The retry line names the requested change, not the candidate:
 /// the candidate is already known to be a different change, so retrying its
-/// exact form cannot answer the request (ticket 2035 finding 21). The
+/// exact form cannot answer the request. The
 /// message names the isoform that spells the request and carries no bare
-/// `Candidates:` list (ticket 2042).
+/// `Candidates:` list.
 #[allow(clippy::too_many_arguments)]
 fn mane_numbering_refusal_message(
     id: &str,
@@ -716,7 +708,7 @@ Retry `biomcp get variant` with a transcript-qualified HGVS naming \
 }
 
 /// The refusal for a request whose numbering could not be checked because
-/// the canonical facts never arrived (ticket 2042): the alias match names a
+/// the canonical facts never arrived: the alias match names a
 /// different change, and without the residue check BioMCP cannot tell a
 /// MANE-numbered request no record names from another transcript's
 /// numbering — so it refuses rather than return the lookalike silently.
@@ -743,7 +735,7 @@ Retry `biomcp get variant` with a transcript-qualified HGVS naming \
 }
 
 /// The refusal for a protein-change request whose resolved record names no
-/// protein change on a transcript BioMCP can headline (ticket 2042): a bare
+/// protein change on a transcript BioMCP can headline: a bare
 /// genomic variant cannot carry the numbering story the request asked for.
 /// The wording claims only what the record showed — a record can carry
 /// protein changes on rows that cannot be headlined (no transcript feature
@@ -973,7 +965,7 @@ async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, Bi
         // Transcript normalization services refuse intronic deletion ranges
         // and other aliases they cannot place; ClinVar's own coding alias list
         // still names them, so the alias search resolves what normalization
-        // cannot (ticket 1292).
+        // cannot.
         Err(_) => {
             let myvariant = MyVariantClient::new()?;
             transcript_hgvs_clinvar_alias_hit(&myvariant, id)
@@ -1216,7 +1208,7 @@ pub(super) async fn resolve_base_with_hit(
                 .collect::<Vec<_>>();
             let clinvar_mane = transform::variant::clinvar_mane_transcript(&compatible_hits);
             // The canonical-residue check runs before any annotation that is
-            // not on the MANE transcript is accepted (ticket 2036). A
+            // not on the MANE transcript is accepted. A
             // ClinVar-free response marks no MANE transcript of its own, so
             // the gene's canonical (MANE Select) protein must be read up
             // front: the record's MANE-Select cross-reference names the MANE
@@ -1246,8 +1238,7 @@ pub(super) async fn resolve_base_with_hit(
                 compatible_hits,
                 mane_transcript.as_deref(),
             )?;
-            // The residue check runs before any note prints (ticket 2035
-            // finding 4), so a ClinVar-free response never answers a
+            // The residue check runs before any note prints, so a ClinVar-free response never answers a
             // MANE-numbered request with another transcript's spelling and
             // a note claiming the request follows different numbering.
             let numbering_note = match refuse_or_note_numbering_mismatch(

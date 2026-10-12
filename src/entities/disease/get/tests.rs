@@ -2,8 +2,7 @@ use super::*;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-/// The disease fixture env: the one shared scratch-cache guard (ticket
-/// 2050), so the card tests never read the machine's own cache.
+/// The disease fixture env: the one shared scratch-cache guard, so the card tests never read the machine's own cache.
 type DiseaseCardFixtureEnv = crate::test_support::FixtureEnv;
 
 fn disease_card_fixture_response(body: &str) -> Vec<u8> {
@@ -40,7 +39,7 @@ async fn disease_card_fixture_server()
                     r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
                     // The embedded DisGeNET block seeds the card's genes
-                    // (ticket 1256): with Open Targets unreachable these
+                    //with Open Targets unreachable these
                     // genes must carry DisGeNET's name, not Open Targets'.
                     r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
                 } else if request.contains("query.cond=Medulloblastoma") {
@@ -129,7 +128,7 @@ async fn stale_serve_fixture_server()
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
                     // Same DisGeNET seed as the card fixture: the stale
                     // card must still credit DisGeNET for its genes, so
-                    // the fixture has to seed them (ticket 1256).
+                    // the fixture has to seed them.
                     r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
                 } else if request.contains("query.cond=Medulloblastoma") {
                     r#"{"studies":[],"totalCount":36}"#
@@ -274,7 +273,7 @@ async fn stale_search_json_carries_the_cache_age_in_the_meta_notes() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels() {
-    // Ticket 1256, review P0-3: the MCP path drives the alias arm of
+    // Review P0-3: the MCP path drives the alias arm of
     // run_outcome_with_worker_stack, which once called run_outcome_inner
     // directly — outside the stale-serve scope — so neither the card note
     // nor the JSON _meta.notes sentence could ever appear over MCP. This
@@ -512,7 +511,7 @@ macro_rules! recorded_mydisease {
     };
 }
 
-/// Ticket 2017: the recorded MyDisease responses for the ambiguous
+/// The recorded MyDisease responses for the ambiguous
 /// abbreviations. The fixture answers only the recorded queries, so the
 /// refusals cannot pass vacuously.
 async fn abbreviation_fixture_server()
@@ -539,7 +538,7 @@ async fn abbreviation_fixture_server()
                     .push(request.clone());
                 let body = if request.contains("/query?") {
                     // A short abbreviation grounds in any letter case
-                    // (ticket 2050), so the fixture answers `mf` and `MF`
+                    //so the fixture answers `mf` and `MF`
                     // with the same recorded reply.
                     if request.contains("MF") || request.contains("mf") {
                         recorded_mydisease!("query_mf.json")
@@ -612,7 +611,7 @@ async fn get_disease_mf_refuses_instead_of_mixing_two_diseases() {
         error.contains("mycosis fungoides (MONDO:0009691)"),
         "{error}"
     );
-    // Ticket 2017 fix round: MONDO:0020481 carries no `name` in the search
+    // Fix round: MONDO:0020481 carries no `name` in the search
     // response, but the ontology `label` names the candidate.
     assert!(
         error.contains("myotonia fluctuans (MONDO:0020481)"),
@@ -621,7 +620,7 @@ async fn get_disease_mf_refuses_instead_of_mixing_two_diseases() {
     assert!(error.contains("search disease"), "{error}");
 }
 
-/// Ticket 2050: a short abbreviation behaves the same in any letter case.
+/// A short abbreviation behaves the same in any letter case.
 /// Lowercase `mf` used to resolve straight to mycosis fungoides while `MF`
 /// refused; both must refuse with the same candidates and the same
 /// clinical-reading pointer.
@@ -670,7 +669,7 @@ async fn get_disease_cad_refuses_naming_every_exact_holder() {
     );
 }
 
-/// Ticket 2032: the refusal still refuses, but the candidate surface
+/// The refusal still refuses, but the candidate surface
 /// also names the oncology reading the source cannot see. MyDisease
 /// holds `MM` on Miyoshi muscular dystrophy alone and no myeloma record
 /// carries `MM`, so the refusal adds a pointer line rather than hiding
@@ -728,7 +727,7 @@ async fn get_disease_single_holder_abbreviation_still_resolves_one_record() {
     assert!(card.contains("ID: MONDO:0024331"), "{card}");
 }
 
-/// Ticket 2017 fix round: a full word is ambiguous only by that name. The
+/// Fix round: a full word is ambiguous only by that name. The
 /// veterinary myeloma record (MONDO:1013329, a descendant of MONDO:0005583
 /// `non-human animal disease`) holds `myeloma` as an exact synonym, and
 /// multiple myeloma holds it as a synonym too — neither synonym hold can
@@ -744,7 +743,7 @@ async fn get_disease_full_word_resolves_past_nonhuman_and_synonym_holders() {
     assert!(card.contains("ID: MONDO:0009693"), "{card}");
 }
 
-/// Ticket 2017 structural guard: when a single-holder abbreviation resolves
+/// Structural guard: when a single-holder abbreviation resolves
 /// to a record without a label, the requested abbreviation stays display-only.
 /// The identity joins (Open Targets) must query the record's own terms, never
 /// the abbreviation — that leak is what mixed mycosis fungoides genes into

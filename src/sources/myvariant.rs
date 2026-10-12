@@ -1005,7 +1005,7 @@ enum ProjectedAnnotation {
     /// A protein-structure row (`feature_type: interaction`, SnpEff's
     /// structural_interaction_variant annotations on PDB chain features):
     /// real provider data that names no transcript, so the projection
-    /// keeps the list it arrives in and drops only the row (ticket 2042).
+    /// keeps the list it arrives in and drops only the row.
     Interaction,
     Invalid,
 }
@@ -1242,7 +1242,7 @@ impl<'de> Visitor<'de> for AnnotationSetVisitor {
                 complete: true,
             },
             // The single-object form read completely; a lone interaction
-            // row simply leaves no transcript annotation (ticket 2042).
+            // row simply leaves no transcript annotation.
             ProjectedAnnotation::Interaction => MyVariantSnpeff {
                 ann: Vec::new(),
                 complete: true,
@@ -1262,7 +1262,7 @@ impl<'de> Visitor<'de> for AnnotationSetVisitor {
         // the retained-annotation bound: BRCA1's BRCT-region variants carry
         // about 48 protein-structure rows per transcript row, and dropping
         // the whole list for their count left the answer with no protein
-        // change at all (ticket 2042). A bounded count of them still caps
+        // change at all. A bounded count of them still caps
         // the deserialization work a hostile array can force. Once the
         // retained rows reach the bound the tail is drained without
         // projecting it, so the projection counters keep their meaning.

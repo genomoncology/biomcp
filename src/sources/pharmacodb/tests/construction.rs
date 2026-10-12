@@ -17,7 +17,7 @@ fn query_of(plan: &RequestPlan) -> String {
         .to_string()
 }
 
-// Ticket 1205 acceptance 1: every experiments request sends `all: true` with an
+// Every experiments request sends `all: true` with an
 // id argument and never a name argument, and the counts request asks for the row
 // id and its dataset name only.
 

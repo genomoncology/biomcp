@@ -233,13 +233,13 @@ tokio::task_local! {
     /// Per-command stale-cache serves. Scoped around the command future
     /// (see `with_stale_serve_notes`) so concurrent commands never mix
     /// notes; the value is an `Arc<Mutex<_>>` because the command future
-    /// must stay `Send` across the worker-thread boundary (ticket 1243).
+    /// must stay `Send` across the worker-thread boundary.
     static STALE_SERVE_NOTES: std::sync::Arc<std::sync::Mutex<Vec<StaleServeNote>>>;
 }
 
 /// Scope stale-serve recording around a command future. A plain function
 /// returning the scoped future, mirroring `with_no_cache` so the dispatch
-/// future keeps one copy of its state (ticket 1243).
+/// future keeps one copy of its state.
 pub(crate) fn with_stale_serve_notes<R, F>(fut: F) -> impl Future<Output = R>
 where
     F: Future<Output = R>,
@@ -249,8 +249,7 @@ where
 
 /// Run a command future inside the stale-serve scope and append the
 /// text note to a non-JSON text outcome, mirroring what
-/// `run_outcome_on_current_stack` does for the CLI path (ticket
-/// 1256). MCP callers use this so the task-local exists on their
+/// `run_outcome_on_current_stack` does for the CLI path. MCP callers use this so the task-local exists on their
 /// drive thread too.
 pub(crate) async fn run_command_with_stale_serve_notes<F>(
     fut: F,
@@ -324,7 +323,7 @@ pub(crate) fn take_stale_serve_sentences() -> Vec<String> {
 /// implies a revalidation failure, because a revalidated response cannot
 /// carry the marker (put strips it). The age is also recorded for the
 /// command's output notes so MCP and JSON consumers see it, not just the
-/// log (ticket 1256).
+/// log.
 fn note_stale_cache_serve(response: &mut reqwest::Response, provider: &'static str) {
     if let Some(value) = response
         .headers()
@@ -527,7 +526,7 @@ pub(crate) const BIOTHINGS_MAX_RESULT_WINDOW: usize = 10_000;
 
 // A RwLock rather than a OnceLock so tests can clear the slot and rerun
 // construction paths regardless of the tests that ran before them in the
-// same process (ticket 2023); production still builds the client once.
+// same process; production still builds the client once.
 static HTTP_CLIENT: std::sync::RwLock<Option<ClientWithMiddleware>> = std::sync::RwLock::new(None);
 
 fn cached_http_client() -> Option<ClientWithMiddleware> {
@@ -583,7 +582,7 @@ fn env_cache_mode() -> Option<CacheMode> {
     })
 }
 
-/// Test-only override slot for the process cache mode (ticket 1261).
+/// Test-only override slot for the process cache mode.
 /// The guard sets the mode on creation and restores the previous value
 /// on drop, so a test cannot latch a mode for the rest of the binary the
 /// way a set-and-restore of `BIOMCP_CACHE_MODE` latched the `OnceLock`
@@ -641,7 +640,7 @@ pub(crate) mod test_cache_mode {
 /// holds one, otherwise the once-read environment mode. Every reader —
 /// the HTTP middleware, the bypass and infinite checks, the FDA orphan
 /// sidecar — goes through here, so no two readers can disagree about
-/// when a mode change takes effect (ticket 1261).
+/// when a mode change takes effect.
 pub(crate) fn current_cache_mode() -> Option<CacheMode> {
     #[cfg(test)]
     if let Some(mode) = test_cache_mode_override() {
@@ -664,8 +663,7 @@ fn resolve_cache_mode(
 /// A plain function returning the scoped future. Taking the future
 /// by value inside an `async fn` kept the generator holding both the
 /// `Scope` future and the inner future's state, doubling the dispatch
-/// future's size; returning the scope directly keeps one copy (ticket
-/// 1243).
+/// future's size; returning the scope directly keeps one copy.
 /// Re-enter the parent command's no-cache scope inside a spawned
 /// task (2026-09-28 review): `tokio::spawn` drops the NO_CACHE
 /// task-local the way it drops the stale-serve scope, so a prefetch
@@ -699,12 +697,10 @@ pub(crate) fn cache_is_bypassed() -> bool {
 }
 
 /// Whether cache reads ignore entry expiry (`BIOMCP_CACHE_MODE=infinite`).
-///
 /// Reads the process mode through [`current_cache_mode`] like every other
 /// cache-mode reader: the test override applies here too, and the
 /// once-read environment mode keeps this check in agreement with the HTTP
-/// middleware (ticket 1261; the earlier per-call environment read let the
-/// two readers disagree about when a change takes effect).
+/// middleware.
 pub(crate) fn cache_is_infinite() -> bool {
     current_cache_mode() == Some(CacheMode::ForceCache)
 }
@@ -762,8 +758,7 @@ pub(crate) fn s2_api_key() -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-// --- Request-construction seam (Tier-2 substrate) ----------------------------
-//
+// Request-construction seam (Tier-2 substrate) ----------------------------
 // A source client builds a pure `RequestPlan` in a `*_plan()` function (no network,
 // no client, no env — directly assertable by a Tier-2 test), then hands it to
 // `request_from_plan()` to get a live `RequestBuilder`. The send path (cache mode,
@@ -989,13 +984,12 @@ fn next_retry_sleep(
 }
 
 /// Returns a shared HTTP client with retry and caching middleware.
-///
-/// - Retry: 3 attempts with exponential backoff for transient errors
-/// - Retry log level: `DEBUG` — retry attempts are suppressed at the default `WARN` verbosity and
+/// Retry: 3 attempts with exponential backoff for transient errors
+/// Retry log level: `DEBUG` — retry attempts are suppressed at the default `WARN` verbosity and
 ///   visible with `RUST_LOG=debug`
-/// - Cache: Disk-based HTTP cache under the resolved canonical cache root
+/// Cache: Disk-based HTTP cache under the resolved canonical cache root
 ///   (`BIOMCP_CACHE_DIR`, `cache.toml`, or XDG default)
-/// - Cache TTL: `Cache-Control: max-stale=86400` makes “no caching headers” responses usable for 24h
+/// Cache TTL: `Cache-Control: max-stale=86400` makes “no caching headers” responses usable for 24h
 #[derive(Clone, Copy)]
 pub(crate) enum SharedHttpClientKind {
     Default,
@@ -1666,7 +1660,6 @@ pub(crate) fn is_semantic_scholar_shared_pool_rate_limit_error(
 }
 
 /// Returns a shared HTTP client without middleware.
-///
 /// Use this for requests with streaming bodies (e.g., multipart) that cannot be cloned and therefore
 /// cannot pass through the retry/cache middleware stack.
 pub(crate) fn streaming_http_client(
@@ -1682,7 +1675,6 @@ pub(crate) fn streaming_http_client(
 }
 
 /// Retry wrapper for streaming requests that bypass middleware.
-///
 /// `build_request` is invoked on each attempt so non-cloneable request bodies
 /// can be reconstructed safely.
 pub(crate) async fn retry_middleware_send<F, Fut>(
@@ -2292,7 +2284,7 @@ mod tests {
         }
         // The drop restores whatever the process mode was before the
         // guard, so a test cannot latch `off` for the rest of the binary
-        // (ticket 1261).
+        //.
         let after = current_cache_mode();
         assert_eq!(
             after == Some(CacheMode::NoStore),

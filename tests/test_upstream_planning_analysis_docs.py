@@ -874,7 +874,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     source_integration = _read_repo("architecture/technical/source-integration.md")
     drug_guide = _read_repo("docs/user-guide/drug.md")
     bioasq_reference = _read_repo("docs/reference/bioasq-benchmark.md")
-    # Ticket 1205 split the get/search selectors out of src/cli/commands.rs to
+    # Split the get/search selectors out of src/cli/commands.rs to
     # stay under the CLI line cap; their long-form help moved with them.
     cli_commands = _read_repo("src/cli/commands/selectors.rs")
     cli_drug_mod = _read_repo("src/cli/drug/mod.rs")
@@ -1120,7 +1120,7 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     canonical = _workflow_job_block(ci, "canonical-gates")
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
     assert "pull_request:" in ci
-    # 2026-09-29 (ticket 1275): ticket branches run CI too; the
+    # 2026-09-29: ticket branches run CI too; the
     # push trigger still names main first.
     assert "push:" in ci and "main" in ci and "tickets/**" in ci
     for command in ("make lint", "make test", "make spec"):
@@ -1236,7 +1236,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^spec:\n"
         r"\t\$\(MAKE\) prepare-spec\n"
-        # Ticket 2024: the spec pages shell out to the project's Python
+        # The spec pages shell out to the project's Python
         # environment (jsonschema at spec/entity/gene.md:408) and the
         # parallel-isolation contracts resolve pytest, so the sync must
         # happen before the run enters the offline namespace.

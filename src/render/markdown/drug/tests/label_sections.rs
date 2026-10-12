@@ -1,6 +1,6 @@
 use super::*;
 
-// Ticket 1300 review: the Markdown short-form pointer must quote multi-word
+// Review: the Markdown short-form pointer must quote multi-word
 // drug names with the repo's shell quoting helper and may only print when
 // the capped Markdown view actually omits label content.
 fn label_drug(name: &str, boxed_warning: Option<String>) -> Drug {
@@ -137,7 +137,7 @@ fn missing_label_reason_prints_from_the_label_section_outcome() {
 
 #[test]
 fn a_card_without_label_content_prints_no_fda_label_heading() {
-    // Ticket 2047: every drug card printed an empty "## FDA Label" heading
+    // Every drug card printed an empty "## FDA Label" heading
     // on the default card (CLI and MCP render the same template) because the
     // heading gated only on the section being shown. The heading now prints
     // only when label content, a label status, or a missing-label reason

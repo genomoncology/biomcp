@@ -193,7 +193,7 @@ pub(super) struct ArticleSearchJsonMeta {
     suggestions: Vec<ArticleSuggestion>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     source_status: Vec<crate::entities::article::ArticleSourceStatus>,
-    /// Stale-cache serves recorded during this command (ticket 1263):
+    /// Stale-cache serves recorded during this command:
     /// the same `_meta.notes` channel the disease search uses.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     notes: Vec<String>,

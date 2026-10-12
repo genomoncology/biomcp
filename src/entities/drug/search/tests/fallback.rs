@@ -122,7 +122,7 @@ fn openfda_label_fallback_is_first_page_only() {
 
 #[test]
 fn openfda_label_generic_names_read_a_disagreeing_page_with_no_owner() {
-    // Ticket 2039: the recorded "Pain Relief" label page — no row carries
+    // The recorded "Pain Relief" label page — no row carries
     // the shelf name as its own brand, and the rows name unrelated
     // ingredients, so every generic name survives and the caller refuses.
     let response = serde_json::json!({
@@ -150,7 +150,7 @@ fn openfda_label_generic_names_read_a_disagreeing_page_with_no_owner() {
 
 #[test]
 fn openfda_label_generic_names_prefer_the_rows_that_own_the_brand() {
-    // Ticket 2039: the Keytruda shape — the rows whose own brand equals the
+    // The Keytruda shape — the rows whose own brand equals the
     // query own the name, so the QLEX combination row never contributes.
     let response = serde_json::json!({
         "results": [
@@ -181,7 +181,7 @@ fn openfda_label_generic_names_prefer_the_rows_that_own_the_brand() {
 
 #[test]
 fn openfda_label_generic_names_keep_disagreeing_owners_apart() {
-    // Ticket 2039: the recorded "Sleep Aid" label page — two labels carry
+    // The recorded "Sleep Aid" label page — two labels carry
     // the shelf name as their own brand and pair it with different
     // ingredients, so both generic names survive and the caller refuses.
     let response = serde_json::json!({
@@ -219,7 +219,7 @@ fn openfda_label_generic_names_keep_disagreeing_owners_apart() {
 
 #[test]
 fn openfda_label_generic_names_take_a_lone_pairing_label() {
-    // Ticket 2043's Darzalex shape, kept honest by ticket 2039: no row
+    // Darzalex shape, kept honest by the shared-name rule: no row
     // carries the plain brand itself, and the page holds one label whose
     // qualified brand pairs the family with one plain ingredient, so that
     // lone generic name resolves the name.

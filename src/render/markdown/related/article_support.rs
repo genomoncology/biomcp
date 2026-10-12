@@ -75,7 +75,7 @@ pub(super) fn article_annotation_command(
 /// rsIDs or HGVS expressions parse as exact variant input, and a disease
 /// crosswalk identifier opens a card only through the caller's verified
 /// command — the crosswalk lookup that found exactly one hit holding the
-/// identifier's PubTator3 concept name (ticket 2047). An unverified MeSH or
+/// identifier's PubTator3 concept name. An unverified MeSH or
 /// OMIM identifier stays a text search, because several MONDO records
 /// crosswalk one broad MeSH descriptor and a bare identifier opens whichever
 /// card sorts first (`MESH:D008175` for "Lung Cancers" opened lung benign
@@ -128,7 +128,7 @@ pub(super) fn ranked_article_annotation_commands(
     }
 
     // A card's related block has no verified crosswalk behind it, so its
-    // disease rows keep the search command (ticket 2047).
+    // disease rows keep the search command.
     let normalized_title = normalize_match_text(title);
     let mut ranked = rows
         .iter()

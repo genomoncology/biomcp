@@ -45,7 +45,7 @@ const WHO_VACCINES_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
 // "Applicant" (issue #288). Validation compares case-insensitively on
 // trimmed header text, and the vaccines export's first header cell carries
 // a trailing space inside the quotes. Columns the exports dropped or
-// renamed stay readable when a pre-1304 cache still carries them, so a
+// renamed stay readable when an older cache still carries them, so a
 // fresh-enough local cache keeps parsing after the upgrade (review fold).
 const REQUIRED_HEADERS: &[&str] = &[
     "WHO REFERENCE NUMBER",
@@ -68,7 +68,7 @@ const API_REQUIRED_HEADERS: &[&str] = &[
 ];
 
 // The API export renamed its applicant column to "Applicant"; caches the
-// pre-1304 binary downloaded carry "Applicant Organization", because the
+// older binary downloaded carry "Applicant Organization", because the
 // old validator never accepted the renamed export. Either spelling
 // validates, and the row read takes whichever is present.
 const API_APPLICANT_HEADERS: &[&str] = &["APPLICANT", "APPLICANT ORGANIZATION"];
@@ -86,7 +86,7 @@ const VACCINE_REQUIRED_HEADERS: &[&str] = &[
 /// Message prefix marking WHO Prequalification validation failures. Only
 /// these render with their file and column detail (error.rs); download
 /// failures keep the generic API line so no upstream body text leaks
-/// (ticket 1304, mirroring the DDInter markers).
+///.
 pub(crate) const WHO_PQ_HEADER_MISMATCH_MARKER: &str =
     "WHO Prequalification export headers did not match: ";
 
@@ -94,14 +94,14 @@ pub(crate) const WHO_PQ_HEADER_MISMATCH_MARKER: &str =
 /// reason starts with this sentence carries its reason and suggestion
 /// through the public error surface instead of the generic source-down
 /// line, so the failing file and missing column reach the terminal, JSON
-/// and MCP callers (ticket 2021, mirroring the article deadline prefix).
+/// and MCP callers.
 pub(crate) const WHO_PQ_SYNC_FAILURE_REASON_PREFIX: &str =
     "Could not prepare WHO Prequalification data.";
 
 /// Recovery sentence shared by the sync failure error and its public
-/// projection, so every surface states one spelling (ticket 2021). `who
+/// projection, so every surface states one spelling. `who
 /// sync` itself just failed, so the sentence names network access and the
-/// manual preseed path instead of the command that failed (1304
+/// manual preseed path instead of the command that failed (a
 /// post-landing review finding 2). The sentence names the resolved data
 /// directory so the preseed has a destination, as `who_preseed_suggestion`
 /// does (second review finding 17).
@@ -114,9 +114,9 @@ pub(crate) fn who_pq_sync_failure_recovery(root: &Path) -> String {
 
 /// Recovery sentence for the projected surfaces — JSON `error.recovery`
 /// and MCP callers — which never carry a local data path: the resolved
-/// data directory stays terminal-only (ticket 2038 finding 7, 2035 #6).
+/// data directory stays terminal-only.
 /// Like the terminal sentence it never tells the caller to run the
-/// command that just failed (1304 post-landing review finding 2).
+/// command that just failed (a post-landing review finding).
 pub(crate) const WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY: &str = "Retry with network access or set BIOMCP_WHO_DIR to a directory holding the three WHO Prequalification CSV exports.";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -179,7 +179,7 @@ pub(crate) struct WhoPqClient {
 
 /// One failed export refresh: the local file name and why the refresh
 /// failed, in the words the public error surface already uses, so every
-/// caller sees the same reason (ticket 2021). The reason carries no
+/// caller sees the same reason. The reason carries no
 /// trailing period; sentences that embed it add exactly one.
 #[derive(Debug, Clone)]
 pub(crate) struct WhoPqSyncFileFailure {
@@ -218,7 +218,7 @@ impl WhoPqSyncReport {
 
     /// One sentence per failed refresh, naming the file and its reason.
     /// Feeds the final sync error so the failing file and, for a validation
-    /// failure, the missing column reach every caller (ticket 2021).
+    /// failure, the missing column reach every caller.
     pub(crate) fn failure_sentences(&self) -> String {
         self.failed
             .iter()
@@ -1071,7 +1071,7 @@ fn who_pq_sync_error(root: &Path, detail: impl Into<String>) -> BioMcpError {
 
 /// The reason one failed refresh carries into the report and the stderr
 /// warning: the error's public message, with its trailing period trimmed so
-/// sentences that embed it add exactly one (ticket 2021). Only words the
+/// sentences that embed it add exactly one. Only words the
 /// public surface already composes appear here; upstream body text never
 /// does.
 fn public_failure_reason(err: &BioMcpError) -> String {
@@ -1162,8 +1162,7 @@ async fn sync_who_pq_root_inner(
     }
 
     // The failing file and its reason stay in the final error, not only on
-    // stderr, so terminal, JSON and MCP callers all see them (ticket 2021,
-    // finishing 1304 item 4).
+    // stderr, so terminal, JSON and MCP callers all see them.
     Err(who_pq_sync_error(
         root,
         format!(
@@ -1227,7 +1226,7 @@ async fn sync_export(
         })
         .map_err(|error| error.with_source_context(context))?;
     // A validation failure means the export changed shape, so the recovery is
-    // reviewing the source, not retrying the same download (ticket 1304).
+    // reviewing the source, not retrying the same download.
     let validation_context = crate::error::SourceContext::new(
         crate::error::SourceProvider::WHO_PREQUALIFICATION,
         crate::error::RecoveryAction::ReviewSourceConfiguration,

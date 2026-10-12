@@ -835,7 +835,7 @@ async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation
 #[cfg(test)]
 fn leaked_cancellation_temps(root: &std::path::Path) -> Vec<String> {
     // Generation temporaries join the root scan: their cleanup runs
-    // detached and can lag past the lock (ticket 1247).
+    // detached and can lag past the lock.
     fn leaked_in(dir: &std::path::Path, prefix: &str) -> Vec<String> {
         std::fs::read_dir(dir)
             .unwrap()

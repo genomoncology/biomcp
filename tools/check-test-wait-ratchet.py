@@ -44,8 +44,7 @@ RUST_PATTERNS = [
     re.compile(pattern)
     for pattern in (
         # Only the SCALED HELPER call exempts a deadline addition; a
-        # `watchdog(` word in a comment is not the helper (ticket
-        # 1269).
+        # `watchdog(` word in a comment is not the helper.
         r"Instant::now\(\)\s*\+\s*(?!.*\b[\w:]*test_support::watchdog\()",
         r"\bsleep\s*\(",
         r"\bsleep_until\s*\(",
@@ -296,7 +295,7 @@ def raise_is_accepted(root: Path, record: dict) -> tuple[bool, str]:
     # and pendings that merely mention ACCEPT — "awaiting ACCEPT",
     # "ACCEPT expected after fixes", "ACCEPT once fixes land",
     # "reviewer returns ACCEPT or findings", "REJECT, not ACCEPT yet"
-    # — stay rejections. A history line like "REJECT once, folded;
+    # stay rejections. A history line like "REJECT once, folded;
     # ACCEPT 2026-09-28 ..." qualifies because its value continues
     # from ACCEPT after the semicolon only if the ACCEPT token starts
     # the value; folded history therefore records its acceptance on
@@ -469,7 +468,7 @@ def main(argv: list[str]) -> int:
         return 1
 
     if args.update:
-        # --update ratchets DOWN or holds; it must never silently
+        # update ratchets DOWN or holds; it must never silently
         # absorb a raise (2026-09-29 review). Any file whose current
         # count or marker total exceeds its pin needs an accepted
         # raise record first — the comparison loop above already

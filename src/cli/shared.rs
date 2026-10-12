@@ -442,11 +442,14 @@ pub(super) async fn try_alias_fallback_outcome(
     requested_entity: crate::entities::discover::DiscoverType,
     json_output: bool,
 ) -> anyhow::Result<Option<CommandOutcome>> {
-    // A refusal never waits on a slow outside service (ticket 2050): the
+    // A refusal never waits on a slow outside service: the
     // alias suggestion gives up on the same budget the entity rescue uses,
-    // and the refusal prints without it when the round runs out.
+    // and the refusal prints without it when the round runs out. The two
+    // rounds share one budget: when the entity rescue already
+    // spent the budget against a stalled source, the remaining time — zero —
+    // is what this round gets, so a refusal costs one budget, not two.
     let resolution = tokio::time::timeout(
-        crate::entities::discover::REFUSAL_DISCOVER_TIMEOUT,
+        crate::entities::discover::refusal_discover_remaining_budget(query),
         crate::entities::discover::resolve_query(
             query,
             crate::entities::discover::DiscoverMode::AliasFallback,

@@ -947,7 +947,7 @@ pub(crate) async fn resolve_unique_canonical_alias(
 }
 
 /// Matching rows whose official symbol IS the query, so alias matches never
-/// confirm (ticket 2022): search routing accepts a first token only when it
+/// confirm: search routing accepts a first token only when it
 /// is the gene's official symbol.
 fn matching_official_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<String> {
     let query = normalized_alias_key(query);
@@ -972,7 +972,7 @@ fn matching_official_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<String> {
 }
 
 /// Resolve a first token that must BE one gene's official symbol, refusing
-/// aliases, ambiguity, and entrez-less rows (ticket 2022). Variant search
+/// aliases, ambiguity, and entrez-less rows. Variant search
 /// gene-first routing uses this oracle; `resolve_unique_canonical_alias`
 /// keeps accepting aliases for the `discover` path.
 pub(crate) async fn resolve_unique_official_symbol(
@@ -3481,7 +3481,7 @@ mod tests {
             mygene_hit("ACVRL1", &["HHT"]),
             mygene_hit("SCN5A", &["ALIAS_OF_SCN5A"]),
         ];
-        // Ticket 2022: only the official symbol routes, so the alias
+        // Only the official symbol routes, so the alias
         // abbreviations from the review keep their whole-phrase search.
         assert_eq!(
             matching_official_symbols("HCC", &hits),

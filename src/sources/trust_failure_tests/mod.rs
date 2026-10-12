@@ -1,9 +1,5 @@
 //! Unit tests for the no-trust-failure retry strategy's error-chain
-//! walk (ticket 1268 follow-up, 2026-09-29 review: the strategy had
-//! no test; the tests live in their own file so mod.rs keeps only the
-//! delegation, the module declaration and the plain-send trust stop,
-//! and its size-inventory baseline rose accordingly — the gate reads
-//! the exact numbers from tools/rust-source-size-inventory.json).
+//! walk.
 
 use super::error_chain_carries;
 

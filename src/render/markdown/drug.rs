@@ -617,7 +617,7 @@ fn drug_search_markdown_with_region_and_footers(
             if let Some(note) = who_note {
                 // A degraded section is not a negative finding: state the
                 // reason instead of printing a bare no-results line the
-                // caller could read as checked-and-absent (ticket 2021).
+                // caller could read as checked-and-absent.
                 out.push_str(&format!("> {note}\n"));
             } else if who_results.is_empty() {
                 out.push_str("No WHO-prequalified drugs found\n");

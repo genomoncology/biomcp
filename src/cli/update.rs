@@ -214,7 +214,7 @@ fn replace_owned_binary_at(
         let smoke = std::process::Command::new(&stage_path)
             .arg("version")
             // A stdio-mode server owns its streams and the smoke
-            // child must not write between frames (1264 guard catch)
+            // child must not write between frames (the guard catches this)
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())

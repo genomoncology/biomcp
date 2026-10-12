@@ -1,4 +1,4 @@
-//! Directed citation-evidence traversal for ticket 1145.
+//! Directed citation-evidence traversal.
 
 use super::{
     GraphDirection, related_paper_from_semantic_scholar, resolve_semantic_scholar_input_id,
@@ -215,7 +215,7 @@ fn bounded_unavailable_error(message: &str) -> BioMcpError {
 
 /// The citation-evidence command's own error surface name. It names the
 /// command, never a provider, because the deadline and the refusal summary
-/// belong to the command rather than to one provider (ticket 1302).
+/// belong to the command rather than to one provider.
 pub(crate) const CITATION_EVIDENCE_API: &str = "article-citation-evidence";
 
 /// The marker prefix carrying the refusal detail this module composes from
@@ -248,7 +248,7 @@ fn valid_paper_id(value: Option<&str>) -> Option<String> {
 }
 
 /// Semantic Scholar's state for one invocation: it answered, or it refused
-/// with a reason the user can act on (ticket 1302).
+/// with a reason the user can act on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SemanticScholarState {
     RateLimited,
@@ -286,7 +286,7 @@ enum IndexRefusal {
     Unavailable,
     NoAddressableDoi,
     /// The index answered with a matching row whose OCI failed the accepted
-    /// shape, so the phase cannot publish the edge (ticket 1306).
+    /// shape, so the phase cannot publish the edge.
     MalformedOci,
 }
 
@@ -822,7 +822,7 @@ struct DegradedPair {
 /// answer the edge from the index when it holds it, and otherwise report the
 /// refusal with both providers and their reasons. No Semantic Scholar
 /// request follows the refusal, so a refused first hop costs one request
-/// plus the index lookup (ticket 1302).
+/// plus the index lookup.
 async fn degraded_confirmation(
     pair: &DegradedPair,
     s2: SemanticScholarState,
@@ -858,7 +858,7 @@ async fn degraded_confirmation(
                                     // The row names the phase that ran: a
                                     // Europe PMC search for DOI resolution,
                                     // or no Europe PMC request at all
-                                    // (ticket 1306).
+                                    //.
                                     status: if pair.europe_searched {
                                         "searched_for_doi_resolution"
                                     } else {
@@ -882,7 +882,7 @@ async fn degraded_confirmation(
                 // A matching row with a shape-invalid OCI fails closed, so
                 // the degraded invocation reports the refusal instead of
                 // publishing provider text; the wording names the malformed
-                // row, never provider unavailability (ticket 1306).
+                // row, never provider unavailability.
                 None => Err(providers_refused_error(s2, IndexRefusal::MalformedOci)),
             },
             None => Err(BioMcpError::NotFound {
@@ -929,7 +929,7 @@ async fn degraded_from_inputs(
 
 /// A degraded invocation whose citing seed resolved and whose cited seed
 /// refused: the citing side keeps the first seed's resolved paper and DOI,
-/// and only the cited side resolves through Europe PMC (ticket 1306).
+/// and only the cited side resolves through Europe PMC.
 async fn degraded_after_citing_seed(
     citing: super::ArticleRelatedPaper,
     citing_paper: &SemanticScholarPaper,
@@ -999,7 +999,7 @@ async fn opencitations_edges(
 
 /// One seed resolution's outcome: the pair Semantic Scholar answered, or
 /// the state of its refusal. A refusal degrades the invocation instead of
-/// failing it, and no second Semantic Scholar request follows (ticket 1302).
+/// failing it, and no second Semantic Scholar request follows.
 enum SeedOutcome {
     Resolved(Box<(super::ArticleRelatedPaper, SemanticScholarPaper)>),
     Refused(SemanticScholarState),

@@ -181,7 +181,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
         assert item["tier"] in {1, 2, 3}
         assert item["integration_mode"] in allowed_modes
         assert item["bioMcp_auth"] in allowed_auth
-        # Ticket 1205: a provider that publishes no terms page gets a null
+        # A provider that publishes no terms page gets a null
         # terms_url rather than a link to something that is not terms, and its
         # licence summary has to say so.
         if item["terms_url"] is None:
@@ -242,7 +242,7 @@ def _stale_review_entries(today: date) -> tuple[list[str], list[str]]:
 def test_source_review_dates_warn_then_fail() -> None:
     # A print is invisible for passing tests (pytest hides captured
     # output), so approaching staleness warns and true staleness fails
-    # (ticket 1244, batch 2). The canonical test gate runs this file,
+    #. The canonical test gate runs this file,
     # so the assert fails CI exactly when a review passes 365 days.
     import warnings
 

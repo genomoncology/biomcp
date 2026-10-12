@@ -1,6 +1,6 @@
 use super::*;
 
-/// Ticket 2050: a sparse card carries no DrugBank ID, type, approval,
+/// A sparse card carries no DrugBank ID, type, approval,
 /// brand or route, and the US header has no FAERS events — the header then
 /// prints no filler for any of them: no `DrugBank ID: -`, no `Safety
 /// (OpenFDA FAERS): unavailable`, and no blank lines where the empty fields
@@ -191,7 +191,7 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
     );
     assert!(!markdown.contains("No known drug-drug interactions found."));
 
-    // Coverage states carry their own wording (ticket 1241): an
+    // Coverage states carry their own wording: an
     // uncovered drug never reads as a clean no-rows result, and the
     // coverage line names the set.
     let mut uncovered = drug.clone();
@@ -558,7 +558,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
 
 #[test]
 fn drug_markdown_with_region_who_names_the_gap_when_the_bundle_cannot_be_read() {
-    // Ticket 2038 finding 7, 2035 #6: an unreadable WHO bundle degrades the
+    // An unreadable WHO bundle degrades the
     // card instead of failing it, and the printed note names the gap without
     // any local data path.
     let drug = Drug {

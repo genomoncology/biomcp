@@ -243,8 +243,7 @@ struct VariantSearchRequest {
 impl VariantSearchRequest {
     /// Every explicit filter flag this request carries, in the command
     /// line's own spelling, so the gene-first hints repeat what the caller
-    /// typed instead of dropping filters the search applied (ticket 2022's
-    /// promise, restored by ticket 2038 finding 7). `--limit` and `--offset`
+    /// typed instead of dropping filters the search applied. `--limit` and `--offset`
     /// are pagination, not filters, and stay out.
     fn explicit_filter_flags(&self) -> Vec<(&'static str, String)> {
         let mut flags = Vec::new();

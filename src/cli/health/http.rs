@@ -135,7 +135,7 @@ pub(in crate::cli::health) async fn send_request(
 
 /// Rewrites a probe URL's scheme and authority onto a test endpoint
 /// when `BIOMCP_HEALTH_PROBE_BASE` is allowed, keeping the path and
-/// query. Test-only seam (ticket 1254, item 8): the health probes
+/// query. Test-only seam: the health probes
 /// carry static catalog URLs, so the handshake test needs one address
 /// override through the shared client. Authed probes attach operator
 /// credentials, so the override is gated exactly like the GenCC
@@ -243,7 +243,7 @@ pub(in crate::cli::health) async fn check_auth_get(
     .await
 }
 
-/// Ticket 1142 health row: the ORCID token validator decides before any
+/// Health row: the ORCID token validator decides before any
 /// network work. Missing or ASCII-space-only tokens exclude the row; an
 /// invalid nonblank token is an error with zero GETs; a valid token performs
 /// exactly one bearer GET.
@@ -556,7 +556,7 @@ mod probe_override_tests {
         // variables. The base cannot parse, so in release builds the
         // gate blocks the rewrite and in debug builds the parse
         // fallback returns the original — the observable is the same
-        // URL either way, which is what this pins (ticket 1257).
+        // URL either way, which is what this pins.
         unsafe {
             std::env::set_var("BIOMCP_HEALTH_PROBE_BASE", "::not a url::");
         }
@@ -574,7 +574,7 @@ mod probe_override_tests {
         // same loopback origin as the signal, so `probe_url` rewrites
         // in debug AND release builds — the old test set only the
         // base, which debug builds let through and release builds
-        // correctly refused (ticket 1257).
+        // correctly refused.
         unsafe {
             std::env::set_var("BIOMCP_HEALTH_PROBE_BASE", "https://127.0.0.1:9443");
             std::env::set_var("BIOMCP_TEST_UNPACED_ORIGIN", "https://127.0.0.1:9443");

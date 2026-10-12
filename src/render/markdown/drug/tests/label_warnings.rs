@@ -105,7 +105,7 @@ fn raw_label_and_safety_together_print_the_ordinary_warnings_once() {
 
 #[test]
 fn raw_label_and_safety_together_print_over_cap_warnings_once() {
-    // Ticket 1300 keeps whole label sections on the entity while the safety
+    // Keeps whole label sections on the entity while the safety
     // field keeps its capped extraction. A warnings section past the
     // Markdown cap must still dedup against its identical capped projection
     // instead of printing the text twice under two Warnings headings.

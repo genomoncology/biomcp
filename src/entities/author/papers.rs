@@ -9,7 +9,7 @@ use serde::Serialize;
 use std::time::Duration;
 
 const AUTHOR_PAPERS_COMMAND_DEADLINE: Duration = Duration::from_secs(35);
-/// Ticket 1142: the ORCID works slice is local, and `--offset` beyond the
+/// The ORCID works slice is local, and `--offset` beyond the
 /// maximum retained group count is a static invalid argument.
 const ORCID_MAX_OFFSET: usize = 10_000;
 
@@ -191,7 +191,7 @@ pub async fn papers_full(
     })
 }
 
-/// Ticket 1142: one logical `/works` request, group selection and stable
+/// One logical `/works` request, group selection and stable
 /// deduplication upstream, then a bounded local slice.
 async fn orcid_papers(
     requested: &ProviderAuthorId,
@@ -239,7 +239,7 @@ async fn orcid_papers(
     })
 }
 
-/// Ticket 1142: stable cross-group deduplication on recognized canonical
+/// Stable cross-group deduplication on recognized canonical
 /// identifiers only. Preserved unrecognized types never drop a group,
 /// including groups whose only identifiers are unrecognized or absent.
 fn retain_deduplicated(
@@ -269,7 +269,7 @@ fn retain_deduplicated(
     retained
 }
 
-/// Ticket 1142 local pagination: slice the retained works by the caller's
+/// Local pagination: slice the retained works by the caller's
 /// offset and limit, with `next` exactly when more retained works remain.
 #[allow(clippy::type_complexity)]
 fn orcid_page_bounds(
@@ -1308,7 +1308,7 @@ mod orcid_works_tests {
         );
     }
 
-    /// Ticket 1142: identifiers that exist only in excluded locations —
+    /// Identifiers that exist only in excluded locations —
     /// group level, a private summary, or a nonselected public summary —
     /// never reach the projected paper, its commands, or its evidence.
     #[test]
@@ -1359,7 +1359,7 @@ mod orcid_works_tests {
         assert_eq!(commands, ["biomcp get article 42".to_string()]);
     }
 
-    /// Ticket 1142: `--full` on an ORCID ID is rejected statically, before
+    /// `--full` on an ORCID ID is rejected statically, before
     /// any client construction, with zero provider requests of any kind.
     #[tokio::test]
     #[serial_test::serial(source_env)]

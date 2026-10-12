@@ -15,7 +15,7 @@ const MAX_PROVIDER_TERM_BYTES: usize = 256;
 /// `MM` names Miyoshi muscular dystrophy in the source while clinicians
 /// mean multiple myeloma, and `HD` names Huntington's disease while
 /// oncology means Hodgkin disease. A single source holder is not evidence
-/// for a token this short, so resolution refuses (ticket 2017).
+/// for a token this short, so resolution refuses.
 const SHORT_ABBREVIATION_MAX_LEN: usize = 2;
 
 fn is_short_abbreviation_token(token: &str) -> bool {
@@ -127,7 +127,7 @@ fn provider_terms(hit: &MyDiseaseHit) -> (Vec<String>, Vec<String>, bool) {
 }
 
 /// Whether a provider names the record itself (a Disease Ontology or MONDO
-/// `name`): the display name falls back to the MONDO label (ticket 2050),
+/// `name`): the display name falls back to the MONDO label,
 /// but the search tie-break keeps its labelled-first ordering on provider
 /// names alone, so a label-only record never leapfrogs a named one.
 fn hit_is_provider_named(hit: &MyDiseaseHit) -> bool {
@@ -152,7 +152,7 @@ fn exact_hit_matches(query: &str, hit: &MyDiseaseHit) -> bool {
 }
 
 /// How a record holds the requested term exactly: as its ontology name or
-/// as an exact synonym. Ticket 2017 counts the two differently for full
+/// as an exact synonym. The two count differently for full
 /// words.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ExactTermHold {
@@ -577,8 +577,11 @@ fn scored_best_candidate_for_queries(
             let normalized_len = normalize_disease_text(&primary_name).len();
             // Unlabelled records answer with their ID as the name, which is
             // shorter than any real label and used to win the length
-            // tie-break (ticket 2017); a real label outranks the fallback.
-            let unlabelled = hit_label(&hit).is_none() as u8;
+            // tie-break; a real label outranks the fallback.
+            // The tie-break reads provider names alone, matching
+            // `rerank_disease_search_hits`, so a label-only record never
+            // leapfrogs a named one in either ranker.
+            let unlabelled = !hit_is_provider_named(&hit) as u8;
             (
                 best_score,
                 best_exact_rank,
@@ -682,7 +685,7 @@ pub(super) fn rerank_disease_search_hits(
                 // record first, then the shorter canonical name: `MDS` ranks
                 // myelodysplastic syndrome above Miller-Dieker lissencephaly,
                 // and label-only abbreviation holders must not surface above
-                // named ones (ticket 2017).
+                // named ones.
                 !hit_is_provider_named(&candidate.hit) as u8,
                 normalize_disease_text(&display_name).len(),
                 candidate.first_seen_query_idx,
@@ -710,8 +713,7 @@ pub(super) fn rerank_disease_search_hits(
 /// MONDO:0005583 is `non-human animal disease`; every veterinary MONDO
 /// record descends from it, including the venom-database `myeloma` that
 /// once made `get disease myeloma` refuse. BioMCP answers clinicians, so a
-/// non-human record never counts toward disease-name ambiguity (ticket
-/// 2017).
+/// non-human record never counts toward disease-name ambiguity.
 const NON_HUMAN_ANIMAL_DISEASE_ID: &str = "MONDO:0005583";
 
 fn is_non_human_record(hit: &MyDiseaseHit) -> bool {
@@ -728,12 +730,12 @@ fn is_non_human_record(hit: &MyDiseaseHit) -> bool {
 
 /// A token shaped like an abbreviation — one word, all ASCII capitals
 /// (`MF`, `CAD`, `NSCLC`), or one word of at most two letters in any letter
-/// case (`mf` names the same diseases `MF` does, ticket 2050) — is ambiguous
+/// case (`mf` names the same diseases `MF` does) — is ambiguous
 /// when several diseases hold it as an exact name or synonym. Any other
 /// shape is a full word, and a full word is ambiguous only when several
 /// records carry it as their exact NAME: a record that merely shares the
 /// word as a synonym does not stop `get disease myeloma` from reaching
-/// multiple myeloma (ticket 2017).
+/// multiple myeloma.
 fn is_abbreviation_shaped_token(token: &str) -> bool {
     let token = token.trim();
     !token.is_empty()
@@ -743,7 +745,7 @@ fn is_abbreviation_shaped_token(token: &str) -> bool {
 
 /// Whether the refusal's short-token reason applies: several holders
 /// explain a refusal on their own, but a single holder alone cannot carry a
-/// token this short (`MM`, ticket 2017).
+/// token this short (`MM`).
 fn single_holder_is_short_token(holders: usize, requested: &str) -> bool {
     holders == 1 && is_short_abbreviation_token(requested)
 }
@@ -770,20 +772,11 @@ fn exact_token_holder_ids<'a>(
     holder_ids
 }
 
-/// A display label for a refusal candidate. MONDO records with no `name`
-/// in the search response still carry the ontology `label`, so the
-/// candidate list names the disease instead of printing a bare ID
-/// (ticket 2017: `CAD` refused listing `MONDO:0018922` with no label).
+/// A display label for a refusal candidate. `hit_label` already falls
+/// back to the ontology `label`, so MONDO records with no
+/// `name` still name the disease instead of printing a bare ID.
 fn holder_display_label(hit: &MyDiseaseHit) -> Option<String> {
-    hit_label(hit).or_else(|| {
-        hit.mondo
-            .as_ref()
-            .and_then(|value| value.get("label"))
-            .and_then(|value| value.as_str())
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(|value| value.to_string())
-    })
+    hit_label(hit)
 }
 
 fn abbreviation_candidate_lines(holders: &[MyDiseaseHit]) -> String {
@@ -847,7 +840,7 @@ pub(super) enum DirectNameResolution {
     Unresolved,
     /// The requested token is held by several diseases, or by one disease
     /// while being too short to name any disease; either way `get disease`
-    /// must refuse instead of picking silently (ticket 2017).
+    /// must refuse instead of picking silently.
     AmbiguousAbbreviation {
         requested: String,
         holders: Vec<MyDiseaseHit>,

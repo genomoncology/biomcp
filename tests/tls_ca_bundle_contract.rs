@@ -288,7 +288,7 @@ async fn health_probe_completes_a_tls_handshake_through_the_shared_client() {
     // trusts: drive the real binary with the test-only probe-base
     // override (BIOMCP_HEALTH_PROBE_BASE) pinned onto the MyGene
     // catalog probe, and prove the handshake and the rewritten
-    // request line both landed (ticket 1254 batch 2, item 8).
+    // request line both landed.
     let fixture = TlsFixture::start().await;
     let output = fixture
         .run_command(
@@ -604,7 +604,7 @@ async fn stdio_rejects_invalid_explicit_bundle_before_session_acceptance() {
 async fn stdio_bad_fallback_starts_and_warns_once_across_tool_calls() {
     let dir = tempfile::tempdir().expect("bundle directory");
     let missing = dir.path().join("missing.pem");
-    // Ticket 1257: `biomcp version` builds no HTTP client, so the two
+    // `biomcp version` builds no HTTP client, so the two
     // version calls below prove only the warning-once behavior. The
     // third call drives an adverse-event fetch whose base points at
     // the private-CA TLS fixture: the fallback bundle was unreadable,

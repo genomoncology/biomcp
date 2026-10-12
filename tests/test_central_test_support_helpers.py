@@ -68,6 +68,12 @@ def line_number(contents: str, offset: int) -> int:
 
 
 def is_allowed_runtime_temp_scratch(relative_path: str, match: re.Match[str]) -> bool:
+    # A test build's default cache root is a runtime scratch
+    # the process shares, not a fixture a test owns, so no RAII guard can
+    # outlive it; the OS temp cleaner handles the folder the way it handles
+    # the benchmark scratch.
+    if relative_path == "src/cache/config.rs" and "biomcp-test-cache-{}" in match.group(0):
+        return True
     return (
         relative_path == "src/cli/benchmark/run/execute.rs"
         and "biomcp-benchmark-{}-{}" in match.group(0)

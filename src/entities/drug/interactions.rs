@@ -266,8 +266,7 @@ pub(super) async fn populate_card_interactions(
 }
 
 /// The DDInter identity for an anchor drug: the anchor name plus its
-/// brand names and anchor-hit synonyms (ticket 1241; anchor-only since
-/// ticket 1254 — never pooled across MyChem hits).
+/// brand names and anchor-hit synonyms.
 pub(crate) fn ddinter_identity_for_anchor(
     requested_name: &str,
     anchor: &crate::entities::drug::Drug,
@@ -422,7 +421,7 @@ mod tests {
 
     #[test]
     fn ddinter_identity_for_anchor_passes_brands_and_synonyms_on() {
-        // The real call-site seam (ticket 1254): the anchor's brand
+        // The real call-site seam: the anchor's brand
         // names and its anchor-hit synonyms both reach the identity.
         let mut anchor: Drug =
             serde_json::from_value(serde_json::json!({"name": "Aspirin"})).expect("drug");
@@ -444,7 +443,7 @@ mod tests {
     fn aggregation_keeps_a_row_whose_partner_is_not_an_anchor_term() {
         // A pooled combination-product synonym used to widen the anchor
         // terms so both row sides matched and the row was skipped
-        // silently (ticket 1254). Anchor-only terms keep the row.
+        // silently. Anchor-only terms keep the row.
         let mut anchor: Drug =
             serde_json::from_value(serde_json::json!({"name": "Aspirin"})).expect("drug");
         anchor.ddinter_synonyms = vec!["acetylsalicylic acid".to_string()];

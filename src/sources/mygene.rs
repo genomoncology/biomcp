@@ -289,7 +289,7 @@ impl MyGeneClient {
     }
 
     /// Official symbols keyed by NCBI Entrez gene id, for rows whose own
-    /// document never spells a usable symbol (ticket 2034).
+    /// document never spells a usable symbol.
     pub async fn symbols_by_entrez_id(
         &self,
         ids: &[String],
@@ -822,7 +822,7 @@ mod tests {
 
         #[test]
         fn symbol_map_parses_recorded_batch_and_drops_unrequested_keys() {
-            // Ticket 2034's recorded response: MyGene answers NCBI Gene 3845
+            // Recorded response: MyGene answers NCBI Gene 3845
             // with the official symbol KRAS for a document that spells the
             // gene "K-Ras" and "K-RAS".
             let rows: Vec<MyGeneBatchGeneHit> = decode_json(

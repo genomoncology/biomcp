@@ -7,7 +7,7 @@ pub(crate) const ARTICLE_XML_NODE_LIMIT: u32 = 1_000_000;
 /// blocking-thread stacks through the recursive JATS and ClinVar
 /// walkers. Measured: the deepest tracked fixture nests 9 levels
 /// (VAERS responses); JATS publisher markup stays an order below
-/// this cap (ticket 1243).
+/// this cap.
 pub(crate) const EXTERNAL_XML_DEPTH_LIMIT: u32 = 64;
 
 #[derive(Debug, thiserror::Error)]
@@ -31,9 +31,7 @@ pub(crate) fn parse_external_xml(
     // Depth is counted in the pre-parse scan, not after parsing: the
     // acceptance nesting-bomb test proved roxmltree's own parse
     // recurses per open tag, so the rejection must happen before
-    // Document::parse or the parser stack overflows first (ticket
-    // 1243; the ticket's post-parse-walk plan was revised on that
-    // evidence). Comments, CDATA, and processing instructions are
+    // Document::parse or the parser stack overflows first. Comments, CDATA, and processing instructions are
     // skipped wholesale below and never move the counter.
     let mut depth: u32 = 0;
     while index < bytes.len() {

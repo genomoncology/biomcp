@@ -1,7 +1,7 @@
 //! Tier 2 - sync outcome coverage over a local export fixture server.
 //! Proves the sync loop attempts every export file, reports the true
 //! per-file outcome, and fails with the failing file named when required
-//! files are missing after the run (ticket 1304). No external network.
+//! files are missing after the run. No external network.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -148,7 +148,7 @@ async fn sync_attempts_every_file_and_names_the_failing_file_when_required_files
 
 /// The recorded finished-pharma export with one column dropped, the shape a
 /// real WHO export change produces. Validation must fail naming the file
-/// and the missing column (ticket 2021).
+/// and the missing column.
 fn fixture_csv_missing_basis_of_listing() -> String {
     let payload = super::fixture_csv();
     let (header, rest) = payload
@@ -187,7 +187,7 @@ async fn sync_names_the_failing_file_and_column_in_its_final_error() {
     assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
     assert_eq!(err.exit_code(), 1);
     // The final error carries its reason through the public surface
-    // instead of the generic source-down line (ticket 2021).
+    // instead of the generic source-down line.
     let projection = err.public_projection();
     assert!(
         projection
@@ -224,7 +224,7 @@ async fn sync_names_the_failing_file_and_column_in_its_final_error() {
     );
     // The projected recovery (JSON `error.recovery`, MCP callers) never
     // carries the resolved data directory: local paths stay terminal-only
-    // (ticket 2038 finding 7, 2035 #6).
+    //.
     let root_path = root.path().display().to_string();
     assert_eq!(
         projection.recovery,

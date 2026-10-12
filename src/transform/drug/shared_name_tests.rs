@@ -1,9 +1,8 @@
-//! Recorded-capture pins for product names several unrelated drugs share
-//! (ticket 2039).
+//! Recorded-capture pins for product names several unrelated drugs share.
 //!
 //! Every capture below was recorded 2026-10-10 from
 //! `mychem.info/v1/query?q=<name>` with the `get` field list, trimmed the
-//! same way as the ticket-2031 captures: only the hits the assertions read
+//! same way as the shared-name captures: only the hits the assertions read
 //! stay, NDC rows deduplicate to the rows the assertions read, and unused
 //! fields are removed.
 
@@ -17,7 +16,7 @@ use super::{merge_mychem_hits, select_hits_for_name};
 /// hemorrhoidal row carries "Pain Relief" as its established name, and the
 /// menthol record answers through its ChEMBL identifier alone. On main the
 /// exact tier merges them all, so one card carried acetaminophen's DB00316
-/// with other records' targets (ticket 2035 finding 20).
+/// with other records' targets.
 pub(crate) const PAIN_RELIEF_CAPTURE: &str = r#"
 {
   "total": 673,
@@ -124,7 +123,7 @@ pub(crate) const PAIN_RELIEF_CAPTURE: &str = r#"
 
 #[test]
 fn pain_relief_refuses_instead_of_fusing_unrelated_drugs() {
-    // Ticket 2039: "Pain Relief" brands acetaminophen, lidocaine, menthol,
+    // "Pain Relief" brands acetaminophen, lidocaine, menthol,
     // diphenhydramine, phenylephrine, benzocaine and ibuprofen products
     // alike, and each record's own rows pair the name with a different
     // ingredient. No one drug owns the name, so the selection refuses and
@@ -182,7 +181,7 @@ pub(crate) const SLEEP_AID_CAPTURE: &str = r#"
 
 #[test]
 fn sleep_aid_refuses_instead_of_merging_diphenhydramine_with_doxylamine() {
-    // Ticket 2039: diphenhydramine's rows pair "Sleep Aid" with
+    // Diphenhydramine's rows pair "Sleep Aid" with
     // diphenhydramine and doxylamine's rows pair it with doxylamine
     // succinate — two unrelated drugs, one shelf name, no single owner.
     let capture = hits(serde_json::from_str(SLEEP_AID_CAPTURE).expect("valid capture"));
@@ -197,7 +196,7 @@ fn sleep_aid_refuses_instead_of_merging_diphenhydramine_with_doxylamine() {
 /// what the leading-name tier sees when the text query ranks only
 /// fexofenadine, whose DrugBank synonyms list "Terfenadine carboxylate" and
 /// "Terfenadine acid metabolite". A foreign drug's synonym is not this
-/// drug's salt form (ticket 2039).
+/// drug's salt form.
 pub(crate) const FEXOFENADINE_TEXT_ONLY_CAPTURE: &str = r#"
 {
   "total": 4,
@@ -236,7 +235,7 @@ pub(crate) const FEXOFENADINE_TEXT_ONLY_CAPTURE: &str = r#"
 
 #[test]
 fn a_foreign_synonym_never_satisfies_the_leading_name_tier() {
-    // Ticket 2039: with terfenadine's own record absent, the only name that
+    // With terfenadine's own record absent, the only name that
     // leads with the query is fexofenadine's synonym "Terfenadine
     // carboxylate" — another drug's synonym, not a salt form of the
     // requested drug — so nothing resolves and the caller refuses.
@@ -253,7 +252,7 @@ fn a_foreign_synonym_never_satisfies_the_leading_name_tier() {
 /// product's rows: the pairings agree, one product resolves, and a bare
 /// product row rides along. The refusal is for disagreeing owners, never
 /// for every shared brand — Lonsurf's trifluridine and tipiracil records
-/// look exactly like this fixture (tickets 2037 and 2039).
+/// look exactly like this fixture.
 pub(crate) const AGREEING_PAIRINGS_CAPTURE: &str = r#"
 {
   "total": 3,
@@ -289,7 +288,7 @@ pub(crate) const AGREEING_PAIRINGS_CAPTURE: &str = r#"
 
 #[test]
 fn agreeing_pairings_still_merge_one_product() {
-    // Ticket 2039: both identity-bearing records pair the brand with the
+    // Both identity-bearing records pair the brand with the
     // same combined ingredient, so the shared name owns exactly one
     // product and the merge keeps its rows (including the bare product row
     // that carries no identity of its own).
@@ -298,5 +297,8 @@ fn agreeing_pairings_still_merge_one_product() {
     assert_eq!(selected.len(), 3);
     let drug = merge_mychem_hits(&selected, "Fixturego");
     assert_eq!(drug.name, "fixturedrug one and fixturedrug two");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB90001"));
+    // A combination card shows product-level identifiers or
+    // none, so Fixturedrug One's DrugBank id never stands in for the
+    // combination the shared name owns.
+    assert_eq!(drug.drugbank_id.as_deref(), None);
 }

@@ -121,7 +121,7 @@ fn a_full_window_note_is_printed_once() {
     );
 }
 
-// Ticket 1214 acceptance 7: the ChEMBL section names its release.
+// The ChEMBL section names its release.
 
 fn with_chembl_section(records: Vec<crate::entities::cell_line::CellLineChemblRecord>) -> CellLine {
     let mut cell_line = sample();

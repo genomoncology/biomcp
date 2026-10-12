@@ -14,8 +14,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 pub(super) use crate::test_support::FixtureEnv;
 
 /// The CTGov fixture env: the shared scratch-cache guard with the registry
-/// and its pacing origin pointed at the fixture (ticket 2050: one shared
-/// helper, never a per-test copy).
+/// and its pacing origin pointed at the fixture.
 pub(super) fn ctgov_fixture_env(base: &str) -> FixtureEnv {
     let mut env = FixtureEnv::new();
     env.set("BIOMCP_CTGOV_BASE", base);

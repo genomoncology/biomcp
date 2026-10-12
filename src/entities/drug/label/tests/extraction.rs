@@ -88,7 +88,7 @@ fn extract_inline_label_carries_whole_sections_past_the_markdown_cap() {
         }]
     });
 
-    // JSON carries the whole section with no truncation note (ticket 1300);
+    // JSON carries the whole section with no truncation note;
     // only the Markdown view keeps the capped short form.
     let label = extract_inline_label(&response, true).expect("label");
     assert_eq!(label.indications.as_deref(), Some(long_text.as_str()));

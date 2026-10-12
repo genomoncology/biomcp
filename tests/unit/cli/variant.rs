@@ -398,7 +398,7 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
     assert_eq!(resolved.condition.as_deref(), Some("Brugada syndrome"));
     // A routed phrase carries its parsed form and a loosened alternative so a
     // zero-row search can say how it was read without repeating itself
-    // (ticket 2022; the alternative drops the condition filter).
+    //.
     assert_eq!(
         note.as_ref(),
         Some(&GeneFirstNote::Routed {
@@ -430,7 +430,7 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
         })
     );
 
-    // Ticket 2022 keeps one oracle verdict shape: only an official symbol
+    // Keeps one oracle verdict shape: only an official symbol
     // confirms, and the confirmed symbol equals the routed token. The ERBB1
     // alias never reaches this branch because the oracle refuses it.
     let (resolved, _note) = apply_gene_first_routing(
@@ -490,7 +490,7 @@ fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
     assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
     // The refused note keeps the explicit flag in the normalized spelling
     // the condition search applied, so the working form repeats it
-    // (ticket 2044).
+    //.
     assert_eq!(
         note,
         Some(GeneFirstNote::Refused {
@@ -506,7 +506,7 @@ fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
 fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
     // Confirmed path: the phrase routes gene-first and the explicit
     // consequence filter survives beside it, in the search and in the
-    // zero-row alternative (ticket 2033, finding 13).
+    // zero-row alternative.
     let (resolved, note) = apply_gene_first_routing(
         "SCN5A".into(),
         None,
@@ -576,8 +576,7 @@ fn apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints() {
     // The finding's case: `search variant "BRAF melanoma" --significance
     // benign --tumor-site skin` dropped both flags from the routed hint,
     // and the refused hint dropped `--significance` too. Every explicit
-    // filter the search applied stays in both hints (ticket 2022's
-    // promise, restored by ticket 2038 finding 7).
+    // filter the search applied stays in both hints.
     let filters = vec![
         ("--significance", "benign".to_string()),
         ("--tumor-site", "skin".to_string()),
@@ -636,7 +635,7 @@ fn apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints() {
 
 #[test]
 fn refused_zero_row_hint_keeps_the_explicit_hgvsp_and_consequence_flags() {
-    // Ticket 2044: the refused zero-row hint used to drop an explicit
+    // The refused zero-row hint used to drop an explicit
     // `--hgvsp` or `--consequence` flag because the note carried only the
     // gene and condition and the hint passed `None` for the flag. The
     // finding's case: `search variant "BRUGADA syndrome" --hgvsp V600E
@@ -785,7 +784,7 @@ async fn refused_zero_row_search_outcome(args: &[&str]) -> crate::cli::CommandOu
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
-    // Ticket 2044, end to end: a refused gene-first phrase whose search
+    // End to end: a refused gene-first phrase whose search
     // returns zero rows prints the working form in the Markdown footer, and
     // that form must keep the caller's explicit `--hgvsp` and
     // `--significance` flags.
@@ -825,7 +824,7 @@ async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
 async fn refused_zero_row_markdown_hint_keeps_the_consequence_flag_end_to_end() {
     // The Markdown footer arm passes the note's consequence beside the
     // hgvsp: replacing the consequence argument with None at the Markdown
-    // call site passes every other test (ticket 2047).
+    // call site passes every other test.
     let outcome = refused_zero_row_search_outcome(&[
         "biomcp",
         "search",
@@ -856,7 +855,7 @@ async fn refused_zero_row_json_next_command_keeps_both_caller_flags_end_to_end()
     // The JSON arm (the zero-row next-commands entry) passes the note's
     // hgvsp and consequence beside the explicit filters: replacing either
     // flag with None at the JSON call site passes every other test
-    // (ticket 2047).
+    //.
     let outcome = refused_zero_row_search_outcome(&[
         "biomcp",
         "--json",

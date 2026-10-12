@@ -1,5 +1,5 @@
-//! Recorded-reply tests for the product-name and sparse-brand gaps found
-//! after 2047 (ticket 2050): a merged NDC product name counts as the
+//! Recorded-reply tests for the product-name and sparse-brand gaps: a
+//! merged NDC product name counts as the
 //! record's own only when it equals the request, a record's own identity
 //! name outranks merged product rows, and one sparse-record reader keeps
 //! multi-word brands whole.
@@ -91,7 +91,7 @@ const TECENTRIQ_HYBREZA_ELEMENTS_BODY: &str = r#"{
 }"#;
 
 /// The MyChem answers for the multi-word sparse brands, recorded 2026-10-11
-/// (ticket 2050) from `mychem.info/v1/query?q=<name>` with the `get` field
+/// from `mychem.info/v1/query?q=<name>` with the `get` field
 /// list: each brand lives on a naked NDC row whose nonproprietary line is
 /// the hyaluronidase pairing.
 const HERCEPTIN_HYLECTA_CAPTURE: &str = r#"
@@ -133,7 +133,7 @@ const TECENTRIQ_HYBREZA_CAPTURE: &str = r#"
 }
 "#;
 
-/// Ticket 2050: a sparse record whose only identity is the element line can
+/// A sparse record whose only identity is the element line can
 /// carry a multi-word brand. The element opens "BRAND BRAND ESTABLISHED …",
 /// and one reader keeps the whole leading brand run, so the identity guard
 /// confirms the record for the queried name and the brand tier serves the
@@ -203,7 +203,7 @@ async fn tecentriq_hybreza_keeps_its_multi_word_brand_and_own_label() {
     server.abort();
 }
 
-/// Ticket 2050: the live sweep showed `get drug 5-FU` waiting four to six
+/// The live sweep showed `get drug 5-FU` waiting four to six
 /// seconds on one EBI OLS4 search while refusing. The refusal rescue runs
 /// inside a two-second budget, so a slow discover round gives up and the
 /// refusal arrives without it.
@@ -268,7 +268,7 @@ async fn a_slow_discover_round_never_holds_the_refusal_hostage() {
 }
 
 /// The openFDA label answer for the "Headache Relief" search (live total
-/// 68, recorded 2026-10-11, ticket 2050), trimmed to the openFDA blocks and
+/// 68, recorded 2026-10-11), trimmed to the openFDA blocks and
 /// the leading section text: the newest record is a store brand whose
 /// generic is the three-ingredient line, and the exact "Headache Relief"
 /// brand record (a876daa7) carries the same three ingredients.
@@ -311,7 +311,7 @@ const HEADACHE_RELIEF_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
-/// `q=headache relief` (recorded 2026-10-11, ticket 2050): the shelf name
+/// `q=headache relief` (recorded 2026-10-11): the shelf name
 /// brands a three-ingredient combination whose rows sit merged on the
 /// acetaminophen, caffeine and aspirin records alike, and those records
 /// also carry the generic-labeled "Tension Headache Relief" product row —
@@ -386,11 +386,13 @@ fn assert_label_set_id_and_text(drug: &super::super::Drug, set_id: &str, needle:
     );
 }
 
-/// Ticket 2050: the merged "Tension Headache Relief" product row used to
+/// The merged "Tension Headache Relief" product row used to
 /// name the acetaminophen card because its name ends with the request. A
 /// product name now counts only when it equals the request, so the card
 /// keeps the ingredient line the "Headache Relief" rows themselves pair,
-/// and the exact-brand label still serves.
+/// and the exact-brand label still serves. A combination card
+/// shows product-level identifiers or none, so the merged acetaminophen
+/// record's DrugBank id never stands in for the whole product.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
@@ -412,7 +414,10 @@ async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
         .await
         .expect("the shared combination product settles a card");
     assert_eq!(drug.name, "acetaminophen, aspirin and caffeine");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00316"));
+    assert_eq!(drug.drugbank_id.as_deref(), None);
+    assert_eq!(drug.chembl_id.as_deref(), None);
+    assert_eq!(drug.unii.as_deref(), None);
+    assert_eq!(drug.approval_date.as_deref(), None);
     assert!(
         !drug.name.contains("tension"),
         "the merged Tension Headache Relief row never names the card: {}",
@@ -427,7 +432,7 @@ async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
 }
 
 /// The openFDA label answer for the "Advil" search (live total 39,
-/// recorded 2026-10-11, ticket 2050), trimmed to the openFDA blocks and the
+/// recorded 2026-10-11), trimmed to the openFDA blocks and the
 /// leading section text: the plain Advil record (1f01c10a) answers third
 /// behind a menstrual-pain salt form and a combination.
 const ADVIL_LABEL_BODY: &str = r#"{
@@ -469,7 +474,7 @@ const ADVIL_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
-/// `q=advil` (recorded 2026-10-11, ticket 2050): the ibuprofen identity
+/// `q=advil` (recorded 2026-10-11): the ibuprofen identity
 /// record carries the merged Advil rows, and one labeler row lists the
 /// Advil PM combination's brand as its established name — the merged
 /// product row whose name starts with the request and used to name the
@@ -499,7 +504,7 @@ const ADVIL_CAPTURE: &str = r#"
 }
 "#;
 
-/// Ticket 2050: `get drug Advil` used to name the card "advil pm" — the
+/// `get drug Advil` used to name the card "advil pm" — the
 /// merged Advil PM product row's established name starts with the request —
 /// while showing the plain Advil label. A product name now counts only
 /// when it equals the request, so the card names the ingredient the Advil
@@ -534,7 +539,7 @@ async fn advil_names_the_ingredient_it_pairs_not_the_merged_pm_row() {
 }
 
 /// The openFDA label answer for the "Nighttime Sleep Aid" search (live
-/// total 126, recorded 2026-10-11, ticket 2050), trimmed to the openFDA
+/// total 126, recorded 2026-10-11), trimmed to the openFDA
 /// blocks and the leading section text: the flavor variant answers first
 /// and the exact "Nighttime Sleep Aid" brand record (514aa6b5) second,
 /// both plain diphenhydramine hydrochloride.
@@ -566,7 +571,7 @@ const NIGHTTIME_SLEEP_AID_LABEL_BODY: &str = r#"{
  ]
 }"#;
 
-/// `q=nighttime sleep aid` (recorded 2026-10-11, ticket 2050): the shelf
+/// `q=nighttime sleep aid` (recorded 2026-10-11): the shelf
 /// name reaches the diphenhydramine record only through its merged Berry
 /// Flavor product row — a proprietary name that extends the request — and
 /// the record's first row is the Savvy two-ingredient product, whose line
@@ -591,7 +596,7 @@ const NIGHTTIME_SLEEP_AID_CAPTURE: &str = r#"
 }
 "#;
 
-/// Ticket 2050: `get drug "Nighttime Sleep Aid"` used to name the card with
+/// `get drug "Nighttime Sleep Aid"` used to name the card with
 /// the first merged row's two-ingredient line ("diphenhydramine
 /// hydrochloride zinc acetate" — another product entirely). The record's
 /// own identity name now outranks merged product rows, so the card names

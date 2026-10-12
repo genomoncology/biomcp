@@ -17,10 +17,10 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 ZERO_COUPLING_CHECKER = ROOT / "tools/check-zero-coupling.py"
 OFFLINE = ROOT / "tools/run-offline"
-# Ticket 1145 raised the package by five authorized module paths:
+# Raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar.
-MAX_PACKAGE_FILES = 1_419  # tickets 2039, 2040 and 2050 add the shared-name capture-test module, the trial abbreviation modules, and the product-name gap replies
+MAX_PACKAGE_FILES = 1_420  # tickets 2039, 2040, 2050 and 2052 add the shared-name capture-test module, the trial abbreviation modules, the product-name gap replies, and the ingredient-resolution recorded replies
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
@@ -73,7 +73,7 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
             path == private_root or path.startswith(f"{private_root}/")
             for path in paths
         )
-    # Test tooling stays out of the shipped source package (ticket 2044):
+    # Test tooling stays out of the shipped source package:
     # the nextest configuration under .config/ gates local runs, not the
     # published crate, and the file cap counts the runtime boundary only.
     assert not any(

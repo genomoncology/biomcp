@@ -701,7 +701,7 @@ def _rust_production_text(text: str) -> str:
 
 
 def check_renderer_next_command_source(root_dir: Path) -> dict[str, object]:
-    # Ticket 1069 dropped author follow-ups, which earned this one-source guard.
+    # A past change dropped author follow-ups, which earned this one-source guard.
     forbidden = "next_commands: vec![]"
     findings: list[dict[str, object]] = []
     for path in sorted((root_dir / "src" / "render").rglob("*.rs")):

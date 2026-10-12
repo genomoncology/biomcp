@@ -1,4 +1,4 @@
-//! Ticket 1145 admission proof: the process-wide JATS worker permit under the
+//! Admission proof: the process-wide JATS worker permit under the
 //! absolute twenty-two-second command deadline. The seam blocks on a Unix
 //! socket read held by the test; a ready file proves the permit was acquired
 //! before blocking. No tokio clock manipulation is involved — the commands

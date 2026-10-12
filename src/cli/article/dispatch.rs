@@ -417,7 +417,7 @@ pub(in crate::cli) async fn handle_command(
                 // when the crosswalk holds exactly one hit naming the
                 // identifier's PubTator3 concept name; every other disease
                 // row keeps the v0.9.1 search command instead of a
-                // confidently wrong get (ticket 2047).
+                // confidently wrong get.
                 let verified_disease_get_commands =
                     super::verified_disease_get_commands(annotations.as_ref()).await;
                 crate::render::markdown::article_entities_markdown(

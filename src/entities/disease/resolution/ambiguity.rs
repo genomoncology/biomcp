@@ -1,5 +1,5 @@
 //! The clinical-reading pointer table and the abbreviation-ambiguity
-//! surface the default trial source consumes (ticket 2040).
+//! surface the default trial source consumes.
 
 use super::{
     DirectNameResolution, MyDiseaseClient, holder_display_label, is_abbreviation_shaped_token,
@@ -21,11 +21,10 @@ pub(crate) struct ClinicalAbbreviationReading {
 }
 
 /// Abbreviations whose clinical meaning the source cannot see, with the
-/// sources checked and measured for each entry (ticket 2040). The
+/// sources checked and measured for each entry. The
 /// refusal stands on the source holders alone; this table only adds a
 /// pointer line naming a reading no holder carries.
-///
-/// - `MM` → multiple myeloma (MONDO:0009693): MyDisease holds `MM` on
+/// `MM` → multiple myeloma (MONDO:0009693): MyDisease holds `MM` on
 ///   Miyoshi muscular dystrophy (MONDO:0009685) alone. Checked live
 ///   2026-10-08 and again 2026-10-11: `mondo.synonym.exact:"MM"` and
 ///   `disease_ontology.synonyms.exact:"MM"` return no myeloma record,
@@ -35,7 +34,7 @@ pub(crate) struct ClinicalAbbreviationReading {
 ///   2026-10-11: of the first 50 trials matching `query.cond=MM`, 30
 ///   list a myeloma condition, so myeloma is the reading the registry
 ///   corpus itself carries.
-/// - `MF` → myelofibrosis (MONDO:0009692, the record `get disease
+/// `MF` → myelofibrosis (MONDO:0009692, the record `get disease
 ///   "myelofibrosis"` resolves to through its Disease Ontology name):
 ///   MyDisease holds `MF` on mycosis fungoides (MONDO:0009691) and
 ///   myotonia fluctuans (MONDO:0020481) alone. Checked live
@@ -48,7 +47,7 @@ pub(crate) struct ClinicalAbbreviationReading {
 ///   matching `query.cond=MF`, 28 list a myelofibrosis condition
 ///   against 6 for mycosis fungoides, so myelofibrosis is the reading
 ///   the trial corpus carries most. Curated abbreviation preferences
-///   stay deferred (ticket 2032).
+///   stay deferred.
 const CLINICAL_ABBREVIATION_READINGS: &[ClinicalAbbreviationReading] = &[
     ClinicalAbbreviationReading {
         token: "MM",
@@ -73,7 +72,7 @@ fn clinical_reading(requested: &str) -> Option<ClinicalAbbreviationReading> {
 }
 
 /// The pointer phrase both the `get disease` refusal and the default
-/// trial source's keyword-search note use (ticket 2040), so one reading
+/// trial source's keyword-search note use, so one reading
 /// keeps one wording across surfaces.
 pub(crate) fn clinical_reading_phrase(requested: &str) -> Option<String> {
     clinical_reading(requested).map(|reading| {
@@ -134,8 +133,7 @@ pub(super) fn holder_display_line(hit: &MyDiseaseHit) -> String {
 
 /// What the refusal knows about an ambiguous abbreviation, exposed so
 /// the default ClinicalTrials.gov trial source can say plainly what its
-/// keyword search ran on instead of leaving the user to guess (ticket
-/// 2040).
+/// keyword search ran on instead of leaving the user to guess.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct AbbreviationAmbiguity {
     pub(crate) requested: String,
@@ -150,7 +148,7 @@ pub(crate) struct AbbreviationAmbiguity {
 /// abbreviation-shaped condition the disease resolver refuses (several
 /// holders, or a holder too short to count), `None` for anything else.
 /// Only abbreviation-shaped tokens reach the resolver, so ordinary
-/// condition words add no grounding request (ticket 2040).
+/// condition words add no grounding request.
 pub(crate) async fn resolve_abbreviated_disease_ambiguity(
     client: &MyDiseaseClient,
     requested: &str,

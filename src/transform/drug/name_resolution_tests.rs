@@ -1,4 +1,4 @@
-//! Recorded-capture pins for drug name resolution (ticket 2031).
+//! Recorded-capture pins for drug name resolution.
 //!
 //! Every capture below was recorded 2026-10-08 from
 //! `mychem.info/v1/query?q=<name>` with the `get` field list. Hits that carry
@@ -354,7 +354,7 @@ fn ferric_oxide_selects_the_ferric_oxide_record_not_calamine() {
 
 /// `q=amivantamab`: the DrugBank record (DB16695) names the drug exactly
 /// while the NDC rows around it carry "amivantamab-vmjw" and combination
-/// names (ticket 2031 keep-list).
+/// names.
 pub(crate) const AMIVANTAMAB_CAPTURE: &str = r#"
 {
   "total": 11,
@@ -403,8 +403,7 @@ fn amivantamab_keeps_resolving_through_its_exact_drugbank_record() {
 /// (DrugCentral synonym "tagrisso", every NDC row's proprietary name), so
 /// the brand query resolves through MyChem and needs no openFDA fallback
 /// — live openFDA returns NOT_FOUND for `openfda.brand_name:"TAGRISSO"`
-/// because the label carries no openFDA block (ticket 2031, fourth-review
-/// finding 1). NDC rows deduplicated to first occurrences.
+/// because the label carries no openFDA block. NDC rows deduplicated to first occurrences.
 pub(crate) const TAGRISSO_CAPTURE: &str = r#"
 {
   "total": 4,
@@ -473,7 +472,7 @@ fn tagrisso_resolves_through_the_brand_fields_on_osimertinibs_record() {
 
 /// `q=ferric oxide` with the ferric oxide records absent: what the text
 /// search returns when only other drugs' records mention the term in wider
-/// names. `get` must refuse and name these matches (ticket 2031).
+/// names. `get` must refuse and name these matches.
 pub(crate) const FERRIC_OXIDE_TEXT_ONLY_CAPTURE: &str = r#"
 {
   "total": 56,
@@ -522,14 +521,14 @@ fn merge_mychem_hits_keeps_the_imatinib_mesylate_established_name() {
 
     let drug = merge_mychem_hits(&[&imatinib], "imatinib");
     assert_eq!(drug.name, "imatinib mesylate");
-    // Ticket 2050: an ingredient request keeps the qualified-form rule only
+    // An ingredient request keeps the qualified-form rule only
     // when it does not itself name a product the record carries; a request
     // that names the salt still names the salt.
     let salt = merge_mychem_hits(&[&imatinib], "imatinib mesylate");
     assert_eq!(salt.name, "imatinib mesylate");
 }
 
-/// `q=Tarceva` recorded 2026-10-09 (ticket 2037): MyChem holds the brand only
+/// `q=Tarceva` recorded 2026-10-09: MyChem holds the brand only
 /// on a record with no name at all, so nothing in the reply can identify the
 /// drug and openFDA holds no Tarceva label either.
 pub(crate) const TARCEVA_CAPTURE: &str = r#"
@@ -542,7 +541,7 @@ pub(crate) const TARCEVA_CAPTURE: &str = r#"
 }
 "#;
 
-/// `q=Erlotinib Hydrochloride` recorded 2026-10-09 (ticket 2037): the
+/// `q=Erlotinib Hydrochloride` recorded 2026-10-09: the
 /// DB00530 record names erlotinib hydrochloride on its own NDC rows. NDC rows
 /// deduplicated to first occurrences; the fieldless text-only hits removed.
 pub(crate) const ERLOTINIB_HYDROCHLORIDE_CAPTURE: &str = r#"
@@ -573,7 +572,7 @@ pub(crate) const ERLOTINIB_HYDROCHLORIDE_CAPTURE: &str = r#"
 }
 "#;
 
-/// `q=Zejula` recorded 2026-10-09 (ticket 2037): the niraparib record carries
+/// `q=Zejula` recorded 2026-10-09: the niraparib record carries
 /// the Akeega combination rows first and Zejula's own rows after them, each
 /// pairing the brand with its established name. NDC rows deduplicated to
 /// first occurrences; the fieldless second hit removed.
@@ -609,7 +608,7 @@ pub(crate) const ZEJULA_CAPTURE: &str = r#"
 
 #[test]
 fn zejula_names_the_card_for_the_drug_its_own_row_pairs() {
-    // Ticket 2037: MyChem pairs proprietaryname ZEJULA with
+    // MyChem pairs proprietaryname ZEJULA with
     // nonproprietaryname niraparib on the same rows, while the first rows on
     // the record belong to the Akeega combination. The brand card takes the
     // name its own product row carries.
@@ -625,7 +624,7 @@ fn zejula_names_the_card_for_the_drug_its_own_row_pairs() {
     );
 }
 
-/// `q=KEYTRUDA` recorded 2026-10-09 (ticket 2037): the brand names two
+/// `q=KEYTRUDA` recorded 2026-10-09: the brand names two
 /// NDC-only records — the pembrolizumab row and the Keytruda QLEX
 /// combination row. The exact brand row resolves the card.
 pub(crate) const KEYTRUDA_CAPTURE: &str = r#"
@@ -663,7 +662,7 @@ fn keytruda_keeps_the_pembrolizumab_card_name() {
     );
 }
 
-/// `q=Lonsurf` recorded 2026-10-09 (ticket 2037): both ingredient records
+/// `q=Lonsurf` recorded 2026-10-09: both ingredient records
 /// carry Lonsurf product rows, and a bare CHEBI record named "Lonsurf"
 /// also matches the brand exactly, so the exact tier holds all three.
 /// NDC rows deduplicated to first occurrences; the fieldless hit removed.
@@ -701,7 +700,7 @@ pub(crate) const LONSURF_CAPTURE: &str = r#"
 
 #[test]
 fn lonsurf_says_trifluridine_and_tipiracil_again() {
-    // Ticket 2037: the exact tier also holds a bare CHEBI record whose own
+    // The exact tier also holds a bare CHEBI record whose own
     // canonical name is the brand string "Lonsurf", and that name must not
     // win: the card takes the established name the LONSURF rows pair on the
     // identity-bearing records.
@@ -710,10 +709,12 @@ fn lonsurf_says_trifluridine_and_tipiracil_again() {
     assert_eq!(selected.len(), 3);
     let drug = merge_mychem_hits(&selected, "lonsurf");
     assert_eq!(drug.name, "trifluridine and tipiracil");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00432"));
+    // A combination card shows product-level identifiers or
+    // none, so trifluridine's DrugBank id never stands in for Lonsurf.
+    assert_eq!(drug.drugbank_id.as_deref(), None);
 }
 
-/// `q=Rybrevant` recorded 2026-10-09 (ticket 2037): the exact tier holds the
+/// `q=Rybrevant` recorded 2026-10-09: the exact tier holds the
 /// identity-bearing amivantamab record, whose DrugCentral synonyms carry the
 /// brand, beside a bare NDC product row that pairs the brand with
 /// "amivantamab-vmjw". The naked row must not rename the card that the
@@ -748,7 +749,7 @@ fn rybrevant_keeps_the_identity_records_name_over_the_naked_product_row() {
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
 }
 
-/// `q=niraparib` recorded 2026-10-10 (ticket 2043): the niraparib record
+/// `q=niraparib` recorded 2026-10-10: the niraparib record
 /// carries the Akeega combination rows first and Zejula's own rows after
 /// them. NDC rows deduplicated to first occurrences; the abiraterone
 /// record's product rows trimmed to one; the fieldless text-only hits
@@ -784,7 +785,7 @@ pub(crate) const NIRAPARIB_CAPTURE: &str = r#"
 
 #[test]
 fn niraparib_names_the_plain_ingredient_card() {
-    // Ticket 2043: the Akeega combination rows sit first on the niraparib
+    // The Akeega combination rows sit first on the niraparib
     // record, and on main their name wins the card through the
     // qualified-form rule. A combination never counts as a qualified form
     // of the requested ingredient, so the card names niraparib itself.
@@ -807,8 +808,8 @@ fn niraparib_names_the_plain_ingredient_card() {
 /// A brand whose canonical name equals the brand string, beside a naked
 /// product row that pairs the brand with a salt name: the identity-record
 /// filter on the brand pairing is the only thing keeping the card's own
-/// name (ticket 2043). Removing the filter — the third rescue-guard
-/// mutation from ticket 2043's review — renames this card "fixturebrand
+/// name. Removing the filter — the third rescue-guard
+/// mutation from the review that added it — renames this card "fixturebrand
 /// special salt" while every existing pin still passes.
 pub(crate) const CANONICAL_BRAND_BESIDE_NAKED_ROW_CAPTURE: &str = r#"
 {
@@ -848,7 +849,7 @@ fn a_canonical_name_equal_to_the_brand_never_yields_to_a_naked_row() {
 /// no NDC proprietary name and no openFDA brand hold "tagrisso", so the
 /// synonym is the only field that identifies the record for the brand query.
 /// This pin bites when DrugCentral synonyms leave `hit_all_names`, which
-/// every other test tolerated (ticket 2037).
+/// every other test tolerated.
 pub(crate) const TAGRISSO_DRUGCENTRAL_ONLY_CAPTURE: &str = r#"
 {
   "total": 1,
@@ -871,8 +872,8 @@ pub(crate) const TAGRISSO_DRUGCENTRAL_ONLY_CAPTURE: &str = r#"
 
 #[test]
 fn tagrisso_still_selects_its_record_through_drugcentral_synonyms_alone() {
-    // Ticket 2037: 2031 credits DrugCentral synonyms for the Tagrisso fix,
-    // yet no other test failed when they were dropped, because every other
+    // DrugCentral synonyms carry the brand the fetched openFDA block
+    // can lack, yet no other test failed when they were dropped, because every other
     // capture also carries the brand on an NDC proprietary name. This
     // capture holds the brand on the synonym alone, so removing the
     // synonyms from `hit_all_names` empties the selection and fails here.

@@ -88,8 +88,7 @@ fn init_tracing() {
         .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             // reqwest-retry's with_retry_log_level exists only for
             // the default strategy; a custom one logs at WARN,
-            // which pollutes every CLI error surface (ticket
-            // 1268). Downgrade it unless the operator asked.
+            // which pollutes every CLI error surface. Downgrade it unless the operator asked.
             EnvFilter::new("warn,reqwest_retry=error")
         }))
         .with_writer(std::io::stderr)
@@ -98,11 +97,11 @@ fn init_tracing() {
 }
 
 fn main() -> std::process::ExitCode {
-    // An explicit multi-thread runtime (ticket 1243): blocking threads
+    // An explicit multi-thread runtime: blocking threads
     // carry 4 MiB stacks as headroom above the XML depth cap, which is
     // the control for the recursive JATS and ClinVar walkers. The 8 MiB
     // execute stack for command futures is pinned separately in
-    // src/cli/outcome.rs (ticket 1225).
+    // src/cli/outcome.rs.
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .thread_stack_size(4 * 1024 * 1024)

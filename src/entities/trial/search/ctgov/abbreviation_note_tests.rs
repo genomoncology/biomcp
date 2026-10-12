@@ -1,4 +1,4 @@
-//! Tests for the default source's ambiguous-abbreviation note (ticket 2040).
+//! Tests for the default source's ambiguous-abbreviation note.
 
 use super::super::super::test_support::*;
 use super::*;
@@ -42,7 +42,7 @@ async fn mydisease_json_fixture(
     (base, requests, task)
 }
 
-/// Ticket 2040: the default source has no disease grounding, so
+/// The default source has no disease grounding, so
 /// `search trial -c MF` keeps running the registry's keyword search —
 /// but the page says so plainly, naming the holders `get disease` would
 /// refuse with and the myelofibrosis reading the source cannot see. The
@@ -133,7 +133,7 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
     );
 }
 
-/// Ticket 2040: the note never fires for a full-word condition, which
+/// The note never fires for a full-word condition, which
 /// adds no MyDisease request to ordinary searches.
 #[tokio::test]
 #[serial_test::serial(source_env)]
@@ -180,7 +180,7 @@ async fn default_source_skips_the_ambiguity_note_for_full_words() {
     );
 }
 
-/// Ticket 2050: a short abbreviation grounds in any letter case, so
+/// A short abbreviation grounds in any letter case, so
 /// `search trial -c mf` prints the same note `MF` prints instead of
 /// silently returning the keyword search.
 #[tokio::test]

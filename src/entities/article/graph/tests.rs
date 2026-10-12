@@ -390,7 +390,7 @@ async fn jats_extraction_seam_controls_the_blocking_parse_outcome() {
     }
 }
 
-// --- Ticket 1145: directed citation-evidence traversal ---
+// --- Directed citation-evidence traversal ---
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -917,7 +917,7 @@ async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_exp
         "expected bounded deadline error, got {error:?}"
     );
     // The bounded outcome names the provider it belongs to, never the
-    // generic placeholder (ticket 1302).
+    // generic placeholder.
     let projection = error.public_projection();
     assert_eq!(projection.source, Some("Semantic Scholar"));
     assert_eq!(
@@ -1006,7 +1006,7 @@ async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
     assert!(!requests.to_lowercase().contains("fulltext"), "{requests}");
 }
 
-// Ticket 1200: the OpenCitations confirmation phase.
+// The OpenCitations confirmation phase.
 //
 // These tests point every provider base at a loopback fixture, including
 // `BIOMCP_TEST_UNPACED_ORIGIN`, which the article asset resolver reads when it
@@ -1119,7 +1119,7 @@ async fn spawn_opencitations_fixture(
                     // The slow reply holds the connection and a timer task
                     // releases it after the delay. The old blocking wait
                     // here parked the connection task's runtime worker and
-                    // froze every deadline timer with it (ticket 2030).
+                    // froze every deadline timer with it.
                     let (release_tx, hold) = held_reply_gate();
                     tokio::spawn(async move {
                         tokio::time::sleep(delay).await;
@@ -1745,7 +1745,7 @@ async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_
     assert!(!logged.contains("opencitations:"), "{logged}");
 }
 
-// Ticket 1302: honest degradation when Semantic Scholar refuses.
+// Honest degradation when Semantic Scholar refuses.
 
 /// How the fixture answers Semantic Scholar.
 #[derive(Clone)]
@@ -1901,7 +1901,7 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
     // request, one Europe PMC resolution, one index request, all loopback.
     // The clock bound is the ticket's fail-fast pin: a refused first hop
     // answers within seconds instead of burning the command budget
-    // (ticket 1302).
+    //.
     let started = std::time::Instant::now();
     let result = crate::sources::semantic_scholar::with_test_client(
         client,
@@ -1952,7 +1952,7 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
         [
             ("semantic_scholar", "rate_limited"),
             // The citing PMID resolved through a Europe PMC search, so the
-            // row names that phase instead of claiming no request (1306).
+            // row names that phase instead of claiming no request.
             ("europe_pmc_jats", "searched_for_doi_resolution"),
             ("opencitations", "available"),
         ]
@@ -2022,7 +2022,7 @@ async fn citation_evidence_reuses_the_resolved_citing_seed_when_the_cited_seed_i
         [
             ("semantic_scholar", "rate_limited"),
             // No Europe PMC search ran: the citing side was reused and the
-            // cited side is a DOI (1306).
+            // cited side is a DOI.
             ("europe_pmc_jats", "not_requested"),
             ("opencitations", "available"),
         ]
@@ -2057,7 +2057,7 @@ async fn citation_evidence_names_a_malformed_identifier_when_the_matched_row_fai
     .unwrap_err();
 
     // The summary names the malformed row, never provider unavailability:
-    // the index answered and matched the pair (1306).
+    // the index answered and matched the pair.
     let projection = error.public_projection();
     assert_eq!(
         projection.message,

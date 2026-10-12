@@ -1,4 +1,4 @@
-//! `who sync` honest-outcome rendering (tickets 1304 and 2021).
+//! `who sync` honest-outcome rendering.
 
 use super::super::who_sync::who_sync_outcome;
 use crate::sources::who_pq::{
@@ -99,7 +99,7 @@ fn who_sync_partial_json_says_partial_with_per_file_outcomes_and_exits_nonzero()
         serde_json::from_str(&json.text).expect("who sync json should parse");
     assert_eq!(value["kind"], "data_sync");
     assert_eq!(value["source"], "who");
-    // A run that kept older files is not a synchronized source (ticket 2021).
+    // A run that kept older files is not a synchronized source.
     assert_eq!(value["status"], "partial");
     assert_eq!(value["changed"], false);
     assert_eq!(value["refreshed"], serde_json::json!([WHO_PQ_CSV_FILE]));

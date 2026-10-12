@@ -369,9 +369,9 @@ async fn nci_age_rejection_precedes_both_provider_requests() {
     assert_eq!(disease_count.load(Ordering::SeqCst), 0);
 }
 
-/// Ticket 2017: when MyDisease grounding fails, the NCI search still runs
+/// When MyDisease grounding fails, the NCI search still runs
 /// as a keyword search, and the degrade reaches the response as a page
-/// note (the 2021 pattern), not only a log line.
+/// note, not only a log line.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_keyword_degrade_note_reaches_the_search_page() {
@@ -469,7 +469,7 @@ async fn json_server(
     (base, requests, task)
 }
 
-/// Ticket 2032: `--condition MF` grounds through the same resolver as
+/// `--condition MF` grounds through the same resolver as
 /// `get disease`. When the resolver refuses the abbreviation, the NCI
 /// search returns the refusal with its named candidates and never sends
 /// the keyword request a degrade would send.
@@ -521,7 +521,7 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
         message.contains("myotonia fluctuans (MONDO:0020481)"),
         "{message}"
     );
-    // Ticket 2040: the refusal also names the myelofibrosis reading the
+    // The refusal also names the myelofibrosis reading the
     // source cannot see, while keeping the refusal itself intact.
     assert!(
         message.contains("'MF' also names myelofibrosis (MONDO:0009692)"),
@@ -537,8 +537,8 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
     );
 }
 
-/// Ticket 2032: a condition that fails to ground keeps the visible
-/// keyword degrade (the 2021 pattern); only the resolver's refusal of
+/// A condition that fails to ground keeps the visible
+/// keyword degrade; only the resolver's refusal of
 /// the input itself propagates.
 #[tokio::test]
 #[serial_test::serial(source_env)]
@@ -600,7 +600,7 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
     );
 }
 
-/// Ticket 2040: a condition over 512 bytes used to fail the whole NCI
+/// A condition over 512 bytes used to fail the whole NCI
 /// search with "Query is too long" before any provider request. It now
 /// truncates to the longest prefix the disease lookup accepts, keeps
 /// searching, and says so in the page note.

@@ -637,7 +637,7 @@ pub struct AnnotationCount {
     /// The name PubTator3 assigns the identifier's registry concept, for
     /// example `Lung Neoplasms` beside `MESH:D008175`. A disease link opens
     /// the named disease only when a crosswalk hit holds this exact name
-    /// (ticket 2047); absent when the mention carries no identifier or the
+    ///; absent when the mention carries no identifier or the
     /// row is not a disease.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

@@ -515,8 +515,7 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
         top_gene_sources,
     );
     // Seeded DisGeNET rows (the MyDisease hit's embedded block) contribute
-    // to the associated-genes provenance when they are present (ticket
-    // 1256); otherwise the row keeps its existing sources.
+    // to the associated-genes provenance when they are present; otherwise the row keeps its existing sources.
     let mut associated_gene_sources = vec!["Monarch Initiative", "Open Targets"];
     if disease.gene_associations.iter().any(|row| {
         row.source
@@ -1064,7 +1063,7 @@ mod tests {
     #[test]
     fn drug_interaction_note_covers_the_zero_rows_wordings() {
         // The covered-zero-rows arm must read as coverage information,
-        // not a clean bill (ticket 1254).
+        // not a clean bill.
         let mut drug: crate::entities::drug::Drug =
             serde_json::from_value(serde_json::json!({"name": "dabigatran"})).expect("drug");
         drug.interaction_coverage_status = Some(

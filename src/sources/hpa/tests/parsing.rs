@@ -74,7 +74,7 @@ fn decode_protein_data_xml_accepts_xml_and_rejects_html() {
 #[test]
 fn parse_gene_hpa_rejects_a_nesting_bomb() {
     // External HPA XML clears the shared pre-parse depth scan before
-    // roxmltree's per-open-tag recursion runs (ticket 1255); the
+    // roxmltree's per-open-tag recursion runs; the
     // rejection surfaces as the site's Api error naming the limit.
     let bomb = format!("<entry>{}", "<tissueExpression>".repeat(100));
     let err = parse_gene_hpa(&bomb).expect_err("depth bomb rejected");

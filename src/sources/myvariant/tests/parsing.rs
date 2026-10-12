@@ -123,7 +123,7 @@ fn snpeff_interaction_rows_are_skipped_and_transcript_rows_kept() {
     // variant) beside the transcript rows. The interaction rows are read
     // and dropped without counting against the retained-annotation bound,
     // so the transcript rows survive instead of the whole list dying for
-    // its length (ticket 2042).
+    // its length.
     let mut annotations = (0..48)
         .map(|index| {
             json!({

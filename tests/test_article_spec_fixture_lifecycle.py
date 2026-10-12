@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _wait_until(predicate, timeout: float = 10.0) -> None:
-    # Delegates to the shared, scaled, marked helper (ticket 1269):
+    # Delegates to the shared, scaled, marked helper:
     # one wait implementation instead of per-file duplicates.
     from support import wait_until
 
@@ -238,7 +238,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    # Ticket 1300 added the drug label sections spec page as one more routine
+    # Added the drug label sections spec page as one more routine
     # mustmatch invocation over the provider contract fixture.
     assert len(invocations) == (3 if mode == "spec-contracts" else 33)
     article_args, article_base, article_origin = invocations[0]

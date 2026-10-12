@@ -18,7 +18,7 @@ fn fixture_reply(request: &str, europepmc_hold: Option<&HeldReplyGate>) -> TestH
     let query = target.split_once('?').map(|(_, rest)| rest).unwrap_or("");
     // Route on the bare path: eutils targets always carry the query string,
     // so matching `ends_with("/esearch.fcgi")` on the raw target never
-    // matched and the PubMed leg read a 404 (ticket 2023).
+    // matched and the PubMed leg read a 404.
     let path = target.split('?').next().unwrap_or(target);
     // Distinct fixture keywords route one server across the deadline
     // scenarios: "deadline silence" holds or fails every source, and
@@ -38,7 +38,7 @@ fn fixture_reply(request: &str, europepmc_hold: Option<&HeldReplyGate>) -> TestH
         }
         // Single-source deadline case: the first cursor page answers fast
         // with distinct rows; every later cursor page is held past the
-        // deadline (ticket 1298 moved the wire from page= to cursorMark=).
+        // deadline.
         let first_cursor = !query.contains("cursorMark=")
             || query
                 .split('&')
@@ -417,8 +417,8 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
     // Hold the cache epoch lock so shared-client construction cannot take
-    // it; the invocation must still exit at its deadline (ticket 1299).
-    // Process-state independence (ticket 2023): the shared client is built
+    // it; the invocation must still exit at its deadline.
+    // Process-state independence: the shared client is built
     // once per process, so the test first builds it and then clears the
     // slot. Without that reset the test passes only when it runs before
     // every other shared-client test — nextest gives each test a fresh
@@ -492,7 +492,7 @@ fn deadline_recognition_covers_the_io_cancellation_shape() {
 
 #[tokio::test(start_paused = true)]
 async fn held_fixture_replies_self_release_at_their_own_bound() {
-    // Ticket 2045: a held reply modeled a hung source by parking on an
+    // A held reply modeled a hung source by parking on an
     // async gate that no test-owned timer bounded, so a bare `cargo test`
     // run that lost its test (or its sender) waited on the reply forever;
     // nextest's slow-timeout covered only itself. The hold now carries its
@@ -524,7 +524,7 @@ async fn held_fixture_replies_self_release_at_their_own_bound() {
 async fn deep_offset_is_refused_on_every_sort_before_any_request() {
     // The relevance arms already refused --offset + --limit above the fetch
     // window; the date and citations arms walked provider pages instead and
-    // answered `has_more: true` on an empty page (ticket 2023).
+    // answered `has_more: true` on an empty page.
     let requests = Arc::new(AtomicUsize::new(0));
     let counter = Arc::clone(&requests);
     let fixture = TestHttpFixture::spawn(move |request| {
@@ -566,7 +566,7 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
         async {
             // PubTator fails fast and non-retryably (400) while Europe PMC is held
             // past the deadline: the terminal error must still name the deadline,
-            // not the fast failure (ticket 2023).
+            // not the fast failure.
             let (_release_tx, hold) = held_reply_gate();
             let fixture = TestHttpFixture::spawn(move |request| {
                 let target = request
@@ -624,7 +624,7 @@ async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
 fn both_primaries_failing_prefers_a_deadline_error_over_the_fast_failure() {
     // When both primaries fail, the federated terminal error prefers a
     // deadline error from either primary over PubTator's fast failure
-    // (ticket 2023).
+    //.
     let fast_failure = BioMcpError::Api {
         api: "pubtator".into(),
         message: "HTTP 400".into(),

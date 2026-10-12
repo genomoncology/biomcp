@@ -362,7 +362,7 @@ def test_source_children_never_inherit_stdio() -> None:
 
 
 def test_guard_catches_the_icacls_regression_shape() -> None:
-    # The exact pre-1246 shape: a spawned icacls.exe whose streams are
+    # The exact original shape: a spawned icacls.exe whose streams are
     # all unset, so the localized success line lands in the MCP stream.
     regression = (
         'let status = std::process::Command::new("icacls.exe")\n'
@@ -542,7 +542,7 @@ def test_guard_scans_production_code_after_a_semicolon_test_module() -> None:
 
 def test_guard_passes_safe_shapes() -> None:
     for safe in (
-        # Discarded streams are the 1246 fix.
+        # Discarded streams are the fix.
         'Command::new("icacls.exe").arg(path)\n'
         "    .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())\n"
         "    .status()?;\n",
@@ -551,7 +551,7 @@ def test_guard_passes_safe_shapes() -> None:
         "cmd.kill_on_drop(true).stdin(Stdio::null())\n"
         "    .stdout(Stdio::piped()).stderr(Stdio::piped());\n",
         # .output() with explicit non-inheriting setters: the
-        # exemption is closed (1264) — a bare .output() with an
+        # exemption is closed — a bare .output() with an
         # .stderr(Stdio::inherit()) before it still inherits.
         "let smoke = std::process::Command::new(&stage_path)\n"
         '    .arg("version")\n'

@@ -131,7 +131,7 @@ impl OpenFdaClient {
     }
 
     /// The plain-product escalation for the drug card's label choice: an
-    /// exact-field match on the card's ingredient name (ticket 2043).
+    /// exact-field match on the card's ingredient name.
     ///
     /// openFDA sorts `drug/label.json` by the caller's `sort`, so a page of
     /// newest-first records can hold five biosimilars while the plain

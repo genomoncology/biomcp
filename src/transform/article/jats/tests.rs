@@ -434,7 +434,7 @@ fn entity_bearing_jats_is_not_rendered_through_fallback() {
     assert!(classify_jats_document(xml).is_err());
 }
 
-// --- Ticket 1145: citation-evidence extractor ---
+// --- Citation-evidence extractor ---
 mod citation_evidence;
 
 #[test]
@@ -501,7 +501,7 @@ fn extract_text_from_jats_keeps_words_wrapped_in_word_joining_elements_whole() {
     // Small caps, styled content, monospace, and footnote markers wrap
     // fragments of one word (`T<sc>able</sc>`, `PD<sc>L1</sc>`); the
     // boundary space that separates surname/given-names runs must not split
-    // these words (ticket 2023).
+    // these words.
     let cases: [(&str, &str); 6] = [
         (
             r#"<p>Values from T<sc>able</sc> 1.</p>"#,

@@ -16,7 +16,7 @@ const SEMANTIC_SCHOLAR_DOCS_URL: &str = "https://www.semanticscholar.org/product
 /// The refusal shapes this client emits for its own upstream answers. Both
 /// construction sites start their messages with exactly this text, so the
 /// degradation consumers can classify a refusal without echoing upstream
-/// bodies (ticket 1302).
+/// bodies.
 pub(crate) const SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX: &str =
     "Rate limited by Semantic Scholar. Set S2_API_KEY for a dedicated rate limit.";
 pub(crate) const SEMANTIC_SCHOLAR_UNAVAILABLE_PREFIX: &str =
@@ -269,7 +269,7 @@ pub(crate) enum SemanticScholarRefusal {
 
 /// Classifies an error from this client as a Semantic Scholar refusal. The
 /// message prefixes this module itself writes are the classification key, so
-/// no upstream body text reaches the decision (ticket 1302).
+/// no upstream body text reaches the decision.
 pub(crate) fn semantic_scholar_refusal(error: &BioMcpError) -> Option<SemanticScholarRefusal> {
     let mut current = error;
     loop {

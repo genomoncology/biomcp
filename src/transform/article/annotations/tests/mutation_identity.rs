@@ -443,7 +443,7 @@ fn spelled_gene_mentions_pick_the_most_mentioned_symbol_shaped_text() {
     // "K-ras" is the most-mentioned text, but the row must not fall back to
     // rs121913529, which opens G12D. The most-mentioned text that passes the
     // symbol check heads the form, so the row names its own allele. On the
-    // pre-2034 rule this test fails: the most-mentioned text "K-ras" fails
+    // earlier rule this test fails: the most-mentioned text "K-ras" fails
     // the symbol check and the row carries the rsID.
     let ann = extract_annotations(&doc, false).expect("annotations should exist");
     assert_eq!(

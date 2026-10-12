@@ -44,7 +44,7 @@ fn plans_reject_empty_identifiers() {
     ));
 }
 
-// Ticket 1214 acceptance 1: the cell line plans target the documented endpoints.
+// The cell line plans target the documented endpoints.
 
 #[test]
 fn cell_line_plan_joins_on_the_cellosaurus_accession() {

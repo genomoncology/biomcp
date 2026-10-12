@@ -372,7 +372,7 @@ pub(super) async fn search_federated_page(
     let federated = acquire_federated_article_rows(filters, fetch_count).await?;
     // Both primaries failing is fatal only when nothing else answered: any
     // PubMed/Semantic Scholar/LitSense2 rows that did arrive are returned as
-    // a partial page (ticket 1293).
+    // a partial page.
     if federated.rows.is_empty()
         && let Some(error) = federated.primary_error
     {
@@ -529,7 +529,7 @@ fn collect_federated_article_rows(
             // A fast non-retryable failure must not hide the deadline: when
             // either primary died on the invocation deadline, that error
             // explains the invocation and carries the deadline translation
-            // through `search_page` (ticket 2023).
+            // through `search_page`.
             let primary_error = match (error, europe_error) {
                 (Some(err), _) if is_search_deadline_error(&err) => Some(err),
                 (_, Some(err)) if is_search_deadline_error(&err) => Some(err),
@@ -899,7 +899,7 @@ async fn search_page_dispatch(
     // Every sort and plan shares one window: the date and citations arms
     // walk provider pages to serve a deep offset, so an unbounded request
     // burns up to MAX_PAGE_FETCHES pages per source and still reports
-    // `has_more` (ticket 2023).
+    // `has_more`.
     if limit.saturating_add(offset) > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
             "--offset + --limit must be <= {MAX_FEDERATED_FETCH_RESULTS} for article search"

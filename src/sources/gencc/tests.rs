@@ -566,7 +566,7 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
 fn generation_cleanup_prunes_a_wrong_mode_generation_directory() {
     // A 0755 generation is a deliberate mismatch, not a transient
     // failure: cleanup prunes it instead of warning on every publish
-    // (ticket 1254, from the 1239 follow-up).
+    //.
     use super::store::{PublishMetadata, Store};
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");

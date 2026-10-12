@@ -16,15 +16,14 @@ use super::{NormalizedTrialSearch, nci_biomarker_value, normalized_facility_filt
 /// The NCI condition filter plus the note to surface when grounding
 /// degraded from an NCI concept ID to a plain keyword search. The note
 /// reaches the response (`meta.notes` and the markdown footer), not only a
-/// log line — the ticket 2021 pattern for visible degrades.
+/// log line — the visible-degrade pattern.
 struct NciDiseaseGrounding {
     filter: NciDiseaseFilter,
     degrade_note: Option<String>,
 }
 
 /// MyDisease's query endpoint refuses inputs over 512 bytes, and that
-/// refusal used to fail the whole NCI search (ticket 2040: conditions
-/// over 512 bytes failed outright). The condition now truncates to the
+/// refusal used to fail the whole NCI search. The condition now truncates to the
 /// longest prefix the lookup accepts, with a note keeping the
 /// truncation visible.
 const NCI_CONDITION_GROUNDING_LIMIT_BYTES: usize = 512;
@@ -65,10 +64,10 @@ async fn resolve_nci_disease_filter_with_client(
 
     let mut grounding = match resolve_disease_hit_by_name(client, condition).await {
         Ok(hit) => Some(nci_disease_grounding_from_hit(condition, hit)),
-        // The 2017 refusal rejects the condition itself; a keyword search
+        // The exact-resolution refusal rejects the condition itself; a keyword search
         // for the raw token would mix the same holders' trials behind a
         // note, so trial search returns the refusal and its choices
-        // instead of degrading (ticket 2032).
+        // instead of degrading.
         Err(err @ BioMcpError::InvalidArgument(_)) => return Err(err),
         Err(BioMcpError::NotFound { .. }) => Some(NciDiseaseGrounding {
             filter: NciDiseaseFilter::Keyword(condition.to_string()),

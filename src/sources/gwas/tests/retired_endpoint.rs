@@ -1,4 +1,4 @@
-//! The retired legacy by-rsID endpoint (tickets 2047 and 2050): upstream
+//! The retired legacy by-rsID endpoint: upstream
 //! retired the GWAS Catalog REST API in 2026-10 with HTTP 410, so a live
 //! `get variant <rsid> all` hard-failed on the dead source. The reader
 //! degrades only the retired class (410) with the honest gap note instead
@@ -98,8 +98,8 @@ async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
     );
 }
 
-/// A 404 keeps meaning no associations for the rsID (ticket 2050): before
-/// 2047's landing it always did, and the retired-endpoint degrade must not
+/// A 404 keeps meaning no associations for the rsID: it always did,
+/// and the retired-endpoint degrade must not
 /// swallow it, because a missing rsID is an answer, not a retired route.
 #[tokio::test]
 #[serial_test::serial(source_env)]

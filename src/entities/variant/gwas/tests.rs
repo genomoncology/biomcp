@@ -211,3 +211,89 @@ fn collect_supporting_pmids_dedupes_case_insensitively() {
         vec!["12345".to_string(), "PMID-ABC".to_string()]
     );
 }
+
+/// "retired" travels as a typed error from the source reader
+/// through `add_gwas_section` to the rendered card, and the rendered GWAS
+/// section offers no retry because no retry reaches a retired endpoint.
+/// Forcing the permanent flag off at the degrade site renders the
+/// transient wording with a retry command and fails this test.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_retired_endpoint_degrades_the_rendered_gwas_section_with_no_retry() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    let retired_body = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/gwas/associations_retired_410_body.txt"
+    ));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind retired GWAS fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let server = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let Ok(len) = stream.read(&mut request).await else {
+                    return;
+                };
+                let _ = &request[..len];
+                let response = format!(
+                    "HTTP/1.1 410 Gone\r\nContent-Type: text/plain\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{retired_body}",
+                    retired_body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            });
+        }
+    });
+    let mut env = crate::test_support::FixtureEnv::new();
+    env.set("BIOMCP_GWAS_BASE", &base);
+
+    let mut variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.100A>T",
+        "gene": "TST",
+        "rsid": "rs121913529"
+    }))
+    .expect("variant fixture");
+    super::add_gwas_section(&mut variant, "rs121913529")
+        .await
+        .expect("the retired endpoint degrades the section, never fails the card");
+    drop(env);
+    server.abort();
+
+    let rendered = crate::render::markdown::variant_markdown(&variant, &["all".to_string()])
+        .expect("rendered variant card");
+    assert!(
+        rendered.contains("GWAS Catalog by-rsID endpoint retired upstream"),
+        "the honest gap note reached the rendered card: {rendered}"
+    );
+    assert!(
+        !rendered.contains("Retry:"),
+        "a retired endpoint offers no retry: {rendered}"
+    );
+    let outcome = variant.section_outcomes.get("gwas").expect("gwas outcome");
+    assert!(
+        outcome.permanent(),
+        "the typed retired error marks the degrade permanent"
+    );
+}
+
+/// The retirement is a typed fact, not a sentence comparison: the error class carries it, and the reason text lives once.
+#[test]
+fn the_retired_error_class_is_the_one_fact_of_retirement() {
+    let retired = BioMcpError::SourceEndpointRetired {
+        source_name: "GWAS Catalog".into(),
+        reason: crate::sources::gwas::RETIRED_ENDPOINT_REASON.into(),
+        suggestion: String::new(),
+    };
+    assert!(crate::sources::gwas::is_retired_endpoint_error(&retired));
+    let transient = BioMcpError::SourceUnavailable {
+        source_name: "GWAS Catalog".into(),
+        reason: crate::sources::gwas::RETIRED_ENDPOINT_REASON.into(),
+        suggestion: String::new(),
+    };
+    assert!(
+        !crate::sources::gwas::is_retired_endpoint_error(&transient),
+        "the same sentence in a transient error is not retirement"
+    );
+}

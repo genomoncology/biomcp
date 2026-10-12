@@ -74,7 +74,7 @@ fn semantic_scholar_unavailable_outcome(
 
 /// One backend's search page plus the failure, if any, that truncated it.
 /// A paginating backend that already delivered rows must not discard them
-/// when a later page fails mid-flight (ticket 1299): the rows stay and the
+/// when a later page fails mid-flight: the rows stay and the
 /// held source is named degraded, as the federated merge already does.
 pub(super) struct PartialSearchPage {
     pub page: SearchPage<ArticleSearchResult>,
@@ -112,7 +112,7 @@ fn truncated_source_status(source: ArticleSource, error: &BioMcpError) -> Articl
 
 /// Construct a provider client honoring the invocation deadline when one
 /// is active, so cache construction never blocks past the deadline on the
-/// epoch lock (ticket 1299). Without a deadline this is the plain path.
+/// epoch lock. Without a deadline this is the plain path.
 async fn pubmed_client_for_current_deadline() -> Result<PubMedClient, BioMcpError> {
     match crate::sources::current_variant_article_deadline() {
         Some(deadline) => PubMedClient::new_with_deadline(&deadline).await,
@@ -238,7 +238,7 @@ pub(super) async fn search_pubmed_page_with_context(
         {
             Ok(response) => response,
             // Rows already accumulated survive a mid-flight failure; the
-            // held source is named degraded (ticket 1299).
+            // held source is named degraded.
             Err(error) if !out.is_empty() => {
                 degradation = Some(truncated_source_status(ArticleSource::PubMed, &error));
                 break;
@@ -467,7 +467,7 @@ pub(super) async fn search_europepmc_page_with_context(
         {
             Ok(outcome) => outcome,
             // Fetched rows survive a mid-flight page failure; the held
-            // source is named degraded (ticket 1299).
+            // source is named degraded.
             Err(error) if !out.is_empty() => {
                 degradation = Some(truncated_source_status(ArticleSource::EuropePmc, &error));
                 break;
@@ -648,7 +648,7 @@ pub(super) async fn search_pubtator_page_with_context(
         {
             Ok(outcome) => outcome,
             // Fetched rows survive a mid-flight page failure; the held
-            // source is named degraded (ticket 1299).
+            // source is named degraded.
             Err(error) if !out.is_empty() => {
                 degradation = Some(truncated_source_status(ArticleSource::PubTator, &error));
                 break;

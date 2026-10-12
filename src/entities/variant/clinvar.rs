@@ -456,7 +456,7 @@ mod tests {
 
     #[test]
     fn day_shaped_gate_lives_in_utils_and_dates_it_prints_come_from_the_shared_rule() {
-        // The duplicate inline gate is gone (2038 finding 7, 2035 #5): the
+        // The duplicate inline gate is gone: the
         // fallback age label reads crate::utils::date::is_day_shaped, whose
         // own tests pin the shape and calendar rules. This test pins the
         // consumer: a provider date that is day-shaped in shape but names

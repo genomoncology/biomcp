@@ -133,7 +133,7 @@ pub struct Drug {
     /// negative: set when the WHO Prequalification bundle could not be
     /// read, so Markdown, JSON and MCP callers read the same reason. The
     /// sentence never carries a local data path; those stay terminal-only
-    /// (ticket 2038 finding 7, 2035 #6).
+    ///.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub who_note: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -603,7 +603,7 @@ pub enum DrugSearchPageWithRegion {
         /// Why the WHO section is empty instead of a true negative: set when
         /// the region-less search degraded after a WHO Prequalification sync
         /// failure, so Markdown, JSON and MCP callers all read the same
-        /// reason (ticket 2021).
+        /// reason.
         who_note: Option<String>,
     },
 }
@@ -671,8 +671,7 @@ fn build_who_identity(requested_name: &str, drug: &Drug) -> WhoPqIdentity {
 /// Path-free degradation sentence shared by the drug search and the drug
 /// card when the WHO Prequalification bundle cannot be read: it names the
 /// source and the reason, and points at `biomcp who sync` and
-/// BIOMCP_WHO_DIR. Local data paths stay terminal-only (ticket 2038
-/// finding 7, 2035 #6), so no surface this note reaches may carry one;
+/// BIOMCP_WHO_DIR. Local data paths stay terminal-only, so no surface this note reaches may carry one;
 /// `surface` reads "search" or "card" so each output names itself.
 pub(crate) fn who_pq_degradation_note(err: &BioMcpError, surface: &str) -> String {
     format!(

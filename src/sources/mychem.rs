@@ -186,7 +186,7 @@ pub struct MyChemChemblDrugMechanism {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemDrugCentral {
-    /// Brand and alias names DrugCentral lists for the drug (ticket 2031):
+    /// Brand and alias names DrugCentral lists for the drug:
     /// live records carry brands such as "tagrisso" here when no fetched
     /// openFDA block does.
     #[serde(default, deserialize_with = "de_vec_or_single")]
@@ -243,7 +243,7 @@ pub enum MyChemNdcField {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemNdc {
     pub nonproprietaryname: Option<String>,
-    /// The product's brand name (ticket 2031): brands live here on the NDC
+    /// The product's brand name: brands live here on the NDC
     /// product rows, not on the ingredient record's name fields.
     pub proprietaryname: Option<String>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
