@@ -229,3 +229,13 @@ GWAS and annotation lanes) stayed green through the sweep.
   refuse on main too). The keeps were verified against main's binary, not
   the 2050 recording.
 - Tarceva's generic (salt) label remains deferred as filed.
+
+## What the build taught us
+
+- A label lookup keyed only on the card name loses the resolved ingredient: 5-fluorouracil names a card the label index never held, while fluorouracil served. Follow the ingredient.
+- A brand whose labels mostly name one ingredient resolves to that ingredient by word-set votes, not by string matching; Motrin's IB labels outvote the PM combination.
+- Two timeout bounds on one refusal path spend two budgets: one shared deadline between the entity rescue and the CLI fallback halves the honest-refusal cost.
+- Retirement carried in reason text splits one fact across two sites; a typed error keeps it whole.
+- A test that reads the machine's own cache tests the machine; defaulting the cache to a per-process temp folder in test builds ends that class of flake.
+- A single-line grep cannot verify a comment sweep: ticket references survive as continuation-line splits and bare numbers. Verify with a shape-aware check and record its output.
+
