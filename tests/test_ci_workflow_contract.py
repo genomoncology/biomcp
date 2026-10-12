@@ -230,7 +230,6 @@ def test_nextest_installs_through_the_checksummed_script() -> None:
 # they never run real cargo, so the docs-only lane may run them.
 CARGO_FAKE_FIXTURE_MODULES = {
     "test_lint.py",
-    "test_pre_commit_reject_march_artifacts.py",  # names a scratch cargo.log; runs no cargo
 }
 
 CARGO_DRIVER_MODULES = {

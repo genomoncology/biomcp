@@ -90,10 +90,8 @@ The local pre-commit hook is withdrawn: never install it, and never run
 Verify before you push by running `make lint` and the lanes your change
 touches on the build machine; CI stays the merge gate. The tracked
 `scripts/pre-commit` entrypoint remains the record of the checks the
-repository owns — the credential and forbidden-artifact scans, with the
-`.march/code-review-log.md` allowance in
-`scripts/pre-commit-reject-march-artifacts.sh` (staged deletions stay
-permitted), and the `cargo fmt --check` plus
+repository owns — the credential and forbidden-artifact scans, and the
+`cargo fmt --check` plus
 `cargo clippy --no-default-features --lib --tests -- -D warnings` forms
 the build machine runs.
 

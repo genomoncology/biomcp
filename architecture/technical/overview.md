@@ -343,22 +343,6 @@ BioMCP has six distinct verification and operator-inspection surfaces.
 - The grounding implementation surfaces for this split are `Makefile`,
   `.github/workflows/ci.yml`, and `.github/workflows/contracts.yml`.
 
-#### March Validation Profiles
-
-The standard repo gates are `make lint`, `make test`, and `make spec`.
-March validation profiles are retired; the repository no longer keeps tracked
-profile files under `.march/` for routine proof routing.
-
-The exhaustive tracked and staged `.march/*` allowlist is
-`.march/code-review-log.md`. `.march/` remains ignored by `.gitignore`;
-allowlisted tracked files are rare explicit index exceptions, not ignore-rule
-negations. The Python cleanup contract rejects every other tracked `.march/*`
-path, and the pre-commit helper rejects staged non-deletion `.march/*` paths
-outside the same allowlist.
-
-Live public-upstream proof moved to the explicit opt-in `make verify` operator
-lane, with `make release-live-smoke` kept as an alias.
-
 ### 2. Spec Suite (`spec/`)
 
 BDD executable documentation written as `mustmatch` spec files. The suite

@@ -947,8 +947,8 @@ make spec SPEC_PROFILE=release SPEC_BIN='
 
 ## Repository Make Check Is Not A Public Target
 
-BioMCP should not keep a compatibility `check` target now that March validates by
-make-target convention. Operators should use the standard gates directly.
+BioMCP should not keep a compatibility `check` target. Operators use the
+standard gates directly.
 
 ```bash
 awk '/^check:/{print}' ../../Makefile | mustmatch not like "check:"
@@ -957,28 +957,13 @@ awk '/^check:/{print}' ../../Makefile | mustmatch not like "check:"
 ## Root Agent Guide Declares The Contract
 
 A dispatched agent starts at the repository root. The root guide must declare
-the executable contract path, the three gates, and the hybrid Rust/Python skill
-rail without requiring the agent to infer them from stale docs.
+the executable contract path, the targeted-test command, and the three gates
+without requiring the agent to infer them from stale docs.
 
 ```bash
-cat ../../AGENTS.md 2>/dev/null | mustmatch like "spec/*.md
-make lint
-make test
-make spec
-rust-standards
-python-standards
-cli-design
-mustmatch
-testing-mindset"
-```
-
-## Runtime Artifacts Stay Ignored
-
-March runtime state belongs outside git. The ignore rules should keep the local
-`.march-runtime/` tree from appearing as a trackable repository path.
-
-```bash
-cat ../../.gitignore | mustmatch like ".march-runtime/"
+cat ../../AGENTS.md 2>/dev/null | mustmatch like "mustmatch executable docs at"
+cat ../../AGENTS.md 2>/dev/null | mustmatch like "cargo nextest run --no-default-features -E 'test(...)'"
+cat ../../AGENTS.md 2>/dev/null | mustmatch like 'run `make lint`, `make test` and `make spec` once on the final'
 ```
 
 ## Public Streamable HTTP Demo Keeps The BRAF Workflow

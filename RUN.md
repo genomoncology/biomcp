@@ -110,11 +110,11 @@ make verify             # opt-in live public-upstream confidence
 make test-contracts     # rerun just Python/docs contract lane
 ```
 
-The installed pre-commit hook is the fast local gate. It should run
-`scripts/pre-commit-reject-march-artifacts.sh` before `cargo fmt --check` and
-`cargo clippy --no-default-features --lib --tests -- -D warnings`. The March helper rejects staged
-non-deletion `.march/*` paths outside the exhaustive allowlist:
-`.march/code-review-log.md`. The hook does not run `cargo nextest run`,
+The local pre-commit hook is withdrawn: never install it. The tracked
+`scripts/pre-commit` entrypoint is the record of the checks the repository
+owns — the credential and forbidden-artifact scans, and the `cargo fmt --check`
+plus `cargo clippy --no-default-features --lib --tests -- -D warnings` forms
+the build machine runs. The hook does not run `cargo nextest run`,
 `make lint`, `make test`, `make spec`,
 `make spec-pr`, `make release-gate`, or `make test-contracts`.
 
