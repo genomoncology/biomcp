@@ -52,7 +52,7 @@
 
 ### Internal
 - The release guards stop the rehearsal repository from publishing: the wheel upload and the Homebrew push run only in the production repository, the container image and its source label follow the repository running the workflow, and the changelog gate reads a bullet's closing ticket group wherever punctuation trails it. (2049)
-- The 0.9.2 tickets read as written, with no wrapped or hand-normalized text, and the review records come from the ticket tool. (2051)
+- The 0.9.2 verdicts are recorded through the ticket tool's own review line, the `Reviews:` line the tool writes on a landed ticket. (2051)
 - A held test reply that nothing releases now ends on its own at a bound above every real test wait, so a run that loses its caller fails at a named test instead of sitting forever. (2045)
 - The release workflow's smoke legs now compare the printed version with the tag exactly, the workflow lint refuses duplicate option keys and variables a container script never receives, and the changelog gate covers every landing shape and stays inside the tag's own release line. (2046)
 - Records written by the ticket tool now pass the repository's review contract unchanged, and every landed ticket closes through the tool that recorded it. (2048)
