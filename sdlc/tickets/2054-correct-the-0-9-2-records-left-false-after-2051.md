@@ -21,3 +21,7 @@ Filed 2026-10-11 from the independent review of main at `b039ac3e7`. Trimmed 202
 - Changes: answer the open ask with `pm answer`; release the 16 reservations, or let pm's own sweep release them if that lands first; delete the leftovers above once nothing needs them.
 - Proof: `pm inbox` and `pm daily` show no open ask and no abandoned reservation.
 - Defers: nothing.
+
+## Amendment, 2026-10-12
+
+pm now checks ticket and review formats itself, so BioMCP's own copy goes. Delete the review-verdict checks in `tests/test_sdlc_review_status_contract.py` and keep its merge-conflict-marker tests in a file of their own. The mailroom ask is answered, so the first Changes item is done. Proof adds: `pm lint` reports no ticket-format findings, and no test under `tests/` restates pm's review-verdict rules.

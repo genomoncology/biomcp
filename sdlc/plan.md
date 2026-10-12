@@ -1,10 +1,10 @@
 # BioMCP plan
 
-This file holds the 1.0 destination, the order of 1.0 work, and each milestone's exit. It never says what is done. Read status from `pm daily`, `pm next`, `pm item` and `pm inbox`, filtered with `--milestone 1.0`.
+This file holds the 1.0 destination, the order of work, and each milestone's exit. It never says what is done. Read status from `pm daily`, `pm next`, `pm item` and `pm inbox`.
 
 Rulings: [decisions](decisions/).
 
-**Scope.** This plan covers the 1.0 line. The 0.9 release line on `main` is driven by a separate lane with its own order, and nothing here sets its priorities.
+**Scope.** This plan covers the 0.9.2 release on `main` and the 1.0 line. The 0.9.2 release comes first. Its work lands on `main` only and never touches the 1.0 branch.
 
 ## Outcome
 
@@ -38,12 +38,14 @@ Exit: every 1.0 ticket lives on `main` with its milestone, a check refuses a tic
 
 ## Order
 
-Open 1.0 tickets only, in the order I want them taken. Status comes from pm, never from this list.
+Open tickets in the order I want them taken. Status comes from pm, never from this list.
 
+- 2055
+- 2054
 - 2041
 - 2006
 - 2005
 - 2003
 - 2004
 
-2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
+2055 and 2054 finish the 0.9.2 release: 2055 before the tag, 2054 after it. 0.9.2 exits when the tag is published and the release checks pass on it. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
