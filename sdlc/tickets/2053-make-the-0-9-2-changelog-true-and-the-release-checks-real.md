@@ -1,6 +1,6 @@
 # 2053 — Make the 0.9.2 changelog true and the release checks real
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
