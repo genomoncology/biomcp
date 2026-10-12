@@ -1,6 +1,6 @@
 # 2057 — Give 2055 its changelog bullet
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
