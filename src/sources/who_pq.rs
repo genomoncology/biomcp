@@ -45,7 +45,7 @@ const WHO_VACCINES_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
 // "Applicant" (issue #288). Validation compares case-insensitively on
 // trimmed header text, and the vaccines export's first header cell carries
 // a trailing space inside the quotes. Columns the exports dropped or
-// renamed stay readable when a pre-1304 cache still carries them, so a
+// renamed stay readable when an older cache still carries them, so a
 // fresh-enough local cache keeps parsing after the upgrade (review fold).
 const REQUIRED_HEADERS: &[&str] = &[
     "WHO REFERENCE NUMBER",
@@ -68,7 +68,7 @@ const API_REQUIRED_HEADERS: &[&str] = &[
 ];
 
 // The API export renamed its applicant column to "Applicant"; caches the
-// pre-1304 binary downloaded carry "Applicant Organization", because the
+// older binary downloaded carry "Applicant Organization", because the
 // old validator never accepted the renamed export. Either spelling
 // validates, and the row read takes whichever is present.
 const API_APPLICANT_HEADERS: &[&str] = &["APPLICANT", "APPLICANT ORGANIZATION"];
@@ -101,7 +101,7 @@ pub(crate) const WHO_PQ_SYNC_FAILURE_REASON_PREFIX: &str =
 /// Recovery sentence shared by the sync failure error and its public
 /// projection, so every surface states one spelling. `who
 /// sync` itself just failed, so the sentence names network access and the
-/// manual preseed path instead of the command that failed (1304
+/// manual preseed path instead of the command that failed (a
 /// post-landing review finding 2). The sentence names the resolved data
 /// directory so the preseed has a destination, as `who_preseed_suggestion`
 /// does (second review finding 17).
@@ -116,7 +116,7 @@ pub(crate) fn who_pq_sync_failure_recovery(root: &Path) -> String {
 /// and MCP callers — which never carry a local data path: the resolved
 /// data directory stays terminal-only.
 /// Like the terminal sentence it never tells the caller to run the
-/// command that just failed (1304 post-landing review finding 2).
+/// command that just failed (a post-landing review finding).
 pub(crate) const WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY: &str = "Retry with network access or set BIOMCP_WHO_DIR to a directory holding the three WHO Prequalification CSV exports.";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

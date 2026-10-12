@@ -64,7 +64,7 @@ async fn resolve_nci_disease_filter_with_client(
 
     let mut grounding = match resolve_disease_hit_by_name(client, condition).await {
         Ok(hit) => Some(nci_disease_grounding_from_hit(condition, hit)),
-        // The 2017 refusal rejects the condition itself; a keyword search
+        // The exact-resolution refusal rejects the condition itself; a keyword search
         // for the raw token would mix the same holders' trials behind a
         // note, so trial search returns the refusal and its choices
         // instead of degrading.

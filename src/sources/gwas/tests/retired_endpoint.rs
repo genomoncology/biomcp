@@ -98,8 +98,8 @@ async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
     );
 }
 
-/// A 404 keeps meaning no associations for the rsID: before
-/// 2047's landing it always did, and the retired-endpoint degrade must not
+/// A 404 keeps meaning no associations for the rsID: it always did,
+/// and the retired-endpoint degrade must not
 /// swallow it, because a missing rsID is an answer, not a retired route.
 #[tokio::test]
 #[serial_test::serial(source_env)]

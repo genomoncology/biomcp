@@ -1,5 +1,5 @@
-//! Recorded-reply tests for the product-name and sparse-brand gaps found
-//! after 2047: a merged NDC product name counts as the
+//! Recorded-reply tests for the product-name and sparse-brand gaps: a
+//! merged NDC product name counts as the
 //! record's own only when it equals the request, a record's own identity
 //! name outranks merged product rows, and one sparse-record reader keeps
 //! multi-word brands whole.

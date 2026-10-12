@@ -1,4 +1,4 @@
-//! Recorded-reply tests for the 2052 resolution rules: the label follows
+//! Recorded-reply tests for the resolution rules: the label follows
 //! the resolved ingredient, a brand whose labels mostly name one
 //! ingredient resolves to it, an ingredient query takes the plain
 //! ingredient's name and label, a card name never carries a product row's

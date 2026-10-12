@@ -375,7 +375,7 @@ def _review_failures(path: Path, landed: bool) -> list[str]:
     }
     for record in records:
         # Terminal state only: a verdict that ends in ACCEPT with the
-        # word "pending" quoted inside its history (1235's "third
+        # word "pending" quoted inside its history (a recorded "third
         # review pending" rejection note) is resolved, not pending.
         if record["states"][-1:] != ["pending"]:
             continue

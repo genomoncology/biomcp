@@ -866,7 +866,7 @@ async fn stalled_ols4_server() -> (String, tokio::task::JoinHandle<()>) {
 /// entity rescue and the CLI alias fallback — and a stalled source must
 /// not collect the refusal budget twice. The CLI refusal against a
 /// stalled source settles inside one budget (about two seconds plus the
-/// fixture rounds), where the pre-2052 shape spent the entity's two
+/// fixture rounds), where the earlier shape spent the entity's two
 /// seconds and then restarted the clock for its own.
 #[tokio::test]
 #[serial_test::serial(source_env)]

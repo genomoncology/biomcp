@@ -49,8 +49,7 @@ def main() -> int:
         parser.error("authorization metadata requires --authorize PATH")
     # One run can authorize several files (a lane that grows many sources on
     # one ticket): --authorize takes a comma-joined path list, and every
-    # named file gets the same ticket metadata (ticket 2047 finishing 2044's
-    # open Changes item).
+    # named file gets the same ticket metadata.
     authorized: set[str] = set()
     if args.authorize:
         authorized = {path.strip() for path in args.authorize.split(",")}
@@ -100,7 +99,7 @@ def main() -> int:
                 }
             )
         elif lines == baseline and path in authorized and baseline > floor:
-            # Reason-only re-authorization (ticket 2044): a file can sit at
+            # Reason-only re-authorization: a file can sit at
             # its pinned baseline while its recorded history is wrong — an
             # inline rewrite of this inventory once replaced every earlier
             # ticket's reason and removal condition with one shared

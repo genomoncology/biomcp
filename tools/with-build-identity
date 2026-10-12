@@ -75,7 +75,7 @@ def main() -> None:
     # Run the child to completion and pass its exit code through.
     # os.execvpe replaced this process, which on Windows exits 0 at
     # once while the child keeps running, so a build step passed
-    # with no binary (ticket 2024). sys.argv[1:] keeps argv[0] as
+    # with no binary. sys.argv[1:] keeps argv[0] as
     # the program name; subprocess.run resolves it on PATH.
     completed = subprocess.run(
         sys.argv[1:],

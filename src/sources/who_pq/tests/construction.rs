@@ -117,7 +117,7 @@ fn who_pq_sync_error_carries_its_detail_and_recovery() {
     assert!(message.contains("who_api.csv: missing required column INN"));
     // The recovery never tells the user to run the command that just
     // failed; it names network access and the resolved data directory so
-    // the manual preseed has a destination (1304 post-landing review
+    // the manual preseed has a destination (a post-landing review
     // finding 2; second review finding 17). That sentence stays on the
     // terminal; the projected surfaces carry the path-free spelling
     //.

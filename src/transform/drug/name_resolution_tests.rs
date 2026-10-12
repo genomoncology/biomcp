@@ -872,8 +872,8 @@ pub(crate) const TAGRISSO_DRUGCENTRAL_ONLY_CAPTURE: &str = r#"
 
 #[test]
 fn tagrisso_still_selects_its_record_through_drugcentral_synonyms_alone() {
-    // 2031 credits DrugCentral synonyms for the Tagrisso fix,
-    // yet no other test failed when they were dropped, because every other
+    // DrugCentral synonyms carry the brand the fetched openFDA block
+    // can lack, yet no other test failed when they were dropped, because every other
     // capture also carries the brand on an NDC proprietary name. This
     // capture holds the brand on the synonym alone, so removing the
     // synonyms from `hit_all_names` empties the selection and fails here.

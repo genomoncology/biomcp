@@ -280,7 +280,7 @@ fn protein_change_resolution_resolves_the_naming_annotation_without_a_marker() {
 fn protein_change_resolution_prefers_the_canonical_spelling_over_conflicting_records() {
     // Recorded BRCA1 C61G shape (query_brca1_c61g_20261007.json): both alias
     // hits carry ClinVar records, but only chr17:g.41258504A>C names C61G on
-    // its canonical transcript; the 1297 conflicting-records refusal would
+    // its canonical transcript; the conflicting-records refusal would
     // hide the unambiguous canonical answer.
     let hits = vec![
         ProteinHitBuilder::default()
@@ -384,7 +384,7 @@ fn protein_change_resolution_refuses_conflicting_clinvar_records() {
 #[test]
 fn protein_change_resolution_refuses_a_clinvar_lookalike_without_the_named_change() {
     // The TP53 C124Y lookalike alone: nothing names the requested change on
-    // a canonical transcript, so the 1297 ClinVar tiebreak must not resolve
+    // a canonical transcript, so the ClinVar tiebreak must not resolve
     // it by default.
     let hits = vec![
         ProteinHitBuilder::default()
@@ -731,8 +731,8 @@ fn protein_change_resolution_returns_the_mane_named_candidate_of_two_alias_hits(
 /// the canonical facts are in hand: UniProt P04637 has Ser at 116, not Arg,
 /// so the requested R116Q truly follows another transcript's numbering and
 /// the answer must say which numbering matched. Silencing the note (or
-/// swapping it for a refusal) fails this test (the note rule pins the 2016
-/// behavior).
+/// swapping it for a refusal) fails this test (the note rule pins the
+/// transcript-naming behavior).
 #[test]
 fn protein_change_resolution_pins_the_true_other_transcript_numbering_note() {
     let hits = vec![

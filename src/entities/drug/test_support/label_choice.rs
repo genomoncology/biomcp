@@ -1033,7 +1033,7 @@ async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
     )
     .await;
 
-    // And 2047: the identity fallback still resolves the brand
+    // The identity fallback still resolves the brand
     // to the plain ingredient the Faspro pairing names, and the label
     // choice takes the plain intravenous DARZALEX record. openFDA's
     // field-scoped search reaches only the Faspro pairing — the plain
@@ -1181,7 +1181,7 @@ async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
     )
     .await;
 
-    // The 2043 gap: a brand whose plain-ingredient twin is
+    // The known gap: a brand whose plain-ingredient twin is
     // another labeler's product. The card names the plain ingredient
     // (imatinib), Gleevec's own record carries the salt generic
     // ("IMATINIB MESYLATE"), and the generic-labeler pages hold records

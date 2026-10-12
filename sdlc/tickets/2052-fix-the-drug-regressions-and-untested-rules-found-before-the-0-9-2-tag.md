@@ -184,14 +184,40 @@ finished sweep joins comment blocks before checking, removes the
 split parentheticals, and repairs the one sentence the first pass
 corrupted (the `plain_paired_ingredient_name` doc comment). Verified
 with the continuation-line-aware check: zero ticket references remain in
-comment scope. Two python files keep numbers in comments that narrate
-their own changelog fixtures (`test_changelog_coverage_check.py`,
-`test_docs_changelog_refresh.py`) — those numbers are the fixture
-content the gate reasons about, like a PMID, not a justification leaned
-on. Assertion strings, python docstrings and the sdlc record keep their
-references as before; fmt, clippy and the targeted suites (Rust drug /
-article-graph / clinvar / template lanes, 465 tests, plus the four
-touched python files, 76 tests) stayed green through the sweep.
+comment scope. The round-2 review found the earlier check still matched only
+"ticket"-worded and parenthetical shapes, leaving 29 bare mentions ("the
+2040 trial tests", "pre-1304 cache", "2035 #6", "And 2047:", "the 2017
+refusal"); all 29 are rewritten to state the rule or fact alone,
+including the second mangled rewrite remnant the review caught
+(label_choice.rs "And 2047:") and the two remaining gate-script files
+(tools/with-build-identity, tools/update-rust-source-size-inventory).
+The two python files that keep numbers in comments narrating their own
+changelog fixtures are `tests/test_changelog_coverage_check.py` (e.g.
+"Land 1306: fold the 1302 review carryovers" names 1302 in its text) and
+`tests/test_docs_changelog_refresh.py` (e.g. "2040 landed after 2038"):
+the numbers are the fixture content the gate reasons about, like a PMID,
+not a justification leaned on. Assertion strings, python docstrings and
+the sdlc record keep their references as before.
+
+The verification command (run at the repo root, single-line comment
+form; triage excludes dates, PMIDs/PMCIDs, CVCL/HP ids, DOIs, versions,
+genomic and protein coordinates, and the two fixture files above):
+
+```
+$ grep -rn -E "^\s*(//|#).*\b(1[0-9]{3}|20[0-9]{2})\b" src/ templates/ tests/ tools/ \
+    --include="*.rs" --include="*.py" --include="*.j2" \
+    --include="check-*" --include="update-*" --include="with-build-identity" \
+  | grep -vE "PMID|PMCID|CVCL|HP:|10\.[0-9]{4}|DOI|[0-9]{4}-[0-9]{2}|windows-20|CC BY|CTR Pv2|default_value|7157|1956|residues|Ser at|rows|P38398|position|Apr 20|test_changelog_coverage_check|test_docs_changelog_refresh"
+(no output — zero ticket references remain in comment scope)
+```
+
+The same check run over joined comment blocks (continuation-line aware,
+so a reference split across lines cannot hide) also returns no hits; the
+only NNNN-shaped strings it surfaces are domain identifiers (ClinVar
+55588, NM_007294, NC_000010.11 coordinates, the 0291eca5 label set id, a
+4096-byte bound, a CI run id). fmt, clippy and the targeted suites
+(527 Rust tests across the drug, NCI, cell-line, protein-change, WHO-PQ,
+GWAS and annotation lanes) stayed green through the sweep.
 
 ### Residual risks
 

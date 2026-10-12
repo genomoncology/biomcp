@@ -558,7 +558,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
 
 #[test]
 fn drug_markdown_with_region_who_names_the_gap_when_the_bundle_cannot_be_read() {
-    // 2035 #6: an unreadable WHO bundle degrades the
+    // An unreadable WHO bundle degrades the
     // card instead of failing it, and the printed note names the gap without
     // any local data path.
     let drug = Drug {

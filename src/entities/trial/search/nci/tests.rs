@@ -371,7 +371,7 @@ async fn nci_age_rejection_precedes_both_provider_requests() {
 
 /// When MyDisease grounding fails, the NCI search still runs
 /// as a keyword search, and the degrade reaches the response as a page
-/// note (the 2021 pattern), not only a log line.
+/// note, not only a log line.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_keyword_degrade_note_reaches_the_search_page() {
@@ -538,7 +538,7 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
 }
 
 /// A condition that fails to ground keeps the visible
-/// keyword degrade (the 2021 pattern); only the resolver's refusal of
+/// keyword degrade; only the resolver's refusal of
 /// the input itself propagates.
 #[tokio::test]
 #[serial_test::serial(source_env)]

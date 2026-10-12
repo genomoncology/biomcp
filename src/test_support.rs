@@ -24,7 +24,7 @@ impl TempDirGuard {
 /// One shared environment guard for source-fixture tests:
 /// every `set` restores on drop, and the guard itself always points the
 /// shared HTTP client's cache at a fresh scratch directory with cache mode
-/// off, so a test never reads the machine's own cache — the 2040 trial
+/// off, so a test never reads the machine's own cache — earlier trial
 /// tests read a 183 MB host cache and hit the suite's time limit before
 /// this guard existed. Tests that do not construct this guard still never
 /// read the machine's cache: a test build's default cache root is a
