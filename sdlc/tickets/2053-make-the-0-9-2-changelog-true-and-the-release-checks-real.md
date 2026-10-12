@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 8fec23f, accept
+
 ## Outcome
 
 Every 0.9.2 changelog sentence is true and sits in the right group. A tag releases only from a commit whose CI passed. The rehearsal tests what production will do, and a test fails if a production upload guard stops guarding.
