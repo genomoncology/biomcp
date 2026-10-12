@@ -1,6 +1,6 @@
 # 2052 — Fix the drug regressions and untested rules found before the 0.9.2 tag
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
