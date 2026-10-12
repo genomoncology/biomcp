@@ -36,6 +36,9 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      # gh run list reads the workflow-run history; the default token
+      # carries this only when the job asks for it.
+      actions: read
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
@@ -49,6 +52,23 @@ jobs:
 
       - name: Require the changelog to cover merged tickets
         run: python3 scripts/check-changelog-coverage.py --tag "$TAG"
+
+      # Ticket 2053: a tag releases only from a commit whose CI passed.
+      # The filter names the workflow and the commit, so it can never
+      # pick another workflow's run, and a missing or failed run fails
+      # the release here, before any publisher starts.
+      - name: Require green CI on the tagged commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          green="$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" \
+            --status completed --conclusion success --limit 100 \
+            --json databaseId --jq length)"
+          if [ -z "$green" ] || [ "$green" = "0" ]; then
+            echo "ci.yml has no finished green run on ${GITHUB_SHA}; refusing to release" >&2
+            exit 1
+          fi
+          echo "ci.yml finished green on ${GITHUB_SHA}"
 
   create-draft:
     needs: [version-check]
@@ -611,24 +631,18 @@ jobs:
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
-          if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
-            echo "rehearsal: checking the formula inputs instead of pushing"
-            VERSION="${TAG#v}"
-          test -n "$VERSION" && echo "formula ${VERSION} reads the release checksums from dist/"
-            exit 0
-          fi
-          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
-            echo "HOMEBREW_TAP_TOKEN is not configured; skip tap update."
-            exit 0
-          fi
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" tap
-          mkdir -p tap/Formula
           VERSION="${TAG#v}"
           X86_SHA256="$(awk '{print $1}' dist/biomcp-darwin-x86_64.tar.gz.sha256)"
           ARM64_SHA256="$(awk '{print $1}' dist/biomcp-darwin-arm64.tar.gz.sha256)"
-          cat > tap/Formula/biomcp.rb << FORMULA
+          test -n "$VERSION"
+          test -n "$X86_SHA256"
+          test -n "$ARM64_SHA256"
+          # Ticket 2053: the rehearsal renders the formula the
+          # production push would land, from the release checksums,
+          # and checks both platform checksums before it exits.
+          FORMULA_DIR="${RUNNER_TEMP:-$(mktemp -d)}"
+          mkdir -p "${FORMULA_DIR}/Formula"
+          cat > "${FORMULA_DIR}/Formula/biomcp.rb" << FORMULA
           class Biomcp < Formula
             desc "Biomedical MCP CLI and knowledge server"
             homepage "https://biomcp.org"
@@ -647,6 +661,22 @@ jobs:
             end
           end
           FORMULA
+          for expected in "${X86_SHA256}" "${ARM64_SHA256}"; do
+            grep -q "\"${expected}\"" "${FORMULA_DIR}/Formula/biomcp.rb"
+          done
+          if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
+            echo "rehearsal: formula ${VERSION} renders with both release checksums; not pushing"
+            exit 0
+          fi
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "HOMEBREW_TAP_TOKEN is not configured; skip tap update."
+            exit 0
+          fi
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" tap
+          mkdir -p tap/Formula
+          cp "${FORMULA_DIR}/Formula/biomcp.rb" tap/Formula/biomcp.rb
           cd tap
           git add Formula/biomcp.rb
           if git diff --cached --quiet; then
