@@ -59,7 +59,6 @@ def main() -> int:
             text=True,
         ).stdout.strip()
     )
-    run(root, [str(root / "scripts/pre-commit-reject-march-artifacts.sh")])
     run(root, [sys.executable, str(root / "tools/check-tracked-text"), str(root)])
 
     paths = staged_paths(root)

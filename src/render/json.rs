@@ -852,7 +852,7 @@ mod tests {
         let sentinels = [
             "https://provider.example/private?token=fake-credential",
             "/home/operator/fixture.json",
-            ".march/design-final.md",
+            ".local/design-final.md",
             "parser detail at byte 42",
         ];
         let errors = [

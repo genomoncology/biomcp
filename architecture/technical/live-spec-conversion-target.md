@@ -115,5 +115,5 @@ The original live paths are **convert**. None is **keep** (provider-only smoke) 
 The work is deliberately source-shaped: capture receipts first; then ClinGen,
 article, variant, ontology, clinical-entity, and remaining provider slices; and
 finally the mixed CLI document. Each slice is independently shippable and uses
-the standard repo gates. See `.march/blueprint.md` and the tickets created by
+the standard repo gates. See the tickets created by
 645 for ordering and dependencies.

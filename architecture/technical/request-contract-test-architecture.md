@@ -133,8 +133,6 @@ Current invariants:
   and other unclassified source errors remain product-red. Deterministic request,
   response, and renderer tests carry the product-owned proof for those relaxed
   live outcomes.
-- `.march/code-review-log.md` is the only tracked `.march/*` allowlist entry;
-  other local March artifacts stay ignored and untracked.
 
 ## Coverage restoration and pruning order
 

@@ -1,6 +1,6 @@
 # 2055 — Rewrite AGENTS.md for efficient work and remove March
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
 
@@ -35,3 +35,29 @@ Filed 2026-10-12 from the independent review of the 2052 build, with Ian's appro
 - Changes: shorten `AGENTS.md` and give it one working section in BioMCP's own commands, matching the team's developer rules: while working, run only the tests for what changed (`cargo nextest run --no-default-features -E 'test(...)'`); before landing, run `make lint`, `make test` and `make spec` once on the final branch, and rerun only when the code changed, since CI runs them again; a test that takes more than a few seconds is a defect to fix; check live behavior with one pass of the built binary over the names under test; run one Rust build at a time on a machine. Delete the two bare lists. Delete every live March reference above, including the hook script, its test, its allowlist asserts and the spec section; point the quality ratchet at an ignored folder under `target/`; use a neutral local path as the sentinel; delete the `.march/` folders from the checkouts. Add `ticket/**` to the CI branch filter and say `ticket/NNNN-slug` in `AGENTS.md`; keep `tickets/**` until no open branch uses it.
 - Proof: `git grep -iE '\.march|march-runtime|march (run|kickoff|worktree|lane)'` outside `CHANGELOG.md`, `sdlc/records/`, `sdlc/tickets/archive/` and `architecture/experiments/` finds nothing; `make lint`, `make test` and `make spec` pass once on the final branch; `AGENTS.md` names no machine or private tool.
 - Defers: March mentions in released changelog entries, archived tickets, records and old experiment notes, which describe past work.
+
+## Evidence (2026-10-12)
+
+Branch `tickets/2055-work`, code head `165afa553` (this evidence commit follows it; it changes only this file).
+
+`AGENTS.md`: keeps the release, CI-and-merging, and source-licensing sections; deletes the two bare skill-name lists; adds one Working section (targeted `cargo nextest run --no-default-features -E 'test(...)'` while working; `make lint`, `make test` and `make spec` once on the final branch, rerun only when the code changed; a slow test is a defect; one live pass with the built binary; one Rust build at a time on a machine); says `ticket/NNNN-slug`; names no machine and no private tool (`grep -ioE "yellow|beelink|\bm5\b|\bpm\b|march|\byr\b|jarvis|\bpi\b" AGENTS.md` → no output).
+
+Removed every listed live March reference: the `AGENTS.md` hygiene line, the `CONTRIBUTING.md` and `RUN.md` hook paragraphs, `.gitignore` (`.march/*`, `.march-runtime/`), `.mcpbignore`, `scripts/pre-commit-reject-march-artifacts.sh` with its call in `scripts/pre-commit` (the credential and forbidden-artifact scans stay), `tests/test_pre_commit_reject_march_artifacts.py`, the March allowlist in `tests/test_directory_submission_contract.py`, the March asserts in `tests/test_upstream_planning_analysis_docs.py` and `tests/test_docs_changelog_refresh.py`, and the `spec/surface/mcp.md` "Runtime Artifacts Stay Ignored" section; that page's root-guide block now pins the Working strings (`mustmatch lint` clean), and its make-check section no longer credits March. The quality ratchet writes to `target/quality-ratchet` (ignored); the `src/render/json.rs` sentinel is `.local/design-final.md`; the four architecture `.march/` pointers and `sdlc/planning/onboarding.md`'s pointer into another project's planning file are gone. `src/transform/article/federation.rs:449` (the month) is untouched. Also: `ticket/**` joins `tickets/**` in the `ci.yml` push filter (actionlint clean via `tools/bootstrap-lint-tools`); `tests/test_source_package_boundary.py` counts 1,418 package files for the two deleted files; and pm's 0.9.2 build order (2052, 2053, 2055, then 2054 after the tag) is recorded in `sdlc/plan.md`.
+
+Ignored `.march/` state deleted from the coordinator checkout (`~/workspace/repos/biomcp/.march` held only ratchet output); the build-host checkout has none (`find ~/workspace/repos/biomcp -maxdepth 2 -name ".march*"` → empty). No commit was made outside this worktree.
+
+Proof grep on head `165afa553`:
+
+```
+git grep -n -iE '\.march|march-runtime|march (run|kickoff|worktree|lane)' -- . ':!CHANGELOG.md' ':!sdlc/records/' ':!sdlc/tickets/archive/' ':!architecture/experiments/'
+```
+
+Output: six lines, every one inside this ticket file's own text (the spec quoting the references it ordered removed). The same command with `':!sdlc/tickets/2055-*'` added prints nothing; once this ticket archives under `sdlc/tickets/archive/`, the command as written prints nothing.
+
+Targeted tests while working (build host): `cargo nextest run --no-default-features -E 'test(structured_error_messages_omit_external_and_local_details)'` → 1 passed, 0.010s; the four edited Python modules → 66 passed in 1.20s; the package-boundary count and worktree-path tests under the lane `TMPDIR` → 2 passed.
+
+Gates, once each on the final branch state (build host): `make lint` → pass; `make test` → pass; `make spec` → pass. Two earlier `make test` runs do not count: the first failed the two package-boundary count asserts (1,420 → 1,418, fixed above), and the rerun after that fix hit one load-flaky failure (`rmcp_client_contract raw_and_typed_article_query_validation_converges_before_provider_work`, 60.17s under the full suite; it passes alone in 11.73s and the next full run was green).
+
+Live pass with the built binary: `target/spec/biomcp --version` → `biomcp 0.9.2+g165afa55`; `target/spec/biomcp search article --gene BRAF --limit 1` answered one live public-upstream query with rendered output.
+
+Defects noted, not fixed here (outside this ticket's scope): `raw_and_typed_article_query_validation_converges_before_provider_work` takes 11.7s alone and 60s under the full suite, far over the few-second bar this ticket installs, and it failed once under load; `tests/test_source_package_boundary.py` runs about five minutes, dominated by the offline package compile.

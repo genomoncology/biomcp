@@ -6,7 +6,9 @@ on:
     # Ticket branches run CI too (2026-09-29 direction): a branch's
     # green CI run is the merge condition, which closes the
     # gate-passed-CI-failed gap and lets branches run in parallel.
-    branches: [main, "tickets/**"]
+    # ticket/** is pm's landing branch form (2026-10-12); tickets/**
+    # stays until no open branch uses it.
+    branches: [main, "tickets/**", "ticket/**"]
 
 permissions:
   contents: read

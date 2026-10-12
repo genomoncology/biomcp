@@ -368,7 +368,6 @@ EXPECTED_RELEASE_MARKERS = {
             "make release-gate",
             "SPEC_SMOKE_ARGS",
             "mustmatch pytest item IDs",
-            ".march",
             "deferred work",
             "runtime wiring shipped",
         ],

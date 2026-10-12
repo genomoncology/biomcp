@@ -1,6 +1,5 @@
 .git/
 .github/
-.march/
 .venv/
 .pytest_cache/
 .ruff_cache/

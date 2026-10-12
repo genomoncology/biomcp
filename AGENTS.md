@@ -41,46 +41,27 @@ https://biomcp.org/:
 - Unit/static layers run with `make test`: Rust nextest first, then the Python
   CLI/MCP/docs contract lane.
 
-## Contract quick reference
+## Working
 
-spec/*.md
-make lint
-make test
-make spec
-rust-standards
-python-standards
-cli-design
-mustmatch
-testing-mindset
-
-## Gates
-
-Run the standard gates directly:
+While you work, run only the tests for what changed:
 
 ```
-make lint
-make test
-make spec
+cargo nextest run --no-default-features -E 'test(...)'
 ```
+
+Before landing, run `make lint`, `make test` and `make spec` once on the final
+branch state, and rerun a gate only when the code changed since that run; CI
+runs them again. A test that takes more than a few seconds is a defect to fix,
+not a cost to accept. Check live behavior with one pass of the built binary
+over the names under test. Run one Rust build at a time on a machine.
 
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
-`make spec` is the routine mustmatch contract gate.
-
-Routine gates use `--no-default-features` so lint, test, and spec share one
-small Cargo graph; that graph does not exercise AlphaGenome. Run `make
-full-feature-check` for all shipped features and the AlphaGenome behavior tests.
-`make release-gate` includes both lanes.
-
-## Skill rail
-
-Use this hybrid repo rail for dispatched work:
-
-- rust-standards
-- python-standards
-- cli-design
-- mustmatch
-- testing-mindset
+`make spec` is the routine mustmatch contract gate. Routine gates use
+`--no-default-features` so lint, test, and spec share one small Cargo graph;
+that graph does not exercise AlphaGenome. Run `make full-feature-check` for all
+shipped features and the AlphaGenome behavior tests, and `make release-gate`
+for both lanes.
 
 ## Releases
 
@@ -100,13 +81,12 @@ Every release works the checklist at `sdlc/release-checklist.md`, in order, with
 
 ## Hygiene
 
-Do not commit secrets, PHI, absolute local paths, planning notes, or March
-runtime artifacts. Keep `.march/` runtime state, `.march-runtime/`, local caches,
-and generated build outputs out of git.
+Do not commit secrets, PHI, absolute local paths, planning notes, or local
+runtime state. Keep local caches and generated build outputs out of git.
 
 ## CI and merging
 
-Push every change to a `tickets/*` branch first. CI runs on ticket branches; merge to main only after that branch's CI run has finished green. A started run does not count. No direct commits to main. A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on both points on 2026-09-29.
+Push every change to a `ticket/NNNN-slug` branch first. CI runs on ticket branches; merge to main only after that branch's CI run has finished green. A started run does not count. No direct commits to main. A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on both points on 2026-09-29.
 
 CI skips the Rust jobs only when every file a push changes is documentation, an `sdlc/` file, or a `notes/` file; the classify job decides by the changed files, never by the commit message, and the repository-contract job still runs the docs and record tests plus the strict documentation build. Never rely on a commit-message prefix to skip CI.
 

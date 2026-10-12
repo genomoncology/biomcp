@@ -1579,18 +1579,13 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
 def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     runbook = _read_repo("RUN.md")
     contributing = _read_repo("CONTRIBUTING.md")
-    technical = _read_repo("architecture/technical/overview.md")
     runbook_prerequisites = _normalize_ws(_markdown_section(runbook, "Prerequisites"))
     runbook_premerge = _normalize_ws(_markdown_section(runbook, "Pre-Merge Checks"))
     contributing_hook = _normalize_ws(
         _markdown_section(contributing, "Pre-Commit Hook", level=3)
     )
-    march_profiles = _normalize_ws(
-        _markdown_section(technical, "March Validation Profiles", level=4)
-    )
 
     assert "pre-commit hook" in runbook_premerge
-    assert "`scripts/pre-commit-reject-march-artifacts.sh`" in runbook_premerge
     assert "`cargo fmt --check`" in runbook_premerge
     assert (
         "`cargo clippy --no-default-features --lib --tests -- -D warnings`"
@@ -1611,34 +1606,14 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`make release-gate`" in runbook_premerge
     assert "`make test-contracts`" in runbook_premerge
     assert "git commit --no-verify" in runbook_premerge
-    assert ".march/code-review-log.md" in runbook_premerge
-    assert ".march/code-review-log.md" in contributing_hook
 
     assert "withdrawn" in contributing_hook
     assert "never run `scripts/install-pre-commit-hook`" in contributing_hook
     assert "build machine" in contributing_hook
     assert "CI stays the merge gate" in contributing_hook
     assert "`scripts/pre-commit`" in contributing_hook
-    assert "`scripts/pre-commit-reject-march-artifacts.sh`" in contributing_hook
     assert "`cargo fmt --check`" in contributing_hook
     assert (
         "`cargo clippy --no-default-features --lib --tests -- -D warnings`"
         in contributing_hook
-    )
-    assert "staged deletions" in contributing_hook
-
-    assert "March validation profiles are retired" in march_profiles
-    assert ".march/code-review-log.md" in march_profiles
-    assert ".march/verify-log.md" not in march_profiles
-    assert ".march/blueprint.md" not in march_profiles
-    assert "`.march/` remains ignored by `.gitignore`" in march_profiles
-    assert "Python cleanup contract" in march_profiles
-    assert "pre-commit helper" in march_profiles
-    assert (
-        "standard repo gates are `make lint`, `make test`, and `make spec`"
-        in march_profiles
-    )
-    assert (
-        "Live public-upstream proof moved to the explicit opt-in `make verify`"
-        in march_profiles
     )
