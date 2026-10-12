@@ -416,6 +416,16 @@ pub enum BioMcpError {
         reason: String,
         suggestion: String,
     },
+    /// A source endpoint that no longer exists upstream: no retry can
+    /// reach it, so callers degrade permanently instead of offering a
+    /// retry. The type carries the fact; the sentence the card prints
+    /// travels in the `reason` from the one place that states it (ticket
+    /// 2052).
+    SourceEndpointRetired {
+        source_name: String,
+        reason: String,
+        suggestion: String,
+    },
     Template(minijinja::Error),
     Json(serde_json::Error),
     Io(std::io::Error),
@@ -452,7 +462,9 @@ impl BioMcpError {
                 (status.map(|_| "http_status").unwrap_or("internal"), status)
             }
             Self::ApiJson { .. } | Self::Json(_) => ("decode", None),
-            Self::SourceUnavailable { .. } => ("unavailable", None),
+            Self::SourceUnavailable { .. } | Self::SourceEndpointRetired { .. } => {
+                ("unavailable", None)
+            }
             _ => ("internal", None),
         };
         ExternalFailureProjection {
@@ -536,6 +548,7 @@ impl BioMcpError {
             Self::SourceUnavailable { .. } => {
                 format!("Source unavailable: {source} is not available.")
             }
+            Self::SourceEndpointRetired { reason, .. } => reason.clone(),
             Self::CtGovInterventionQueryRejected { .. } => {
                 format!("API request to {source} was rejected.")
             }
@@ -628,6 +641,11 @@ impl BioMcpError {
             Self::SourceUnavailable { source_name, .. } => format!(
                 "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
             ),
+            Self::SourceEndpointRetired {
+                reason, suggestion, ..
+            } => {
+                format!("{reason}\n\n{suggestion}")
+            }
             Self::Template(_) => "Template rendering failed.".to_string(),
             Self::Json(_) => "JSON processing failed.".to_string(),
             Self::Io(_) => "I/O operation failed.".to_string(),
@@ -719,7 +737,8 @@ impl BioMcpError {
                 SourceProvider::from_legacy(source_name).unwrap_or(SourceProvider::UNKNOWN),
                 RecoveryAction::NarrowRequest,
             )),
-            Self::SourceUnavailable { source_name, .. } => Some(SourceContext::new(
+            Self::SourceUnavailable { source_name, .. }
+            | Self::SourceEndpointRetired { source_name, .. } => Some(SourceContext::new(
                 SourceProvider::from_legacy(source_name).unwrap_or(SourceProvider::UNKNOWN),
                 RecoveryAction::ReviewSourceConfiguration,
             )),
@@ -785,7 +804,9 @@ impl BioMcpError {
             Self::ApiKeyRequired { .. } => "api_key_required",
             Self::ApiKeyRejected { .. } => "api_key_rejected",
             Self::ApiCredentialInvalid { .. } => "api_credential_invalid",
-            Self::SourceUnavailable { .. } => "source_unavailable",
+            Self::SourceUnavailable { .. } | Self::SourceEndpointRetired { .. } => {
+                "source_unavailable"
+            }
             Self::Template(_) => "template",
             Self::Json(_) => "json",
             Self::Io(_) => "io",
@@ -821,6 +842,7 @@ impl fmt::Display for BioMcpError {
             | Self::BodyLimit { .. }
             | Self::ProviderResponseLimit { .. }
             | Self::SourceUnavailable { .. }
+            | Self::SourceEndpointRetired { .. }
             | Self::CaBundle { .. }
             | Self::WithSourceContext { .. } => {
                 // The WHO Prequalification sync failure keeps its local data

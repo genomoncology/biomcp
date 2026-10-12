@@ -587,10 +587,9 @@ pub(super) fn search_results_from_openfda_label_response(
 /// name (ticket 2039): the rows whose own brand equals the query when any
 /// row carries it (the "Keytruda" rows, never the QLEX combination), and
 /// every row otherwise — the ticket-2043 pairing shape, where the only
-/// label a brand family holds pairs a qualified brand ("Darzalex Faspro")
-/// with its plain ingredient. Order is preserved and values deduplicate
-/// case-insensitively, so the caller can refuse when they name more than
-/// one distinct ingredient.
+/// label a brand family holds pairs a qualified brand with its plain
+/// ingredient, deduplicated so the caller can refuse distinct answers.
+#[cfg(test)]
 pub(super) fn openfda_label_generic_names(
     label_response: &serde_json::Value,
     query: &str,

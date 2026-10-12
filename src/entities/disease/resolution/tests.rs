@@ -674,3 +674,25 @@ async fn exact_resolution_maps_selected_detail_inconsistency_to_safe_source_erro
     assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     assert_eq!(requests.lock().expect("lock requests").len(), 1);
 }
+
+#[test]
+fn scored_best_candidate_breaks_ties_on_provider_names_like_rerank() {
+    // Ticket 2052: both disease rankers read the provider-named tie-break.
+    // A record whose only label is the ontology `label` still displays a
+    // name, but it is not provider-named, and it must never outrank a named
+    // record the way it used to when this ranker read `hit_label` alone.
+    let label_only: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+        "_id": "MONDO:0000001",
+        "mondo": {"label": "fixture syndrome"}
+    }))
+    .expect("valid label-only hit");
+    let named = test_disease_hit("MONDO:0000002", "fixture syndrome", &[], &[]);
+
+    let queries = resolver_queries("fixture syndrome");
+    let best = scored_best_candidate_for_queries(&queries, vec![label_only, named])
+        .expect("a best hit should be selected");
+    assert_eq!(
+        best.id, "MONDO:0000002",
+        "the provider-named record outranks the label-only record"
+    );
+}

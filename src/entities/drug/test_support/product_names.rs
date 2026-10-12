@@ -390,7 +390,9 @@ fn assert_label_set_id_and_text(drug: &super::super::Drug, set_id: &str, needle:
 /// name the acetaminophen card because its name ends with the request. A
 /// product name now counts only when it equals the request, so the card
 /// keeps the ingredient line the "Headache Relief" rows themselves pair,
-/// and the exact-brand label still serves.
+/// and the exact-brand label still serves. Ticket 2052: a combination card
+/// shows product-level identifiers or none, so the merged acetaminophen
+/// record's DrugBank id never stands in for the whole product.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
@@ -412,7 +414,10 @@ async fn headache_relief_names_the_product_it_pairs_not_a_merged_row() {
         .await
         .expect("the shared combination product settles a card");
     assert_eq!(drug.name, "acetaminophen, aspirin and caffeine");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00316"));
+    assert_eq!(drug.drugbank_id.as_deref(), None);
+    assert_eq!(drug.chembl_id.as_deref(), None);
+    assert_eq!(drug.unii.as_deref(), None);
+    assert_eq!(drug.approval_date.as_deref(), None);
     assert!(
         !drug.name.contains("tension"),
         "the merged Tension Headache Relief row never names the card: {}",

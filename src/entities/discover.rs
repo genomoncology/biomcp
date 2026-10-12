@@ -391,6 +391,52 @@ fn memoize_alias_fallback(key: String, result: &DiscoverResult) {
 /// holds a refusal hostage.
 pub(crate) const REFUSAL_DISCOVER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
 
+/// The refusal deadlines remembered for this process (ticket 2052): a
+/// refusal is two rounds over one outside service — the entity rescue and
+/// the CLI alias fallback — and a stalled source must not collect the
+/// budget twice. A rescue that runs out of time remembers the deadline it
+/// started from, and the later alias-fallback round spends only what is
+/// left of that same budget instead of starting a fresh one.
+static REFUSAL_DISCOVER_STARTS: OnceLock<Mutex<HashMap<String, std::time::Instant>>> =
+    OnceLock::new();
+
+const REFUSAL_DISCOVER_DEADLINE_CAP: usize = 512;
+
+fn refusal_discover_starts() -> &'static Mutex<HashMap<String, std::time::Instant>> {
+    REFUSAL_DISCOVER_STARTS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn refusal_discover_deadline_key(query: &str) -> String {
+    query.trim().to_ascii_lowercase()
+}
+
+/// Remember the deadline one refusal discover round started from, so the
+/// next round against the same query shares it. The first writer wins: a
+/// round already inside a remembered budget never pushes it out.
+pub(crate) fn remember_refusal_discover_start(query: &str, started_at: std::time::Instant) {
+    let mut starts = crate::utils::sync::recover_poison(refusal_discover_starts().lock());
+    if starts.len() >= REFUSAL_DISCOVER_DEADLINE_CAP {
+        starts.clear();
+    }
+    starts
+        .entry(refusal_discover_deadline_key(query))
+        .or_insert(started_at);
+}
+
+/// The budget left for a refusal discover round over `query`: the time
+/// until a deadline an earlier round remembered, or the full budget when
+/// no round over this query has run out yet. `Duration::ZERO` means the
+/// shared budget is already spent and the round must not run.
+pub(crate) fn refusal_discover_remaining_budget(query: &str) -> Duration {
+    match crate::utils::sync::recover_poison(refusal_discover_starts().lock())
+        .get(&refusal_discover_deadline_key(query))
+    {
+        Some(started_at) => (*started_at + REFUSAL_DISCOVER_TIMEOUT)
+            .saturating_duration_since(std::time::Instant::now()),
+        None => REFUSAL_DISCOVER_TIMEOUT,
+    }
+}
+
 pub(crate) async fn resolve_query(
     query: &str,
     mode: DiscoverMode,

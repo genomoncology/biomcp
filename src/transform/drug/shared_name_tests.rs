@@ -298,5 +298,8 @@ fn agreeing_pairings_still_merge_one_product() {
     assert_eq!(selected.len(), 3);
     let drug = merge_mychem_hits(&selected, "Fixturego");
     assert_eq!(drug.name, "fixturedrug one and fixturedrug two");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB90001"));
+    // Ticket 2052: a combination card shows product-level identifiers or
+    // none, so Fixturedrug One's DrugBank id never stands in for the
+    // combination the shared name owns.
+    assert_eq!(drug.drugbank_id.as_deref(), None);
 }

@@ -316,11 +316,12 @@ fn gwas_status_is_transient(message: &str) -> bool {
 /// the variant degrades with this reason instead of the transient wording.
 /// The reason fits the section-outcome message bound whole, so no renderer
 /// cuts it mid-word, and it names no retry because no retry reaches a
-/// retired endpoint (ticket 2050).
+/// retired endpoint (ticket 2050). One sentence, stated once (ticket 2052):
+/// the typed error carries it, and every reader reads it from the error.
 pub(crate) const RETIRED_ENDPOINT_REASON: &str = "The legacy GWAS Catalog by-rsID endpoint retired upstream (HTTP 410); GWAS association data is unavailable until the v2 endpoint is wired.";
 
 fn retired_gwas_endpoint_error() -> BioMcpError {
-    BioMcpError::SourceUnavailable {
+    BioMcpError::SourceEndpointRetired {
         source_name: "GWAS Catalog".to_string(),
         reason: RETIRED_ENDPOINT_REASON.to_string(),
         suggestion:
@@ -330,9 +331,14 @@ fn retired_gwas_endpoint_error() -> BioMcpError {
 }
 
 /// Whether an error is the retired-endpoint degrade: no retry recovers it,
-/// so the variant's GWAS section offers no retry command (ticket 2050).
+/// so the variant's GWAS section offers no retry command (ticket 2050). The
+/// retirement is a typed fact, not a sentence comparison (ticket 2052).
 pub(crate) fn is_retired_endpoint_error(err: &BioMcpError) -> bool {
-    matches!(err, BioMcpError::SourceUnavailable { reason, .. } if reason == RETIRED_ENDPOINT_REASON)
+    match err {
+        BioMcpError::SourceEndpointRetired { .. } => true,
+        BioMcpError::WithSourceContext { source, .. } => is_retired_endpoint_error(source),
+        _ => false,
+    }
 }
 
 fn normalize_rsid(value: &str) -> Result<String, BioMcpError> {

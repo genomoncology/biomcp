@@ -280,3 +280,119 @@ fn filter_keeps_the_withdrawn_exkivity_record_from_the_mobocertinib_capture() {
     assert_eq!(results[0]["set_id"], "f1a91500-a944-4cb8-b4a8-ae278bcf728d");
     assert!(filter_label_response_to_identity(&response, "itraconazole").is_some());
 }
+
+/// The pairing split reads the record's own ingredient list (ticket 2052):
+/// the plain side is the half the record lists as an established
+/// ingredient while the paired half is only a qualified form of another
+/// listed ingredient — never a name string in code.
+#[test]
+fn pairing_split_derives_the_plain_ingredient_from_the_records_own_list() {
+    let faspro = vec![
+        "DARATUMUMAB".to_string(),
+        "HYALURONIDASE (HUMAN RECOMBINANT)".to_string(),
+    ];
+    assert_eq!(
+        plain_paired_ingredient_name(
+            "daratumumab and hyaluronidase-fihj (human recombinant)",
+            &faspro,
+        ),
+        "daratumumab"
+    );
+    let qlex = vec![
+        "PEMBROLIZUMAB".to_string(),
+        "BERAHYALURONIDASE ALFA".to_string(),
+    ];
+    assert_eq!(
+        plain_paired_ingredient_name("pembrolizumab and berahyaluronidase alfa-pmph", &qlex),
+        "pembrolizumab"
+    );
+}
+
+/// A record that lists both halves as established ingredients names a true
+/// two-drug combination: Opdualag's relatlimab-rmbw is its own ingredient,
+/// and Lonsurf's tipiracil half is a truncated salt of the listed
+/// "tipiracil hydrochloride", so neither splits (tickets 2047 and 2052).
+#[test]
+fn a_two_drug_combination_never_splits_to_one_ingredient() {
+    let opdualag = vec!["NIVOLUMAB".to_string(), "RELATLIMAB-RMBW".to_string()];
+    assert_eq!(
+        plain_paired_ingredient_name("nivolumab and relatlimab-rmbw", &opdualag),
+        "nivolumab and relatlimab-rmbw"
+    );
+    // The live Opdualag record lists the unsuffixed stem alone: a
+    // single-word stem never qualifies a half that extends it.
+    let opdualag_stem = vec!["NIVOLUMAB".to_string(), "RELATLIMAB".to_string()];
+    assert_eq!(
+        plain_paired_ingredient_name("nivolumab and relatlimab-rmbw", &opdualag_stem),
+        "nivolumab and relatlimab-rmbw"
+    );
+    let lonsurf = vec![
+        "TRIFLURIDINE".to_string(),
+        "TIPIRACIL HYDROCHLORIDE".to_string(),
+    ];
+    assert_eq!(
+        plain_paired_ingredient_name("trifluridine and tipiracil", &lonsurf),
+        "trifluridine and tipiracil"
+    );
+    // A comma-list combination and a record that lists neither half keep
+    // the whole name.
+    let phesgo = vec![
+        "PERTUZUMAB".to_string(),
+        "TRASTUZUMAB".to_string(),
+        "HYALURONIDASE (HUMAN RECOMBINANT)".to_string(),
+    ];
+    assert_eq!(
+        plain_paired_ingredient_name("pertuzumab, trastuzumab, and hyaluronidase-zzxf", &phesgo),
+        "pertuzumab, trastuzumab, and hyaluronidase-zzxf"
+    );
+    assert_eq!(
+        plain_paired_ingredient_name("nivolumab and relatlimab-rmbw", &[]),
+        "nivolumab and relatlimab-rmbw"
+    );
+}
+
+/// Ticket 2050's brand-tier guard, pinned (ticket 2052): an exact-brand
+/// label whose generic names an unrelated drug never wins the brand tier,
+/// so the plain-ingredient record below it serves instead. Removing the
+/// generic-fits check serves the wrong record.
+#[test]
+fn an_exact_brand_label_with_an_unrelated_generic_never_wins_the_brand_tier() {
+    let response = serde_json::json!({
+        "meta": {"results": {"skip": 0, "limit": 5, "total": 2}},
+        "results": [
+            {
+                "set_id": "11111111-1111-4111-8111-111111111111",
+                "openfda": {
+                    "brand_name": ["Fixturebrand"],
+                    "generic_name": ["UNRELATED DRUG"],
+                    "substance_name": ["UNRELATED DRUG"]
+                },
+                "indications_and_usage": [
+                    "1 INDICATIONS AND USAGE Fixturebrand is indicated for the treatment of cancer \u{2026}[recorded reply trimmed for the fixture]"
+                ]
+            },
+            {
+                "set_id": "22222222-2222-4222-8222-222222222222",
+                "openfda": {
+                    "brand_name": ["Other Labeler Product"],
+                    "generic_name": ["FIXTUREDRUG"],
+                    "substance_name": ["FIXTUREDRUG"]
+                },
+                "indications_and_usage": [
+                    "1 INDICATIONS AND USAGE Fixturedrug is indicated for the treatment of cancer \u{2026}[recorded reply trimmed for the fixture]"
+                ]
+            }
+        ]
+    });
+
+    let (chosen, rank) =
+        choose_label_response(response, "Fixturebrand", "fixturedrug").expect("a chosen record");
+    assert_eq!(
+        rank, LABEL_RANK_PLAIN_INGREDIENT,
+        "the exact-brand record with an unrelated generic never wins the brand tier"
+    );
+    assert_eq!(
+        chosen["results"][0]["set_id"],
+        "22222222-2222-4222-8222-222222222222"
+    );
+}

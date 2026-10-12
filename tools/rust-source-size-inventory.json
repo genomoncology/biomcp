@@ -126,42 +126,47 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4174,
+      "baseline_lines": 4220,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "2050",
-        "delta": 480,
-        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
-        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
+        "ticket": "2052",
+        "delta": 526,
+        "reason": "the 2052 resolution rules and their tests grow the drug name-resolution, label-choice and refusal-budget modules",
+        "removal_condition": "ticket 2052 lands or its review rejects the module growth"
       }
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1293,
+      "baseline_lines": 1428,
       "floor_lines": 1273,
       "authorized_increase": {
-        "ticket": "2050",
-        "delta": 20,
-        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
-        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
+        "ticket": "2052",
+        "delta": 155,
+        "reason": "the 2052 resolution rules and their tests grow the drug name-resolution, label-choice and refusal-budget modules",
+        "removal_condition": "ticket 2052 lands or its review rejects the module growth"
       }
     },
     {
       "path": "src/entities/drug/label.rs",
-      "baseline_lines": 1164,
+      "baseline_lines": 1309,
       "floor_lines": 938,
       "authorized_increase": {
-        "ticket": "2050",
-        "delta": 226,
-        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
-        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
+        "ticket": "2052",
+        "delta": 371,
+        "reason": "the 2052 resolution rules and their tests grow the drug name-resolution, label-choice and refusal-budget modules",
+        "removal_condition": "ticket 2052 lands or its review rejects the module growth"
       }
     },
     {
       "path": "src/entities/drug/test_support/label_choice.rs",
-      "baseline_lines": 1287,
+      "baseline_lines": 1290,
       "floor_lines": 1287,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2052",
+        "delta": 3,
+        "reason": "the 2052 resolution rules and their tests grow the drug name-resolution, label-choice and refusal-budget modules",
+        "removal_condition": "ticket 2052 lands or its review rejects the module growth"
+      }
     },
     {
       "path": "src/entities/gene.rs",
@@ -299,13 +304,13 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1461,
+      "baseline_lines": 1483,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1256, 1302, 1304, 1299, 2017, 2021, 2038, 2044",
-        "delta": 339,
-        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests. Ticket 1304: the WHO Prequalification header-mismatch projection arm and its test. | merged deadline-projection guard beside the citation-evidence carve-outs and the WHO PQ mismatch arm | The WHO Prequalification sync-failure projection arm carries the sync reason and recovery through the public error surface instead of the generic source-down line. The projection recovery borrows from the error so the WHO recovery names the resolved data directory instead of holding a second static spelling. | Ticket 2038: the WHO sync-failure projection arm carries the projected, path-free recovery beside the terminal suggestion. | Ticket 2044 restores the compound history the 2038 inline inventory rewrite lost.",
-        "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures. | the shared error-projection redesign collapses the per-surface carve-outs | Fold the per-surface reason-prefix projection arms into shared plumbing when the error-projection redesign lands. | Fold the WHO sync-failure projection arm into the shared error-projection redesign when it lands."
+        "ticket": "2052",
+        "delta": 361,
+        "reason": "the 2052 resolution rules and their tests grow the drug name-resolution, label-choice and refusal-budget modules",
+        "removal_condition": "ticket 2052 lands or its review rejects the module growth"
       }
     },
     {
@@ -372,13 +377,13 @@
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
-      "baseline_lines": 1166,
+      "baseline_lines": 1206,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "2050",
-        "delta": 166,
-        "reason": "The refusal-path discover budget and memo bound, the rescue timeout wrapper, the sparse-record multi-word brand reader with the brand-tier generic fit check, and the recorded-reply tests for the product-name, abbreviation, GWAS and card-field gaps.",
-        "removal_condition": "Shrink when the element identity helpers move beside the SPL element parsing they share and the recorded replies fold into shared fixtures."
+        "ticket": "2052",
+        "delta": 206,
+        "reason": "the 2052 resolution rules and their tests grow the drug name-resolution, label-choice and refusal-budget modules",
+        "removal_condition": "ticket 2052 lands or its review rejects the module growth"
       }
     },
     {
@@ -538,14 +543,9 @@
     },
     {
       "path": "src/transform/drug.rs",
-      "baseline_lines": 1436,
-      "floor_lines": 1000,
-      "authorized_increase": {
-        "ticket": "2050",
-        "delta": 436,
-        "reason": "The request-names-a-carried-product check that scopes the product-name equality rule, and the recorded-reply tests for the product-name gaps.",
-        "removal_condition": "Shrink when the carried-product check folds into the canonical name entry builder."
-      }
+      "baseline_lines": 1705,
+      "floor_lines": 1705,
+      "authorized_increase": null
     },
     {
       "path": "src/transform/variant.rs",

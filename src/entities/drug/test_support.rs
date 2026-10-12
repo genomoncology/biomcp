@@ -106,6 +106,8 @@ fn drug_fixture_env(
 
 #[cfg(test)]
 mod brand_resolution;
+#[cfg(test)]
+mod ingredient_resolution;
 mod label_choice;
 #[cfg(test)]
 mod product_names;
@@ -831,4 +833,136 @@ async fn a_brand_query_resolves_through_the_mychem_record_itself() {
     assert_eq!(drug.name, "osimertinib");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09330"));
     server.abort();
+}
+
+/// A TCP server that accepts connections and never answers: a stalled
+/// discover source. Both refusal rounds — the entity rescue inside `get`
+/// and the CLI alias fallback — must bound their discover rounds against
+/// it (ticket 2052).
+async fn stalled_ols4_server() -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind stalled OLS4 fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                // Never answers within any budget the tests allow: the
+                // connection stays open and the read parks on data that
+                // never arrives, so the stall is the fixture itself and
+                // no timer bounds it.
+                loop {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    if stream.read(&mut request).await.unwrap_or(0) == 0 {
+                        return;
+                    }
+                }
+            });
+        }
+    });
+    (base, task)
+}
+
+/// Ticket 2052: a refusal is two rounds over one discover source — the
+/// entity rescue and the CLI alias fallback — and a stalled source must
+/// not collect the refusal budget twice. The CLI refusal against a
+/// stalled source settles inside one budget (about two seconds plus the
+/// fixture rounds), where the pre-2052 shape spent the entity's two
+/// seconds and then restarted the clock for its own.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_stalled_drug_refusal_costs_one_discover_budget() {
+    let (ols_base, ols_server) = stalled_ols4_server().await;
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "Fluxitol".to_string(),
+            r#"{"total":1,"hits":[{"_id":"C9999999","_score":17.0,"ndc":{"nonproprietaryname":"otherdrug","proprietaryname":"Otherdrug"}}]}"#
+                .to_string(),
+        )],
+        Vec::new(),
+        Vec::new(),
+    )
+    .await;
+    let (mut env, _ddinter) = drug_fixture_env(base.as_str(), "stalled-drug-refusal-ddinter");
+    env.set("BIOMCP_OLS4_BASE", &ols_base);
+
+    let started = std::time::Instant::now();
+    let err = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "drug".to_string(),
+        "Fluxitol".to_string(),
+        "label".to_string(),
+    ])
+    .await
+    .expect_err("the text-only match refuses");
+    let elapsed = started.elapsed();
+    drop(env);
+    ols_server.abort();
+    server.abort();
+
+    assert!(
+        err.to_string().contains("drug 'Fluxitol' not found"),
+        "{err}"
+    );
+    assert!(
+        elapsed <= crate::test_support::watchdog(3),
+        "the refusal must cost one discover budget, not two: {elapsed:?}"
+    );
+}
+
+/// The CLI alias fallback's own round gives up on the refusal budget
+/// (tickets 2050 and 2052): a gene miss has no entity-side discover
+/// rescue, so the alias fallback's bounded round is the whole discover
+/// cost, and the refusal settles inside it. Setting the fallback timeout
+/// to an hour hangs this test past its watchdog.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_slow_alias_fallback_round_gives_up_within_the_refusal_budget() {
+    let (ols_base, ols_server) = stalled_ols4_server().await;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind mygene fixture");
+    let gene_base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let gene_server = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let Ok(len) = stream.read(&mut request).await else {
+                    return;
+                };
+                let _ = &request[..len];
+                let body = r#"{"total": 0, "hits": []}"#;
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            });
+        }
+    });
+
+    let mut env = crate::test_support::FixtureEnv::new();
+    env.set("BIOMCP_MYGENE_BASE", &gene_base);
+    env.set("BIOMCP_OLS4_BASE", &ols_base);
+
+    let started = std::time::Instant::now();
+    let err = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "gene".to_string(),
+        "FLUX1".to_string(),
+    ])
+    .await
+    .expect_err("a gene miss refuses");
+    let elapsed = started.elapsed();
+    drop(env);
+    ols_server.abort();
+    gene_server.abort();
+
+    assert!(err.to_string().contains("gene 'FLUX1' not found"), "{err}");
+    assert!(
+        elapsed <= crate::test_support::watchdog(3),
+        "the alias fallback round must give up on the refusal budget: {elapsed:?}"
+    );
 }

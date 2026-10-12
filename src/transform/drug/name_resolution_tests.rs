@@ -710,7 +710,9 @@ fn lonsurf_says_trifluridine_and_tipiracil_again() {
     assert_eq!(selected.len(), 3);
     let drug = merge_mychem_hits(&selected, "lonsurf");
     assert_eq!(drug.name, "trifluridine and tipiracil");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00432"));
+    // Ticket 2052: a combination card shows product-level identifiers or
+    // none, so trifluridine's DrugBank id never stands in for Lonsurf.
+    assert_eq!(drug.drugbank_id.as_deref(), None);
 }
 
 /// `q=Rybrevant` recorded 2026-10-09 (ticket 2037): the exact tier holds the

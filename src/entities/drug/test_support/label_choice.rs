@@ -773,7 +773,10 @@ const DARATUMUMAB_CAPTURE: &str = r#"
 }
 "#;
 
-pub(super) fn assert_label_data_with_set_id(drug: &super::super::Drug, set_id: &str) {
+pub(in crate::entities::drug::test_support) fn assert_label_data_with_set_id(
+    drug: &super::super::Drug,
+    set_id: &str,
+) {
     assert_eq!(drug.label_set_id.as_deref(), Some(set_id));
     let outcome = drug
         .section_outcomes

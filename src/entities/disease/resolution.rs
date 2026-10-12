@@ -578,7 +578,10 @@ fn scored_best_candidate_for_queries(
             // Unlabelled records answer with their ID as the name, which is
             // shorter than any real label and used to win the length
             // tie-break (ticket 2017); a real label outranks the fallback.
-            let unlabelled = hit_label(&hit).is_none() as u8;
+            // The tie-break reads provider names alone, matching
+            // `rerank_disease_search_hits`, so a label-only record never
+            // leapfrogs a named one in either ranker (ticket 2052).
+            let unlabelled = !hit_is_provider_named(&hit) as u8;
             (
                 best_score,
                 best_exact_rank,
@@ -770,20 +773,12 @@ fn exact_token_holder_ids<'a>(
     holder_ids
 }
 
-/// A display label for a refusal candidate. MONDO records with no `name`
-/// in the search response still carry the ontology `label`, so the
-/// candidate list names the disease instead of printing a bare ID
-/// (ticket 2017: `CAD` refused listing `MONDO:0018922` with no label).
+/// A display label for a refusal candidate. `hit_label` already falls
+/// back to the ontology `label` (ticket 2050), so MONDO records with no
+/// `name` still name the disease instead of printing a bare ID (ticket
+/// 2017: `CAD` refused listing `MONDO:0018922` with no label).
 fn holder_display_label(hit: &MyDiseaseHit) -> Option<String> {
-    hit_label(hit).or_else(|| {
-        hit.mondo
-            .as_ref()
-            .and_then(|value| value.get("label"))
-            .and_then(|value| value.as_str())
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(|value| value.to_string())
-    })
+    hit_label(hit)
 }
 
 fn abbreviation_candidate_lines(holders: &[MyDiseaseHit]) -> String {
