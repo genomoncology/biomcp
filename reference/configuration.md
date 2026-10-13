@@ -144,7 +144,26 @@ Internal cBioPortal fixture/source-selection seams include
 
 | Variable | Purpose |
 |---|---|
-| `BIOMCP_DISABLE_KEGG` | Operator-supported degradation control that disables KEGG pathway calls when KEGG should be avoided |
+| `BIOMCP_DISABLE_SOURCES` | Comma- or pipe-separated source ids or group names to turn off; `--disable-sources` passes the same list for one invocation |
+| `BIOMCP_DISABLE_KEGG` | Legacy alias for `BIOMCP_DISABLE_SOURCES=kegg`; set to `1` to turn off KEGG |
+
+### Disabling sources by name or group
+
+`--disable-sources` and `BIOMCP_DISABLE_SOURCES` take a comma- or
+pipe-separated list of source ids and group names, matched
+case-insensitively with surrounding whitespace trimmed:
+`--disable-sources kegg,enrichr` and `BIOMCP_DISABLE_SOURCES=kegg|enrichr`
+behave identically, and the CLI and the MCP server read the same setting.
+An unknown id or group name is an error that lists the valid names. Valid
+ids come from [`sources.json`](source-licensing.md#how-to-read-this-page);
+the groups are `commercial-restricted`, `license-required`, and
+`non-commercial`, drawn from each source's recorded commercial terms in that
+file rather than from a list in code. A disabled source is never called, its
+fields are dropped when another service carries them (for example, gene
+records show no KEGG pathway names while `kegg` is off), `biomcp health`
+lists every disabled source with the setting that turned it off, and the MCP
+server's description names them for its clients. Sources that need a key
+stay off without one regardless of this setting.
 
 - Human-facing diagnostics and tracing go to stderr, never JSON stdout.
 - JSON query responses use `_meta.source_status` where a command has structured
@@ -160,4 +179,6 @@ Internal cBioPortal fixture/source-selection seams include
   usable evidence. Outcome-only helpers such as `variant structure` may expose
   the same state model on their documented status surface.
 - `SourceUnavailable` means the source is supported but temporarily unavailable.
-  It is distinct from unsupported sections or invalid command grammar.
+  It is distinct from unsupported sections or invalid command grammar. A
+  source disabled through `--disable-sources`/`BIOMCP_DISABLE_SOURCES` is
+  reported as disabled, not unavailable, and names the setting to change.

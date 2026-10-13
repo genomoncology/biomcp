@@ -3706,6 +3706,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Observability and Degradation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-sources-by-name-or-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling sources by name or group
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -4374,6 +4391,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Observability and Degradation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-sources-by-name-or-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling sources by name or group
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -4672,11 +4706,31 @@ Internal cBioPortal fixture/source-selection seams include
 </thead>
 <tbody>
 <tr>
+<td><code>BIOMCP_DISABLE_SOURCES</code></td>
+<td>Comma- or pipe-separated source ids or group names to turn off; <code>--disable-sources</code> passes the same list for one invocation</td>
+</tr>
+<tr>
 <td><code>BIOMCP_DISABLE_KEGG</code></td>
-<td>Operator-supported degradation control that disables KEGG pathway calls when KEGG should be avoided</td>
+<td>Legacy alias for <code>BIOMCP_DISABLE_SOURCES=kegg</code>; set to <code>1</code> to turn off KEGG</td>
 </tr>
 </tbody>
 </table>
+<h3 id="disabling-sources-by-name-or-group">Disabling sources by name or group<a class="headerlink" href="#disabling-sources-by-name-or-group" title="Permanent link">&para;</a></h3>
+<p><code>--disable-sources</code> and <code>BIOMCP_DISABLE_SOURCES</code> take a comma- or
+pipe-separated list of source ids and group names, matched
+case-insensitively with surrounding whitespace trimmed:
+<code>--disable-sources kegg,enrichr</code> and <code>BIOMCP_DISABLE_SOURCES=kegg|enrichr</code>
+behave identically, and the CLI and the MCP server read the same setting.
+An unknown id or group name is an error that lists the valid names. Valid
+ids come from <a href="../source-licensing/#how-to-read-this-page"><code>sources.json</code></a>;
+the groups are <code>commercial-restricted</code>, <code>license-required</code>, and
+<code>non-commercial</code>, drawn from each source's recorded commercial terms in that
+file rather than from a list in code. A disabled source is never called, its
+fields are dropped when another service carries them (for example, gene
+records show no KEGG pathway names while <code>kegg</code> is off), <code>biomcp health</code>
+lists every disabled source with the setting that turned it off, and the MCP
+server's description names them for its clients. Sources that need a key
+stay off without one regardless of this setting.</p>
 <ul>
 <li>Human-facing diagnostics and tracing go to stderr, never JSON stdout.</li>
 <li>JSON query responses use <code>_meta.source_status</code> where a command has structured
@@ -4692,7 +4746,9 @@ Internal cBioPortal fixture/source-selection seams include
   usable evidence. Outcome-only helpers such as <code>variant structure</code> may expose
   the same state model on their documented status surface.</li>
 <li><code>SourceUnavailable</code> means the source is supported but temporarily unavailable.
-  It is distinct from unsupported sections or invalid command grammar.</li>
+  It is distinct from unsupported sections or invalid command grammar. A
+  source disabled through <code>--disable-sources</code>/<code>BIOMCP_DISABLE_SOURCES</code> is
+  reported as disabled, not unavailable, and names the setting to change.</li>
 </ul>
 
 

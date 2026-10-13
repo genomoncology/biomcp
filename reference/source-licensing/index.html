@@ -3455,6 +3455,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="How to read this page">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#turning-restricted-sources-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Turning restricted sources off
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -5240,6 +5257,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="How to read this page">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#turning-restricted-sources-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Turning restricted sources off
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -6268,7 +6302,24 @@ specific capture requires a separate source-by-source rights record.</p>
   <code>optional_env</code> means an environment variable improves quota or access quality but is not required for baseline use.
   <code>required_env</code> means the feature requires a configured environment variable.
   <code>not_applicable</code> means there is no standalone BioMCP auth path because the provider is indirect-only.</li>
+<li><code>commercial_terms</code>
+  <code>null</code> means the recorded terms impose no recorded commercial restriction on the content BioMCP serves.
+  <code>license-required</code> means the recorded terms require a commercial license for commercial use.
+  <code>non-commercial</code> means the recorded terms allow non-commercial use only.</li>
 </ul>
+<h3 id="turning-restricted-sources-off">Turning restricted sources off<a class="headerlink" href="#turning-restricted-sources-off" title="Permanent link">&para;</a></h3>
+<p>The <code>commercial_terms</code> field draws the <code>--disable-sources</code> groups:
+<code>license-required</code> and <code>non-commercial</code> each select their own shape, and
+<code>commercial-restricted</code> is their union. Turn any of them off with the global
+flag or the environment variable
+(<a href="../configuration/#disabling-sources-by-name-or-group">Configuration: disabling sources by name or group</a>);
+any single source id also works on its own. Membership follows this file, so
+re-recording a source's terms redraws the groups without a code change.
+Today <code>license-required</code> covers KEGG, Enrichr, OncoKB, and DrugBank;
+<code>non-commercial</code> covers DDInter and PharmacoDB. COSMIC stays out: BioMCP
+serves only the v68 snapshot MyVariant carries, and the recorded reading is
+that the v68-era terms govern those fields. Semantic Scholar and the WHO
+sources stay out on their recorded open readings.</p>
 <h2 id="summary-table">Summary table<a class="headerlink" href="#summary-table" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
