@@ -50,6 +50,7 @@ The tests read these declarations directly. Each list applies only to its named 
 --condition
 --count-only
 --criteria
+--disable-sources
 --date-from
 --date-to
 --distance
