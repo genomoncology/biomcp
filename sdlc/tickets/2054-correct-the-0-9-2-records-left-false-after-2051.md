@@ -1,8 +1,10 @@
 # 2054 — Clear the 0.9.2 leftovers
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.2
+
+Reviews: revision 392f504, accept
 
 ## Outcome
 
@@ -25,3 +27,11 @@ Filed 2026-10-11 from the independent review of main at `b039ac3e7`. Trimmed 202
 ## Amendment, 2026-10-12
 
 pm now checks ticket and review formats itself, so BioMCP's own copy goes. Delete the review-verdict checks in `tests/test_sdlc_review_status_contract.py` and keep its merge-conflict-marker tests in a file of their own. The mailroom ask is answered, so the first Changes item is done. Proof adds: `pm lint` reports no ticket-format findings, and no test under `tests/` restates pm's review-verdict rules.
+
+## Amendment, 2026-10-13
+
+The PM ruled on the review's blocker, option b: "pm's merge-branch flow lacks a verdict gate (bug filed as pm 0325), so BioMCP keeps ONE minimal check until pm 0325 lands and a re-probe passes: every landed ticket carries an accept." That check is `tests/test_landed_tickets_carry_accept.py`. A landed ticket, its number the leading number of a file in `sdlc/records/`, passes on pm's own `Reviews: revision <hex>, accept` line or a review line whose state token is ACCEPT; glued, bold and wrapped shapes stay pm's alone. The ruled shapes alone fail the tickets the 1259 records round left with honest "no record kept" verdicts, so the check also accepts a closed list of those exact disposition strings, enumerated in the module; a new spelling fails rather than matching a pattern. Delete the whole check when pm 0325 lands and the re-probe passes.
+
+## Progress
+
+- 2026-10-13 next: the accept check is back under the PM's ruling and pm 0325 is filed; delete it when pm 0325 lands and the re-probe passes
