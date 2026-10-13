@@ -455,7 +455,7 @@ fn enrichr_disabled_makes_no_enrichr_request_but_enabled_does() {
     assert!(disabled.status.success(), "{disabled:?}");
     let disabled_out = stdout(&disabled);
     assert!(
-        disabled_out.contains("Enrichr gene enrichment is disabled by --disable-sources enrichr"),
+        disabled_out.contains("Enrichr gene enrichment is disabled by --disable-sources=enrichr"),
         "{disabled_out}"
     );
     let requests_after_enabled = fixture.requests_matching("/Enrichr/");
@@ -502,8 +502,8 @@ fn health_lists_disabled_sources_with_the_reason() {
     assert!(output.status.success(), "{output:?}");
     let out = stdout(&output);
     assert!(out.contains("\"disabled\":"), "{out}");
-    assert!(out.contains("\"id\":\"kegg\""), "{out}");
-    assert!(out.contains("\"id\":\"enrichr\""), "{out}");
+    assert!(out.contains("\"id\": \"kegg\""), "{out}");
+    assert!(out.contains("\"id\": \"enrichr\""), "{out}");
     assert!(
         out.contains("disabled by BIOMCP_DISABLE_SOURCES=kegg"),
         "{out}"

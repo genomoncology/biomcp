@@ -40,9 +40,9 @@ impl CommercialTerms {
 /// A group name resolves to a recorded commercial-terms shape; `None`
 /// means every source that records a shape (the union group).
 const GROUPS: &[(&str, Option<CommercialTerms>)] = &[
+    ("commercial-restricted", None),
     ("license-required", Some(CommercialTerms::LicenseRequired)),
     ("non-commercial", Some(CommercialTerms::NonCommercial)),
-    ("commercial-restricted", None),
 ];
 
 const SOURCES_JSON: &str = include_str!("../../docs/reference/sources.json");
