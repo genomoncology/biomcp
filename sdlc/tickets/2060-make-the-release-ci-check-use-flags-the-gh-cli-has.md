@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 85105b0, accept
+
 ## Outcome
 
 The release workflow's green-CI check runs on the gh version GitHub runners ship, so a tag whose CI passed releases.
