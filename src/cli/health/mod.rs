@@ -527,6 +527,7 @@ mod tests {
             error: 1,
             total: 1,
             rows: Vec::new(),
+            disabled: Vec::new(),
         };
         let output: serde_json::Value =
             serde_json::from_str(&report.to_json(true).unwrap()).unwrap();

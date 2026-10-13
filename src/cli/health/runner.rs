@@ -306,14 +306,17 @@ async fn run_api_probes(
     run_buffered_in_order(
         sources.iter().copied(),
         HEALTH_API_PROBE_CONCURRENCY_LIMIT,
-        move |source| async move {
-            let disabled = crate::sources::disable::Registry::get()
-                .id_for_name(source.api)
-                .is_some_and(crate::sources::disable::is_disabled);
-            if disabled {
-                disabled_row(&source)
-            } else {
-                probe_source_with_timeout(client.clone(), source).await
+        move |source| {
+            let client = client.clone();
+            async move {
+                let disabled = crate::sources::disable::Registry::get()
+                    .id_for_name(source.api)
+                    .is_some_and(crate::sources::disable::is_disabled);
+                if disabled {
+                    disabled_row(&source)
+                } else {
+                    probe_source_with_timeout(client, source).await
+                }
             }
         },
     )

@@ -136,7 +136,7 @@ pub(in crate::cli::health) fn check_ddinter_local_data() -> ProbeOutcome {
             "DDInter local data",
             super::HealthStatus::Disabled,
             "-".to_string(),
-            DDINTER_LOCAL_DATA_AFFECTS,
+            Some(DDINTER_LOCAL_DATA_AFFECTS),
             None,
         );
         row.disabled_reason = crate::sources::disable::reason("ddinter").map(str::to_string);

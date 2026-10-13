@@ -385,9 +385,10 @@ mod tests {
     #[test]
     fn license_required_group_covers_the_four_recorded_sources() {
         let parsed = parse_disable_spec("license-required", "--disable-sources").unwrap();
-        let ids: Vec<&str> = parsed.entries().iter().map(|e| e.id.as_str()).collect();
+        let entries = parsed.entries();
+        let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
         assert_eq!(ids, vec!["drugbank", "enrichr", "kegg", "oncokb"]);
-        assert!(parsed.entries().iter().all(|entry| {
+        assert!(entries.iter().all(|entry| {
             entry
                 .reason
                 .contains("license-required group (the recorded terms require a commercial license")
@@ -397,7 +398,8 @@ mod tests {
     #[test]
     fn non_commercial_group_covers_the_two_recorded_sources() {
         let parsed = parse_disable_spec("non-commercial", "--disable-sources").unwrap();
-        let ids: Vec<&str> = parsed.entries().iter().map(|e| e.id.as_str()).collect();
+        let entries = parsed.entries();
+        let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
         assert_eq!(ids, vec!["ddinter", "pharmacodb"]);
     }
 
@@ -407,12 +409,15 @@ mod tests {
         let license = parse_disable_spec("license-required", "--disable-sources").unwrap();
         let non_commercial = parse_disable_spec("non-commercial", "--disable-sources").unwrap();
 
-        for id in license
+        let mut member_ids: Vec<String> = license
             .entries()
-            .iter()
-            .chain(non_commercial.entries().iter())
-            .map(|entry| entry.id.as_str())
-        {
+            .into_iter()
+            .chain(non_commercial.entries())
+            .map(|entry| entry.id)
+            .collect();
+        member_ids.sort();
+        assert_eq!(member_ids.len(), 6, "union covers both shapes");
+        for id in &member_ids {
             assert!(union.is_disabled(id), "{id} must join the union group");
         }
         assert!(!union.is_disabled("reactome"));

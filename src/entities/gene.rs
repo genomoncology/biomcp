@@ -1116,12 +1116,11 @@ fn extract_enrich_terms(
 fn enrichr_section_unavailable(err: &BioMcpError) -> SectionOutcome {
     match crate::sources::disable::unavailable_disabled_reason(err) {
         Some(reason) => {
-            SectionOutcome::unavailable(&format!("Enrichr gene enrichment is {reason}."))
+            SectionOutcome::unavailable_message(format!("Enrichr gene enrichment is {reason}."))
         }
         None => SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
     }
 }
-
 async fn enrich_gene(
     symbol: &str,
     include: &[GeneIncludeType],

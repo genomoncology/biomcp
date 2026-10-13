@@ -691,7 +691,7 @@ impl BioMcpError {
             return PublicErrorProjection {
                 message: format!("Source unavailable: {source_name} is {reason}."),
                 source: None,
-                recovery: Some(suggestion.clone()),
+                recovery: Some(suggestion.as_str()),
             };
         }
         // The article-search deadline names itself in its reason; carry that
