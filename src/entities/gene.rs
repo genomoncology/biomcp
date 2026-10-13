@@ -1127,7 +1127,9 @@ async fn enrich_gene(
     include: &[GeneIncludeType],
 ) -> Result<(Option<Vec<EnrichmentResult>>, Option<Vec<EnrichmentResult>>), BioMcpError> {
     if crate::sources::disable::is_disabled("enrichr") {
-        return Err(crate::sources::disable::source_disabled_error("enrichr", "enrichr"));
+        return Err(crate::sources::disable::source_disabled_error(
+            "enrichr", "enrichr",
+        ));
     }
     let enrichr = EnrichrClient::new()?;
     let list_id = enrichr.add_list(&[symbol]).await?;
@@ -2398,10 +2400,8 @@ async fn populate_sections_parallel_top(
             Ok(value) => value,
             Err(err) => {
                 for section in &enrichr_sections {
-                    gene.section_outcomes.complete(
-                        section.as_str(),
-                        enrichr_section_unavailable(&err),
-                    );
+                    gene.section_outcomes
+                        .complete(section.as_str(), enrichr_section_unavailable(&err));
                 }
                 (None, None)
             }
@@ -2726,10 +2726,8 @@ pub async fn get_with_report(
             Err(err) => {
                 timing.record("enrichr", started, "error");
                 for section in &enrichr_sections {
-                    gene.section_outcomes.complete(
-                        section.as_str(),
-                        enrichr_section_unavailable(&err),
-                    );
+                    gene.section_outcomes
+                        .complete(section.as_str(), enrichr_section_unavailable(&err));
                 }
                 (None, None)
             }

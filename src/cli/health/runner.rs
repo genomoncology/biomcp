@@ -375,6 +375,7 @@ pub(in crate::cli::health) fn report_from_outcomes(outcomes: Vec<ProbeOutcome>) 
         error,
         total: rows.len(),
         rows,
+        disabled: Vec::new(),
     }
 }
 
@@ -413,7 +414,10 @@ fn disabled_health_sources() -> Vec<super::HealthDisabledSource> {
     crate::sources::disable::disabled_entries()
         .into_iter()
         .map(|entry| super::HealthDisabledSource {
-            name: registry.display_name(&entry.id).unwrap_or_default().to_string(),
+            name: registry
+                .display_name(&entry.id)
+                .unwrap_or_default()
+                .to_string(),
             id: entry.id,
             reason: entry.reason,
         })

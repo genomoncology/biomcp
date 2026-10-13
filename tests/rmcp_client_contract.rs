@@ -1740,7 +1740,10 @@ async fn mcp_server_description_lists_disabled_sources() -> anyhow::Result<()> {
             .peer_info()
             .expect("rmcp client stores initialize result as peer info");
         let instructions = initialize.instructions.as_deref().unwrap_or_default();
-        assert!(instructions.contains("disabled these sources"), "{instructions}");
+        assert!(
+            instructions.contains("disabled these sources"),
+            "{instructions}"
+        );
         assert!(
             instructions.contains("kegg (disabled by BIOMCP_DISABLE_SOURCES=kegg)"),
             "{instructions}"
@@ -1750,8 +1753,7 @@ async fn mcp_server_description_lists_disabled_sources() -> anyhow::Result<()> {
             assert!(instructions.contains(id), "{instructions}");
         }
         assert!(
-            instructions
-                .contains("disabled by the commercial-restricted group"),
+            instructions.contains("disabled by the commercial-restricted group"),
             "{instructions}"
         );
         assert!(

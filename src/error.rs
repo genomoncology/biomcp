@@ -647,9 +647,9 @@ impl BioMcpError {
                 source_name,
                 reason,
                 suggestion,
-            } if reason.starts_with(DISABLED_SOURCE_REASON_PREFIX) => format!(
-                "Source unavailable: {source_name} is {reason}.\n\n{suggestion}"
-            ),
+            } if reason.starts_with(DISABLED_SOURCE_REASON_PREFIX) => {
+                format!("Source unavailable: {source_name} is {reason}.\n\n{suggestion}")
+            }
             Self::SourceUnavailable { source_name, .. } => format!(
                 "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
             ),

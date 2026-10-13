@@ -156,8 +156,7 @@ impl DdinterClient {
     pub(crate) async fn ready() -> Result<Self, BioMcpError> {
         if crate::sources::disable::is_disabled("ddinter") {
             return Err(crate::sources::disable::source_disabled_error(
-                "DDInter",
-                "ddinter",
+                "DDInter", "ddinter",
             ));
         }
         let root = resolve_ddinter_root();
@@ -172,8 +171,7 @@ impl DdinterClient {
     pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<bool, BioMcpError> {
         if crate::sources::disable::is_disabled("ddinter") {
             return Err(crate::sources::disable::source_disabled_error(
-                "DDInter",
-                "ddinter",
+                "DDInter", "ddinter",
             ));
         }
         let root = resolve_ddinter_root();

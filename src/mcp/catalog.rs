@@ -94,7 +94,9 @@ pub(super) fn instructions() -> String {
     instructions_with_disabled(&crate::sources::disable::disabled_entries())
 }
 
-pub(super) fn instructions_with_disabled(disabled: &[crate::sources::disable::DisabledEntry]) -> String {
+pub(super) fn instructions_with_disabled(
+    disabled: &[crate::sources::disable::DisabledEntry],
+) -> String {
     let names = TOOLS
         .iter()
         .map(|tool| tool.name)

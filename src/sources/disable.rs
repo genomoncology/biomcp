@@ -181,13 +181,8 @@ pub(crate) fn parse_disable_spec(raw: &str, origin: &str) -> Result<DisabledSour
             continue;
         }
         if let Some(record) = registry.find_id(&token.to_ascii_lowercase()) {
-            entries.insert(
-                record.id.clone(),
-                format!("disabled by {origin}={token}"),
-            );
-        } else if let Some((group, shape)) =
-            registry.find_group(&token.to_ascii_lowercase())
-        {
+            entries.insert(record.id.clone(), format!("disabled by {origin}={token}"));
+        } else if let Some((group, shape)) = registry.find_group(&token.to_ascii_lowercase()) {
             let reason = match shape {
                 Some(shape) => {
                     format!("disabled by the {group} group ({})", shape.description())
@@ -196,7 +191,9 @@ pub(crate) fn parse_disable_spec(raw: &str, origin: &str) -> Result<DisabledSour
                     .to_string(),
             };
             for id in registry.ids_for_group(shape) {
-                entries.entry(id.to_string()).or_insert_with(|| reason.clone());
+                entries
+                    .entry(id.to_string())
+                    .or_insert_with(|| reason.clone());
             }
         } else {
             return Err(unknown_token_error(token));
@@ -298,7 +295,9 @@ pub(crate) fn reason(id: &str) -> Option<&'static str> {
 pub(crate) fn source_disabled_error(source_name: &str, id: &str) -> BioMcpError {
     BioMcpError::SourceUnavailable {
         source_name: source_name.to_string(),
-        reason: reason(id).unwrap_or("disabled by --disable-sources").to_string(),
+        reason: reason(id)
+            .unwrap_or("disabled by --disable-sources")
+            .to_string(),
         suggestion: format!(
             "Remove {id} from --disable-sources/BIOMCP_DISABLE_SOURCES to query {source_name}."
         ),
@@ -368,7 +367,11 @@ mod tests {
         assert!(message.contains("Valid sources: kegg"), "{message}");
         assert!(message.contains("enrichr"), "{message}");
         assert!(message.contains("drugbank"), "{message}");
-        assert!(message.contains("Valid groups: commercial-restricted, license-required, non-commercial"), "{message}");
+        assert!(
+            message
+                .contains("Valid groups: commercial-restricted, license-required, non-commercial"),
+            "{message}"
+        );
     }
 
     #[test]
@@ -384,9 +387,11 @@ mod tests {
         let parsed = parse_disable_spec("license-required", "--disable-sources").unwrap();
         let ids: Vec<&str> = parsed.entries().iter().map(|e| e.id.as_str()).collect();
         assert_eq!(ids, vec!["drugbank", "enrichr", "kegg", "oncokb"]);
-        assert!(parsed.entries().iter().all(|entry| entry
-            .reason
-            .contains("license-required group (the recorded terms require a commercial license")));
+        assert!(parsed.entries().iter().all(|entry| {
+            entry
+                .reason
+                .contains("license-required group (the recorded terms require a commercial license")
+        }));
     }
 
     #[test]
@@ -420,8 +425,16 @@ mod tests {
         assert!(registry.find_id("kegg").is_some());
         assert!(registry.find_id("NOPE").is_none());
         assert!(registry.id_for_name("KEGG").is_some_and(|id| id == "kegg"));
-        assert!(registry.id_for_name("Enrichr").is_some_and(|id| id == "enrichr"));
-        assert!(registry.id_for_name("DDInter").is_some_and(|id| id == "ddinter"));
+        assert!(
+            registry
+                .id_for_name("Enrichr")
+                .is_some_and(|id| id == "enrichr")
+        );
+        assert!(
+            registry
+                .id_for_name("DDInter")
+                .is_some_and(|id| id == "ddinter")
+        );
         assert!(registry.ids_for_group(None).len() == 6);
     }
 

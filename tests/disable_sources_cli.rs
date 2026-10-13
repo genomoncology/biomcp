@@ -198,7 +198,10 @@ impl<'a> Binary<'a> {
             .args(args)
             .env("BIOMCP_CACHE_DIR", self.cache.path())
             .env("BIOMCP_MYGENE_BASE", format!("{base}/mygene/v3"))
-            .env("BIOMCP_REACTOME_BASE", format!("{base}/reactome/ContentService"))
+            .env(
+                "BIOMCP_REACTOME_BASE",
+                format!("{base}/reactome/ContentService"),
+            )
             .env("BIOMCP_WIKIPATHWAYS_BASE", format!("{base}/wikipathways"))
             .env("BIOMCP_KEGG_BASE", format!("{base}/kegg"))
             .env("BIOMCP_ENRICHR_BASE", format!("{base}/Enrichr"))
@@ -227,7 +230,14 @@ fn disable_kegg_flag_makes_no_kegg_request_and_hides_kegg_rows() {
     let fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
-    let enabled = binary.run(&["--json", "search", "pathway", "MAPK signaling pathway", "--limit", "5"]);
+    let enabled = binary.run(&[
+        "--json",
+        "search",
+        "pathway",
+        "MAPK signaling pathway",
+        "--limit",
+        "5",
+    ]);
     assert!(enabled.status.success(), "{enabled:?}");
     let enabled_out = stdout(&enabled);
     assert!(enabled_out.contains("hsa04010"), "{enabled_out}");
@@ -272,7 +282,14 @@ fn disable_kegg_env_and_flag_forms_agree_with_comma_and_pipe() {
     let fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
-    let args = ["--json", "search", "pathway", "MAPK signaling pathway", "--limit", "5"];
+    let args = [
+        "--json",
+        "search",
+        "pathway",
+        "MAPK signaling pathway",
+        "--limit",
+        "5",
+    ];
     let flag_comma = binary.run_with(&args, Some("kegg,enrichr"), None);
     let flag_pipe = binary.run_with(&args, Some(" KEGG | ENRICHR "), None);
     let env_comma = binary.run_with(&args, None, Some("kegg,enrichr"));
@@ -328,10 +345,30 @@ fn commercial_restricted_group_disables_kegg_and_enrichr() {
 
     // The union also covers OncoKB and DrugBank, while each named group
     // works alone.
-    let licensed = binary.run_with(&["--json", "search", "pathway", "MAPK signaling pathway", "--limit", "5"], Some("license-required"), None);
+    let licensed = binary.run_with(
+        &[
+            "--json",
+            "search",
+            "pathway",
+            "MAPK signaling pathway",
+            "--limit",
+            "5",
+        ],
+        Some("license-required"),
+        None,
+    );
     assert!(licensed.status.success(), "{licensed:?}");
     assert_eq!(fixture.requests_matching("/kegg/"), 0);
-    let non_commercial = binary.run(&["--json", "--disable-sources", "non-commercial", "search", "pathway", "MAPK signaling pathway", "--limit", "5"]);
+    let non_commercial = binary.run(&[
+        "--json",
+        "--disable-sources",
+        "non-commercial",
+        "search",
+        "pathway",
+        "MAPK signaling pathway",
+        "--limit",
+        "5",
+    ]);
     assert!(non_commercial.status.success(), "{non_commercial:?}");
     assert!(
         stdout(&non_commercial).contains("hsa04010"),
@@ -367,9 +404,20 @@ fn kegg_disable_drops_kegg_pathway_names_carried_by_mygene() {
     let enabled = binary.run(&["--json", "get", "gene", "BRAF", "pathways"]);
     assert!(enabled.status.success(), "{enabled:?}");
     let enabled_out = stdout(&enabled);
-    assert!(enabled_out.contains("MAPK signaling pathway - Homo sapiens (human)"), "{enabled_out}");
+    assert!(
+        enabled_out.contains("MAPK signaling pathway - Homo sapiens (human)"),
+        "{enabled_out}"
+    );
 
-    let disabled = binary.run(&["--json", "--disable-sources", "kegg", "get", "gene", "BRAF", "pathways"]);
+    let disabled = binary.run(&[
+        "--json",
+        "--disable-sources",
+        "kegg",
+        "get",
+        "gene",
+        "BRAF",
+        "pathways",
+    ]);
     assert!(disabled.status.success(), "{disabled:?}");
     let disabled_out = stdout(&disabled);
     assert!(
@@ -390,9 +438,20 @@ fn enrichr_disabled_makes_no_enrichr_request_but_enabled_does() {
 
     let enabled = binary.run(&["--json", "get", "gene", "BRAF", "ontology"]);
     assert!(enabled.status.success(), "{enabled:?}");
-    assert!(fixture.requests_matching("/Enrichr/") >= 2, "addList plus enrich");
+    assert!(
+        fixture.requests_matching("/Enrichr/") >= 2,
+        "addList plus enrich"
+    );
 
-    let disabled = binary.run(&["--json", "--disable-sources", "enrichr", "get", "gene", "BRAF", "ontology"]);
+    let disabled = binary.run(&[
+        "--json",
+        "--disable-sources",
+        "enrichr",
+        "get",
+        "gene",
+        "BRAF",
+        "ontology",
+    ]);
     assert!(disabled.status.success(), "{disabled:?}");
     let disabled_out = stdout(&disabled);
     assert!(
@@ -416,7 +475,10 @@ fn unknown_name_fails_with_the_valid_names() {
     let output = binary.run(&["--disable-sources", "nope", "search", "gene", "BRAF"]);
     assert_eq!(output.status.code(), Some(2), "{output:?}");
     let combined = format!("{}{}", stdout(&output), stderr(&output));
-    assert!(combined.contains("Unknown source or group \"nope\""), "{combined}");
+    assert!(
+        combined.contains("Unknown source or group \"nope\""),
+        "{combined}"
+    );
     assert!(combined.contains("Valid sources:"), "{combined}");
     assert!(combined.contains("kegg"), "{combined}");
     assert!(combined.contains("mygene-info"), "{combined}");
@@ -424,14 +486,17 @@ fn unknown_name_fails_with_the_valid_names() {
         combined.contains("Valid groups: commercial-restricted, license-required, non-commercial"),
         "{combined}"
     );
-    assert_eq!(fixture.requests_matching("/mygene/"), 0, "no provider is queried before the setting is validated");
+    assert_eq!(
+        fixture.requests_matching("/mygene/"),
+        0,
+        "no provider is queried before the setting is validated"
+    );
 }
 
 #[test]
 fn health_lists_disabled_sources_with_the_reason() {
     let fixture = Fixture::start();
-    let binary = Binary::new(&fixture)
-        .env("BIOMCP_DISABLE_SOURCES", "kegg,enrichr");
+    let binary = Binary::new(&fixture).env("BIOMCP_DISABLE_SOURCES", "kegg,enrichr");
 
     let output = binary.run(&["--json", "health", "--api", "kegg", "--api", "enrichr"]);
     assert!(output.status.success(), "{output:?}");

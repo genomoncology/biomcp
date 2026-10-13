@@ -678,7 +678,10 @@ pub async fn search_with_filters(
     let wikipathways = WikiPathwaysClient::new()?;
 
     let (reactome_res, kegg_res, wikipathways_res) = if kegg_disabled() {
-        warn!("KEGG pathway search skipped: kegg is {}", kegg_disabled_reason());
+        warn!(
+            "KEGG pathway search skipped: kegg is {}",
+            kegg_disabled_reason()
+        );
         let (reactome_res, wikipathways_res) = tokio::join!(
             client.search_pathways(&effective_query, limit),
             wikipathways.search_pathways(&effective_query, limit)
