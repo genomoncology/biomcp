@@ -3,6 +3,9 @@
 Status: OPEN.
 
 Milestone: 0.9.3
+
+Reviews: revision 4864762, accept
+
 ## Outcome
 
 A user turns off any source, or any named group of sources, with one setting: the global flag `--disable-sources` or the variable `BIOMCP_DISABLE_SOURCES`. Either takes a comma- or pipe-separated list of source ids and group names, such as `kegg,enrichr` or `commercial-restricted|alphagenome`. BioMCP never calls a disabled source, and it leaves out fields that other services pass along from that source. `biomcp health` lists the disabled sources and says why each one is off. The CLI and the MCP server behave the same way.
