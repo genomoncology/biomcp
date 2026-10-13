@@ -22,3 +22,4 @@ BioMCP keeps no test of its own that restates pm's review-verdict rules. pm's la
 ## Progress
 
 - 2026-10-13 started
+- 2026-10-13 next: pm rebuilt from f6b5096, which holds 0325; the re-probe on a scratch clone under /tmp refused every bad verdict under both pm ticket land --merge-branch and pm land-check, each exit 1 naming the review verdict — the pending bullet, the pm-form pending, the pm-form findings, the glued, the bold and the wrapped accept spellings, and no review lines at all — while a genuine accept landed: its merge carried Review: accept, the verdict pm read, with Status: COMPLETE. inside it; the check is deleted
