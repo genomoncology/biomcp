@@ -145,8 +145,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     let results = Box::pin(crate::cli::search_all::dispatch(&input)).await?;
                     if json {
                         // Search-all JSON carries the stale-cache note in a
-                        // `_meta.notes` channel like every other search body
-                        //; omitted when nothing was recorded.
+                        // `_meta.notes` channel; omitted when nothing was recorded.
                         let notes = crate::sources::take_stale_serve_sentences();
                         let body = crate::cli::search_all::json_body(&results, input.counts_only, notes)?;
                         Ok(crate::render::json::to_pretty(&body)?)
