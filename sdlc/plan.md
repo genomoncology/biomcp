@@ -40,12 +40,12 @@ Exit: every 1.0 ticket lives on `main` with its milestone, a check refuses a tic
 
 Open tickets in the order I want them taken. Status comes from pm, never from this list.
 
-- 2054
 - 2061
+- 2063
 - 2041
 - 2006
 - 2005
 - 2003
 - 2004
 
-2054 clears what the 0.9.2 release left behind. 2061 opens 0.9.3 because a user asked for it and it touches no file the speed work changes; the rest of 0.9.3 follows the plan in `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and becomes tickets as it starts. 0.9.3 exits when its tag passes its first rehearsal. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
+2063 removes the last interim review check now that pm guards landings. 2061 opens 0.9.3 because a user asked for it and it touches no file the speed work changes; the rest of 0.9.3 follows the plan in `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and becomes tickets as it starts. 0.9.3 exits when its tag passes its first rehearsal. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
