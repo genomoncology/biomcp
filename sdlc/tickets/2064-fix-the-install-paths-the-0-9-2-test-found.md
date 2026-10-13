@@ -25,6 +25,10 @@ Filed 2026-10-13 from the post-release install and product test of v0.9.2 (tag `
 - Proof: an outside-in test runs the install script with `--version` against a staged release and passes, and reads back the receipt's version; a test runs the wrapper through a symlinked sibling; the rendered formula carries a test block; a release rehearsal's draft release carries the 0.9.3 notes.
 - Defers: a Linux Homebrew formula.
 
+## Amendment 2026-10-13
+
+Ian ruled mid-build: drop the `biomcp-cli` wrapper instead of fixing it. Delete `src/main_biomcp_cli.rs`, its `[[bin]]` entry in Cargo.toml, its packaging references, and its tests; the PyPI package keeps its name (`biomcp-cli`) and installs only the `biomcp` binary. The changelog bullet and the install docs tell uvx users to run `uvx --from biomcp-cli biomcp serve` (uvx needs `--from` because the package name and the command name now differ). The "wrapper resolves a symlinked sibling" change and its proof case are dropped entirely. Every other item above stands: the install.sh version read and receipt, the Python 3.10 floor, Homebrew macOS-only docs, Docker pin guidance, the maintainer-note drop, the formula `test do` block, and the release-notes-from-changelog step.
+
 Built 2026-10-13 on `ticket/2064-install-paths`.
 
 - Red probes on main (`probe/2064-red-tests`, deleted after recording): nine Python tests failed as filed — the pinned install refused a staged release whose `version` banner ends with the build field, the latest install wrote that field into the receipt, the docs lacked the Python 3.10 floor and the Homebrew/Docker statements, the rendered formula carried no `test do` block, and `create-draft` created a draft with no notes. The Rust probe failed with exit 126, "sibling is not a regular file", through a symlinked sibling.
