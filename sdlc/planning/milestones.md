@@ -10,6 +10,12 @@ Outcome: the 0.9 branch queue landed on main, every external issue answered, the
 
 Exit criteria: 1298 and 1294 land on a green merged-tree CI run, the yellow gates, and a fresh review verdict recorded on the ticket. The QA sign-off they first named is not owed: Ian waived it when he dissolved the QA team on 2026-10-06, before it answered. 1299, 1302, 1304, and 1291 land through the lane pipeline under the same bar. Issues #288 and #289 stay closed with fixes on main. Changelog bullets owed by the landed tickets are written before any tag.
 
+## 0.9.3
+
+Outcome: faster building and testing, following the plan in `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, and a setting that turns off individual sources and named groups of sources (issue #290).
+
+Exit criteria: the tag passes its first rehearsal, and issue #290 is answered with the shipped setting.
+
 ## 1.0
 
 Owned by the other team. Tracked in their records, not here.
