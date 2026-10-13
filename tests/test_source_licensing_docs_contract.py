@@ -146,6 +146,9 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             "ordinary_url_policy",
             "provider_url_policy",
             "ca_bundle",
+            # The disabled-source registry is shared state over this
+            # inventory, not a provider client.
+            "disable",
         }
     ]
     assert sorted(discovered_modules) == sorted(DIRECT_SOURCE_MODULES)
