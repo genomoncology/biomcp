@@ -1,0 +1,3 @@
+# 2063 build record — the interim accept check dropped
+
+Landed 2026-10-13 from branch ticket/2063-drop-accept-check. pm 0325 landed, and the re-run 2054 probe on the rebuilt pm confirms both land-check and merge-branch refuse every bad verdict shape (pending-only, pm-form pending, findings, glued, bold, wrapped, no review lines) while a genuine accept lands with the merge trailer stating the verdict pm read. The interim landed-ticket accept check and its closed disposition list are deleted, the package cap returns to its prior count, and pm's ask is answered with the probe result. Review: accept at 071d6202d by a gate-running reviewer who re-probed pm independently and verified the diff, the answer message, and pm lint. CI green on the exact landed head.

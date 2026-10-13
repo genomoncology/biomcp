@@ -1,8 +1,12 @@
 # 2063 — Drop the landed-accept check
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 071d620, accept
+
+Reviews: revision 0de70ba, accept
 
 ## Outcome
 
@@ -18,3 +22,8 @@ BioMCP keeps no test of its own that restates pm's review-verdict rules. pm's la
 - Changes: pull and rebuild pm; re-run the 2054 probe on a scratch clone (pending-only, findings, glued, bold and wrapped verdicts against `--merge-branch` and `land-check`); delete `tests/test_landed_tickets_carry_accept.py` and its closed list of disposition strings.
 - Proof: the probe's results recorded on this ticket, every bad verdict refused by `--merge-branch` and `land-check`; no test under `tests/` restates pm's review-verdict rules; `pm lint` shows no ticket-format finding. Answer pm's ask in `inbox/biomcp/2026-10-13-pm-s-review-gate-is-fixed-re-run-your-2054-probe.md` with the probe result.
 - Defers: nothing.
+
+## Progress
+
+- 2026-10-13 started
+- 2026-10-13 next: pm rebuilt from f6b5096, which holds 0325; the re-probe on a scratch clone under /tmp refused every bad verdict under both pm ticket land --merge-branch and pm land-check, each exit 1 naming the review verdict — the pending bullet, the pm-form pending, the pm-form findings, the glued, the bold and the wrapped accept spellings, and no review lines at all — while a genuine accept landed: its merge carried Review: accept, the verdict pm read, with Status: COMPLETE. inside it; the check is deleted
