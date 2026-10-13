@@ -41,7 +41,7 @@ impl Fixture {
 }
 
 fn handle(mut stream: TcpStream, log: Arc<Mutex<Vec<String>>>) {
-    let Ok((request, body)) = read_request(&mut stream) else {
+    let Some((request, body)) = read_request(&mut stream) else {
         return;
     };
     let request_line = request.lines().next().unwrap_or_default().to_string();
@@ -56,7 +56,7 @@ fn handle(mut stream: TcpStream, log: Arc<Mutex<Vec<String>>>) {
     }
     let _ = body;
 
-    let (path_only, query) = match path.split_once('?') {
+    let (path_only, query): (String, String) = match path.split_once('?') {
         Some((p, q)) => (p.to_string(), q.to_string()),
         None => (path.clone(), String::new()),
     };
@@ -70,7 +70,7 @@ fn handle(mut stream: TcpStream, log: Arc<Mutex<Vec<String>>>) {
         body.len()
     );
     let _ = stream.write_all(response.as_bytes());
-    let _ = stream.write_all(body.as_bytes());
+    let _ = stream.write_all(body);
     let _ = stream.flush();
 }
 
@@ -125,7 +125,7 @@ fn route(path: &str, query: &str) -> (&'static str, &'static str, &'static [u8])
             ("200 OK", "application/json", body)
         }
         "/reactome/ContentService/search/query" => {
-            let body = if query.contains("MAPK") {
+            let body: &[u8] = if query.contains("MAPK") {
                 br#"{"totalResults":1,"results":[{"entries":[{"stId":"R-HSA-5684996","id":"R-HSA-5684996","name":"MAPK signaling pathway"}]}]}"#
             } else {
                 br#"{"totalResults":1,"results":[{"entries":[{"stId":"R-HSA-6802949","id":"R-HSA-6802949","name":"BRAF activating pathway"}]}]}"#
@@ -202,6 +202,7 @@ impl<'a> Binary<'a> {
             .env("BIOMCP_WIKIPATHWAYS_BASE", format!("{base}/wikipathways"))
             .env("BIOMCP_KEGG_BASE", format!("{base}/kegg"))
             .env("BIOMCP_ENRICHR_BASE", format!("{base}/Enrichr"))
+            .env("BIOMCP_MYVARIANT_BASE", format!("{base}/myvariant/v1"))
             .env("BIOMCP_OPENTARGETS_BASE", format!("{base}/unavailable"));
         command
             .env_remove("BIOMCP_DISABLE_SOURCES")
