@@ -343,11 +343,22 @@ cp "$bin_path" "$stage_path"
 chmod 755 "$stage_path"
 sync_path "$stage_path"
 
-if ! installed_version="$("$stage_path" version 2>/dev/null | head -n 1)"; then
+if installed_version="$("$stage_path" --version 2>/dev/null | head -n 1)"; then
+  :
+elif installed_version="$("$stage_path" version 2>/dev/null | head -n 1)"; then
+  :
+else
   echo "Install verification failed before replacement: staged biomcp version" >&2
   exit 1
 fi
-reported_version="${installed_version##* }"
+# The version is the banner's second word: `biomcp version` now ends
+# with the build-time field, which is not the version.
+reported_version="${installed_version#* }"
+reported_version="${reported_version%% *}"
+if [[ -z "$reported_version" ]]; then
+  echo "Install verification failed before replacement: staged biomcp version" >&2
+  exit 1
+fi
 requested_version="${VERSION#v}"
 if [[ "$VERSION" != "latest" && "${reported_version#v}" != "$requested_version" ]]; then
   echo "Install verification failed: requested $requested_version but staged binary reported $reported_version" >&2
@@ -358,8 +369,12 @@ old_sha=""
 old_version=""
 if [[ -f "$installed_bin" ]]; then
   old_sha="$(compute_sha256 "$installed_bin")"
-  old_output="$("$installed_bin" version 2>/dev/null | head -n 1 || true)"
-  old_version="${old_output##* }"
+  old_output="$($installed_bin --version 2>/dev/null | head -n 1 || true)"
+  if [[ -z "$old_output" ]]; then
+    old_output="$($installed_bin version 2>/dev/null | head -n 1 || true)"
+  fi
+  old_version="${old_output#* }"
+  old_version="${old_version%% *}"
 fi
 transaction_nonce="${stage_path##*.biomcp-stage.}"
 write_receipt "$receipt" pending "$old_version" "$old_sha" "$transaction_nonce" "$old_version" "$old_sha" "$reported_version" "$new_sha"

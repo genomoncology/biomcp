@@ -91,10 +91,23 @@ jobs:
       GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
+      # Ticket 2064: v0.9.2 and v0.9.1 published with no release
+      # notes. The draft carries the tag's changelog section from the
+      # moment it exists, so a rehearsal reads the notes off the
+      # draft before publish-release makes it public.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Render the release notes from the changelog
+        run: |
+          python3 release/release_notes.py --changelog CHANGELOG.md \
+            --version "${TAG#v}" --output "$RUNNER_TEMP/release-notes.md"
+
       - name: Create the draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$TAG" --draft --verify-tag --title "$TAG"
+        run: gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
 
   build:
     needs: [version-check, create-draft]
@@ -666,6 +679,10 @@ jobs:
             end
             def install
               bin.install "biomcp"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/biomcp --version")
             end
           end
           FORMULA

@@ -411,6 +411,10 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "Publish the GitHub release after every publisher succeeds",
     ],
     "create-draft": [
+        # Ticket 2064: the draft carries the tag's changelog section
+        # as its release notes.
+        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+        "Render the release notes from the changelog",
         "Create the draft release",
     ],
 }

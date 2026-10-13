@@ -14,7 +14,7 @@ fn sibling_biomcp() -> Result<PathBuf, String> {
     let name = "biomcp";
     let sibling = directory.join(name);
     let metadata = sibling
-        .symlink_metadata()
+        .metadata()
         .map_err(|error| format!("cannot run sibling {}: {error}", sibling.display()))?;
     if !metadata.file_type().is_file() {
         return Err(format!(
