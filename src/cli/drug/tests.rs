@@ -313,6 +313,7 @@ fn get_drug_parses_region_split_form() {
             },
         json,
         no_cache,
+        disable_sources: _,
     } = cli
     else {
         panic!("expected get drug command");

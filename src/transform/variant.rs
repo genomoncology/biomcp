@@ -563,6 +563,11 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
 }
 
 fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
+    // MyVariant carries these fields from COSMIC's own annotation; a
+    // disabled cosmic leaves none of them in variant output.
+    if crate::sources::disable::is_disabled("cosmic") {
+        return None;
+    }
     let cosmic = hit.cosmic.as_ref()?;
 
     let context = VariantCosmicContext {
@@ -588,6 +593,11 @@ fn value_first_string(value: &serde_json::Value) -> Option<String> {
 }
 
 fn extract_cgi_associations(hit: &MyVariantHit) -> Vec<VariantCgiAssociation> {
+    // MyVariant carries these rows from the Cancer Genome Interpreter's
+    // own annotation; a disabled cancer-genome-interpreter drops them.
+    if crate::sources::disable::is_disabled("cancer-genome-interpreter") {
+        return Vec::new();
+    }
     let Some(cgi) = hit.cgi.as_ref() else {
         return Vec::new();
     };
@@ -1057,14 +1067,17 @@ pub(crate) fn from_myvariant_hit_with_mane(
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    let cosmic_id = hit
-        .cosmic
-        .as_ref()
-        .map(|c| c.cosmic_id.clone().into_vec())
-        .unwrap_or_default()
-        .into_iter()
-        .map(|s| s.trim().to_string())
-        .find(|s| !s.is_empty());
+    let cosmic_id = if crate::sources::disable::is_disabled("cosmic") {
+        None
+    } else {
+        hit.cosmic
+            .as_ref()
+            .map(|c| c.cosmic_id.clone().into_vec())
+            .unwrap_or_default()
+            .into_iter()
+            .map(|s| s.trim().to_string())
+            .find(|s| !s.is_empty())
+    };
 
     let clinvar_id = hit
         .clinvar

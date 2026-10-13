@@ -260,6 +260,7 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
         command: Commands::Batch(args),
         json,
         no_cache,
+        disable_sources: _,
     } = cli
     else {
         panic!("expected canonical batch command")

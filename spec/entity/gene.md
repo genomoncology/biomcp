@@ -366,6 +366,7 @@ Options:
       --offset <OFFSET>          Skip the first N results [default: 0]
   -j, --json                     Output as JSON instead of Markdown
       --no-cache                 Use no managed request state: bypass HTTP cache and article sessions
+      --disable-sources <LIST>   Disable sources by id or group for this invocation, comma- or pipe-separated (e.g. kegg or commercial-restricted)
   -h, --help                     Print help
 
 EXAMPLES:
@@ -399,6 +400,21 @@ disclosure hints that let readers deepen into the right follow-up section.
 ../../tools/biomcp-ci get gene BRAF | mustmatch like 'Entrez ID: 673
 biomcp get gene BRAF pathways
 biomcp get gene BRAF diagnostics'
+```
+
+## Disabled KEGG Drops Carried Pathway Names
+
+MyGene carries KEGG pathway rows inside its own gene record. With kegg off
+through `--disable-sources`, those rows leave the pathways section while the
+gene record itself still resolves.
+
+```bash
+../../tools/biomcp-ci --json get gene BRAF pathways \
+  | jq -e '(.pathways // []) | any(.source == "KEGG" and .id == "hsa04010")' \
+  | mustmatch 'true'
+kegg_disabled="$(BIOMCP_DISABLE_SOURCES=kegg ../../tools/biomcp-ci --json get gene BRAF pathways)"
+jq -e '(.symbol == "BRAF") and ((.pathways // []) | all(.source != "KEGG"))' <<<"$kegg_disabled" | mustmatch 'true'
+! grep -Fq 'Homo sapiens (human)' <<<"$kegg_disabled"
 ```
 
 ## Shipped schema matches the fixture-backed CLI payload

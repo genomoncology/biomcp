@@ -46,6 +46,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
         command,
         json,
         no_cache,
+        disable_sources: _,
     } = cli;
 
     crate::sources::with_no_cache(no_cache, async move {
@@ -144,8 +145,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     let results = Box::pin(crate::cli::search_all::dispatch(&input)).await?;
                     if json {
                         // Search-all JSON carries the stale-cache note in a
-                        // `_meta.notes` channel like every other search body
-                        //; omitted when nothing was recorded.
+                        // `_meta.notes` channel; omitted when nothing was recorded.
                         let notes = crate::sources::take_stale_serve_sentences();
                         let body = crate::cli::search_all::json_body(&results, input.counts_only, notes)?;
                         Ok(crate::render::json::to_pretty(&body)?)
@@ -345,11 +345,13 @@ async fn run_outcome_inner(
     cli: Cli,
     alias_suggestions_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    crate::sources::disable::init(cli.disable_sources.as_deref())?;
     super::shared::validate_cli_state_contract(&cli)?;
     let Cli {
         command,
         json,
         no_cache,
+        disable_sources: _,
     } = cli;
 
     match command {
@@ -557,6 +559,7 @@ async fn run_outcome_inner(
                 command,
                 json,
                 no_cache,
+                disable_sources: None,
             }))
             .await?,
         )),

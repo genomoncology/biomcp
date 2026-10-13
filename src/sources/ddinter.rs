@@ -154,6 +154,11 @@ struct DdinterCsvRow {
 
 impl DdinterClient {
     pub(crate) async fn ready() -> Result<Self, BioMcpError> {
+        if crate::sources::disable::is_disabled("ddinter") {
+            return Err(crate::sources::disable::source_disabled_error(
+                "DDInter", "ddinter",
+            ));
+        }
         let root = resolve_ddinter_root();
         let cached = cached_index_for_root(&root)?;
         let freshness = basis_freshness(cached.oldest_mtime);
@@ -164,6 +169,11 @@ impl DdinterClient {
     }
 
     pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<bool, BioMcpError> {
+        if crate::sources::disable::is_disabled("ddinter") {
+            return Err(crate::sources::disable::source_disabled_error(
+                "DDInter", "ddinter",
+            ));
+        }
         let root = resolve_ddinter_root();
         let changed = sync_ddinter_root(&root, mode).await?;
         if changed {

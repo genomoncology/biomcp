@@ -1724,3 +1724,46 @@ async fn rmcp_streamable_http_client_verifies_chart_contract() -> anyhow::Result
     child.kill().await.ok();
     result
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn mcp_server_description_lists_disabled_sources() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness
+        .spawn_stdio_client(&[(
+            "BIOMCP_DISABLE_SOURCES",
+            "kegg|commercial-restricted".to_string(),
+        )])
+        .await?;
+    let result = async {
+        let initialize = client
+            .peer()
+            .peer_info()
+            .expect("rmcp client stores initialize result as peer info");
+        let instructions = initialize.instructions.as_deref().unwrap_or_default();
+        assert!(
+            instructions.contains("disabled these sources"),
+            "{instructions}"
+        );
+        assert!(
+            instructions.contains("kegg (disabled by BIOMCP_DISABLE_SOURCES=kegg)"),
+            "{instructions}"
+        );
+        // The union group also carries the other license-required sources.
+        for id in ["enrichr", "oncokb", "drugbank"] {
+            assert!(instructions.contains(id), "{instructions}");
+        }
+        assert!(
+            instructions.contains("disabled by the commercial-restricted group"),
+            "{instructions}"
+        );
+        assert!(
+            instructions.contains("makes no calls to them"),
+            "{instructions}"
+        );
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
+
+    client.cancel().await?;
+    result
+}

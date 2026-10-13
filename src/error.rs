@@ -2,6 +2,12 @@ pub use crate::entities::trial::ClinicalTrialArmId;
 pub use crate::entities::trial::{ClinicalTrialArmRelationshipError, TrialDesignError};
 use std::fmt;
 
+/// Every disabled-source reason starts with this prefix, so the error
+/// projections can tell a source the operator turned off from a source
+/// that is merely down. The `sources::disable` module owns how the
+/// reasons are built.
+pub const DISABLED_SOURCE_REASON_PREFIX: &str = "disabled by ";
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SourceProvider {
     label: &'static str,
@@ -475,7 +481,7 @@ impl BioMcpError {
         }
     }
 
-    fn underlying(&self) -> &Self {
+    pub(crate) fn underlying(&self) -> &Self {
         match self {
             Self::WithSourceContext { source, .. } => source.underlying(),
             _ => self,
@@ -637,6 +643,13 @@ impl BioMcpError {
             Self::ApiCredentialInvalid { api, env_var } => format!(
                 "{api} credential in {env_var} is invalid. Set {env_var} to 1-4096 visible ASCII bytes and retry."
             ),
+            Self::SourceUnavailable {
+                source_name,
+                reason,
+                suggestion,
+            } if reason.starts_with(DISABLED_SOURCE_REASON_PREFIX) => {
+                format!("Source unavailable: {source_name} is {reason}.\n\n{suggestion}")
+            }
             Self::SourceUnavailable { source_name, .. } => format!(
                 "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
             ),
@@ -665,6 +678,22 @@ impl BioMcpError {
     }
 
     pub fn public_projection(&self) -> PublicErrorProjection<'_> {
+        // A source the operator disabled names the setting that turned it
+        // off; the generic source-down wording would hide the one fact the
+        // caller can act on.
+        if let Self::SourceUnavailable {
+            source_name,
+            reason,
+            suggestion,
+        } = self.underlying()
+            && reason.starts_with(DISABLED_SOURCE_REASON_PREFIX)
+        {
+            return PublicErrorProjection {
+                message: format!("Source unavailable: {source_name} is {reason}."),
+                source: None,
+                recovery: Some(suggestion.as_str()),
+            };
+        }
         // The article-search deadline names itself in its reason; carry that
         // sentence and its suggestion instead of the generic source-down
         // message, so an expired search says what happened.

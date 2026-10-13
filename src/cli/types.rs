@@ -23,6 +23,11 @@ pub struct Cli {
     /// Use no managed request state: bypass HTTP cache and article sessions
     #[arg(long, global = true)]
     pub no_cache: bool,
+
+    /// Disable sources by id or group for this invocation, comma- or
+    /// pipe-separated (e.g. kegg or commercial-restricted)
+    #[arg(long, global = true, value_name = "LIST")]
+    pub disable_sources: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]

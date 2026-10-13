@@ -151,6 +151,7 @@ fn no_cache_is_rejected_by_public_run_before_cache_dispatch() {
                         command: Commands::Cache { cmd },
                         json: false,
                         no_cache: true,
+                        disable_sources: None,
                     }))
             })
             .expect("run test worker")
@@ -168,6 +169,7 @@ async fn no_cache_is_rejected_by_public_run_outcome_as_json_usage_error() {
             command: Commands::Cache { cmd },
             json: true,
             no_cache: true,
+            disable_sources: None,
         })
         .await
         .expect("JSON usage errors are outcomes");

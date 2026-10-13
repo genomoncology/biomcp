@@ -126,7 +126,16 @@ impl MyChemClient {
     ) -> Result<MyChemQueryResponse, BioMcpError> {
         let plan = Self::query_with_fields_plan(q, limit, offset, fields)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        self.get_json(req).await
+        let mut response: MyChemQueryResponse = self.get_json(req).await?;
+        // MyChem carries the drugbank fields from DrugBank's own
+        // annotation; a disabled drugbank leaves none of them in drug
+        // output even though MyChem still returns them.
+        if crate::sources::disable::is_disabled("drugbank") {
+            for hit in &mut response.hits {
+                hit.drugbank = None;
+            }
+        }
+        Ok(response)
     }
 }
 

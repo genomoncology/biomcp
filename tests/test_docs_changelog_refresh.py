@@ -8,7 +8,12 @@ import pytest
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DEV_CYCLE_VERSION = "0.9.3"
+DEV_CYCLE_HEADING = f"## {DEV_CYCLE_VERSION}"
 EXPECTED_RELEASE_TICKETS = {
+    DEV_CYCLE_VERSION: {
+        2061,
+    },
     "0.9.2": {
         1287,
         1288,
@@ -455,11 +460,15 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         previous_release_block, "### New features"
     )
 
-    # The changelog opens with the current release heading, or with
-    # a fresh Unreleased section ahead of it during the dev cycle.
+    # The changelog opens with the current release heading, with a fresh
+    # Unreleased section or the next milestone's undated heading ahead of
+    # it during the dev cycle.
+    dev_cycle_heading = "## 0.9.3"
     assert changelog.startswith(
         f"# Changelog\n\n{current_release_heading}\n"
-    ) or changelog.startswith("# Changelog\n\n## Unreleased\n")
+    ) or changelog.startswith("# Changelog\n\n## Unreleased\n") or changelog.startswith(
+        f"# Changelog\n\n{dev_cycle_heading}\n"
+    )
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
     assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
@@ -523,6 +532,18 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         header = f"## {version} — {date}"
         assert header in changelog
         assert "\n- " in _markdown_section_block(changelog, header)
+
+
+def test_dev_cycle_section_carries_its_own_tickets() -> None:
+    """The undated dev-cycle section sits ahead of the last released
+    heading and describes exactly the tickets landed for the milestone
+    so far; the release bump dates the heading without touching it."""
+    changelog = _read("CHANGELOG.md")
+    assert DEV_CYCLE_HEADING in changelog
+    assert changelog.index(DEV_CYCLE_HEADING) < changelog.index("## 0.9.2 — 2026-10-11")
+    block = _markdown_section_block(changelog, DEV_CYCLE_HEADING)
+    assert _ticket_references(block) == EXPECTED_RELEASE_TICKETS[DEV_CYCLE_VERSION]
+    assert "### New features" in block
 
 
 def test_unreleased_records_the_complete_dev6_batch_and_preserves_history() -> None:

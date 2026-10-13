@@ -12,6 +12,9 @@ HELPER_MODULES = {
     "ca_bundle",
     "cbioportal_download",
     "cbioportal_study",
+    # The disabled-source registry is shared state over the source
+    # inventory, not a provider client.
+    "disable",
     "pmc_article",
     "ordinary_url_policy",
     "provider_url_policy",
