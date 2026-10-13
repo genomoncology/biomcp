@@ -366,6 +366,7 @@ Options:
       --offset <OFFSET>          Skip the first N results [default: 0]
   -j, --json                     Output as JSON instead of Markdown
       --no-cache                 Use no managed request state: bypass HTTP cache and article sessions
+      --disable-sources <LIST>   Disable sources by id or group for this invocation, comma- or pipe-separated (e.g. kegg or commercial-restricted)
   -h, --help                     Print help
 
 EXAMPLES:

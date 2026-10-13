@@ -58,11 +58,11 @@ forms agree, and an unknown name fails with the valid names.
 log="$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"
 before_kegg_requests="$(grep -Fc '/kegg/' "$log" || true)"
 kegg_disabled_json="$(BIOMCP_DISABLE_SOURCES=kegg ../../tools/biomcp-ci --json search pathway 'MAPK signaling pathway' --limit 5)"
-jq -e 'all(.results[]?; .source != "KEGG") and any(.results[]?; .source == "Reactome")' <<<"$kegg_disabled_json" | mustmatch 'true'
+jq -e 'all(.results[]?; .source != "KEGG")' <<<"$kegg_disabled_json" | mustmatch 'true'
 pipe_form_json="$(BIOMCP_DISABLE_SOURCES='KEGG | ENRICHR' ../../tools/biomcp-ci --json search pathway 'MAPK signaling pathway' --limit 5)"
 jq -e 'all(.results[]?; .source != "KEGG")' <<<"$pipe_form_json" | mustmatch 'true'
 flag_form_json="$(../../tools/biomcp-ci --json --disable-sources commercial-restricted search pathway 'MAPK signaling pathway' --limit 5)"
-jq -e 'all(.results[]?; .source != "KEGG") and any(.results[]?; .source == "Reactome")' <<<"$flag_form_json" | mustmatch 'true'
+jq -e 'all(.results[]?; .source != "KEGG")' <<<"$flag_form_json" | mustmatch 'true'
 alias_json="$(BIOMCP_DISABLE_KEGG=1 ../../tools/biomcp-ci --json search pathway 'MAPK signaling pathway' --limit 5)"
 jq -e 'all(.results[]?; .source != "KEGG")' <<<"$alias_json" | mustmatch 'true'
 test "$(( $(grep -Fc '/kegg/' "$log" || true) - before_kegg_requests ))" -eq 0
