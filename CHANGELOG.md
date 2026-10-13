@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Every documented install path works as the docs say: a pinned installer run reads the true version from the staged binary and records it in the receipt instead of the build-time field, the `biomcp-cli` compatibility command resolves a symlinked sibling as uv's bin folders hold on macOS, the install docs state the Python 3.10 floor, that Homebrew covers macOS only, and how to pull or pin the Docker image, the Homebrew formula the release renders carries a `test do` block, and the release publishes the changelog section as the GitHub release notes. (2064)
+- Every documented install path works as the docs say: a pinned installer run reads the true version from the staged binary and records it in the receipt instead of the build-time field, the PyPI package keeps its `biomcp-cli` name and installs only the `biomcp` command — uvx users run `uvx --from biomcp-cli biomcp serve` — the install docs state the Python 3.10 floor, that Homebrew covers macOS only, and how to pull or pin the Docker image, the Homebrew formula the release renders carries a `test do` block, and the release publishes the changelog section as the GitHub release notes. (2064)
 
 ## 0.9.2 — 2026-10-11
 

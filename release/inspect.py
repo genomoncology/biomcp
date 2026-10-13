@@ -232,7 +232,6 @@ def inspect_wheel(
     dist = f"biomcp_cli-{python_version}"
     suffix = ".exe" if settings["os"] == "windows" else ""
     full_name = f"{dist}.data/scripts/biomcp{suffix}"
-    shim_name = f"{dist}.data/scripts/biomcp-cli{suffix}"
     metadata_name = f"{dist}.dist-info/METADATA"
     wheel_name = f"{dist}.dist-info/WHEEL"
     record_name = f"{dist}.dist-info/RECORD"
@@ -242,7 +241,6 @@ def inspect_wheel(
     }
     expected_names = {
         full_name,
-        shim_name,
         metadata_name,
         wheel_name,
         record_name,
@@ -259,7 +257,7 @@ def inspect_wheel(
             raise InspectionError("wheel member set does not match candidate identity")
         contents = {name: archive.read(name) for name in names}
         modes = {info.filename: info.external_attr >> 16 for info in infos}
-    if modes[full_name] & 0o111 == 0 or modes[shim_name] & 0o111 == 0:
+    if modes[full_name] & 0o111 == 0:
         raise InspectionError("wheel executables lack execute permission")
     if any(
         not stat.S_ISREG(modes[name]) or modes[name] & 0o111 for name in inventory
@@ -290,16 +288,13 @@ def inspect_wheel(
             "wheel RECORD must leave only its own hash and size empty"
         )
     full = contents[full_name]
-    shim = contents[shim_name]
-    if not full or not shim or len(shim) >= len(full):
-        raise InspectionError("wheel compatibility executable is not a small shim")
+    if not full:
+        raise InspectionError("wheel executable is empty")
     return {
         "archive_members": len(names),
-        "executable_count": 2,
+        "executable_count": 1,
         "assembled_binary_sha256": hashlib.sha256(full).hexdigest(),
-        "assembled_shim_sha256": hashlib.sha256(shim).hexdigest(),
         "python_version": python_version,
-        "shim_is_smaller": True,
         "inspected": True,
     }
 
@@ -475,9 +470,7 @@ def validate_signing(
     *,
     target: str,
     binary: Path,
-    shim: Path | None,
     unsigned_binary: Path | None,
-    unsigned_shim: Path | None,
     source_sha: str,
     version: str,
     run_id: str,
@@ -492,19 +485,19 @@ def validate_signing(
     if policy.get("schema_version") != 2:
         raise InspectionError("unsupported signing policy schema")
     if TARGETS[target]["os"] == "linux":
-        if evidence_paths or unsigned_binary is not None or unsigned_shim is not None:
+        if evidence_paths or unsigned_binary is not None:
             raise InspectionError("Linux artifacts must not claim signing evidence")
         return {}
     _validate_signing_policy(policy)
-    if unsigned_binary is None or (shim is not None) != (unsigned_shim is not None):
+    if unsigned_binary is None:
         raise InspectionError("unsigned executable set does not match signed artifacts")
-    expected_paths = {"biomcp"} | ({"biomcp-cli"} if shim is not None else set())
+    expected_paths = {"biomcp"}
     if set(evidence_paths) != expected_paths:
         raise InspectionError(
             "signing evidence set does not match packaged executables"
         )
     policy_hash = hashlib.sha256(raw).hexdigest()
-    result = {
+    return {
         "biomcp": _signing_record(
             evidence_paths["biomcp"],
             binary,
@@ -517,19 +510,6 @@ def validate_signing(
             policy_hash,
         )
     }
-    if shim is not None:
-        result["biomcp-cli"] = _signing_record(
-            evidence_paths["biomcp-cli"],
-            shim,
-            unsigned_shim,
-            target,
-            source_sha,
-            version,
-            run_id,
-            policy,
-            policy_hash,
-        )
-    return result
 
 
 def smoke(binary: Path, source_sha: str, version: str) -> dict[str, object]:
@@ -585,7 +565,6 @@ def finalize_record(
     version: str,
     python_version: str,
     run_id: str,
-    shim: Path | None,
     sbom: Path,
     cargo_lock: Path,
     signing_policy: Path,
@@ -593,7 +572,6 @@ def finalize_record(
     provenance: dict[str, object],
     output: Path,
     unsigned_binary: Path | None = None,
-    unsigned_shim: Path | None = None,
 ) -> dict[str, object]:
     """Independently inspect final bytes and atomically write their success record."""
     output.unlink(missing_ok=True)
@@ -606,16 +584,11 @@ def finalize_record(
         if kind == "native"
         else inspect_wheel(artifact, artifact_id, python_version)
     )
-    if (kind == "wheel") != (shim is not None):
-        raise InspectionError("shim path does not match artifact kind")
     binary_hash = sha256_file(binary)
-    shim_hash = sha256_file(shim) if shim is not None else None
     if archive_evidence["assembled_binary_sha256"] != binary_hash:
         raise InspectionError(
             "assembled binary hash does not match inspected executable"
         )
-    if shim is not None and archive_evidence["assembled_shim_sha256"] != shim_hash:
-        raise InspectionError("assembled shim hash does not match inspected executable")
     evidence = {
         **archive_evidence,
         "platform": platform_evidence(binary, target),
@@ -624,9 +597,7 @@ def finalize_record(
         "signing": validate_signing(
             target=target,
             binary=binary,
-            shim=shim,
             unsigned_binary=unsigned_binary,
-            unsigned_shim=unsigned_shim,
             source_sha=source_sha,
             version=version,
             run_id=run_id,
@@ -636,8 +607,6 @@ def finalize_record(
         **smoke(binary, source_sha, version),
         "artifact_sha256": sha256_file(artifact),
     }
-    if shim_hash is not None:
-        evidence["shim_sha256"] = shim_hash
     record: dict[str, object] = {
         "id": artifact_id,
         "kind": kind,
@@ -662,14 +631,11 @@ def main() -> int:
     parser.add_argument("--artifact", type=Path, required=True)
     parser.add_argument("--record", type=Path, required=True)
     parser.add_argument("--binary", type=Path, required=True)
-    parser.add_argument("--shim", type=Path)
     parser.add_argument("--sbom", type=Path, required=True)
     parser.add_argument("--cargo-lock", type=Path, required=True)
     parser.add_argument("--signing-policy", type=Path, required=True)
     parser.add_argument("--binary-signing-evidence", type=Path)
-    parser.add_argument("--shim-signing-evidence", type=Path)
     parser.add_argument("--unsigned-binary", type=Path)
-    parser.add_argument("--unsigned-shim", type=Path)
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--python-version", required=True)
@@ -679,8 +645,6 @@ def main() -> int:
     signing_evidence = {}
     if args.binary_signing_evidence is not None:
         signing_evidence["biomcp"] = args.binary_signing_evidence
-    if args.shim_signing_evidence is not None:
-        signing_evidence["biomcp-cli"] = args.shim_signing_evidence
     try:
         finalize_record(
             kind=args.kind,
@@ -691,7 +655,6 @@ def main() -> int:
             version=args.version,
             python_version=args.python_version,
             run_id=args.run_id,
-            shim=args.shim,
             sbom=args.sbom,
             cargo_lock=args.cargo_lock,
             signing_policy=args.signing_policy,
@@ -699,7 +662,6 @@ def main() -> int:
             provenance=json.loads(args.provenance),
             output=args.record,
             unsigned_binary=args.unsigned_binary,
-            unsigned_shim=args.unsigned_shim,
         )
         return 0
     except (

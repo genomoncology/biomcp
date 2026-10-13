@@ -15,7 +15,6 @@ class Biomcp < Formula
 
   def install
     bin.install "biomcp"
-    bin.install_symlink "biomcp" => "biomcp-cli"
   end
 
   test do
@@ -24,6 +23,5 @@ class Biomcp < Formula
     assert_match "__REVISION__", output
     expected_sha256 = Hardware::CPU.arm? ? "__DARWIN_ARM64_BINARY_SHA256__" : "__DARWIN_X86_64_BINARY_SHA256__"
     assert_equal expected_sha256, Digest::SHA256.file(bin/"biomcp").hexdigest
-    assert_predicate bin/"biomcp-cli", :symlink?
   end
 end

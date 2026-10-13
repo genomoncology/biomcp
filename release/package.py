@@ -68,7 +68,6 @@ def _record_hash(data: bytes) -> str:
 
 def wheel(
     full: Path,
-    shim: Path,
     output: Path,
     python_version: str,
     tag: str,
@@ -78,7 +77,6 @@ def wheel(
     suffix = ".exe" if windows else ""
     entries: list[tuple[str, bytes, int]] = [
         (f"{dist}.data/scripts/biomcp{suffix}", full.read_bytes(), 0o100755),
-        (f"{dist}.data/scripts/biomcp-cli{suffix}", shim.read_bytes(), 0o100755),
         (
             f"{dist}.dist-info/METADATA",
             (
@@ -141,7 +139,6 @@ def main() -> int:
     parser.add_argument("--kind", choices=["native", "wheel"], required=True)
     parser.add_argument("--artifact-id", choices=sorted(ARTIFACTS), required=True)
     parser.add_argument("--biomcp", type=Path, required=True)
-    parser.add_argument("--shim", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--record", type=Path, required=True)
     parser.add_argument("--source-sha", required=True)
@@ -154,11 +151,10 @@ def main() -> int:
     if args.kind == "native":
         native_archive(args.biomcp, args.output, args.windows)
     else:
-        if args.shim is None or args.wheel_tag is None:
-            parser.error("wheel requires --shim and --wheel-tag")
+        if args.wheel_tag is None:
+            parser.error("wheel requires --wheel-tag")
         wheel(
             args.biomcp,
-            args.shim,
             args.output,
             args.version,
             args.wheel_tag,

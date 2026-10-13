@@ -112,10 +112,6 @@
       "count": 2,
       "language": "rust"
     },
-    "tests/biomcp_cli_shim.rs": {
-      "count": 1,
-      "language": "rust"
-    },
     "tests/json_error_contract.rs": {
       "count": 5,
       "language": "rust",

@@ -43,9 +43,12 @@ uv tool install biomcp-cli
 ```
 
 Install the `biomcp-cli` package, then use the `biomcp` command in the rest of
-this guide. The package also keeps a small `biomcp-cli` compatibility command;
-it forwards to the sibling `biomcp` executable without changing command output
-or exit status.
+this guide; the package name and the command name differ. To run BioMCP without
+installing it, uvx needs `--from` because of that difference:
+
+```bash
+uvx --from biomcp-cli biomcp serve
+```
 
 The wheels need Python 3.10 or later. An environment on an older Python —
 including the macOS system Python 3.9 — finds no matching distribution; create
