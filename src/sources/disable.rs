@@ -364,7 +364,8 @@ mod tests {
     fn unknown_token_error_lists_valid_sources_and_groups() {
         let message = err_message("nope");
         assert!(message.contains("\"nope\""), "{message}");
-        assert!(message.contains("Valid sources: kegg"), "{message}");
+        assert!(message.contains("Valid sources: alphafold-db"), "{message}");
+        assert!(message.contains(", kegg,"), "{message}");
         assert!(message.contains("enrichr"), "{message}");
         assert!(message.contains("drugbank"), "{message}");
         assert!(
