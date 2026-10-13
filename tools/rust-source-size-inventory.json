@@ -160,13 +160,13 @@
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3963,
+      "baseline_lines": 3974,
       "floor_lines": 3812,
       "authorized_increase": {
-        "ticket": "2022",
-        "delta": 151,
-        "reason": "Ticket 2022: official-symbol confirmation resolves through the gene module.",
-        "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+        "ticket": "2061",
+        "delta": 162,
+        "reason": "Ticket 2061: sources disabled by --disable-sources are never called, drop their carried fields, and report the setting that turned them off.",
+        "removal_condition": "Fold the disable checks into the shared request plumbing once a second caller shares them."
       }
     },
     {
@@ -193,8 +193,8 @@
     },
     {
       "path": "src/entities/pathway.rs",
-      "baseline_lines": 1314,
-      "floor_lines": 1314,
+      "baseline_lines": 1300,
+      "floor_lines": 1300,
       "authorized_increase": null
     },
     {
@@ -239,9 +239,14 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 2026,
+      "baseline_lines": 2031,
       "floor_lines": 2026,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2061",
+        "delta": 5,
+        "reason": "Ticket 2061: sources disabled by --disable-sources are never called, drop their carried fields, and report the setting that turned them off.",
+        "removal_condition": "Fold the disable checks into the shared request plumbing once a second caller shares them."
+      }
     },
     {
       "path": "src/entities/variant/get/protein_change_tests.rs",
@@ -279,9 +284,14 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1479,
+      "baseline_lines": 1508,
       "floor_lines": 1479,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2061",
+        "delta": 29,
+        "reason": "Ticket 2061: sources disabled by --disable-sources are never called, drop their carried fields, and report the setting that turned them off.",
+        "removal_condition": "Fold the disable checks into the shared request plumbing once a second caller shares them."
+      }
     },
     {
       "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
@@ -420,9 +430,14 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2826,
+      "baseline_lines": 2827,
       "floor_lines": 2826,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2061",
+        "delta": 1,
+        "reason": "Ticket 2061: sources disabled by --disable-sources are never called, drop their carried fields, and report the setting that turned them off.",
+        "removal_condition": "Fold the disable checks into the shared request plumbing once a second caller shares them."
+      }
     },
     {
       "path": "src/sources/myvariant.rs",
@@ -499,9 +514,14 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1251,
+      "baseline_lines": 1264,
       "floor_lines": 1251,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2061",
+        "delta": 13,
+        "reason": "Ticket 2061: sources disabled by --disable-sources are never called, drop their carried fields, and report the setting that turned them off.",
+        "removal_condition": "Fold the disable checks into the shared request plumbing once a second caller shares them."
+      }
     }
   ]
 }
