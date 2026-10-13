@@ -25,3 +25,11 @@ Filed 2026-10-11 from the independent review of main at `b039ac3e7`. Trimmed 202
 ## Amendment, 2026-10-12
 
 pm now checks ticket and review formats itself, so BioMCP's own copy goes. Delete the review-verdict checks in `tests/test_sdlc_review_status_contract.py` and keep its merge-conflict-marker tests in a file of their own. The mailroom ask is answered, so the first Changes item is done. Proof adds: `pm lint` reports no ticket-format findings, and no test under `tests/` restates pm's review-verdict rules.
+
+## Progress
+
+- Ask answered 2026-10-13: the running-time ask (pm 0300) is answered through pm answer — pm daily on the M5 shows the Running section honestly (no biomcp ticket running; one pre-0300 foreign row; the 1.0 branch rename command listed).
+- Reservations: the 16 abandoned refs released 2026-10-12 through the sweep's own release commands.
+- Coordinator machine: /tmp/rehearsal-clone, /tmp/2050-live, the review and lane report files, and the local probe branches deleted; other repos' scratch files left to their owners.
+- Build host: /tmp/2036-green removed, the 6.3 GB ~/gate-biomcp clone removed, measure-* and yr-branch/yr-main cleared (the shared checkout returned to main under the lock), old home log files removed; the study clone left alone as the PM asked. Three setup scripts in the home folder (machine setup, not release leftovers) stay.
+- Review-verdict checks: tests/test_sdlc_review_status_contract.py deleted; its merge-conflict-marker tests moved to tests/test_merge_conflict_markers.py. pm lint at this head reports 285 layout findings, all on files older than this release (records whose tickets predate the archive split; legacy ticket sections); none are review-verdict findings.
