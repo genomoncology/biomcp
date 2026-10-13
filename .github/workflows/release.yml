@@ -57,17 +57,25 @@ jobs:
       # The filter names the workflow and the commit, so it can never
       # pick another workflow's run, and a missing or failed run fails
       # the release here, before any publisher starts.
+      # Ticket 2060: gh has no --conclusion flag on the versions the
+      # runners ship, so gh returns every conclusion for the commit
+      # and jq counts only the successful ones.
       - name: Require green CI on the tagged commit
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           green="$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" \
-            --status completed --conclusion success --limit 100 \
-            --json databaseId --jq length)"
-          if [ -z "$green" ] || [ "$green" = "0" ]; then
-            echo "ci.yml has no finished green run on ${GITHUB_SHA}; refusing to release" >&2
-            exit 1
-          fi
+            --limit 100 \
+            --json conclusion \
+            --jq '[.[] | select(.conclusion == "success")] | length')"
+          # Refuse an empty count (gh or jq failed), zero successful
+          # runs, and anything that is not a plain number.
+          case "$green" in
+            '' | 0 | *[!0-9]*)
+              echo "ci.yml has no finished green run on ${GITHUB_SHA}; refusing to release" >&2
+              exit 1
+              ;;
+          esac
           echo "ci.yml finished green on ${GITHUB_SHA}"
 
   create-draft:

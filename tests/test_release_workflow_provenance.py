@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -316,8 +317,10 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("version-check", "Require the tag and committed versions to agree"): "8bdcc74fd872a7a77d8341bd5049e3a3845a89825f02875f4258e5d665243b8b",
     ("version-check", "Require the changelog to cover merged tickets"): "8dcf47fdb31ff44771a511058fa05d8e17d1a551744dcc1e8631fa7f8979118e",
     # Ticket 2053: the release waits on a finished green ci.yml run
-    # for the exact tagged commit.
-    ("version-check", "Require green CI on the tagged commit"): "c414da0d0db0ba20a5571cc80f0c86a226a36d93f91c034af779ad054270deb2",
+    # for the exact tagged commit. Re-pinned 2026-10-13 for ticket
+    # 2060: gh has no --conclusion flag, so jq counts the successful
+    # conclusions.
+    ("version-check", "Require green CI on the tagged commit"): "6a5acafb79dbd43069bbf2e829d90763c5547be136331d275a8d71a2df0f7959",
 }
 
 
@@ -2143,15 +2146,81 @@ def test_the_ci_gate_accepts_a_green_run_and_names_the_commit(
     calls = " ".join(_log_lines(log))
     assert "gh run list --workflow ci.yml --commit " in calls
     assert "f" * 40 in calls
-    assert "--status completed --conclusion success" in calls
+    assert "--limit 100" in calls
+    assert "--json conclusion" in calls
+    assert 'select(.conclusion == "success")' in calls
+    # Ticket 2060: the old filter used --status and --conclusion,
+    # flags no shipped gh accepts.
+    assert "--status completed" not in calls
+    assert " --conclusion " not in calls
 
 
-@pytest.mark.parametrize("reply", ["0", ""])
+def test_the_ci_gate_flags_parse_on_the_real_gh_cli() -> None:
+    """Ticket 2060: the CI gate's gh flags must parse on a real gh
+    binary. Flag errors happen before any network call, so running
+    the step's exact invocation surfaces an unsupported flag at
+    once. The stub gh accepts every flag, and a runner's gh rejected
+    the release tag's --conclusion, so only the real binary can
+    prove the flag surface."""
+    gh = shutil.which("gh")
+    assert gh is not None, (
+        "the CI gate's flags must be proven against the real gh CLI "
+        "on PATH; the stub gh accepts any flag"
+    )
+    script = _ci_gate_script()
+    # Collapse the shell's line continuations, then take the exact
+    # gh invocation the step runs: from `gh run list` to the closing
+    # `)"` at the end of the assignment line.
+    one_line = re.sub(r"\\\n\s*", " ", script)
+    match = re.search(r'gh (run list [^\n]*?)\)"', one_line)
+    assert match is not None, "the CI gate must run gh run list"
+    command = match.group(1)
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("GH_")
+    }
+    env.update(
+        GH_REPO=PRODUCTION_REPOSITORY,
+        # A deliberately invalid token keeps the run from spending a
+        # host credential; flags parse before any request leaves.
+        GH_TOKEN="flag-parse-check-only",
+        GITHUB_SHA=commit,
+    )
+    result = subprocess.run(
+        ["bash", "-c", f'exec "{gh}" {command}'],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=REPO_ROOT,
+    )
+    output = result.stdout + result.stderr
+    assert "unknown flag" not in output, (
+        f"the CI gate uses a flag the real gh CLI rejects:\n{output}"
+    )
+    # An invalid flag makes gh print its usage text; a real answer
+    # (green, empty, or an auth failure) never does.
+    assert "Usage:" not in output, (
+        f"gh answered the CI gate with its usage text:\n{output}"
+    )
+
+
+@pytest.mark.parametrize("reply", ["0", "", "[]"])
 def test_the_ci_gate_refuses_when_no_green_run_exists(
     tmp_path: Path, reply: str
 ) -> None:
     """A commit with no finished green ci.yml run — CI missing, still
-    running, or failed — fails the release."""
+    running, or failed — fails the release. The count must be a
+    plain nonzero number: the jq filter turns an empty run list
+    into 0, and a raw [] or anything else means gh or jq answered
+    something other than a count, so the release refuses too."""
     result = _run_guard_script(
         _ci_gate_script(),
         tmp_path,
