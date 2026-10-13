@@ -145,10 +145,12 @@ pub(crate) struct DisabledSources {
 }
 
 impl DisabledSources {
+    #[cfg(test)]
     pub(crate) fn is_disabled(&self, id: &str) -> bool {
         self.entries.contains_key(id)
     }
 
+    #[cfg(test)]
     pub(crate) fn entries(&self) -> Vec<DisabledEntry> {
         self.entries
             .iter()
@@ -286,9 +288,9 @@ pub(crate) fn reason(id: &str) -> Option<&'static str> {
     state().entries.get(id).map(String::as_str)
 }
 
-/// Every reason this module records starts with the shared prefix in
-/// `crate::error::DISABLED_SOURCE_REASON_PREFIX`, so error projections can
-/// tell a disabled source from a down one.
+// Every reason this module records starts with the shared prefix in
+// `crate::error::DISABLED_SOURCE_REASON_PREFIX`, so error projections can
+// tell a disabled source from a down one.
 
 /// The error a direct caller returns when its source is disabled: the
 /// reason records the setting so downstream surfaces can repeat it.
