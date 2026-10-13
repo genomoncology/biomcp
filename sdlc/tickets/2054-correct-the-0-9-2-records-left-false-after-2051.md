@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.2
 
+Reviews: revision 392f504, accept
+
 ## Outcome
 
 pm shows no open ask and no landed ticket's reserved number from this release, and the machines hold no leftover builds, clones or branches from it.
