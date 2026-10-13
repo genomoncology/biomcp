@@ -1,0 +1,3 @@
+# 2060 build record — the release CI check uses flags the gh CLI has
+
+Landed 2026-10-13 from branch ticket/2060-gh-flags. The release workflow's green-CI check counts successful conclusions through jq with flags gh 2.45.0 accepts, after rehearsal round 3 (run 38337603835) failed the step on the unsupported --conclusion flag; empty, zero, and non-numeric replies all refuse to release. A new flag-surface test runs the step's exact invocation against the real gh binary, proven red by restoring the old invocation. Review: accept at 85105b0de by a gate-running reviewer, recorded on the branch by pm before the merge. CI green on the reviewed head.
