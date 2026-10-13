@@ -28,4 +28,4 @@ pm now checks ticket and review formats itself, so BioMCP's own copy goes. Delet
 
 ## Progress
 
-- 2026-10-13 landed <none yet>; next: evidence corrected and the review-verdict trim blocked on the pm ruling (pm merge-branch does not gate review verdicts; probe in the review).
+- 2026-10-13 next: evidence corrected; the review-verdict trim waits on the pm ruling (merge-branch does not gate review verdicts)
