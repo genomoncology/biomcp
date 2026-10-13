@@ -43,14 +43,28 @@ Open tickets in the order I want them taken. Status comes from pm, never from th
 - 2064
 - 2061
 - 2063
+- 2069
+- 2070
+- 2071
+- 2072
+- 2073
 - 2065
 - 2066
 - 2067
 - 2068
+- 2074
+- 2075
+- 2076
+- 2077
+- 2078
+- 2079
+- 2080
+- 2081
+- 2082
 - 2041
 - 2006
 - 2005
 - 2003
 - 2004
 
-2064 leads because the install script fix ships to users through the docs site as soon as it lands, without a tag. 2065 to 2068 fix what the 0.9.2 post-release test found. 2063 removes the last interim review check now that pm guards landings. 2061 opens 0.9.3 because a user asked for it and it touches no file the speed work changes; the rest of 0.9.3 follows the plan in `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and becomes tickets as it starts. 0.9.3 exits when its tag passes its first rehearsal. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
+2064, 2061 and 2063 are already building. 2064 ships to users through the docs site as soon as it lands. 2069 records the baseline before any speed change lands. 2070 and 2071 come next because every later ticket builds and tests through them. 2072 and 2073 touch dependencies and dead code only, so they can run alongside the bug fixes 2065 to 2068, which touch product code. 2074 to 2076 change CI and lint, one at a time because they share workflow files. 2077 and 2078 finish the dependency work. 2079 builds the replay server and golden suite that 2080 and 2081 need. 2082 measures the result. 0.9.3 exits when 2082 records the after numbers and the tag passes its first rehearsal. The plans behind these tickets are `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
