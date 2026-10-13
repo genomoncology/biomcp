@@ -52,7 +52,7 @@ The build script row is the costliest surprise. The repository has a `build.rs` 
 
 All runs inside the repository's offline sandbox (`tools/run-offline`), with the binaries already built.
 
-| Lane | Command | Wall time | Tests |
+| Suite | Command | Wall time | Tests |
 |---|---|---|---|
 | The whole routine gate | `make test` (Makefile:38-41) | 635 s (1,428 s CPU) | spec-profile freshness check 0.3 s, nextest archive 7 s, Rust tests 149 s, Python 473 s, docs build a few seconds |
 | Rust unit and integration tests | `cargo nextest run` inside `make test` | 148.8 s wall, 528 s of summed test time | 4,205 tests across 29 binaries, 33 skipped, all passed |
