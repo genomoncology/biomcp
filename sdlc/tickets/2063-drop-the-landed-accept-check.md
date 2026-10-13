@@ -18,3 +18,7 @@ BioMCP keeps no test of its own that restates pm's review-verdict rules. pm's la
 - Changes: pull and rebuild pm; re-run the 2054 probe on a scratch clone (pending-only, findings, glued, bold and wrapped verdicts against `--merge-branch` and `land-check`); delete `tests/test_landed_tickets_carry_accept.py` and its closed list of disposition strings.
 - Proof: the probe's results recorded on this ticket, every bad verdict refused by `--merge-branch` and `land-check`; no test under `tests/` restates pm's review-verdict rules; `pm lint` shows no ticket-format finding. Answer pm's ask in `inbox/biomcp/2026-10-13-pm-s-review-gate-is-fixed-re-run-your-2054-probe.md` with the probe result.
 - Defers: nothing.
+
+## Progress
+
+- 2026-10-13 started
