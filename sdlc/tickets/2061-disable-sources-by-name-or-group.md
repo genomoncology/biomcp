@@ -66,3 +66,45 @@ their id (the parser resolves every inventory id) but currently ignore a
 by-id disable; wiring the ask into every remaining source client is a
 follow-up. `search gene --pathway <id>` still filters on MyGene's own
 index (no KEGG call); only KEGG-carried output fields drop.
+
+## Gate and live evidence (2026-10-13, resumed lane)
+
+The interrupted lane resumed at 352686c24. CI on the heads before
+ff8425d37 failed the clippy gates (`empty-line-after-doc-comments` and
+test-only dead code in the disable registry) and the CLI line cap
+(outcome.rs at 701); d38eb1121 fixed the clippy findings and 536f82b70
+rewrapped the search-all note comment back under 700. CI on ff8425d37
+failed the lint-gate quality ratchet on three findings fixed by the next
+three commits: 0ff1d24bd authorizes the grown file baselines in the Rust
+source-size inventory (ticket 2061 stamps), 558f1fc24 adds
+`--disable-sources` to the trial capability declaration, and 18debc486
+excludes the disable registry from the source-registry census as a
+helper module, mirroring the docs census exclusion in 4109a28a1.
+ff8425d37 also carries the package boundary file-count ratchet at 1420
+naming the two 2061 files.
+
+On 18debc486, `make lint`, `make test` (Rust 4226 passed, Python 1252
+passed) and `make spec` each passed once on Yellow holding the checkout
+and gate locks, and the CI run on 18debc486 finished green. Two full-test
+attempts on Yellow failed single timing-sensitive tests
+(`raw_and_typed_article_query_validation_converges_before_provider_work`
+at 120s and 63s, and once `citation_evidence_returns_the_bounded_error_when_the_bridge_stalls`),
+each passing in isolation in under 12s; the failures traced to
+concurrent lanes sharing Yellow's checkout, `.cache` and target dir. A
+`make spec` gene.md failure under the same contention (help-text assert)
+did not reproduce on a quiet machine in three full runs, and two
+concurrent spec suites corrupt each other's shared fixture state by
+design; gates must hold `~/.yr-checkout.lock` and `~/.yellow-gate.lock`
+for the whole run.
+
+One live pass over the built binary (spec artifact of 18debc486):
+unknown name errors listing every inventory id and the three groups;
+comma and pipe forms produce identical health rows and reasons;
+`commercial-restricted` disables KEGG, Enrichr, OncoKB, PharmacoDB and
+DDInter (DrugBank stays key-gated off the health list);
+`license-required` alone disables KEGG, Enrichr and OncoKB;
+`non-commercial` alone disables DDInter and PharmacoDB;
+`BIOMCP_DISABLE_KEGG=1` disables KEGG with the alias reason; and a live
+gene card carries no KEGG fields either way (the quick view does not
+request the pathways section), so the carried-field drop rests on the
+recorded-reply tests.
