@@ -160,6 +160,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
 
     allowed_auth = {"none", "optional_env", "required_env", "not_applicable"}
     allowed_modes = {"direct_api", "indirect_only"}
+    allowed_commercial_terms = {"license-required", "non-commercial"}
     for item in inventory:
         assert set(item) == {
             "id",
@@ -169,6 +170,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             "via",
             "bioMcp_surfaces",
             "bioMcp_auth",
+            "commercial_terms",
             "env_var",
             "provider_access",
             "license_summary",
@@ -181,6 +183,12 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
         assert item["tier"] in {1, 2, 3}
         assert item["integration_mode"] in allowed_modes
         assert item["bioMcp_auth"] in allowed_auth
+        # The recorded commercial-terms shape draws the --disable-sources
+        # groups (license-required, non-commercial, and their union
+        # commercial-restricted); sources without a recorded commercial
+        # restriction carry null.
+        if item["commercial_terms"] is not None:
+            assert item["commercial_terms"] in allowed_commercial_terms
         # A provider that publishes no terms page gets a null
         # terms_url rather than a link to something that is not terms, and its
         # licence summary has to say so.

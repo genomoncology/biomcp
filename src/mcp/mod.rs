@@ -14,6 +14,7 @@ pub(crate) fn tool_catalog_json() -> anyhow::Result<String> {
 ///
 /// Returns an error when stdio transport setup or MCP server startup fails.
 pub async fn run_stdio() -> anyhow::Result<()> {
+    crate::sources::disable::init(None)?;
     shell::run_stdio().await
 }
 
@@ -35,6 +36,7 @@ pub async fn run_http(
     allowed_hosts: Vec<String>,
     unsafe_allow_any_host: bool,
 ) -> anyhow::Result<()> {
+    crate::sources::disable::init(None)?;
     shell::run_http(host, port, allowed_hosts, unsafe_allow_any_host).await
 }
 

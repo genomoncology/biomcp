@@ -401,6 +401,21 @@ biomcp get gene BRAF pathways
 biomcp get gene BRAF diagnostics'
 ```
 
+## Disabled KEGG Drops Carried Pathway Names
+
+MyGene carries KEGG pathway rows inside its own gene record. With kegg off
+through `--disable-sources`, those rows leave the pathways section while the
+gene record itself still resolves.
+
+```bash
+../../tools/biomcp-ci --json get gene BRAF pathways \
+  | jq -e '(.pathways // []) | any(.source == "KEGG" and .id == "hsa04010")' \
+  | mustmatch 'true'
+kegg_disabled="$(BIOMCP_DISABLE_SOURCES=kegg ../../tools/biomcp-ci --json get gene BRAF pathways)"
+jq -e '(.symbol == "BRAF") and ((.pathways // []) | all(.source != "KEGG"))' <<<"$kegg_disabled" | mustmatch 'true'
+! grep -Fq 'Homo sapiens (human)' <<<"$kegg_disabled"
+```
+
 ## Shipped schema matches the fixture-backed CLI payload
 
 The checked-in gene schema must validate the actual JSON emitted from the captured MyGene BRAF response. This closes the gate if the Rust serializer and shipped skill schema drift apart, even when the static example still agrees with the stale schema.

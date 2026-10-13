@@ -33,6 +33,25 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
   `optional_env` means an environment variable improves quota or access quality but is not required for baseline use.
   `required_env` means the feature requires a configured environment variable.
   `not_applicable` means there is no standalone BioMCP auth path because the provider is indirect-only.
+- `commercial_terms`
+  `null` means the recorded terms impose no recorded commercial restriction on the content BioMCP serves.
+  `license-required` means the recorded terms require a commercial license for commercial use.
+  `non-commercial` means the recorded terms allow non-commercial use only.
+
+### Turning restricted sources off
+
+The `commercial_terms` field draws the `--disable-sources` groups:
+`license-required` and `non-commercial` each select their own shape, and
+`commercial-restricted` is their union. Turn any of them off with the global
+flag or the environment variable
+([Configuration: disabling sources by name or group](configuration.md#disabling-sources-by-name-or-group));
+any single source id also works on its own. Membership follows this file, so
+re-recording a source's terms redraws the groups without a code change.
+Today `license-required` covers KEGG, Enrichr, OncoKB, and DrugBank;
+`non-commercial` covers DDInter and PharmacoDB. COSMIC stays out: BioMCP
+serves only the v68 snapshot MyVariant carries, and the recorded reading is
+that the v68-era terms govern those fields. Semantic Scholar and the WHO
+sources stay out on their recorded open readings.
 
 ## Summary table
 

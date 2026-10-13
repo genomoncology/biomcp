@@ -46,6 +46,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
         command,
         json,
         no_cache,
+        disable_sources: _,
     } = cli;
 
     crate::sources::with_no_cache(no_cache, async move {
@@ -345,11 +346,13 @@ async fn run_outcome_inner(
     cli: Cli,
     alias_suggestions_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    crate::sources::disable::init(cli.disable_sources.as_deref())?;
     super::shared::validate_cli_state_contract(&cli)?;
     let Cli {
         command,
         json,
         no_cache,
+        disable_sources: _,
     } = cli;
 
     match command {
@@ -557,6 +560,7 @@ async fn run_outcome_inner(
                 command,
                 json,
                 no_cache,
+                disable_sources: None,
             }))
             .await?,
         )),

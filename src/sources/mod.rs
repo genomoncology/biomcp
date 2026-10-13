@@ -457,6 +457,7 @@ pub(crate) mod complexportal;
 pub(crate) mod cpic;
 pub(crate) mod cvx;
 pub(crate) mod dbsnp;
+pub(crate) mod disable;
 pub(crate) mod ddinter;
 pub(crate) mod dgidb;
 pub(crate) mod disgenet;

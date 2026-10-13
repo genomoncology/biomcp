@@ -1302,6 +1302,12 @@ async fn resolve_base(
 }
 
 pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
+    if crate::sources::disable::is_disabled("oncokb") {
+        return Err(crate::sources::disable::source_disabled_error(
+            "OncoKB",
+            "oncokb",
+        ));
+    }
     let (variant, id_format) = resolve_base(id, None).await?;
     let gene = variant.gene.trim();
     if gene.is_empty() {

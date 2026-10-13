@@ -91,12 +91,27 @@ pub(super) fn list<S>(router: &ToolRouter<S>) -> Vec<Tool> {
 }
 
 pub(super) fn instructions() -> String {
+    instructions_with_disabled(&crate::sources::disable::disabled_entries())
+}
+
+pub(super) fn instructions_with_disabled(disabled: &[crate::sources::disable::DisabledEntry]) -> String {
     let names = TOOLS
         .iter()
         .map(|tool| tool.name)
         .collect::<Vec<_>>()
         .join(", ");
-    format!(
+    let base = format!(
         "BioMCP provides data from leading public biomedical data sources through seven read-only tools: {names}. Prefer bounded typed tools before the raw `biomcp` escape hatch. Use `search` and `get` for ordinary entity lookup, `variant_articles` for bounded literature batches, and the three ClinGen tools for their named contracts. For long-tail commands, start raw discovery with `biomcp list` or `biomcp list <entity>`; use `biomcp skill list` for worked workflows."
+    );
+    if disabled.is_empty() {
+        return base;
+    }
+    let listed = disabled
+        .iter()
+        .map(|entry| format!("{} ({})", entry.id, entry.reason))
+        .collect::<Vec<_>>()
+        .join("; ");
+    format!(
+        "{base} The operator disabled these sources: {listed}; BioMCP makes no calls to them and drops fields other services pass along from them."
     )
 }

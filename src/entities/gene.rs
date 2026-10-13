@@ -1111,10 +1111,24 @@ fn extract_enrich_terms(
     Ok(out)
 }
 
+/// Names the disable setting in the section outcome when Enrichr is off;
+/// keeps the plain unavailable note for ordinary failures.
+fn enrichr_section_unavailable(err: &BioMcpError) -> SectionOutcome {
+    match crate::sources::disable::unavailable_disabled_reason(err) {
+        Some(reason) => {
+            SectionOutcome::unavailable(&format!("Enrichr gene enrichment is {reason}."))
+        }
+        None => SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
+    }
+}
+
 async fn enrich_gene(
     symbol: &str,
     include: &[GeneIncludeType],
 ) -> Result<(Option<Vec<EnrichmentResult>>, Option<Vec<EnrichmentResult>>), BioMcpError> {
+    if crate::sources::disable::is_disabled("enrichr") {
+        return Err(crate::sources::disable::source_disabled_error("enrichr", "enrichr"));
+    }
     let enrichr = EnrichrClient::new()?;
     let list_id = enrichr.add_list(&[symbol]).await?;
 
@@ -2382,11 +2396,11 @@ async fn populate_sections_parallel_top(
         timing.push(entry);
         let (ontology, diseases) = match result {
             Ok(value) => value,
-            Err(_) => {
+            Err(err) => {
                 for section in &enrichr_sections {
                     gene.section_outcomes.complete(
                         section.as_str(),
-                        SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
+                        enrichr_section_unavailable(&err),
                     );
                 }
                 (None, None)
@@ -2709,12 +2723,12 @@ pub async fn get_with_report(
         let enrichr = enrich_gene(&gene.symbol, &enrichr_sections).await;
         let (ontology, diseases) = match enrichr {
             Ok(value) => value,
-            Err(_) => {
+            Err(err) => {
                 timing.record("enrichr", started, "error");
                 for section in &enrichr_sections {
                     gene.section_outcomes.complete(
                         section.as_str(),
-                        SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
+                        enrichr_section_unavailable(&err),
                     );
                 }
                 (None, None)
