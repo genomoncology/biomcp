@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 071d620, accept
+
 ## Outcome
 
 BioMCP keeps no test of its own that restates pm's review-verdict rules. pm's landing refuses any ticket without an accept of the landed revision, so the repository's interim check goes.
