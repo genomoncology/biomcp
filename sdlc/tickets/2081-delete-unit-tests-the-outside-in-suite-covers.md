@@ -19,3 +19,7 @@ Unit tests remain only for parser edge tables, security boundaries and regressio
 - Changes: delete unit tests file by file, starting with the 75 files; add outside-in cases for the 34 untouched files before deleting there; give the slow tests an injected clock or a shorter deadline; delete the test-only items and unread fields as their tests go; land in small batches.
 - Proof: combined coverage within a few points of 84%; Rust test count, lib test compile time and run time fall; the dead-code scan in `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md` reports no hand-written spans.
 - Defers: nothing.
+
+## Amendment, 2026-10-13
+
+`search all`, `update` and `uninstall` stay: they are documented, and `search all` is a recommended agent entry point. Among the 34 files no outside-in test reaches, these three commands get outside-in tests first: `search all` golden cases through the replay server (counts-only and full), and `update --check`, `update` and `uninstall` against a staged local release and a temporary install folder, including the refusal to touch a package-managed install.

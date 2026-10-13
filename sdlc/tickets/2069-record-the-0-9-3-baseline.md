@@ -17,4 +17,8 @@ One record holds every number 0.9.3 is judged by, measured on v0.9.2 on the buil
 - Keeps: the studies' commands where they already measure the number.
 - Changes: one record, `sdlc/records/2069-0-9-3-baseline.md`, with a script under `tools/` that prints every number and the command behind it: stripped release binary bytes; build folder bytes after `make test` and after a release build; cold release build; cold dev build of all targets; rebuild after one Rust edit and after one doc edit; direct dependencies, `Cargo.lock` packages and crates compiled; duplicate crate names; `make test`, `make spec` and `make lint` wall times; Rust, Python and spec test counts; outside-in, unit and combined line coverage; CI wall time and runner-minutes for the last ten green runs; tests over one second; LLVM lines; peak release build memory; ignored advisories in `deny.toml`.
 - Proof: the script's output in the record, run twice with numbers within a few percent.
-- Defers: performance of BioMCP commands at run time.
+- Defers: nothing.
+
+## Amendment, 2026-10-13
+
+Ian ruled that program speed matters more than build speed, so the baseline also measures BioMCP at run time on the build host: `biomcp --version` start-up time with an empty cache and with a large one; and wall time with a warm cache and with the cache off for `get gene BRAF`, `get variant "BRAF V600E"`, `get drug imatinib`, `search article -g BRAF --limit 10` and `search all --gene BRAF --disease melanoma --counts-only`, five runs each, median and spread. The release profile stays thin LTO with one codegen unit; no ticket trades run-time speed for build time.
