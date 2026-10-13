@@ -143,6 +143,10 @@ def _assert_release_contract(workflow: str) -> None:
 
     draft = _job_block(workflow, "create-draft")
     assert 'gh release create "$TAG" --draft --verify-tag' in draft
+    # Ticket 2064: the draft carries the tag's changelog section as
+    # its release notes, rendered from the checked-out tag.
+    assert "release/release_notes.py" in draft
+    assert "--notes-file" in draft
     build = _job_block(workflow, "build")
     assert 'gh release upload "$TAG"' in build and "--clobber" in build
     assert "skip-existing" not in workflow and "skip_existing" not in workflow
@@ -2012,6 +2016,13 @@ def _assert_homebrew_guard_behavior(script: str, tmp_path: Path) -> None:
         assert f'sha256 "{X86_CHECKSUM}"' in formula
         assert f'sha256 "{ARM64_CHECKSUM}"' in formula
         assert 'version "0.9.2"' in formula
+        # Ticket 2064: the rendered formula carries a Homebrew test
+        # block, so `brew audit` style checks pass on the tap.
+        assert "test do" in formula
+        assert (
+            'assert_match version.to_s, shell_output("#{bin}/biomcp --version")'
+            in formula
+        )
         if repository == PRODUCTION_REPOSITORY:
             _assert_tool_ran(log, "git clone", repository)
             _assert_tool_ran(log, "git push origin HEAD:main", repository)

@@ -314,3 +314,100 @@ def test_installer_refuses_symlink_destination_without_changing_target(tmp_path:
     )
     assert result.returncode != 0
     assert target.read_text() == "untouched"
+
+
+VERSION_FLAG_BANNER = "biomcp 0.9.2"
+VERSION_SUBCOMMAND_BANNER = (
+    "biomcp 0.9.2 (git 4049666f5, build 2026-10-13T00:14:34-04:00)"
+)
+
+
+def _release_shaped_binary(version_flag_banner: str | None) -> str:
+    """A staged release binary: `--version` prints the bare banner,
+    `version` prints a banner that ends with the build-time field
+    (ticket 2064); `version_flag_banner=None` removes `--version`.
+    """
+    lines = ["#!/bin/sh"]
+    if version_flag_banner is None:
+        lines.append('if [ "$1" = --version ]; then exit 1; fi')
+    else:
+        lines.append(
+            f"if [ \"$1\" = --version ]; then printf '%s\\n' '{version_flag_banner}'; exit 0; fi"
+        )
+    lines.append(f"printf '%s\\n' '{VERSION_SUBCOMMAND_BANNER}'")
+    return "\n".join(lines) + "\n"
+
+
+def _run_installer_with_staged_release(
+    tmp_path: Path, binary_text: str, requested: str
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    fixture = tmp_path / "fixture"
+    fixture.mkdir()
+    binary = fixture / "biomcp"
+    _write_executable(binary, binary_text)
+    archive = fixture / ASSET
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(binary, arcname="biomcp")
+    (fixture / "sidecar").write_text(
+        f"{hashlib.sha256(archive.read_bytes()).hexdigest()}\n", encoding="utf-8"
+    )
+    tools = _tools(tmp_path, "curl", "system")
+    install_dir = tmp_path / "install"
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    env = os.environ | {
+        "BIOMCP_INSTALL_DIR": str(install_dir),
+        "BIOMCP_VERSION": requested,
+        "FIXTURE_DIR": str(fixture),
+        "TMPDIR": str(scratch),
+        "PATH": str(tools),
+    }
+    result = subprocess.run(
+        ["bash", str(INSTALLER)], text=True, capture_output=True, env=env, check=False
+    )
+    return result, install_dir
+
+
+def test_pinned_install_reads_the_version_flag_against_a_staged_release(
+    tmp_path: Path,
+) -> None:
+    result, install_dir = _run_installer_with_staged_release(
+        tmp_path, _release_shaped_binary(VERSION_FLAG_BANNER), "0.9.2"
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Verified installation: " in result.stdout
+    receipt = json.loads((install_dir / "biomcp.install.json").read_text())
+    assert receipt["version"] == "0.9.2"
+
+
+def test_pinned_install_falls_back_to_the_second_word_of_the_version_banner(
+    tmp_path: Path,
+) -> None:
+    result, install_dir = _run_installer_with_staged_release(
+        tmp_path, _release_shaped_binary(None), "0.9.2"
+    )
+
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads((install_dir / "biomcp.install.json").read_text())
+    assert receipt["version"] == "0.9.2"
+
+
+def test_latest_install_receipt_carries_the_true_version(tmp_path: Path) -> None:
+    result, install_dir = _run_installer_with_staged_release(
+        tmp_path, _release_shaped_binary(VERSION_FLAG_BANNER), "latest"
+    )
+
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads((install_dir / "biomcp.install.json").read_text())
+    assert receipt["version"] == "0.9.2"
+
+
+def test_pinned_install_still_refuses_a_version_mismatch(tmp_path: Path) -> None:
+    result, install_dir = _run_installer_with_staged_release(
+        tmp_path, _release_shaped_binary(VERSION_FLAG_BANNER), "0.9.1"
+    )
+
+    assert result.returncode != 0
+    assert "requested 0.9.1" in result.stderr
+    assert not (install_dir / "biomcp").exists()

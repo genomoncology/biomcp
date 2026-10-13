@@ -66,3 +66,22 @@ fn shim_rejects_a_non_executable_sibling() {
     assert_eq!(result.status.code(), Some(126));
     assert!(String::from_utf8_lossy(&result.stderr).contains("is not executable"));
 }
+
+#[cfg(unix)]
+#[test]
+fn shim_resolves_a_symlinked_sibling() {
+    // uv's bin folders hold symlinks for installed entry points on
+    // macOS (ticket 2064), so the sibling beside the wrapper can be
+    // a link to the real executable rather than a plain file.
+    let temporary = tempfile::tempdir().expect("temporary directory");
+    let shim = temporary.path().join("biomcp-cli");
+    let sibling = temporary.path().join("biomcp");
+    fs::copy(env!("CARGO_BIN_EXE_biomcp-cli"), &shim).expect("copy shim");
+    std::os::unix::fs::symlink(env!("CARGO_BIN_EXE_biomcp"), &sibling)
+        .expect("symlink sibling");
+    let direct = output(Path::new(env!("CARGO_BIN_EXE_biomcp")), &["--version"]);
+    let forwarded = output(&shim, &["--version"]);
+    assert_eq!(forwarded.status.code(), direct.status.code());
+    assert_eq!(forwarded.stdout, direct.stdout);
+    assert_eq!(forwarded.stderr, direct.stderr);
+}

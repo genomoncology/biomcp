@@ -13,6 +13,7 @@ DEV_CYCLE_HEADING = f"## {DEV_CYCLE_VERSION}"
 EXPECTED_RELEASE_TICKETS = {
     DEV_CYCLE_VERSION: {
         2061,
+        2064,
     },
     "0.9.2": {
         1287,
@@ -463,11 +464,10 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     # The changelog opens with the current release heading, with a fresh
     # Unreleased section or the next milestone's undated heading ahead of
     # it during the dev cycle.
-    dev_cycle_heading = "## 0.9.3"
     assert changelog.startswith(
         f"# Changelog\n\n{current_release_heading}\n"
     ) or changelog.startswith("# Changelog\n\n## Unreleased\n") or changelog.startswith(
-        f"# Changelog\n\n{dev_cycle_heading}\n"
+        f"# Changelog\n\n{DEV_CYCLE_HEADING}\n"
     )
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
@@ -544,6 +544,7 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
     block = _markdown_section_block(changelog, DEV_CYCLE_HEADING)
     assert _ticket_references(block) == EXPECTED_RELEASE_TICKETS[DEV_CYCLE_VERSION]
     assert "### New features" in block
+    assert "### Fixes" in block
 
 
 def test_unreleased_records_the_complete_dev6_batch_and_preserves_history() -> None:
