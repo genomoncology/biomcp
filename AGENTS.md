@@ -65,6 +65,8 @@ for both lanes.
 
 ## Releases
 
+A ticket merged for a release carries its changelog bullet in its own landing, so the release gate never finds a ticket without one.
+
 `docs/reference/release-process.md` is the release runbook of record. A
 published release builds five platform archives, publishes PyPI wheels through
 the protected `pypi` environment, updates the Homebrew tap, and publishes
