@@ -51,6 +51,7 @@
 - The guides match the shipped behavior: the variant guide explains gene-symbol-first routing, the article guide states the 60-second search deadline, the deep-offset refusal and the OpenCitations fallback, the drug guide names the sections that keep their caps, and the ClinVar source page and the variant-structure blog post show the current headline format. (1290, 1293, 1300, 1301, 1302)
 
 ### Internal
+- The release's green-CI check now counts successful runs with flags the shipped gh CLI actually supports, after a rehearsal release failed on a gh flag the runner does not have. (2060)
 - Ticket 2055's landing carries its release note, which the first gated rehearsal caught missing. (2057)
 - The release notes close with this entry, so every ticket in the 0.9.2 tag carries its bullet. (2058)
 - The repository's working rules sit in one section of its agent guide — targeted tests while working, the full gates once before landing — and the retired March tooling is gone from the tree. (2055)
