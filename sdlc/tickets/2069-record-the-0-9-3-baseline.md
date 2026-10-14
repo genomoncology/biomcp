@@ -1,8 +1,12 @@
 # 2069 — Record the 0.9.3 baseline
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision fda07f8, accept
+
+Reviews: revision f26f8a8, accept
 
 ## Outcome
 

@@ -1,0 +1,681 @@
+#!/usr/bin/env bash
+# Measure the 0.9.3 baseline numbers for one BioMCP clone.
+#
+# Every number prints with the command behind it, in this shape:
+#
+#   ### <section-id> — <title>
+#   $ <command>
+#   <command output>
+#   RESULT <key> = <value>
+#
+# so a record can hold the exact evidence and a second run can be compared
+# key by key. The script is written for the Yellow build host: it holds
+# ~/.yr-checkout.lock and ~/.yellow-gate.lock for the whole run and refuses
+# to start while any build, test, or gate process is still alive.
+#
+# Usage:
+#   tools/measure-0-9-3-baseline <clone-dir> [options]
+#
+# Options:
+#   --dry-run        print every command without running anything
+#   --only a,b,c     run only the named sections
+#   --no-locks       do not take or hold the Yellow locks (for read-only
+#                    sections such as ci-history on another host)
+#   --expect-tag T   fail unless the clone's HEAD is exactly at tag T
+#
+# The clone must be a clean checkout of the tree to measure (ticket 2069
+# measures tag v0.9.2). Timed build numbers assume the host's documented
+# cargo config (incremental off, line-tables-only dev debug) and a quiet
+# machine; the host section records both.
+
+set -euo pipefail
+
+DRY_RUN=0
+NO_LOCKS=0
+ONLY=""
+EXPECT_TAG=""
+CLONE=""
+
+usage() {
+  cat >&2 <<'USAGEEOF'
+usage: measure-0-9-3-baseline <clone-dir> [--dry-run] [--only a,b,c]
+                              [--no-locks] [--expect-tag vX.Y.Z]
+USAGEEOF
+  exit 2
+}
+
+while (($#)); do
+  case "$1" in
+    --dry-run) DRY_RUN=1 ;;
+    --no-locks) NO_LOCKS=1 ;;
+    --only) shift; ONLY="${1:-}" ;;
+    --only=*) ONLY="${1#*=}" ;;
+    --expect-tag) shift; EXPECT_TAG="${1:-}" ;;
+    --expect-tag=*) EXPECT_TAG="${1#*=}" ;;
+    -h|--help) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 0 ;;
+    -*) echo "unknown option: $1" >&2; usage ;;
+    *) if [[ -n "$CLONE" ]]; then echo "one clone directory only" >&2; usage; fi
+       CLONE="$1" ;;
+  esac
+  shift
+done
+
+[[ -n "$CLONE" ]] || usage
+[[ -d "$CLONE" ]] || { echo "clone directory not found: $CLONE" >&2; exit 2; }
+
+export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+cd "$CLONE"
+CLONE="$(pwd)"
+LOGD=".cache/measure"
+mkdir -p "$LOGD"
+
+say() { printf '\n### %s — %s\n' "$1" "$2"; }
+result() { printf 'RESULT %s = %s\n' "$1" "$2"; }
+show() { printf '$ %s\n' "$1"; }
+
+# runsh runs a shell string and prints it first; the record shows the
+# command behind every number.
+runsh() {
+  show "$1"
+  if ((DRY_RUN)); then return 0; fi
+  bash -c "$1"
+}
+
+# timedsh prints the command, runs it, and records its wall time.
+timedsh() {
+  local label="$1" command="$2" start end wall
+  show "$command"
+  if ((DRY_RUN)); then result "${label}_wall_s" dry-run; return 0; fi
+  start=$(date +%s.%N)
+  bash -c "$command"
+  end=$(date +%s.%N)
+  wall=$(awk -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", e - s }')
+  result "${label}_wall_s" "$wall"
+}
+
+want_section() {
+  [[ -z "$ONLY" ]] && return 0
+  [[ ",$ONLY," == *",$1,"* ]]
+}
+
+quiet_pids() {
+  local name pids
+  for name in cargo rustc cargo-nextest clippy-driver pytest mkdocs make uv cargo-deny cargo-llvm-cov; do
+    pids=$(pgrep -x "$name" 2>/dev/null || true)
+    if [[ -n "$pids" ]]; then
+      echo "busy: process(es) named $name are running:" >&2
+      ps -o pid=,etime=,args= -p "$(echo "$pids" | tr '\n' ',' | sed 's/,$//')" >&2 || true
+      return 1
+    fi
+  done
+  return 0
+}
+
+# ---------------------------------------------------------------- locks
+
+if ((NO_LOCKS)); then
+  say locks "skipped by --no-locks"
+else
+  exec 9>"$HOME/.yr-checkout.lock"
+  flock -n 9 || { echo "busy: ~/.yr-checkout.lock is held" >&2; exit 3; }
+  exec 8>"$HOME/.yellow-gate.lock"
+  flock -n 8 || { echo "busy: ~/.yellow-gate.lock is held" >&2; exit 3; }
+  say locks "held for the whole run"
+  show "flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock"
+  echo "both locks held by pid $$"
+fi
+
+# ---------------------------------------------------------------- host
+
+if want_section host; then
+  say host "machine and toolchain conditions at the start"
+  runsh 'hostname; uname -sr; nproc'
+  runsh 'cat /proc/loadavg'
+  runsh 'free -g | sed -n 1,2p'
+  runsh 'df -h . | tail -1'
+  runsh 'rustc --version; cargo --version; cargo nextest --version; cargo-deny --version; cargo llvm-cov --version; cargo llvm-lines --version; ruff --version; python3 --version; uv --version; node --version 2>/dev/null || true; mustmatch --version 2>/dev/null || true'
+  runsh 'cat ~/.cargo/config.toml 2>/dev/null || echo "no ~/.cargo/config.toml"'
+  runsh 'cat .config/nextest.toml 2>/dev/null || echo "no .config/nextest.toml"'
+fi
+
+# ---------------------------------------------------------------- clone
+
+if want_section clone; then
+  say clone "the tree being measured"
+  runsh 'git rev-parse HEAD; git describe --tags --exact-match HEAD 2>/dev/null || true; git log -1 --format="%H %s"; git status --porcelain | wc -l'
+  if ((!DRY_RUN)) && [[ -n "$EXPECT_TAG" ]]; then
+    tag=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+    [[ "$tag" == "$EXPECT_TAG" ]] || { echo "clone HEAD is not at $EXPECT_TAG (found: ${tag:-none})" >&2; exit 2; }
+  fi
+fi
+
+# ---------------------------------------------------------------- quiet
+
+if want_section quiet; then
+  say quiet "no other build or gate process is running"
+  show "pgrep -x cargo rustc cargo-nextest clippy-driver pytest mkdocs make uv cargo-deny cargo-llvm-cov"
+  if ((!DRY_RUN)); then
+    quiet_pids || exit 3
+    echo "quiet: no matching process is running"
+  fi
+fi
+
+# ---------------------------------------------------------------- cold dev build
+
+if want_section cold-dev-build; then
+  say cold-dev-build "cold dev build of every target (routine feature set)"
+  timedsh cold_dev_build \
+    '/usr/bin/time -f "TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M" cargo build --locked --no-default-features --all-targets --timings'
+fi
+
+# ---------------------------------------------------------------- rebuild after one Rust edit
+
+if want_section rust-edit-rebuild; then
+  say rust-edit-rebuild "rebuild after one Rust edit (dev profile, incremental off)"
+  runsh 'touch src/render/markdown/gene.rs'
+  timedsh rust_edit_rebuild \
+    '/usr/bin/time -f "TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M" cargo build --locked --no-default-features --all-targets'
+fi
+
+# ---------------------------------------------------------------- rebuild after one doc edit
+
+if want_section doc-edit-rebuild; then
+  say doc-edit-rebuild "rebuild after one doc edit (a spec page touch; v0.9.2 build.rs scans the whole package)"
+  runsh 'touch spec/entity/gene.md'
+  timedsh doc_edit_rebuild \
+    '/usr/bin/time -f "TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M" cargo build --locked --no-default-features --all-targets'
+fi
+
+# ---------------------------------------------------------------- dependency counts
+
+if want_section dep-counts; then
+  say dep-counts "direct dependencies, Cargo.lock packages, crates compiled, duplicate names"
+  show "python3 (counts from Cargo.toml and Cargo.lock)"
+  if ((!DRY_RUN)); then
+    python3 - "$LOGD/dep-counts.txt" <<'PY'
+import sys
+import tomllib
+from collections import Counter
+from pathlib import Path
+
+out = []
+manifest = tomllib.loads(Path("Cargo.toml").read_text())
+normal = manifest.get("dependencies", {})
+optional = sorted(k for k, v in normal.items() if isinstance(v, dict) and v.get("optional"))
+dev = manifest.get("dev-dependencies", {})
+win = manifest.get("target", {}).get('cfg(windows)', {}).get("dependencies", {})
+unix_dev = manifest.get("target", {}).get("cfg(unix)", {}).get("dev-dependencies", {})
+out.append(f"RESULT direct_dependencies_normal = {len(normal)} (optional: {len(optional)}: {', '.join(optional)})")
+out.append(f"RESULT direct_dependencies_dev = {len(dev)}")
+out.append(f"RESULT direct_dependencies_windows_only = {len(win)}")
+out.append(f"RESULT direct_dependencies_unix_dev = {len(unix_dev)}")
+
+lock = tomllib.loads(Path("Cargo.lock").read_text())
+packages = lock.get("package", [])
+names = Counter(p["name"] for p in packages)
+dups = sorted(n for n, c in names.items() if c > 1)
+out.append(f"RESULT cargo_lock_packages = {len(packages)}")
+out.append(f"RESULT cargo_lock_duplicate_names = {len(dups)} (extra copies: {sum(names[n] for n in dups) - len(dups)})")
+Path(sys.argv[1]).write_text("\n".join(out) + "\n")
+print("\n".join(out))
+PY
+  fi
+  runsh "cargo tree --locked --no-default-features -e normal,build --prefix none > $LOGD/tree-normal-build.txt"
+  runsh "cargo tree --locked --no-default-features -e normal,build,dev --prefix none > $LOGD/tree-normal-build-dev.txt"
+  show "python3 (unique crate name@version pairs in each cargo tree, workspace members excluded)"
+  if ((!DRY_RUN)); then
+    python3 - "$LOGD/tree-normal-build.txt" "$LOGD/tree-normal-build-dev.txt" <<'PY'
+import sys
+from collections import Counter
+
+workspace = {"biomcp-cli", "biomcp-mcp-contract-client"}
+for label, path in (("normal_build", sys.argv[1]), ("with_dev", sys.argv[2])):
+    pairs = set()
+    for line in open(path):
+        fields = line.split()
+        if len(fields) < 2 or not fields[1].startswith("v"):
+            continue
+        if fields[0] in workspace:
+            continue
+        pairs.add((fields[0], fields[1]))
+    print(f"RESULT crates_compiled_{label} = {len(pairs)}")
+    names = Counter(name for name, _ in pairs)
+    dups = sorted(n for n, c in names.items() if c > 1)
+    print(f"RESULT duplicate_crate_names_{label} = {len(dups)} ({', '.join(dups) if dups else 'none'})")
+PY
+  fi
+fi
+
+# ---------------------------------------------------------------- prepare (context)
+
+if want_section prepare-context; then
+  say prepare-context "one prepare so the timed gates below start with fresh artifacts (context, not a baseline number)"
+  timedsh make_prepare_test 'make prepare-test'
+fi
+
+# ---------------------------------------------------------------- make test
+
+if want_section make-test; then
+  say make-test "the routine gate, wall time with artifacts already fresh"
+  timedsh make_test "make test > $LOGD/make-test.log 2>&1"
+  runsh "grep -E 'Summary \\[|tests? run:' $LOGD/make-test.log | tail -1 || true"
+  runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/make-test.log | tail -2 || true"
+  runsh "grep -iE 'documentation built|docs built' $LOGD/make-test.log | tail -1 || true"
+  show "python3 (test counts parsed from the make-test log)"
+  if ((!DRY_RUN)); then
+    python3 - "$LOGD/make-test.log" <<'PY'
+import re
+import sys
+
+text = open(sys.argv[1], errors="replace").read()
+m = re.search(r"Summary \[.*?\]\s+(\d+) tests? run:.*?(\d+) passed.*?(\d+) skipped", text)
+if m:
+    print(f"RESULT rust_tests_run = {m.group(1)}")
+    print(f"RESULT rust_tests_passed = {m.group(2)}")
+    print(f"RESULT rust_tests_skipped = {m.group(3)}")
+else:
+    print("RESULT rust_tests_run = parse-failed")
+p = re.findall(r"=+ (\d+ passed[^=]*?) =+", text)
+if p:
+    print(f"RESULT python_lane_summary = {p[-1].strip()}")
+PY
+  fi
+fi
+
+# ---------------------------------------------------------------- build folder after make test
+
+if want_section build-folder-after-make-test; then
+  say build-folder-after-make-test "target/ bytes after make test"
+  runsh 'du -sb target | awk "{print \$1}"'
+  runsh 'du -sh target'
+  if ((!DRY_RUN)); then
+    result build_folder_bytes_after_make_test "$(du -sb target | awk '{print $1}')"
+  fi
+fi
+
+# ---------------------------------------------------------------- rust test census
+
+if want_section rust-test-census; then
+  say rust-test-census "test-duration census of the routine Rust suite (from the archive make test built)"
+  timedsh rust_test_census \
+    "NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 tools/run-offline -- cargo nextest run --archive-file .cache/routine-tests.tar.zst --config-file .config/nextest.toml --message-format libtest-json-plus > $LOGD/census.jsonl 2> $LOGD/census.err || true"
+  runsh "tail -2 $LOGD/census.err || true"
+  show "python3 (count tests at or over one second from the libtest-json-plus stream)"
+  if ((!DRY_RUN)); then
+    python3 - "$LOGD/census.jsonl" <<'PY'
+import json
+import sys
+
+tests = {}
+for line in open(sys.argv[1], errors="replace"):
+    try:
+        event = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    if event.get("type") != "test":
+        continue
+    if event.get("event") not in ("ok", "failed", "timeout", "ignored"):
+        continue
+    time = event.get("exec_time")
+    if time is None:
+        continue
+    tests[event.get("name", "?")] = max(tests.get(event.get("name", "?"), 0.0), float(time))
+slow = sorted(((t, n) for n, t in tests.items() if t >= 1.0), reverse=True)
+print(f"RESULT rust_tests_with_duration = {len(tests)}")
+print(f"RESULT tests_over_1s = {len(slow)}")
+print(f"RESULT tests_over_1s_sum_s = {sum(t for t, _ in slow):.1f}")
+print("slowest tests:")
+for t, n in slow[:15]:
+    print(f"  {t:8.1f}s  {n}")
+PY
+  fi
+fi
+
+# ---------------------------------------------------------------- python test count
+
+if want_section python-test-count; then
+  say python-test-count "python lane test count (collection, no runs)"
+  timedsh python_collect \
+    "tools/run-offline -- env BIOMCP_BIN=$PWD/target/spec/biomcp uv run --no-sync pytest tests/ --collect-only -q > $LOGD/pytest-collect.txt 2>&1"
+  runsh "tail -2 $LOGD/pytest-collect.txt"
+  show "python3 (collected count)"
+  if ((!DRY_RUN)); then
+    count=$(grep -oE '[0-9]+ tests? collected' "$LOGD/pytest-collect.txt" | grep -oE '^[0-9]+' | tail -1 || true)
+    result python_tests_collected "${count:-parse-failed}"
+  fi
+fi
+
+# ---------------------------------------------------------------- spec block census
+
+if want_section spec-block-census; then
+  say spec-block-census "executable bash blocks across the spec pages"
+  BASH_FENCE='^[[:space:]]*```bash[[:space:]]*$'
+  runsh "grep -rlE '$BASH_FENCE' spec --include='*.md' | wc -l"
+  runsh "grep -rE '$BASH_FENCE' spec --include='*.md' | wc -l"
+  if ((!DRY_RUN)); then
+    result spec_pages_with_bash_blocks "$(grep -rlE "$BASH_FENCE" spec --include='*.md' | wc -l)"
+    result spec_bash_blocks "$(grep -rE "$BASH_FENCE" spec --include='*.md' | wc -l)"
+  fi
+fi
+
+# ---------------------------------------------------------------- make spec
+
+if want_section make-spec; then
+  say make-spec "the spec lane, wall time with artifacts already fresh"
+  timedsh make_spec "make spec > $LOGD/make-spec.log 2>&1"
+  runsh "tail -6 $LOGD/make-spec.log"
+fi
+
+# ---------------------------------------------------------------- make lint
+
+if want_section make-lint; then
+  say make-lint "the lint gate, wall time"
+  timedsh make_lint "make lint > $LOGD/make-lint.log 2>&1"
+  runsh "tail -6 $LOGD/make-lint.log"
+fi
+
+# ---------------------------------------------------------------- release build
+
+if want_section release-build; then
+  say release-build "cold release build (default features, shipped profile: thin LTO, one codegen unit, strip)"
+  timedsh release_build \
+    "/usr/bin/time -v -o $LOGD/release-time.txt cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
+  runsh "grep -E 'Elapsed \\(wall clock|Maximum resident set size|User time|System time' $LOGD/release-time.txt"
+  runsh "tail -3 $LOGD/release-build.log"
+  if ((!DRY_RUN)); then
+    rss=$(grep -oE 'Maximum resident set size \(kbytes\): [0-9]+' "$LOGD/release-time.txt" | grep -oE '[0-9]+')
+    result release_peak_rss_kb "${rss:-parse-failed}"
+  fi
+fi
+
+# ---------------------------------------------------------------- build folder after release
+
+if want_section build-folder-after-release; then
+  say build-folder-after-release "target/ bytes after the release build"
+  runsh 'du -sb target | awk "{print \$1}"'
+  runsh 'du -sh target'
+  if ((!DRY_RUN)); then
+    result build_folder_bytes_after_release_build "$(du -sb target | awk '{print $1}')"
+  fi
+fi
+
+# ---------------------------------------------------------------- stripped binary
+
+if want_section stripped-binary; then
+  say stripped-binary "the stripped release binary's size in bytes"
+  runsh 'stat -c %s target/release/biomcp'
+  runsh 'file target/release/biomcp | head -1'
+  if ((!DRY_RUN)); then
+    if file target/release/biomcp | grep -q 'not stripped'; then
+      cp target/release/biomcp "$LOGD/biomcp.stripped"
+      strip "$LOGD/biomcp.stripped"
+      result stripped_release_binary_bytes "$(stat -c %s "$LOGD/biomcp.stripped") (stripped a copy; profile does not strip)"
+    else
+      result stripped_release_binary_bytes "$(stat -c %s target/release/biomcp)"
+    fi
+  fi
+fi
+
+# ---------------------------------------------------------------- llvm lines
+
+if want_section llvm-lines; then
+  say llvm-lines "LLVM IR lines and function copies of the library, release profile"
+  timedsh llvm_lines "cargo llvm-lines --release --lib > $LOGD/llvm-lines.txt 2>&1"
+  runsh "head -8 $LOGD/llvm-lines.txt"
+  show "awk (sum of the Lines and Copies columns)"
+  if ((!DRY_RUN)); then
+    awk '$3 == "(TOTAL)" { printf "RESULT llvm_lines_total = %d\nRESULT llvm_function_copies = %d\n", $1, $2 }' "$LOGD/llvm-lines.txt"
+  fi
+fi
+
+# ---------------------------------------------------------------- deny advisories
+
+if want_section deny-advisories; then
+  say deny-advisories "advisories ignored in deny.toml"
+  show "python3 (count of [advisories].ignore entries)"
+  if ((!DRY_RUN)); then
+    python3 - <<'PY'
+import tomllib
+from pathlib import Path
+
+deny = tomllib.loads(Path("deny.toml").read_text())
+ignored = deny.get("advisories", {}).get("ignore", [])
+print(f"RESULT ignored_advisories = {len(ignored)}")
+for entry in ignored:
+    print(f"  {entry.get('id')}")
+PY
+  fi
+fi
+
+# ---------------------------------------------------------------- coverage
+
+if want_section coverage; then
+  say coverage "line coverage of three suites through cargo-llvm-cov (dev build instrumented)"
+  COVT="target/llvm-cov-target"
+  runsh 'cargo llvm-cov clean --workspace'
+  show 'eval each line of "cargo llvm-cov show-env" as an export; CARGO_TARGET_DIR=target/llvm-cov-target; LLVM_PROFILE_FILE per suite'
+  if ((!DRY_RUN)); then
+    while IFS= read -r line; do
+      eval "export $line"
+    done < <(cargo llvm-cov show-env 2>/dev/null | grep -E '^[A-Z_]+=')
+    export CARGO_INCREMENTAL=0
+    export CARGO_TARGET_DIR="$PWD/$COVT"
+    mkdir -p "$CARGO_TARGET_DIR"
+  fi
+  timedsh coverage_build \
+    "cargo build --locked --no-default-features --all-targets > $LOGD/cov-build.log 2>&1"
+  # absolute path: the suites run subprocesses from many working
+  # directories, and a relative profile path silently drops their profiles
+  export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/out-%8m.profraw"
+  timedsh coverage_integration_tests \
+    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(test)' > $LOGD/cov-integration.log 2>&1 || true"
+  runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-integration.log | tail -1 || true"
+  timedsh coverage_python_lane \
+    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp TMPDIR=\$PWD/$LOGD/tmp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1 || true"
+  runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/cov-pytest.log | tail -2 || true"
+  say coverage "spec lane against the instrumented dev binary (hand-written artifacts env)"
+  runsh "cat > .cache/spec-artifacts.env <<'ENVEOF'
+export BIOMCP_SPEC_ARTIFACT_MODE=spec
+export BIOMCP_SPEC_FEATURE_OFF_BIN=$PWD/$COVT/debug/biomcp
+export BIOMCP_SPEC_MCP_EXAMPLE_BIN=$PWD/$COVT/debug/examples/rmcp_streamable_http_contract
+export BIOMCP_SPEC_CARGO_TREE=$PWD/.cache/spec-artifacts/cargo-tree-no-default-features.txt
+export BIOMCP_SPEC_CARGO_METADATA=$PWD/.cache/spec-artifacts/cargo-metadata.json
+export BIOMCP_BIN=$PWD/$COVT/debug/biomcp
+ENVEOF
+cat .cache/spec-artifacts.env"
+  timedsh coverage_spec_lane \
+    "PATH=\"$PWD/$COVT/debug:\$PATH\" BIOMCP_SPEC_ARTIFACTS_PREPARED=1 ROUTINE_CARGO_FEATURES=--no-default-features SPEC_PROFILE=dev tools/run-offline -- bash scripts/run-specs.sh spec > $LOGD/cov-spec.log 2>&1 || true"
+  runsh "tail -4 $LOGD/cov-spec.log || true"
+  export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/unit-%8m.profraw"
+  timedsh coverage_unit_tests \
+    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(lib) | kind(bin)' > $LOGD/cov-unit.log 2>&1 || true"
+  runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-unit.log | tail -1 || true"
+  # Reports: report merges every profraw under target/llvm-cov-target, so
+  # the set not being reported moves aside first. Test code leaves the
+  # report by path; inline #[cfg(test)] modules stay in, so these are the
+  # llvm-cov view, not the span-reduced view of the iteration-speed study.
+  # Field 10 of the TOTAL row is the Lines cover percentage.
+  COV_REGEX='(^|/)(tests?|examples?|benches)/|(^|/)(tests?\.rs|_tests?\.rs|tests?_[^/]*\.rs)$|test_support|(^|/)generated/'
+  COV_HOLD="$LOGD/cov-hold"
+  mkdir -p "$COV_HOLD"
+  for report_set in outside-in unit combined; do
+    say coverage "report: $report_set"
+    case "$report_set" in
+      outside-in) aside="unit" ;;
+      unit) aside="out" ;;
+      combined) aside="" ;;
+    esac
+    if ((!DRY_RUN)); then
+      if [[ -n "$aside" ]]; then
+        show "mv $COVT/$aside-*.profraw $COV_HOLD/ (report the other set)"
+        mv "$COVT"/$aside-*.profraw "$COV_HOLD"/ 2>/dev/null || true
+      else
+        show "mv $COV_HOLD/*.profraw $COVT/ (report everything)"
+        mv "$COV_HOLD"/*.profraw "$COVT"/ 2>/dev/null || true
+      fi
+    fi
+    # report discovers profraws and objects under target/llvm-cov-target on
+    # its own; the show-env exports (CARGO_TARGET_DIR, CARGO_LLVM_COV) break
+    # that discovery by pointing it back at the plain target directory, so
+    # all three are unset for the report only.
+    runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
+    if ((!DRY_RUN)); then
+      pct=$(awk '/^TOTAL/ {print $10}' "$LOGD/cov-report-${report_set//-/_}.txt" | tr -d '%')
+      result "coverage_${report_set//-/_}_lines_pct" "${pct:-parse-failed}"
+      if [[ -n "$aside" ]]; then
+        show "mv $COV_HOLD/*.profraw $COVT/ (restore)"
+        mv "$COV_HOLD"/*.profraw "$COVT"/ 2>/dev/null || true
+      fi
+    fi
+  done
+fi
+
+# ---------------------------------------------------------------- run time (amendment)
+
+if want_section runtime; then
+  say runtime "run-time measurements with the release binary (thin LTO, one codegen unit)"
+  runsh '{ find ~/.cache/biomcp/http -type f 2>/dev/null || true; } | wc -l; du -sh ~/.cache/biomcp 2>/dev/null || echo "no host cache"'
+  show "python3 (five timed runs per case; median, min, max in seconds)"
+  if ((!DRY_RUN)); then
+    RUN_SCRATCH="$PWD/$LOGD/runtime" python3 - <<'PY'
+import os
+import statistics
+import subprocess
+import time
+
+bin_path = os.path.abspath("target/release/biomcp")
+scratch = os.environ["RUN_SCRATCH"]
+os.makedirs(scratch, exist_ok=True)
+commands = {
+    "get_gene_BRAF": ["get", "gene", "BRAF"],
+    "get_variant_BRAF_V600E": ["get", "variant", "BRAF V600E"],
+    "get_drug_imatinib": ["get", "drug", "imatinib"],
+    "search_article_BRAF": ["search", "article", "-g", "BRAF", "--limit", "10"],
+    "search_all_BRAF_melanoma": ["search", "all", "--gene", "BRAF", "--disease", "melanoma", "--counts-only"],
+}
+
+def run_once(argv, cache_dir, mode):
+    env = dict(os.environ)
+    env["BIOMCP_CACHE_DIR"] = cache_dir
+    if mode:
+        env["BIOMCP_CACHE_MODE"] = mode
+    else:
+        env.pop("BIOMCP_CACHE_MODE", None)
+    start = time.perf_counter()
+    proc = subprocess.run([bin_path, *argv], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
+    elapsed = time.perf_counter() - start
+    return elapsed, proc.returncode
+
+def measure(label, argv, cache_dir, mode, runs=5):
+    values = []
+    codes = set()
+    for _ in range(runs):
+        elapsed, code = run_once(argv, cache_dir, mode)
+        values.append(elapsed)
+        codes.add(code)
+    values_s = " ".join(f"{v:.4f}" if argv == ["--version"] else f"{v:.2f}" for v in values)
+    fmt = ".4f" if argv == ["--version"] else ".2f"
+    median = statistics.median(values)
+    spread = max(values) - min(values)
+    print(f"{label}: runs {values_s} median {median:{fmt}}s spread {spread:{fmt}}s exit {sorted(codes)}")
+    print(f"RESULT runtime_{label}_median_s = {median:{fmt}}")
+    print(f"RESULT runtime_{label}_spread_s = {spread:{fmt}}")
+
+empty = os.path.join(scratch, "empty-cache")
+os.makedirs(empty, exist_ok=True)
+large = os.path.expanduser("~/.cache/biomcp")
+warm = os.path.join(scratch, "warm-cache")
+os.makedirs(warm, exist_ok=True)
+
+print("== biomcp --version start-up, empty cache dir ==")
+measure("version_empty_cache", ["--version"], empty, None)
+print("== biomcp --version start-up, the host's large cache ==")
+measure("version_large_cache", ["--version"], large, None)
+
+print("== prefetch (one network run per command into the warm cache dir) ==")
+for name, argv in commands.items():
+    elapsed, code = run_once(argv, warm, None)
+    print(f"prefetch {name}: {elapsed:.2f}s exit {code}")
+    print(f"RESULT runtime_prefetch_{name}_s = {elapsed:.2f}")
+
+print("== output size of each command from the warm cache (one run, bytes) ==")
+for name, argv in commands.items():
+    env = dict(os.environ)
+    env["BIOMCP_CACHE_DIR"] = warm
+    env["BIOMCP_CACHE_MODE"] = "infinite"
+    proc = subprocess.run([bin_path, *argv], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env)
+    print(f"RESULT runtime_output_bytes_{name} = {len(proc.stdout)} exit {proc.returncode}")
+
+print("== warm cache (BIOMCP_CACHE_MODE=infinite), five runs each ==")
+for name, argv in commands.items():
+    measure(f"warm_{name}", argv, warm, "infinite")
+
+print("== cache off (BIOMCP_CACHE_MODE=off, network), five runs each ==")
+for name, argv in commands.items():
+    measure(f"nocache_{name}", argv, warm, "off")
+PY
+  fi
+fi
+
+# ---------------------------------------------------------------- ci history
+
+if want_section ci-history; then
+  say ci-history "the last ten green CI runs of ci.yml (wall time and runner-minutes)"
+  show "gh api + python3 (per run: updated_at - run_started_at; runner-minutes summed over jobs)"
+  if ((!DRY_RUN)); then
+    python3 - <<'PY'
+import json
+import subprocess
+from datetime import datetime
+
+def gh(path):
+    out = subprocess.run(["gh", "api", path], check=True, capture_output=True, text=True)
+    return json.loads(out.stdout)
+
+def parse(iso):
+    return datetime.fromisoformat(iso.replace("Z", "+00:00"))
+
+try:
+    runs = gh("repos/genomoncology/biomcp/actions/workflows/ci.yml/runs?status=success&per_page=10")
+except (subprocess.CalledProcessError, FileNotFoundError) as error:
+    print(f"skipped: gh api unavailable or unauthenticated ({error})")
+    raise SystemExit(0)
+walls = []
+runner_totals = []
+for run in runs.get("workflow_runs", []):
+    start = run.get("run_started_at") or run.get("created_at")
+    wall = (parse(run["updated_at"]) - parse(start)).total_seconds() / 60.0
+    jobs = gh(f"repos/genomoncology/biomcp/actions/runs/{run['id']}/jobs?per_page=100")
+    job_minutes = 0.0
+    for job in jobs.get("jobs", []):
+        if job.get("completed_at") and job.get("started_at"):
+            job_minutes += (parse(job["completed_at"]) - parse(job["started_at"])).total_seconds() / 60.0
+    walls.append(wall)
+    runner_totals.append(job_minutes)
+    print(f"run {run['id']} {run['head_sha'][:9]} {start} wall {wall:.1f}m runner {job_minutes:.1f}m")
+walls_sorted = sorted(walls)
+print(f"RESULT ci_green_runs = {len(walls)}")
+print(f"RESULT ci_wall_minutes_median = {walls_sorted[len(walls_sorted) // 2]:.1f}")
+print(f"RESULT ci_wall_minutes_range = {walls_sorted[0]:.1f}-{walls_sorted[-1]:.1f}")
+print(f"RESULT ci_runner_minutes_mean = {sum(runner_totals) / len(runner_totals):.1f}")
+full = [(w, r) for w, r in zip(walls, runner_totals) if r > 30.0]
+full_walls = sorted(w for w, _ in full)
+if full:
+    print(f"RESULT ci_full_runs = {len(full)} (runner-minutes over 30; docs-only runs excluded)")
+    print(f"RESULT ci_full_wall_minutes_median = {full_walls[len(full_walls) // 2]:.1f}")
+    print(f"RESULT ci_full_wall_minutes_range = {full_walls[0]:.1f}-{full_walls[-1]:.1f}")
+    print(f"RESULT ci_full_runner_minutes_mean = {sum(r for _, r in full) / len(full):.1f}")
+PY
+  fi
+fi
+
+# ---------------------------------------------------------------- host after
+
+if want_section host-after; then
+  say host-after "machine conditions at the end"
+  runsh 'cat /proc/loadavg'
+  runsh 'free -g | sed -n 1,2p'
+  runsh 'df -h . | tail -1'
+fi
+
+printf '\n### done — measurement complete\n'
