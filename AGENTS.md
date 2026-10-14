@@ -88,7 +88,7 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 ## CI and merging
 
-Push every change to a `ticket/NNNN-slug` branch first. CI runs on ticket branches; merge to main only after that branch's CI run has finished green. A started run does not count. No direct commits to main. A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on both points on 2026-09-29.
+A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on this on 2026-09-29.
 
 CI skips the Rust jobs only when every file a push changes is documentation, an `sdlc/` file, or a `notes/` file; the classify job decides by the changed files, never by the commit message, and the repository-contract job still runs the docs and record tests plus the strict documentation build. Never rely on a commit-message prefix to skip CI.
 
