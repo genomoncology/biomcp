@@ -16,13 +16,12 @@ Two ticket branches that each add a changelog bullet merge without a conflict, a
 
 - Starts from: `tests/test_docs_changelog_refresh.py` (`EXPECTED_RELEASE_TICKETS` at line 13, `test_dev_cycle_section_carries_its_own_tickets` at line 540); `scripts/check-changelog-coverage.py` (`described_tickets`, `main`); `.gitattributes`; the 0.9.3 section of `CHANGELOG.md`, which has the subsections New features, Fixes and Internal.
 - Keeps: the hand lists for released versions, which never change; the tag-time coverage check; the section's place above `## 0.9.2`.
-- Changes:
+- Changes: claims `tests/test_docs_changelog_refresh.py` `scripts/check-changelog-coverage.py` `.gitattributes` `CHANGELOG.md` `AGENTS.md`.
   - Delete the `DEV_CYCLE_VERSION` entry from `EXPECTED_RELEASE_TICKETS`. `test_dev_cycle_section_carries_its_own_tickets` checks shape only: the section sits above the last released heading, it carries the New features, Fixes and Internal headings, every bullet ends with a ticket number in parentheses, and every ticket it cites has a ticket file under `sdlc/tickets/` with `Milestone: 0.9.3`.
   - Add that last check to `scripts/check-changelog-coverage.py` as one function the test imports, and call it from `main` so the tag run applies it to the released section too.
   - Add `CHANGELOG.md merge=union` to `.gitattributes`.
   - Keep all three 0.9.3 subsection headings present even when empty, so no branch adds a heading. Say so in one sentence after `AGENTS.md:68`, which describes changelog bullets.
   - One Internal changelog bullet.
-- Changes claims: `tests/test_docs_changelog_refresh.py` `scripts/check-changelog-coverage.py` `.gitattributes` `CHANGELOG.md` `AGENTS.md`
 - Proof: two scratch branches from main, each adding a bullet under Fixes, merge with no conflict; the shape test fails on a planted bullet citing a ticket of another milestone and on a bullet with no ticket number; the coverage check still passes on tag v0.9.2 (`scripts/check-changelog-coverage.py --tag v0.9.2`).
 - Defers: running the coverage check on every branch, and skipping process-only tickets (2074).
 - Order: right after 2070, before the other 0.9.3 tickets, because every later ticket edits these two files.

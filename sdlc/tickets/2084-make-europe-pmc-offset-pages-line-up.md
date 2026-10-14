@@ -18,8 +18,7 @@ Split from 2066 on 2026-10-14. Found by the post-release install and product tes
 
 - Starts from: `src/entities/article/search.rs`, `search_relevance_page` (line 664), which fetches `limit + offset` rows; `src/entities/article/enrichment.rs:415`, which adds citation counts to the pool, ranks it and slices; `EUROPE_PMC_PAGE_SIZE = 25` (`src/entities/article/mod.rs:1096`), so the provider already returns 25 rows per request.
 - Keeps: the local citation ranking; every other source's paging.
-- Changes: apply the rounded pool size in both single-source arms of `search_relevance_page`; document the 25-row block in `docs/user-guide/article.md`; one Fixes changelog bullet that names the boundary case.
-- Changes claims: `src/entities/article/search.rs` `src/entities/article/search/tests.rs` `testdata/sources/europepmc/**` `testdata/sources/semantic_scholar/**` `testdata/sources/capture-receipts.json` `docs/user-guide/article.md` `CHANGELOG.md` `tests/test_docs_changelog_refresh.py`
+- Changes: claims `src/entities/article/search.rs` `src/entities/article/search/tests.rs` `testdata/sources/europepmc/**` `testdata/sources/semantic_scholar/**` `testdata/sources/capture-receipts.json` `docs/user-guide/article.md` `CHANGELOG.md` `tests/test_docs_changelog_refresh.py`. Apply the rounded pool size in both single-source arms of `search_relevance_page`; document the 25-row block in `docs/user-guide/article.md`; one Fixes changelog bullet that names the boundary case.
 - Proof: an offline test with a recorded 25-row Europe PMC reply and a recorded Semantic Scholar reply shows limit 10 equals limit 5 followed by offset 5; it fails on current main.
 - Defers: nothing.
 - Order: safe alongside anything.

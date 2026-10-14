@@ -20,7 +20,7 @@ Split from 2066 on 2026-10-14. Found by the post-release install and product tes
   - The disease refusal at `src/entities/disease/resolution.rs:800` is the shape to copy: `InvalidArgument`, a "Candidates:" list, exit 2.
 - Keeps: the 2031 and 2039 resolutions (TAGRISSO, Motrin, Opdualag).
 - Decisions: when the label records whose brand name equals the query name two or more distinct single ingredients, return `InvalidArgument` with "Ambiguous drug name '<query>': several drug products carry this name.", then "Candidates:" and one `- <ingredient>` line per ingredient, sorted by record count and then by name, capped at 10, then "Try `biomcp get drug "<ingredient>"`". "Sleep Aid" and "Cold and Flu" get the same refusal.
-- Changes claims: `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` `testdata/sources/openfda/**` `testdata/sources/capture-receipts.json` `CHANGELOG.md` `tests/test_docs_changelog_refresh.py`
+- Changes: claims `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` `testdata/sources/openfda/**` `testdata/sources/capture-receipts.json` `CHANGELOG.md` `tests/test_docs_changelog_refresh.py`.
 - Proof: a recorded openFDA reply for "Pain Relief" gives exit 2 and the candidate list; the 2031 and 2039 tests still pass; one live run, recorded in the review.
 - Defers: nothing.
 - Order: safe alongside anything.

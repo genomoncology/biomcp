@@ -21,7 +21,7 @@ Routine builds compile no zstd C library, the shipped binary has no tokio test c
   - The fs2 call sites. Production: `src/cli/article/session.rs`, `src/cache/clear.rs`, `src/cache/limits.rs` (`available_space` and `total_space`), `src/cache/migration.rs`, `src/cache/provider_capture.rs`, `src/sources/gencc/store.rs`. Tests: `src/entities/article/search/tests/deadline.rs`, `src/sources/gencc/tests.rs`.
   - `tests/test_alphagenome_proto_generation.py:39`, which asserts the exact `alphagenome = [...]` feature line.
 - Keeps: every user feature; the same lock behavior (std file locks use flock on Unix and LockFileEx on Windows, as fs2 does); `biomcp cache` and health output byte-identical; `md5`, `humantime`, `bytesize` and `toml`.
-- Changes:
+- Changes: claims `Cargo.toml` `Cargo.lock` `tests/test_alphagenome_proto_generation.py` `src/cli/update.rs` `src/cli/article/session.rs` `src/cache/clear.rs` `src/cache/limits.rs` `src/cache/migration.rs` `src/cache/provider_capture.rs` `src/sources/gencc/store.rs` `src/sources/gencc/tests.rs` `src/entities/article/search/tests/deadline.rs` `tools/rust-source-size-inventory.json` `CHANGELOG.md` `tests/test_docs_changelog_refresh.py`.
   - `zip = { version = "0.6", default-features = false, features = ["deflate"] }`.
   - Remove `"test-util"` from tokio's features and add `tokio = { version = "1", features = ["test-util"] }` under `[dev-dependencies]`.
   - `tokio-stream = { version = "0.1", optional = true }`, with `"dep:tokio-stream"` in the `alphagenome` feature; update the assertion in `tests/test_alphagenome_proto_generation.py`.
@@ -29,7 +29,6 @@ Routine builds compile no zstd C library, the shipped binary has no tokio test c
   - Replace fs2 with std's `File::lock`, `lock_shared`, `try_lock`, `try_lock_shared` and `unlock` (stable since Rust 1.89), mapping `TryLockError::WouldBlock` onto the existing `io::ErrorKind::WouldBlock` branches. In `src/cache/limits.rs`, read free and total space through `libc::statvfs` on Unix and `GetDiskFreeSpaceExW` on Windows from the `windows-sys` features already listed.
   - A unit test in `src/cli/update.rs` builds a deflate zip with `zip::ZipWriter` and extracts the binary through `extract_binary_from_zip`.
   - One Internal changelog bullet.
-- Changes claims: `Cargo.toml` `Cargo.lock` `tests/test_alphagenome_proto_generation.py` `src/cli/update.rs` `src/cli/article/session.rs` `src/cache/clear.rs` `src/cache/limits.rs` `src/cache/migration.rs` `src/cache/provider_capture.rs` `src/sources/gencc/store.rs` `src/sources/gencc/tests.rs` `src/entities/article/search/tests/deadline.rs` `tools/rust-source-size-inventory.json` `CHANGELOG.md` `tests/test_docs_changelog_refresh.py`
 - Proof (today's values measured on main ca54283f0):
   - `cargo tree --no-default-features -e normal,build | grep -c zstd-sys` prints 1 today and 0 after.
   - `cargo tree -d -e normal,build` lists axum 0.7.9, axum-core 0.4.5, matchit 0.7.3 and zstd 0.11.2 today and none of them after. cipher 0.4 and inout 0.1 stay because unpdf needs them.
