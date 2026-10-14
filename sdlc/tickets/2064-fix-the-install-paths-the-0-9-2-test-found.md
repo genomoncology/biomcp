@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision c139e21, accept
+
 ## Outcome
 
 Every documented install path works as the docs say: a pinned install script run, the `biomcp-cli` wrapper on every platform, and install docs that state the Python floor, which platforms Homebrew covers, and how to get a current Docker image.
