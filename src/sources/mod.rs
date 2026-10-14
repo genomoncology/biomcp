@@ -693,13 +693,6 @@ pub(crate) fn is_no_cache_enabled() -> bool {
     matches!(NO_CACHE.try_with(|v| *v), Ok(true))
 }
 
-/// Whether the process cache mode is `off` (`BIOMCP_CACHE_MODE=off`): the
-/// HTTP cache is neither read nor written, and start-up maintenance skips
-/// the HTTP cache scan entirely.
-pub(crate) fn cache_mode_is_off() -> bool {
-    current_cache_mode() == Some(CacheMode::NoStore)
-}
-
 pub(crate) fn cache_is_bypassed() -> bool {
     is_no_cache_enabled() || current_cache_mode() == Some(CacheMode::NoStore)
 }

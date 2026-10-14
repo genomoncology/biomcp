@@ -443,7 +443,7 @@ fn run_startup_clean_at(
     config: &ResolvedCacheConfig,
     now_ms: u128,
 ) -> Result<(), BioMcpError> {
-    if crate::sources::cache_mode_is_off() {
+    if crate::sources::current_cache_mode() == Some(http_cache_reqwest::CacheMode::NoStore) {
         debug!("cache mode off; start-up cache clean skipped");
         return Ok(());
     }
