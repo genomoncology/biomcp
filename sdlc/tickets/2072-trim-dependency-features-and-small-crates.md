@@ -29,7 +29,7 @@ Routine builds compile no zstd C library, the shipped binary has no tokio test c
   - Replace fs2 with std's `File::lock`, `lock_shared`, `try_lock`, `try_lock_shared` and `unlock` (stable since Rust 1.89), mapping `TryLockError::WouldBlock` onto the existing `io::ErrorKind::WouldBlock` branches. In `src/cache/limits.rs`, read free and total space through `libc::statvfs` on Unix and `GetDiskFreeSpaceExW` on Windows from the `windows-sys` features already listed.
   - A unit test in `src/cli/update.rs` builds a deflate zip with `zip::ZipWriter` and extracts the binary through `extract_binary_from_zip`.
   - One Internal changelog bullet.
-- Proof (today's values measured on main ca54283f0):
+- Proof: today's values measured on main ca54283f0:
   - `cargo tree --no-default-features -e normal,build | grep -c zstd-sys` prints 1 today and 0 after.
   - `cargo tree -d -e normal,build` lists axum 0.7.9, axum-core 0.4.5, matchit 0.7.3 and zstd 0.11.2 today and none of them after. cipher 0.4 and inout 0.1 stay because unpdf needs them.
   - `cargo tree -e features -i tokio -e normal | grep -c test-util` prints 0 after.
@@ -38,4 +38,4 @@ Routine builds compile no zstd C library, the shipped binary has no tokio test c
   - `tools/measure-0-9-3-baseline <clone> --only dep-counts,cold-dev-build` against the baseline (338 crates normal and build, 349 with dev, cold dev build 250.9 / 260.3 s); a trial manifest edit drops the routine tree by about 12 crates.
   - After `make test`, `make spec` compiles nothing, which proves moving test-util into dev-dependencies did not split 2070's single build.
 - Defers: scraper's features, getopts and getrandom (2078); the tonic upgrade (2077); toml 1.x.
-- Order: after 2070, which also edits `Cargo.toml` and the same assertion line in `tests/test_alphagenome_proto_generation.py`.
+- Order: after 2070, which also edits `Cargo.toml` and the same assertion line in `tests/test_alphagenome_proto_generation.py`. After 2076, which edits `Cargo.toml` and deletes `tools/rust-source-size-inventory.json`; once 2076 lands, drop the edit to that file.

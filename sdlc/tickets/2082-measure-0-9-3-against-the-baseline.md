@@ -14,11 +14,13 @@ Every number in the 2069 baseline is measured again on the 0.9.3 release candida
 
 - Starts from: the 2069 script and record.
 - Keeps: the same host, conditions and commands.
-- Changes: run the script on the release candidate; add the after column to the 2069 record with each change named.
-- Proof: the record with both columns; the 0.9.3 rehearsal run passes on its first try.
+- Changes: claims `tools/measure-0-9-3-baseline`. Run the script on the release candidate; add the after column to the 2069 record with each change named; add a targets table for the hard targets in [the 2026-10-14 decision](../decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md): median ticket-branch CI wall time about 10 minutes, `make test` about 3 minutes, `make spec` about 3 minutes, no routine test over a few seconds, and the test-code share against the target set after 2081's first batch.
+- Proof: the record with both columns and each target marked met or missed with its number; the 0.9.3 rehearsal run passes on its first try.
 - Defers: nothing.
 
-## Amendment 2026-10-14: fix the run-time measuring method
+## Amendment, 2026-10-14
+
+Fix the run-time measuring method.
 
 - A run-time investigation on the build host found the 2069 run-time block skews its result. It runs all five warm runs before all five cache-off runs, so provider drift lands on one mode; cache-off runs share the warm cache folder, and a cache-off request deletes the stored entry it touches (http-cache's no-store path), so any later warm run on that folder goes back to the network; and the script inherits whatever provider keys the host sets, which changes what can be cached. The GWAS section's 12-second cut also made three warm `search all` runs read exactly 12.02 s: those numbers are a timeout, not a speed.
 - Changes: claims `tools/measure-0-9-3-baseline`.

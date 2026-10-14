@@ -40,32 +40,33 @@ Exit: every 1.0 ticket lives on `main` with its milestone, a check refuses a tic
 
 Open tickets in the order I want them taken. Status comes from pm, never from this list.
 
-- 2070
 - 2083
 - 2086
 - 2075
+- 2074
+- 2071
+- 2081
+- 2079
+- 2080
+- 2076
+- 2094
+- 2095
+- 2085
 - 2089
 - 2090
 - 2091
 - 2092
-- 2073
-- 2071
-- 2072
+- 2084
 - 2065
 - 2066
-- 2084
-- 2085
 - 2067
 - 2068
 - 2087
 - 2088
-- 2074
-- 2076
+- 2073
+- 2072
 - 2077
 - 2078
-- 2079
-- 2080
-- 2081
 - 2082
 - 2041
 - 2006
@@ -73,4 +74,12 @@ Open tickets in the order I want them taken. Status comes from pm, never from th
 - 2003
 - 2004
 
-2070 comes first because every later ticket builds and tests through it. 2083 follows it because every later ticket adds a changelog bullet, and until 2083 changes the file's shape each landing conflicts with the last. 2086 comes next because every landing reruns the full gates on pm's review-record commit, so each later landing waits one CI run less once it lands. 2075 follows 2086 because every later landing waits on CI two or three times, and running the lanes in parallel off one build shortens each of those waits; it needs 2070's single dev build, and it shares `.github/workflows/ci.yml` with 2086, 2074 and 2076, so those four go 2086, 2075, 2074, 2076. Ian ruled that program speed matters more than build speed, so the run-time tickets come next. 2089 and 2090 only send requests at the same time that BioMCP now sends one after another, with unchanged output, so they run alongside the build work; 2090 lands before 2085 and 2068, which edit the same drug lookup file. 2091 follows both because it changes how fresh GWAS and openFDA answers are, on the same call paths. 2092 removes a start-up stall on large caches and can run alongside anything. 2082's run-time measurement now alternates warm and cache-off runs, so before and after compare like with like. 2073 and 2071 can run side by side once 2070 lands; they share no file. The `Makefile` chain is 2070, 2075, 2071, 2076, and the `Cargo.toml` chain is 2070, 2072, 2077, 2078; each ticket in a chain lands before the next starts. 2065 lands after 2073 because they edit different parts of the same two MCP files. The product fixes 2066, 2084, 2085, 2067 and 2087 share no code file with the build work or each other, so they run alongside any of it. 2068 lands after 2085, which edits the same drug lookup file, and 2088 lands after 2065, whose health files sit beside its own. 2077 and 2078 finish the dependency work; they both edit `deny.toml`, so they land one after the other, and 2078 lands after 2088 because both edit the FDA orphan source. 2079 builds the replay server and golden suite that 2080 and 2081 need. 2082 measures the result against the baseline record. 0.9.3 exits when 2082 records the after numbers and the tag passes its first rehearsal. The plans behind these tickets are `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
+0.9.3 runs in two lanes at once. The first lane makes building and testing fast; the second, from 2085 to 2088, makes the program fast and fixes product answers. The second lane's tickets share no claimed file with the first lane's, so they run beside it rather than after it. Ian ruled that program speed matters more than build speed, and on 2026-10-14 that tests are deleted boldly and the suites split ([decision](decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md)).
+
+First lane. 2083 comes first because every later ticket adds a changelog bullet, and until 2083 changes the file's shape each landing conflicts with the last. 2086 comes next because every landing reruns the full gates on pm's review-record commit, so each later landing waits one CI run less once it lands. 2075 follows 2086 because every later landing waits on CI two or three times; it runs the lanes in parallel off one build and moves the all-features, Windows, stress and release-panic jobs to `main`. 2074 follows 2075 because it needs 2083's changelog check and shares `.github/workflows/ci.yml`, whose chain is 2086, 2075, 2074, 2076. Then the test cleanup, the main aim of the milestone: 2071 takes the slow cases off the Python lane; 2081 deletes every test that is not one of the four kinds, in small batches that each land on their own, and its batches avoid files the second lane claims; 2079 lands a small replay server and golden suite first, which 2080 needs to bring the spec pages to about 3 minutes and which 2081's last batch needs for `search all`; 2076 replaces the ratchet scripts with compiler lints and deletes their self-tests. 2094 measures the result, closes any gap to about 10 minutes of CI and 3 minutes of `make test`, and makes CI a ticket's one full check. 2095 then makes the runners fail any routine test over 10 seconds, once 2071 and 2081 have removed or fixed the slow ones. The `Makefile` chain is 2075, 2071, 2076, 2095; each ticket in a chain lands before the next starts.
+
+Second lane. 2085 lands first among the drug tickets, and 2090 and then 2068 rebase onto its drug lookup file. 2089 and 2090 send at the same time requests that BioMCP now sends one after another, with unchanged output. 2091 follows both because it changes how fresh GWAS and openFDA answers are, on the same call paths. 2092 removes a start-up stall on large caches. The product fixes 2084, 2066, 2067 and 2087 share no code file with each other or with the first lane. 2088 lands after 2065, whose health files sit beside its own.
+
+Then the dependency and dead-code work. 2073 lands after 2065 because they edit different parts of the same two MCP files. The `Cargo.toml` chain is 2076, 2072, 2077, 2078; 2076 deletes the size inventory 2072 used to edit. 2077 and 2078 both edit `deny.toml`, so they land one after the other, and 2078 lands after 2088 because both edit the FDA orphan source. 2077 changes code only the all-features build compiles, so its proof runs `make full-feature-check` before landing. 2082 measures the result against the baseline record and the decision's targets, with the run-time block alternating warm and cache-off runs. 0.9.3 exits when 2082 records the after numbers and the tag passes its first rehearsal. The plans behind these tickets are `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`.
+
+Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.

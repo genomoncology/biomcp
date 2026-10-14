@@ -26,4 +26,4 @@ Function length and sleeps are enforced by clippy and ruff, the size and wait in
   - One Internal changelog bullet.
 - Proof: on the build host, `make lint` and Python-lane times before and after; clippy fails on a planted 1-line-over function and a planted sleep in a test; ruff fails on a planted `time.sleep` in `tests/`.
 - Defers: a file-length rule (clippy has none).
-- Order: after 2075 and 2074 (`.github/workflows/ci.yml`, `bin/lint`); after 2072, which edits `tools/rust-source-size-inventory.json`. It edits the `Makefile` `lint` target and `Cargo.toml`, so it lands after 2070, 2071, 2072 and 2075.
+- Order: after 2075 and 2074 (`.github/workflows/ci.yml`, `bin/lint`). It edits the `Makefile` `lint` target, so it lands after 2070, 2071 and 2075. PM decision 2026-10-14: per [the decision to delete tests boldly](../decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md), this ticket now lands before 2072; it deletes `tools/rust-source-size-inventory.json`, so 2072 drops its edit to that file, and 2072 rebases onto this ticket's `Cargo.toml`.
