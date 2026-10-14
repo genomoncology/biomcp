@@ -105,12 +105,20 @@ pub async fn search_gwas_page(
             (Some(gene_page), Some(trait_page))
         }
         (Some(gene), None) => (
-            Some(client.search_associations(Some(gene), None, fetch_limit).await?),
+            Some(
+                client
+                    .search_associations(Some(gene), None, fetch_limit)
+                    .await?,
+            ),
             None,
         ),
         (None, Some(trait_query)) => (
             None,
-            Some(client.search_associations(None, Some(trait_query), fetch_limit).await?),
+            Some(
+                client
+                    .search_associations(None, Some(trait_query), fetch_limit)
+                    .await?,
+            ),
         ),
         // The empty-filter case returned with the usage error above.
         (None, None) => unreachable!("search_gwas_page requires a gene or a trait"),

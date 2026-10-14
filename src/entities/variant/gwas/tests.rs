@@ -312,9 +312,8 @@ fn sequential_combined_rows(
         .take(50)
         .filter_map(map_gwas_summary)
         .collect();
-    let mut rows =
-        dedupe_gwas_rows(intersect_gwas_legs(gene_rows, trait_rows, true), 50)
-            .expect("dedupe sequential rows");
+    let mut rows = dedupe_gwas_rows(intersect_gwas_legs(gene_rows, trait_rows, true), 50)
+        .expect("dedupe sequential rows");
     apply_p_value_filter(&mut rows, None);
     rows.into_iter().skip(offset).take(limit).collect()
 }
