@@ -43,8 +43,7 @@ https://biomcp.org/:
 
 ## Working
 
-While you work, run only the tests for what changed, with incremental
-compilation on for the whole edit loop:
+Keep incremental compilation on for the whole edit loop:
 
 ```
 CARGO_INCREMENTAL=1 cargo nextest run --no-default-features -E 'test(...)'
@@ -53,11 +52,8 @@ CARGO_INCREMENTAL=1 cargo nextest run --no-default-features -E 'test(...)'
 Keep `CARGO_INCREMENTAL` set for the whole loop and unset it for the gates:
 toggling the setting recompiles the crate.
 
-Before landing, run `make lint`, `make test` and `make spec` once on the final
-branch state, and rerun a gate only when the code changed since that run; CI
-runs them again. A test that takes more than a few seconds is a defect to fix,
-not a cost to accept. Check live behavior with one pass of the built binary
-over the names under test. Run one Rust build at a time on a machine.
+A test that takes more than a few seconds is a defect to fix, not a cost to
+accept. Run one Rust build at a time on a machine.
 
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
