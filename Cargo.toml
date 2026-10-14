@@ -19,6 +19,7 @@ exclude = [
     "testdata/",
     "tools/alphagenome-proto-generator/",
     "tools/check-zero-coupling.py",
+    "tools/measure-0-9-3-baseline",
     "tools/zero-coupling-historical.json",
     "tests/test_zero_coupling_ratchet.py",
 ]
