@@ -29,5 +29,5 @@ No test in `make test`'s Python lane compiles BioMCP or reads the developer's ow
   7. `RUN.md` says `make release-gate` runs the packaged-crate check.
   8. One Internal changelog bullet.
 - Proof: on the build host, `tools/measure-0-9-3-baseline <clone> --only make-test` before and after (baseline 646.3 / 640.0 s, Python lane 476.0 / 477.5 s); `uv run --no-sync pytest tests/ -n 4 --dist loadfile --durations=30` before and after, with the trial-search detail test under 10 s; no routine test calls `cargo test` or a verifying `cargo package`; `make release-gate` runs and passes the packaged-crate check; the isolation test fails when the autouse fixture is removed.
-- Defers: the ratchet self-tests go to 2076, which deletes them; until it lands they set the lane's floor, so this ticket promises no lane time. The start-up cache clean itself goes to a run-time cache ticket to be filed.
+- Defers: the ratchet self-tests go to 2076, which deletes them; until it lands they set the lane's floor, so this ticket promises no lane time. The start-up cache clean itself goes to 2092.
 - Order: after 2070, which also edits `Makefile`. Safe alongside 2073.
