@@ -290,11 +290,10 @@ struct AmbiguousIngredient {
     name: String,
 }
 
-/// One counted label record's identity contribution: whether the record's
-/// own brand equals the query, and the single ingredients its own fields
-/// list.
+/// One counted label record's identity contribution: the single
+/// ingredients its own fields list. Owner records and page records sit in
+/// separate lists, so the vote mode decides which records count.
 struct LabelRecordVote {
-    owns_brand: bool,
     ingredients: Vec<String>,
 }
 
@@ -372,10 +371,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
         let owns_brand = super::label::extract_openfda_values_from_result(result, "brand_name")
             .iter()
             .any(|brand| brand.trim().to_ascii_lowercase() == query);
-        let vote = LabelRecordVote {
-            owns_brand,
-            ingredients,
-        };
+        let vote = LabelRecordVote { ingredients };
         if owns_brand {
             owner_votes.push(plain.clone());
             owner_records.push(vote);
