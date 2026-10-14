@@ -418,7 +418,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     // ingredient.
     let mut plain_singles: Vec<&String> = Vec::new();
     for vote in votes {
-        if !vote.contains(" and ") && !vote.contains(',') {
+        if names_one_ingredient(vote) {
             plain_singles.push(vote);
         }
     }
@@ -437,23 +437,41 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     // ("Pain Relief") — several drug products carry the name, and the
     // refusal lists the single ingredients those products' own records
     // carry.
-    LabelIdentityAnswer::Ambiguous(ambiguous_ingredient_candidates(counted))
+    LabelIdentityAnswer::Ambiguous(ambiguous_ingredient_candidates(votes, counted))
+}
+
+/// Whether a vote line names one ingredient: no combination joiner and no
+/// comma list — the same line shape the single-vote resolution reads.
+fn names_one_ingredient(vote: &str) -> bool {
+    !vote.contains(" and ") && !vote.contains(',')
 }
 
 /// The refusal's candidates: the distinct single ingredients the counted
 /// records carry — the structural ingredient list each record's own
-/// fields name — one per ingredient, counted by records, spelled as most
-/// records spell it, sorted by record count and then by name, capped at
-/// ten. Spelling variants count as one ingredient, the same way votes
-/// compare as ingredient word sets.
-fn ambiguous_ingredient_candidates(records: &[LabelRecordVote]) -> Vec<AmbiguousIngredient> {
+/// fields name, or the record's own vote when it names one ingredient and
+/// lists no structural set — one per ingredient, counted by records,
+/// spelled as most records spell it, sorted by record count and then by
+/// name, capped at ten. Spelling variants count as one ingredient, the
+/// same way votes compare as ingredient word sets.
+fn ambiguous_ingredient_candidates(
+    votes: &[String],
+    records: &[LabelRecordVote],
+) -> Vec<AmbiguousIngredient> {
     use std::collections::{BTreeSet, HashMap};
 
     let mut grouped: Vec<(BTreeSet<String>, HashMap<String, usize>)> = Vec::new();
-    for record in records {
+    for (vote, record) in votes.iter().zip(records) {
+        // A record that lists no structural ingredients still names a
+        // single ingredient when its own vote line is one: the generic
+        // name of a single-ingredient product.
+        let carried: Vec<String> = if record.ingredients.is_empty() && names_one_ingredient(vote) {
+            vec![vote.clone()]
+        } else {
+            record.ingredients.clone()
+        };
         // One record counts once per ingredient, never once per mention.
         let mut counted = BTreeSet::new();
-        for ingredient in &record.ingredients {
+        for ingredient in &carried {
             let words = super::label::ingredient_word_set(ingredient);
             if words.is_empty() || !counted.insert(words.clone()) {
                 continue;

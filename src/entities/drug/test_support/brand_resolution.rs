@@ -585,18 +585,22 @@ async fn pain_relief_refuses_naming_the_drugs_that_share_the_name() {
 
     // The shelf name brands unrelated drugs' products, MyChem
     // carries it on each of their records, and openFDA holds no label whose
-    // own brand is "Pain Relief". No record owns the name, so the card
-    // refuses and names drugs the text search matched instead of fusing
+    // own brand is "Pain Relief". No record owns the name, and the label
+    // page's records carry unrelated single ingredients, so the name
+    // refuses as ambiguous — listing those ingredients — instead of fusing
     // acetaminophen's identifiers with other drugs' targets.
     let err = shared_name_refusal_drug("Pain Relief", &base).await;
     let message = err.to_string();
     assert!(
-        message.contains("No drug card matches \"Pain Relief\""),
+        message
+            .contains("Ambiguous drug name 'Pain Relief': several drug products carry this name."),
         "{message}"
     );
+    // These label records list no structural ingredients, so each record's
+    // own single-ingredient vote line is its candidate.
     assert!(
-        message.contains("acetaminophen"),
-        "the refusal names a drug the text search matched: {message}"
+        message.contains("Candidates:\n- acetaminophen\n- hexylresorcinol\n- lidocaine 4%\n"),
+        "the refusal lists the ingredients the products carry: {message}"
     );
     server.abort();
 }
@@ -624,19 +628,19 @@ async fn sleep_aid_refuses_when_openfdas_own_brands_disagree() {
     // and doxylamine's records pair it with different ingredients, and the
     // openFDA identity fallback refuses too, because its two labels that
     // carry "Sleep Aid" as their own brand pair it with different
-    // ingredients. The refusal names the matched drugs. The doxylamine
-    // succinate reply pins the fallback's refusal: adopting
-    // the first of the two candidates would resolve a card and fail this
-    // test.
+    // ingredients: the name refuses as ambiguous, listing both
+    // ingredients. The doxylamine succinate reply stays as the tripwire
+    // the moment the refusal starts adopting the first candidate instead
+    // of refusing.
     let err = shared_name_refusal_drug("Sleep Aid", &base).await;
     let message = err.to_string();
     assert!(
-        message.contains("No drug card matches \"Sleep Aid\""),
+        message.contains("Ambiguous drug name 'Sleep Aid': several drug products carry this name."),
         "{message}"
     );
     assert!(
-        message.contains("diphenhydramine"),
-        "the refusal names a drug the text search matched: {message}"
+        message.contains("Candidates:\n- diphenhydramine hcl\n- doxylamine succinate\n"),
+        "the refusal lists the ingredients the owner records carry: {message}"
     );
     server.abort();
 }
