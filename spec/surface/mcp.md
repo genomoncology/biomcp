@@ -965,7 +965,7 @@ without requiring the agent to infer them from stale docs.
 ```bash
 cat ../../AGENTS.md 2>/dev/null | mustmatch like "mustmatch executable docs at"
 cat ../../AGENTS.md 2>/dev/null | mustmatch like "cargo nextest run --no-default-features -E 'test(...)'"
-cat ../../AGENTS.md 2>/dev/null | mustmatch like 'run `make lint`, `make test` and `make spec` once on the final'
+cat ../../AGENTS.md 2>/dev/null | mustmatch like '`make spec` is the routine mustmatch contract gate'
 ```
 
 ## Public Streamable HTTP Demo Keeps The BRAF Workflow
