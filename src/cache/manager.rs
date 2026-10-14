@@ -490,9 +490,14 @@ fn read_startup_clean_marker(marker: &Path) -> Option<u128> {
 }
 
 /// Record the clean time in the start-up marker, created private to the
-/// current user like every other managed cache file.
+/// current user like every other managed cache file. Ensures the HTTP
+/// cache directory exists first: direct construction can reach the clean
+/// before any other step has created it.
 fn write_startup_clean_marker(marker: &Path, now_ms: u128) -> io::Result<()> {
     use std::io::Write;
+    if let Some(parent) = marker.parent() {
+        super::private::secure_managed_dir(parent)?;
+    }
     let mut options = fs::OpenOptions::new();
     options.write(true).create(true).truncate(true);
     let mut file = super::private::open_private(&mut options, marker)?;
