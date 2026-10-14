@@ -43,9 +43,16 @@ uv tool install biomcp-cli
 ```
 
 Install the `biomcp-cli` package, then use the `biomcp` command in the rest of
-this guide. The package also keeps a small `biomcp-cli` compatibility command;
-it forwards to the sibling `biomcp` executable without changing command output
-or exit status.
+this guide; the package name and the command name differ. To run BioMCP without
+installing it, uvx needs `--from` because of that difference:
+
+```bash
+uvx --from biomcp-cli biomcp serve
+```
+
+The wheels need Python 3.10 or later. An environment on an older Python —
+including the macOS system Python 3.9 — finds no matching distribution; create
+the environment with Python 3.10 or newer first.
 
 The Linux wheels are tagged `manylinux_2_28` and carry the same glibc
 2.28 floor as the prebuilt Linux tarballs (RHEL 8, Debian 10, Ubuntu
@@ -66,8 +73,9 @@ brew tap genomoncology/biomcp
 brew install biomcp
 ```
 
-The separate `genomoncology/homebrew-biomcp` tap repository must exist before
-these commands can work; creating that tap is a one-time release prerequisite.
+Homebrew installs the macOS builds only, Apple silicon and Intel. There is no
+Linux formula; on Linux use the installer script, the PyPI package, or the
+Docker image.
 
 Verify:
 
@@ -92,6 +100,12 @@ Use the published GHCR image when you want BioMCP without a local Rust or Python
 docker run --rm ghcr.io/genomoncology/biomcp --version
 docker run --rm ghcr.io/genomoncology/biomcp list
 ```
+
+An image named without a tag resolves to `latest`, and a machine that already
+pulled an older `latest` keeps running it until the next pull. Pull the image
+before you run (`docker pull ghcr.io/genomoncology/biomcp`), or pin the release
+you want, for example `docker run --rm ghcr.io/genomoncology/biomcp:0.9.2
+--version`.
 
 For stdio MCP clients, run the same image with `serve` and keep stdin open:
 

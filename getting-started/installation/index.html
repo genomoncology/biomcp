@@ -4467,44 +4467,54 @@ same floor.</p>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># pip install biomcp-cli</span>
 </code></pre></div>
 <p>Install the <code>biomcp-cli</code> package, then use the <code>biomcp</code> command in the rest of
-this guide. The package also keeps a small <code>biomcp-cli</code> compatibility command;
-it forwards to the sibling <code>biomcp</code> executable without changing command output
-or exit status.</p>
+this guide; the package name and the command name differ. To run BioMCP without
+installing it, uvx needs <code>--from</code> because of that difference:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>uvx<span class="w"> </span>--from<span class="w"> </span>biomcp-cli<span class="w"> </span>biomcp<span class="w"> </span>serve
+</code></pre></div>
+<p>The wheels need Python 3.10 or later. An environment on an older Python —
+including the macOS system Python 3.9 — finds no matching distribution; create
+the environment with Python 3.10 or newer first.</p>
 <p>The Linux wheels are tagged <code>manylinux_2_28</code> and carry the same glibc
 2.28 floor as the prebuilt Linux tarballs (RHEL 8, Debian 10, Ubuntu
 20.04 onward). Older Linux cannot run them; build from source
 instead (Option 3). A current <code>pip</code> is needed so the <code>manylinux_2_28</code>
 tag resolves.</p>
 <p>Verify:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>--version
 </code></pre></div>
 <h2 id="homebrew">Homebrew<a class="headerlink" href="#homebrew" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>brew<span class="w"> </span>tap<span class="w"> </span>genomoncology/biomcp
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>brew<span class="w"> </span>install<span class="w"> </span>biomcp
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>brew<span class="w"> </span>tap<span class="w"> </span>genomoncology/biomcp
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>brew<span class="w"> </span>install<span class="w"> </span>biomcp
 </code></pre></div>
-<p>The separate <code>genomoncology/homebrew-biomcp</code> tap repository must exist before
-these commands can work; creating that tap is a one-time release prerequisite.</p>
+<p>Homebrew installs the macOS builds only, Apple silicon and Intel. There is no
+Linux formula; on Linux use the installer script, the PyPI package, or the
+Docker image.</p>
 <p>Verify:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>--version
 </code></pre></div>
 <h2 id="option-3-source-build">Option 3: Source build<a class="headerlink" href="#option-3-source-build" title="Permanent link">&para;</a></h2>
 <p>From a local checkout:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>make<span class="w"> </span>install
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.local/bin/biomcp&quot;</span><span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>make<span class="w"> </span>install
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.local/bin/biomcp&quot;</span><span class="w"> </span>--version
 </code></pre></div>
 <h2 id="option-4-docker-image">Option 4: Docker image<a class="headerlink" href="#option-4-docker-image" title="Permanent link">&para;</a></h2>
 <p>Use the published GHCR image when you want BioMCP without a local Rust or Python toolchain:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ghcr.io/genomoncology/biomcp<span class="w"> </span>--version
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ghcr.io/genomoncology/biomcp<span class="w"> </span>list
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ghcr.io/genomoncology/biomcp<span class="w"> </span>--version
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ghcr.io/genomoncology/biomcp<span class="w"> </span>list
 </code></pre></div>
+<p>An image named without a tag resolves to <code>latest</code>, and a machine that already
+pulled an older <code>latest</code> keeps running it until the next pull. Pull the image
+before you run (<code>docker pull ghcr.io/genomoncology/biomcp</code>), or pin the release
+you want, for example <code>docker run --rm ghcr.io/genomoncology/biomcp:0.9.2
+--version</code>.</p>
 <p>For stdio MCP clients, run the same image with <code>serve</code> and keep stdin open:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-i<span class="w"> </span>ghcr.io/genomoncology/biomcp<span class="w"> </span>serve
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-i<span class="w"> </span>ghcr.io/genomoncology/biomcp<span class="w"> </span>serve
 </code></pre></div>
 <p>Pass provider keys from your shell when needed, for example <code>-e ONCOKB_TOKEN</code> or <code>-e NCBI_API_KEY</code>. Do not put secret values in documentation or checked-in client configs.</p>
 <h2 id="post-install-smoke-checks">Post-install smoke checks<a class="headerlink" href="#post-install-smoke-checks" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>list
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>list
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 <h2 id="environment-notes">Environment notes<a class="headerlink" href="#environment-notes" title="Permanent link">&para;</a></h2>
 <ul>
