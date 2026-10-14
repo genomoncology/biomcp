@@ -12,6 +12,7 @@
 
 ### Internal
 
+- One dev build now serves every routine gate: the empty build script that made cargo rescan the package and recompile the crate after any edit is gone, the Python and spec lanes run the dev test build's binary instead of building a second spec-profile binary, and the documented targeted-test loop sets `CARGO_INCREMENTAL=1` for the edit loop. (2070)
 - `cargo deny check advisories` passes again: rustls moved from 0.23.45 to 0.23.46, past the fresh advisories that turned every lane's lint and CI red, with the rest of the lockfile unchanged. (2093)
 - The repository now carries one baseline record and its measuring script for the 0.9.3 work: binary and build-folder size, build times, dependency counts, gate times, test counts, coverage, CI cost, and command run times, each printed with the command behind it and measured twice on the build host against tag v0.9.2, so the 0.9.3 changes have before-and-after numbers from one source. (2069)
 

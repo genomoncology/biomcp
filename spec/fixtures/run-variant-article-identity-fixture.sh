@@ -216,7 +216,7 @@ bash "$ownership_helper" write "$repo_root" "$kind" "$fixture_root" "$server_pid
 trap 'bash "$ownership_helper" cleanup "$repo_root" "$kind" "BIOMCP_RUN_VARIANT_ARTICLE_IDENTITY"' EXIT
 for _ in $(seq 1 100); do test -s "$ready" && break; sleep 0.05; done
 base_url="$(cat "$ready")"
-binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
+binary="${BIOMCP_BIN:-$repo_root/target/debug/biomcp}"
 export BIOMCP_CACHE_MODE=off BIOMCP_CACHE_DIR="$fixture_root/cache" BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
 export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url" BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN="$base_url"
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"

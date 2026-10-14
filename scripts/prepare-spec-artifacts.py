@@ -85,7 +85,7 @@ def export_name(target: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", required=True)
-    parser.add_argument("--profile", default="spec")
+    parser.add_argument("--profile", default="dev")
     parser.add_argument("--feature-on-bin")
     parser.add_argument("--cargo-feature-arg", action="append", default=[])
     parser.add_argument("--output", required=True, type=Path)

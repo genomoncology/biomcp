@@ -27,15 +27,13 @@ def _load_generator():
 
 
 def test_normal_build_consumes_only_committed_alphagenome_rust() -> None:
-    build_script = _read("build.rs")
     manifest = _read("Cargo.toml")
     alphagenome = _read("src/sources/alphagenome.rs")
 
-    assert "protoc" not in build_script
-    assert "tonic_build" not in build_script
-    assert "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs" not in (
-        build_script
-    )
+    # The package carries no build script at all (ticket 2070): an empty one
+    # made cargo rescan every package file and recompile the crate after any
+    # edit, Rust or not.
+    assert not (REPO_ROOT / "build.rs").exists()
     assert 'alphagenome = ["dep:tonic", "dep:prost", "dep:zstd"]' in manifest
     assert "tonic-build" not in manifest
     assert "tonic::include_proto!" not in alphagenome

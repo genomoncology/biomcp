@@ -1191,17 +1191,20 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r'lto = "thin"\n'
         r"codegen-units = 1\n"
         r'panic = "unwind"\n'
-        r"strip = true\n\n"
-        r"^\[profile\.spec\]\n"
-        r'inherits = "release"\n'
-        r"lto = false\n"
-        r"codegen-units = 16$",
+        r"strip = true$",
         cargo_toml,
         flags=re.MULTILINE,
     )
-    assert "SPEC_PROFILE ?= spec" in makefile
+    # One dev build per ticket (2070): the routine gates run the dev test
+    # build's binary, the spec profile is gone, and the release profile
+    # stays for the release gate.
+    assert "[profile.spec]" not in cargo_toml
+    assert "SPEC_PROFILE ?= dev" in makefile
     assert "ROUTINE_CARGO_FEATURES ?= --no-default-features" in makefile
-    assert "SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp" in makefile
+    assert (
+        "SPEC_BIN ?= $(CURDIR)/target/$(if $(filter dev,$(SPEC_PROFILE)),debug,$(SPEC_PROFILE))/biomcp"
+        in makefile
+    )
     assert (
         'SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)'
         in makefile
@@ -1269,7 +1272,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         "tests/surface/test_parallel_isolation_contract.py"
     ]
     assert 'verify) default_biomcp_bin="$ROOT/target/release/biomcp"' in runner
-    assert '*) default_biomcp_bin="$ROOT/target/spec/biomcp"' in runner
+    assert '*) default_biomcp_bin="$ROOT/target/debug/biomcp"' in runner
     assert 'BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"' in runner
     assert 'export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"' in runner
     for mode in ("spec|spec-pr", "spec-contracts"):

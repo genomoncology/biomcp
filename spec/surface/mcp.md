@@ -893,15 +893,17 @@ IMAGE: image/svg+xml'
 
 `make test` is the gate March uses for focused and baseline validation. It must
 run the Rust unit suite and the Python CLI/MCP/docs contract lane so neither
-runtime layer can report a silent green.
+runtime layer can report a silent green, and both layers run the one
+dev-profile build the gate prepares.
 
 ```bash
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
-  make -C ../.. -n test SPEC_PROFILE=spec \
+  make -C ../.. -n test \
   2>&1 | mustmatch like 'cargo nextest run
-cargo build --locked --profile spec
-/target/spec/biomcp" uv run --no-sync pytest tests/ -v
-/target/spec/biomcp" uv run --no-sync mkdocs build --strict'
+cargo nextest archive
+cargo build --locked --profile dev
+/target/debug/biomcp" uv run --no-sync pytest tests/ -v
+/target/debug/biomcp" uv run --no-sync mkdocs build --strict'
 ```
 
 ## Routine Markdown Helpers Reuse The Selected Cargo Profile
@@ -940,8 +942,8 @@ make full-feature-check
 cargo clippy --locked --all-targets --all-features
 cargo test --locked --all-features --lib sources::alphagenome::tests
 cargo build --release --locked --all-features --bin biomcp
-/target/spec/biomcp" uv run --no-sync pytest tests/ -v
-/target/spec/biomcp" uv run --no-sync mkdocs build --strict
+/target/debug/biomcp" uv run --no-sync pytest tests/ -v
+/target/debug/biomcp" uv run --no-sync mkdocs build --strict
 make spec SPEC_PROFILE=release SPEC_BIN='
 ```
 
@@ -1013,7 +1015,7 @@ find ../../scripts -maxdepth 1 -name run-specs.sh -type f -exec cat {} \; | must
 --timeout 180
 SPEC_ROUTINE_PATHS
 SPEC_LIVE_PATHS
-default_biomcp_bin="$ROOT/target/spec/biomcp"
+default_biomcp_bin="$ROOT/target/debug/biomcp"
 BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"'
 ```
 

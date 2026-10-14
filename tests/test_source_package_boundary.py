@@ -20,7 +20,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # Raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar.
-MAX_PACKAGE_FILES = 1_418  # tickets 2039, 2040, 2050 and 2052 add the shared-name capture-test module, the trial abbreviation modules, the product-name gap replies, and the ingredient-resolution recorded replies; ticket 2055 removes the March hook helper and its test; ticket 2054 adds the landed-ticket accept check module and ticket 2063 removes it; ticket 2064 removes the biomcp-cli wrapper and its tests
+MAX_PACKAGE_FILES = 1_417  # tickets 2039, 2040, 2050 and 2052 add the shared-name capture-test module, the trial abbreviation modules, the product-name gap replies, and the ingredient-resolution recorded replies; ticket 2055 removes the March hook helper and its test; ticket 2054 adds the landed-ticket accept check module and ticket 2063 removes it; ticket 2064 removes the biomcp-cli wrapper and its tests; ticket 2070 removes the empty build.rs
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
