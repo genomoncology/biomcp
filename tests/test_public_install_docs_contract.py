@@ -85,6 +85,33 @@ def test_installation_doc_source_build_uses_canonical_make_install_path() -> Non
     assert "cargo install --path ." not in source_block
 
 
+def test_installation_doc_states_runtime_and_platform_requirements() -> None:
+    installation = _read("docs/getting-started/installation.md")
+
+    pypi_block = _markdown_section_block(
+        installation,
+        "## Option 2: PyPI package",
+        "\n## Homebrew",
+    )
+    assert "Python 3.10" in pypi_block
+
+    homebrew_block = _markdown_section_block(
+        installation,
+        "\n## Homebrew",
+        "\n## Option 3: Source build",
+    )
+    assert "macOS" in homebrew_block
+    assert "one-time release prerequisite" not in homebrew_block
+
+    docker_block = _markdown_section_block(
+        installation,
+        "## Option 4: Docker image",
+        "\n## Post-install smoke checks",
+    )
+    assert "docker pull" in docker_block
+    assert "ghcr.io/genomoncology/biomcp:0.9.2" in docker_block
+
+
 def test_readme_lists_binary_install_before_pypi_tool_install() -> None:
     readme = _read("README.md")
 

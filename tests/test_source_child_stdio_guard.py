@@ -20,10 +20,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# The wheel launcher is a pass-through: it must hand the child the
-# parent's streams verbatim. It is the only allowed inheritor.
-ALLOW_INHERIT = {"src/main_biomcp_cli.rs"}
-
 # Any path-qualified Command::new (std::process, tokio::process,
 # process:: after `use std::process;`) and the bare imported form.
 COMMAND_NEW = re.compile(
@@ -282,8 +278,6 @@ def statement_windows(source: str, pattern: re.Pattern[str]) -> list[str]:
 
 
 def child_stdio_violations(relative: str, source: str) -> list[str]:
-    if relative.replace("\\", "/") in ALLOW_INHERIT:
-        return []
     violations: list[str] = []
     # Fail closed on unresolved Command bindings: a use statement that
     # mentions Command in a shape the resolver did not consume is a
@@ -595,10 +589,6 @@ def test_output_exemption_is_closed() -> None:
         violations = child_stdio_violations("src/a.rs", bad)
         assert violations, f"guard must fail this shape:\n{bad}"
 
-
-def test_the_launcher_stays_the_only_allowed_inheritor() -> None:
-    launcher = (ROOT / "src" / "main_biomcp_cli.rs").read_text(encoding="utf-8")
-    assert "Stdio::inherit()" in launcher, "launcher contract moved; update the guard"
 
 def test_guard_catches_round_three_shapes() -> None:
     """Ticket 1269: the neighboring spellings the prior guard missed."""

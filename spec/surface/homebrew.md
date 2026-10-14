@@ -11,7 +11,6 @@ biomcp-darwin-arm64.tar.gz
 biomcp-darwin-x86_64.tar.gz
 sha256
 bin.install "biomcp"
-bin.install_symlink
 Digest::SHA256.file'
 ```
 

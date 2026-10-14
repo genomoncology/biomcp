@@ -27,10 +27,6 @@ exclude = [
 name = "biomcp"
 path = "src/main.rs"
 
-[[bin]]
-name = "biomcp-cli"
-path = "src/main_biomcp_cli.rs"
-
 [dependencies]
 
 # CLI

@@ -155,20 +155,15 @@ def main() -> int:
                 args.target,
                 "--bin",
                 "biomcp",
-                "--bin",
-                "biomcp-cli",
             ],
             env=environment,
         )
     suffix = ".exe" if settings["os"] == "windows" else ""
     target_dir = args.repo / "target" / args.target / "release"
     full = target_dir / f"biomcp{suffix}"
-    shim = target_dir / f"biomcp-cli{suffix}"
     unsigned_full = full
-    unsigned_shim = shim
     if settings["os"] != "linux":
         signed_full = args.dist / f"signed-biomcp{suffix}"
-        signed_shim = args.dist / f"signed-biomcp-cli{suffix}"
         finalize(
             full,
             signed_full,
@@ -179,17 +174,7 @@ def main() -> int:
             args.run_id,
             args.repo,
         )
-        finalize(
-            shim,
-            signed_shim,
-            args.dist / "shim-signing.json",
-            str(settings["slug"]),
-            args.source_sha,
-            args.version,
-            args.run_id,
-            args.repo,
-        )
-        full, shim = signed_full, signed_shim
+        full = signed_full
     sbom_path = args.dist / "sbom.cdx.json"
     sbom(args.repo / "Cargo.lock", sbom_path, args.source_sha, args.version)
     native_path = args.dist / str(settings["archive"])
@@ -199,7 +184,6 @@ def main() -> int:
     package_artifact.native_archive(full, native_path, settings["os"] == "windows")
     package_artifact.wheel(
         full,
-        shim,
         wheel_path,
         args.python_version,
         f"py3-none-{settings['wheel']}",
@@ -246,8 +230,6 @@ def main() -> int:
                 sort_keys=True,
             ),
         ]
-        if kind == "wheel":
-            command.extend(["--shim", str(shim)])
         if settings["os"] != "linux":
             command.extend(
                 [
@@ -257,19 +239,9 @@ def main() -> int:
                     str(unsigned_full),
                 ]
             )
-            if kind == "wheel":
-                command.extend(
-                    [
-                        "--shim-signing-evidence",
-                        str(args.dist / "shim-signing.json"),
-                        "--unsigned-shim",
-                        str(unsigned_shim),
-                    ]
-                )
         _run(command)
     if settings["os"] != "linux":
         full.unlink()
-        shim.unlink()
     return 0
 
 

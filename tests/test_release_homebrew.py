@@ -53,7 +53,7 @@ def test_formula_is_derived_from_exact_staged_archives_and_identity() -> None:
     assert 'version "1.2.3"' in rendered
     assert "/releases/download/v1.2.3/biomcp-darwin-arm64.tar.gz" in rendered
     assert 'assert_match "cccccccc", output' in rendered
-    assert 'bin.install_symlink "biomcp" => "biomcp-cli"' in rendered
+    assert "install_symlink" not in rendered
 
 
 def test_formula_refuses_unsigned_or_mixed_candidate_sources() -> None:

@@ -133,16 +133,13 @@ def test_native_archives_carry_the_complete_agent_surface(tmp_path: Path) -> Non
 
 def test_wheel_contains_binaries_and_complete_agent_surface(tmp_path: Path) -> None:
     full = tmp_path / "biomcp"
-    shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"full executable bytes")
-    shim.write_bytes(b"shim")
     wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-manylinux_2_28_x86_64.whl"
-    packaging.wheel(full, shim, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
+    packaging.wheel(full, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
     evidence = inspection.inspect_wheel(wheel, "wheel-linux-x86_64", "1.2.3")
-    assert evidence["executable_count"] == 2
+    assert evidence["executable_count"] == 1
     with zipfile.ZipFile(wheel) as archive:
         assert sum(name.endswith("/biomcp") for name in archive.namelist()) == 1
-        assert sum(name.endswith("/biomcp-cli") for name in archive.namelist()) == 1
         assert not any(
             "testdata" in name or "sdlc" in name for name in archive.namelist()
         )
@@ -157,7 +154,6 @@ def test_wheel_contains_binaries_and_complete_agent_surface(tmp_path: Path) -> N
         dist = "biomcp_cli-1.2.3"
         expected = {
             f"{dist}.data/scripts/biomcp",
-            f"{dist}.data/scripts/biomcp-cli",
             f"{dist}.dist-info/METADATA",
             f"{dist}.dist-info/WHEEL",
             f"{dist}.dist-info/RECORD",
@@ -168,11 +164,9 @@ def test_wheel_contains_binaries_and_complete_agent_surface(tmp_path: Path) -> N
 
 def test_packaged_agent_index_maps_local_and_live_topics(tmp_path: Path) -> None:
     full = tmp_path / "biomcp"
-    shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"full executable bytes")
-    shim.write_bytes(b"shim")
     wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-any.whl"
-    packaging.wheel(full, shim, wheel, "1.2.3", "py3-none-any", False)
+    packaging.wheel(full, wheel, "1.2.3", "py3-none-any", False)
 
     with zipfile.ZipFile(wheel) as archive:
         index = archive.read(
@@ -196,7 +190,7 @@ def test_packaged_agent_index_maps_local_and_live_topics(tmp_path: Path) -> None
 def test_wheel_installs_skills_without_network(tmp_path: Path) -> None:
     binary = Path(os.environ["BIOMCP_BIN"])
     wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-any.whl"
-    packaging.wheel(binary, binary, wheel, "1.2.3", "py3-none-any", False)
+    packaging.wheel(binary, wheel, "1.2.3", "py3-none-any", False)
     environment = tmp_path / "environment"
     subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
     scripts = environment / ("Scripts" if os.name == "nt" else "bin")
@@ -223,14 +217,11 @@ def test_wheel_installs_skills_without_network(tmp_path: Path) -> None:
 
 def test_development_wheel_uses_exact_pep440_identity(tmp_path: Path) -> None:
     full = tmp_path / "biomcp"
-    shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"full executable bytes")
-    shim.write_bytes(b"shim")
     wheel = tmp_path / "biomcp_cli-0.9.0.dev1-py3-none-manylinux_2_28_x86_64.whl"
 
     packaging.wheel(
         full,
-        shim,
         wheel,
         "0.9.0.dev1",
         "py3-none-manylinux_2_28_x86_64",
@@ -271,11 +262,9 @@ def test_wheel_identity_metadata_and_record_are_fully_validated(
     tmp_path: Path, member: str, old: bytes, new: bytes
 ) -> None:
     full = tmp_path / "biomcp"
-    shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"full executable bytes")
-    shim.write_bytes(b"shim")
     wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-manylinux_2_28_x86_64.whl"
-    packaging.wheel(full, shim, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
+    packaging.wheel(full, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
     with zipfile.ZipFile(wheel) as archive:
         entries = {
             info.filename: (info, archive.read(info)) for info in archive.infolist()
@@ -304,11 +293,9 @@ def test_wheel_identity_metadata_and_record_are_fully_validated(
 
 def test_wheel_duplicate_member_is_rejected(tmp_path: Path) -> None:
     full = tmp_path / "biomcp"
-    shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"full executable bytes")
-    shim.write_bytes(b"shim")
     wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-manylinux_2_28_x86_64.whl"
-    packaging.wheel(full, shim, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
+    packaging.wheel(full, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
     with pytest.warns(UserWarning, match="Duplicate"):
         with zipfile.ZipFile(wheel, "a") as archive:
             archive.writestr("biomcp_cli-1.2.3.dist-info/METADATA", b"duplicate")
@@ -368,11 +355,9 @@ def test_final_inspector_owns_complete_wheel_evidence(
     tmp_path: Path, monkeypatch
 ) -> None:
     full = tmp_path / "biomcp"
-    shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"full executable bytes")
-    shim.write_bytes(b"shim")
     wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-manylinux_2_28_x86_64.whl"
-    packaging.wheel(full, shim, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
+    packaging.wheel(full, wheel, "1.2.3", "py3-none-manylinux_2_28_x86_64", False)
     output = tmp_path / "wheel.json"
     monkeypatch.setattr(
         inspection,
@@ -395,7 +380,6 @@ def test_final_inspector_owns_complete_wheel_evidence(
         version="1.2.3",
         python_version="1.2.3",
         run_id="42",
-        shim=shim,
         sbom=_sbom(tmp_path / "sbom.cdx.json"),
         cargo_lock=_lock(tmp_path / "Cargo.lock"),
         signing_policy=ROOT / "release/signing-policy.json",
@@ -406,8 +390,8 @@ def test_final_inspector_owns_complete_wheel_evidence(
 
     evidence = json.loads(output.read_text())["evidence"]
     assert evidence["artifact_sha256"] == hashlib.sha256(wheel.read_bytes()).hexdigest()
-    assert evidence["archive_members"] == 2 + 3 + len(_packaged_agent_inventory())
-    assert evidence["executable_count"] == 2
+    assert evidence["archive_members"] == 1 + 3 + len(_packaged_agent_inventory())
+    assert evidence["executable_count"] == 1
     assert evidence["python_version"] == "1.2.3"
     assert evidence["version_help_json_smoke"] is True
     assert evidence["platform"] == {"glibc_floor_checked": True}
@@ -416,8 +400,6 @@ def test_final_inspector_owns_complete_wheel_evidence(
         == hashlib.sha256((tmp_path / "sbom.cdx.json").read_bytes()).hexdigest()
     )
     assert evidence["binary_sha256"] == hashlib.sha256(full.read_bytes()).hexdigest()
-    assert evidence["shim_sha256"] == hashlib.sha256(shim.read_bytes()).hexdigest()
-    assert evidence["shim_is_smaller"] is True
 
 
 def test_failed_final_inspection_leaves_no_success_record(tmp_path: Path) -> None:
@@ -438,7 +420,6 @@ def test_failed_final_inspection_leaves_no_success_record(tmp_path: Path) -> Non
             version="1.2.3",
             python_version="1.2.3",
             run_id="42",
-            shim=None,
             sbom=_sbom(tmp_path / "sbom.cdx.json"),
             cargo_lock=_lock(tmp_path / "Cargo.lock"),
             signing_policy=ROOT / "release/signing-policy.json",
@@ -478,7 +459,6 @@ def test_tampered_sbom_leaves_no_success_record(tmp_path: Path, monkeypatch) -> 
             version="1.2.3",
             python_version="1.2.3",
             run_id="42",
-            shim=None,
             sbom=_sbom(tmp_path / "sbom.cdx.json", source_sha="c" * 40),
             cargo_lock=_lock(tmp_path / "Cargo.lock"),
             signing_policy=ROOT / "release/signing-policy.json",
@@ -515,7 +495,6 @@ def test_failed_platform_reinspection_leaves_no_success_record(
             version="1.2.3",
             python_version="1.2.3",
             run_id="42",
-            shim=None,
             sbom=_sbom(tmp_path / "sbom.cdx.json"),
             cargo_lock=_lock(tmp_path / "Cargo.lock"),
             signing_policy=ROOT / "release/signing-policy.json",
@@ -530,11 +509,9 @@ def test_tampered_signing_evidence_leaves_no_success_record(
     tmp_path: Path, monkeypatch
 ) -> None:
     full = tmp_path / "biomcp"
-    shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"signed full executable")
-    shim.write_bytes(b"signed shim")
     wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-macosx_14_0_x86_64.whl"
-    packaging.wheel(full, shim, wheel, "1.2.3", "py3-none-macosx_14_0_x86_64", False)
+    packaging.wheel(full, wheel, "1.2.3", "py3-none-macosx_14_0_x86_64", False)
     policy = tmp_path / "policy.json"
     policy.write_text(
         json.dumps(
@@ -570,9 +547,7 @@ def test_tampered_signing_evidence_leaves_no_success_record(
     policy_hash = hashlib.sha256(policy.read_bytes()).hexdigest()
 
     unsigned_full = tmp_path / "unsigned-biomcp"
-    unsigned_shim = tmp_path / "unsigned-biomcp-cli"
     unsigned_full.write_bytes(b"unsigned full executable")
-    unsigned_shim.write_bytes(b"unsigned shim")
 
     def signing_record(path: Path, signed_hash: str, unsigned_hash: str) -> Path:
         path.write_text(
@@ -615,7 +590,6 @@ def test_tampered_signing_evidence_leaves_no_success_record(
             version="1.2.3",
             python_version="1.2.3",
             run_id="42",
-            shim=shim,
             sbom=_sbom(tmp_path / "sbom.cdx.json"),
             cargo_lock=_lock(tmp_path / "Cargo.lock"),
             signing_policy=policy,
@@ -625,15 +599,9 @@ def test_tampered_signing_evidence_leaves_no_success_record(
                     "0" * 64,
                     hashlib.sha256(unsigned_full.read_bytes()).hexdigest(),
                 ),
-                "biomcp-cli": signing_record(
-                    tmp_path / "shim-signing.json",
-                    hashlib.sha256(shim.read_bytes()).hexdigest(),
-                    hashlib.sha256(unsigned_shim.read_bytes()).hexdigest(),
-                ),
             },
             provenance={"target": "x86_64-apple-darwin"},
             output=output,
             unsigned_binary=unsigned_full,
-            unsigned_shim=unsigned_shim,
         )
     assert not output.exists()
