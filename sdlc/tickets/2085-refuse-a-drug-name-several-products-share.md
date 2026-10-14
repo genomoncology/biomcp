@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 5101919, accept
+
 ## Outcome
 
 `get drug "Pain Relief"` refuses as an ambiguous drug name, exits 2, and lists the ingredients of the products that carry that brand name.
