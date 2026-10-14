@@ -3340,6 +3340,18 @@
       }
     },
     {
+      "path": "openfda/label_pain_relief_20261014.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "openFDA",
+        "request": "https://api.fda.gov/drug/label.json?search=openfda.generic_name%3A%22Pain+Relief%22+OR+openfda.brand_name%3A%22Pain+Relief%22&limit=5&sort=effective_time%3Adesc",
+        "captured_at": "2026-10-14T12:00:00Z",
+        "sha256": "b68af7ded3216bb22e4a1deecd765202009dec720bb5acd467e805a779c351dd",
+        "minimization_or_redaction": "Reduced to result metadata and each record's openFDA identity fields (brand, generic, and substance names); SPL section text, product data elements, and packaging fields were removed.",
+        "provider_origin_statement": "Bytes were recorded from the public openFDA response through BioMCP's production request path before permitted minimization."
+      }
+    },
+    {
       "path": "openfda/label_mobocertinib_fulltext_20261007.json",
       "classification": "real_and_receipted",
       "receipt": {

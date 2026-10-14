@@ -9,6 +9,7 @@
 ### Fixes
 
 - Every documented install path works as the docs say: a pinned installer run reads the true version from the staged binary and records it in the receipt instead of the build-time field, the PyPI package keeps its `biomcp-cli` name and installs only the `biomcp` command — uvx users run `uvx --from biomcp-cli biomcp serve` — the install docs state the Python 3.10 floor, that Homebrew covers macOS only, and how to pull or pin the Docker image, the Homebrew formula the release renders carries a `test do` block, and the release publishes the changelog section as the GitHub release notes. (2064)
+- `get drug` now refuses a product name several drug products share: `get drug "Pain Relief"` exits 2 as an ambiguous drug name, lists the single ingredients the label records carry (lidocaine, menthol, acetaminophen, hexylresorcinol on the recorded reply), and names the ingredient form to try, where it used to exit as not found and list symptom names; "Sleep Aid" and "Cold and Flu" refuse the same way. (2085)
 
 ### Internal
 

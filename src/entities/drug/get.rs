@@ -272,6 +272,45 @@ enum SparseDrugDiscoverRescue {
     None,
 }
 
+/// The identity search's answer for one drug name: the candidate the
+/// page's records agree on, no answer when the page casts no deciding
+/// vote, or the disagreement itself — several distinct ingredients —
+/// which the name-miss caller refuses as an ambiguous drug name while
+/// the card-keeping callers treat it as no answer.
+enum LabelIdentityAnswer {
+    Candidate(String),
+    NoAnswer,
+    Ambiguous(Vec<AmbiguousIngredient>),
+}
+
+/// One refusal candidate: a distinct single ingredient the counted label
+/// records carry, and how many records carry it.
+struct AmbiguousIngredient {
+    records: usize,
+    name: String,
+}
+
+/// One counted label record's identity contribution: whether the record's
+/// own brand equals the query, and the single ingredients its own fields
+/// list.
+struct LabelRecordVote {
+    owns_brand: bool,
+    ingredients: Vec<String>,
+}
+
+async fn openfda_label_identity_candidate(name: &str) -> LabelIdentityAnswer {
+    let Ok(client) = OpenFdaClient::new() else {
+        return LabelIdentityAnswer::NoAnswer;
+    };
+    let Some(response) = client.label_search(name).await.ok().flatten() else {
+        return LabelIdentityAnswer::NoAnswer;
+    };
+    let Some(results) = response.get("results").and_then(|value| value.as_array()) else {
+        return LabelIdentityAnswer::NoAnswer;
+    };
+    label_identity_answer(name, results)
+}
+
 /// A secondary identity resolution through openFDA's field-scoped label
 /// search: the label records the page
 /// holds vote on the drug they name. A record whose own brand equals the
@@ -290,24 +329,26 @@ enum SparseDrugDiscoverRescue {
 /// vote among combination votes is the brand whose labels mostly name one
 /// ingredient — Motrin's labels name ibuprofen. Anything
 /// else — several plain ingredients ("Sleep Aid"), several combinations
-/// ("Cold and Flu"), unrelated singles ("Pain Relief") — names no one drug
-/// and the caller refuses. Some label records carry no
-/// openFDA identity block at all, so this path can miss (a brand MyChem
-/// itself carries resolves through the MyChem record instead).
-async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
+/// ("Cold and Flu"), unrelated singles ("Pain Relief") — names no one
+/// drug: the name-miss caller refuses it as an ambiguous drug name whose
+/// candidates are the ingredients the counted records carry, while the
+/// card-keeping callers keep the card they already hold. Some label
+/// records carry no openFDA identity block at all, so this path can miss
+/// (a brand MyChem itself carries resolves through the MyChem record
+/// instead).
+fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIdentityAnswer {
     use std::collections::BTreeSet;
 
-    let client = OpenFdaClient::new().ok()?;
-    let response = client.label_search(name).await.ok()??;
-    let results = response.get("results")?.as_array()?.to_vec();
     if results.is_empty() {
-        return None;
+        return LabelIdentityAnswer::NoAnswer;
     }
-    let query = name.trim().to_ascii_lowercase();
+    let query = query.trim().to_ascii_lowercase();
     // One vote per record: the plain ingredient the record's own identity
     // supports, so counting votes counts records.
     let mut owner_votes: Vec<String> = Vec::new();
     let mut page_votes: Vec<String> = Vec::new();
+    let mut owner_records: Vec<LabelRecordVote> = Vec::new();
+    let mut page_records: Vec<LabelRecordVote> = Vec::new();
     for result in &results {
         let Some(raw) = super::label::label_result_generic_names(result)
             .into_iter()
@@ -317,7 +358,11 @@ async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
         else {
             continue;
         };
-        let ingredients = super::label::label_result_ingredient_names(result);
+        let ingredients: Vec<String> = super::label::label_result_ingredient_names(result)
+            .into_iter()
+            .map(|ingredient| ingredient.trim().to_ascii_lowercase())
+            .filter(|ingredient| !ingredient.is_empty())
+            .collect();
         let plain = super::label::plain_paired_ingredient_name(&raw, &ingredients)
             .trim()
             .to_ascii_lowercase();
@@ -327,18 +372,27 @@ async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
         let owns_brand = super::label::extract_openfda_values_from_result(result, "brand_name")
             .iter()
             .any(|brand| brand.trim().to_ascii_lowercase() == query);
+        let vote = LabelRecordVote {
+            owns_brand,
+            ingredients,
+        };
         if owns_brand {
             owner_votes.push(plain.clone());
+            owner_records.push(vote);
+        } else {
+            page_records.push(vote);
         }
         page_votes.push(plain);
     }
-    let votes = if owner_votes.is_empty() {
-        page_votes
+    // Only owner rows vote when any exist, and the refusal's candidates
+    // come from the same counted records that voted.
+    let (votes, counted): (&[String], &[LabelRecordVote]) = if owner_votes.is_empty() {
+        (&page_votes, &page_records)
     } else {
-        owner_votes
+        (&owner_votes, &owner_records)
     };
     if votes.is_empty() {
-        return None;
+        return LabelIdentityAnswer::NoAnswer;
     }
     let vote_words = |vote: &str| -> BTreeSet<String> { super::label::ingredient_word_set(vote) };
     let mut distinct_sets: Vec<BTreeSet<String>> = Vec::new();
@@ -361,7 +415,7 @@ async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
                 best = vote.clone();
             }
         }
-        return Some(best);
+        return LabelIdentityAnswer::Candidate(best);
     }
     // Short of agreement, exactly one plain single-ingredient vote among
     // the combination votes is the brand whose labels mostly name one
@@ -379,7 +433,79 @@ async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
             plain_sets.push(words);
         }
     }
-    (plain_sets.len() == 1).then(|| (*plain_singles[0]).clone())
+    if plain_sets.len() == 1 {
+        return LabelIdentityAnswer::Candidate((*plain_singles[0]).clone());
+    }
+    // Anything else names no one drug: several plain ingredients ("Sleep
+    // Aid"), several combinations ("Cold and Flu"), or unrelated singles
+    // ("Pain Relief") — several drug products carry the name, and the
+    // refusal lists the single ingredients those products' own records
+    // carry.
+    LabelIdentityAnswer::Ambiguous(ambiguous_ingredient_candidates(counted))
+}
+
+/// The refusal's candidates: the distinct single ingredients the counted
+/// records carry — the structural ingredient list each record's own
+/// fields name — one per ingredient, counted by records, spelled as most
+/// records spell it, sorted by record count and then by name, capped at
+/// ten. Spelling variants count as one ingredient, the same way votes
+/// compare as ingredient word sets.
+fn ambiguous_ingredient_candidates(records: &[LabelRecordVote]) -> Vec<AmbiguousIngredient> {
+    use std::collections::{BTreeSet, HashMap};
+
+    let mut grouped: Vec<(BTreeSet<String>, HashMap<String, usize>)> = Vec::new();
+    for record in records {
+        // One record counts once per ingredient, never once per mention.
+        let mut counted = BTreeSet::new();
+        for ingredient in &record.ingredients {
+            let words = super::label::ingredient_word_set(ingredient);
+            if words.is_empty() || !counted.insert(words.clone()) {
+                continue;
+            }
+            match grouped.iter_mut().find(|(set, _)| *set == words) {
+                Some((_, spellings)) => {
+                    *spellings.entry(ingredient.clone()).or_insert(0) += 1;
+                }
+                None => grouped.push((words, HashMap::from([(ingredient.clone(), 1)]))),
+            }
+        }
+    }
+    let mut ranked: Vec<AmbiguousIngredient> = grouped
+        .into_iter()
+        .map(|(_, spellings)| {
+            let records = spellings.values().sum();
+            let name = spellings
+                .into_iter()
+                .max_by(|left, right| left.1.cmp(&right.1).then_with(|| right.0.cmp(&left.0)))
+                .map(|(name, _)| name)
+                .unwrap_or_default();
+            AmbiguousIngredient { records, name }
+        })
+        .collect();
+    ranked.sort_by(|left, right| {
+        right
+            .records
+            .cmp(&left.records)
+            .then_with(|| left.name.cmp(&right.name))
+    });
+    ranked.truncate(10);
+    ranked
+}
+
+/// The ambiguous-name refusal, the disease refusal's shape
+/// (`src/entities/disease/resolution.rs`) applied to a drug name several
+/// products carry: `InvalidArgument`, a `Candidates:` list, exit 2. The
+/// Try line names the ingredient form, the one spelling that resolves.
+fn ambiguous_drug_name_error(name: &str, candidates: &[AmbiguousIngredient]) -> BioMcpError {
+    let lines = candidates
+        .iter()
+        .map(|candidate| format!("- {}\n", candidate.name))
+        .collect::<String>();
+    BioMcpError::InvalidArgument(format!(
+        "Ambiguous drug name '{name}': several drug products carry this name.\n\
+Candidates:\n{lines}\
+Try `biomcp get drug \"<ingredient>\"`"
+    ))
 }
 
 /// A MyChem response for `name` whose own names match `name`: `None` when
@@ -830,10 +956,16 @@ pub(super) async fn resolve_drug_base(
         // resolve it through openFDA's identity fields before refusing
         //.
         let identity_fallback = match openfda_label_identity_candidate(&lookup_name).await {
-            Some(candidate) => named_drug_response(&candidate)
+            LabelIdentityAnswer::Candidate(candidate) => named_drug_response(&candidate)
                 .await
                 .map(|candidate_resp| (candidate, candidate_resp)),
-            None => None,
+            // A page whose records disagree on the ingredient names no one
+            // drug: several drug products carry this name, so refuse it as
+            // an ambiguous name instead of falling through to not-found.
+            LabelIdentityAnswer::Ambiguous(candidates) => {
+                return Err(ambiguous_drug_name_error(&lookup_name, &candidates));
+            }
+            LabelIdentityAnswer::NoAnswer => None,
         };
         match identity_fallback {
             Some((candidate, candidate_resp)) => {
@@ -883,7 +1015,8 @@ pub(super) async fn resolve_drug_base(
     // (Opdualag, Phesgo, advil pm).
     if transform::drug::card_names_combination(&drug.name)
         && !drug.name.eq_ignore_ascii_case(lookup_name.trim())
-        && let Some(candidate) = openfda_label_identity_candidate(&lookup_name).await
+        && let LabelIdentityAnswer::Candidate(candidate) =
+            openfda_label_identity_candidate(&lookup_name).await
         && let Some(candidate_resp) = named_drug_response(&candidate).await
     {
         lookup_name = candidate;
@@ -897,11 +1030,13 @@ pub(super) async fn resolve_drug_base(
         && drug.chembl_id.is_none()
         && drug.unii.is_none();
     if needs_canonical_fallback {
+        // An ambiguous page keeps the sparse card the query already
+        // named; the ambiguous refusal is the name-miss site's answer.
         let identity_fallback = match openfda_label_identity_candidate(&lookup_name).await {
-            Some(candidate) => named_drug_response(&candidate)
+            LabelIdentityAnswer::Candidate(candidate) => named_drug_response(&candidate)
                 .await
                 .map(|candidate_resp| (candidate, candidate_resp)),
-            None => None,
+            LabelIdentityAnswer::Ambiguous(_) | LabelIdentityAnswer::NoAnswer => None,
         };
         if let Some((candidate, candidate_resp)) = identity_fallback {
             lookup_name = candidate;
