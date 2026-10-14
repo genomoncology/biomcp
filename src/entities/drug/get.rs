@@ -349,7 +349,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     let mut page_votes: Vec<String> = Vec::new();
     let mut owner_records: Vec<LabelRecordVote> = Vec::new();
     let mut page_records: Vec<LabelRecordVote> = Vec::new();
-    for result in &results {
+    for result in results {
         let Some(raw) = super::label::label_result_generic_names(result)
             .into_iter()
             .next()
@@ -396,7 +396,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     }
     let vote_words = |vote: &str| -> BTreeSet<String> { super::label::ingredient_word_set(vote) };
     let mut distinct_sets: Vec<BTreeSet<String>> = Vec::new();
-    for vote in &votes {
+    for vote in votes {
         let words = vote_words(vote);
         if !distinct_sets.contains(&words) {
             distinct_sets.push(words);
@@ -408,7 +408,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     if distinct_sets.len() == 1 {
         let mut best = votes[0].clone();
         let mut best_count = 0;
-        for vote in &votes {
+        for vote in votes {
             let count = votes.iter().filter(|seen| seen == &vote).count();
             if count > best_count {
                 best_count = count;
@@ -421,7 +421,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     // the combination votes is the brand whose labels mostly name one
     // ingredient.
     let mut plain_singles: Vec<&String> = Vec::new();
-    for vote in &votes {
+    for vote in votes {
         if !vote.contains(" and ") && !vote.contains(',') {
             plain_singles.push(vote);
         }
