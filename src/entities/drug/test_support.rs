@@ -78,7 +78,7 @@ pub(super) fn who_api_row(product_id: &str, inn: &str) -> WhoPrequalificationEnt
 /// openFDA, the discover rescue's OLS4 and its HPO/UMLS lookups, the pacing
 /// origin, and a missing DDInter tree — so no drug fixture test decides on
 /// its own what to isolate. The DDInter guard must outlive the env's use.
-fn drug_fixture_env(
+pub(super) fn drug_fixture_env(
     base: &str,
     ddinter_label: &str,
 ) -> (
@@ -525,7 +525,7 @@ fn quoted_search_field_value(term: &str, field: &str) -> Option<String> {
 /// product-data-elements search routes on the quoted name it asks for,
 /// separate from the field-scoped and exact searches — and the OLS4
 /// discover search answers by decoded `q` term or a no-match 404.
-async fn name_resolution_fixture_server(
+pub(super) async fn name_resolution_fixture_server(
     mychem: Vec<(String, String)>,
     label_searches: Vec<(String, String)>,
     ols_searches: Vec<(String, String)>,

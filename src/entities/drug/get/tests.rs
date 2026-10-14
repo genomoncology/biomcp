@@ -763,3 +763,193 @@ fn unreadable_who_bundle_degrades_the_card_section_without_a_local_path() {
     assert!(drug.who_note.is_none());
     assert!(drug.who_prequalification.is_some());
 }
+
+/// The openFDA label answer for `Pain Relief` (live total 1249, recorded
+/// 2026-10-14, minimized to the identity fields the resolution reads):
+/// five newest records whose brands merely contain the phrase, each
+/// carrying a different single ingredient. The full capture and its
+/// receipt live at `testdata/sources/openfda/label_pain_relief_20261014.json`.
+const PAIN_RELIEF_LABEL_BODY: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/openfda/label_pain_relief_20261014.json"
+));
+
+fn label_page_results(body: &str) -> Vec<serde_json::Value> {
+    serde_json::from_str::<serde_json::Value>(body)
+        .expect("label body parses")
+        .get("results")
+        .and_then(|value| value.as_array())
+        .expect("label body holds results")
+        .clone()
+}
+
+fn synthetic_label_record(brand: &str, generic: &str, substances: &[&str]) -> serde_json::Value {
+    serde_json::json!({
+        "set_id": format!("synthetic-{brand}"),
+        "effective_time": "20260901",
+        "openfda": {
+            "brand_name": [brand],
+            "generic_name": [generic],
+            "substance_name": substances,
+        }
+    })
+}
+
+#[test]
+fn a_disagreeing_label_page_refuses_the_name_as_ambiguous() {
+    let answer = label_identity_answer("Pain Relief", &label_page_results(PAIN_RELIEF_LABEL_BODY));
+    let LabelIdentityAnswer::Ambiguous(candidates) = answer else {
+        panic!("the recorded Pain Relief page must refuse as ambiguous");
+    };
+    // Lidocaine and menthol each answer on two of the five records;
+    // acetaminophen and hexylresorcinol on one: record count first, then
+    // name.
+    let listed = candidates
+        .iter()
+        .map(|candidate| (candidate.records, candidate.name.as_str()))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        listed,
+        [
+            (2, "lidocaine"),
+            (2, "menthol"),
+            (1, "acetaminophen"),
+            (1, "hexylresorcinol"),
+        ]
+    );
+    assert_eq!(
+        ambiguous_drug_name_error("Pain Relief", &candidates).to_string(),
+        "Invalid argument: Ambiguous drug name 'Pain Relief': several drug products carry this name.\n\
+Candidates:\n- lidocaine\n- menthol\n- acetaminophen\n- hexylresorcinol\n\
+Try `biomcp get drug \"<ingredient>\"`"
+    );
+}
+
+#[test]
+fn ambiguous_candidates_come_from_the_records_that_own_the_name() {
+    // The recorded "Sleep Aid" shape (live total 247, recorded 2026-10-14):
+    // two owner records carry two distinct single ingredients while a
+    // third record merely holds the phrase in a longer brand.
+    let page = vec![
+        synthetic_label_record(
+            "Sleep Aid",
+            "DIPHENHYDRAMINE HCL",
+            &["DIPHENHYDRAMINE HYDROCHLORIDE"],
+        ),
+        synthetic_label_record(
+            "SLEEP AID",
+            "DOXYLAMINE SUCCINATE",
+            &["DOXYLAMINE SUCCINATE"],
+        ),
+        synthetic_label_record(
+            "Nighttime Sleep Aid Berry Flavor",
+            "DIPHENHYDRAMINE HYDROCHLORIDE",
+            &["DIPHENHYDRAMINE HYDROCHLORIDE"],
+        ),
+    ];
+    let answer = label_identity_answer("Sleep Aid", &page);
+    let LabelIdentityAnswer::Ambiguous(candidates) = answer else {
+        panic!("the Sleep Aid page must refuse as ambiguous");
+    };
+    // Only the owner records' ingredients count, so the third record adds
+    // no diphenhydramine count and no third candidate.
+    assert_eq!(
+        candidates
+            .iter()
+            .map(|candidate| (candidate.records, candidate.name.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            (1, "diphenhydramine hydrochloride"),
+            (1, "doxylamine succinate")
+        ]
+    );
+}
+
+#[test]
+fn ambiguous_candidates_rank_by_record_count_then_name_and_cap_at_ten() {
+    let seconds = [
+        "CHLORPHENIRAMINE MALEATE",
+        "DEXTROMETHORPHAN HBR",
+        "DOXYLAMINE SUCCINATE",
+        "PHENYLEPHRINE HCL",
+        "TRIPROLIDINE HCL",
+        "BROMPHENIRAMINE MALEATE",
+        "PSEUDOEPHEDRINE HCL",
+        "GUAIFENESIN",
+        "IBUPROFEN",
+        "NAPROXEN SODIUM",
+        "CETIRIZINE HCL",
+    ];
+    let page = seconds
+        .iter()
+        .map(|second| {
+            synthetic_label_record(
+                "Cold and Flu",
+                &format!("ACETAMINOPHEN, {second}"),
+                &["ACETAMINOPHEN", second],
+            )
+        })
+        .collect::<Vec<_>>();
+    let answer = label_identity_answer("Cold and Flu", &page);
+    let LabelIdentityAnswer::Ambiguous(candidates) = answer else {
+        panic!("the Cold and Flu page must refuse as ambiguous");
+    };
+    // Acetaminophen answers on every record, so it leads; the rest rank
+    // by name, and the cap keeps the first ten lines.
+    assert_eq!(
+        candidates
+            .iter()
+            .map(|candidate| (candidate.records, candidate.name.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            (11, "acetaminophen"),
+            (1, "brompheniramine maleate"),
+            (1, "cetirizine hcl"),
+            (1, "chlorpheniramine maleate"),
+            (1, "dextromethorphan hbr"),
+            (1, "doxylamine succinate"),
+            (1, "guaifenesin"),
+            (1, "ibuprofen"),
+            (1, "naproxen sodium"),
+            (1, "phenylephrine hcl"),
+        ]
+    );
+}
+
+/// The recorded-reply proof for the ticket: the live openFDA answer for
+/// "Pain Relief", replayed through the fixture server, refuses the name
+/// as ambiguous with exit 2 and the ingredient candidates, before the
+/// discover rescue can answer it as a symptom.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_drug_pain_relief_refuses_as_ambiguous_with_the_recorded_candidates() {
+    let (base, server) = crate::entities::drug::test_support::name_resolution_fixture_server(
+        // The live MyChem text query matches only other drugs' records
+        // (live total 673, trimmed to one row).
+        vec![(
+            "Pain Relief".to_string(),
+            r#"{"total":673,"hits":[{"_id":"RZVAJINKPMORJF-UHFFFAOYSA-N","_score":21.7,"ndc":{"nonproprietaryname":"Acetaminophen, Caffeine, Pyrilamine maleate","proprietaryname":"FLO PMS Complete"}}]}"#
+                .to_string(),
+        )],
+        vec![(
+            "Pain Relief".to_string(),
+            PAIN_RELIEF_LABEL_BODY.to_string(),
+        )],
+        Vec::new(),
+    )
+    .await;
+    let (_env, _ddinter) =
+        crate::entities::drug::test_support::drug_fixture_env(&base, "pain-relief-ddinter");
+
+    let err = super::get("Pain Relief", &["label".to_string()])
+        .await
+        .expect_err("a name several products share must refuse");
+    assert_eq!(err.exit_code(), 2, "{err}");
+    assert_eq!(
+        err.to_string(),
+        "Invalid argument: Ambiguous drug name 'Pain Relief': several drug products carry this name.\n\
+Candidates:\n- lidocaine\n- menthol\n- acetaminophen\n- hexylresorcinol\n\
+Try `biomcp get drug \"<ingredient>\"`"
+    );
+    server.abort();
+}

@@ -1,0 +1,87 @@
+{
+ "meta": {
+  "results": {
+   "skip": 0,
+   "limit": 5,
+   "total": 1249
+  }
+ },
+ "results": [
+  {
+   "set_id": "5b197cd8-542f-38b4-e063-6294a90ad7d3",
+   "effective_time": "20260909",
+   "openfda": {
+    "brand_name": [
+     "4% Lidocaine Pain Relief Patch"
+    ],
+    "generic_name": [
+     "LIDOCAINE 4%"
+    ],
+    "substance_name": [
+     "LIDOCAINE"
+    ]
+   }
+  },
+  {
+   "set_id": "d846065a-5c39-4f4b-894c-4280acaaf4fa",
+   "effective_time": "20260908",
+   "openfda": {
+    "brand_name": [
+     "Pain Relief Extra Strength"
+    ],
+    "generic_name": [
+     "ACETAMINOPHEN"
+    ],
+    "substance_name": [
+     "ACETAMINOPHEN"
+    ]
+   }
+  },
+  {
+   "set_id": "5a68fe67-5c15-af9a-e063-6294a90a7ec1",
+   "effective_time": "20260901",
+   "openfda": {
+    "brand_name": [
+     "Gaimoa Lidocaine Pain Relief Gel Patches"
+    ],
+    "generic_name": [
+     "LIDOCAINE PAIN RELIEF GEL PATCHES"
+    ],
+    "substance_name": [
+     "LIDOCAINE",
+     "MENTHOL"
+    ]
+   }
+  },
+  {
+   "set_id": "4c150222-06ea-4fcf-967f-84e19846bd66",
+   "effective_time": "20260831",
+   "openfda": {
+    "brand_name": [
+     "MUCINEX INSTASOOTHE SORE THROAT PLUS PAIN RELIEF"
+    ],
+    "generic_name": [
+     "HEXYLRESORCINOL"
+    ],
+    "substance_name": [
+     "HEXYLRESORCINOL"
+    ]
+   }
+  },
+  {
+   "set_id": "5a450e68-07a7-a4bb-e063-6294a90a97c9",
+   "effective_time": "20260830",
+   "openfda": {
+    "brand_name": [
+     "EAYONYUMT NECK PAIN RELIEF"
+    ],
+    "generic_name": [
+     "MENTHOL"
+    ],
+    "substance_name": [
+     "MENTHOL"
+    ]
+   }
+  }
+ ]
+}
