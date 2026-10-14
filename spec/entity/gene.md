@@ -2,7 +2,8 @@
 
 Gene search is the fastest way to anchor a BioMCP session in a stable entity.
 These canaries keep the focus on durable identity, deepen-path guidance, and
-opt-in sections instead of volatile upstream counts or copy-edit trivia.
+opt-in sections instead of volatile upstream counts or copy-edit trivia. A
+page edit like this one must never cost a Rust compile.
 
 ## Symbol-Based Search
 
