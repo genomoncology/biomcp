@@ -18,4 +18,4 @@ A ticket branch fails CI when the release would fail, so a tag needs one rehears
 - Keeps: the tag-time version check.
 - Changes: run the changelog coverage and green-CI query steps in CI on every ticket branch with the real `gh`; let the coverage check skip tickets whose diff touches only `sdlc/`, `docs/` process files or CI; add a lint step that fails on a ticket number in a source comment.
 - Proof: a branch with a missing bullet fails CI; a process-only ticket passes without a bullet; a planted comment ticket number fails lint and main passes; the 0.9.3 tag passes its first rehearsal.
-- Defers: nothing.
+- Defers: the changelog's file shape and the hand-written 0.9.3 ticket list in the changelog test (2083).
