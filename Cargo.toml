@@ -12,6 +12,7 @@ keywords = ["bioinformatics", "mcp", "genomics", "clinical-trials", "pubmed"]
 categories = ["command-line-utilities", "science"]
 exclude = [
     ".config/",
+    "CLAUDE.md",
     "architecture/",
     "protos/",
     "scripts/regenerate-alphagenome-proto",
