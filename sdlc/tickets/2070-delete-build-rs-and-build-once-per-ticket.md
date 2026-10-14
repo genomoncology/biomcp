@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 0fcfebb, accept
+
 ## Outcome
 
 Editing a doc, a spec page or a Python test recompiles nothing, and a ticket's gates compile BioMCP once in the dev profile.
