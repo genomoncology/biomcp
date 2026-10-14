@@ -25,3 +25,10 @@ A ticket-branch push whose only change since a tip with a green CI run is under 
 - Proof: new cases in `tests/test_ci_classify_push_script.py` with a fake `gh` on `PATH`: an sdlc-only push over a green tip gives `docs_only=true`; the same push over a failed, missing or in-progress tip gives false; a push touching any file outside `sdlc/` gives false; a force push whose before is not an ancestor gives false; a push to `main` gives false. All fail on current main except the false cases. Then on a scratch `ticket/` branch: push a code change, wait for green, push an sdlc-only commit, and record both runs' durations in the review.
 - Defers: making pm record reviews without a branch commit (a pm question, asked by mail); the CI restructure (2075).
 - Order: right after 2083. It shares no file with 2070, 2083 or the product tickets; it shares `.github/workflows/ci.yml` with 2074 to 2076, which come later.
+
+## Amendment 2026-10-14: AGENTS.md leaves the docs-only allow list
+
+`spec/surface/mcp.md` ("Root Agent Guide Declares The Contract") reads `AGENTS.md`, so an `AGENTS.md`-only push must run the spec pages. On 2026-10-14 commit 393737eae changed only `AGENTS.md`, classified as docs-only, skipped the spec pages on its branch, and turned main red until ec4029345.
+
+- Changes: remove `AGENTS.md` from the merge-base route's allow list in `scripts/ci-classify-push.sh`, and update the allow-list string `tests/test_ci_workflow_contract.py` strips.
+- Proof: a case in `tests/test_ci_classify_push_script.py` where a push changing only `AGENTS.md` gives `docs_only=false`; it fails on current main.
