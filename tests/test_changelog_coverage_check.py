@@ -26,10 +26,11 @@ def _fake_git(
 ) -> None:
     """Answer git subprocess calls by leading subcommand, not by order.
 
-    The coverage check runs `git tag`, `git log`, `git diff` and
-    `git show <ref>:<path>` in whatever order it needs them, so
-    dispatching on the first argument keeps the harness honest when
-    the script changes. The `show` value maps `ref:path` to a body.
+    The coverage check runs `git tag`, `git log`, `git diff`, `git
+    ls-tree` and `git show <ref>:<path>` in whatever order it needs
+    them, so dispatching on the first argument keeps the harness
+    honest when the script changes. The `show` value maps `ref:path`
+    to a body.
     """
     script = directory / "git"
     body = "#!/usr/bin/env bash\nset -euo pipefail\n"
@@ -56,16 +57,20 @@ def _run(
     subjects: list[str],
     records: list[str] | None = None,
     tickets: dict[str, str] | None = None,
+    tagged_tickets: list[str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """Ticket files map path to the file's content at the tag; they
     reach the gate through the `diff` name list and the `git show
-    tag:path` body, the two calls the status source makes."""
+    tag:path` body, the two calls the status source makes.
+    `tagged_tickets` lists the ticket files present in the tagged
+    tree, the source the milestone check reads."""
     _fake_git(
         tmp_path,
         {
             "tag": ["v0.9.0", "v0.9.1"],
             "log": subjects,
             "diff": list(records or []) + list(tickets or {}),
+            "ls-tree": tagged_tickets or [],
             "show": {
                 f"v0.9.1:{path}": content for path, content in (tickets or {}).items()
             },
@@ -644,6 +649,68 @@ def test_dated_and_yearly_records_do_not_count_as_tickets(tmp_path: Path, monkey
     # Date-shaped names never count (any year); ticket numbers of
     # 2000 and above count — the cap is gone (2026-09-29 review).
     assert found == {"1265", "0843", "1255", "2000", "2027"}, found
+
+def test_milestone_problems_names_each_kind_of_wrong_ticket() -> None:
+    # A ticket filed for the milestone raises no problem; a missing
+    # file or a milestone-less file proves nothing and only names
+    # itself for the strict dev-cycle shape test.
+    tickets = {
+        "1234": "Status: complete.\nMilestone: 0.9.2\n",
+        "1235": "Status: complete.\n",
+        "1236": None,
+        "1237": "Milestone: 0.9.3\n",
+    }
+    section = "- Fixed the gates. (1234, 1235 and 1236)\n- Trimmed the lints. (1237)\n"
+    assert _MODULE.milestone_problems(section, "0.9.3", tickets.get) == {
+        "1234": "0.9.2",
+        "1235": _MODULE.NO_MILESTONE,
+        "1236": _MODULE.NO_TICKET_FILE,
+    }
+
+
+def test_cited_ticket_of_another_milestone_fails_the_tag_run(
+    tmp_path: Path,
+) -> None:
+    # Ticket 2083: a section that cites another milestone's ticket
+    # misfiles its bullets, and the release gate must refuse it.
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        tickets={"sdlc/tickets/1234-lane.md": "Status: complete.\nMilestone: 1.0\n"},
+        tagged_tickets=["sdlc/tickets/1234-lane.md"],
+        changelog="# C\n\n## 0.9.1 — 2026-09-23\n\n- Fixed release publication. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "1234 (1.0)" in result.stderr
+
+
+def test_cited_ticket_without_a_milestone_line_passes_the_tag_run(
+    tmp_path: Path,
+) -> None:
+    # Early 0.9.2 tickets carry no Milestone line; a milestone-less
+    # file cannot prove another release, so the tag run accepts it.
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1287-gate'"],
+        tickets={"sdlc/tickets/1287-sweep.md": "Status: complete.\n"},
+        tagged_tickets=["sdlc/tickets/1287-sweep.md"],
+        changelog="# C\n\n## 0.9.1 — 2026-09-23\n\n- Swept after the release. (1287)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_cited_ticket_without_a_ticket_file_passes_the_tag_run(
+    tmp_path: Path,
+) -> None:
+    # Tickets 1288 and 1289 carry no ticket file at all; a missing
+    # record proves nothing about the milestone.
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1288-gate'"],
+        changelog="# C\n\n## 0.9.1 — 2026-09-23\n\n- Recorded release planning. (1288)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
 
 def test_carried_tickets_from_another_release_line_do_not_demand_bullets() -> None:
     """A v0.9.x tag covers milestone 0.9.x tickets only (2046).
