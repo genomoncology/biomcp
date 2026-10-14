@@ -57,7 +57,7 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
     assert "git merge-base" in classify
     assert "sdlc/*|notes/*" in classify
     allow_list = classify.split("case")[1].split("esac")[0]
-    stripped = allow_list.replace("sdlc/*|notes/*|AGENTS.md|.github/*.md)", "")
+    stripped = allow_list.replace("sdlc/*|notes/*|.github/*.md)", "")
     for executable in ("docs/*", "README.md|", "|README"):
         assert executable not in stripped, (
             "docs/ and README.md are read by Rust tests and compiled in; they must run full CI"
@@ -68,6 +68,15 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
     assert "CHANGELOG.md" not in allow_list, (
         "CHANGELOG.md is read by tests/test_docs_changelog_refresh.py; "
         "a changelog-only push must run the lane that carries it"
+    )
+    # AGENTS.md left the allow list too (2026-10-14 amendment):
+    # spec/surface/mcp.md reads it, so an AGENTS.md-only push must
+    # run the spec pages — its docs-only skip is what turned main
+    # red on 2026-10-14 until ec4029345.
+    allow_line = next(line for line in classify.splitlines() if "sdlc/*|notes/*" in line)
+    assert "AGENTS.md" not in allow_line, (
+        "AGENTS.md is read by spec/surface/mcp.md; an AGENTS.md-only push "
+        "must run the spec pages, so it must not be docs-only"
     )
 
 
@@ -172,6 +181,23 @@ def test_the_changes_job_covers_the_whole_push() -> None:
     assert run_step["run"] == "scripts/ci-classify-push.sh"
     assert run_step["env"]["PUSH_BASE_REF"] == "origin/main"
     assert run_step["env"]["PUSH_AFTER"] == "${{ github.sha }}"
+
+
+def test_the_changes_job_can_ask_for_the_previous_tips_run() -> None:
+    """Ticket 2086: the green-tip route needs the push's before sha
+    and a token that may read actions. A job-level permissions block
+    replaces the workflow-level one entirely, so the job restates
+    contents: read (the checkout needs it) and adds actions: read.
+    """
+    changes = _job("changes")
+    assert changes["permissions"] == {"contents": "read", "actions": "read"}, (
+        "the classify job must hold contents: read (checkout) and "
+        "actions: read (the run query); a job block that named only "
+        "actions would strip the checkout's contents: read"
+    )
+    run_step = next(s for s in changes["steps"] if s.get("id") == "classify")
+    assert run_step["env"]["PUSH_BEFORE"] == "${{ github.event.before }}"
+    assert run_step["env"]["GH_TOKEN"] == "${{ github.token }}"
 
 
 def test_the_cache_follows_checkout_and_toolchain_and_is_pinned() -> None:
