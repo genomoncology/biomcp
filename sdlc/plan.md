@@ -43,6 +43,7 @@ Open tickets in the order I want them taken. Status comes from pm, never from th
 - 2070
 - 2083
 - 2086
+- 2075
 - 2073
 - 2071
 - 2072
@@ -52,8 +53,9 @@ Open tickets in the order I want them taken. Status comes from pm, never from th
 - 2085
 - 2067
 - 2068
+- 2087
+- 2088
 - 2074
-- 2075
 - 2076
 - 2077
 - 2078
@@ -67,4 +69,4 @@ Open tickets in the order I want them taken. Status comes from pm, never from th
 - 2003
 - 2004
 
-2070 comes first because every later ticket builds and tests through it. 2083 follows it because every later ticket adds a changelog bullet, and until 2083 changes the file's shape each landing conflicts with the last. 2086 comes next because every landing reruns the full gates on pm's review-record commit, so each later landing waits one CI run less once it lands; it shares no file with the tickets around it. 2073 and 2071 can run side by side: both wait for 2070, and they share no file. 2072 follows 2070 because both edit `Cargo.toml`. 2065 lands after 2073 because they edit different parts of the same two MCP files. 2066, 2084 and 2085 are three separate product fixes that share no code file with anything above, so they can run alongside any of it. 2067 and 2068 are the remaining product fixes. 2074 to 2076 change CI and lint, one at a time because they share workflow files. 2077 and 2078 finish the dependency work. 2079 builds the replay server and golden suite that 2080 and 2081 need. 2082 measures the result against the baseline record. 0.9.3 exits when 2082 records the after numbers and the tag passes its first rehearsal. The plans behind these tickets are `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
+2070 comes first because every later ticket builds and tests through it. 2083 follows it because every later ticket adds a changelog bullet, and until 2083 changes the file's shape each landing conflicts with the last. 2086 comes next because every landing reruns the full gates on pm's review-record commit, so each later landing waits one CI run less once it lands. 2075 follows 2086 because every later landing waits on CI two or three times, and running the lanes in parallel off one build shortens each of those waits; it needs 2070's single dev build, and it shares `.github/workflows/ci.yml` with 2086, 2074 and 2076, so those four go 2086, 2075, 2074, 2076. 2073 and 2071 can run side by side once 2070 lands; they share no file. The `Makefile` chain is 2070, 2075, 2071, 2076, and the `Cargo.toml` chain is 2070, 2072, 2077, 2078; each ticket in a chain lands before the next starts. 2065 lands after 2073 because they edit different parts of the same two MCP files. The product fixes 2066, 2084, 2085, 2067 and 2087 share no code file with the build work or each other, so they run alongside any of it. 2068 lands after 2085, which edits the same drug lookup file, and 2088 lands after 2065, whose health files sit beside its own. 2077 and 2078 finish the dependency work; they both edit `deny.toml`, so they land one after the other, and 2078 lands after 2088 because both edit the FDA orphan source. 2079 builds the replay server and golden suite that 2080 and 2081 need. 2082 measures the result against the baseline record. 0.9.3 exits when 2082 records the after numbers and the tag passes its first rehearsal. The plans behind these tickets are `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md` and `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`. Among the 1.0 tickets, 2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
