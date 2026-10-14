@@ -13,7 +13,9 @@ DEV_CYCLE_HEADING = f"## {DEV_CYCLE_VERSION}"
 EXPECTED_RELEASE_TICKETS = {
     DEV_CYCLE_VERSION: {
         2061,
+        2064,
         2069,
+
     },
     "0.9.2": {
         1287,
