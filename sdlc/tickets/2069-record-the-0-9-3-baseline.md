@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision fda07f8, accept
+
 ## Outcome
 
 One record holds every number 0.9.3 is judged by, measured on v0.9.2 on the build host with nothing else building, so 2082 can repeat the same commands after the plan lands.
