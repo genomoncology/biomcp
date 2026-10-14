@@ -65,7 +65,7 @@ for both lanes.
 
 ## Releases
 
-A ticket merged for a release carries its changelog bullet in its own landing, so the release gate never finds a ticket without one.
+A ticket merged for a release carries its changelog bullet in its own landing, so the release gate never finds a ticket without one. Keep the New features, Fixes and Internal headings of the release under way in place even when a section is empty, so no landing adds or moves a heading.
 
 `docs/reference/release-process.md` is the release runbook of record. A
 published release builds five platform archives, publishes PyPI wheels through

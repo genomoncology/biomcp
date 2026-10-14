@@ -12,6 +12,10 @@ EXPECTED_GITATTRIBUTES = """*.pdf binary
 
 # The vendored tokenizer cache is an offline asset, not reviewable text
 benchmarks/output-footprint/tokenizer-cache/* -diff
+
+# Every landing only appends a bullet, so the union driver keeps two
+# branches' bullets without a conflict
+CHANGELOG.md merge=union
 """
 
 
@@ -34,6 +38,12 @@ def test_binary_asset_gitattributes_contract_is_exact() -> None:
     assert (REPO_ROOT / ".gitattributes").read_text(encoding="utf-8") == (
         EXPECTED_GITATTRIBUTES
     )
+
+
+def test_changelog_merges_with_the_union_driver() -> None:
+    # Ticket 2083: two branches that each append a bullet must merge
+    # without a conflict, so the union driver has to be live in git.
+    assert _git_check_attr("CHANGELOG.md")["merge"] == "union"
 
 
 def test_pdf_fixture_is_treated_as_binary_by_git() -> None:

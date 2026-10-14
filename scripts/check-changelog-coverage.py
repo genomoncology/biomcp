@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from pathlib import Path
 import re
 import subprocess
@@ -227,6 +228,71 @@ def described_tickets(section: str) -> set[str]:
     return found
 
 
+# A cited ticket whose file is missing or milestone-less cannot prove
+# another release: the milestone convention arrived mid-0.9.2 and
+# tickets 1288 and 1289 carry no ticket file at all, so the tag run
+# tolerates both and fails only a ticket whose file names another
+# milestone.
+NO_TICKET_FILE = "no ticket file"
+NO_MILESTONE = "no milestone"
+
+
+def cited_tickets(section: str) -> set[str]:
+    """Ticket numbers a changelog section cites in parentheses."""
+    found: set[str] = set()
+    for group in re.findall(r"\(([^)]+)\)", section):
+        for token in re.split(r",|and", group):
+            token = token.strip()
+            if token.isdigit():
+                found.add(token)
+    return found
+
+
+def tag_ticket_reader(tag: str) -> Callable[[str], str | None]:
+    """Read a cited ticket's file as it stands at `tag`.
+
+    Ticket files move after a release, so the gate reads the tagged
+    tree, not the working tree.
+    """
+    paths = {
+        match.group(1): name
+        for name in run_git(
+            "ls-tree", "--name-only", tag, "--", "sdlc/tickets/"
+        ).splitlines()
+        if (match := TICKET_FILE.match(name)) is not None
+    }
+
+    def read(ticket: str) -> str | None:
+        path = paths.get(ticket)
+        return run_git("show", f"{tag}:{path}") if path is not None else None
+
+    return read
+
+
+def milestone_problems(
+    section: str, milestone: str, read_ticket: Callable[[str], str | None]
+) -> dict[str, str]:
+    """Why each ticket a section cites is not a ticket of `milestone`.
+
+    The value is NO_TICKET_FILE when no ticket file exists, NO_MILESTONE
+    when the file carries no Milestone line, and the milestone the file
+    carries otherwise. Only the last value proves the cited ticket
+    belongs to another release.
+    """
+    problems: dict[str, str] = {}
+    for ticket in sorted(cited_tickets(section), key=int):
+        content = read_ticket(ticket)
+        if content is None:
+            problems[ticket] = NO_TICKET_FILE
+            continue
+        found = re.search(r"^Milestone:\s*(\S+)", content, re.MULTILINE)
+        if found is None:
+            problems[ticket] = NO_MILESTONE
+        elif found.group(1) != milestone:
+            problems[ticket] = found.group(1)
+    return problems
+
+
 def main() -> int:
     args = parse_args()
     if not STABLE_TAG.fullmatch(args.tag):
@@ -243,6 +309,9 @@ def main() -> int:
         tickets = merged_tickets(previous, args.tag)
         label, section = section_text(args.changelog, args.tag)
         described = described_tickets(section)
+        problems = milestone_problems(
+            section, args.tag.removeprefix("v"), tag_ticket_reader(args.tag)
+        )
     except RuntimeError as error:
         print(f"changelog coverage check failed: {error}", file=sys.stderr)
         return 1
@@ -251,6 +320,18 @@ def main() -> int:
         print(
             f"CHANGELOG {label} is missing described bullets for tickets merged since {previous}: "
             + ", ".join(missing),
+            file=sys.stderr,
+        )
+        return 1
+    conflicts = {
+        ticket: problem
+        for ticket, problem in sorted(problems.items(), key=lambda item: int(item[0]))
+        if problem not in (NO_TICKET_FILE, NO_MILESTONE)
+    }
+    if conflicts:
+        print(
+            f"CHANGELOG {label} cites tickets filed for another milestone: "
+            + ", ".join(f"{ticket} ({problem})" for ticket, problem in conflicts.items()),
             file=sys.stderr,
         )
         return 1

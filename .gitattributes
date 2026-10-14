@@ -5,3 +5,7 @@
 
 # The vendored tokenizer cache is an offline asset, not reviewable text
 benchmarks/output-footprint/tokenizer-cache/* -diff
+
+# Every landing only appends a bullet, so the union driver keeps two
+# branches' bullets without a conflict
+CHANGELOG.md merge=union
