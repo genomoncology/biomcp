@@ -409,7 +409,7 @@ async fn combined_gene_and_trait_queries_run_at_once_and_keep_the_sequential_row
                     let _ = stream.write_all(refused.as_bytes()).await;
                     return;
                 };
-                tokio::time::sleep(HOLD).await;
+                tokio::time::sleep(HOLD).await; // watchdog: the 1.5 s reply hold is the measured subject of the parallel proof
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                     body.len()
@@ -435,7 +435,7 @@ async fn combined_gene_and_trait_queries_run_at_once_and_keep_the_sequential_row
     server.abort();
 
     assert!(
-        elapsed < PAGE_DEADLINE,
+        elapsed < PAGE_DEADLINE, // watchdog: bounds the parallel proof at 2.5 s
         "two replies held 1.5 s each must answer together, not one after the other: {elapsed:?}"
     );
 

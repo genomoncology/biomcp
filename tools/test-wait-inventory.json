@@ -175,9 +175,14 @@
       "count": 0,
       "language": "rust",
       "markers": 3
+    },
+    "src/entities/variant/gwas/tests.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 2
     }
   },
-  "marker_total_ceiling": 46,
+  "marker_total_ceiling": 48,
   "raises": [
     {
       "file": "(global)",
@@ -274,6 +279,14 @@
       "to": 46,
       "reason": "three bounded deadline-test waits moved with the extracted ClinVar module",
       "ticket": "1291"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 46,
+      "to": 48,
+      "reason": "the GWAS parallel proof holds each fixture reply 1.5 s and bounds the page at 2.5 s; the clock is the measured subject, marked on its two lines",
+      "ticket": "2089"
     }
   ]
 }
