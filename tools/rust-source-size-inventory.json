@@ -137,13 +137,13 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1428,
+      "baseline_lines": 1577,
       "floor_lines": 1273,
       "authorized_increase": {
-        "ticket": "2052",
-        "delta": 155,
-        "reason": "the comment sweep states rules without ticket numbers, shifting line counts and one dead-code reason",
-        "removal_condition": "ticket 2052 lands or its review rejects the sweep"
+        "ticket": "2085",
+        "delta": 304,
+        "reason": "the shared-name refusal adds the identity-answer enum, the candidate ranking, the refusal builder, and their call-site updates to the resolver",
+        "removal_condition": "extract the label identity vote and its refusal into the label module when the next drug-resolution ticket touches the resolver"
       }
     },
     {
