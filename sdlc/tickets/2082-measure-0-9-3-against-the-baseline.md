@@ -14,7 +14,8 @@ Every number in the 2069 baseline is measured again on the 0.9.3 release candida
 
 - Starts from: the 2069 script and record.
 - Keeps: the same host, conditions and commands.
-- Changes: claims `tools/measure-0-9-3-baseline`. Run the script on the release candidate; add the after column to the 2069 record with each change named; add a targets table for the hard targets in [the 2026-10-14 decision](../decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md): median ticket-branch CI wall time about 10 minutes, `make test` about 3 minutes, `make spec` about 3 minutes, no routine test over a few seconds, and the test-code share against the target set after 2081's first batch.
+- Changes: claims `tools/measure-0-9-3-baseline`. Run the script on the release candidate; add the after column to the 2069 record with each change named; add a targets table for the hard targets in [the 2026-10-14 decision](../decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md), in the numbers the tickets enforce: median ticket-branch CI wall time 11 minutes or less (2094), `make test` 200 s or less (2094), `make spec` 200 s or less (2080), no routine test over 10 s (2095), and the test-code share against the target set after 2081's first batch.
+  - The CI block reads green `ci.yml` runs whose `head_branch` starts with `ticket/`, so `main` runs that still carry the heavy jobs stay out. A run counts as full when its `rust-tests` job ran and succeeded, not when it used more than 30 runner-minutes, since a ticket-branch run sheds about 42 runner-minutes once 2075 moves the heavy jobs to `main`. It prints the median and range over the last ten full runs.
 - Proof: the record with both columns and each target marked met or missed with its number; the 0.9.3 rehearsal run passes on its first try.
 - Defers: nothing.
 

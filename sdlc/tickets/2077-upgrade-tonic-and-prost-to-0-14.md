@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Depends on: 2072
+
 ## Outcome
 
 With all features on, the AlphaGenome client builds on tonic and prost 0.14, the tree holds one copy each of tower, indexmap, socket2 and axum, and `deny.toml` has no `rustls-pemfile` advisory exception.

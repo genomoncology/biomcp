@@ -6,7 +6,7 @@ Milestone: 0.9.3
 
 ## Outcome
 
-A full ticket-branch CI run takes the build job plus its longest routine lane, with a median wall time of at most 20 minutes over ten full runs, down from 25.4 to 27.4 minutes in the 2069 baseline, and the all-features, Windows, stress and release-panic jobs run only on pushes to `main`.
+A full ticket-branch CI run takes the build job plus its longest routine lane, with a median wall time of at most 20 minutes over the branch's own full runs, down from 25.4 to 27.4 minutes in the 2069 baseline, and the all-features, Windows, stress and release-panic jobs run only on pushes to `main`.
 
 ## Evidence
 
@@ -25,6 +25,6 @@ A full ticket-branch CI run takes the build job plus its longest routine lane, w
   - `full-features`, `windows-contracts`, `stress-lane` and `release-panic` run only on pushes to `main`. The tag needs green CI on its commit, so they still gate every release.
   - `tests/test_alphagenome_proto_generation.py` asserts `setup-protoc` appears exactly twice in `ci.yml`; keep protoc out of the new lanes or update that count.
   - One Internal changelog bullet.
-- Proof: wall time from the Actions API for ten full ticket-branch runs after landing, compared with the 2069 baseline's table, each run listing no full-features, windows-contracts, stress-lane or release-panic job; one run on `main` that lists all four; one run where a planted failing Rust test fails `rust-tests` while the other lanes still report.
+- Proof: before landing, the branch's own CI run plus five reruns (`gh run rerun`), with the median wall time of the six from the Actions API at 20 minutes or less, compared with the 2069 baseline's table, each run listing no full-features, windows-contracts, stress-lane or release-panic job; five reruns, not ten, because reruns of one run go one after another and each costs wall time; one run on `main` that lists all four; one run where a planted failing Rust test fails `rust-tests` while the other lanes still report.
 - Defers: shortening the Python lane (2071, 2076) and the spec lane (2080); the 10-minute median and the one-full-check rule (2094).
 - Order: after 2070, which builds the single dev binary these lanes share. Right after 2086, which also edits `.github/workflows/ci.yml`; before 2074 and 2076, which edit the same file. It edits the `Makefile` `test` target that 2071 also edits, so 2075 lands first and 2071 rebases onto it. 2073 and 2072 rebase onto it for `tests/test_upstream_planning_analysis_docs.py` and `tests/test_alphagenome_proto_generation.py`.

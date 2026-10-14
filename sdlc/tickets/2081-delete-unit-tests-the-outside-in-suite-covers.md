@@ -6,7 +6,7 @@ Milestone: 0.9.3
 
 ## Outcome
 
-Every Rust and Python test left in the routine suite is a behavior test through a real entry point, an edge-case table, a contract check or a regression test that failed before its fix, and no routine test waits on the wall clock.
+Every Rust and Python test left in the routine suite is a behavior test through a real entry point, an edge-case table, a contract check, a regression test that failed before its fix, or a test that pins one of BioMCP's refusals, and no routine test waits on the wall clock.
 
 ## Evidence
 
@@ -18,10 +18,12 @@ Every Rust and Python test left in the routine suite is a behavior test through 
 - Starts from: the per-file outside-in coverage method in `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, the dead-code list in `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`, and the four kinds in the decision.
 - Keeps: behavior tests through `biomcp` commands and the MCP server, edge-case tables for parsers and resolvers, contract checks on JSON and Markdown output, the MCP schema and releases, and every regression test that pins a refusal or a fixed wrong answer.
 - Changes: claims `CHANGELOG.md`. Each batch names its files on this ticket before its first push, and avoids files an open product ticket claims, so the parallel lane never waits on it.
+  - Files every batch avoids while their tickets are open: `tests/conftest.py` and `tests/test_source_package_boundary.py` (2071); the ratchet self-tests `tests/test_quality_ratchet_contract.py` and `tests/test_test_wait_ratchet_check.py` (2076, which deletes them); the four `tests/test_*_fixture_lifecycle.py` files (2080); `src/entities/drug/get/tests.rs` and the other drug files (2085, 2090, 2068). `pm next` shows the current claims.
+  - Keep the four Rust tests the `Makefile` `stress` target names in its `-E` filter, since nextest fails when a filter matches no test.
   - Work in small batches, one module or file group each, starting with the 75 files the outside-in suite already covers at 90% or more. Each batch deletes every test that is not one of the four kinds and the test-only items and unread fields its deleted tests used.
   - Where a kept behavior has no outside-in test, write that test in the same batch before deleting the inside one. Do not add outside-in tests for behavior nobody needs; delete the code instead.
-  - Give each slow test that stays an injected clock or a shorter deadline.
+  - Give each slow test that stays an injected clock or a shorter deadline. The last batch removes the remaining test sleeps and deletes 2076's group allowances for them (`#![cfg_attr(test, allow(clippy::disallowed_methods))]` in `src/lib.rs` and ruff's `per-file-ignores` for `time.sleep`).
   - Each batch lands on its own: `pm ticket progress 2081 --landed SHA --next TEXT`. Run `pm ticket land` after the last batch.
   - One Internal changelog bullet, with the first batch.
-- Proof: per batch, the Rust and Python test counts, the lib test compile time and the routine test run time before and after, and outside-in and combined coverage reported, not gated; the first batch also records the share of test code, so the milestone's test-code target can be set; at the end, no routine test takes more than a few seconds in `cargo nextest run --no-default-features` or `pytest --durations=0`.
+- Proof: per batch, the names of the deleted tests, so the reviewer can confirm none pins a refusal or a fixed wrong answer; the Rust and Python test counts, the lib test compile time and the routine test run time before and after; outside-in and combined coverage reported, not gated. The first batch also records the share of test code, so the milestone's test-code target can be set. At the end, no routine test takes more than 10 s in `cargo nextest run --no-default-features` or `pytest --durations=0`, and no test sleep allowance remains.
 - Defers: enforcing the per-test limit in the runners (2095); the `search all` golden cases (2079).

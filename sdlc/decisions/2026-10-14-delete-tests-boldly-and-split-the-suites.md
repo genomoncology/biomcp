@@ -33,3 +33,7 @@ Asked to choose between a cautious plan and a more aggressive one, he approved t
 - The 2075 PM decision of 2026-10-14 that only release-panic moves to main-only and that full-features and windows-contracts stay on every push, with its 22-minute target.
 - "A few minutes" as the spec-page target in 2080.
 - The 0.9.3 order in `sdlc/plan.md` that put the run-time tickets ahead of the test cleanup and the test cleanup last.
+
+## Amendment, 2026-10-14
+
+The tickets state the targets as checkable numbers: ticket-branch CI median 11 minutes or less and `make test` 200 s or less (2094), `make spec` 200 s or less (2080), and no routine test over 10 s (2095). Those numbers are the enforceable form of the targets in rule 4.
