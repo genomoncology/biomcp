@@ -4,12 +4,14 @@ SHELL := /bin/bash
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
-SPEC_PROFILE ?= spec
+SPEC_PROFILE ?= dev
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
 PYTEST_WORKERS ?= 4
 PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
-SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
+# Cargo maps the dev profile to target/debug; every other profile name is
+# its own directory under target/.
+SPEC_BIN ?= $(CURDIR)/target/$(if $(filter dev,$(SPEC_PROFILE)),debug,$(SPEC_PROFILE))/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
 CARGO_WITH_IDENTITY = tools/with-build-identity cargo
@@ -31,9 +33,13 @@ build:
 prepare-routine-test-tmp:
 	mkdir -p "$(ROUTINE_TEST_TMPDIR)"
 
-prepare-test: prepare-routine-test-tmp prepare-test-contracts
+# The nextest archive builds the bin, the MCP example, and every test unit
+# in one dev-profile cargo invocation; the contract build after it is a
+# freshness check that compiles nothing unless the archive did not run.
+prepare-test: prepare-routine-test-tmp
 	mkdir -p "$(CURDIR)/.cache"
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
+	$(MAKE) prepare-test-contracts
 
 test:
 	$(MAKE) prepare-test

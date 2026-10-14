@@ -325,7 +325,8 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   the AlphaGenome behavior tests with `cargo test`, and builds the all-feature
   release CLI.
 - Repo-local `make test` runs `cargo nextest run` plus the Python/docs contract
-  lane against `target/spec/biomcp`. Python contract files use four bounded
+  lane against `target/debug/biomcp`, the same dev-profile binary every
+  routine gate builds once per ticket. Python contract files use four bounded
   pytest workers with file-based distribution; `PYTEST_WORKERS=1` is the
   diagnostic override. Routine `make spec` shares that selected binary; the CI
   `canonical-gates` job invokes those same Make targets, while the

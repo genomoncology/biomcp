@@ -27,7 +27,7 @@ FIXTURE_CLEANUP = (
 )
 FIXTURE_ENV = REPO_ROOT / ".cache/spec-ctgov-intervention-alias-env"
 FIXTURE_LOCK = REPO_ROOT / ".cache/spec-routine-fixtures.lock"
-REFERENCE_BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/spec/biomcp"))
+REFERENCE_BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
 REFERENCE_CAPTURES = REPO_ROOT / "testdata/sources/ctgov"
 REFERENCE_FIELDS = [
     "BriefSummary",
@@ -82,7 +82,7 @@ def test_combined_geo_and_eligibility_filters_fetch_one_detail_projection() -> N
         try:
             fixture_env = _read_exports(FIXTURE_ENV)
             env = os.environ | fixture_env
-            biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp"))
+            biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp"))
             completed = subprocess.run(
                 [
                     biomcp_bin,
@@ -142,7 +142,7 @@ def _run_alias_search_with_detail_log(
                 "BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE"
             ]
             biomcp_bin = env.get(
-                "BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp")
+                "BIOMCP_BIN", str(REPO_ROOT / "target/debug/biomcp")
             )
             completed = subprocess.run(
                 [

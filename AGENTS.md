@@ -43,11 +43,15 @@ https://biomcp.org/:
 
 ## Working
 
-While you work, run only the tests for what changed:
+While you work, run only the tests for what changed, with incremental
+compilation on for the whole edit loop:
 
 ```
-cargo nextest run --no-default-features -E 'test(...)'
+CARGO_INCREMENTAL=1 cargo nextest run --no-default-features -E 'test(...)'
 ```
+
+Keep `CARGO_INCREMENTAL` set for the whole loop and unset it for the gates:
+toggling the setting recompiles the crate.
 
 Before landing, run `make lint`, `make test` and `make spec` once on the final
 branch state, and rerun a gate only when the code changed since that run; CI

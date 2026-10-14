@@ -21,9 +21,9 @@ use super::{
 pub(super) const ARTICLE_SEARCH_DEADLINE: Duration = Duration::from_secs(60);
 
 /// The article-search deadline budget. The `BIOMCP_TEST_` override mirrors
-/// the citation-graph deadline seam: recorded fixtures run the release-shaped
-/// spec binary (no `debug_assertions`), so the hook is read unconditionally,
-/// exactly like `BIOMCP_TEST_UNPACED_ORIGIN`.
+/// the citation-graph deadline seam: recorded fixtures also run the release
+/// binary under `make verify` (no `debug_assertions`), so the hook is read
+/// unconditionally, exactly like `BIOMCP_TEST_UNPACED_ORIGIN`.
 pub(crate) fn article_search_deadline_budget() -> Duration {
     if let Ok(value) = std::env::var("BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS")
         && let Ok(millis) = value.trim().parse::<u64>()

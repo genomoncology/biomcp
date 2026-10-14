@@ -137,7 +137,7 @@ assert "finite" in payload["error"]["message"], payload
 print("CLI non-finite threshold: invalid_argument")
 PY
 
-biomcp_bin="${BIOMCP_BIN:-../../target/spec/biomcp}"
+biomcp_bin="${BIOMCP_BIN:-../../target/debug/biomcp}"
 python3 - "$biomcp_bin" <<'PY'
 import json
 import subprocess
