@@ -21,11 +21,8 @@ fn marker_path(cache_path: &Path) -> PathBuf {
 }
 
 fn write_marker(cache_path: &Path, last_clean_ms: u128) {
-    fs::write(
-        marker_path(cache_path),
-        last_clean_ms.to_string(),
-    )
-    .expect("write startup clean marker");
+    fs::write(marker_path(cache_path), last_clean_ms.to_string())
+        .expect("write startup clean marker");
 }
 
 /// A config whose ten-second age limit expires the entry written at 1 ms.

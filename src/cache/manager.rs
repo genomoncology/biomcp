@@ -651,10 +651,10 @@ mod tests {
     use crate::test_support::TempDirGuard;
     use http_cache::CacheManager;
 
-    #[path = "startup_clean_tests.rs"]
-    mod startup_clean_tests;
     #[path = "stale_marker_tests.rs"]
     mod stale_marker_tests;
+    #[path = "startup_clean_tests.rs"]
+    mod startup_clean_tests;
     #[path = "write_security_tests.rs"]
     mod write_security_tests;
     #[path = "write_security_windows_tests.rs"]
