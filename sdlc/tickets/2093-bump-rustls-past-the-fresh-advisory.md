@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 8b8166f, accept
+
 ## Outcome
 
 `cargo deny check advisories` passes again on main, with rustls at or past the releases that fix the fresh advisories.
