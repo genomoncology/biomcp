@@ -1,13 +1,16 @@
 # Changelog
 
-## 0.9.3
-### New features
+## 0.9.3### New features
 
 - `--disable-sources` and `BIOMCP_DISABLE_SOURCES` turn any source, or any recorded group, off in one setting: the list takes comma- or pipe-separated ids and group names, an unknown name fails with the valid names, `commercial-restricted` covers every source whose recorded terms restrict commercial use, a disabled source is never called and its carried fields drop from output, `biomcp health` and the MCP server description name what is off, and `BIOMCP_DISABLE_KEGG` keeps working as an alias. (2061)
 
 ### Fixes
 
 - Every documented install path works as the docs say: a pinned installer run reads the true version from the staged binary and records it in the receipt instead of the build-time field, the PyPI package keeps its `biomcp-cli` name and installs only the `biomcp` command — uvx users run `uvx --from biomcp-cli biomcp serve` — the install docs state the Python 3.10 floor, that Homebrew covers macOS only, and how to pull or pin the Docker image, the Homebrew formula the release renders carries a `test do` block, and the release publishes the changelog section as the GitHub release notes. (2064)
+
+### Internal
+
+- The repository now carries one baseline record and its measuring script for the 0.9.3 work: binary and build-folder size, build times, dependency counts, gate times, test counts, coverage, CI cost, and command run times, each printed with the command behind it and measured twice on the build host against tag v0.9.2, so the 0.9.3 changes have before-and-after numbers from one source. (2069)
 
 ## 0.9.2 — 2026-10-11
 
