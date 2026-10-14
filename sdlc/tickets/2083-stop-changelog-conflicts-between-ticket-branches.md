@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 8b08177, accept
+
 ## Outcome
 
 Two ticket branches that each add a changelog bullet merge without a conflict, and no test lists the tickets of the release in progress by hand.
