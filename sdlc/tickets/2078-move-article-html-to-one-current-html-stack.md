@@ -6,15 +6,22 @@ Milestone: 0.9.3
 
 ## Outcome
 
-Article HTML parsing and readability run on one current html5ever stack, and the 33-crate html5ever 0.26 stack, syn 1 and the `fxhash` advisory exception are gone.
+Article HTML parsing and readability run on scraper 0.27 and dom_smoothie, so html5ever 0.26, syn 1, the direct `getrandom` and the `fxhash` advisory exception are gone.
 
 ## Evidence
 
-- `readability-rust 0.1` has one release and pins `scraper 0.18`, which pulls html5ever 0.26 beside htmd's 0.38: 33 crates, 34.5 s of release CPU, 24.8 s dev (`sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`, step 7).
-- `scraper 0.27` and a maintained Readability port such as `dom_smoothie` (MIT) share html5ever 0.39.
+- `readability-rust 0.1` has one release and pins `scraper 0.18`, which pulls html5ever 0.26 beside htmd's 0.38: 33 crates, 34.5 s of release CPU, 24.8 s dev (`sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`, step 7). On current main `cargo tree -i syn@1` is non-empty, through html5ever 0.26 from both readability-rust and scraper 0.18.
+- dom_smoothie 0.18.2 (MIT) uses dom_query 0.28, which uses html5ever 0.39, the same version as scraper 0.27 (ISC, which `deny.toml` allows). `uuid` is already in the tree through rmcp.
+- The old proof "at most two html5ever versions" already passes on main (0.26 and 0.38), so the proof names the versions.
+- PM decision 2026-10-14: replace readability-rust with dom_smoothie 0.18.
 
-- Starts from: three scraper call sites (`fda_orphan.rs`, `transform/article/html.rs`, `variant/erepo.rs`) and one Readability call site.
+- Starts from: the scraper call sites `src/sources/fda_orphan.rs:10`, `src/transform/article/html.rs:7` and `src/entities/variant/erepo.rs:446`; the Readability call in `extract_readable_html` (`src/transform/article/html.rs:346`); `getrandom::fill` in `unique_suffix` (`src/sources/gencc/store.rs:1067`).
 - Keeps: article full-text output, checked against the article fixtures.
-- Changes: scraper 0.27; replace readability-rust; use `uuid` for the gencc temp-name nonce and drop the direct `getrandom`.
-- Proof: `cargo tree -i syn@1` is empty; `cargo tree -d` shows at most two html5ever versions; the article fixtures and full-text spec pages pass, and any output change is shown in the review.
-- Defers: moving htmd to the same html5ever.
+- Changes: claims `Cargo.toml` `Cargo.lock` `deny.toml` `src/transform/article/html.rs` `src/sources/fda_orphan.rs` `src/entities/variant/erepo.rs` `src/sources/gencc/store.rs` `CHANGELOG.md`.
+  - scraper 0.27; readability-rust replaced with dom_smoothie 0.18.
+  - `uuid::Uuid::new_v4()` for the gencc nonce; drop the direct `getrandom`.
+  - Drop `RUSTSEC-2025-0057` from `deny.toml`.
+  - One Internal changelog bullet.
+- Proof: `cargo tree -i syn@1` is empty; `cargo tree -d -e normal --all-features` lists html5ever only at 0.38 and 0.39, with no 0.26 (current main lists 0.26 and 0.38); `cargo deny check` passes without the fxhash exception; the article fixtures and full-text spec pages pass, and any output change is shown in the review.
+- Defers: moving htmd to html5ever 0.39 (htmd 0.5.5 still pins 0.38).
+- Order: after 2072, which edits `Cargo.toml` and `src/sources/gencc/store.rs`. It edits `deny.toml` alongside 2077, so the two land one after the other. 2088 also edits `src/sources/fda_orphan.rs`; land 2078 after it.
