@@ -10,6 +10,8 @@ Reviews: revision a8abda6, accept
 
 Reviews: revision a8abda6, accept
 
+Reviews: revision abf68e5, accept
+
 ## Outcome
 
 Once MyChem has named the drug, `biomcp get drug NAME` fetches the openFDA label, the CIViC context, the Open Targets data and the openFDA adverse-event preview at the same time, so the card waits for the slowest of them instead of their sum, and its output is byte-identical.
