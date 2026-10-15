@@ -6,7 +6,7 @@ deps: [2002]
 
 # 2003: Search patients by typed facts
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 
