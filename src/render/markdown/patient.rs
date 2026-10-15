@@ -19,7 +19,7 @@ pub fn search_next_commands_patient(rows: &[PatientSearchRow]) -> Vec<String> {
 
 /// The command text one search row prints for a usable id. A bad id
 /// prints no id and no command.
-pub fn patient_search_next_command(id: &str) -> String {
+fn patient_search_next_command(id: &str) -> String {
     markdown_command_code_span(&format!("biomcp get patient {id}"))
 }
 

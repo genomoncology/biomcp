@@ -78,8 +78,7 @@ pub use self::gene::{
 };
 pub use self::pathway::{pathway_markdown, pathway_search_markdown_with_footer};
 pub use self::patient::{
-    patient_count_markdown, patient_markdown, patient_search_markdown, patient_search_next_command,
-    search_next_commands_patient,
+    patient_count_markdown, patient_markdown, patient_search_markdown, search_next_commands_patient,
 };
 #[allow(unused_imports)]
 pub use self::pgx::{pgx_markdown, pgx_search_markdown_with_footer};

@@ -27,7 +27,12 @@ pub struct PatientSearchArgs {
     #[arg(long)]
     pub condition: Option<String>,
     /// Maximum results, 1-50 (default: 10)
-    #[arg(short, long, default_value = "10", value_parser = clap::value_parser!(usize).range(1..=50))]
+    #[arg(
+        short,
+        long,
+        default_value = "10",
+        value_parser = clap::builder::RangedU64ValueParser::<usize>::new().range(1..=50)
+    )]
     pub limit: usize,
     /// Print the count the server reports instead of the list
     #[arg(long)]
