@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 Reviews: revision a20d580, accept
 
+Reviews: revision 07f8912, accept
+
 ## Outcome
 
 Dev and test builds write line tables instead of full debug info, so they compile, link and fill the target folder faster and smaller, while backtraces still name files and lines. A `debugging` profile gives full debug info when someone needs a debugger.
