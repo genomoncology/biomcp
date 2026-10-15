@@ -1,7 +1,8 @@
 //! NCI CTS trial search helpers.
 
 use crate::entities::SearchPage;
-use crate::entities::disease::resolve_disease_hit_by_name;
+use crate::entities::disease::clinical_reading_label;
+use crate::entities::disease::resolve_disease_hit_by_name_with_retry;
 use crate::error::BioMcpError;
 use crate::sources::mydisease::{MyDiseaseClient, MyDiseaseHit};
 use crate::sources::nci_cts::{
@@ -53,6 +54,21 @@ results may be broader than the requested condition."
     )
 }
 
+/// The refusal's retry sentence on the NCI surface: the clinical
+/// reading's full condition when the reading table carries one, one
+/// candidate's ontology ID or full name otherwise. The install test
+/// found a `get disease` retry tells the trial user nothing about how
+/// to fix the search they ran.
+fn nci_trial_search_retry(condition: &str) -> String {
+    match clinical_reading_label(condition) {
+        Some(label) => {
+            format!("Retry `biomcp search trial -c \"{label}\" --source nci`.")
+        }
+        None => "Retry `biomcp search trial -c` with one candidate's ontology ID or full name."
+            .to_string(),
+    }
+}
+
 async fn resolve_nci_disease_filter_with_client(
     client: &MyDiseaseClient,
     condition: Option<&str>,
@@ -62,40 +78,43 @@ async fn resolve_nci_disease_filter_with_client(
     };
     let (condition, truncated) = truncate_condition_for_grounding(requested);
 
-    let mut grounding = match resolve_disease_hit_by_name(client, condition).await {
-        Ok(hit) => Some(nci_disease_grounding_from_hit(condition, hit)),
-        // The exact-resolution refusal rejects the condition itself; a keyword search
-        // for the raw token would mix the same holders' trials behind a
-        // note, so trial search returns the refusal and its choices
-        // instead of degrading.
-        Err(err @ BioMcpError::InvalidArgument(_)) => return Err(err),
-        Err(BioMcpError::NotFound { .. }) => Some(NciDiseaseGrounding {
-            filter: NciDiseaseFilter::Keyword(condition.to_string()),
-            degrade_note: Some(nci_keyword_degrade_note(
-                condition,
-                "it does not ground to a disease concept in MyDisease",
-            )),
-        }),
-        Err(err) => {
-            warn!(
-                condition,
-                error = %err,
-                "NCI disease grounding failed, falling back to keyword"
-            );
-            let reason_text = err.to_string();
-            let reason = reason_text
-                .lines()
-                .next()
-                .unwrap_or("disease grounding failed");
-            Some(NciDiseaseGrounding {
+    let mut grounding =
+        match resolve_disease_hit_by_name_with_retry(client, condition, nci_trial_search_retry)
+            .await
+        {
+            Ok(hit) => Some(nci_disease_grounding_from_hit(condition, hit)),
+            // The exact-resolution refusal rejects the condition itself; a keyword search
+            // for the raw token would mix the same holders' trials behind a
+            // note, so trial search returns the refusal and its choices
+            // instead of degrading.
+            Err(err @ BioMcpError::InvalidArgument(_)) => return Err(err),
+            Err(BioMcpError::NotFound { .. }) => Some(NciDiseaseGrounding {
                 filter: NciDiseaseFilter::Keyword(condition.to_string()),
                 degrade_note: Some(nci_keyword_degrade_note(
                     condition,
-                    &format!("disease grounding failed ({reason})"),
+                    "it does not ground to a disease concept in MyDisease",
                 )),
-            })
-        }
-    };
+            }),
+            Err(err) => {
+                warn!(
+                    condition,
+                    error = %err,
+                    "NCI disease grounding failed, falling back to keyword"
+                );
+                let reason_text = err.to_string();
+                let reason = reason_text
+                    .lines()
+                    .next()
+                    .unwrap_or("disease grounding failed");
+                Some(NciDiseaseGrounding {
+                    filter: NciDiseaseFilter::Keyword(condition.to_string()),
+                    degrade_note: Some(nci_keyword_degrade_note(
+                        condition,
+                        &format!("disease grounding failed ({reason})"),
+                    )),
+                })
+            }
+        };
     // The truncation note applies whether grounding succeeded on the
     // truncated text or degraded to a keyword search: the search ran on
     // fewer bytes than the caller sent.

@@ -472,7 +472,9 @@ async fn json_server(
 /// `--condition MF` grounds through the same resolver as
 /// `get disease`. When the resolver refuses the abbreviation, the NCI
 /// search returns the refusal with its named candidates and never sends
-/// the keyword request a degrade would send.
+/// the keyword request a degrade would send. The refusal names the
+/// trial-search retry, not the `get disease` retry the install test
+/// found useless to a trial user.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
@@ -527,6 +529,72 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
         message.contains("'MF' also names myelofibrosis (MONDO:0009692)"),
         "{message}"
     );
+    // The retry names the trial search the user ran, with the reading's
+    // full condition — never the `get disease` form.
+    assert!(
+        message.contains("Retry `biomcp search trial -c \"myelofibrosis\" --source nci`."),
+        "{message}"
+    );
+    assert!(!message.contains("Retry `biomcp get disease`"), "{message}");
+    let requests = nci_requests
+        .lock()
+        .expect("lock NCI fixture requests")
+        .clone();
+    assert!(
+        requests.is_empty(),
+        "the refusal must send no NCI request: {requests:?}"
+    );
+}
+
+/// The install test's `search trial -c MM --source nci` refusal: `MM`
+/// names Miyoshi muscular dystrophy alone in the source, so the
+/// refusal leads with the oncology reading (multiple myeloma) and its
+/// retry names the trial search with the reading's full condition.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn nci_mm_refusal_leads_with_the_reading_and_names_the_trial_retry() {
+    let mm_hits =
+        include_str!("../../../../../testdata/sources/mydisease/query_mm.json").to_string();
+    let (disease_base, _disease_requests, disease_server) =
+        json_server(move |request| request.contains("/query?").then(|| (200, mm_hits.clone())))
+            .await;
+    let (nci_base, nci_requests, nci_server) =
+        json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
+
+    let mut restore = FixtureEnv::new();
+    restore.set("NCI_API_KEY", "fixture-key");
+    restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
+    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+
+    let error = super::super::search_page(
+        &TrialSearchFilters {
+            source: TrialSource::NciCts,
+            condition: Some("MM".into()),
+            ..Default::default()
+        },
+        1,
+        0,
+        None,
+    )
+    .await
+    .expect_err("the refusal must reach the caller");
+    tokio::task::yield_now().await;
+    nci_server.abort();
+    disease_server.abort();
+    drop(restore);
+
+    let message = error.to_string();
+    assert!(
+        message.contains(
+            "Candidates:\n- multiple myeloma (MONDO:0009693)\n- Miyoshi muscular dystrophy (MONDO:0009685)\n"
+        ),
+        "{message}"
+    );
+    assert!(
+        message.contains("Retry `biomcp search trial -c \"multiple myeloma\" --source nci`."),
+        "{message}"
+    );
+    assert!(!message.contains("Retry `biomcp get disease`"), "{message}");
     let requests = nci_requests
         .lock()
         .expect("lock NCI fixture requests")
