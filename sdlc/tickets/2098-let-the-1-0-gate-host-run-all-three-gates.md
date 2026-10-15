@@ -34,3 +34,11 @@ The PM rules on the two gaps a lane could not decide.
 - Cause 4 (offline sandbox): `tools/run-offline` keeps its Linux network sandbox. On macOS it runs the command without the sandbox and prints one line to stderr saying the run is not network-isolated, instead of refusing. Linux CI stays the proof that the suite runs offline. A test that reaches the network on macOS while CI stays green is a test defect, filed as its own ticket.
 - Changes: adds `tools/run-offline` to this ticket's work beside the lint bootstrap and the two spec scripts.
 - Proof: acceptance 1 stands, and the `make test` log on the macOS host carries the not-network-isolated line.
+
+## Coordinator rulings on the lane's questions
+
+- Node@22 precedence machine-wide on M5: accepted, per the PM's Node-pin ruling; node@26 stays available via its keg. Record the mechanism here, not in biodata.
+- Gate-host rustfmt/clippy pinned to CI's versions: yes — gate parity includes toolchain parity. The M5 lint findings are presumed skew until the pin lands; GitHub CI (Linux toolchain) on this branch is the arbiter for this landing.
+
+Deferrals: the failing Rust test -> 2106; the 14 macOS spec pages -> 2107.
+
