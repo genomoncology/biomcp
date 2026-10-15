@@ -1,0 +1,3 @@
+# 2006 build record — ticket numbers unique across the lines
+
+Landed 2026-10-15 by fast-forwarding biodata/biomcp-1.0 to 027db7efe (rebased onto the merged line after 2041; review accept recorded at 58f21d0 and again at the landed tip). The check runs from make lint on the 1.0 line: duplicate numbers across main and the line fail naming both paths, line-only tickets below 2001 fail, main passes silently. Proof on M5 at the rebased tip: the check exits 0 and the 9-case contract suite passes (9/9); original lane evidence at 58109d8 including the planted-duplicate proofs. Pre-existing M5 gaps that kept make lint itself from running are ticket 2098.

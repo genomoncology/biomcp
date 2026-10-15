@@ -6,7 +6,7 @@ deps: []
 
 # 2006: Keep ticket numbers unique across main and the 1.0 line
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 
