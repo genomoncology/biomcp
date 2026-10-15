@@ -18,6 +18,7 @@
 - `get drug` now fetches the openFDA label, the CIViC context, the Open Targets data and the openFDA adverse-event preview at the same time once MyChem has named the drug, so the card waits for its slowest source instead of the sum of all four and returns byte-identical output. (2090)
 - `get trial NCT99999999` reports the trial as not found with its search suggestion instead of telling the caller to retry the remote source, `get article 999999999999` treats every all-digit identifier as a PMID and reports no article with that PMID instead of rejecting the identifier format, and `get variant "BRAF Z999Q"` exits 2 naming the residue letter Z that is not an amino acid instead of suggesting a search. (2087)
 - Every follow-up command a variant card prints uses the headline coordinate: a card whose population section resolved a GRCh37 rsID to a GRCh38 coordinate through dbSNP no longer points its CIViC pointer or its trials and articles commands at the resolved coordinate, so following the printed civic command returns the evidence the card counted, and each direct ClinVar row now prints `N submission(s)` from its submission count instead of an empty submitter count. (2067)
+- Single-source relevance searches on Europe PMC and PubTator3 now rank whole 25-row provider pages before slicing, so `--limit 5` and then `--limit 5 --offset 5` return the same ten rows in the same order as `--limit 10`, where a window that straddled a 25-row page boundary could re-rank a short prefix, skip rows, and repeat rows between the two pages. (2084)
 
 ### Internal
 
