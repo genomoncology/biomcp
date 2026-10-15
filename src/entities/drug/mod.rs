@@ -704,7 +704,6 @@ mod outcome_tests {
                 "civic",
                 "indications",
                 "interactions",
-                "label",
                 "safety",
                 "targets",
             ]
