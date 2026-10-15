@@ -61,7 +61,7 @@ def test_lane_setup_installs_unpinned_gate_tools() -> None:
         assert f"run: {gate}" in WORKFLOW
 
 
-def test_the_release_history_checkout_lives_in_the_python_lane() -> None:
+def test_the_release_history_checkout_lives_in_the_python_and_spec_lanes() -> None:
     workflow = yaml.safe_load(WORKFLOW)
     full_history_checkouts = [
         (job_id, step)
@@ -70,15 +70,17 @@ def test_the_release_history_checkout_lives_in_the_python_lane() -> None:
         if step.get("uses", "").startswith("actions/checkout@")
         and step.get("with", {}).get("fetch-depth") == 0
     ]
-    # Three jobs need full history: changes (the docs-only
+    # Four jobs need full history: changes (the docs-only
     # classification diffs the whole push), repository-contracts
-    # (record lineage) and python-lane (the release version
-    # contracts, which the canonical-gates job carried before
-    # ticket 2075 split it).
+    # (record lineage), python-lane (the release version
+    # contracts) and spec-lane (spec/surface/mcp.md runs the
+    # tag-reading version-sync check) — ticket 2075 carried the
+    # last two out of the old canonical-gates job.
     assert {job_id for job_id, _ in full_history_checkouts} == {
         "changes",
         "repository-contracts",
         "python-lane",
+        "spec-lane",
     }
     assert all(
         step["with"].get("filter") == "blob:none"

@@ -142,6 +142,12 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: dev-build
+      - name: Restore the dev binaries' exec bits
+        # upload-artifact does not preserve file modes; the tests drive
+        # these binaries through CARGO_BIN_EXE_biomcp's original path.
+        run: >-
+          chmod +x target/debug/biomcp
+          target/debug/examples/rmcp_streamable_http_contract
       - name: Set up the lane
         uses: ./.github/actions/lane-setup
         with:
@@ -178,10 +184,16 @@ jobs:
           chmod +x target/debug/biomcp
           target/debug/examples/rmcp_streamable_http_contract
       - name: Set up the lane
+        # The Python contract suite drives the cargo toolchain (the
+        # source-package boundary tests run cargo package --offline)
+        # and the standalone mustmatch binary.
         uses: ./.github/actions/lane-setup
         with:
+          rust: true
+          cache: true
           python: true
           offline: true
+          mustmatch: true
       - name: Canonical Python contract gate
         run: make test-python
 
@@ -196,8 +208,13 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
+      # Full history: spec/surface/mcp.md's release-prep block runs
+      # scripts/check-version-sync.sh, which reads the reachable tags.
       - name: Check out the exact revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          filter: blob:none
       - name: Download the dev build
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
