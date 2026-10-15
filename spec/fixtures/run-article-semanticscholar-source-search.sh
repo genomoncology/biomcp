@@ -105,5 +105,5 @@ BIOMCP_PUBMED_BASE="$base" \
 BIOMCP_LITSENSE2_BASE="$base" \
 BIOMCP_TEST_UNPACED_ORIGIN="$base" \
 S2_API_KEY="" \
-  timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "protein:protein interaction" --source semanticscholar --debug-plan --limit 1
+  run_with_timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "protein:protein interaction" --source semanticscholar --debug-plan --limit 1
 test "$(cat "$REQUEST_FILE")" = $'/graph/v1/paper/search\tprotein:protein interaction'

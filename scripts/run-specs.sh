@@ -4,11 +4,17 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-routine_owner_stat="$(<"/proc/$$/stat")"
-routine_owner_rest="${routine_owner_stat#*) }"
-read -r -a routine_owner_fields <<<"$routine_owner_rest"
-export ROUTINE_FIXTURE_OWNER_PID="$$"
-export ROUTINE_FIXTURE_OWNER_START_ID="${routine_owner_fields[19]}"
+# Procfs supplies the routine fixture owner identity on Linux. Without it
+# (the macOS gate host) the runner exports no identity and each fixture setup
+# derives the same owner from its own parent with ps, defined once in
+# spec/fixtures/fixture-supervisor.sh.
+if [[ -r "/proc/$$/stat" ]]; then
+  routine_owner_stat="$(<"/proc/$$/stat")"
+  routine_owner_rest="${routine_owner_stat#*) }"
+  read -r -a routine_owner_fields <<<"$routine_owner_rest"
+  export ROUTINE_FIXTURE_OWNER_PID="$$"
+  export ROUTINE_FIXTURE_OWNER_START_ID="${routine_owner_fields[19]}"
+fi
 
 SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
@@ -359,16 +365,46 @@ reap_stale_routine_fixtures() {
 lock_routine_fixtures() {
   mkdir -p "$ROOT/.cache"
   exec 8>"$ROOT/.cache/spec-routine-fixtures.lock"
-  # Bounded wait. flock binds to the open file description, not the PID, so a
+  # Bounded wait. The lock binds to the open file description, not the PID, so a
   # background fixture server that inherited fd 8 and outlived an interrupted
   # run holds this lock forever. Every fixture now closes fd 8 explicitly, but
   # if one ever leaks again this must fail loudly in minutes rather than hang
   # until the caller's own timeout kills it hours later.
-  if ! flock -w 300 8; then
+  #
+  # flock(1) is Linux-only; without it fcntl.flock in a Python child takes the
+  # same advisory lock on the same inherited open file description.
+  if command -v flock >/dev/null 2>&1; then
+    if ! flock -w 300 8; then
+      lock_failed=1
+    fi
+  elif ! python3 - <<'PY'
+import errno
+import fcntl
+import sys
+import time
+
+deadline = time.monotonic() + 300
+while True:
+    try:
+        fcntl.flock(8, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        raise SystemExit(0)
+    except OSError as error:
+        if error.errno not in (errno.EACCES, errno.EAGAIN):
+            raise SystemExit(1)
+    if time.monotonic() >= deadline:
+        raise SystemExit(1)
+    time.sleep(0.2)
+PY
+  then
+    lock_failed=1
+  fi
+  if [[ "${lock_failed:-0}" == 1 ]]; then
     printf 'error: could not acquire %s within 300s.\n' \
       "$ROOT/.cache/spec-routine-fixtures.lock" >&2
-    printf 'A leaked fixture process is probably still holding it. Find it with:\n' >&2
-    printf '  for f in /proc/[0-9]*/fd/*; do readlink "$f" | grep -q spec-routine-fixtures.lock && echo "$f"; done\n' >&2
+    printf 'A leaked fixture process is probably still holding it.\n' >&2
+    if [[ -d /proc ]]; then
+      printf '  for f in /proc/[0-9]*/fd/*; do readlink "$f" | grep -q spec-routine-fixtures.lock && echo "$f"; done\n' >&2
+    fi
     exit 1
   fi
 }

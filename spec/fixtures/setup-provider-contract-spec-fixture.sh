@@ -6,12 +6,12 @@ ownership_helper="$script_dir/routine-fixture-ownership.sh"
 # shellcheck source=fixture-supervisor.sh
 source "$script_dir/fixture-supervisor.sh"
 
-workspace_root="$(realpath -e "${1:-$PWD}")"
+workspace_root="$(canonical_dir "${1:-$PWD}")"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-provider-contract-env"
 cleanup_script="$script_dir/cleanup-provider-contract-spec-fixture.sh"
 mkdir -p "$cache_dir"
-cache_dir="$(realpath -e "$cache_dir")"
+cache_dir="$(canonical_dir "$cache_dir")"
 bash "$cleanup_script" "$workspace_root"
 recover_provider_contract_orphans "$cache_dir"
 

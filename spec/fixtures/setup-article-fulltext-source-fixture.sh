@@ -18,7 +18,7 @@ lock_file="$cache_dir/spec-article-fulltext-source.lock"
 
 mkdir -p "$cache_dir"
 exec 9>"$lock_file"
-flock 9
+acquire_fixture_lock 9
 
 bash "$repo_root/spec/fixtures/cleanup-article-fulltext-source-fixture.sh" "$workspace_root"
 recover_fixture_orphans "$cache_dir" "article-fulltext-source" "spec-article-fulltext-source."

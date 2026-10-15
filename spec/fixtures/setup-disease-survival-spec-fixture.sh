@@ -6,13 +6,13 @@ ownership_helper="$script_dir/routine-fixture-ownership.sh"
 # shellcheck source=fixture-supervisor.sh
 source "$script_dir/fixture-supervisor.sh"
 
-workspace_root="$(realpath -e "${1:-$PWD}")"
+workspace_root="$(canonical_dir "${1:-$PWD}")"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-disease-survival-env"
 cleanup_script="$script_dir/cleanup-disease-survival-spec-fixture.sh"
 
 mkdir -p "$cache_dir"
-cache_dir="$(realpath -e "$cache_dir")"
+cache_dir="$(canonical_dir "$cache_dir")"
 
 if [[ -x "$cleanup_script" ]]; then
   bash "$cleanup_script" "$workspace_root"
