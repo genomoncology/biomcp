@@ -1610,23 +1610,21 @@ async fn mcp_health_names_local_datasets_without_local_paths() -> anyhow::Result
     let client = harness.spawn_stdio_client(&env).await?;
 
     let root = home.path().display().to_string();
-    for command in ["biomcp health", "biomcp health --json"] {
-        let result = biomcp_mcp_contract_client::call_biomcp(&client, command).await?;
-        assert_eq!(result.is_error, Some(false), "{command}");
-        let text = biomcp_mcp_contract_client::first_text(&result.content);
-        assert!(
-            !text.contains(&root),
-            "{command} named a local path: {text}"
-        );
-        assert!(
-            text.contains("EMA local data"),
-            "{command} lost the local dataset row: {text}"
-        );
-        assert!(
-            text.contains("Cache dir"),
-            "{command} lost the cache row: {text}"
-        );
-    }
+    let text_call = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp health").await?;
+    assert_eq!(text_call.is_error, Some(false));
+    let text = biomcp_mcp_contract_client::first_text(&text_call.content);
+    assert!(
+        !text.contains(&root),
+        "biomcp health named a local path: {text}"
+    );
+    assert!(
+        text.contains("EMA local data"),
+        "biomcp health lost the local dataset row: {text}"
+    );
+    assert!(
+        text.contains("Cache dir"),
+        "biomcp health lost the cache row: {text}"
+    );
 
     let json_call = biomcp_mcp_contract_client::call_biomcp_json(&client, "biomcp health").await?;
     assert_eq!(json_call.is_error, Some(false));
@@ -1640,7 +1638,6 @@ async fn mcp_health_names_local_datasets_without_local_paths() -> anyhow::Result
     for row in rows {
         assert!(row.get("local_path").is_none(), "row carried a path: {row}");
     }
-
     client.cancel().await?;
     Ok(())
 }
