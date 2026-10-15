@@ -6,7 +6,7 @@ deps: [2002]
 
 # 2004: Degrade conditions only when con-3 is broken
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 
