@@ -29,7 +29,7 @@ def _copy_release_metadata_fixture(tmp_path: Path) -> Path:
     _set_public_metadata_version(repo, "0.8.25")
     citation = repo / "CITATION.cff"
     citation_text = citation.read_text(encoding="utf-8").replace(
-        "date-released: 2026-09-16", "date-released: 2026-07-07", 1
+        "date-released: 2026-10-11", "date-released: 2026-07-07", 1
     )
     citation.write_text(citation_text, encoding="utf-8")
     assert "date-released: 2026-07-07" in citation_text
