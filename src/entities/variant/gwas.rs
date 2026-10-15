@@ -91,14 +91,43 @@ pub async fn search_gwas_page(
     let client = GwasClient::new()?;
     let combined = gene.is_some() && trait_query.is_some();
     let fetch_limit = if combined { 50 } else { page_probe_limit };
+
+    // The gene and trait legs answer independent upstream queries, so a
+    // combined search sends both at once and the page waits only for the
+    // slower leg; either leg's failure fails the page. A search with one
+    // filter keeps its single call.
+    let (gene_page, trait_page) = match (gene.as_deref(), trait_query.as_deref()) {
+        (Some(gene), Some(trait_query)) => {
+            let (gene_page, trait_page) = tokio::try_join!(
+                client.search_associations(Some(gene), None, fetch_limit),
+                client.search_associations(None, Some(trait_query), fetch_limit),
+            )?;
+            (Some(gene_page), Some(trait_page))
+        }
+        (Some(gene), None) => (
+            Some(
+                client
+                    .search_associations(Some(gene), None, fetch_limit)
+                    .await?,
+            ),
+            None,
+        ),
+        (None, Some(trait_query)) => (
+            None,
+            Some(
+                client
+                    .search_associations(None, Some(trait_query), fetch_limit)
+                    .await?,
+            ),
+        ),
+        // The empty-filter case returned with the usage error above.
+        (None, None) => unreachable!("search_gwas_page requires a gene or a trait"),
+    };
+
     let mut gene_rows = Vec::new();
     let mut trait_rows = Vec::new();
     let mut provider_truncated = false;
-
-    if let Some(gene) = gene.as_deref() {
-        let page = client
-            .search_associations(Some(gene), None, fetch_limit)
-            .await?;
+    if let Some(page) = gene_page {
         provider_truncated |= page.total > fetch_limit;
         gene_rows.extend(
             page.associations
@@ -108,10 +137,7 @@ pub async fn search_gwas_page(
         );
     }
 
-    if let Some(trait_query) = trait_query.as_deref() {
-        let page = client
-            .search_associations(None, Some(trait_query), fetch_limit)
-            .await?;
+    if let Some(page) = trait_page {
         provider_truncated |= page.total > fetch_limit;
         trait_rows.extend(
             page.associations
