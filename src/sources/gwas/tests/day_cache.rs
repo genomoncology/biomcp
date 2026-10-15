@@ -326,7 +326,6 @@ async fn a_stored_body_that_fails_to_decode_is_replaced_by_a_fresh_fetch() {
 #[derive(serde::Serialize, serde::Deserialize)]
 struct StoredHttpEntry {
     response: http_cache::HttpResponse,
-    #[allow(dead_code)]
     policy: http_cache_semantics::CachePolicy,
 }
 
@@ -346,6 +345,10 @@ fn corrupt_the_stored_gwas_body() {
     let bytes = cacache::read_sync(&http_cache, &keys[0]).expect("read stored entry");
     let mut stored: StoredHttpEntry =
         bincode::deserialize(&bytes).expect("deserialize stored entry");
+    assert!(
+        stored.policy.age(std::time::SystemTime::now()) < crate::sources::DAY_CACHE_TTL,
+        "the seeded entry must sit inside the day window so the serve, not the age check, drives the test"
+    );
     stored.response.body = b"not json".to_vec();
     let rewritten = bincode::serialize(&stored).expect("serialize rewritten entry");
     let mut writer = cacache::WriteOpts::new()
