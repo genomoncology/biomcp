@@ -487,41 +487,7 @@ def test_invalid_allowed_host_fails_before_listening() -> None:
         sock.bind(("127.0.0.1", port))
 
 
-def test_top_level_help_hides_serve_sse_but_lists_serve_http() -> None:
-    binary = _require_release_binary()
-    result = subprocess.run(
-        [str(binary), "--help"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert result.returncode == 0
-    assert "serve-http" in result.stdout
-    assert "serve-sse" not in result.stdout
-
-
-def test_serve_sse_help_is_still_callable_and_deprecated() -> None:
-    binary = _require_release_binary()
-    result = subprocess.run(
-        [str(binary), "serve-sse", "--help"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert result.returncode == 0
-    assert "serve-sse" in result.stdout
-    assert "removed" in result.stdout or "deprecated" in result.stdout
-    assert "serve-http" in result.stdout
-    assert "/mcp" in result.stdout
-    assert "--json" not in result.stdout
-    assert "--no-cache" not in result.stdout
-
-
-def test_serve_sse_exits_non_zero_with_migration_message() -> None:
+def test_serve_sse_is_an_unrecognized_subcommand() -> None:
     binary = _require_release_binary()
     result = subprocess.run(
         [str(binary), "serve-sse"],
@@ -531,7 +497,5 @@ def test_serve_sse_exits_non_zero_with_migration_message() -> None:
         check=False,
     )
 
-    combined = f"{result.stdout}\n{result.stderr}"
-    assert result.returncode != 0
-    assert "serve-http" in combined
-    assert "removed" in combined or "deprecated" in combined
+    assert result.returncode == 2
+    assert "unrecognized subcommand 'serve-sse'" in result.stderr

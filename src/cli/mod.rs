@@ -3,12 +3,6 @@
 mod adverse_event;
 mod article;
 mod author;
-// Internal regression harness; not wired into production CLI.
-// See architecture/technical/benchmark-cli-ownership-decision.md.
-#[cfg(test)]
-// dead-code reason: benchmark is an internal regression harness compiled only for native tests
-#[allow(dead_code)]
-mod benchmark;
 pub mod cache;
 pub(crate) mod cell_line;
 pub mod chart;

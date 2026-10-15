@@ -810,7 +810,6 @@ fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
         | Commands::Serve
         | Commands::McpConfig(_)
         | Commands::ServeHttp(_)
-        | Commands::ServeSse
         | Commands::Chart { .. }
         | Commands::Update(_)
         | Commands::Uninstall

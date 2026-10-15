@@ -235,7 +235,6 @@ impl JsonResponseContract {
             | Commands::Serve
             | Commands::McpConfig(_)
             | Commands::ServeHttp(_)
-            | Commands::ServeSse
             | Commands::Skill { .. }
             | Commands::Chart { .. }
             | Commands::Update(_)

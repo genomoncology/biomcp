@@ -73,45 +73,11 @@ fn runtime_commands_still_parse_hidden_global_flags() {
     for args in [
         ["biomcp", "mcp", "--json", "--no-cache"].as_slice(),
         ["biomcp", "serve", "--json", "--no-cache"].as_slice(),
-        ["biomcp", "serve-sse", "--json", "--no-cache"].as_slice(),
     ] {
         let cli = parse_built_cli(args);
         assert!(cli.json);
         assert!(cli.no_cache);
     }
-}
-
-#[test]
-fn serve_sse_help_stays_callable_and_deprecated() {
-    let mut command = crate::cli::build_cli();
-    let serve_sse = command
-        .find_subcommand_mut("serve-sse")
-        .expect("serve-sse subcommand should exist");
-    let mut help = Vec::new();
-    serve_sse
-        .write_long_help(&mut help)
-        .expect("serve-sse help should render");
-    let help = String::from_utf8(help).expect("help should be utf-8");
-
-    assert!(help.contains("serve-sse"));
-    assert!(help.contains("removed"));
-    assert!(help.contains("serve-http"));
-    assert!(help.contains("/mcp"));
-    assert!(!help.contains("--json"));
-    assert!(!help.contains("--no-cache"));
-}
-
-#[test]
-fn top_level_help_hides_serve_sse_but_keeps_serve_http() {
-    let mut command = crate::cli::build_cli();
-    let mut help = Vec::new();
-    command
-        .write_long_help(&mut help)
-        .expect("top-level help should render");
-    let help = String::from_utf8(help).expect("help should be utf-8");
-
-    assert!(help.contains("serve-http"));
-    assert!(!help.contains("serve-sse"));
 }
 
 #[test]
