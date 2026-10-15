@@ -13,6 +13,7 @@ use crate::sources::mychem::{MyChemHit, MyChemQueryResponse};
 use crate::sources::openfda::OpenFdaClient;
 use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
+use tracing::warn;
 
 use super::label::{
     ELEMENTS_SEARCH_OVERSIZE_NOTE, LABEL_UNAVAILABLE_MESSAGE, LabelLookup, NO_LABEL_TEXT_NOTE,

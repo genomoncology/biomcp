@@ -8,7 +8,6 @@ use crate::entities::variant::{
     VariantIdFormat, VariantInputKind, VariantShorthand, classify_variant_input,
     is_exact_gene_token,
 };
-use crate::sources::pubtator::PubTatorDocument;
 
 /// Longest identifier or namespace value carried through to entity rows.
 const MAX_IDENTIFIER_BYTES: usize = 256;
@@ -91,6 +90,24 @@ fn annotation_identity(
             None
         }
     }
+}
+
+fn first_rsid(infons: &crate::sources::pubtator::PubTatorAnnotationInfons) -> Option<&str> {
+    infons
+        .rsid
+        .as_deref()
+        .and_then(clean_identifier)
+        .or_else(|| {
+            infons
+                .rsids
+                .as_ref()
+                .and_then(|rsids| rsids.first())
+                .and_then(|rsid| clean_identifier(rsid))
+        })
+}
+
+fn is_protein_hgvs(hgvs: &str) -> bool {
+    hgvs.trim().to_ascii_lowercase().starts_with("p.")
 }
 
 /// Document-wide facts that disambiguate mutation identities: the gene symbol

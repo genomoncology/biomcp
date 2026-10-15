@@ -913,6 +913,21 @@ async fn transcript_hgvs_clinvar_alias_hit(
     .cloned())
 }
 
+fn transcript_hgvs_clinvar_query(id: &str) -> String {
+    format!(
+        "clinvar.hgvs.coding:\"{}\"",
+        MyVariantClient::escape_query_value(id)
+    )
+}
+
+
+fn best_hit(
+    hits: &[crate::sources::myvariant::MyVariantHit],
+) -> Option<&crate::sources::myvariant::MyVariantHit> {
+    hits.iter().max_by_key(|h| score_myvariant_hit(h))
+}
+
+
 async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     match normalize_transcript_hgvs_for_get(id).await {
         Ok(format) => Ok(format),
