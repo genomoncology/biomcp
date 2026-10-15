@@ -3,9 +3,20 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# macOS has no bubblewrap and no user-namespace network sandbox to hand the
+# command; the PM ruling for ticket 2098 keeps Linux CI authoritative for
+# offline enforcement and lets the gate hosts run the suite unsandboxed with
+# one explicit not-network-isolated line per invocation.
 if [[ "$(uname -s)" != Linux ]]; then
-  echo "offline routine-gate enforcement is unsupported on this platform; Linux CI is authoritative" >&2
-  exit 2
+  if [[ "${1:-}" == -- ]]; then
+    shift
+  fi
+  if (($# == 0)); then
+    echo "usage: tools/run-offline -- COMMAND [ARG ...]" >&2
+    exit 2
+  fi
+  echo "run-offline: no network sandbox on $(uname -s); this run is not network-isolated" >&2
+  exec "$@"
 fi
 if ! command -v bwrap >/dev/null 2>&1; then
   echo "offline routine gates require bubblewrap; refusing to run without network isolation" >&2

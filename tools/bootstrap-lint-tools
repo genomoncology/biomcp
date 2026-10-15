@@ -39,6 +39,16 @@ case "$(uname -s)-$(uname -m)" in
       8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8 \
       actionlint
     ;;
+  Darwin-arm64)
+    install_archive_binary shellcheck 0.10.0 \
+      https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.darwin.aarch64.tar.xz \
+      bbd2f14826328eee7679da7221f2bc3afb011f6a928b848c80c321f6046ddf81 \
+      shellcheck-v0.10.0/shellcheck
+    install_archive_binary actionlint 1.7.12 \
+      https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_darwin_arm64.tar.gz \
+      aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f \
+      actionlint
+    ;;
   *)
     printf 'No pinned lint-tool archive for %s; install ShellCheck 0.10.0 and actionlint 1.7.12 manually.\n' "$(uname -s)-$(uname -m)" >&2
     exit 1
