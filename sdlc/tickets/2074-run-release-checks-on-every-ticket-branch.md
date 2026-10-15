@@ -7,6 +7,8 @@ Milestone: 0.9.3
 Depends on: 2083
 Depends on: 2075
 
+Reviews: revision 9f9adfd, accept
+
 ## Outcome
 
 A ticket branch that changes shipped behavior without a changelog bullet, or whose release-time `gh` query would fail, fails CI; a ticket that changes no shipped behavior needs no bullet; and a ticket number in a Rust or Python comment fails lint.
