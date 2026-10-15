@@ -116,10 +116,6 @@ mod tests {
             as fn(&ESummaryEntry) -> Option<ArticleSearchResult>;
         let _ = crate::transform::article::retained_extract_annotations
             as fn(&PubTatorDocument, bool) -> Option<ArticleAnnotations>;
-        let _ = crate::transform::article::extract_annotations_with_official_symbols
-            as fn(&PubTatorDocument, bool, &HashMap<u64, String>) -> Option<ArticleAnnotations>;
-        let _ = crate::transform::article::gene_ids_needing_official_symbols
-            as fn(&PubTatorDocument) -> Vec<u64>;
         let _ = crate::transform::article::classify_jats_document
             as fn(&str) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable>;
         let _ = crate::transform::article::classify_html_document
