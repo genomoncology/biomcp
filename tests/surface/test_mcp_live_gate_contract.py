@@ -14,7 +14,7 @@ LIVE_FULL_CONTRACT_TESTS = (
 
 def _make_target(name: str) -> str:
     match = re.search(
-        rf"^{re.escape(name)}:\n(?P<body>(?:\t.*\n)+)",
+        rf"^{re.escape(name)}:[^\n]*\n(?P<body>(?:\t.*\n)+)",
         MAKEFILE,
         flags=re.MULTILINE,
     )
@@ -23,7 +23,10 @@ def _make_target(name: str) -> str:
 
 
 def test_live_mcp_full_contracts_are_excluded_from_routine_test() -> None:
-    routine = _make_target("test")
+    # The routine Rust lane is `test-rust` since ticket 2075 split
+    # `make test` so CI runs the halves in parallel; `make test`
+    # composes it, so the exclusion holds for the composed lane too.
+    routine = _make_target("test-rust")
     assert "cargo nextest run --archive-file" in routine
     assert "--run-ignored" not in routine
 

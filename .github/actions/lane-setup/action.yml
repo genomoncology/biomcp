@@ -91,7 +91,6 @@ runs:
     - name: Install pinned lint tools
       if: ${{ inputs.lint-tools == 'true' }}
       shell: bash
-      timeout-minutes: 20
       run: |
         cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
         uv tool install "ruff==$RUFF_VERSION"
