@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 1.0
 
+Reviews: revision ad7c668, accept
+
 ## Outcome
 
 `get patient <id> conditions` marks the section `degraded` only when a Condition breaks FHIR R4 invariant con-3. Each row shows its own clinical status, or shows it as absent when the source omits it. On the blue demo server, patients whose Conditions all satisfy con-3 come back `data`, not `degraded`.
