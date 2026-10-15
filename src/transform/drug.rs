@@ -804,7 +804,13 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
         .iter()
         .filter(|h| {
             record_match_candidates(h);
+            // The exact name admits the record, and a qualified form of the
+            // same drug (its salt or hydrate) joins the tier beside it
+            // instead of waiting for an exact-only tier to come up empty.
             hit_all_names(h).iter().any(|n| n == &target)
+                || hit_own_names(h)
+                    .iter()
+                    .any(|n| name_extends_request(n, &target))
         })
         .collect();
     if out.is_empty() {
