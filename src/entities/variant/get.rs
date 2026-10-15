@@ -1202,6 +1202,7 @@ pub(super) async fn resolve_base_with_hit(
             return Err(BioMcpError::InvalidArgument(
                 "Transcript gene coding lookup could not prepare its request.".into(),
             ));
+        }
         VariantIdFormat::GeneProteinChange { gene, change } => {
             let q = format!(
                 "dbnsfp.genename:{} AND dbnsfp.hgvsp:\"p.{}\"",
