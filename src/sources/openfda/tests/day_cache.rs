@@ -171,6 +171,15 @@ async fn a_label_answer_a_day_old_is_refetched() {
     assert_eq!(first, second);
 }
 
+/// The count buckets as comparable (term, count) rows.
+fn count_rows(answer: &crate::sources::openfda::OpenFdaCountResponse) -> Vec<(String, usize)> {
+    answer
+        .results
+        .iter()
+        .map(|bucket| (bucket.term.clone(), bucket.count))
+        .collect()
+}
+
 /// The repeat adverse-event count inside a day makes no request.
 #[tokio::test]
 #[serial_test::serial(source_env)]
@@ -206,7 +215,7 @@ async fn a_repeat_adverse_event_count_inside_a_day_makes_no_request() {
         1,
         "the repeat must serve from the cache"
     );
-    assert_eq!(first.results, second.results);
+    assert_eq!(count_rows(&second), count_rows(&first));
 }
 
 /// The stored adverse-event count a day old goes back to the provider.
@@ -240,7 +249,7 @@ async fn an_adverse_event_count_a_day_old_is_refetched() {
     server.abort();
     drop(env);
     assert_eq!(request_count(&requests), 2, "the aged answer must refetch");
-    assert_eq!(first.results, second.results);
+    assert_eq!(count_rows(&second), count_rows(&first));
 }
 
 /// An openFDA key keeps the cache bypassed: both label searches go to
