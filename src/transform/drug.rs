@@ -1148,27 +1148,19 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     // ("imatinib mesylate" for imatinib) keeps naming the card, and the
     // pairing counts only on identity-bearing records.
     let requested = normalize_name(requested_name);
-    let canonical = hits
+    // The card headlines the merged records' own top-precedence name (the
+    // eight-source order the get path has always used), not the requested
+    // spelling: a request that names one of the record's own names still
+    // gets the record's leading display name, and a page that names
+    // nothing falls back to the request.
+    let mut name = hits
         .iter()
-        .find_map(|hit| canonical_name_matching_request(hit, requested_name));
-    let brand_paired = hits.iter().find_map(|hit| {
-        hit_has_identity(hit)
-            .then(|| brand_paired_nonproprietary_name(hit, requested_name))
-            .flatten()
-    });
-    let mut name = match (canonical, brand_paired) {
-        (Some(canonical), _) if canonical != requested => canonical,
-        (_, Some(brand_paired)) => brand_paired,
-        (Some(canonical), None) => canonical,
-        (None, None) => hits
-            .iter()
-            .find_map(|hit| best_name_from_hit(hit))
-            .or_else(|| {
-                hits.iter()
-                    .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
-            })
-            .unwrap_or_else(|| requested.clone()),
-    };
+        .find_map(|hit| best_name_from_hit(hit))
+        .or_else(|| {
+            hits.iter()
+                .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
+        })
+        .unwrap_or_else(|| requested.clone());
     // A combination card shows product-level identifiers or
     // none. The merged records are one ingredient's records, so their
     // stable identifiers, approval dates and synonym lists are that
