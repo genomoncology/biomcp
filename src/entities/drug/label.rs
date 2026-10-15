@@ -568,26 +568,36 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
     out
 }
 
-/// The brand that opens each SPL product data element entry, as written:
-/// the only brand identity a record with an empty `openfda` block carries
-/// ("DARZALEX Daratumumab DARATUMUMAB …" names DARZALEX), so a card whose
-/// chosen label is a sparse record still lists its own brand.
-/// One reader serves every consumer of the element line's brand, so a multi-word brand ("Herceptin Hylecta") stays whole wherever
-/// it is read.
-pub(super) fn element_leading_brand_names(label_response: &serde_json::Value) -> Vec<String> {
+/// The brands a label response's own products carry for the card's drug:
+/// a result contributes its brands — the `brand_name` field, or the brand
+/// an element line opens with when the record is sparse — only when the
+/// record's own generic line names the card's drug as the card's own
+/// product, so another drug's record that only matched the search never
+/// donates its brand.
+pub(super) fn card_own_label_brands(
+    label_response: &serde_json::Value,
+    card_name: &str,
+) -> Vec<String> {
     let Some(results) = label_response.get("results").and_then(|v| v.as_array()) else {
         return Vec::new();
     };
     let mut out = Vec::new();
-    let mut seen = HashSet::new();
     for result in results {
-        if !is_sparse_identity_record(result) {
+        let sparse = is_sparse_identity_record(result);
+        let generic_lines = if sparse {
+            sparse_element_identity_names(result).1
+        } else {
+            extract_openfda_values_from_result(result, "generic_name")
+        };
+        if !generic_lines
+            .iter()
+            .any(|generic| label_generic_names_card(generic, card_name))
+        {
             continue;
         }
-        for brand in sparse_element_identity_names(result).0 {
-            if seen.insert(brand.to_ascii_lowercase()) {
-                out.push(brand);
-            }
+        out.extend(extract_openfda_values_from_result(result, "brand_name"));
+        if sparse {
+            out.extend(sparse_element_identity_names(result).0);
         }
     }
     out
@@ -976,6 +986,37 @@ fn generic_extends_stem(name: &str, requested: &str, card: &str) -> bool {
         !stem.is_empty()
             && (name.starts_with(&format!("{stem} ")) || name.starts_with(&format!("{stem}-")))
     })
+}
+
+/// Whether a label record's generic line names the card's drug as the
+/// card's own product, so the record's brands list on the card. The
+/// card's own line matches whatever separators each side writes ("A, B, C"
+/// against "A, B and C"); a plain ingredient also matches its qualified
+/// forms in either direction — a salt or hydrate ("erlotinib
+/// hydrochloride" for erlotinib) or a biosimilar suffix
+/// ("trastuzumab-dkst" for trastuzumab). Everything else is another
+/// product's line: a second active ingredient makes a combination, and a
+/// conjugate or prefixed derivative ("fam-trastuzumab deruxtecan-nxki")
+/// names its own drug, never the plain card's.
+fn label_generic_names_card(generic: &str, card: &str) -> bool {
+    let generic = generic.trim();
+    let card = card.trim();
+    if generic.is_empty() || card.is_empty() {
+        return false;
+    }
+    let generic_words = ingredient_word_set(generic);
+    if generic_words == ingredient_word_set(card) {
+        return true;
+    }
+    if is_combination_product_name(generic) || is_combination_product_name(card) {
+        return false;
+    }
+    let generic = generic.to_ascii_lowercase();
+    let card = card.to_ascii_lowercase();
+    generic.starts_with(&format!("{card} "))
+        || generic.starts_with(&format!("{card}-"))
+        || card.starts_with(&format!("{generic} "))
+        || card.starts_with(&format!("{generic}-"))
 }
 
 /// The ingredient words one generic line names: tokens split at punctuation

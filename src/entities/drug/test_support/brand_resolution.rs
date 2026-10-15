@@ -4,6 +4,21 @@
 
 use super::*;
 
+/// A recorded provider reply from `testdata/sources`, minimized with its
+/// receipt there.
+macro_rules! recorded {
+    ($source:expr, $name:expr) => {
+        String::from_utf8_lossy(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/",
+            $source,
+            "/",
+            $name
+        )))
+        .into_owned()
+    };
+}
+
 /// The live OLS4 answer for `q=Tarceva`, recorded 2026-10-09
 /// and trimmed to the fields the discover pipeline reads, with descriptions
 /// shortened and each doc's synonym list cut to its Tarceva-bearing entries.
@@ -314,6 +329,110 @@ async fn tarceva_resolves_erlotinib_through_the_guarded_discover_rescue() {
                     .is_some_and(|text| text.contains("erlotinib"))
         }),
         "the erlotinib label text reached the card"
+    );
+    server.abort();
+}
+
+/// `get drug Tarceva` against the recorded provider replies of 2026-10-15
+/// (the MyChem and openFDA captures under `testdata/sources`): the typed
+/// brand stays listed once the rescue resolves it, and the erlotinib
+/// record's DrugBank synonyms — the bracketed chemical name among them —
+/// never list as brands.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn tarceva_lists_the_typed_brand_and_no_chemical_synonym() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![
+            (
+                "Tarceva".to_string(),
+                recorded!("mychem", "query_tarceva_get_20261015.json"),
+            ),
+            (
+                "erlotinib hydrochloride".to_string(),
+                recorded!("mychem", "query_erlotinib_hydrochloride_get_20261015.json"),
+            ),
+        ],
+        vec![(
+            "erlotinib hydrochloride".to_string(),
+            recorded!("openfda", "label_erlotinib_hydrochloride_20261015.json"),
+        )],
+        vec![("Tarceva".to_string(), OLS_TARCEVA_BODY.to_string())],
+    )
+    .await;
+
+    let drug = name_resolution_fixture_drug(&base, "Tarceva").await;
+    assert_eq!(drug.name, "erlotinib hydrochloride");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00530"));
+    assert!(
+        drug.brand_names
+            .first()
+            .is_some_and(|brand| brand.eq_ignore_ascii_case("Tarceva")),
+        "the brand the user typed lists on the card: {:?}",
+        drug.brand_names
+    );
+    assert!(
+        drug.brand_names
+            .iter()
+            .all(|brand| !brand.contains("Bis-(2-methoxy")),
+        "the record's chemical synonym never lists as a brand: {:?}",
+        drug.brand_names
+    );
+    server.abort();
+}
+
+/// `get drug trastuzumab` against the recorded provider replies of
+/// 2026-10-15: the label page's five newest records hold four trastuzumab
+/// products and Enhertu, whose generic line "fam-trastuzumab
+/// deruxtecan-nxki" is another drug that only matched the search, so the
+/// card lists only the products whose labels name trastuzumab itself.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn trastuzumab_lists_only_brands_whose_labels_name_trastuzumab() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![
+            (
+                "trastuzumab".to_string(),
+                recorded!("mychem", "query_trastuzumab_get_20261015.json"),
+            ),
+        ],
+        vec![
+            (
+                "trastuzumab".to_string(),
+                recorded!("openfda", "label_trastuzumab_20261015.json"),
+            ),
+        ],
+        Vec::new(),
+    )
+    .await;
+
+    let drug = name_resolution_fixture_drug(&base, "trastuzumab").await;
+    assert_eq!(drug.name, "trastuzumab");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00072"));
+    assert_eq!(
+        drug.label_set_id.as_deref(),
+        Some("492dbdb2-077e-4064-bff3-372d6af0a7a2"),
+        "the plain trastuzumab record serves before the newer qualified forms"
+    );
+    assert!(
+        drug.brand_names
+            .iter()
+            .any(|brand| brand.eq_ignore_ascii_case("Herceptin")),
+        "trastuzumab's own products still list: {:?}",
+        drug.brand_names
+    );
+    assert!(
+        drug.brand_names
+            .iter()
+            .all(|brand| !brand.eq_ignore_ascii_case("Enhertu")),
+        "trastuzumab deruxtecan's brand never lists on the trastuzumab card: {:?}",
+        drug.brand_names
+    );
+    assert!(
+        drug.brand_names
+            .iter()
+            .all(|brand| !brand.contains("GB221") && !brand.contains("RHUMAB")),
+        "a DrugBank synonym never lists as a brand: {:?}",
+        drug.brand_names
     );
     server.abort();
 }

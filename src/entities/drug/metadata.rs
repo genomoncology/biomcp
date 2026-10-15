@@ -165,17 +165,19 @@ fn route_rank(route: &str) -> usize {
 }
 
 pub(super) fn apply_openfda_metadata(drug: &mut Drug, label_response: &serde_json::Value) {
-    let mut brand_names: Vec<String> = extract_openfda_values(label_response, "brand_name");
-    // A sparse record names its brand only on the element line, so the
-    // chosen label's own brand still reaches the card.
-    brand_names.extend(super::label::element_leading_brand_names(label_response));
-    brand_names.extend(
-        brand_names
-            .iter()
-            .filter_map(|name| maybe_brand_alias(name))
-            .collect::<Vec<_>>(),
-    );
-    brand_names.extend(drug.brand_names.clone());
+    // The card's earlier brands (a brand the user typed that the rescue
+    // resolved) stay listed ahead of the label's own products: only a
+    // label record whose generic line names the card's drug as the card's
+    // own product contributes its brands, never another drug's record that
+    // only matched the search.
+    let mut brand_names: Vec<String> = drug.brand_names.clone();
+    let label_brands = super::label::card_own_label_brands(label_response, &drug.name);
+    let label_brand_aliases: Vec<String> = label_brands
+        .iter()
+        .filter_map(|name| maybe_brand_alias(name))
+        .collect();
+    brand_names.extend(label_brands);
+    brand_names.extend(label_brand_aliases);
     let mut seen: HashSet<String> = HashSet::new();
     let mut merged: Vec<String> = Vec::new();
     for name in brand_names {

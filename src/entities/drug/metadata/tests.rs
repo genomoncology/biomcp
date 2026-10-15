@@ -1,5 +1,33 @@
 use super::*;
+use crate::entities::drug::Drug;
+use crate::sources::mychem::MyChemHit;
 use crate::sources::openfda::{DrugsFdaResult, OpenFdaResponse};
+
+macro_rules! recorded {
+    ($source:expr, $name:expr) => {
+        serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/",
+            $source,
+            "/",
+            $name
+        )))
+        .expect("recorded reply parses")
+    };
+}
+
+/// A merged card named for the given drug, the real construction path a
+/// label answer applies to.
+fn card_named(name: &str) -> Drug {
+    let hit: MyChemHit = serde_json::from_value(serde_json::json!({
+        "_id": "TESTCARD",
+        "_score": 1.0,
+        "drugbank": {"id": "DBTESTCARD", "name": name},
+    }))
+    .expect("valid card hit");
+    let selected = vec![hit];
+    crate::transform::drug::merge_mychem_hits(&selected, name)
+}
 
 #[test]
 fn map_drugsfda_approvals_extracts_key_fields() {
@@ -58,4 +86,55 @@ fn extract_top_adverse_events_ranks_by_frequency() {
 
     let out = extract_top_adverse_events(&resp);
     assert_eq!(out, vec!["Fatigue", "Rash", "Nausea"]);
+}
+
+/// The recorded openFDA answer for the trastuzumab label search (2026-10-15):
+/// the five newest records — four trastuzumab products and Enhertu, whose
+/// generic line "fam-trastuzumab deruxtecan-nxki" is another drug that
+/// only matched the search.
+#[test]
+fn apply_openfda_metadata_lists_only_the_cards_own_label_products() {
+    let label_response: serde_json::Value =
+        recorded!("openfda", "label_trastuzumab_20261015.json");
+    let mut drug = card_named("Trastuzumab");
+    assert_eq!(drug.name, "trastuzumab");
+
+    apply_openfda_metadata(&mut drug, &label_response);
+
+    assert_eq!(
+        drug.brand_names,
+        vec!["OGIVRI", "Kanjinti", "Herceptin", "Ontruzant"],
+        "only the records whose generic line names trastuzumab list their brands"
+    );
+    assert!(
+        !drug
+            .brand_names
+            .iter()
+            .any(|brand| brand.eq_ignore_ascii_case("Enhertu")),
+        "another drug's conjugate never lists as a trastuzumab brand"
+    );
+}
+
+/// The recorded openFDA answer for the erlotinib hydrochloride label search
+/// (2026-10-15): every record's generic line is the card's own, under three
+/// label spellings of the brand. A typed brand the rescue resolved stays
+/// listed ahead of the label's own products.
+#[test]
+fn apply_openfda_metadata_keeps_a_resolved_typed_brand_listed() {
+    let label_response: serde_json::Value =
+        recorded!("openfda", "label_erlotinib_hydrochloride_20261015.json");
+    let mut drug = card_named("erlotinib hydrochloride");
+    drug.brand_names = vec!["Tarceva".to_string()];
+
+    apply_openfda_metadata(&mut drug, &label_response);
+
+    assert_eq!(
+        drug.brand_names.first().map(String::as_str),
+        Some("Tarceva"),
+        "the typed brand the rescue resolved stays listed"
+    );
+    assert_eq!(
+        drug.brand_names[1..],
+        vec!["ERLOTINIB HYDROCHLORIDE", "Erlotinib Hydrochloride", "Erlotinib", "ERLOTINIB"]
+    );
 }
