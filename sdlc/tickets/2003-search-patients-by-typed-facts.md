@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 1.0
 
+Reviews: revision 426c0c2, accept
+
 ## Outcome
 
 An agent finds patients on the configured FHIR server by gender, birth date range, and coded condition, and can ask for the server-reported count. Decision record: `sdlc/planning/adr/0002-read-one-patient-fhir-record-as-the-patient-entity.md`.
