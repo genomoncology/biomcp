@@ -162,7 +162,8 @@ fn parse_variant_id_accepts_gene_protein_range_deletions() {
         }
         _ => panic!("expected long-form range deletion"),
     }
-    assert!(parse_variant_id("EGFR E746_A750dup").is_err());
+    // The 1.0 interval machinery admits range duplications; only the
+    // single-residue forms below stay refused as unrecognized.
     assert!(parse_variant_id("EGFR E746del").is_err());
 }
 
