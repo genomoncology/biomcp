@@ -52,6 +52,98 @@ pub use self::structure::{VariantStructureResult, structure};
 pub(crate) use self::gwas::validate_p_value as validate_gwas_p_value;
 pub(crate) use self::normalization::{transcript_coding_hgvs_re, validate_car_hgvs_input};
 #[allow(unused_imports)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarRecord {
+    pub source: String,
+    pub variation_id: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accession: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub record_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub number_submissions: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub number_submitters: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub germline_classification: Option<ClinvarRecordClassification>,
+    #[serde(default)]
+    pub aggregates: Vec<ClinvarAggregate>,
+    #[serde(default)]
+    pub submissions: Vec<ClinvarSubmission>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarRecordClassification {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub classification: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub review_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evaluation_date: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarAggregate {
+    pub source: String,
+    pub accession: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<u32>,
+    pub classification_domain: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub classification: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub review_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evaluation_date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub record_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub number_submitters: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submission_count: Option<u32>,
+    #[serde(default)]
+    pub conditions: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarSubmission {
+    pub source: String,
+    pub accession: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<u32>,
+    pub classification_domain: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub classification: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub review_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evaluation_date: Option<String>,
+    pub record_status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submitter: Option<String>,
+    pub contributes_to_aggregate_classification: Option<bool>,
+    #[serde(default)]
+    pub conditions: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub criteria: Option<String>,
+    #[serde(default)]
+    pub citations: Vec<ClinvarCitation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_comment: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarCitation {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
 pub(crate) use self::resolution::{
     NormalizedGenomicCoordinate, NormalizedVariantAliases, RequestedVariantIdentity,
     SourceVariantIdentity, VariantArticleRequest, VariantArticleResolution,

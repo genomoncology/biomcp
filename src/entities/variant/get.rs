@@ -928,6 +928,27 @@ fn best_hit(
 }
 
 
+fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
+    let mut score = 0;
+    if let Some(clinvar) = hit.clinvar.as_ref() {
+        if !clinvar.rcv.is_empty() {
+            score += 100;
+            score += clinvar.rcv.len().min(50) as i32;
+        }
+        if clinvar.variant_id.is_some() {
+            score += 5;
+        }
+    }
+    if hit.dbnsfp.as_ref().and_then(|d| d.hgvsp.first()).is_some() {
+        score += 10;
+    }
+    if hit.dbsnp.as_ref().and_then(|d| d.rsid.as_ref()).is_some() {
+        score += 5;
+    }
+    score
+}
+
+
 async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     match normalize_transcript_hgvs_for_get(id).await {
         Ok(format) => Ok(format),

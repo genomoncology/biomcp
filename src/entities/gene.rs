@@ -906,7 +906,7 @@ fn matching_canonical_aliases(query: &str, hits: &[MyGeneRecord]) -> Vec<Canonic
 
 fn canonical_aliases_for_symbols(
     symbols: Vec<String>,
-    hits: &[MyGeneHit],
+    hits: &[MyGeneRecord],
 ) -> Vec<CanonicalGeneAlias> {
     symbols
         .into_iter()
@@ -948,19 +948,14 @@ pub(crate) async fn resolve_unique_canonical_alias(
 /// Matching rows whose official symbol IS the query, so alias matches never
 /// confirm: search routing accepts a first token only when it
 /// is the gene's official symbol.
-fn matching_official_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<String> {
+fn matching_official_symbols(query: &str, hits: &[MyGeneRecord]) -> Vec<String> {
     let query = normalized_alias_key(query);
     let mut out = Vec::new();
     for hit in hits {
-        let Some(symbol) = hit
-            .symbol
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-        else {
+        let Some(symbol) = hit.symbol().map(str::trim).filter(|value| !value.is_empty()) else {
             continue;
         };
-        if hit.entrezgene.is_none() {
+        if hit.code("NCBI Gene").is_none() {
             continue;
         }
         if normalized_alias_key(symbol) == query && !out.iter().any(|existing| existing == symbol) {
