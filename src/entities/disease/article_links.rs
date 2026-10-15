@@ -3,8 +3,10 @@
 //! assigns it; several MONDO records crosswalk one broad descriptor, and a
 //! bare identifier opens whichever card sorts first. A row's follow-up get
 //! may name a hit's ontology ID only when exactly one crosswalk hit holds
-//! the concept name exactly, so every other row keeps the v0.9.1 search
-//! command instead of a confidently wrong get.
+//! the concept name exactly, and a hit whose card title narrows the
+//! concept — every concept word plus at least one more — never holds it,
+//! so every other row keeps the v0.9.1 search command instead of a
+//! confidently wrong get.
 
 use crate::transform;
 
@@ -37,11 +39,15 @@ fn fold_one_word(word: &str) -> &str {
 
 /// An article disease row's concept name holds a hit exactly when a name,
 /// label, or synonym is the same phrase (case-insensitive, punctuation and
-/// `carcinoma` normalized, final-word plurals folded).
+/// `carcinoma` normalized, final-word plurals folded) and the hit's card
+/// title does not narrow the concept: a title carrying every concept word
+/// plus at least one more names a subtype the row never named, so the hit
+/// cannot hold the concept even though a synonym matched.
 fn crosswalk_hit_holds_name(name: &str, hit: &crate::sources::mydisease::MyDiseaseHit) -> bool {
     let name = super::resolution::normalize_disease_text(name);
     let name_forms = [name.clone(), singular_final_word(&name)];
-    let mut labels = vec![transform::disease::name_from_mydisease_hit(hit)];
+    let title = transform::disease::name_from_mydisease_hit(hit);
+    let mut labels = vec![title.clone()];
     if let Some(value) = hit.mondo.as_ref().and_then(|v| v.get("label")) {
         super::resolution::collect_json_strings(value, &mut labels);
     }
@@ -60,7 +66,31 @@ fn crosswalk_hit_holds_name(name: &str, hit: &crate::sources::mydisease::MyDisea
         let singular = singular_final_word(&label);
         let label_forms = [label, singular];
         name_forms.iter().any(|name| label_forms.contains(name))
-    })
+    }) && !card_title_narrows_the_concept(&name, &title)
+}
+
+/// A card title narrower than the row's concept name: the title carries
+/// every concept word plus at least one more, after the same folding the
+/// name match uses. The "skin neoplasms" row's only name holder is titled
+/// "skin benign neoplasm" — every concept word plus "benign" — so the
+/// row keeps its text search instead of opening a subtype card.
+fn card_title_narrows_the_concept(concept: &str, title: &str) -> bool {
+    let concept = folded_words(concept);
+    let title = folded_words(title);
+    !concept.is_empty()
+        && concept.len() < title.len()
+        && concept.iter().all(|word| title.contains(word))
+}
+
+/// The folded word list both sides of the narrower rule compare: case,
+/// punctuation, and `carcinoma` normalized, then the final-word plural
+/// folded.
+fn folded_words(value: &str) -> Vec<String> {
+    let normalized = super::resolution::normalize_disease_text(value);
+    singular_final_word(&normalized)
+        .split_whitespace()
+        .map(str::to_string)
+        .collect()
 }
 
 /// The one crosswalk hit that holds the concept name PubTator3 assigns a
@@ -68,7 +98,9 @@ fn crosswalk_hit_holds_name(name: &str, hit: &crate::sources::mydisease::MyDisea
 /// ontology ID only when exactly one hit holds that name: several MONDO
 /// records crosswalk one broad MeSH descriptor (`MESH:D008175` "Lung
 /// Neoplasms" hits both `lung neoplasm` and `lung benign neoplasm`), and a
-/// bare identifier opens whichever card sorts first — the wrong card.
+/// bare identifier opens whichever card sorts first — the wrong card. A
+/// holder whose card title narrows the concept counts as no holder, so
+/// its row keeps the search command.
 fn exact_named_crosswalk_hit<'a>(
     name: &str,
     hits: &'a [crate::sources::mydisease::MyDiseaseHit],
@@ -130,3 +162,6 @@ pub(crate) async fn article_disease_row_get_command(
     let hit = exact_named_crosswalk_hit(concept_name, &response.hits)?;
     Some(format!("biomcp get disease {}", hit.id))
 }
+
+#[cfg(test)]
+mod tests;

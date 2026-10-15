@@ -132,11 +132,12 @@ fn holder_candidate_lines_fill_the_mondo_label() {
     assert_eq!(lines, "- cold agglutinin disease (MONDO:0018922)\n");
 }
 
-/// A refusal names the clinical reading the source cannot
-/// see as a pointer line, never as a source candidate, and only for the
-/// abbreviations the table records.
+/// The refusal names the clinical reading the source cannot see: the
+/// default reading leads the candidate list (`MM` opens with multiple
+/// myeloma), an additional reading stays a pointer line, and a token
+/// outside the table gets no reading at all.
 #[test]
-fn clinical_reading_pointer_is_a_pointer_not_a_candidate() {
+fn default_reading_leads_the_candidates_and_additions_stay_pointers() {
     let holder: MyDiseaseHit = serde_json::from_value(serde_json::json!({
         "_id": "MONDO:0009685",
         "disease_ontology": {
@@ -145,9 +146,15 @@ fn clinical_reading_pointer_is_a_pointer_not_a_candidate() {
         }
     }))
     .expect("single MM holder");
-    let message = ambiguous_abbreviation_error("MM", &[holder], true).to_string();
+    let message =
+        ambiguous_abbreviation_error("MM", &[holder], true, ambiguity::get_disease_retry("MM"))
+            .to_string();
+    // The reading is the first candidate, ahead of the source's rare
+    // holder, and the pointer line and its `get disease` retry stay.
     assert!(
-        message.contains("- Miyoshi muscular dystrophy (MONDO:0009685)\n"),
+        message.contains(
+            "Candidates:\n- multiple myeloma (MONDO:0009693)\n- Miyoshi muscular dystrophy (MONDO:0009685)\n"
+        ),
         "{message}"
     );
     assert!(
@@ -158,10 +165,35 @@ fn clinical_reading_pointer_is_a_pointer_not_a_candidate() {
         message.contains("get disease \"multiple myeloma\""),
         "{message}"
     );
-    assert!(!message.contains("- multiple myeloma"), "{message}");
 
-    let untouched = ambiguous_abbreviation_error("CAD", &holder_hits(), false).to_string();
+    // An additional reading never joins the holder list.
+    let mf = ambiguous_abbreviation_error(
+        "MF",
+        &mf_holder_hits(),
+        false,
+        ambiguity::get_disease_retry("MF"),
+    )
+    .to_string();
+    assert!(
+        mf.contains("Clinical reading: 'MF' also names myelofibrosis"),
+        "{mf}"
+    );
+    assert!(!mf.contains("- myelofibrosis"), "{mf}");
+
+    // A token outside the table carries no reading line at all.
+    let untouched = ambiguous_abbreviation_error(
+        "CAD",
+        &holder_hits(),
+        false,
+        ambiguity::get_disease_retry("CAD"),
+    )
+    .to_string();
     assert!(!untouched.contains("Clinical reading"), "{untouched}");
+    assert!(
+        untouched
+            .contains("Retry `biomcp get disease` with one candidate's ontology ID or full name"),
+        "{untouched}"
+    );
 }
 
 fn mf_holder_hits() -> Vec<MyDiseaseHit> {
@@ -194,7 +226,13 @@ fn mf_holder_hits() -> Vec<MyDiseaseHit> {
 /// candidate.
 #[test]
 fn mf_refusal_names_the_myelofibrosis_reading() {
-    let message = ambiguous_abbreviation_error("MF", &mf_holder_hits(), false).to_string();
+    let message = ambiguous_abbreviation_error(
+        "MF",
+        &mf_holder_hits(),
+        false,
+        ambiguity::get_disease_retry("MF"),
+    )
+    .to_string();
     assert!(
         message.contains("- mycosis fungoides (MONDO:0009691)\n"),
         "{message}"

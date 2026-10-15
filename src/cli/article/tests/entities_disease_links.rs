@@ -1,8 +1,8 @@
-//! Article disease-row links: the recorded PubTator3 reply
-//! for PMID 37887282 and the recorded MyDisease crosswalk replies pin the
-//! four live-defect rows, so a MeSH identifier opens the named disease's
-//! ontology card or keeps the v0.9.1 search command — never a bare
-//! crosswalk get.
+//! Article disease-row links: the recorded PubTator3 replies and the
+//! recorded MyDisease crosswalk replies pin the four live-defect rows of
+//! PMID 37887282 and the narrower-title refusal of PMID 22663011, so a
+//! MeSH identifier opens the named disease's ontology card or keeps the
+//! v0.9.1 search command — never a bare crosswalk get.
 
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -19,12 +19,12 @@ macro_rules! recorded {
     };
 }
 
-/// The recorded PubTator3 reply for PMID 37887282 and the
-/// recorded MyDisease crosswalk replies for its four MeSH descriptors.
-/// The fixture answers only the recorded routes, so the pinned rows cannot
-/// pass vacuously.
-async fn article_disease_link_fixture_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+/// The recorded PubTator3 export and the recorded MyDisease crosswalk
+/// replies for its MeSH descriptors. The fixture answers only the
+/// recorded routes, so a pinned row cannot pass vacuously.
+async fn article_disease_link_fixture_server(
+    pubtator_export: &'static str,
+) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind article disease link fixture");
@@ -46,7 +46,7 @@ async fn article_disease_link_fixture_server()
                     .expect("lock fixture requests")
                     .push(request.clone());
                 let body = if request.starts_with("GET /publications/export/biocjson?") {
-                    recorded!("pubtator", "export_37887282.json")
+                    pubtator_export
                 } else if request.contains("xrefs.mesh") {
                     // MyDisease crosswalk queries: the MeSH descriptor value
                     // names the recorded reply. URL encoding leaves the
@@ -59,6 +59,8 @@ async fn article_disease_link_fixture_server()
                         recorded!("mydisease", "query_xref_mesh_d000236.json")
                     } else if request.contains("D009369") {
                         recorded!("mydisease", "query_xref_mesh_d009369.json")
+                    } else if request.contains("D012878") {
+                        recorded!("mydisease", "query_xref_mesh_d012878.json")
                     } else {
                         r#"{"total":0,"hits":[]}"#
                     }
@@ -120,7 +122,8 @@ impl Drop for ArticleDiseaseLinkEnv {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn article_entities_disease_rows_link_the_named_disease_or_search() {
-    let (base, requests, server) = article_disease_link_fixture_server().await;
+    let (base, requests, server) =
+        article_disease_link_fixture_server(recorded!("pubtator", "export_37887282.json")).await;
     let cache = crate::test_support::TempDirGuard::new("article-disease-links-cache");
     let mut env = ArticleDiseaseLinkEnv(Vec::new());
     env.set("BIOMCP_PUBTATOR_BASE", &base);
@@ -178,4 +181,57 @@ async fn article_entities_disease_rows_link_the_named_disease_or_search() {
             "the crosswalk lookup for {descriptor} must run: {requests}"
         );
     }
+}
+
+/// The install test's PMID 22663011 row: "skin neoplasms" (MeSH D012878)
+/// crosswalks to two records, and the only one holding the concept name is
+/// the benign-neoplasm card, whose title narrows the concept (every
+/// concept word plus "benign"). The row keeps its v0.9.1 search command
+/// instead of linking a subtype card the row never named.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn article_entities_skin_neoplasms_row_keeps_its_search_command() {
+    let (base, requests, server) =
+        article_disease_link_fixture_server(recorded!("pubtator", "export_22663011.json")).await;
+    let cache = crate::test_support::TempDirGuard::new("article-disease-links-cache");
+    let mut env = ArticleDiseaseLinkEnv(Vec::new());
+    env.set("BIOMCP_PUBTATOR_BASE", &base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &base);
+    env.set("BIOMCP_MYDISEASE_BASE", &base);
+    env.set("BIOMCP_MYGENE_BASE", &base);
+    env.set(
+        "BIOMCP_CACHE_DIR",
+        cache.path().to_str().expect("utf-8 cache root"),
+    );
+
+    let markdown = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "article".to_string(),
+        "entities".to_string(),
+        "22663011".to_string(),
+    ])
+    .await
+    .expect("article entities renders");
+    server.abort();
+    drop(env);
+
+    // The narrower benign-neoplasm card never links, and no disease row
+    // trusts a bare crosswalk identifier.
+    for wrong in ["MONDO:0002531", "MONDO:0002898", "get disease MESH:"] {
+        assert!(
+            !markdown.contains(wrong),
+            "{wrong} must not appear: {markdown}"
+        );
+    }
+    // The row keeps its text search for the concept name it carries.
+    assert!(
+        markdown.contains("biomcp search disease --query \"skin neoplasms\""),
+        "the skin neoplasms row keeps its search command: {markdown}"
+    );
+
+    let requests = requests.lock().expect("lock fixture requests").join("\n");
+    assert!(
+        requests.contains("D012878"),
+        "the crosswalk lookup for D012878 must run before refusing: {requests}"
+    );
 }

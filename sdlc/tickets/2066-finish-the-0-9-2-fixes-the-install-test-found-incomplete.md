@@ -1,8 +1,10 @@
 # 2066 — Finish the 0.9.2 fixes the install test found incomplete
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision a37d733, accept
 
 ## Outcome
 

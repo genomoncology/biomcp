@@ -91,10 +91,13 @@ The NCI source grounds `--condition` through the same resolver as
 `get disease`. When that resolver refuses an ambiguous abbreviation, the
 trial search returns the refusal with its named candidates instead of
 quietly running a keyword search for the raw token, which would mix the
-holders' trials behind a degrade note (ticket 2032). A condition that
-simply fails to ground keeps the visible keyword degrade. This row
+holders' trials behind a degrade note (ticket 2032), and the refusal's
+retry names the trial search the user ran with the clinical reading's
+full condition, not a `get disease` command (ticket 2066). A condition
+that simply fails to ground keeps the visible keyword degrade. This row
 replays the recorded MyDisease `MF` response through the routine disease
-fixture; the refusal names every holder exactly as `get disease MF` does.
+fixture; the refusal names every holder exactly as `get disease MF`
+does.
 
 ```bash run id=nci-ambiguous-condition-refusal exit=2
 "$BIOMCP_BIN" --json search trial -c MF --source nci --limit 1
@@ -104,7 +107,7 @@ fixture; the refusal names every holder exactly as `get disease MF` does.
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: Ambiguous disease abbreviation 'MF': 2 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- mycosis fungoides (MONDO:0009691)\n- myotonia fluctuans (MONDO:0020481)\nClinical reading: 'MF' also names myelofibrosis (MONDO:0009692); try `biomcp get disease \"myelofibrosis\"`.\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MF\"` to see every match."
+    "message": "Invalid argument: Ambiguous disease abbreviation 'MF': 2 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- mycosis fungoides (MONDO:0009691)\n- myotonia fluctuans (MONDO:0020481)\nClinical reading: 'MF' also names myelofibrosis (MONDO:0009692); try `biomcp get disease \"myelofibrosis\"`.\nRetry `biomcp search trial -c \"myelofibrosis\" --source nci`."
   }
 }
 ```

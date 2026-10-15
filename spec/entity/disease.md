@@ -168,7 +168,7 @@ disease fixture.
 |---|---|
 | MF | {"code":"invalid_argument","candidates":2} |
 | CAD | {"code":"invalid_argument","candidates":3} |
-| MM | {"code":"invalid_argument","candidates":1} |
+| MM | {"code":"invalid_argument","candidates":2} |
 | MDS | {"code":"invalid_argument","candidates":2} |
 | CRC | {"code":"ok","candidates":0,"id":"MONDO:0024331","name":"colorectal carcinoma"} |
 | myeloma | {"code":"ok","candidates":0,"id":"MONDO:0009693","name":"multiple myeloma"} |
@@ -180,9 +180,12 @@ disease fixture.
 ```
 
 Ticket 2040: the refusal also names a clinical reading no indexed source
-record holds, as a pointer line that never joins the candidates. `MM`
-points at multiple myeloma and `MF` points at myelofibrosis — the
-reading the ClinicalTrials.gov corpus carries most (28 of the first 50
+record holds (ticket 2066 finished the shape): the default reading the
+holders never offer leads the candidate list — `MM` opens with multiple
+myeloma, ahead of the source's rare holder — while an additional
+reading beside clinical holders stays a pointer line that never joins
+the candidates: `MF` points at myelofibrosis — the reading the
+ClinicalTrials.gov corpus carries most (28 of the first 50
 `MF` trials list a myelofibrosis condition, against 6 for mycosis
 fungoides, measured 2026-10-11) — because MyDisease, the Disease
 Ontology entry, and the NCI Thesaurus synonym lists hold `MM` and `MF`
@@ -215,12 +218,13 @@ A refusal names every holder with a working retry form.
 ```
 
 A short abbreviation's refusal also names the clinical reading the source
-cannot see (ticket 2032): MyDisease holds `MM` on Miyoshi muscular
-dystrophy alone, and no myeloma record carries `MM` in any indexed field,
-so the candidate list alone would hide the disease oncology usually means.
-The reading arrives as a pointer line with a working command, never as a
-source candidate, and `MM` still refuses — curated abbreviation
-preferences stay deferred.
+cannot see (tickets 2032 and 2066): MyDisease holds `MM` on Miyoshi
+muscular dystrophy alone, and no myeloma record carries `MM` in any
+indexed field, so the holder list alone would bury the disease oncology
+means. The default reading leads the candidate list in the same `- label
+(ID)` form the holders use, the pointer line and its working command
+follow, and `MM` still refuses — curated abbreviation preferences stay
+deferred.
 
 ```bash run id=ambiguous-abbreviation-mm-refusal exit=2
 ../../tools/biomcp-ci --json get disease MM
@@ -230,7 +234,7 @@ preferences stay deferred.
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: Ambiguous disease abbreviation 'MM': the source holds it on 1 disease, but a token this short cannot name one disease reliably; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- Miyoshi muscular dystrophy (MONDO:0009685)\nClinical reading: 'MM' usually means multiple myeloma (MONDO:0009693); try `biomcp get disease \"multiple myeloma\"`.\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MM\"` to see every match."
+    "message": "Invalid argument: Ambiguous disease abbreviation 'MM': the source holds it on 1 disease, but a token this short cannot name one disease reliably; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- multiple myeloma (MONDO:0009693)\n- Miyoshi muscular dystrophy (MONDO:0009685)\nClinical reading: 'MM' usually means multiple myeloma (MONDO:0009693); try `biomcp get disease \"multiple myeloma\"`.\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MM\"` to see every match."
   }
 }
 ```

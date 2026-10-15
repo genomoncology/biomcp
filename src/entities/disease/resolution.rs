@@ -5,7 +5,8 @@ use super::*;
 
 mod ambiguity;
 pub(crate) use ambiguity::{
-    AbbreviationAmbiguity, clinical_reading_phrase, resolve_abbreviated_disease_ambiguity,
+    AbbreviationAmbiguity, clinical_reading_label, clinical_reading_phrase,
+    resolve_abbreviated_disease_ambiguity,
 };
 
 const EXACT_RESOLUTION_QUERY_SIZE: usize = 50;
@@ -790,6 +791,7 @@ fn ambiguous_abbreviation_error(
     requested: &str,
     holders: &[MyDiseaseHit],
     short_token: bool,
+    retry: String,
 ) -> BioMcpError {
     let abbreviation = is_abbreviation_shaped_token(requested);
     let subject = if abbreviation { "abbreviation" } else { "name" };
@@ -797,11 +799,14 @@ fn ambiguous_abbreviation_error(
     let reading = ambiguity::clinical_reading_line(requested)
         .map(|line| format!("{line}\n"))
         .unwrap_or_default();
+    // The default clinical reading leads the candidates: the install
+    // test found a pointer line alone buries the disease oncology
+    // means under the source's rare holder.
+    let leading_reading = ambiguity::default_reading_candidate_line(requested).unwrap_or_default();
     BioMcpError::InvalidArgument(format!(
         "Ambiguous disease {subject} '{requested}': {reason}; \
 BioMCP refuses rather than return one disease's definition with another's genes.\n\
-Candidates:\n{}{reading}\
-Retry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"{requested}\"` to see every match.",
+Candidates:\n{leading_reading}{}{reading}{retry}",
         abbreviation_candidate_lines(holders),
     ))
 }
@@ -809,6 +814,17 @@ Retry `biomcp get disease` with one candidate's ontology ID or full name, or run
 pub(crate) async fn resolve_disease_hit_by_name(
     client: &MyDiseaseClient,
     name_or_id: &str,
+) -> Result<MyDiseaseHit, BioMcpError> {
+    resolve_disease_hit_by_name_with_retry(client, name_or_id, ambiguity::get_disease_retry).await
+}
+
+/// Resolution for a command surface whose refusal names its own retry:
+/// the refusal body stays one builder, and the retry sentence names the
+/// command that received the ambiguous token.
+pub(crate) async fn resolve_disease_hit_by_name_with_retry(
+    client: &MyDiseaseClient,
+    name_or_id: &str,
+    retry: fn(&str) -> String,
 ) -> Result<MyDiseaseHit, BioMcpError> {
     match resolve_disease_hit_by_name_direct(client, name_or_id).await? {
         DirectNameResolution::AmbiguousAbbreviation { requested, holders } => {
@@ -819,6 +835,7 @@ pub(crate) async fn resolve_disease_hit_by_name(
                 &requested,
                 &holders,
                 short_token,
+                retry(&requested),
             ));
         }
         DirectNameResolution::Resolved(best) => return Ok(best),
