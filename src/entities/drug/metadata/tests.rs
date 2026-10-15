@@ -133,8 +133,11 @@ fn apply_openfda_metadata_keeps_a_resolved_typed_brand_listed() {
         Some("Tarceva"),
         "the typed brand the rescue resolved stays listed"
     );
+    // Case-insensitive dedupe keeps each labeler's first spelling, so the
+    // later "Erlotinib Hydrochloride" record and the "ERLOTINIB" alias of
+    // the first brand casefold onto spellings already listed.
     assert_eq!(
         drug.brand_names[1..],
-        vec!["ERLOTINIB HYDROCHLORIDE", "Erlotinib Hydrochloride", "Erlotinib", "ERLOTINIB"]
+        vec!["ERLOTINIB HYDROCHLORIDE", "Erlotinib"]
     );
 }
