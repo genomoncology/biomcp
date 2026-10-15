@@ -15,6 +15,7 @@
 - `search all` and `search gwas` with both a gene and a trait wait for one GWAS Catalog query instead of two: the gene query and the trait query are sent at the same time, so `search all --gene BRAF --disease melanoma` finishes its GWAS section inside the 12-second section limit with the same rows. (2089)
 - `get drug` now refuses a product name several drug products share: `get drug "Pain Relief"` exits 2 as an ambiguous drug name, lists the single ingredients the label records carry (lidocaine, menthol, acetaminophen, hexylresorhinol on the recorded reply), and names the ingredient form to try, where it used to exit as not found and list symptom names; "Sleep Aid" and "Cold and Flu" refuse the same way. (2085)
 - `get drug` now fetches the openFDA label, the CIViC context, the Open Targets data and the openFDA adverse-event preview at the same time once MyChem has named the drug, so the card waits for its slowest source instead of the sum of all four and returns byte-identical output. (2090)
+- Every follow-up command a variant card prints uses the headline coordinate: a card whose population section resolved a GRCh37 rsID to a GRCh38 coordinate through dbSNP no longer points its CIViC pointer or its trials and articles commands at the resolved coordinate, so following the printed civic command returns the evidence the card counted, and each direct ClinVar row now prints `N submission(s)` from its submission count instead of an empty submitter count. (2067)
 
 ### Internal
 
