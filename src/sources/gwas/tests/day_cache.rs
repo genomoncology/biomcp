@@ -201,20 +201,23 @@ async fn a_gwas_answer_a_day_old_is_refetched() {
 
 /// `BIOMCP_CACHE_MODE=infinite` keeps its meaning for the day-cache
 /// kinds too: the mode exists to serve expired entries without
-/// revalidation, so the day window yields to it and no request runs.
+/// revalidation, so the day window yields to it. The aged answer is
+/// stored first under the default mode (the day-cache store rule holds
+/// whatever the provider's headers say), and the infinite repeat makes
+/// no request.
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn infinite_cache_mode_still_serves_the_aged_gwas_answer() {
     let (base, requests, server) =
         day_cache_server(vec![Reply::json_a_day_old(V2_SEARCH_BODY)]).await;
     let mut env = FixtureEnv::scratch_cache_only();
-    let _infinite = crate::sources::test_cache_mode::infinite();
     let client = day_cached_client(&base, &mut env);
 
     let first = client
         .search_associations(Some("BRAF"), None, 5)
         .await
         .expect("first search");
+    let _infinite = crate::sources::test_cache_mode::infinite();
     let second = client
         .search_associations(Some("BRAF"), None, 5)
         .await
