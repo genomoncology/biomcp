@@ -202,6 +202,12 @@
 
 ### Fixes
 
+- `get patient <id> conditions` marks the section `degraded` only when a
+  Condition breaks FHIR R4 invariant con-3: a `problem-list-item` Condition
+  with no clinical status whose verification status is not `entered-in-error`.
+  Conditions that satisfy the invariant settle `data`, and each row shows the
+  clinical status as absent when the source omits it. (2004)
+
 - The glibc floor check now compares versions as integer pairs, the
   way the dynamic loader orders them, so a highest reference of 2.9
   passes a 2.28 floor and 2.30 no longer reads as 2.3. The Linux

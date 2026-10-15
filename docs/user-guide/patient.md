@@ -34,7 +34,7 @@ biomcp get patient <id> conditions
 biomcp get patient <id> all
 ```
 
-`conditions` searches `Condition?patient=<id>` at 100 per page and follows the server's `next` links. Each row shows the condition text, its codes, the clinical and verification status, the onset, and the recorded date.
+`conditions` searches `Condition?patient=<id>` at 100 per page and follows the server's `next` links. Each row shows the condition text, its codes, the clinical and verification status, the onset, and the recorded date. A row whose source omits the clinical status shows it as absent.
 
 The walk follows a `next` link or a redirect only when it stays on the configured origin and base path, and it reads at most 20 pages. The section settles as `degraded` and keeps the rows it read when any of these happen:
 
@@ -43,7 +43,8 @@ The walk follows a `next` link or a redirect only when it stays on the configure
 - the walk reaches the 20-page cap
 - a later page fails
 - the server reports an error in an OperationOutcome
-- a condition has no clinical status
+- a `problem-list-item` condition has no clinical status and its verification
+  status is not `entered-in-error` (FHIR R4 invariant con-3)
 
 A failed first page makes the section `unavailable`. A search with no matches is `empty`.
 

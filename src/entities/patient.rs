@@ -22,7 +22,8 @@ const CONDITIONS_PAGE_CAP: &str =
     "The condition list stopped at the 20-page limit and may be incomplete.";
 const CONDITIONS_LATER_PAGE: &str =
     "The condition list stopped when a later page failed and may be incomplete.";
-const CONDITIONS_MISSING_STATUS: &str = "At least one condition has no clinical status.";
+const CONDITIONS_CON_3_BROKEN: &str =
+    "At least one problem-list-item condition has no clinical status.";
 const CONDITIONS_OUTCOME_ERROR: &str = "The FHIR server reported an error with the condition list.";
 
 fn default_patient_section_outcomes() -> SectionOutcomes {
@@ -67,6 +68,10 @@ pub struct PatientCondition {
     pub verification_status: Option<String>,
     pub onset: Option<String>,
     pub recorded_date: Option<String>,
+    /// FHIR R4 invariant con-3: a problem-list-item Condition that is not
+    /// `entered-in-error` must carry a clinical status.
+    #[serde(skip)]
+    pub breaks_con_3: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -149,9 +154,7 @@ pub(crate) fn conditions_from_walk(walk: &Walk) -> (Vec<PatientCondition>, Secti
         Some(WalkStop::PageCap) => Some(CONDITIONS_PAGE_CAP),
         Some(WalkStop::LaterPageFailed) => Some(CONDITIONS_LATER_PAGE),
         None if walk.outcome_error => Some(CONDITIONS_OUTCOME_ERROR),
-        None if conditions.iter().any(|row| row.clinical_status.is_none()) => {
-            Some(CONDITIONS_MISSING_STATUS)
-        }
+        None if conditions.iter().any(|row| row.breaks_con_3) => Some(CONDITIONS_CON_3_BROKEN),
         None => None,
     };
     let outcome = match degraded {
@@ -185,15 +188,38 @@ fn condition_from_resource(resource: &Value) -> PatientCondition {
                 .and_then(|period| text_at(period, "start"))
         })
         .or_else(|| text_at(resource, "onsetString"));
+    let clinical_status = first_code(resource.get("clinicalStatus"));
+    let verification_status = first_code(resource.get("verificationStatus"));
     PatientCondition {
         id: text_at(resource, "id"),
         text,
         codings,
-        clinical_status: first_code(resource.get("clinicalStatus")),
-        verification_status: first_code(resource.get("verificationStatus")),
+        clinical_status,
+        verification_status,
         onset,
         recorded_date: text_at(resource, "recordedDate"),
+        breaks_con_3: has_problem_list_category(resource)
+            && clinical_status.is_none()
+            && verification_status.as_deref() != Some("entered-in-error"),
     }
+}
+
+fn has_problem_list_category(resource: &Value) -> bool {
+    resource
+        .get("category")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .any(|category| {
+            category
+                .get("coding")
+                .and_then(Value::as_array)
+                .is_some_and(|codings| {
+                    codings.iter().any(|coding| {
+                        text_at(coding, "code").as_deref() == Some("problem-list-item")
+                    })
+                })
+        })
 }
 
 fn first_code(concept: Option<&Value>) -> Option<String> {

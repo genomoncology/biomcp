@@ -63,22 +63,67 @@ async fn the_card_reads_demographics_and_both_condition_pages() {
     assert_eq!(outcome(&patient).outcome(), SectionOutcomeState::Data);
 }
 
+/// A one-condition bundle whose Condition carries one category and no
+/// clinical status, optionally exempt through its verification status.
+fn no_status_bundle(category: &str, verification: Option<&str>) -> serde_json::Value {
+    let mut resource = condition("c1", "Synthetic");
+    resource["category"] = json!([{"coding": [{"code": category}]}]);
+    resource
+        .as_object_mut()
+        .expect("object")
+        .remove("clinicalStatus");
+    if let Some(verification) = verification {
+        resource["verificationStatus"] = json!({"coding": [{"code": verification}]});
+    }
+    condition_bundle(std::slice::from_ref(&resource), None)
+}
+
 #[tokio::test]
-async fn a_condition_without_clinical_status_is_degraded() {
+async fn an_encounter_diagnosis_without_clinical_status_stays_data() {
+    let (patient, _server) = read(|target| {
+        if target.starts_with("/fhir/Patient/") {
+            return Reply::json(200, patient_json());
+        }
+        Reply::json(200, no_status_bundle("encounter-diagnosis", None))
+    })
+    .await;
+    let conditions = patient.conditions.as_ref().expect("conditions");
+    assert_eq!(conditions.len(), 1);
+    assert_eq!(conditions[0].clinical_status, None);
+    assert!(!conditions[0].breaks_con_3);
+    assert_eq!(outcome(&patient).outcome(), SectionOutcomeState::Data);
+}
+
+#[tokio::test]
+async fn a_problem_list_condition_without_clinical_status_is_degraded() {
     let (patient, server) = read(|target| {
         if target.starts_with("/fhir/Patient/") {
             return Reply::json(200, patient_json());
         }
-        let mut bare = condition("c1", "Synthetic");
-        bare.as_object_mut()
-            .expect("object")
-            .remove("clinicalStatus");
-        Reply::json(200, condition_bundle(&[bare], None))
+        Reply::json(200, no_status_bundle("problem-list-item", None))
     })
     .await;
-    assert_eq!(outcome(&patient).outcome(), SectionOutcomeState::Degraded);
     assert_eq!(patient.conditions.as_ref().map(Vec::len), Some(1));
+    assert_eq!(outcome(&patient).outcome(), SectionOutcomeState::Degraded);
     assert_message_names_nothing(&patient, &server);
+}
+
+#[tokio::test]
+async fn an_entered_in_error_condition_is_exempt_from_con_3() {
+    let (patient, _server) = read(|target| {
+        if target.starts_with("/fhir/Patient/") {
+            return Reply::json(200, patient_json());
+        }
+        Reply::json(
+            200,
+            no_status_bundle("problem-list-item", Some("entered-in-error")),
+        )
+    })
+    .await;
+    let conditions = patient.conditions.as_ref().expect("conditions");
+    assert_eq!(conditions.len(), 1);
+    assert!(!conditions[0].breaks_con_3);
+    assert_eq!(outcome(&patient).outcome(), SectionOutcomeState::Data);
 }
 
 #[tokio::test]

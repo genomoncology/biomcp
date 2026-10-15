@@ -416,7 +416,7 @@ NCI_TRUNCATED_EMPTY = b'{"total":0,"data":[]}'
 
 # Synthetic FHIR R4 patients for spec/entity/patient.md. No real or demo
 # server data: every ID, date, and condition here is invented.
-def fhir_condition(cid, text, status="active"):
+def fhir_condition(cid, text, status="active", category=None, verification=None):
     resource = {
         "resourceType": "Condition",
         "id": cid,
@@ -425,6 +425,10 @@ def fhir_condition(cid, text, status="active"):
     }
     if status:
         resource["clinicalStatus"] = {"coding": [{"code": status}]}
+    if category:
+        resource["category"] = [{"coding": [{"code": category}]}]
+    if verification:
+        resource["verificationStatus"] = {"coding": [{"code": verification}]}
     return resource
 
 
@@ -439,7 +443,14 @@ def fhir_bundle(conditions, next_url=None):
     return json.dumps(bundle).encode("utf-8")
 
 
-FHIR_PATIENTS = {"SYNTH-PT-1", "SYNTH-PT-EMPTY", "SYNTH-PT-OFFSITE"}
+FHIR_PATIENTS = {
+    "SYNTH-PT-1",
+    "SYNTH-PT-EMPTY",
+    "SYNTH-PT-OFFSITE",
+    "SYNTH-PT-ENCOUNTER",
+    "SYNTH-PT-PROBLEM",
+    "SYNTH-PT-EXEMPT",
+}
 FHIR_PAGE_TWO = "/fhir?_getpages=synth-pt-1&_getpagesoffset=1"
 
 
@@ -460,6 +471,41 @@ def fhir_response(parsed):
             return 200, fhir_bundle(
                 [fhir_condition("synth-c3", "Synthetic condition three")],
                 "http://offsite.invalid/fhir?page=2",
+            )
+        # Ticket 2004: con-3. Encounter-diagnosis conditions satisfy the
+        # invariant without a clinical status; only a problem-list-item
+        # condition without one breaks it, unless it is entered-in-error.
+        if pid == "SYNTH-PT-ENCOUNTER":
+            return 200, fhir_bundle(
+                [
+                    fhir_condition(
+                        "synth-e1", "Synthetic encounter one",
+                        status=None, category="encounter-diagnosis",
+                    ),
+                    fhir_condition(
+                        "synth-e2", "Synthetic encounter two",
+                        status="resolved", category="encounter-diagnosis",
+                    ),
+                ]
+            )
+        if pid == "SYNTH-PT-PROBLEM":
+            return 200, fhir_bundle(
+                [
+                    fhir_condition(
+                        "synth-p1", "Synthetic problem one",
+                        status=None, category="problem-list-item",
+                    ),
+                ]
+            )
+        if pid == "SYNTH-PT-EXEMPT":
+            return 200, fhir_bundle(
+                [
+                    fhir_condition(
+                        "synth-x1", "Synthetic exempt one",
+                        status=None, category="problem-list-item",
+                        verification="entered-in-error",
+                    ),
+                ]
             )
         return 200, fhir_bundle([])
     if path == "/fhir" and params.get("_getpages") == ["synth-pt-1"]:

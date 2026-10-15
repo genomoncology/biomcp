@@ -50,6 +50,23 @@ export BIOMCP_FHIR_BASE="${BIOMCP_PROVIDER_CONTRACT_BASE:?provider fixture base 
 ../../tools/biomcp-ci --json get patient SYNTH-PT-OFFSITE conditions | jq -c '[(.conditions | length), .section_outcomes.conditions.outcome, .section_outcomes.conditions.message]' | mustmatch '[1,"degraded","The condition list stopped at a link or redirect off the configured server and may be incomplete."]'
 ```
 
+## Conditions Degrade Only On A Con-3 Break
+
+FHIR R4 invariant con-3 requires a clinical status only on a `problem-list-item`
+Condition that is not `entered-in-error`. Encounter-diagnosis conditions
+satisfy it without one, the section settles `data`, and each row shows the
+clinical status as absent when the source omits it.
+
+```bash
+export BIOMCP_FHIR_BASE="${BIOMCP_PROVIDER_CONTRACT_BASE:?provider fixture base is not configured}/fhir"
+../../tools/biomcp-ci get patient SYNTH-PT-ENCOUNTER conditions | mustmatch like '| Synthetic encounter one | - | - | - | 2020-01-01 | - |
+| Synthetic encounter two | - | resolved | - | 2020-01-01 | - |'
+../../tools/biomcp-ci --json get patient SYNTH-PT-ENCOUNTER conditions | jq -c '[.section_outcomes.conditions.outcome, [.conditions[].clinical_status]]' | mustmatch '["data",[null,"resolved"]]'
+../../tools/biomcp-ci get patient SYNTH-PT-PROBLEM conditions | mustmatch like '| Synthetic problem one | - | - | - | 2020-01-01 | - |'
+../../tools/biomcp-ci --json get patient SYNTH-PT-PROBLEM conditions | jq -c '[.section_outcomes.conditions.outcome, .section_outcomes.conditions.message]' | mustmatch '["degraded","At least one problem-list-item condition has no clinical status."]'
+../../tools/biomcp-ci --json get patient SYNTH-PT-EXEMPT conditions | jq -c '[.section_outcomes.conditions.outcome, [.conditions[] | [.clinical_status, .verification_status]]]' | mustmatch '["data",[[null,"entered-in-error"]]]'
+```
+
 ## Errors Name No Patient Or Server
 
 A missing patient fails without naming the ID. A malformed ID is refused before
