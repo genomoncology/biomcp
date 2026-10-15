@@ -236,7 +236,7 @@ fn resolve_protein_change_hit(
     let named = hits
         .iter()
         .enumerate()
-        .filter(|(_, hit)| names_change(hit.source()))
+        .filter(|(_, hit)| hit_names_requested_change(hit, change, mane_transcript))
         .map(|(index, _)| index)
         .collect::<Vec<_>>();
     if named.len() == 1 {
@@ -939,7 +939,10 @@ fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
             score += 5;
         }
     }
-    if hit.source().dbnsfp().is_some_and(|d| !d.hgvsp().is_empty()) {
+    if hit
+        .source()
+        .dbnsfp()
+        .is_some_and(|d| d.hgvsp().first().is_some()) {
         score += 10;
     }
     if hit.source().dbsnp().is_some_and(|d| d.rsid().is_some()) {

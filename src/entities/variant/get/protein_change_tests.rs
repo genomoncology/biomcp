@@ -126,7 +126,7 @@ fn protein_change_resolution_prefers_the_clinvar_named_hit_over_first_match() {
         mane.as_deref(),
     )
     .expect("the ClinVar record names one of the three matching hits");
-    assert_eq!(resolved.id, "chr14:g.95562808C>T");
+    assert_eq!(resolved.source().id(), "chr14:g.95562808C>T");
 }
 
 #[test]
@@ -156,7 +156,7 @@ fn protein_change_resolution_keeps_the_named_change_over_a_clinvar_lookalike() {
     let mane = transform::variant::clinvar_mane_transcript(&hits);
     let resolved = resolve_protein_change_hit("TP53 C124Y", "TP53", "C124Y", hits, mane.as_deref())
         .expect("the hit whose canonical transcript names the change resolves");
-    assert_eq!(resolved.id, "chr17:g.7579316C>T");
+    assert_eq!(resolved.source().id(), "chr17:g.7579316C>T");
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn protein_change_resolution_keeps_the_named_brca1_change_over_a_clinvar_lookali
     let resolved =
         resolve_protein_change_hit("BRCA1 A314T", "BRCA1", "A314T", hits, mane.as_deref())
             .expect("the hit whose canonical transcript names the change resolves");
-    assert_eq!(resolved.id, "chr17:g.41246608C>T");
+    assert_eq!(resolved.source().id(), "chr17:g.41246608C>T");
 }
 
 #[test]
@@ -234,7 +234,7 @@ fn protein_change_resolution_resolves_a_past_insert_change_on_mane_numbering() {
     let resolved =
         resolve_protein_change_hit("BRCA1 I1568N", "BRCA1", "I1568N", hits, mane.as_deref())
             .expect("the MANE-named hit resolves past the insert");
-    assert_eq!(resolved.id, "chr17:g.41223228A>T");
+    assert_eq!(resolved.source().id(), "chr17:g.41223228A>T");
     let variant = transform::variant::from_myvariant_hit_with_mane(
         &resolved,
         mane.as_deref(),
@@ -269,7 +269,7 @@ fn protein_change_resolution_resolves_the_naming_annotation_without_a_marker() {
 
     let resolved = resolve_protein_change_hit("BRCA1 I1568N", "BRCA1", "I1568N", hits, None)
         .expect("the naming annotation resolves without a marker");
-    assert_eq!(resolved.id, "chr17:g.41223228A>T");
+    assert_eq!(resolved.source().id(), "chr17:g.41223228A>T");
     let variant = transform::variant::from_myvariant_hit_with_mane(&resolved, None, Some("I1568N"));
     assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ile1568Asn"));
     assert_eq!(variant.transcript.as_deref(), Some("NM_007294.3"));
@@ -304,7 +304,7 @@ fn protein_change_resolution_prefers_the_canonical_spelling_over_conflicting_rec
     let mane = transform::variant::clinvar_mane_transcript(&hits);
     let resolved = resolve_protein_change_hit("BRCA1 C61G", "BRCA1", "C61G", hits, mane.as_deref())
         .expect("the single canonical spelling resolves");
-    assert_eq!(resolved.id, "chr17:g.41258504A>C");
+    assert_eq!(resolved.source().id(), "chr17:g.41258504A>C");
 }
 
 #[test]
@@ -317,7 +317,7 @@ fn protein_change_resolution_keeps_a_single_matching_hit() {
 
     let resolved = resolve_protein_change_hit("BRAF V600E", "BRAF", "V600E", hits, None)
         .expect("one matching hit resolves without a ClinVar record");
-    assert_eq!(resolved.id, "chr7:g.140453136A>T");
+    assert_eq!(resolved.source().id(), "chr7:g.140453136A>T");
 }
 
 #[test]
@@ -676,7 +676,7 @@ fn protein_change_resolution_returns_the_mane_named_candidate_of_two_alias_hits(
         Some("NM_007294.4"),
     )
     .expect("the candidate MANE names resolves");
-    assert_eq!(resolved.id, "chr17:g.41226371G>T");
+    assert_eq!(resolved.source().id(), "chr17:g.41226371G>T");
     let variant = transform::variant::from_myvariant_hit_with_mane(
         &resolved,
         Some("NM_007294.4"),
@@ -716,7 +716,7 @@ fn protein_change_resolution_returns_the_mane_named_candidate_of_two_alias_hits(
         Some("NM_007294.4"),
     )
     .expect("the candidate MANE names resolves");
-    assert_eq!(resolved.id, "chr17:g.41246365A>T");
+    assert_eq!(resolved.source().id(), "chr17:g.41246365A>T");
     let variant = transform::variant::from_myvariant_hit_with_mane(
         &resolved,
         Some("NM_007294.4"),

@@ -671,7 +671,7 @@ async fn trim_empty_provider_cursor_stops_without_repeating_page_one() {
     })
     .to_string();
     let (base, requests, server) = ctgov_json_fixture(body).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         condition: Some("melanoma".into()),
@@ -755,7 +755,7 @@ async fn alias_union_blank_cursor_cannot_claim_an_exact_total() {
     })
     .to_string();
     let (base, requests, server) = ctgov_json_fixture(body).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         condition: Some("melanoma".into()),
