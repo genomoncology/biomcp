@@ -1,8 +1,5 @@
 //! Local data and cache readiness tests for `biomcp health`.
 
-use std::io;
-use std::path::PathBuf;
-
 use super::super::HealthStatus;
 use super::super::catalog::{
     CVX_LOCAL_DATA_AFFECTS, EMA_LOCAL_DATA_AFFECTS, GTR_LOCAL_DATA_AFFECTS,
@@ -15,11 +12,10 @@ use super::super::local::{
 };
 use super::super::runner::{ProbeClass, report_from_outcomes};
 use super::{
-    assert_millisecond_latency, block_on, fixture_ema_root, set_fresh_ema_mtimes,
-    set_stale_ema_mtimes, set_stale_mtime, set_stale_mtime_with_age, write_cvx_files,
-    write_ema_files, write_gtr_files, write_who_files, write_who_ivd_files,
+    fixture_ema_root, set_fresh_ema_mtimes, set_stale_ema_mtimes, set_stale_mtime,
+    set_stale_mtime_with_age, write_cvx_files, write_ema_files, write_gtr_files, write_who_files,
+    write_who_ivd_files,
 };
-use crate::error::BioMcpError;
 use crate::test_support::TempDirGuard;
 
 #[test]
