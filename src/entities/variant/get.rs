@@ -257,7 +257,7 @@ Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, Cl
             .collect::<String>();
         return Err(refusal(
             hits.len(),
-            "none of them names that change on its canonical (or ClinVar-named) transcript",
+            "none of them carries a ClinVar record that names one",
             &candidates,
         ));
     }
