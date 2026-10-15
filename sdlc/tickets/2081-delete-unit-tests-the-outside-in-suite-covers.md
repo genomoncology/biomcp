@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision e65830a, accept
+
 ## Outcome
 
 Retained routine tests protect behavior, edge cases, external contracts, fixed defects or refusals; redundant construction/restatement tests and unused test-only code are removed in reviewed small batches.
