@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 Reviews: revision ae1c4ec, accept
 
+Reviews: revision c9ad8c5, accept
+
 ## Outcome
 
 With a gene and a disease, the GWAS section of `biomcp search all` and `biomcp search gwas -g GENE --trait TEXT` waits only as long as the slower of its two GWAS Catalog queries, so `search all --gene BRAF --disease melanoma` finishes its GWAS section inside the 12-second section limit, with unchanged output.
