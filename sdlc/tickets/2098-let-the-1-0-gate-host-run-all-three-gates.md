@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 1.0
 
+Reviews: revision d04ae2b, accept
+
 ## Evidence
 
 - Filed 2026-10-15 from lanes 2004 and 2006: every 1.0 lane's acceptance names `make lint`, `make test`, and `make spec` on the gate host, and all three fail on M5 for pre-existing reasons proven at the base tip e2dff0a46, before any lane's diff.
