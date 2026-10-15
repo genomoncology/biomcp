@@ -15,12 +15,12 @@
     },
     {
       "path": "src/cache/migration.rs",
-      "baseline_lines": 1117,
+      "baseline_lines": 1119,
       "floor_lines": 927,
       "authorized_increase": {
         "ticket": "2041",
-        "delta": 190,
-        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages' reviewed growth.",
+        "delta": 192,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages reviewed growth.",
         "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
@@ -165,9 +165,14 @@
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3968,
+      "baseline_lines": 3972,
       "floor_lines": 3968,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2041",
+        "delta": 4,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
+      }
     },
     {
       "path": "src/entities/gene/cspec.rs",
@@ -234,12 +239,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 2155,
+      "baseline_lines": 2151,
       "floor_lines": 1428,
       "authorized_increase": {
         "ticket": "2041",
-        "delta": 727,
-        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages' reviewed growth.",
+        "delta": 723,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages reviewed growth.",
         "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
@@ -262,12 +267,12 @@
     },
     {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1208,
+      "baseline_lines": 1209,
       "floor_lines": 1187,
       "authorized_increase": {
         "ticket": "2041",
-        "delta": 21,
-        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages' reviewed growth.",
+        "delta": 22,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages reviewed growth.",
         "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
@@ -491,15 +496,20 @@
     },
     {
       "path": "src/transform/drug.rs",
-      "baseline_lines": 1354,
-      "floor_lines": 1354,
+      "baseline_lines": 1342,
+      "floor_lines": 1342,
       "authorized_increase": null
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1117,
+      "baseline_lines": 1120,
       "floor_lines": 1117,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2041",
+        "delta": 3,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-15, and each named file carries both lineages reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
+      }
     }
   ]
 }

@@ -548,6 +548,7 @@ mod tests {
         assert_eq!(output["ok"], false);
     }
 
+    mod cache;
     mod catalog;
     mod http;
     mod local;
