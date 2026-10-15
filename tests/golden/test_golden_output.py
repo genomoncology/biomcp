@@ -29,6 +29,10 @@ OVERRIDE_SUFFIXES = ("_BASE", "_BASE_URL", "_FIXTURE_ORIGIN", "_URL")
 NON_PROVIDER_OVERRIDES = frozenset({"BIOMCP_HEALTH_PROBE_BASE"})
 RECORD_PASSES = 3
 RECORD_TIMEOUT_SECONDS = 600.0
+# search-all JSON embeds the command's own wall time. A golden file pins the
+# output format, not the stopwatch, so the measured value is blanked on both
+# sides of the comparison.
+WALL_TIME_RE = re.compile(r'("wall_time_ms": )\d+')
 
 
 @dataclass(frozen=True)
@@ -50,6 +54,10 @@ CASES = (
     ),
 )
 FORMAT_SUFFIX = {"json": ".json", "markdown": ".md"}
+
+
+def _normalize(text: str) -> str:
+    return WALL_TIME_RE.sub(r"\1<WALL_TIME_MS>", text)
 
 
 def _golden_path(case: Case, output_format: str) -> Path:
@@ -117,9 +125,9 @@ def test_golden_output(
     golden_update: bool,
 ) -> None:
     process = _run_case(replay, case, output_format)
-    output = process.stdout
+    output = _normalize(process.stdout)
     if output_format == "json":
-        json.loads(output)
+        json.loads(process.stdout)
     golden = _golden_path(case, output_format)
     if golden_update:
         golden.parent.mkdir(parents=True, exist_ok=True)
