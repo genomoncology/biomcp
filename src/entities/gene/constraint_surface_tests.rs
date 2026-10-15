@@ -1,7 +1,7 @@
 //! Actual constraint retrieval, product decoding and shipped channel contracts.
 use super::*;
 use crate::entities::article::test_support::{
-    TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    TestEnv, TestHttpFixture, TestHttpReply, held_reply_gate, test_http_response,
 };
 use biomcp_mcp_contract_client::{ContractHarness, first_text};
 use rmcp::model::CallToolRequestParams;
@@ -144,8 +144,7 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
     let selected = Arc::clone(&response);
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = Arc::clone(&requests);
-    let (release, wait) = std::sync::mpsc::channel::<()>();
-    let hold = Arc::new(Mutex::new(wait));
+    let (release, hold) = held_reply_gate();
     let fixture = TestHttpFixture::spawn(move |request| {
             captured.lock().unwrap().push(request.to_owned());
             if request.starts_with("POST /gnomad") {

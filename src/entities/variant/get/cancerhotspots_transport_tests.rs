@@ -1,6 +1,6 @@
 //! Real callers own transport, section policy and public channels.
 use crate::entities::article::test_support::{
-    TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    TestEnv, TestHttpFixture, TestHttpReply, held_reply_gate, test_http_response,
 };
 use biomcp_mcp_contract_client::{ContractHarness, first_text};
 use rmcp::model::CallToolRequestParams;
@@ -258,8 +258,7 @@ fn hotspots_flattened_detail_restores_required_source_and_literal_target() {
 #[serial_test::serial(source_env)]
 async fn hotspots_detail_timeout_preserves_other_enrichment() {
     let (fixture, _) = fixture(CAPTURE.to_vec(), false).await;
-    let (release, receiver) = std::sync::mpsc::channel::<()>();
-    let receiver = Arc::new(Mutex::new(receiver));
+    let (release, receiver) = held_reply_gate();
     let contacted = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let calls = contacted.clone();
     let hung = TestHttpFixture::spawn(move |request| {
