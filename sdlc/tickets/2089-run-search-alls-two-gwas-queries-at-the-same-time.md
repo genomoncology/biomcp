@@ -33,4 +33,6 @@ With a gene and a disease, the GWAS section of `biomcp search all` and `biomcp s
 - CI on `6fffafeb6` (run 38632440980): every job green except the two jobs that run the test-wait ratchet (`canonical-gates` through `make lint`, `repository-contracts` through `test_test_wait_ratchet_check.py`), both failing only on that raise awaiting this review. The build-host timing pass (five runs of `search all --gene BRAF --disease melanoma --counts-only`, median under 8 s, no timeout error) is left to the reviewer per the Proof wording.
 - Beyond the claimed files: `tools/test-wait-inventory.json` (the file pin and the 46→48 ceiling raise citing 2089).
 
-- Code review: ACCEPT 2026-10-15. Verified: the timed test is red on pre-change code at 3.018 s and green on the branch at 1.635 s, rows and pagination asserted equal to the sequential composition on the same replies, callers untouched, keeps read intact; full-suite verification runs in the end-of-0.9.3 pass.
+- Code review: ACCEPT 2026-10-15 by Coordinator Review
+
+  Basis: the timed test is red on pre-change code at 3.018 s and green on the branch at 1.635 s, rows and pagination asserted equal to the sequential composition on the same replies, callers untouched, keeps read intact; full-suite verification runs in the end-of-0.9.3 pass.
