@@ -132,8 +132,7 @@ pub(crate) fn selected_snpeff_annotation_index(
                 1
             } else if requested_change.is_some_and(|change| {
                 ann.1
-                    .hgvs_p
-                    .as_deref()
+                    .hgvs_p()
                     .and_then(crate::entities::variant::normalize_protein_change)
                     .is_some_and(|protein| {
                         crate::entities::variant::protein_changes_equivalent(change, &protein)
@@ -231,14 +230,12 @@ pub(crate) fn mane_annotation_names_change(
     let Some(mane_stem) = mane_transcript.map(accession_stem) else {
         return false;
     };
-    let snpeff_names = hit.snpeff.as_ref().is_some_and(|snpeff| {
-        snpeff.ann.iter().any(|ann| {
-            ann.feature_id
-                .as_deref()
+    let snpeff_names = hit.source().snpeff().is_some_and(|snpeff| {
+        snpeff.annotations().iter().any(|ann| {
+            ann.feature_id()
                 .is_some_and(|feature| accession_stem(feature) == mane_stem)
                 && ann
-                    .hgvs_p
-                    .as_deref()
+                    .hgvs_p()
                     .and_then(crate::entities::variant::normalize_protein_change)
                     .is_some_and(|protein| {
                         crate::entities::variant::protein_changes_equivalent(change, &protein)
@@ -273,8 +270,8 @@ pub(crate) fn isoform_annotation_naming_change(
     mane_transcript: Option<&str>,
 ) -> Option<(String, String)> {
     let mane_stem = mane_transcript.map(accession_stem);
-    hit.snpeff.as_ref()?.ann.iter().find_map(|ann| {
-        let feature = ann.feature_id.as_deref()?.trim();
+    hit.source().snpeff()?.annotations().iter().find_map(|ann| {
+        let feature = ann.feature_id()?;
         if feature.is_empty() || !looks_like_transcript(feature) {
             return None;
         }

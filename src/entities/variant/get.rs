@@ -253,7 +253,7 @@ Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, Cl
     if named.is_empty() {
         let candidates = hits
             .iter()
-            .map(|hit| format!("- {}\n", protein_change_candidate(hit)))
+            .map(|hit| format!("- {}\n", protein_change_candidate(hit.source())))
             .collect::<String>();
         return Err(refusal(
             hits.len(),
@@ -930,19 +930,19 @@ fn best_hit(
 
 fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
     let mut score = 0;
-    if let Some(clinvar) = hit.clinvar.as_ref() {
-        if !clinvar.rcv.is_empty() {
+    if let Some(clinvar) = hit.source().clinvar() {
+        if !clinvar.rcv().is_empty() {
             score += 100;
-            score += clinvar.rcv.len().min(50) as i32;
+            score += clinvar.rcv().len().min(50) as i32;
         }
-        if clinvar.variant_id.is_some() {
+        if clinvar.variant_id().is_some() {
             score += 5;
         }
     }
-    if hit.dbnsfp.as_ref().and_then(|d| d.hgvsp.first()).is_some() {
+    if hit.source().dbnsfp().is_some_and(|d| !d.hgvsp().is_empty()) {
         score += 10;
     }
-    if hit.dbsnp.as_ref().and_then(|d| d.rsid.as_ref()).is_some() {
+    if hit.source().dbsnp().is_some_and(|d| d.rsid().is_some()) {
         score += 5;
     }
     score
@@ -962,11 +962,11 @@ async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, Bi
                 .await?
                 .filter(|hit| {
                     matches!(
-                        parse_variant_id(hit.id.trim()),
+                        parse_variant_id(hit.source().id().trim()),
                         Ok(VariantIdFormat::HgvsGenomic(_))
                     )
                 })
-                .map(|hit| VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()))
+                .map(|hit| VariantIdFormat::HgvsGenomic(hit.source().id().trim().to_string()))
                 .ok_or_else(|| BioMcpError::NotFound {
                     entity: "variant".into(),
                     id: id.to_string(),

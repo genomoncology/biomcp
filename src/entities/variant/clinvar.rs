@@ -125,27 +125,27 @@ fn indirect_conditions(value: Option<&serde_json::Value>, preferred: Option<&str
 pub(super) fn indirect_clinvar_record(
     hit: &crate::sources::myvariant::MyVariantHit,
 ) -> Option<super::ClinvarRecord> {
-    let clinvar = hit.clinvar.as_ref()?;
-    let variation_id = clinvar.variant_id?;
+    let clinvar = hit.source().clinvar()?;
+    let variation_id = clinvar.variant_id()?;
     let aggregates = clinvar
-        .rcv
+        .rcv()
         .iter()
         .filter_map(|rcv| {
-            let accession = rcv.accession.as_deref()?.trim();
+            let accession = rcv.accession().unwrap_or_default().trim();
             (!accession.is_empty()).then(|| super::ClinvarAggregate {
                 source: "MyVariant.info".into(),
                 accession: accession.into(),
-                version: rcv.version,
+                version: rcv.version(),
                 classification_domain: "germline".into(),
-                classification: rcv.clinical_significance.clone(),
-                review_status: rcv.review_status.clone(),
-                evaluation_date: rcv.last_evaluated.clone(),
+                classification: rcv.clinical_significance().map(str::to_string),
+                review_status: rcv.review_status().map(str::to_string),
+                evaluation_date: rcv.last_evaluated().map(str::to_string),
                 record_status: None,
-                number_submitters: rcv.number_submitters,
+                number_submitters: rcv.number_submitters(),
                 submission_count: None,
                 conditions: indirect_conditions(
-                    rcv.conditions.as_ref(),
-                    rcv.preferred_name.as_deref(),
+                    rcv.conditions(),
+                    rcv.preferred_name(),
                 ),
             })
         })
@@ -206,7 +206,10 @@ pub(super) async fn add_clinvar(
     timeout: Duration,
 ) {
     let fallback = indirect_clinvar_record(hit);
-    let variation_id = hit.clinvar.as_ref().and_then(|clinvar| clinvar.variant_id);
+    let variation_id = hit
+        .source()
+        .clinvar()
+        .and_then(|clinvar| clinvar.variant_id());
     super::get::strip_clinvar_details(variant);
     let Some(variation_id) = variation_id else {
         variant
