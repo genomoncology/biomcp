@@ -1,8 +1,16 @@
 # 2067 — Keep variant follow-ups on the headline build
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 9a8bd3c, accept
+
+Reviews: revision 9a8bd3c, accept
+
+Reviews: revision e94e166, accept
+
+Reviews: revision e94e166, accept
 
 ## Outcome
 

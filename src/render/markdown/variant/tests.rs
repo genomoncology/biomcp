@@ -306,6 +306,51 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
 }
 
 #[test]
+fn variant_clinvar_rows_print_the_submission_count_when_submitters_are_absent() {
+    // A direct NCBI aggregate row carries `SubmissionCount`, never
+    // `NumberOfSubmitters`; serde skips the missing field, so a missing
+    // count is undefined in the template, not none.
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr7:g.140453136A>T",
+        "gene": "BRAF",
+        "clinvar": {
+            "source": "NCBI ClinVar",
+            "variation_id": 13961,
+            "accession": "VCV000013961",
+            "version": 143,
+            "record_status": "current",
+            "number_submitters": 22,
+            "aggregates": [
+                {
+                    "source": "NCBI ClinVar",
+                    "accession": "RCV000014992",
+                    "version": 24,
+                    "classification_domain": "germline",
+                    "classification": "Pathogenic",
+                    "review_status": "no assertion criteria provided",
+                    "evaluation_date": "2014-09-04",
+                    "record_status": "current",
+                    "submission_count": 1,
+                    "conditions": ["Carcinoma of colon", "MedGen:C0699790"]
+                }
+            ]
+        }
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &["clinvar".to_string()]).expect("rendered markdown");
+    assert!(
+        markdown.contains(
+            "RCV000014992.24 [germline]: Pathogenic; no assertion criteria provided; \
+             evaluated 2014-09-04; 1 submission(s); RCV status current."
+        ),
+        "{markdown}"
+    );
+    assert!(!markdown.contains(" submitter(s)"), "{markdown}");
+    assert!(markdown.contains("VCV submitters: 22"), "{markdown}");
+}
+
+#[test]
 fn variant_population_markdown_labels_residual_group_but_json_keeps_raw_id() {
     let variant: Variant = serde_json::from_value(serde_json::json!({
         "id": "rs1426654",
