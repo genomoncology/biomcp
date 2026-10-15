@@ -101,3 +101,13 @@ CI skips the Rust jobs only when every file a push changes is documentation, an 
 ## Source licensing
 
 State each source's terms plainly in its registry entry and on the licensing page. Label restricted terms as restricted. Users are responsible for their own licenses. BioMCP never buys a license or contacts a provider without Ian's approval.
+
+## Landing a ticket into the 1.0 line
+
+The line is a branch, not main, so pm's usual landing commands refuse it. Land
+in three steps: fast-forward the line to the reviewed ticket-branch tip with a
+direct push (`git push origin <reviewed-tip>:refs/heads/<the 1.0 branch>`),
+commit the ticket's build record on the line (record-only landing demands the
+record ride the line), then run `pm ticket land NNNN --record-only` from a
+checkout sitting ON a local branch of the line at its tip. Review verdicts ride
+the ticket's own branch as usual.
