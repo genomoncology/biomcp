@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev stress
+.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
@@ -18,7 +18,7 @@ CARGO_WITH_IDENTITY = tools/with-build-identity cargo
 ROUTINE_TEST_ARCHIVE = $(CURDIR)/.cache/routine-tests.tar.zst
 ROUTINE_TEST_TMPDIR = $(CURDIR)/.cache/routine-test-tmp
 PYTEST_BASETEMP = $(ROUTINE_TEST_TMPDIR)/pytest
-ifneq (,$(filter test,$(MAKECMDGOALS)))
+ifneq (,$(filter test test-rust test-python,$(MAKECMDGOALS)))
 export TMPDIR = $(ROUTINE_TEST_TMPDIR)
 export BIOMCP_ROUTINE_TEST_LANE = 1
 endif
@@ -43,7 +43,18 @@ prepare-test: prepare-routine-test-tmp
 
 test:
 	$(MAKE) prepare-test
+	$(MAKE) test-rust
+	$(MAKE) test-python
+
+# The two halves of `make test` (ticket 2075) so the CI lanes run
+# the Rust tests and the Python contracts in parallel against the
+# build job's artifact; a local caller reaches them through
+# `make test`, which prepares the dev build first.
+test-rust: prepare-routine-test-tmp
 	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
+
+test-python: prepare-routine-test-tmp
+	$(MAKE) sync-python-dev
 	$(MAKE) test-contracts-prepared
 
 prepare-test-contracts:
@@ -135,13 +146,19 @@ validate-skills:
 
 # Stress lane: run the known load-flaky tests pinned to a two-CPU set
 # with forced worker parallelism, repeated BIOMCP_STRESS_REPEAT times
-# (default 3). The build runs unpinned; only the test invocations are
-# pinned, because the runners auto-serialize on the detected CPU count.
+# (default 3). The lane runs the prepared dev build — the CI job
+# downloads the build job's archive instead of rebuilding it, and a
+# local caller runs make prepare-test first (ticket 2075). The test
+# invocations alone are pinned, because the runners auto-serialize on
+# the detected CPU count.
 # One-CPU pinning is avoided deliberately: it deadlocks the pipe
 # handshake child deterministically (issue
 # sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md).
 stress:
-	$(MAKE) prepare-test
+	@test -s "$(ROUTINE_TEST_ARCHIVE)" && test -x "$(SPEC_RUN_BIN)" || { \
+	  echo "stress needs the prepared dev build at $(ROUTINE_TEST_ARCHIVE) and $(SPEC_RUN_BIN); run: make prepare-test" >&2; \
+	  exit 2; }
+	$(MAKE) sync-python-dev
 	@set -euo pipefail; \
 	repeat="$${BIOMCP_STRESS_REPEAT:-3}"; \
 	scale="$${BIOMCP_TEST_TIMEOUT_SCALE:-6}"; \

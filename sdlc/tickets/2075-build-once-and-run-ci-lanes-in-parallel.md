@@ -1,8 +1,10 @@
 # 2075 — Build once and run CI lanes in parallel
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 2976713, accept
 
 ## Outcome
 

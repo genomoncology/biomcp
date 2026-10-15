@@ -16,6 +16,12 @@ pytestmark = [pytest.mark.needs_binary]  # needs bubblewrap/offline toolchain; d
 ROOT = Path(__file__).resolve().parents[1]
 MAKEFILE = (ROOT / "Makefile").read_text(encoding="utf-8")
 WORKFLOW = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+ACTION = (ROOT / ".github/actions/lane-setup/action.yml").read_text(encoding="utf-8")
+
+
+def _action_step(name: str) -> str:
+    block = ACTION.split(f"- name: {name}\n", 1)[1]
+    return block.split("\n    - name:", 1)[0]
 
 
 def test_routine_gates_prepare_before_entering_offline_namespace() -> None:
@@ -32,15 +38,18 @@ def test_live_verify_lane_is_not_network_isolated() -> None:
     assert "tools/run-offline" not in verify
 
 
-def test_authoritative_linux_job_installs_unpinned_gate_tools() -> None:
-    canonical = WORKFLOW.split("  canonical-gates:\n", 1)[1].split(
-        "\n  full-features:", 1
-    )[0]
-    assert "BUBBLEWRAP_VERSION" not in WORKFLOW
-    assert "APPARMOR_VERSION" not in WORKFLOW
-    assert "RIPGREP_VERSION" not in WORKFLOW
-    assert "sudo apt-get install -y --no-install-recommends" in canonical
-    install = canonical.split("sudo apt-get install", 1)[1]
+def test_lane_setup_installs_unpinned_gate_tools() -> None:
+    # The shared setup (ticket 2075) installs the apt packages the
+    # offline lanes need, unpinned from the distribution like the
+    # 2026-09-29 review ruled, and each lane runs its gate through
+    # the Makefile target, never a copied command list.
+    for text in (WORKFLOW, ACTION):
+        assert "BUBBLEWRAP_VERSION" not in text
+        assert "APPARMOR_VERSION" not in text
+        assert "RIPGREP_VERSION" not in text
+    sandbox = _action_step("Install the offline sandbox")
+    assert "sudo apt-get install -y --no-install-recommends" in sandbox
+    install = sandbox.split("sudo apt-get install", 1)[1]
     install = install.split("sudo install", 1)[0]
     assert "=" not in install
     packages = (
@@ -48,39 +57,40 @@ def test_authoritative_linux_job_installs_unpinned_gate_tools() -> None:
         - {"--no-install-recommends", "-y"}
     )
     assert packages == {"bubblewrap", "apparmor", "apparmor-profiles", "ripgrep"}
-    assert "make test" in canonical
-    assert "make spec" in canonical
+    for gate in ("make lint", "make test-rust", "make test-python", "make spec"):
+        assert f"run: {gate}" in WORKFLOW
 
 
-def test_authoritative_linux_job_fetches_release_history_for_version_contracts() -> None:
+def test_the_release_history_checkout_lives_in_the_python_and_spec_lanes() -> None:
     workflow = yaml.safe_load(WORKFLOW)
-    steps = workflow["jobs"]["canonical-gates"]["steps"]
-    checkout = next(s for s in steps if s.get("name") == "Check out the exact revision")
-
-    assert checkout["with"]["fetch-depth"] == 0
-    assert checkout["with"]["filter"] == "blob:none"
     full_history_checkouts = [
-        step
-        for job in workflow["jobs"].values()
+        (job_id, step)
+        for job_id, job in workflow["jobs"].items()
         for step in job.get("steps", [])
         if step.get("uses", "").startswith("actions/checkout@")
         and step.get("with", {}).get("fetch-depth") == 0
     ]
-    # Three jobs need full history: canonical-gates (release
-    # version contracts), repository-contracts (record lineage) and
-    # changes (the docs-only classification diffs the whole push).
-    assert len(full_history_checkouts) == 3
+    # Four jobs need full history: changes (the docs-only
+    # classification diffs the whole push), repository-contracts
+    # (record lineage), python-lane (the release version
+    # contracts) and spec-lane (spec/surface/mcp.md runs the
+    # tag-reading version-sync check) — ticket 2075 carried the
+    # last two out of the old canonical-gates job.
+    assert {job_id for job_id, _ in full_history_checkouts} == {
+        "changes",
+        "repository-contracts",
+        "python-lane",
+        "spec-lane",
+    }
     assert all(
         step["with"].get("filter") == "blob:none"
-        for step in full_history_checkouts
+        for _, step in full_history_checkouts
     )
 
 
-def test_authoritative_linux_job_loads_scoped_apparmor_before_compilation() -> None:
-    canonical = WORKFLOW.split("  canonical-gates:\n", 1)[1].split(
-        "\n  full-features:", 1
-    )[0]
-    assert "APPARMOR_VERSION" not in WORKFLOW
+def test_the_offline_sandbox_loads_scoped_apparmor_before_any_lane_runs() -> None:
+    assert "APPARMOR_VERSION" not in ACTION
+    sandbox = _action_step("Install the offline sandbox")
     expected = (
         "apparmor",
         "apparmor-profiles",
@@ -91,13 +101,19 @@ def test_authoritative_linux_job_loads_scoped_apparmor_before_compilation() -> N
         "tools/run-offline -- true",
     )
     for contract in expected:
-        assert contract in canonical
-    # nextest installs as a prebuilt binary now; the
-    # sandbox still loads before any cargo install runs.
-    assert canonical.index("tools/run-offline -- true") < canonical.index(
+        assert contract in sandbox
+    # nextest installs as a prebuilt binary; the sandbox still
+    # loads before any cargo install runs in the same action.
+    assert ACTION.index("tools/run-offline -- true") < ACTION.index(
         "cargo install cargo-deny"
     )
-    assert canonical.index("tools/run-offline -- true") < canonical.index("make lint")
+    # Every lane enters the namespace only after the action's own
+    # sandbox self-test, so its gate runs after the lane-setup step.
+    lint = WORKFLOW.split("  lint:\n", 1)[1].split("\n  rust-tests:\n", 1)[0]
+    setup = next(
+        line for line in lint.splitlines() if ".github/actions/lane-setup" in line
+    )
+    assert lint.index(setup) < lint.index("run: make lint")
 
 
 def test_offline_runner_maps_root_inside_an_isolated_user_namespace() -> None:
@@ -378,17 +394,25 @@ def test_enclosed_runner_revalidates_privilege_and_network_state() -> None:
 
 def test_release_panic_contract_runs_in_ci_and_is_pinned() -> None:
     # The release-mode panic-recovery test moved from
-    # the opt-in `make verify` lane onto the canonical CI lane. The
-    # job's build and test commands are pinned exactly so a
-    # profile swap, a filter change, or a dropped job breaks here
+    # the opt-in `make verify` lane onto a main-only CI lane (ticket
+    # 2075). The job's build and test commands are pinned exactly so
+    # a profile swap, a filter change, or a dropped job breaks here
     # first.
     parsed = yaml.safe_load(WORKFLOW)
     job = parsed["jobs"].get("release-panic")
     assert job is not None, "ci.yml must run the release-panic job"
     assert job["runs-on"] == "ubuntu-24.04"
 
+    setup_steps = [
+        s
+        for s in job["steps"]
+        if ".github/actions/lane-setup" in str(s.get("uses", ""))
+    ]
+    assert len(setup_steps) == 1, "release-panic: one lane-setup step"
+    assert setup_steps[0]["with"]["nextest"] is True
+
     run_steps = [s for s in job["steps"] if "run" in s]
-    assert len(run_steps) == 2, "release-panic: install step plus one contract step"
+    assert len(run_steps) == 1, "release-panic: one contract step"
 
     contract = run_steps[-1]["run"]
     assert contract == (

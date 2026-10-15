@@ -34,7 +34,9 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert "nextest archive --locked $(ROUTINE_CARGO_FEATURES)" in _target(
         makefile, "prepare-test"
     )
-    assert "nextest run --archive-file" in _target(makefile, "test")
+    # Ticket 2075 split `make test` so the CI lanes can run the Rust
+    # half alone; the archive run is the rust lane's recipe.
+    assert "nextest run --archive-file" in _target(makefile, "test-rust")
     assert "--cargo-feature-arg" in runner
     assert '"${routine_cargo_features[@]}"' in runner
     assert "args.cargo_feature_arg" in preparer
@@ -75,7 +77,8 @@ def test_ci_and_developer_docs_name_small_and_full_feature_lanes() -> None:
     )
 
     assert "run: make lint" in workflow
-    assert "run: make test" in workflow
+    assert "run: make test-rust" in workflow
+    assert "run: make test-python" in workflow
     assert "make full-feature-check" in workflow
     assert "Routine gates use `--no-default-features`" in docs
     assert "`make full-feature-check`" in docs

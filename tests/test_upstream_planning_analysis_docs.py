@@ -1117,14 +1117,22 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ci = _read_repo(".github/workflows/ci.yml")
     release = _read_repo(".github/workflows/release.yml")
     contracts_smoke = _read_repo(".github/workflows/contracts.yml")
-    canonical = _workflow_job_block(ci, "canonical-gates")
+    lane_setup = _read_repo(".github/actions/lane-setup/action.yml")
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
     assert "pull_request:" in ci
     # 2026-09-29: ticket branches run CI too; the
     # push trigger still names main first.
     assert "push:" in ci and "main" in ci and "tickets/**" in ci
-    for command in ("make lint", "make test", "make spec"):
-        assert f"run: {command}" in canonical
+    # Ticket 2075: one build job prepares the dev build; the lanes
+    # each run one Make target, so CI copies no smaller command list.
+    for job, command in (
+        ("build", "make prepare-test"),
+        ("lint", "make lint"),
+        ("rust-tests", "make test-rust"),
+        ("python-lane", "make test-python"),
+        ("spec-lane", "make spec"),
+    ):
+        assert f"run: {command}" in _workflow_job_block(ci, job)
     for version in (
         "1.93.1",
         "3.12.3",
@@ -1137,10 +1145,11 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ):
         assert version in ci
     # The rust cache is pinned by its v2 commit (2026-09-29
-    # review), so every action in the file carries a commit pin.
-    assert "@v" not in canonical and "@stable" not in canonical
-    assert "tools/bootstrap-lint-tools" in canonical
-    assert "secrets." not in canonical.replace("secrets.GITHUB_TOKEN", "")
+    # review), so every action in the files carries a commit pin.
+    assert "@v" not in ci and "@stable" not in ci
+    assert "@v" not in lane_setup and "@stable" not in lane_setup
+    assert "tools/bootstrap-lint-tools" in lane_setup
+    assert "secrets." not in ci.replace("secrets.GITHUB_TOKEN", "")
 
     assert 'version: "28.3"' in ci_generated_sources
     assert _workflow_run_steps(ci_generated_sources) == [
@@ -1165,7 +1174,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     runner = _read_repo("scripts/run-specs.sh")
     cargo_toml = _read_repo("Cargo.toml")
     assert (
-        ".PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
+        ".PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress"
         in makefile
     )
     assert "SPEC_PR_DESELECT_ARGS" not in makefile
@@ -1180,7 +1189,22 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^test:\n"
         r"\t\$\(MAKE\) prepare-test\n"
-        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"\n'
+        r"\t\$\(MAKE\) test-rust\n"
+        r"\t\$\(MAKE\) test-python$",
+        makefile,
+        flags=re.MULTILINE,
+    )
+    # Ticket 2075: the two lane halves CI runs in parallel are real
+    # targets, so `make test` stays the developer's one command.
+    assert re.search(
+        r"^test-rust: prepare-routine-test-tmp\n"
+        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"$',
+        makefile,
+        flags=re.MULTILINE,
+    )
+    assert re.search(
+        r"^test-python: prepare-routine-test-tmp\n"
+        r"\t\$\(MAKE\) sync-python-dev\n"
         r"\t\$\(MAKE\) test-contracts-prepared$",
         makefile,
         flags=re.MULTILINE,

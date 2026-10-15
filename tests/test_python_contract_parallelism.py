@@ -17,11 +17,15 @@ def test_python_contract_gate_uses_bounded_file_workers() -> None:
 def test_ci_reuses_the_canonical_python_contract_gate() -> None:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 
-    assert "run: make test" in workflow
-    # The full suite runs only through make test in canonical-gates.
-    # repository-contracts runs the binary-less subset for docs-only
-    # pushes (2026-09-29 review); a bare full-suite pytest outside
-    # make test would lose the spec-binary environment.
+    # Each lane runs its whole gate through the Makefile target
+    # (ticket 2075 split `make test` into `test-rust` and
+    # `test-python` for exactly this); CI never copies a smaller
+    # command list. repository-contracts runs the binary-less subset
+    # for docs-only pushes (2026-09-29 review); a bare full-suite
+    # pytest outside the Make targets would lose the spec-binary
+    # environment.
+    for gate in ("make lint", "make test-rust", "make test-python", "make spec"):
+        assert f"run: {gate}" in workflow
     assert 'uv run --no-sync pytest tests/ -v' not in workflow
 
 
