@@ -53,6 +53,7 @@ pub(in crate::cli::health) fn health_row(
         required_env_var: None,
         missing_files: None,
         not_built: None,
+        disabled_reason: None,
     }
 }
 
@@ -285,10 +286,40 @@ async fn run_api_probes(
     client: reqwest::Client,
     sources: &[SourceDescriptor],
 ) -> Vec<ProbeOutcome> {
+    // A source the operator disabled is never probed: its row states the
+    // setting instead of its latency, and the source's shared row joins
+    // the report's disabled list.
+    let disabled_row = |source: &SourceDescriptor| {
+        let id = crate::sources::disable::Registry::get()
+            .id_for_name(source.api)
+            .expect("a disabled health row maps to a registry record")
+            .to_string();
+        let mut row = health_row(
+            source.api,
+            HealthStatus::Disabled,
+            "-".to_string(),
+            source.affects,
+            None,
+        );
+        row.disabled_reason = crate::sources::disable::reason(&id).map(str::to_string);
+        outcome(row, ProbeClass::Excluded)
+    };
     run_buffered_in_order(
         sources.iter().copied(),
         HEALTH_API_PROBE_CONCURRENCY_LIMIT,
-        move |source| probe_source_with_timeout(client.clone(), source),
+        move |source| {
+            let client = client.clone();
+            async move {
+                let disabled = crate::sources::disable::Registry::get()
+                    .id_for_name(source.api)
+                    .is_some_and(crate::sources::disable::is_disabled);
+                if disabled {
+                    disabled_row(&source)
+                } else {
+                    probe_source_with_timeout(client, source).await
+                }
+            }
+        },
     )
     .await
 }
@@ -348,6 +379,7 @@ pub(in crate::cli::health) fn report_from_outcomes(outcomes: Vec<ProbeOutcome>) 
         error,
         total: rows.len(),
         rows,
+        disabled: Vec::new(),
     }
 }
 
@@ -375,5 +407,24 @@ pub(super) async fn check(
         outcomes.push(check_cache_limits().await);
     }
 
-    Ok(report_from_outcomes(outcomes))
+    let mut report = report_from_outcomes(outcomes);
+    report.disabled = disabled_health_sources();
+    Ok(report)
+}
+
+/// Every disabled source, named with its inventory display name and the
+/// setting that turned it off — including sources with no probe row.
+fn disabled_health_sources() -> Vec<super::HealthDisabledSource> {
+    let registry = crate::sources::disable::Registry::get();
+    crate::sources::disable::disabled_entries()
+        .into_iter()
+        .map(|entry| super::HealthDisabledSource {
+            name: registry
+                .display_name(&entry.id)
+                .unwrap_or_default()
+                .to_string(),
+            id: entry.id,
+            reason: entry.reason,
+        })
+        .collect()
 }

@@ -15,8 +15,6 @@ website/dist/
 website/.astro/
 .climb/
 .climb-test-vault/
-.march/*
-.march-runtime/
 .claude/
 .agents/
 /planning/

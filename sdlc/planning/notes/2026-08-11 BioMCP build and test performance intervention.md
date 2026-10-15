@@ -14,8 +14,8 @@ the same complete gate against the same commit is not additional evidence.
 
 ## Pinned baseline
 
-- Repository: `/home/ian/workspace/repos/biomcp`
-- Worktree: `/home/ian/workspace/worktrees/biomcp-performance`
+- Repository: `~/workspace/repos/biomcp`
+- Worktree: `~/workspace/worktrees/biomcp-performance`
 - Branch: `performance/build-flow`
 - Base: `bf55ce01e8c5d3b074769e09cd02c987f8ab148c`
 - Machine: Ryzen 7 5825U, 16 logical CPUs, 27 GiB RAM

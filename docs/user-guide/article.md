@@ -209,6 +209,12 @@ Default article search excludes confirmed retractions unless you pass
 `--include-retracted`. Sources that do not expose retraction metadata still
 participate in the search, and compact and `--full` JSON search rows keep the
 tri-state contract: `"is_retracted": true`, `false`, or `null`.
+
+Every article search runs under a 60-second deadline: when the deadline
+arrives, BioMCP returns the rows that already answered and names each silent
+or slow source as degraded instead of hanging. Deep pages are refused —
+`--offset` plus `--limit` beyond 1,250 returns an error on every sort order
+rather than walking hundreds of provider pages.
 `--type`, `--open-access`, and `--no-preprints` are backend-compatibility
 constraints rather than universal filters across every article source.
 `--type` on `--source all` uses Europe PMC + PubMed when `--open-access` and
@@ -406,6 +412,13 @@ biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related p
 biomcp article citation-evidence 22663011 10.1038/nature10725  # passage for one directed citation
 ```
 
+Variant rows in `article entities` print a `get variant` command that opens
+the row's own allele whenever the row carries a gene and a protein change. A
+row with neither part keeps its rsID command, and one rsID can name several
+alleles, so a gene-less row that mentions only one allele of such an rsID can
+still print a command that opens a different allele; BioMCP has no
+allele-specific form for that row.
+
 `batch article --mode compact` works without `S2_API_KEY` and returns the
 standard `{summary, items}` batch envelope in request order. Each compact card
 echoes the original `requested_id`, keeps its
@@ -437,9 +450,11 @@ for one directed citation pair: Semantic Scholar context by default, and when
 the edge carries no context, the paragraphs of the citing paper's open
 Europe PMC JATS full text whose unambiguous bibliographic markers link to the
 cited reference. Pass `--fulltext` to force the JATS path even when provider
-context exists. When no passage is openly available, OpenCitations confirms
-whether the directed edge exists and the response reports that confirmed edge
-without a passage. The response is a closed six-status evidence object
+context exists. When Semantic Scholar refuses with a rate limit or a server
+error, the evidence degrades to OpenCitations and names the provider it used
+and the provider that failed. When no passage is openly available, OpenCitations
+confirms whether the directed edge exists and the response reports that confirmed
+edge without a passage. The response is a closed six-status evidence object
 (`context_from_provider`, `context_from_fulltext`, `fulltext_unavailable`,
 `reference_confirmed_without_passage`, `reference_unresolved`,
 `citation_marker_unlinked`) with per-passage locators and evidence URLs. It

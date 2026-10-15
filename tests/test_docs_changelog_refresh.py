@@ -8,7 +8,42 @@ import pytest
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DEV_CYCLE_VERSION = "0.9.3"
+DEV_CYCLE_HEADING = f"## {DEV_CYCLE_VERSION}"
 EXPECTED_RELEASE_TICKETS = {
+    "0.9.2": {
+        1287,
+        1288,
+        1289,
+        *range(1290, 1307),
+        2010,
+        *range(2016, 2025),
+        # 2040 landed after 2038; 2042, 2043 and 2044 landed after
+        # that; the corrected bullet also names the still-open follow-up in
+        # plain words.
+        *range(2029, 2039),
+        2040,
+        2042,
+        2043,
+        2044,
+        2039,
+        2045,
+        2046,
+        2047,
+        2048,
+        2049,
+        2050,
+        2051,
+        2052,
+        2053,
+        2055,
+        2057,
+        2058,
+        2060,
+    },
+    "0.9.1": {
+        1202, 1205, 1213, 1214, 1219, 1220, 1221, 1222, 1223, 1224, 1225, 1226, 1227, 1228, 1229, 1230, 1231, 1232, 1233, 1234, 1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243, 1244, 1245, 1246, 1247, 1248, 1249, 1250, 1251, 1252, 1254, 1255, 1256, 1257, 1258, 1259, 1261, 1263, 1264, 1265, 1266, 1267, 1268, 1269, 1270, 1275, 1276, 1278, 1279, 1280, 1281, 1282, 1283, 1284, 1285, 1286, 1287,
+    },
     "0.9.0": {
         1145,
         1198,
@@ -182,6 +217,46 @@ PUBLISHED_V0_8_25_CHANGELOG_BLOCK_SHA256 = (
 )
 
 EXPECTED_RELEASE_MARKERS = {
+    "0.9.2": {
+        "fixes": [
+            "current ClinVar classification",
+            "whole label sections",
+            "one- and two-letter abbreviations",
+            "refuses and names what matched",
+        ],
+        "new_features": [
+            "official gene symbol",
+            "pinned runner image",
+        ],
+        "docs": [
+            "gene-symbol-first routing",
+            "OpenCitations fallback",
+        ],
+        "internal": [
+            "changelog test",
+            "process level",
+        ],
+    },
+    "0.9.1": {
+        "fixes": [
+            "panicking tool call",
+            "boxed warnings",
+            "empty section",
+        ],
+        "new_features": [
+            "manylinux_2_28",
+            "ARM64",
+            "container image",
+        ],
+        "docs": [
+            "licensing evidence",
+            "data-terms",
+        ],
+        "internal": [
+            "merge gate",
+            "wait on signals",
+        ],
+    },
     "0.9.0": {
         "fixes": [
             "servers",
@@ -299,7 +374,6 @@ EXPECTED_RELEASE_MARKERS = {
             "make release-gate",
             "SPEC_SMOKE_ARGS",
             "mustmatch pytest item IDs",
-            ".march",
             "deferred work",
             "runtime wiring shipped",
         ],
@@ -358,6 +432,24 @@ def _ticket_references(text: str) -> set[int]:
     return references
 
 
+def _coverage_gate():
+    """Load scripts/check-changelog-coverage.py as a module."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "gate", REPO_ROOT / "scripts" / "check-changelog-coverage.py"
+    )
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    return gate
+
+
+def _ticket_file_content(ticket: str) -> str | None:
+    """A cited ticket's live file, or None when the repo holds none."""
+    matches = sorted((REPO_ROOT / "sdlc" / "tickets").glob(f"{ticket}-*.md"))
+    return matches[0].read_text(encoding="utf-8") if matches else None
+
+
 def test_changelog_has_backfilled_releases_and_release_header() -> None:
     changelog = _read("CHANGELOG.md")
     current_release_version = _current_release_version()
@@ -386,7 +478,15 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         previous_release_block, "### New features"
     )
 
-    assert changelog.startswith("# Changelog\n\n## Unreleased\n")
+    # The changelog opens with the current release heading, with a fresh
+    # Unreleased section or the next milestone's undated heading ahead of
+    # it during the dev cycle.
+    dev_cycle_heading = "## 0.9.3"
+    assert changelog.startswith(
+        f"# Changelog\n\n{current_release_heading}\n"
+    ) or changelog.startswith("# Changelog\n\n## Unreleased\n") or changelog.startswith(
+        f"# Changelog\n\n{dev_cycle_heading}\n"
+    )
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
     assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
@@ -446,6 +546,37 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         header = f"## {version} — {date}"
         assert header in changelog
         assert "\n- " in _markdown_section_block(changelog, header)
+
+
+def test_dev_cycle_section_carries_its_own_tickets() -> None:
+    """The undated dev-cycle section sits ahead of the last released
+    heading and keeps a shape every branch only appends to: the three
+    named subsections stay in place even when empty, every bullet
+    closes with its ticket number, and every cited ticket is filed
+    for this milestone, so two branches merge without touching each
+    other's lines."""
+    changelog = _read("CHANGELOG.md")
+    assert DEV_CYCLE_HEADING in changelog
+    assert changelog.index(DEV_CYCLE_HEADING) < changelog.index(
+        _current_release_heading()
+    )
+    block = _markdown_section_block(changelog, DEV_CYCLE_HEADING)
+    assert "### New features" in block
+    assert "### Fixes" in block
+    assert "### Internal" in block
+    closing_group = re.compile(
+        r"\(\s*[0-9]+(?:\s*(?:,|and)\s*[0-9]+)*\s*\)\s*[.,;]?\s*$"
+    )
+    for bullet in re.findall(r"^- .+$", block, re.MULTILINE):
+        assert closing_group.search(bullet), (
+            f"a dev-cycle bullet must close with its ticket number: {bullet}"
+        )
+    problems = _coverage_gate().milestone_problems(
+        block, DEV_CYCLE_VERSION, _ticket_file_content
+    )
+    assert not problems, (
+        f"tickets cited outside milestone {DEV_CYCLE_VERSION}: {problems}"
+    )
 
 
 def test_unreleased_records_the_complete_dev6_batch_and_preserves_history() -> None:
@@ -971,3 +1102,25 @@ def test_public_docs_surface_local_study_analytics() -> None:
     assert "data_clinical_patient.txt" in cli_reference
     for command in study_commands:
         assert command in cli_reference
+
+def test_the_live_release_section_describes_every_ticket_it_names() -> None:
+    """Ticket 2049: the coverage gate's own view of the live section.
+
+    A bullet whose closing group trails a period must still count, and
+    prose numbers must not, exactly as the gate will judge at the tag.
+    """
+    gate = _coverage_gate()
+    content = Path(__file__).resolve().parents[1].joinpath("CHANGELOG.md").read_text(encoding="utf-8")
+    match = re.search(
+        r"^## 0\.9\.2 —[\s\S]*?(?=^## |\Z)", content, re.MULTILINE
+    )
+    assert match is not None
+    section = match.group(0)
+    described = gate.described_tickets(section)
+    mentioned = set(re.findall(r"\((\d{4})(?:,\s*\d{4})*\)", section))
+    mentioned |= set(
+        n for group in re.findall(r"\(([\d,\s]+)\)", section)
+        for n in re.findall(r"\d+", group)
+    )
+    missing = sorted(mentioned - described)
+    assert not missing, f"the live 0.9.2 section loses coverage for {missing}"

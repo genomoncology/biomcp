@@ -8,4 +8,4 @@ Imported from March ticket 590. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/590-deduplicate-ctgov-alias-fanout-candidates-before-trial-detail-verification
+Artifacts: ~/workspace/planning/biomcp/artifacts/590-deduplicate-ctgov-alias-fanout-candidates-before-trial-detail-verification

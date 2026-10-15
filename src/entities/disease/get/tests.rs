@@ -2,34 +2,8 @@ use super::*;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-struct DiseaseCardFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl DiseaseCardFixtureEnv {
-    fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    fn set(&mut self, key: &'static str, value: &str) {
-        self.0.push((key, std::env::var_os(key)));
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var(key, value) };
-    }
-}
-
-impl Drop for DiseaseCardFixtureEnv {
-    fn drop(&mut self) {
-        for (key, previous) in self.0.drain(..).rev() {
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(value) = previous {
-                    std::env::set_var(key, value);
-                } else {
-                    std::env::remove_var(key);
-                }
-            }
-        }
-    }
-}
+/// The disease fixture env: the one shared scratch-cache guard, so the card tests never read the machine's own cache.
+type DiseaseCardFixtureEnv = crate::test_support::FixtureEnv;
 
 fn disease_card_fixture_response(body: &str) -> Vec<u8> {
     format!(
@@ -65,7 +39,7 @@ async fn disease_card_fixture_server()
                     r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
                     // The embedded DisGeNET block seeds the card's genes
-                    // (ticket 1256): with Open Targets unreachable these
+                    //with Open Targets unreachable these
                     // genes must carry DisGeNET's name, not Open Targets'.
                     r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
                 } else if request.contains("query.cond=Medulloblastoma") {
@@ -158,7 +132,7 @@ async fn stale_serve_fixture_server()
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
                     // Same DisGeNET seed as the card fixture: the stale
                     // card must still credit DisGeNET for its genes, so
-                    // the fixture has to seed them (ticket 1256).
+                    // the fixture has to seed them.
                     r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
                 } else if request.contains("query.cond=Medulloblastoma") {
                     r#"{"studies":[],"totalCount":36}"#
@@ -199,7 +173,7 @@ fn stale_serve_env(env: &mut DiseaseCardFixtureEnv, cache_root: &std::path::Path
 async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
     let (base, _requests, server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-card-cache");
-    let mut env = DiseaseCardFixtureEnv::new();
+    let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
 
     let first = crate::cli::execute(vec![
@@ -249,7 +223,7 @@ async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
 async fn stale_search_json_carries_the_cache_age_in_the_meta_notes() {
     let (base, _requests, server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-search-cache");
-    let mut env = DiseaseCardFixtureEnv::new();
+    let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
 
     let first = crate::cli::execute(vec![
@@ -303,7 +277,7 @@ async fn stale_search_json_carries_the_cache_age_in_the_meta_notes() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels() {
-    // Ticket 1256, review P0-3: the MCP path drives the alias arm of
+    // Review P0-3: the MCP path drives the alias arm of
     // run_outcome_with_worker_stack, which once called run_outcome_inner
     // directly — outside the stale-serve scope — so neither the card note
     // nor the JSON _meta.notes sentence could ever appear over MCP. This
@@ -311,7 +285,7 @@ async fn a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels() {
     // and proves both channels.
     let (base, _requests, server) = stale_serve_fixture_server().await;
     let root = crate::test_support::TempDirGuard::new("stale-mcp-cache");
-    let mut env = DiseaseCardFixtureEnv::new();
+    let mut env = DiseaseCardFixtureEnv::scratch_cache_only();
     stale_serve_env(&mut env, root.path(), &base);
 
     let fresh_card = crate::cli::execute_mcp(vec![
@@ -529,4 +503,320 @@ fn get_disease_resolves_mesh_and_omim_crosswalk_ids_before_fetch() {
 #[test]
 fn get_disease_returns_not_found_for_unresolved_crosswalk_without_name_fallback() {
     assert!(preferred_crosswalk_hit(Vec::new()).is_none());
+}
+
+macro_rules! recorded_mydisease {
+    ($name:expr) => {
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/mydisease/",
+            $name
+        ))
+    };
+}
+
+/// The recorded MyDisease responses for the ambiguous
+/// abbreviations. The fixture answers only the recorded queries, so the
+/// refusals cannot pass vacuously.
+async fn abbreviation_fixture_server()
+-> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind abbreviation fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock fixture requests")
+                    .push(request.clone());
+                let body = if request.contains("/query?") {
+                    // A short abbreviation grounds in any letter case
+                    //so the fixture answers `mf` and `MF`
+                    // with the same recorded reply.
+                    if request.contains("MF") || request.contains("mf") {
+                        recorded_mydisease!("query_mf.json")
+                    } else if request.contains("MM") {
+                        recorded_mydisease!("query_mm.json")
+                    } else if request.contains("MDS") {
+                        recorded_mydisease!("query_mds.json")
+                    } else if request.contains("CAD") {
+                        recorded_mydisease!("query_cad.json")
+                    } else if request.contains("CRC") {
+                        recorded_mydisease!("query_crc.json")
+                    } else if request.contains("myeloma") {
+                        recorded_mydisease!("query_myeloma.json")
+                    } else {
+                        r#"{"total":0,"hits":[]}"#
+                    }
+                } else if request.contains("/disease/MONDO:0024331") {
+                    recorded_mydisease!("get_mondo_0024331.json")
+                } else if request.contains("/disease/MONDO:0009693") {
+                    recorded_mydisease!("get_mondo_0009693.json")
+                } else {
+                    r#"{"total":0,"hits":[]}"#
+                };
+                stream
+                    .write_all(&disease_card_fixture_response(body))
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+async fn get_disease_card_or_error(query: &str) -> Result<String, String> {
+    let (base, requests, server) = abbreviation_fixture_server().await;
+    let mut env = DiseaseCardFixtureEnv::new();
+    env.set("BIOMCP_MYDISEASE_BASE", &base);
+    env.set("BIOMCP_CTGOV_BASE", &base);
+    env.set("BIOMCP_OLS4_BASE", "://unavailable-ols-fixture");
+    env.set("BIOMCP_MYCHEM_BASE", "://unavailable-mychem-fixture");
+    env.set(
+        "BIOMCP_OPENTARGETS_BASE",
+        "://unavailable-opentargets-fixture",
+    );
+    let outcome = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "disease".to_string(),
+        query.to_string(),
+    ])
+    .await;
+    server.abort();
+    drop(env);
+    outcome.map_err(|err| err.to_string()).map(|text| {
+        text + "\n<<requests>>\n" + &requests.lock().expect("lock fixture requests").join("\n")
+    })
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_mf_refuses_instead_of_mixing_two_diseases() {
+    let error = get_disease_card_or_error("MF")
+        .await
+        .expect_err("MF holds on two diseases and must refuse");
+    assert!(
+        error.contains("Ambiguous disease abbreviation 'MF'"),
+        "{error}"
+    );
+    assert!(
+        error.contains("mycosis fungoides (MONDO:0009691)"),
+        "{error}"
+    );
+    // Fix round: MONDO:0020481 carries no `name` in the search
+    // response, but the ontology `label` names the candidate.
+    assert!(
+        error.contains("myotonia fluctuans (MONDO:0020481)"),
+        "{error}"
+    );
+    assert!(error.contains("search disease"), "{error}");
+}
+
+/// A short abbreviation behaves the same in any letter case.
+/// Lowercase `mf` used to resolve straight to mycosis fungoides while `MF`
+/// refused; both must refuse with the same candidates and the same
+/// clinical-reading pointer.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_lowercase_mf_refuses_like_uppercase() {
+    let error = get_disease_card_or_error("mf")
+        .await
+        .expect_err("mf holds on two diseases and must refuse like MF");
+    assert!(
+        error.contains("Ambiguous disease abbreviation 'mf'"),
+        "{error}"
+    );
+    assert!(
+        error.contains("mycosis fungoides (MONDO:0009691)"),
+        "{error}"
+    );
+    assert!(
+        error.contains("myotonia fluctuans (MONDO:0020481)"),
+        "{error}"
+    );
+    assert!(
+        error.contains("Clinical reading: 'mf' also names myelofibrosis"),
+        "{error}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_cad_refuses_naming_every_exact_holder() {
+    let error = get_disease_card_or_error("CAD")
+        .await
+        .expect_err("CAD holds on three diseases and must refuse");
+    for candidate in [
+        "coronary artery disease (MONDO:0005010)",
+        // Both holders without a search-response `name` carry a MONDO
+        // `label`, so the refusal names the diseases, not bare IDs.
+        "cold agglutinin disease (MONDO:0018922)",
+        "congenital alveolar dysplasia (MONDO:0100077)",
+    ] {
+        assert!(error.contains(candidate), "missing {candidate}: {error}");
+    }
+    assert!(
+        !error.contains("no label in the search response"),
+        "{error}"
+    );
+}
+
+/// The refusal still refuses, but the candidate surface
+/// also names the oncology reading the source cannot see. MyDisease
+/// holds `MM` on Miyoshi muscular dystrophy alone and no myeloma record
+/// carries `MM`, so the refusal adds a pointer line rather than hiding
+/// the disease a clinician's `MM` usually means.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_mm_refusal_names_the_oncology_reading() {
+    let error = get_disease_card_or_error("MM")
+        .await
+        .expect_err("a two-letter abbreviation must not resolve to Miyoshi");
+    assert!(
+        error.contains("Miyoshi muscular dystrophy (MONDO:0009685)"),
+        "{error}"
+    );
+    assert!(
+        error.contains("a token this short cannot name one disease reliably"),
+        "{error}"
+    );
+    assert!(
+        error.contains("usually means multiple myeloma (MONDO:0009693)"),
+        "{error}"
+    );
+    assert!(
+        error.contains("get disease \"multiple myeloma\""),
+        "{error}"
+    );
+    // The pointer is not a source candidate: myeloma holds no `MM` in the
+    // source, so it never joins the holder list.
+    assert!(!error.contains("- multiple myeloma"), "{error}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_mds_refuses_naming_both_holders() {
+    let error = get_disease_card_or_error("MDS")
+        .await
+        .expect_err("MDS holds on two diseases and must refuse");
+    assert!(
+        error.contains("myelodysplastic syndrome (MONDO:0018881)"),
+        "{error}"
+    );
+    assert!(
+        error.contains("Miller-Dieker lissencephaly syndrome (MONDO:0009532)"),
+        "{error}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_single_holder_abbreviation_still_resolves_one_record() {
+    let card = get_disease_card_or_error("CRC")
+        .await
+        .expect("CRC is held by one disease and must resolve");
+    assert!(card.starts_with("# colorectal carcinoma"), "{card}");
+    assert!(card.contains("ID: MONDO:0024331"), "{card}");
+}
+
+/// Fix round: a full word is ambiguous only by that name. The
+/// veterinary myeloma record (MONDO:1013329, a descendant of MONDO:0005583
+/// `non-human animal disease`) holds `myeloma` as an exact synonym, and
+/// multiple myeloma holds it as a synonym too — neither synonym hold can
+/// refuse the lookup, so `get disease myeloma` resolves to the full-name
+/// disease.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_full_word_resolves_past_nonhuman_and_synonym_holders() {
+    let card = get_disease_card_or_error("myeloma")
+        .await
+        .expect("a full word whose exact-name holder count is zero must resolve");
+    assert!(card.starts_with("# multiple myeloma"), "{card}");
+    assert!(card.contains("ID: MONDO:0009693"), "{card}");
+}
+
+/// Structural guard: when a single-holder abbreviation resolves
+/// to a record without a label, the requested abbreviation stays display-only.
+/// The identity joins (Open Targets) must query the record's own terms, never
+/// the abbreviation — that leak is what mixed mycosis fungoides genes into
+/// the Myotonia fluctuans card.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_alias_lookup_does_not_feed_the_abbreviation_to_open_targets() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind alias fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream.read(&mut request).await.expect("read request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock alias fixture requests")
+                    .push(request.clone());
+                // ZQX appears only in the initial resolution query; every
+                // later request must answer without it.
+                let body = if request.starts_with("GET /query?") && request.contains("ZQX") {
+                    r#"{"total":1,"hits":[{"_id":"MONDO:0900001","mondo":{"synonym":{"exact":["ZQX"]}}}]}"#
+                } else if request.contains("/disease/MONDO:0900001") {
+                    // No name: the record is the abbreviation's unlabelled
+                    // single holder.
+                    r#"{"_id":"MONDO:0900001","mondo":{"synonym":{"exact":["ZQX"]}},"disease_ontology":{}}"#
+                } else {
+                    r#"{"total":0,"hits":[]}"#
+                };
+                stream
+                    .write_all(&disease_card_fixture_response(body))
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    let mut env = DiseaseCardFixtureEnv::new();
+    env.set("BIOMCP_MYDISEASE_BASE", &base);
+    env.set("BIOMCP_CTGOV_BASE", &base);
+    env.set("BIOMCP_OLS4_BASE", &base);
+    env.set("BIOMCP_MYCHEM_BASE", &base);
+    env.set("BIOMCP_OPENTARGETS_BASE", &base);
+    let card = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "disease".to_string(),
+        "ZQX".to_string(),
+    ])
+    .await
+    .expect("single-holder abbreviation resolves");
+    task.abort();
+    drop(env);
+
+    assert!(card.contains("ID: MONDO:0900001"), "{card}");
+    let requests = requests
+        .lock()
+        .expect("lock alias fixture requests")
+        .join("\n");
+    // The resolution query repeats the token once per Lucene clause; count
+    // requests, not occurrences.
+    let querying_requests = requests.lines().filter(|line| line.contains("ZQX")).count();
+    assert!(
+        querying_requests == 1,
+        "the abbreviation may appear only in the resolution query: {requests}"
+    );
 }

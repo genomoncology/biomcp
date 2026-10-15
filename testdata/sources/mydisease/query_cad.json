@@ -1,5 +1,5 @@
 {
- "took": 4,
+ "took": 2,
  "total": 8,
  "max_score": 12.724326,
  "hits": [
@@ -7,6 +7,19 @@
    "_id": "MONDO:0100077",
    "_score": 12.724326,
    "mondo": {
+    "ancestors": [
+     "MONDO:7770007",
+     "MONDO:0700096",
+     "MONDO:0024239",
+     "MONDO:0021147",
+     "MONDO:0000001",
+     "MONDO:0005453",
+     "MONDO:7770006",
+     "MONDO:0020295",
+     "MONDO:0004995",
+     "MONDO:0005267"
+    ],
+    "label": "congenital alveolar dysplasia",
     "synonym": {
      "exact": [
       "CAD"
@@ -18,6 +31,19 @@
    "_id": "MONDO:0018212",
    "_score": 12.494551,
    "mondo": {
+    "ancestors": [
+     "MONDO:0700096",
+     "MONDO:7770009",
+     "MONDO:0005385",
+     "MONDO:0000001",
+     "MONDO:0000473",
+     "MONDO:7770006",
+     "MONDO:7770008",
+     "MONDO:0006061",
+     "MONDO:0003847",
+     "MONDO:0004995"
+    ],
+    "label": "familial cervical artery dissection",
     "synonym": {
      "exact": [
       "familial CAD",
@@ -29,7 +55,7 @@
   },
   {
    "_id": "MONDO:0850371",
-   "_score": 12.420673,
+   "_score": 12.424074,
    "disease_ontology": {
     "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
     "name": "nonobstructive coronary artery disease",
@@ -38,26 +64,75 @@
       "non-CAD"
      ]
     }
-   }
-  },
-  {
-   "_id": "MONDO:0100097",
-   "_score": 11.272236,
+   },
    "mondo": {
-    "synonym": {
-     "exact": [
-      "CAD due to TBX4"
-     ]
-    }
+    "ancestors": [
+     "MONDO:0700096",
+     "MONDO:0005385",
+     "MONDO:0000001",
+     "MONDO:0005010",
+     "MONDO:0000473",
+     "MONDO:7770006",
+     "MONDO:0004995",
+     "MONDO:0005267"
+    ],
+    "label": "nonobstructive coronary artery disease"
    }
   },
   {
    "_id": "MONDO:0100090",
    "_score": 11.272236,
    "mondo": {
+    "ancestors": [
+     "MONDO:0100077",
+     "MONDO:0100547",
+     "MONDO:0005453",
+     "MONDO:7770009",
+     "MONDO:0000001",
+     "MONDO:0020295",
+     "MONDO:0700096",
+     "MONDO:0004995",
+     "MONDO:7770007",
+     "MONDO:0024239",
+     "MONDO:0021147",
+     "MONDO:7770006",
+     "MONDO:7770008",
+     "MONDO:0003847",
+     "MONDO:0005267"
+    ],
+    "label": "congenital alveolar dysplasia due to FGF10",
     "synonym": {
      "exact": [
       "CAD due to FGF10"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100097",
+   "_score": 11.272236,
+   "mondo": {
+    "ancestors": [
+     "MONDO:0100077",
+     "MONDO:0100547",
+     "MONDO:0005453",
+     "MONDO:7770009",
+     "MONDO:0000001",
+     "MONDO:0020295",
+     "MONDO:0700096",
+     "MONDO:0004995",
+     "MONDO:7770007",
+     "MONDO:0024239",
+     "MONDO:0021147",
+     "MONDO:7770006",
+     "MONDO:7770008",
+     "MONDO:0003847",
+     "MONDO:0005267"
+    ],
+    "label": "congenital alveolar dysplasia due to TBX4",
+    "synonym": {
+     "exact": [
+      "CAD due to TBX4"
      ]
     }
    }
@@ -112,6 +187,21 @@
     ]
    },
    "mondo": {
+    "ancestors": [
+     "MONDO:0002280",
+     "MONDO:0020108",
+     "MONDO:0004139",
+     "MONDO:0000602",
+     "MONDO:0003664",
+     "MONDO:0016450",
+     "MONDO:0005570",
+     "MONDO:0007179",
+     "MONDO:0000001",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0700096"
+    ],
+    "label": "cold agglutinin disease",
     "synonym": {
      "exact": [
       "CAD",
@@ -146,6 +236,16 @@
     }
    },
    "mondo": {
+    "ancestors": [
+     "MONDO:0700096",
+     "MONDO:0005385",
+     "MONDO:0000001",
+     "MONDO:0000473",
+     "MONDO:7770006",
+     "MONDO:0004995",
+     "MONDO:0005267"
+    ],
+    "label": "coronary artery disorder",
     "synonym": {
      "exact": [
       "CAD",
@@ -261,6 +361,35 @@
     ]
    },
    "mondo": {
+    "ancestors": [
+     "MONDO:0100620",
+     "MONDO:0100500",
+     "MONDO:0002602",
+     "MONDO:0019052",
+     "MONDO:0005066",
+     "MONDO:7770009",
+     "MONDO:0005500",
+     "MONDO:0100545",
+     "MONDO:0000001",
+     "MONDO:0037937",
+     "MONDO:0019238",
+     "MONDO:0700096",
+     "MONDO:0005027",
+     "MONDO:0002320",
+     "MONDO:0005071",
+     "MONDO:0100062",
+     "MONDO:0017749",
+     "MONDO:0005560",
+     "MONDO:0019254",
+     "MONDO:0700092",
+     "MONDO:7770007",
+     "MONDO:0015286",
+     "MONDO:7770006",
+     "MONDO:7770008",
+     "MONDO:0003847",
+     "MONDO:0100038"
+    ],
+    "label": "developmental and epileptic encephalopathy, 50",
     "synonym": {
      "exact": [
       "CAD-CDG",

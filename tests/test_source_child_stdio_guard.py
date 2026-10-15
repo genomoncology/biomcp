@@ -20,10 +20,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# The wheel launcher is a pass-through: it must hand the child the
-# parent's streams verbatim. It is the only allowed inheritor.
-ALLOW_INHERIT = {"src/main_biomcp_cli.rs"}
-
 # Any path-qualified Command::new (std::process, tokio::process,
 # process:: after `use std::process;`) and the bare imported form.
 COMMAND_NEW = re.compile(
@@ -282,8 +278,6 @@ def statement_windows(source: str, pattern: re.Pattern[str]) -> list[str]:
 
 
 def child_stdio_violations(relative: str, source: str) -> list[str]:
-    if relative.replace("\\", "/") in ALLOW_INHERIT:
-        return []
     violations: list[str] = []
     # Fail closed on unresolved Command bindings: a use statement that
     # mentions Command in a shape the resolver did not consume is a
@@ -362,7 +356,7 @@ def test_source_children_never_inherit_stdio() -> None:
 
 
 def test_guard_catches_the_icacls_regression_shape() -> None:
-    # The exact pre-1246 shape: a spawned icacls.exe whose streams are
+    # The exact original shape: a spawned icacls.exe whose streams are
     # all unset, so the localized success line lands in the MCP stream.
     regression = (
         'let status = std::process::Command::new("icacls.exe")\n'
@@ -542,7 +536,7 @@ def test_guard_scans_production_code_after_a_semicolon_test_module() -> None:
 
 def test_guard_passes_safe_shapes() -> None:
     for safe in (
-        # Discarded streams are the 1246 fix.
+        # Discarded streams are the fix.
         'Command::new("icacls.exe").arg(path)\n'
         "    .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())\n"
         "    .status()?;\n",
@@ -551,7 +545,7 @@ def test_guard_passes_safe_shapes() -> None:
         "cmd.kill_on_drop(true).stdin(Stdio::null())\n"
         "    .stdout(Stdio::piped()).stderr(Stdio::piped());\n",
         # .output() with explicit non-inheriting setters: the
-        # exemption is closed (1264) — a bare .output() with an
+        # exemption is closed — a bare .output() with an
         # .stderr(Stdio::inherit()) before it still inherits.
         "let smoke = std::process::Command::new(&stage_path)\n"
         '    .arg("version")\n'
@@ -595,10 +589,6 @@ def test_output_exemption_is_closed() -> None:
         violations = child_stdio_violations("src/a.rs", bad)
         assert violations, f"guard must fail this shape:\n{bad}"
 
-
-def test_the_launcher_stays_the_only_allowed_inheritor() -> None:
-    launcher = (ROOT / "src" / "main_biomcp_cli.rs").read_text(encoding="utf-8")
-    assert "Stdio::inherit()" in launcher, "launcher contract moved; update the guard"
 
 def test_guard_catches_round_three_shapes() -> None:
     """Ticket 1269: the neighboring spellings the prior guard missed."""

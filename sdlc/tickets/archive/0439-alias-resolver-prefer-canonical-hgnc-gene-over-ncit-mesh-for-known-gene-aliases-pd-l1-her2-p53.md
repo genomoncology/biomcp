@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/439-alias-resolver-prefer-canonical-hgnc-gene-over-ncit-mesh-for-known-gene-aliases-pd-l1-her2-p53
+    ~/workspace/planning/biomcp/artifacts/439-alias-resolver-prefer-canonical-hgnc-gene-over-ncit-mesh-for-known-gene-aliases-pd-l1-her2-p53

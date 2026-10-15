@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/019-source-integration-architecture-contracts
+    ~/workspace/planning/biomcp/artifacts/019-source-integration-architecture-contracts
 
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the

@@ -8,7 +8,7 @@ merge: (this record's merge)
 
 ## What changed
 
-The draft-visibility blocker (container-publish contents: write, with the guard test), the pinned exit-code case, the mid-line gh guard, the reference-tight raise-review grammar with the review's five rejections, record 1283 with both failing runs named, dispositions for the fourth and fifth review files, the changelog wording (RNA levels per the CLI help; the internal phrasing fully out), the DepMap and Cell Model Passports terms pages with evidence rows (52 pinned), and the rehearsal: checklist section 1 gained the item, and the scratch repository genomoncology/biomcp-release-rehearsal (private) carries this branch plus one commit pointing the image and TestPyPI at itself. The rehearsal tag is not pushed yet; it waits on TestPyPI trusted publishing for the scratch repository.
+The draft-visibility blocker (container-publish contents: write, with the guard test), the pinned exit-code case, the mid-line gh guard, the reference-tight raise-review grammar with the review's five rejections, record 1283 with both failing runs named, dispositions for the fourth and fifth review files, the changelog wording (RNA levels per the CLI help; the internal phrasing fully out), the DepMap and Cell Model Passports terms pages with evidence rows (52 pinned), and the rehearsal: checklist section 1 gained the item, and the rehearsal runs on the public scratch repository genomoncology/biomcp-release-rehearsal — a private copy stops mid-flight because private-repository runners are not available to this account — with the publish step as a credential-free twine check (no TestPyPI registration exists and none is planned). The go request waits on that rehearsal run.
 
 ## Evidence, read from the API
 

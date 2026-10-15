@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/228-quality-ratchet-lints-and-architecture-doc-refresh
+    ~/workspace/planning/biomcp/artifacts/228-quality-ratchet-lints-and-architecture-doc-refresh

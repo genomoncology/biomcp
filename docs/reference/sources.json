@@ -9,6 +9,7 @@
       "get protein <id> structures"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced through UniProt cross-references; no standalone BioMCP client",
     "license_summary": "AlphaFold DB structural predictions are published for broad open use",
@@ -28,6 +29,7 @@
       "get variant <id> predict"
     ],
     "bioMcp_auth": "required_env",
+    "commercial_terms": null,
     "env_var": "ALPHAGENOME_API_KEY",
     "provider_access": "provider-controlled access to the AlphaGenome service",
     "license_summary": "custom provider terms; access is gated by Google/DeepMind service controls",
@@ -47,6 +49,7 @@
       "get variant <id>"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced indirectly through MyVariant.info payloads",
     "license_summary": "custom tool terms",
@@ -66,6 +69,7 @@
       "get variant <gene> <change> all"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public API access",
     "license_summary": "public cancer hotspot recurrence resource with provider-specific reuse expectations",
@@ -87,6 +91,7 @@
       "study query"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public API access for open studies",
     "license_summary": "public API with study-specific downstream terms",
@@ -110,6 +115,7 @@
       "biomcp cvx sync"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "on-demand local download by BioMCP on first EU/default/WHO-vaccine bridge use, or manual preseed via BIOMCP_CVX_DIR",
     "license_summary": "most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply",
@@ -129,6 +135,7 @@
       "get cell-line <CVCL_xxxx> xrefs (identifier only)"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public portal; BioMCP shows Cell Model Passports identifiers resolved through Cellosaurus cross-references and fetches no portal data",
     "license_summary": "Sanger DepMap Data Usage Policy: a non-exclusive, non-transferable right to use the data files for internal proprietary research and education; resale of all or a significant part and provision of commercial services are excluded, and commercial API/data use requires prior consent (non-commercial API access needs no registration)",
@@ -151,6 +158,7 @@
       "get cell-line <id> variants"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API, no key and no published rate limit",
     "license_summary": "CC BY 4.0",
@@ -172,6 +180,7 @@
       "get drug <name> targets"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "ChEMBL data is provided under Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0); attribution is required and share-alike applies to adaptations (2026-09-27 pass added the ShareAlike obligation the earlier summary omitted).",
@@ -194,6 +203,7 @@
       "get disease <id> variants"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "open community knowledgebase; CIViC content is published for unrestricted reuse. Verified 2026-09-28 against the live FAQ (plain HTML): CIViC content is released under CC0 1.0 Universal; the source code is MIT; CIViC is intended for purely research purposes.",
@@ -214,6 +224,7 @@
       "variant erepo <CAid>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public web/API access",
     "license_summary": "public ClinGen curation resources with publication and attribution expectations",
@@ -233,6 +244,7 @@
       "variant normalize car <HGVS>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public web/API access",
     "license_summary": "public ClinGen curation resources with publication and attribution expectations",
@@ -253,6 +265,7 @@
       "gene_cspec"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public web/API access",
     "license_summary": "public ClinGen curation resources with publication and attribution expectations",
@@ -272,6 +285,7 @@
       "variant erepo <CAid>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public web/API access",
     "license_summary": "public ClinGen curation resources with publication and attribution expectations",
@@ -292,6 +306,7 @@
       "variant_articles"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public web/API access",
     "license_summary": "public ClinGen curation resources with publication and attribution expectations",
@@ -312,6 +327,7 @@
       "get trial <nct_id>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "U.S. government public information service",
@@ -331,6 +347,7 @@
       "get variant <id> clinvar"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public NCBI E-utilities API; MyVariant.info is the fallback carrier",
     "license_summary": "NCBI public-domain submission archive",
@@ -350,6 +367,7 @@
       "get protein <id> complexes"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "EMBL-EBI open data service",
@@ -369,6 +387,7 @@
       "get variant <id> cosmic"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced indirectly through cached MyVariant.info fields; no standalone BioMCP COSMIC client",
     "license_summary": "BioMCP reads COSMIC only through MyVariant.info, whose COSMIC fields are the v68 snapshot \u2014 per MyVariant's metadata: 'COSMIC v68 was imported from UCSC database dump. This is the last freely available somatic variants from COSMIC before their licence change' (checked 2026-09-27). The v68-era terms, not the current cosmickb.org licence, govern those fields. The current licence requires a commercial licence for commercial use including patient services and clinical reporting; it governs COSMIC's current direct offering only. The practical limit of the v68 fields is age, not licence.",
@@ -389,6 +408,7 @@
       "get pgx <gene_or_drug>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "cpicpgx.org now redirects to ClinPGx and its former CC0 licence pages are gone; the successor data-usage policy states ClinPGx data is CC BY-SA 4.0. Whether that licence governs CPIC content is not stated on any live page; treat CPIC data as attribution-plus-share-alike until CPIC publishes terms on its own domain again.",
@@ -408,6 +428,7 @@
       "get variant <id> population"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "NCBI public data service with attribution and non-endorsement expectations",
@@ -430,6 +451,7 @@
       "biomcp ddinter sync"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": "non-commercial",
     "env_var": null,
     "provider_access": "public DDInter download bundle; operators run biomcp ddinter sync explicitly or preseed BIOMCP_DDINTER_DIR manually, and normal reads stay local",
     "license_summary": "CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists",
@@ -449,6 +471,7 @@
       "get cell-line <CVCL_xxxx> xrefs (identifier only)"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public portal; BioMCP shows DepMap identifiers resolved through Cellosaurus cross-references and fetches no DepMap data",
     "license_summary": "DepMap's own guidance says DepMap-generated data are generally CC BY 4.0 while other hosted projects may use different licenses; each file's Data Usage and Terms must be checked per download, and a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed)",
@@ -469,6 +492,7 @@
       "get drug <name> interactions"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "open interaction service; aggregated claims may still reflect upstream source terms",
@@ -489,6 +513,7 @@
       "get disease <id>"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced indirectly through MyDisease.info",
     "license_summary": "open disease ontology project",
@@ -509,6 +534,7 @@
       "get disease <id> disgenet"
     ],
     "bioMcp_auth": "required_env",
+    "commercial_terms": null,
     "env_var": "DISGENET_API_KEY",
     "provider_access": "account registration and API key required",
     "license_summary": "custom provider terms for API and downloads",
@@ -529,6 +555,7 @@
       "get drug <name> label"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": "license-required",
     "env_var": null,
     "provider_access": "surfaced indirectly through MyChem.info payloads",
     "license_summary": "custom DrugBank terms of use and licensing",
@@ -548,6 +575,7 @@
       "get drug <name> approvals"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced through OpenFDA-derived approval fields",
     "license_summary": "FDA-origin public information",
@@ -570,6 +598,7 @@
       "get drug <name> shortage --region eu|all"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "on-demand local download by BioMCP on first EMA use, or manual preseed via BIOMCP_EMA_DIR",
     "license_summary": "EMA website material may be reused with source attribution; third-party content can carry separate rights",
@@ -589,6 +618,7 @@
       "get gene <symbol> ontology"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": "license-required",
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "Verified 2026-09-29 against the live terms page: free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners. The terms state Enrichr is not to be used for treating or diagnosing human subjects.",
@@ -612,6 +642,7 @@
       "get article <id> asset <asset-key>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "open literature metadata service; article and full-text licenses vary by record",
@@ -631,6 +662,7 @@
       "get drug <name> regulatory --region us|all"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public FDA search service",
     "license_summary": "FDA-origin public information",
@@ -671,6 +703,7 @@
       "get article <id> asset <asset-key>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "public repository API; each article/file carries its own license metadata",
@@ -691,6 +724,7 @@
       "gencc sync"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public weekly new-format CSV export",
     "license_summary": "CC0 1.0 data with requested attribution to GenCC and contributing submitters",
@@ -711,6 +745,7 @@
       "get variant <id> population"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public browser/API",
     "license_summary": "Broad Institute data policies with attribution and service-specific conditions",
@@ -730,6 +765,7 @@
       "enrich <GENE1,GENE2,...>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "open enrichment service with provider citation expectations",
@@ -749,6 +785,7 @@
       "get gene <symbol> expression"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public portal/API for public-access expression data",
     "license_summary": "NIH-hosted public-access expression resource",
@@ -771,6 +808,7 @@
       "biomcp gtr sync"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public FTP bulk export; BioMCP downloads and reads local copies on demand, or operators can preseed `BIOMCP_GTR_DIR` manually",
     "license_summary": "NLM/NCBI government data service with public bulk-export access",
@@ -791,6 +829,7 @@
       "get variant <id> gwas"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "EMBL-EBI resource terms; summary statistics may carry separate licenses",
@@ -811,6 +850,7 @@
       "discover phenotype term resolution"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public ontology API",
     "license_summary": "open HPO data with attribution and integrity requirements",
@@ -831,6 +871,7 @@
       "gene cell-lines <symbol> --group <group>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public XML and web resources",
     "license_summary": "CC BY 4.0 for copyrightable parts of the database",
@@ -850,6 +891,7 @@
       "get protein <id> domains"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "EMBL-EBI open data resource",
@@ -870,6 +912,7 @@
       "get pathway <id>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": "license-required",
     "env_var": null,
     "provider_access": "open website/API for academic use; commercial use requires a license",
     "license_summary": "custom KEGG terms; academic users may freely use the website, non-academic use requires a commercial license",
@@ -889,6 +932,7 @@
       "search article -k <query>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "NCBI/NLM public-domain literature service",
@@ -908,6 +952,7 @@
       "discover plain-language topics"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public search API",
     "license_summary": "NLM public-information service with trademark and endorsement guidance",
@@ -929,6 +974,7 @@
       "search phenotype"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "open integrated knowledge graph; underlying source licenses still matter",
@@ -949,6 +995,7 @@
       "discover <query>"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced indirectly through MyDisease.info payloads",
     "license_summary": "CC BY 4.0",
@@ -968,6 +1015,7 @@
       "variant normalize"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "public Mutalyzer normalization service; provider terms apply to returned validation output",
@@ -988,6 +1036,7 @@
       "get drug <name>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "BioThings aggregation service; upstream source terms continue to apply",
@@ -1005,9 +1054,12 @@
     "via": null,
     "bioMcp_surfaces": [
       "search disease",
-      "get disease <id>"
+      "get disease <id>",
+      "search trial (condition abbreviation note)",
+      "search trial --source nci (condition grounding)"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "BioThings aggregation service; source ontologies and datasets keep their own terms",
@@ -1025,9 +1077,13 @@
     "via": null,
     "bioMcp_surfaces": [
       "search gene",
-      "get gene <symbol>"
+      "get gene <symbol>",
+      "search variant <free-text query>",
+      "get variant <gene> <change>",
+      "get article <id>; article entities"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "BioThings aggregation service; source-specific terms remain attached to underlying records",
@@ -1035,7 +1091,7 @@
     "terms_url": "https://docs.mygene.info/en/latest/",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data."
+    "notes": "BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data. Free-text variant search confirms a gene-symbol first token, `get variant <gene> <change>` resolves the gene's UniProt accession for the numbering check, and article cards and article entities resolve official symbols for spelled gene names."
   },
   {
     "id": "myvariant-info",
@@ -1048,6 +1104,7 @@
       "get variant <id>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "BioThings aggregation service; indirect providers retain their own terms",
@@ -1068,6 +1125,7 @@
       "get article <id> fulltext"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public E-utilities endpoint; optional My NCBI API key improves throughput",
     "license_summary": "NLM public-domain utility service",
@@ -1087,6 +1145,7 @@
       "get article <id> fulltext"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public utility; optional My NCBI API key improves throughput",
     "license_summary": "NLM public-domain utility service",
@@ -1107,6 +1166,7 @@
       "get trial <nct_id> --source nci"
     ],
     "bioMcp_auth": "required_env",
+    "commercial_terms": null,
     "env_var": "NCI_API_KEY",
     "provider_access": "API key required",
     "license_summary": "custom provider API terms for the NCI Clinical Trials Search API",
@@ -1127,6 +1187,7 @@
       "get gene <symbol> funding"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "NIH-operated public funding-reporting service",
@@ -1146,6 +1207,7 @@
       "discover <query>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public ontology service",
     "license_summary": "EMBL-EBI ontology browser; each ontology keeps its own license",
@@ -1165,6 +1227,7 @@
       "variant oncokb <id>"
     ],
     "bioMcp_auth": "required_env",
+    "commercial_terms": "license-required",
     "env_var": "ONCOKB_TOKEN",
     "provider_access": "registration and provider-controlled API access",
     "license_summary": "custom provider terms; academic research access is no-fee but licensed, commercial/clinical use requires a paid license",
@@ -1184,6 +1247,7 @@
       "article citation-evidence <citing-id> <cited-id>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "free public REST API without authentication",
     "license_summary": "OpenCitations datasets are released under a CC0 public domain dedication; website text is CC BY 4.0 and the software is ISC",
@@ -1206,6 +1270,7 @@
       "get diagnostic <diagnostic_id> regulatory"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "OPENFDA_API_KEY",
     "provider_access": "open public API; optional key increases quota headroom",
     "license_summary": "FDA-origin public data and API terms",
@@ -1227,6 +1292,7 @@
       "get disease <id> genes"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public GraphQL API",
     "license_summary": "Open Targets data is CC0; platform code is Apache 2.0",
@@ -1247,6 +1313,7 @@
       "author papers orcid:<id>"
     ],
     "bioMcp_auth": "required_env",
+    "commercial_terms": null,
     "env_var": "ORCID_ACCESS_TOKEN",
     "provider_access": "public-read bearer token obtained from ORCID for the /read-public scope",
     "license_summary": "ORCID public API terms; public data is released for reuse under the ORCID public-data license",
@@ -1266,6 +1333,7 @@
       "get protein <id> structures"
     ],
     "bioMcp_auth": "not_applicable",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced through UniProt cross-references; no standalone BioMCP PDB client",
     "license_summary": "PDB archive data is CC0 1.0",
@@ -1289,6 +1357,7 @@
       "drug cell-lines <name> --dataset <name>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": "non-commercial",
     "env_var": null,
     "provider_access": "open public GraphQL endpoint, no key",
     "license_summary": "PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider",
@@ -1308,6 +1377,7 @@
       "get pgx <gene_or_drug> annotations"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "PharmGKB's own domain now redirects to ClinPGx and the former terms pages are gone; the successor data-usage policy (read from the live page's JS bundle) states ClinPGx data is CC BY-SA 4.0. Verified 2026-09-28 against the same page CPIC was, since both routes lead to one policy.",
@@ -1329,6 +1399,7 @@
       "get article <id> asset <asset-key>"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public utility for the PMC Open Access subset",
     "license_summary": "open-access subset only; article licenses vary within PMC OA",
@@ -1350,6 +1421,7 @@
       "get article <id> indexing"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public search/metadata service; optional My NCBI API key improves throughput",
     "license_summary": "NLM public-domain search and metadata service",
@@ -1370,6 +1442,7 @@
       "get article <pmid> annotations"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public API; optional My NCBI API key improves throughput",
     "license_summary": "NCBI/NLM public-domain annotation service",
@@ -1389,6 +1462,7 @@
       "get gene <symbol> go"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "GO/EMBL-EBI open data service",
@@ -1410,6 +1484,7 @@
       "get gene <symbol> pathways"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "Reactome pathway content is CC BY 4.0, with some data exports additionally placed under CC0",
@@ -1429,6 +1504,7 @@
       "get disease <id> survival"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public website endpoints; no BioMCP account or key path",
     "license_summary": "U.S. government cancer-statistics website and public explorer",
@@ -1455,6 +1531,7 @@
       "article recommendations <id>"
     ],
     "bioMcp_auth": "optional_env",
+    "commercial_terms": null,
     "env_var": "S2_API_KEY",
     "provider_access": "Unauthenticated access is available on the shared pool; authenticated access uses the provider-issued API key and remains governed by the API license agreement",
     "license_summary": "custom API license agreement",
@@ -1475,6 +1552,7 @@
       "get protein <id> interactions"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "CC BY 4.0",
@@ -1494,6 +1572,7 @@
       "discover <query> crosswalk enrichment"
     ],
     "bioMcp_auth": "required_env",
+    "commercial_terms": null,
     "env_var": "UMLS_API_KEY",
     "provider_access": "UTS account plus acceptance of the UMLS Metathesaurus license",
     "license_summary": "custom UMLS Metathesaurus license and terminology-specific appendices",
@@ -1511,9 +1590,11 @@
     "via": null,
     "bioMcp_surfaces": [
       "get protein <id>",
-      "get gene <symbol> protein"
+      "get gene <symbol> protein",
+      "get variant <gene> <change>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "CC BY 4.0",
@@ -1521,7 +1602,7 @@
     "terms_url": "https://www.uniprot.org/help/license",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly."
+    "notes": "BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly. `get variant <gene> <change>` reads the canonical (MANE Select) protein sequence to check a requested reference residue."
   },
   {
     "id": "vaers",
@@ -1535,6 +1616,7 @@
       "biomcp health"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public CDC WONDER web/API access; consent to the CDC WONDER data use restrictions is required",
     "license_summary": "CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts",
@@ -1554,6 +1636,7 @@
       "variant normalize"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "public VariantValidator service; provider terms apply to returned validation output",
@@ -1576,6 +1659,7 @@
       "biomcp who-ivd sync"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "public WHO CSV export; BioMCP downloads and reads a local copy on demand, or operators can preseed `BIOMCP_WHO_IVD_DIR` manually",
     "license_summary": "WHO content generally requires attribution; commercial reuse may require permission and third-party materials can carry separate rights",
@@ -1598,6 +1682,7 @@
       "get drug <name> regulatory --region who|all"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "on-demand local download by BioMCP on first WHO use, or manual preseed via BIOMCP_WHO_DIR",
     "license_summary": "WHO content generally requires attribution; commercial reuse may require permission and third-party materials can carry separate rights",
@@ -1618,6 +1703,7 @@
       "get pathway <id>"
     ],
     "bioMcp_auth": "none",
+    "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "Verified 2026-09-28 against the live terms page: WikiPathways adopts the Creative Commons CC0 waiver for its content (the page says so in plain text). The earlier unverifiable call reflected the retired classic site; the current site's terms page is live.",

@@ -8,4 +8,4 @@ Imported from March ticket 073. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/073-close-4-bioasq-product-gaps-fulltext-size-rare-disease-phenotypes-somatic-mutations-rare-drug-indications
+Artifacts: ~/workspace/planning/biomcp/artifacts/073-close-4-bioasq-product-gaps-fulltext-size-rare-disease-phenotypes-somatic-mutations-rare-drug-indications

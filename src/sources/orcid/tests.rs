@@ -141,7 +141,7 @@ fn an_absent_group_key_fails_decoding() {
     assert!(serde_json::from_str::<OrcidWorksResponse>(body).is_err());
 }
 
-// ---- Ticket 1142 closing pass: loopback transport and works bounds ----
+// ---- Loopback transport and works bounds ----
 
 mod closing {
     use super::super::*;

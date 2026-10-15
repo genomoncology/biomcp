@@ -8,38 +8,120 @@ use crate::sources::nci_cts::NciCtsClient;
 use crate::transform;
 use tracing::warn;
 
-async fn resolve_disease(
+/// The NCI condition selection plus the note to surface when grounding
+/// degraded from an NCI concept ID to a plain keyword search. The note
+/// reaches the response (`meta.notes` and the markdown footer), not only a
+/// log line — the visible-degrade pattern.
+struct NciDiseaseGrounding {
+    selection: biodata::NciCtsV2DiseaseSelection,
+    degrade_note: Option<String>,
+}
+
+/// MyDisease's query endpoint refuses inputs over 512 bytes, and that
+/// refusal used to fail the whole NCI search. The condition now truncates to the
+/// longest prefix the lookup accepts, with a note keeping the
+/// truncation visible.
+const NCI_CONDITION_GROUNDING_LIMIT_BYTES: usize = 512;
+
+fn truncate_condition_for_grounding(condition: &str) -> (&str, bool) {
+    if condition.len() <= NCI_CONDITION_GROUNDING_LIMIT_BYTES {
+        return (condition, false);
+    }
+    let mut end = NCI_CONDITION_GROUNDING_LIMIT_BYTES;
+    while end > 0 && !condition.is_char_boundary(end) {
+        end -= 1;
+    }
+    (&condition[..end], true)
+}
+
+fn nci_truncation_note() -> String {
+    format!(
+        "NCI trial search used at most the first {NCI_CONDITION_GROUNDING_LIMIT_BYTES} bytes of the condition \
+(the disease lookup accepts no more); results reflect the truncated condition."
+    )
+}
+
+fn nci_keyword_degrade_note(condition: &str, reason: &str) -> String {
+    format!(
+        "NCI trial search used a plain keyword search for '{condition}' because {reason}; \
+results may be broader than the requested condition."
+    )
+}
+
+async fn resolve_nci_disease_grounding(
     client: &MyDiseaseClient,
     condition: Option<&str>,
-) -> Result<Option<biodata::NciCtsV2DiseaseSelection>, BioMcpError> {
-    let Some(condition) = condition.map(str::trim).filter(|v| !v.is_empty()) else {
+) -> Result<Option<NciDiseaseGrounding>, BioMcpError> {
+    let Some(requested) = condition.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
-    match resolve_disease_hit_by_name(client, condition).await {
-        Ok(hit) => Ok(Some(from_hit(condition, hit))),
-        Err(BioMcpError::NotFound { .. }) => Ok(Some(biodata::NciCtsV2DiseaseSelection::Keyword(
-            condition.to_owned(),
-        ))),
+    let (condition, truncated) = truncate_condition_for_grounding(requested);
+
+    let mut grounding = match resolve_disease_hit_by_name(client, condition).await {
+        Ok(hit) => Some(nci_disease_grounding_from_hit(condition, hit)),
+        // The exact-resolution refusal rejects the condition itself; a keyword search
+        // for the raw token would mix the same holders' trials behind a
+        // note, so trial search returns the refusal and its choices
+        // instead of degrading.
+        Err(err @ BioMcpError::InvalidArgument(_)) => return Err(err),
+        Err(BioMcpError::NotFound { .. }) => Some(NciDiseaseGrounding {
+            selection: biodata::NciCtsV2DiseaseSelection::Keyword(condition.to_string()),
+            degrade_note: Some(nci_keyword_degrade_note(
+                condition,
+                "it does not ground to a disease concept in MyDisease",
+            )),
+        }),
         Err(error) if crate::sources::mydisease::optional_failure(&error) => {
-            warn!(error=%error,"NCI disease grounding failed; using the keyword fallback");
-            Ok(Some(biodata::NciCtsV2DiseaseSelection::Keyword(
-                condition.to_owned(),
-            )))
+            warn!(error=%error, "NCI disease grounding failed, falling back to keyword");
+            let reason_text = error.to_string();
+            let reason = reason_text
+                .lines()
+                .next()
+                .unwrap_or("disease grounding failed");
+            Some(NciDiseaseGrounding {
+                selection: biodata::NciCtsV2DiseaseSelection::Keyword(condition.to_string()),
+                degrade_note: Some(nci_keyword_degrade_note(
+                    condition,
+                    &format!("disease grounding failed ({reason})"),
+                )),
+            })
         }
-        Err(error) => Err(error),
+        Err(error) => return Err(error),
+    };
+    // The truncation note applies whether grounding succeeded on the
+    // truncated text or degraded to a keyword search: the search ran on
+    // fewer bytes than the caller sent.
+    if truncated && let Some(grounding) = grounding.as_mut() {
+        let truncation = nci_truncation_note();
+        grounding.degrade_note = Some(match grounding.degrade_note.take() {
+            Some(existing) => format!("{truncation} {existing}"),
+            None => truncation,
+        });
     }
+    Ok(grounding)
 }
-fn from_hit(condition: &str, hit: MyDiseaseHit) -> biodata::NciCtsV2DiseaseSelection {
+
+fn nci_disease_grounding_from_hit(condition: &str, hit: MyDiseaseHit) -> NciDiseaseGrounding {
     let mut disease = transform::disease::from_mydisease_hit(hit);
-    disease
+    if let Some(nci_id) = disease
         .xrefs
         .remove("NCI")
         .map(|v| v.trim().to_owned())
         .filter(|v| !v.is_empty())
-        .map_or_else(
-            || biodata::NciCtsV2DiseaseSelection::Keyword(condition.to_owned()),
-            biodata::NciCtsV2DiseaseSelection::ConceptId,
-        )
+    {
+        NciDiseaseGrounding {
+            selection: biodata::NciCtsV2DiseaseSelection::ConceptId(nci_id),
+            degrade_note: None,
+        }
+    } else {
+        NciDiseaseGrounding {
+            selection: biodata::NciCtsV2DiseaseSelection::Keyword(condition.to_string()),
+            degrade_note: Some(nci_keyword_degrade_note(
+                condition,
+                "the resolved disease carries no NCI concept ID",
+            )),
+        }
+    }
 }
 
 pub(super) async fn search_page_with_nci_clients(
@@ -50,9 +132,16 @@ pub(super) async fn search_page_with_nci_clients(
     limit: usize,
     offset: usize,
 ) -> Result<super::TrialSearchPage, BioMcpError> {
-    let disease = resolve_disease(mydisease, filters.condition.as_deref()).await?;
-    let plan = biodata::NciCtsV2SearchPlan::new(&normalized.biodata, disease, limit, offset)
-        .map_err(|error| biodata_plan_error("invalid NCI trial search", error))?;
+    let grounding =
+        resolve_nci_disease_grounding(mydisease, filters.condition.as_deref()).await?;
+    let degrade_note = grounding.as_ref().and_then(|g| g.degrade_note.clone());
+    let plan = biodata::NciCtsV2SearchPlan::new(
+        &normalized.biodata,
+        grounding.map(|g| g.selection),
+        limit,
+        offset,
+    )
+    .map_err(|error| biodata_plan_error("invalid NCI trial search", error))?;
     let response = client.search(&plan).await?;
     let results = response
         .results()
@@ -68,7 +157,7 @@ pub(super) async fn search_page_with_nci_clients(
         total,
         continuation,
         eligibility_verification_upstream_total: None,
-        partial_note: None,
+        partial_note: degrade_note,
     })
 }
 
@@ -120,24 +209,39 @@ mod tests {
 
     #[test]
     fn disease_grounding_prefers_nci_identity_and_otherwise_keeps_keyword() {
-        let grounded = from_hit(
+        let grounded = nci_disease_grounding_from_hit(
             "melanoma",
             hit(
                 serde_json::json!({"_id":"MONDO:1","mondo":{"name":"Melanoma","xrefs":{"ncit":["C3224"]}}}),
             ),
         );
         assert_eq!(
-            grounded,
+            grounded.selection,
             biodata::NciCtsV2DiseaseSelection::ConceptId("C3224".into())
         );
-        let fallback = from_hit(
+        assert_eq!(grounded.degrade_note, None);
+        let fallback = nci_disease_grounding_from_hit(
             "melanoma",
             hit(serde_json::json!({"_id":"MONDO:1","mondo":{"name":"Melanoma"}})),
         );
         assert_eq!(
-            fallback,
+            fallback.selection,
             biodata::NciCtsV2DiseaseSelection::Keyword("melanoma".into())
         );
+        assert!(fallback.degrade_note.is_some());
+    }
+
+    #[test]
+    fn overlong_conditions_truncate_on_a_char_boundary() {
+        let (condition, truncated) =
+            truncate_condition_for_grounding(&"a".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES));
+        assert_eq!(condition.len(), NCI_CONDITION_GROUNDING_LIMIT_BYTES);
+        assert!(!truncated);
+        let long = format!("{}{}", "ä".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES), "z");
+        let (condition, truncated) = truncate_condition_for_grounding(&long);
+        assert!(truncated);
+        assert!(condition.len() < NCI_CONDITION_GROUNDING_LIMIT_BYTES);
+        assert!(condition.is_char_boundary(NCI_CONDITION_GROUNDING_LIMIT_BYTES - 1));
     }
 
     #[test]

@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/685-declare-the-genome-build-on-every-myvariant-lookup
+    ~/workspace/planning/biomcp/artifacts/685-declare-the-genome-build-on-every-myvariant-lookup

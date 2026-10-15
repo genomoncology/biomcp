@@ -144,7 +144,7 @@ focused executions completed without invoking Cargo.
 Warm timing records before ticket 395 included the old live/cache-backed
 `make spec-pr` corpus. After ticket 427, `make spec`/`make spec-pr` are offline
 Markdown-only routine lanes and `make verify` is the operator-run live lane.
-Before this cleanup, `make spec-contracts` was recorded at `386.98s` on beelink
+Before this cleanup, `make spec-contracts` was recorded at `386.98s` on the recorded machine
 on `2026-05-23` for the legacy deterministic subset and in the `spec-only`
 validation-profile comment. After this cleanup, `/usr/bin/time -p make
 spec-contracts` in this worktree recorded `real 337.47`, `user 2.51`, and `sys
@@ -152,7 +152,7 @@ spec-contracts` in this worktree recorded `real 337.47`, `user 2.51`, and `sys
 
 ## Contract Profile Timing Record
 
-Timing is observational rather than a gate. On beelink on 2026-07-11, the
+Timing is observational rather than a gate. On the recorded machine on 2026-07-11, the
 pre-change cold `make spec` run spent `114s` compiling the spec profile and
 `704.28s` wall-clock overall; that baseline did not expose separate nextest,
 Python, or MkDocs timings. Post-change observations on the same machine were:
@@ -181,7 +181,7 @@ compilation savings.
 
 ## Ticket 507 Explicit-Fixture Pacing Result
 
-On beelink on 2026-07-13, the parent binary at `e62b45066d931480b8d4fd38df09ab4216af266b`
+On the recorded machine on 2026-07-13, the parent binary at `e62b45066d931480b8d4fd38df09ab4216af266b`
 and candidate binary at `14a8ec05f4f6716ecbaaca6c79600582542aee70` were each built once before
 timing. Each repetition removed the worktree-local routine HTTP cache, started a fresh shared
 article fixture, ran the candidate revision's article document, and cleaned up the fixture.
@@ -218,7 +218,7 @@ values from every child and adds the signal only for that test.
 The pre-change release-binary G5 observation was **228s** against the unchanged
 **180-second** heading budget. On 2026-07-31, after authoritative RefSeq exact
 retrieval stopped appending CAR-derived aliases, the release-binary runner took
-**166.38s** (`user 3.97s`, `sys 16.73s`) on beelink. The 180-second budget is
+**166.38s** (`user 3.97s`, `sys 16.73s`) on the recorded machine. The 180-second budget is
 unchanged. This measurement is live-provider dependent; it records the alias
 selection lever and elapsed result rather than a timing SLA.
 
@@ -230,7 +230,7 @@ selection lever and elapsed result rather than a timing SLA.
 
 ## Ticket 622/624 Investigation Record — 2026-07-25
 
-Measured on beelink while the March queue was concurrently building ticket
+Measured on the recorded machine while the March queue was concurrently building ticket
 617, so these are representative of real queue conditions rather than
 clean-room best cases. Machine load ranged from 10 to 24 during collection.
 

@@ -1,4 +1,4 @@
-//! Ticket 1205: the drug cell-lines section and its row helper arguments. Pure:
+//! The drug cell-lines section and its row helper arguments. Pure:
 //! recorded counts and pure inputs. No network, no server.
 
 use super::*;
@@ -79,6 +79,7 @@ fn card() -> Drug {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     }

@@ -1,0 +1,70 @@
+{
+ "_id": "MONDO:0024331",
+ "_version": 1,
+ "disease_ontology": {
+  "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+  "def": "\"A colorectal cancer that arises from the colon or rectum and invades through the muscularis mucosa into the submucosa.\" [url:https\\://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&version=16.12d&ns=NCI_Thesaurus&code=C4978]",
+  "doid": "DOID:0080199",
+  "name": "colorectal carcinoma",
+  "parents": [
+   "DOID:305",
+   "DOID:9256"
+  ],
+  "synonyms": {},
+  "xrefs": {
+   "efo": "1001951",
+   "mesh": "D015179",
+   "ncit": "C2955",
+   "umls_cui": "C0009402"
+  }
+ },
+ "mondo": {
+  "definition": "A malignant epithelial neoplasm that arises from the colon or rectum and invades through the muscularis mucosa into the submucosa. The vast majority are adenocarcinomas. [NCIT:C2955]",
+  "parents": [
+   "MONDO:0005575",
+   "MONDO:0006181"
+  ],
+  "synonym": {
+   "exact": [
+    "carcinoma of colorectum",
+    "carcinoma of large bowel",
+    "carcinoma of large intestine",
+    "carcinoma of the large bowel",
+    "carcinoma of the large intestine",
+    "colorectal carcinoma",
+    "colorectum carcinoma",
+    "CRC",
+    "large bowel carcinoma",
+    "large intestine carcinoma"
+   ]
+  },
+  "xrefs": {
+   "doid": [
+    "DOID:0080199"
+   ],
+   "efo": [
+    "EFO:1001951"
+   ],
+   "medgen": [
+    "3170"
+   ],
+   "ncit": [
+    "C2955"
+   ],
+   "umls": [
+    "C0009402"
+   ]
+  }
+ },
+ "umls": {
+  "_license": "https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/license_agreement.html",
+  "mesh": {
+   "non-preferred": "D015179",
+   "preferred": "D015179"
+  },
+  "nci": {
+   "non-preferred": "C2955",
+   "preferred": "C2955"
+  }
+ }
+}

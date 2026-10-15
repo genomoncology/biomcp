@@ -185,7 +185,7 @@ fn markdown_shows_new_affects_mappings() {
         affects_for_api("KEGG"),
         Some("pathway search and detail sections")
     );
-    // Ticket 1213 acceptance 6: the HPA row names the cell line surface.
+    // The HPA row names the cell line surface.
     assert_eq!(
         affects_for_api("HPA"),
         Some(

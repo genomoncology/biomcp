@@ -6,6 +6,10 @@ deps: [2002]
 
 # 2003: Search patients by typed facts
 
+Status: OPEN.
+
+Milestone: 1.0
+
 ## Outcome
 
 An agent finds patients on the configured FHIR server by gender, birth date range, and coded condition, and can ask for the server-reported count. Decision record: `sdlc/planning/adr/0002-read-one-patient-fhir-record-as-the-patient-entity.md`.
@@ -14,6 +18,10 @@ An agent finds patients on the configured FHIR server by gender, birth date rang
 biomcp search patient --gender female --born-after 1950-01-01 --condition "http://snomed.info/sct|44054006" --limit 10
 biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 ```
+
+## Evidence
+
+- Changes: `src/cli/patient/mod.rs` `src/cli/patient/dispatch.rs` `src/sources/fhir.rs` `tests/patient_fhir_contract.rs`
 
 ## Current Facts
 
@@ -74,7 +82,7 @@ Synthetic bundles only, served by the existing spec fixture runner. "Sends no re
 
 ## Review
 
-- Design review: split from 2002 (2026-09-23). Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
-- Design re-review: accepted (2026-09-23). Stated the `--limit` range and where `_has` must be declared.
-- Design review after 2002 landed: rejected (2026-09-23). Revised to check every search parameter against `metadata`, send `Prefer: handling=strict`, check value forms and commas, keep only id, gender, and birth date in output, state the transport work, keep typed MCP search filterless, and run the serve-http case with filters.
+- Design review (item batch): ACCEPT 2026-09-23, split from 2002. Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
+- Design re-review (item batch): ACCEPT 2026-09-23. Stated the `--limit` range and where `_has` must be declared.
+- Design re-review (item batch, after 2002 landed): REJECT 2026-09-23, revisions folded into the Changes line below. Revised to check every search parameter against `metadata`, send `Prefer: handling=strict`, check value forms and commas, keep only id, gender, and birth date in output, state the transport work, keep typed MCP search filterless, and run the serve-http case with filters.
 - Code review: pending

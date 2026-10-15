@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/339-add-executable-spec-coverage-for-ambiguous-research-code-drug-fallback
+    ~/workspace/planning/biomcp/artifacts/339-add-executable-spec-coverage-for-ambiguous-research-code-drug-fallback

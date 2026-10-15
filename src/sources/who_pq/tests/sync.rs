@@ -1,7 +1,7 @@
 //! Tier 2 - sync outcome coverage over a local export fixture server.
 //! Proves the sync loop attempts every export file, reports the true
 //! per-file outcome, and fails with the failing file named when required
-//! files are missing after the run (ticket 1304). No external network.
+//! files are missing after the run. No external network.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -146,11 +146,161 @@ async fn sync_attempts_every_file_and_names_the_failing_file_when_required_files
     );
 }
 
+/// The recorded finished-pharma export with one column dropped, the shape a
+/// real WHO export change produces. Validation must fail naming the file
+/// and the missing column.
+fn fixture_csv_missing_basis_of_listing() -> String {
+    let payload = super::fixture_csv();
+    let (header, rest) = payload
+        .split_once('\n')
+        .expect("recorded fixture should carry a header row");
+    let trimmed = header
+        .replace(r#""Basis of Listing","#, "")
+        .replace(r#""Basis of Listing""#, "");
+    assert_ne!(
+        trimmed, header,
+        "the recorded fixture should still carry the Basis of Listing column"
+    );
+    format!("{trimmed}\n{rest}")
+}
+
+#[tokio::test]
+#[serial_test::serial(who_pq_sync_env)]
+async fn sync_names_the_failing_file_and_column_in_its_final_error() {
+    let requests = Arc::new(AtomicUsize::new(0));
+    let base = serve_exports_once(
+        fixture_csv_missing_basis_of_listing(),
+        super::fixture_api_csv(),
+        super::fixture_vaccine_csv(),
+        Arc::clone(&requests),
+    )
+    .await;
+    let root = TempDirGuard::new("who-pq-sync-column");
+    let mut env = EnvRestore(Vec::new());
+    point_export_urls_at(&mut env, &base);
+
+    let err = sync_who_pq_root(root.path(), WhoPqSyncMode::Force)
+        .await
+        .expect_err("an export missing a required column must fail the sync");
+
+    assert_eq!(requests.load(Ordering::SeqCst), 3);
+    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+    assert_eq!(err.exit_code(), 1);
+    // The final error carries its reason through the public surface
+    // instead of the generic source-down line.
+    let projection = err.public_projection();
+    assert!(
+        projection
+            .message
+            .starts_with(WHO_PQ_SYNC_FAILURE_REASON_PREFIX),
+        "projection: {}",
+        projection.message
+    );
+    assert!(
+        projection.message.contains("Refresh failed for who_pq.csv"),
+        "projection: {}",
+        projection.message
+    );
+    assert!(
+        projection
+            .message
+            .contains("missing required column BASIS OF LISTING"),
+        "projection: {}",
+        projection.message
+    );
+    assert!(
+        projection
+            .message
+            .contains("Missing required WHO Prequalification file(s)"),
+        "projection: {}",
+        projection.message
+    );
+    assert!(
+        projection
+            .recovery
+            .is_some_and(|recovery| recovery.contains("network access")),
+        "recovery: {:?}",
+        projection.recovery
+    );
+    // The projected recovery (JSON `error.recovery`, MCP callers) never
+    // carries the resolved data directory: local paths stay terminal-only
+    //.
+    let root_path = root.path().display().to_string();
+    assert_eq!(
+        projection.recovery,
+        Some(WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY),
+        "recovery: {:?}",
+        projection.recovery
+    );
+    assert!(
+        !WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY.contains(&root_path),
+        "the projected recovery must stay path-free"
+    );
+    // The terminal keeps the manual preseed destination: the rendered
+    // error names the resolved data directory (second review finding 17).
+    let rendered = err.to_string();
+    assert!(
+        rendered.contains(&root_path),
+        "rendered terminal error must keep the local data path: {rendered}"
+    );
+    assert!(rendered.contains("who_pq.csv"));
+    assert!(!rendered.contains(".."));
+}
+
+#[tokio::test]
+#[serial_test::serial(who_pq_sync_env)]
+async fn sync_partial_run_keeps_older_data_and_reports_the_failure_reason_per_file() {
+    let requests = Arc::new(AtomicUsize::new(0));
+    let base = serve_exports_once(
+        fixture_csv_missing_basis_of_listing(),
+        super::fixture_api_csv(),
+        super::fixture_vaccine_csv(),
+        Arc::clone(&requests),
+    )
+    .await;
+    let root = TempDirGuard::new("who-pq-sync-partial");
+    // An older good copy keeps the run partial instead of failing it.
+    std::fs::write(root.path().join(WHO_PQ_CSV_FILE), super::fixture_csv())
+        .expect("seed older WHO export");
+    let mut env = EnvRestore(Vec::new());
+    point_export_urls_at(&mut env, &base);
+
+    let report = sync_who_pq_root(root.path(), WhoPqSyncMode::Force)
+        .await
+        .expect("a partial refresh with local data must not fail the sync");
+
+    assert_eq!(
+        report.refreshed,
+        vec![WHO_PQ_API_CSV_FILE, WHO_VACCINES_CSV_FILE]
+    );
+    assert_eq!(report.failed.len(), 1);
+    assert_eq!(report.failed[0].file, WHO_PQ_CSV_FILE);
+    assert!(
+        report.failed[0]
+            .reason
+            .contains("missing required column BASIS OF LISTING"),
+        "reason: {}",
+        report.failed[0].reason
+    );
+    assert!(
+        report
+            .failure_sentences()
+            .contains("Refresh failed for who_pq.csv: WHO Prequalification export headers did not match: who_pq.csv: missing required column BASIS OF LISTING."),
+        "sentences: {}",
+        report.failure_sentences()
+    );
+    // The older copy survives the failed refresh.
+    assert!(root.path().join(WHO_PQ_CSV_FILE).is_file());
+}
+
 #[test]
 fn summary_line_names_refreshed_and_failed_files() {
     let report = WhoPqSyncReport {
         refreshed: vec![WHO_PQ_CSV_FILE, WHO_PQ_API_CSV_FILE],
-        failed: vec![WHO_VACCINES_CSV_FILE],
+        failed: vec![WhoPqSyncFileFailure {
+            file: WHO_VACCINES_CSV_FILE,
+            reason: "API request to who-prequalification failed".to_string(),
+        }],
         changed: true,
     };
     assert_eq!(

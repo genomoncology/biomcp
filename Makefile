@@ -1,21 +1,24 @@
 SHELL := /bin/bash
 
-.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev stress
+.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp prepare-website test-contracts-prepared prepare-spec
 
-SPEC_PROFILE ?= spec
+SPEC_PROFILE ?= dev
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
 PYTEST_WORKERS ?= 4
 PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
-SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
+# Cargo maps the dev profile to target/debug; every other profile name is
+# its own directory under target/.
+SPEC_BIN ?= $(CURDIR)/target/$(if $(filter dev,$(SPEC_PROFILE)),debug,$(SPEC_PROFILE))/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
 CARGO_WITH_IDENTITY = tools/with-build-identity cargo
 ROUTINE_TEST_ARCHIVE = $(CURDIR)/.cache/routine-tests.tar.zst
 ROUTINE_TEST_TMPDIR = $(CURDIR)/.cache/routine-test-tmp
-ifneq (,$(filter test,$(MAKECMDGOALS)))
+PYTEST_BASETEMP = $(ROUTINE_TEST_TMPDIR)/pytest
+ifneq (,$(filter test test-rust test-python,$(MAKECMDGOALS)))
 export TMPDIR = $(ROUTINE_TEST_TMPDIR)
 endif
 SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,$(CARGO_WITH_IDENTITY) build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)
@@ -29,13 +32,28 @@ build:
 prepare-routine-test-tmp:
 	mkdir -p "$(ROUTINE_TEST_TMPDIR)"
 
-prepare-test: prepare-routine-test-tmp prepare-test-contracts
+# The nextest archive builds the bin, the MCP example, and every test unit
+# in one dev-profile cargo invocation; the contract build after it is a
+# freshness check that compiles nothing unless the archive did not run.
+prepare-test: prepare-routine-test-tmp
 	mkdir -p "$(CURDIR)/.cache"
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
+	$(MAKE) prepare-test-contracts
 
 test:
 	$(MAKE) prepare-test
-	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)"
+	$(MAKE) test-rust
+	$(MAKE) test-python
+
+# The two halves of `make test` (ticket 2075) so the CI lanes run
+# the Rust tests and the Python contracts in parallel against the
+# build job's artifact; a local caller reaches them through
+# `make test`, which prepares the dev build first.
+test-rust: prepare-routine-test-tmp
+	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
+
+test-python: prepare-routine-test-tmp
+	$(MAKE) sync-python-dev
 	$(MAKE) test-contracts-prepared
 
 prepare-website:
@@ -97,6 +115,7 @@ prepare-spec:
 
 spec:
 	$(MAKE) prepare-spec
+	$(MAKE) sync-python-dev
 	tools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec
 	tools/run-offline -- $(MAKE) spec-static
 
@@ -130,13 +149,19 @@ validate-skills:
 
 # Stress lane: run the known load-flaky tests pinned to a two-CPU set
 # with forced worker parallelism, repeated BIOMCP_STRESS_REPEAT times
-# (default 3). The build runs unpinned; only the test invocations are
-# pinned, because the runners auto-serialize on the detected CPU count.
+# (default 3). The lane runs the prepared dev build — the CI job
+# downloads the build job's archive instead of rebuilding it, and a
+# local caller runs make prepare-test first (ticket 2075). The test
+# invocations alone are pinned, because the runners auto-serialize on
+# the detected CPU count.
 # One-CPU pinning is avoided deliberately: it deadlocks the pipe
 # handshake child deterministically (issue
 # sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md).
-stress:
-	$(MAKE) prepare-test
+stress: prepare-routine-test-tmp
+	@test -s "$(ROUTINE_TEST_ARCHIVE)" && test -x "$(SPEC_RUN_BIN)" || { \
+	  echo "stress needs the prepared dev build at $(ROUTINE_TEST_ARCHIVE) and $(SPEC_RUN_BIN); run: make prepare-test" >&2; \
+	  exit 2; }
+	$(MAKE) sync-python-dev
 	@set -euo pipefail; \
 	repeat="$${BIOMCP_STRESS_REPEAT:-3}"; \
 	scale="$${BIOMCP_TEST_TIMEOUT_SCALE:-6}"; \

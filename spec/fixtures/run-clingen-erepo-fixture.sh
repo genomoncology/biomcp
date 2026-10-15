@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repo_root="$(cd "${1:-../..}" && pwd)"
-binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
+binary="${BIOMCP_BIN:-$repo_root/target/debug/biomcp}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
 # shellcheck source=fixture-supervisor.sh

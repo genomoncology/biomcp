@@ -18,6 +18,7 @@ pub enum HealthStatus {
     NotConfigured,
     Warning,
     Unavailable,
+    Disabled,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -39,6 +40,16 @@ pub struct HealthRow {
     pub missing_files: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub not_built: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disabled_reason: Option<String>,
+}
+
+/// One source the operator turned off, with the setting that did it.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct HealthDisabledSource {
+    pub id: String,
+    pub name: String,
+    pub reason: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -49,6 +60,7 @@ pub struct HealthReport {
     pub error: usize,
     pub total: usize,
     pub rows: Vec<HealthRow>,
+    pub disabled: Vec<HealthDisabledSource>,
 }
 
 #[derive(Debug, Clone, Copy, serde::Serialize)]
@@ -108,6 +120,12 @@ impl HealthReport {
             out.push_str(&format!(", {} warning", self.warning));
         }
         out.push('\n');
+        if !self.disabled.is_empty() {
+            out.push_str("\nDisabled sources (never called; carried fields dropped):\n");
+            for source in &self.disabled {
+                out.push_str(&format!("- {} — {}\n", source.id, source.reason));
+            }
+        }
         out.push_str(&format!(
             "Exit policy: {}; result: {}\n",
             if fail_on_error {
@@ -168,6 +186,10 @@ fn markdown_status(row: &HealthRow) -> String {
             "unavailable (not built)".to_string()
         }
         (HealthStatus::Unavailable, _) => "unavailable".to_string(),
+        (HealthStatus::Disabled, _) => format!(
+            "disabled ({})",
+            row.disabled_reason.as_deref().unwrap_or_default()
+        ),
         (HealthStatus::NotConfigured, _) => "not configured".to_string(),
         (HealthStatus::Error, _) if row.missing_files.is_some() => format!(
             "error (missing: {})",
@@ -505,6 +527,7 @@ mod tests {
             error: 1,
             total: 1,
             rows: Vec::new(),
+            disabled: Vec::new(),
         };
         let output: serde_json::Value =
             serde_json::from_str(&report.to_json(true).unwrap()).unwrap();

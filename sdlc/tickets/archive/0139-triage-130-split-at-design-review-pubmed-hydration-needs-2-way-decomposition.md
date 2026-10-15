@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/139-triage-130-split-at-design-review-pubmed-hydration-needs-2-way-decomposition
+    ~/workspace/planning/biomcp/artifacts/139-triage-130-split-at-design-review-pubmed-hydration-needs-2-way-decomposition
 
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the

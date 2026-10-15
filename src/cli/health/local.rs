@@ -131,6 +131,17 @@ pub(in crate::cli::health) fn ddinter_local_data_outcome(
 }
 
 pub(in crate::cli::health) fn check_ddinter_local_data() -> ProbeOutcome {
+    if crate::sources::disable::is_disabled("ddinter") {
+        let mut row = super::runner::health_row(
+            "DDInter local data",
+            super::HealthStatus::Disabled,
+            "-".to_string(),
+            Some(DDINTER_LOCAL_DATA_AFFECTS),
+            None,
+        );
+        row.disabled_reason = crate::sources::disable::reason("ddinter").map(str::to_string);
+        return super::runner::outcome(row, super::runner::ProbeClass::Excluded);
+    }
     let env_configured = configured_key("BIOMCP_DDINTER_DIR").is_some();
     let root = crate::sources::ddinter::resolve_ddinter_root();
     ddinter_local_data_outcome(&root, env_configured)
@@ -233,6 +244,8 @@ where
                     required_env_var: None,
                     missing_files: None,
                     not_built: None,
+
+                    disabled_reason: None,
                 },
                 ProbeClass::Error,
             );
@@ -295,6 +308,8 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome 
                 required_env_var: None,
                 missing_files: None,
                 not_built: None,
+
+                disabled_reason: None,
             },
             ProbeClass::Healthy,
         ),
@@ -310,6 +325,8 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome 
                 required_env_var: None,
                 missing_files: None,
                 not_built: None,
+
+                disabled_reason: None,
             },
             ProbeClass::Error,
         ),
@@ -354,6 +371,8 @@ where
                 required_env_var: None,
                 missing_files: None,
                 not_built: None,
+
+                disabled_reason: None,
             },
             ProbeClass::Warning,
         );
@@ -371,6 +390,8 @@ where
             required_env_var: None,
             missing_files: None,
             not_built: None,
+
+            disabled_reason: None,
         },
         ProbeClass::Healthy,
     )
@@ -411,6 +432,8 @@ fn cache_limits_error_outcome(message: String) -> ProbeOutcome {
             required_env_var: None,
             missing_files: None,
             not_built: None,
+
+            disabled_reason: None,
         },
         ProbeClass::Error,
     )

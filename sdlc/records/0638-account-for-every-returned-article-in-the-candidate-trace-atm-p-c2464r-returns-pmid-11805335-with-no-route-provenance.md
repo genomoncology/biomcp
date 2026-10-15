@@ -8,4 +8,4 @@ Imported from March ticket 638. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/638-account-for-every-returned-article-in-the-candidate-trace-atm-p-c2464r-returns-pmid-11805335-with-no-route-provenance
+Artifacts: ~/workspace/planning/biomcp/artifacts/638-account-for-every-returned-article-in-the-candidate-trace-atm-p-c2464r-returns-pmid-11805335-with-no-route-provenance

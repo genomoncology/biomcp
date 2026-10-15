@@ -8,4 +8,4 @@ Imported from March ticket 494. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/494-rip-out-rare-disease-trial-planner-condition-expansion-and-action-summary-surface
+Artifacts: ~/workspace/planning/biomcp/artifacts/494-rip-out-rare-disease-trial-planner-condition-expansion-and-action-summary-surface

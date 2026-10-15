@@ -8,4 +8,4 @@ Imported from March ticket 212. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/212-improve-error-messages-for-study-download-403-and-disgenet-403
+Artifacts: ~/workspace/planning/biomcp/artifacts/212-improve-error-messages-for-study-download-403-and-disgenet-403

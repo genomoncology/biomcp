@@ -701,3 +701,235 @@ fn drugsfda_failure_state_matrix() {
     );
     assert_approval_outcome(&data, SectionOutcomeState::Data);
 }
+
+#[test]
+fn unreadable_who_bundle_degrades_the_card_section_without_a_local_path() {
+    // With WHO broken, `get drug <name>
+    // regulatory` must not error outright carrying a local data path. The
+    // card degrades: the WHO section is omitted with a note that names the
+    // gap, and the note carries no local path, so JSON and MCP callers
+    // never see one.
+    let unavailable = BioMcpError::SourceUnavailable {
+        source_name: "WHO Prequalification".to_string(),
+        reason: format!(
+            "{} Refresh failed for who_pq.csv: WHO Prequalification export headers did not match: who_pq.csv: missing required column BASIS OF LISTING. Missing required WHO Prequalification file(s) after the run: who_pq.csv.",
+            crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX
+        ),
+        suggestion: crate::sources::who_pq::who_pq_sync_failure_recovery(std::path::Path::new(
+            "/home/who/private-data",
+        )),
+    };
+    let mut drug = test_approval_drug();
+    apply_who_sections_result(&mut drug, "zidovudine", Err(unavailable)).expect("degrade");
+    assert!(drug.who_prequalification.is_none());
+    let note = drug
+        .who_note
+        .as_deref()
+        .expect("degraded card carries the note");
+    assert!(note.contains("WHO Prequalification data is unavailable"));
+    assert!(note.contains("so this card omits the WHO section"));
+    assert!(note.contains("biomcp who sync"));
+    assert!(note.contains("BIOMCP_WHO_DIR"));
+    assert!(
+        !note.contains("/home/who"),
+        "the card note must stay path-free: {note}"
+    );
+    // The JSON surface (and so MCP `get drug ... regulatory` with --json)
+    // carries the same note and no path.
+    let json = serde_json::to_value(&drug).expect("drug JSON");
+    assert_eq!(
+        json["who_note"].as_str(),
+        Some(note),
+        "the degraded note must reach JSON"
+    );
+    assert!(!json.to_string().contains("/home/who"));
+
+    // A readable bundle clears the note and fills the section.
+    let root = crate::test_support::TempDirGuard::new("who-card-ready");
+    let fixture_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("spec")
+        .join("fixtures")
+        .join("who-pq");
+    for file in crate::sources::who_pq::WHO_PQ_REQUIRED_FILES {
+        std::fs::copy(fixture_dir.join(file), root.path().join(file)).expect("copy WHO fixture");
+    }
+    let mut drug = test_approval_drug();
+    drug.who_note = Some("stale note".into());
+    apply_who_sections_result(
+        &mut drug,
+        "zidovudine",
+        Ok(crate::sources::who_pq::WhoPqClient::from_root(root.path())),
+    )
+    .expect("populated bundle root resolves sections");
+    assert!(drug.who_note.is_none());
+    assert!(drug.who_prequalification.is_some());
+}
+
+/// The parallel-source proof's MyChem reply: one record that names
+/// imatinib itself and carries its ChEMBL id, so the card resolves with a
+/// single query and the target fetch has a `chembl_id` to look up.
+const PARALLEL_PROOF_MYCHEM: &str = r#"{"total":1,"hits":[{"_id":"DB00619","_score":10.0,"drugbank":{"id":"DB00619","name":"imatinib","synonyms":[],"drug_interactions":[]},"chembl":{"molecule_chembl_id":"CHEMBL941"}}]}"#;
+
+/// The openFDA label record the proof's card chooses: the plain ingredient
+/// answers the field-scoped search on the first query, so the label lookup
+/// needs one request.
+const PARALLEL_PROOF_LABEL: &str = r#"{"meta":{"results":{"skip":0,"limit":5,"total":1}},"results":[{"set_id":"parallel-proof-set-id","openfda":{"generic_name":["imatinib"],"brand_name":["Gleevec"]},"spl_product_data_elements":["Gleevec imatinib imatinib mesylate silicon dioxide"],"indications_and_usage":["INDICATIONS AND USAGE GLEEVEC (imatinib mesylate) is indicated for newly diagnosed adult patients with Philadelphia chromosome-positive chronic myeloid leukemia in chronic phase."]}]}"#;
+
+/// The CIViC answer: one accepted evidence item whose molecular profile
+/// extends the merged target, so the variant-target merge consumes the
+/// CIViC context after the target fetch finished.
+const PARALLEL_PROOF_CIVIC: &str = r#"{"data":{"evidenceItems":{"totalCount":1,"nodes":[{"id":6368,"name":"EID6368","status":"accepted","evidenceType":"Predictive","evidenceLevel":"A","significance":"Sensitivity/Response","molecularProfile":{"name":"ABL1 imatinib"},"disease":null,"therapies":[{"name":"imatinib"}],"source":null}]},"assertions":{"totalCount":0,"nodes":[]}}}"#;
+
+/// The Open Targets answer: one mechanism row naming the merged target and
+/// one approved indication, so the target and indication sections carry
+/// fetched rows.
+const PARALLEL_PROOF_OPENTARGETS: &str = r#"{"data":{"drug":{"indications":{"rows":[{"maxClinicalStage":"APPROVAL","disease":{"name":"chronic myeloid leukemia"}}]},"mechanismsOfAction":{"rows":[{"targets":[{"approvedSymbol":"ABL1","approvedName":"Tyrosine-protein kinase ABL1"}]}]}}}}"#;
+
+/// The ChEMBL mechanism answer for the same target, served at once: the
+/// run-time investigation counted it as the warm run's cacheable call, so
+/// the proof times only the four sources that are never cached.
+const PARALLEL_PROOF_CHEMBL: &str = r#"{"mechanisms":[{"target_pref_name":"ABL1","action_type":"INHIBITOR","mechanism_of_action":"inhibitor of tyrosine-protein kinase ABL1","target_chembl_id":"CHEMBL1862"}]}"#;
+
+/// The openFDA adverse-event count answer: four ranked terms, of which the
+/// preview keeps the top three in count order.
+const PARALLEL_PROOF_FAERS: &str = r#"{"meta":{"results":{"skip":0,"limit":50,"total":4}},"results":[{"term":"Oedema peripheral","count":97},{"term":"Nausea","count":63},{"term":"Muscle spasms","count":44},{"term":"Rash","count":30}]}"#;
+
+/// A fixture server for the parallel-source proof: MyChem and ChEMBL
+/// answer at once, while each of the four sources the card's speed depends
+/// on — the openFDA label, the CIViC context, the Open Targets sections
+/// and the openFDA adverse-event count — waits `hold` before its reply when
+/// the caller's toggle is set.
+async fn parallel_source_server(
+    hold: std::time::Duration,
+) -> (
+    String,
+    std::sync::Arc<std::sync::atomic::AtomicBool>,
+    tokio::task::JoinHandle<()>,
+) {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind parallel drug fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let hold_replies = Arc::new(AtomicBool::new(true));
+    let held = hold_replies.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let held = held.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 32 * 1024];
+                let Ok(len) = stream.read(&mut request).await else {
+                    return;
+                };
+                let request = String::from_utf8_lossy(&request[..len]);
+                let (body, delayed) = if request.starts_with("GET /v1/query?") {
+                    (PARALLEL_PROOF_MYCHEM, false)
+                } else if request.starts_with("GET /drug/label.json?") {
+                    (PARALLEL_PROOF_LABEL, true)
+                } else if request.starts_with("POST /civic/graphql") {
+                    (PARALLEL_PROOF_CIVIC, true)
+                } else if request.starts_with("POST /opentargets/graphql") {
+                    (PARALLEL_PROOF_OPENTARGETS, true)
+                } else if request.starts_with("GET /chembl/mechanism.json?") {
+                    (PARALLEL_PROOF_CHEMBL, false)
+                } else if request.starts_with("GET /drug/event.json?") {
+                    (PARALLEL_PROOF_FAERS, true)
+                } else {
+                    (r#"{"error":"unplanned"}"#, false)
+                };
+                if delayed && held.load(Ordering::SeqCst) {
+                    tokio::time::sleep(hold).await; // watchdog: the one-second reply hold is the measured subject of the parallel proof
+                }
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            });
+        }
+    });
+    (base, hold_replies, task)
+}
+
+/// The parallel-source proof: the card's four independent source fetches —
+/// the openFDA label, the CIViC context, the target sources and the
+/// adverse-event preview — run at once once the drug is named, so a
+/// fixture that holds each of the four replies one second settles the card
+/// under two seconds where the sequential card paid all four holds (about
+/// four seconds on current main), and the card's JSON and Markdown are
+/// identical to the same replies with no hold.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn drug_card_sources_run_at_once_and_keep_the_undelayed_output() {
+    use std::time::{Duration, Instant};
+
+    const HOLD: Duration = Duration::from_secs(1);
+    const CARD_DEADLINE: Duration = Duration::from_millis(2000);
+
+    let (base, hold_replies, server) = parallel_source_server(HOLD).await;
+    let (mut env, _ddinter) =
+        crate::entities::drug::test_support::drug_fixture_env(&base, "parallel-drug-ddinter");
+    env.set("BIOMCP_CIVIC_BASE", &format!("{base}/civic"));
+    env.set("BIOMCP_OPENTARGETS_BASE", &format!("{base}/opentargets"));
+    env.set("BIOMCP_CHEMBL_BASE", &format!("{base}/chembl"));
+
+    let started = Instant::now();
+    let held_card = super::get("imatinib", &[])
+        .await
+        .expect("held card settles");
+    assert!(
+        started.elapsed() < CARD_DEADLINE, // watchdog: bounds the parallel proof at two seconds
+        "four replies held one second each must answer together, not one after the other: {:?}",
+        started.elapsed()
+    );
+
+    // The same replies with no hold must return the same card, so the
+    // parallel fetch changed only the waiting, not the answer.
+    hold_replies.store(false, std::sync::atomic::Ordering::SeqCst);
+    let undelayed_card = super::get("imatinib", &[])
+        .await
+        .expect("undelayed card settles");
+    drop(env);
+    server.abort();
+
+    assert_eq!(
+        serde_json::to_value(&held_card).expect("serialize held card"),
+        serde_json::to_value(&undelayed_card).expect("serialize undelayed card"),
+        "the joined fetch must return the undelayed card's JSON unchanged"
+    );
+    assert_eq!(
+        crate::render::markdown::drug_markdown(&held_card, &[]).expect("render held card"),
+        crate::render::markdown::drug_markdown(&undelayed_card, &[])
+            .expect("render undelayed card"),
+        "the joined fetch must render the undelayed card's Markdown unchanged"
+    );
+
+    // The card carries every fetched source's rows, so the timing bound
+    // cannot pass on empty answers.
+    assert_eq!(held_card.name, "imatinib");
+    assert_eq!(held_card.targets, vec!["ABL1".to_string()]);
+    assert_eq!(held_card.variant_targets, vec!["ABL1 imatinib".to_string()]);
+    assert_eq!(
+        held_card.top_adverse_events,
+        vec![
+            "Oedema peripheral".to_string(),
+            "Nausea".to_string(),
+            "Muscle spasms".to_string(),
+        ]
+    );
+    assert_eq!(
+        held_card.label_set_id.as_deref(),
+        Some("parallel-proof-set-id")
+    );
+    assert_eq!(
+        held_card.brand_names.first().map(String::as_str),
+        Some("Gleevec")
+    );
+    assert_eq!(
+        held_card.mechanism.as_deref(),
+        Some("inhibitor of tyrosine-protein kinase ABL1")
+    );
+}

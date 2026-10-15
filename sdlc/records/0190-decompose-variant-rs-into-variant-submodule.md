@@ -8,4 +8,4 @@ Imported from March ticket 190. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/190-decompose-variant-rs-into-variant-submodule
+Artifacts: ~/workspace/planning/biomcp/artifacts/190-decompose-variant-rs-into-variant-submodule

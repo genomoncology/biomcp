@@ -33,4 +33,4 @@ Status: complete.
 
 ## Review
 
-- Design review: ACCEPT 2026-10-03 on the second pass, dispatch 9962598b (fresh SWE-2 researcher, read-only). The first pass accepted with notes; the revision recorded them.
+- Design review: ACCEPT 2026-10-03 on the second pass, dispatch 9962598b (fresh researcher, read-only). The first pass accepted with notes; the revision recorded them.

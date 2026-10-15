@@ -8,4 +8,4 @@ Imported from March ticket 459. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/459-add-whole-surface-cli-contract-ratchet-for-help-list-docs-specs-json-meta
+Artifacts: ~/workspace/planning/biomcp/artifacts/459-add-whole-surface-cli-contract-ratchet-for-help-list-docs-specs-json-meta

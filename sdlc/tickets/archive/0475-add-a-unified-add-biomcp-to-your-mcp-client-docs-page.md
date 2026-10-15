@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/475-add-a-unified-add-biomcp-to-your-mcp-client-docs-page
+    ~/workspace/planning/biomcp/artifacts/475-add-a-unified-add-biomcp-to-your-mcp-client-docs-page

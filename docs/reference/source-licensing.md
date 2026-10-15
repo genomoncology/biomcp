@@ -33,6 +33,25 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
   `optional_env` means an environment variable improves quota or access quality but is not required for baseline use.
   `required_env` means the feature requires a configured environment variable.
   `not_applicable` means there is no standalone BioMCP auth path because the provider is indirect-only.
+- `commercial_terms`
+  `null` means the recorded terms impose no recorded commercial restriction on the content BioMCP serves.
+  `license-required` means the recorded terms require a commercial license for commercial use.
+  `non-commercial` means the recorded terms allow non-commercial use only.
+
+### Turning restricted sources off
+
+The `commercial_terms` field draws the `--disable-sources` groups:
+`license-required` and `non-commercial` each select their own shape, and
+`commercial-restricted` is their union. Turn any of them off with the global
+flag or the environment variable
+([Configuration: disabling sources by name or group](configuration.md#disabling-sources-by-name-or-group));
+any single source id also works on its own. Membership follows this file, so
+re-recording a source's terms redraws the groups without a code change.
+Today `license-required` covers KEGG, Enrichr, OncoKB, and DrugBank;
+`non-commercial` covers DDInter and PharmacoDB. COSMIC stays out: BioMCP
+serves only the v68 snapshot MyVariant carries, and the recorded reading is
+that the v68-era terms govern those fields. Semantic Scholar and the WHO
+sources stay out on their recorded open readings.
 
 ## Summary table
 
@@ -607,7 +626,7 @@ Reviewed on: `2026-09-27`
 
 ### MyDisease.info
 
-- BioMCP surfaces: `search disease; get disease <id>`
+- BioMCP surfaces: `search disease; get disease <id>; search trial (condition abbreviation note); search trial --source nci (condition grounding)`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -619,7 +638,7 @@ Reviewed on: `2026-09-27`
 
 ### MyGene.info
 
-- BioMCP surfaces: `search gene; get gene <symbol>`
+- BioMCP surfaces: `search gene; get gene <symbol>; search variant <free-text query>; get variant <gene> <change>; get article <id>; article entities`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -627,7 +646,7 @@ Reviewed on: `2026-09-27`
 - Redistribution / reuse summary: reuse should preserve provenance back to NCBI Gene, UniProt, and other upstream sources
 - Official terms URL: <https://docs.mygene.info/en/latest/>
 Reviewed on: `2026-09-27`
-- Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data.
+- Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data. Free-text variant search confirms a gene-symbol first token, `get variant <gene> <change>` resolves the gene's UniProt accession for the numbering check, and article cards and article entities resolve official symbols for spelled gene names.
 
 ### MyVariant.info
 
@@ -829,7 +848,7 @@ Reviewed on: `2026-09-27`
 
 ### UniProt
 
-- BioMCP surfaces: `get protein <id>; get gene <symbol> protein`
+- BioMCP surfaces: `get protein <id>; get gene <symbol> protein; get variant <gene> <change>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -837,7 +856,7 @@ Reviewed on: `2026-09-27`
 - Redistribution / reuse summary: reuse is allowed with attribution; linked cross-references can have their own terms
 - Official terms URL: <https://www.uniprot.org/help/license>
 Reviewed on: `2026-09-27`
-- Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly.
+- Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly. `get variant <gene> <change>` reads the canonical (MANE Select) protein sequence to check a requested reference residue.
 
 ### VariantValidator
 

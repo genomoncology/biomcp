@@ -1,4 +1,4 @@
-//! Ticket 1199: the citation-evidence sidecar under the managed cache root.
+//! The citation-evidence sidecar under the managed cache root.
 //!
 //! Every test runs against the loopback fixture with a fresh `TempDirGuard`
 //! cache root. A second call deletes `<cache>/http` so a warm HTTP cache can
@@ -382,7 +382,7 @@ async fn infinite_mode_serves_an_expired_entry() {
 
     // The mode takes effect through the test-only guard after the first
     // call, so the once-read process mode is already resolved and only the
-    // override can change it (ticket 1261).
+    // override can change it.
     let _infinite = crate::sources::test_cache_mode::infinite();
     fx.cold_http_cache();
     fx.clear_log();

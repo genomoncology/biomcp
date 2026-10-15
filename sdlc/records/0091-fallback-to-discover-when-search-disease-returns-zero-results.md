@@ -8,4 +8,4 @@ Imported from March ticket 091. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/091-fallback-to-discover-when-search-disease-returns-zero-results
+Artifacts: ~/workspace/planning/biomcp/artifacts/091-fallback-to-discover-when-search-disease-returns-zero-results

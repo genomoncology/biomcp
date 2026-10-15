@@ -1,0 +1,3 @@
+# 2058 build record — the changelog loop closed at the 0.9.2 tag
+
+Landed 2026-10-12 from branch ticket/2058-changelog-loop. The landing carries the (2057) bullet for the 2055 note and its own (2058) bullet, so one merge closes the recursion the gated rehearsals exposed; the expected-ticket set gains both numbers; and the Releases section of AGENTS.md now requires a ticket merged for a release to carry its changelog bullet in its own landing. A literal v0.9.2 scratch-tag run of the coverage gate at the reviewed head reports the changelog covers all 56 tickets merged since v0.9.1, with the 2057 bullet proven load-bearing by a drop-mutation. Review: accept at 31db0bb58 by a gate-running reviewer, recorded on main before the merge. CI green on the reviewed head.

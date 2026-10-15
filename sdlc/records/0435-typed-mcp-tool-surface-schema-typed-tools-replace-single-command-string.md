@@ -8,4 +8,4 @@ Imported from March ticket 435. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/435-typed-mcp-tool-surface-schema-typed-tools-replace-single-command-string
+Artifacts: ~/workspace/planning/biomcp/artifacts/435-typed-mcp-tool-surface-schema-typed-tools-replace-single-command-string

@@ -226,6 +226,7 @@ fn drug_evidence_urls_include_chembl() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -288,6 +289,7 @@ fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
             ema_safety: None,
             ema_shortage: None,
             who_prequalification: None,
+            who_note: None,
             civic: None,
             cell_lines: None,
         };

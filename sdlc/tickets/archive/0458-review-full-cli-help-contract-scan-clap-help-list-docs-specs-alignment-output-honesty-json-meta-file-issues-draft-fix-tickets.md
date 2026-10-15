@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/458-review-full-cli-help-contract-scan-clap-help-list-docs-specs-alignment-output-honesty-json-meta-file-issues-draft-fix-tickets
+    ~/workspace/planning/biomcp/artifacts/458-review-full-cli-help-contract-scan-clap-help-list-docs-specs-alignment-output-honesty-json-meta-file-issues-draft-fix-tickets
 
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the

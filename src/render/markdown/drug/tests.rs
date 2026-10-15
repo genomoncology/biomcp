@@ -1,5 +1,80 @@
 use super::*;
 
+/// A sparse card carries no DrugBank ID, type, approval,
+/// brand or route, and the US header has no FAERS events — the header then
+/// prints no filler for any of them: no `DrugBank ID: -`, no `Safety
+/// (OpenFDA FAERS): unavailable`, and no blank lines where the empty fields
+/// sit (the Herceptin Hylecta card printed four).
+#[test]
+fn drug_markdown_header_drops_empty_fields_instead_of_printing_fillers() {
+    let drug = Drug {
+        section_outcomes: Default::default(),
+        name: "pertuzumab, trastuzumab, and hyaluronidase-zzxf".to_string(),
+        drugbank_id: None,
+        chembl_id: None,
+        unii: None,
+        drug_type: None,
+        mechanism: None,
+        mechanisms: Vec::new(),
+        approval_date: None,
+        approval_date_raw: None,
+        approval_date_display: None,
+        approval_summary: None,
+        brand_names: vec!["Phesgo".to_string()],
+        route: None,
+        targets: Vec::new(),
+        variant_targets: Vec::new(),
+        target_family: None,
+        target_family_name: None,
+        indications: Vec::new(),
+        interactions: Vec::new(),
+        interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
+        pharm_classes: Vec::new(),
+        top_adverse_events: Vec::new(),
+        faers_query: None,
+        label: None,
+        label_set_id: None,
+        shortage: None,
+        approvals: None,
+        fda_orphan_designations: None,
+        us_safety_warnings: None,
+        us_boxed_warning: None,
+        ema_regulatory: None,
+        ema_safety: None,
+        ema_shortage: None,
+        who_prequalification: None,
+        who_note: None,
+        civic: None,
+        cell_lines: None,
+    };
+
+    let markdown = drug_markdown(&drug, &[]).expect("markdown");
+    assert!(
+        !markdown.contains("DrugBank ID:"),
+        "an absent DrugBank ID prints no line: {markdown}"
+    );
+    assert!(
+        !markdown.contains("Safety (OpenFDA FAERS): unavailable"),
+        "a FAERS miss prints no unavailable filler: {markdown}"
+    );
+    assert!(
+        !markdown.contains("Safety (OpenFDA FAERS)"),
+        "no FAERS line at all without events: {markdown}"
+    );
+    assert!(
+        markdown.contains("Brand Names (DrugBank): Phesgo"),
+        "the one filled field still prints: {markdown}"
+    );
+    assert!(
+        !markdown.contains("\n\n\n"),
+        "no stacked blank lines between dropped header fields: {markdown}"
+    );
+}
+
 #[test]
 fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback() {
     let mut section_outcomes = crate::entities::drug::default_drug_section_outcomes();
@@ -50,6 +125,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -103,6 +179,7 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -114,7 +191,7 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
     );
     assert!(!markdown.contains("No known drug-drug interactions found."));
 
-    // Coverage states carry their own wording (ticket 1241): an
+    // Coverage states carry their own wording: an
     // uncovered drug never reads as a clean no-rows result, and the
     // coverage line names the set.
     let mut uncovered = drug.clone();
@@ -226,6 +303,7 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -277,6 +355,7 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -329,6 +408,7 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -427,6 +507,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
             last_updated_date: Some("13/01/2026".to_string()),
         }]),
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -476,8 +557,40 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
 }
 
 #[test]
-fn drug_markdown_with_region_who_renders_regulatory_block() {
+fn drug_markdown_with_region_who_names_the_gap_when_the_bundle_cannot_be_read() {
+    // An unreadable WHO bundle degrades the
+    // card instead of failing it, and the printed note names the gap without
+    // any local data path.
     let drug = Drug {
+        name: "zidovudine".to_string(),
+        who_prequalification: None,
+        who_note: Some(crate::entities::drug::who_pq_degradation_note(
+            &BioMcpError::SourceUnavailable {
+                source_name: "WHO Prequalification".to_string(),
+                reason: format!(
+                    "{} Refresh failed for who_pq.csv.",
+                    crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX
+                ),
+                suggestion: crate::sources::who_pq::who_pq_sync_failure_recovery(
+                    std::path::Path::new("/home/who/private-data"),
+                ),
+            },
+            "card",
+        )),
+        ..test_who_regulatory_drug()
+    };
+    let markdown =
+        drug_markdown_with_region(&drug, &["regulatory".to_string()], DrugRegion::Who, false)
+            .expect("markdown");
+    assert!(markdown.contains("## Regulatory (WHO Prequalification)"));
+    assert!(markdown.contains("so this card omits the WHO section"));
+    assert!(markdown.contains("biomcp who sync"));
+    assert!(!markdown.contains("/home/who"));
+    assert!(!markdown.contains("Not WHO-prequalified"));
+}
+
+fn test_who_regulatory_drug() -> Drug {
+    Drug {
         section_outcomes: Default::default(),
         name: "trastuzumab".to_string(),
         drugbank_id: Some("DB00072".to_string()),
@@ -539,9 +652,15 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
             manufacturer: None,
             responsible_nra: None,
         }]),
+        who_note: None,
         civic: None,
         cell_lines: None,
-    };
+    }
+}
+
+#[test]
+fn drug_markdown_with_region_who_renders_regulatory_block() {
+    let drug = test_who_regulatory_drug();
 
     let markdown =
         drug_markdown_with_region(&drug, &["regulatory".to_string()], DrugRegion::Who, false)
@@ -734,6 +853,7 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         }),
         ema_shortage: Some(Vec::new()),
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -808,6 +928,7 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         }),
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -869,6 +990,28 @@ fn drug_search_eu_empty_state_includes_discover_hint() {
     .expect("markdown");
 
     assert!(markdown.contains("Try: biomcp discover MK-3475"));
+}
+
+#[test]
+fn drug_search_all_region_degraded_who_section_states_the_reason_instead_of_a_bare_negative() {
+    let note = "WHO Prequalification data is unavailable (Could not prepare WHO Prequalification data. Refresh failed for who_pq.csv: WHO Prequalification export headers did not match: who_pq.csv: missing required column BASIS OF LISTING.), so this search omits the WHO section. Run `biomcp who sync` with network access or set BIOMCP_WHO_DIR.";
+    let markdown = drug_search_markdown_all_regions(
+        "zidovudine",
+        &[],
+        Some(0),
+        &[],
+        Some(0),
+        &[],
+        Some(0),
+        &crate::render::markdown::DrugSearchRegionFooters::default(),
+        Some(note),
+    )
+    .expect("markdown");
+
+    assert!(markdown.contains("## WHO (WHO Prequalification)"));
+    assert!(markdown.contains(&format!("> {note}")));
+    // The degraded section must not claim a checked-and-absent finding.
+    assert!(!markdown.contains("No WHO-prequalified drugs found"));
 }
 
 #[test]
@@ -978,6 +1121,7 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
             ),
             ..Default::default()
         },
+        None,
     )
     .expect("markdown");
 
@@ -1001,4 +1145,5 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
     );
 }
 
+mod label_sections;
 mod label_warnings;

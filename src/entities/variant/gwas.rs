@@ -91,14 +91,43 @@ pub async fn search_gwas_page(
     let client = GwasClient::new()?;
     let combined = gene.is_some() && trait_query.is_some();
     let fetch_limit = if combined { 50 } else { page_probe_limit };
+
+    // The gene and trait legs answer independent upstream queries, so a
+    // combined search sends both at once and the page waits only for the
+    // slower leg; either leg's failure fails the page. A search with one
+    // filter keeps its single call.
+    let (gene_page, trait_page) = match (gene.as_deref(), trait_query.as_deref()) {
+        (Some(gene), Some(trait_query)) => {
+            let (gene_page, trait_page) = tokio::try_join!(
+                client.search_associations(Some(gene), None, fetch_limit),
+                client.search_associations(None, Some(trait_query), fetch_limit),
+            )?;
+            (Some(gene_page), Some(trait_page))
+        }
+        (Some(gene), None) => (
+            Some(
+                client
+                    .search_associations(Some(gene), None, fetch_limit)
+                    .await?,
+            ),
+            None,
+        ),
+        (None, Some(trait_query)) => (
+            None,
+            Some(
+                client
+                    .search_associations(None, Some(trait_query), fetch_limit)
+                    .await?,
+            ),
+        ),
+        // The empty-filter case returned with the usage error above.
+        (None, None) => unreachable!("search_gwas_page requires a gene or a trait"),
+    };
+
     let mut gene_rows = Vec::new();
     let mut trait_rows = Vec::new();
     let mut provider_truncated = false;
-
-    if let Some(gene) = gene.as_deref() {
-        let page = client
-            .search_associations(Some(gene), None, fetch_limit)
-            .await?;
+    if let Some(page) = gene_page {
         provider_truncated |= page.total > fetch_limit;
         gene_rows.extend(
             page.associations
@@ -108,10 +137,7 @@ pub async fn search_gwas_page(
         );
     }
 
-    if let Some(trait_query) = trait_query.as_deref() {
-        let page = client
-            .search_associations(None, Some(trait_query), fetch_limit)
-            .await?;
+    if let Some(page) = trait_page {
         provider_truncated |= page.total > fetch_limit;
         trait_rows.extend(
             page.associations
@@ -503,7 +529,7 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     let client = match GwasClient::new() {
         Ok(client) => client,
         Err(err) if err.code() == "source_unavailable" => {
-            mark_gwas_unavailable(variant);
+            mark_gwas_unavailable(variant, &gwas_unavailable_reason(&err), false);
             return Ok(());
         }
         Err(err) => return Err(err),
@@ -511,7 +537,11 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     let associations = match client.associations_by_rsid(&rsid, 20).await {
         Ok(associations) => associations,
         Err(err) if err.code() == "source_unavailable" => {
-            mark_gwas_unavailable(variant);
+            mark_gwas_unavailable(
+                variant,
+                &gwas_unavailable_reason(&err),
+                crate::sources::gwas::is_retired_endpoint_error(&err),
+            );
             return Ok(());
         }
         Err(err) => return Err(err),
@@ -533,13 +563,36 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     Ok(())
 }
 
-pub(in crate::entities::variant) fn mark_gwas_unavailable(variant: &mut Variant) {
+pub(in crate::entities::variant) fn mark_gwas_unavailable(
+    variant: &mut Variant,
+    reason: &str,
+    permanent: bool,
+) {
     variant.supporting_pmids = None;
-    variant.gwas_unavailable_reason = Some("GWAS association data temporarily unavailable.".into());
-    variant.section_outcomes.complete(
-        "gwas",
-        SectionOutcome::unavailable("GWAS association data is temporarily unavailable."),
-    );
+    variant.gwas_unavailable_reason = Some(reason.to_string());
+    let outcome = if permanent {
+        SectionOutcome::unavailable_permanent(reason)
+    } else {
+        SectionOutcome::unavailable_message(reason)
+    };
+    variant.section_outcomes.complete("gwas", outcome);
+}
+
+/// The degrade note a `source_unavailable` error carries: the error's own
+/// reason when the source stated one (the retired legacy endpoint names its
+/// retirement through the typed error,), and the
+/// transient wording otherwise.
+fn gwas_unavailable_reason(err: &BioMcpError) -> String {
+    const TRANSIENT: &str = "GWAS association data is temporarily unavailable.";
+    match err {
+        BioMcpError::SourceUnavailable { reason, .. }
+        | BioMcpError::SourceEndpointRetired { reason, .. }
+            if !reason.trim().is_empty() =>
+        {
+            reason.clone()
+        }
+        _ => TRANSIENT.to_string(),
+    }
 }
 
 fn collect_supporting_pmids(rows: &[VariantGwasAssociation]) -> Vec<String> {

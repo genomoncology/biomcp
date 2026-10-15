@@ -6,7 +6,7 @@ Built and driven by the branch lead; reviewed fresh twice.
 
 ## Prior evidence
 
-Experiment 439 reproduced the row loss: Europe PMC ignores the page
+The recorded repro experiment reproduced the row loss: Europe PMC ignores the page
 parameter upstream, so every fetch returned page one and PMID dedup
 collapsed searches to 18 of 50 rows while burning the full fetch budget.
 Three-page walks under each supported sort (relevance, date desc,

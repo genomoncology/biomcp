@@ -134,7 +134,7 @@ pub(crate) struct SearchAllCountsOnlySection<'a> {
 
 /// The search-all JSON body: the results (or the counts-only view)
 /// plus a `_meta.notes` channel for this command's stale-cache
-/// serves, omitted when none were recorded (ticket 1263).
+/// serves, omitted when none were recorded.
 pub(crate) fn json_body(
     results: &SearchAllResults,
     counts_only: bool,

@@ -1,0 +1,324 @@
+{
+ "_id": "MONDO:0009693",
+ "_version": 1,
+ "disease_ontology": {
+  "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+  "def": "\"A myeloid neoplasm that is located_in the plasma cells in bone marrow.\" [url:http\\://en.wikipedia.org/wiki/Multiple_myeloma, url:http\\://www.cancer.gov/dictionary?CdrID=411384]",
+  "doid": "DOID:9538",
+  "name": "multiple myeloma",
+  "parents": [
+   "DOID:0070004",
+   "DOID:9500"
+  ],
+  "synonyms": {
+   "exact": [
+    "myeloma"
+   ]
+  },
+  "xrefs": {
+   "efo": "0001378",
+   "gard": "7108",
+   "icd10": "C90.0",
+   "icd9": "203.0",
+   "mesh": "D009101",
+   "mim": "254500",
+   "ncit": "C3242",
+   "ordo": "29073",
+   "snomedct_us_2025_09_01": "94705007",
+   "umls_cui": "C0026764"
+  }
+ },
+ "hpo": [
+  {
+   "inheritance": {
+    "hpo_id": "HP:0001442"
+   },
+   "phenotype_related_to_disease": [
+    {
+     "evidence": "TAS",
+     "hpo_id": "HP:0011034"
+    },
+    {
+     "evidence": "TAS",
+     "hpo_id": "HP:0031047"
+    },
+    {
+     "evidence": "TAS",
+     "hpo_id": "HP:0006775"
+    }
+   ]
+  },
+  {
+   "phenotype_related_to_disease": [
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040281",
+     "hpo_id": "HP:0000938"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040281",
+     "hpo_id": "HP:0002756"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0000100"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0000112"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0000980"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0001903"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0001919"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0002152"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0002653"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0002797"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0003237"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0003259"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0003324"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0004313"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040282",
+     "hpo_id": "HP:0012378"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0000014"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0000098"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0001824"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0002176"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0002808"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0002953"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0003072"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0003261"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0003401"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0004341"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0009830"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0012185"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040283",
+     "hpo_id": "HP:0012719"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040284",
+     "hpo_id": "HP:0001744"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040284",
+     "hpo_id": "HP:0002202"
+    },
+    {
+     "evidence": "TAS",
+     "hp_freq": "HP:0040284",
+     "hpo_id": "HP:0002716"
+    }
+   ]
+  }
+ ],
+ "mondo": {
+  "definition": "A bone marrow-based plasma cell neoplasm characterized by a serum monoclonal protein and skeletal destruction with osteolytic lesions, pathological fractures, bone pain, hypercalcemia, and anemia. Clinical variants include non-secretory myeloma, smoldering myeloma, indolent myeloma, and plasma cell leukemia. (WHO, 2001) [NCIT:C3242]",
+  "parents": [
+   "MONDO:0000621",
+   "MONDO:0004959",
+   "MONDO:0005170"
+  ],
+  "synonym": {
+   "exact": [
+    "Kahler disease",
+    "Kahler's disease",
+    "medullary plasmacytoma",
+    "Multiple Myeloma",
+    "multiple myeloma",
+    "multiple myeloma, resistance to, Somatic mutation",
+    "multiple myeloma, susceptibility to, Somatic mutation",
+    "multiple myeloma/plasma cell myeloma",
+    "myeloid neoplasm of plasma cell",
+    "myeloma",
+    "myeloma, multiple",
+    "myeloma, plasma cell, malignant",
+    "myelomatosis",
+    "plasma cell myeloid neoplasm",
+    "plasma cell myeloma"
+   ],
+   "related": [
+    "myeloma - multiple"
+   ]
+  },
+  "xrefs": {
+   "doid": [
+    "DOID:9538"
+   ],
+   "efo": [
+    "EFO:0001378"
+   ],
+   "gard": [
+    "0007108"
+   ],
+   "icd10cm": [
+    "C90.0"
+   ],
+   "icd11": [
+    "foundation:526287100",
+    "foundation:1582389689"
+   ],
+   "icd9": [
+    "203.0"
+   ],
+   "icdo": [
+    "9732/3"
+   ],
+   "meddra": [
+    "10028228"
+   ],
+   "medgen": [
+    "10122"
+   ],
+   "mesh": [
+    "D009101"
+   ],
+   "ncit": [
+    "C3242"
+   ],
+   "nord": [
+    "1469"
+   ],
+   "omim": [
+    "254500"
+   ],
+   "oncotree": [
+    "PCM"
+   ],
+   "orphanet": [
+    "29073"
+   ],
+   "umls": [
+    "C0026764"
+   ]
+  }
+ },
+ "umls": {
+  "_license": "https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/license_agreement.html",
+  "icd10am": {
+   "preferred": [
+    "C90.0",
+    "M9732/3"
+   ]
+  },
+  "mesh": {
+   "non-preferred": "D009101",
+   "preferred": "D009101"
+  },
+  "nci": {
+   "non-preferred": "C3242",
+   "preferred": "C3242"
+  },
+  "snomed": {
+   "non-preferred": [
+    "94705007",
+    "55921005",
+    "109989006",
+    "154585004",
+    "1162576007"
+   ],
+   "preferred": [
+    "55921005",
+    "1162576007",
+    "94705007",
+    "109989006"
+   ]
+  }
+ }
+}

@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/473-publish-biomcp-cli-to-the-official-mcp-registry-and-disambiguate-the-biomcp-pypi-name
+    ~/workspace/planning/biomcp/artifacts/473-publish-biomcp-cli-to-the-official-mcp-registry-and-disambiguate-the-biomcp-pypi-name

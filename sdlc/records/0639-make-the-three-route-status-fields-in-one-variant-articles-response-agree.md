@@ -8,4 +8,4 @@ Imported from March ticket 639. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/639-make-the-three-route-status-fields-in-one-variant-articles-response-agree
+Artifacts: ~/workspace/planning/biomcp/artifacts/639-make-the-three-route-status-fields-in-one-variant-articles-response-agree

@@ -372,7 +372,7 @@ mod tests {
     ));
     // Real recorded PMC article page (Blood 2019, PMID 31648294) carrying the
     // tileshop image viewers, `[Open in a new tab]` links, and reference
-    // `scholar_lookup` URLs named by ticket 1294.
+    // `scholar_lookup` URLs named by.
     const PMC6695558_PAGE: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/pmc_article/pmc6695558.html"

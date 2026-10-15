@@ -8,4 +8,4 @@ Imported from March ticket 680. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/680-give-the-vaers-cvx-local-only-lookup-a-test-seam-so-three-tests-stop-reading-a-user-data-directory
+Artifacts: ~/workspace/planning/biomcp/artifacts/680-give-the-vaers-cvx-local-only-lookup-a-test-seam-so-three-tests-stop-reading-a-user-data-directory

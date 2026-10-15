@@ -73,30 +73,37 @@ pub(super) fn who_api_row(product_id: &str, inn: &str) -> WhoPrequalificationEnt
     }
 }
 
-struct RequiredLabelFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl RequiredLabelFixtureEnv {
-    fn set(&mut self, name: &'static str, value: &str) {
-        self.0.push((name, std::env::var_os(name)));
-        // SAFETY: the test holds serial_test's process-wide environment lock.
-        unsafe { std::env::set_var(name, value) };
-    }
+/// The drug fixture env: the one shared scratch-cache guard
+/// carrying every source base a name-resolution test touches — MyChem,
+/// openFDA, the discover rescue's OLS4 and its HPO/UMLS lookups, the pacing
+/// origin, and a missing DDInter tree — so no drug fixture test decides on
+/// its own what to isolate. The DDInter guard must outlive the env's use.
+pub(super) fn drug_fixture_env(
+    base: &str,
+    ddinter_label: &str,
+) -> (
+    crate::test_support::FixtureEnv,
+    crate::test_support::TempDirGuard,
+) {
+    let root = crate::test_support::TempDirGuard::new(ddinter_label);
+    let missing_ddinter = root.path().join("missing-ddinter");
+    let mut env = crate::test_support::FixtureEnv::new();
+    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_OPENFDA_BASE", base);
+    // The guarded discover rescue reaches OLS4 and the HPO alias lookup it
+    // carries; both stay on the fixture so no name-resolution test leaves
+    // it.
+    env.set("BIOMCP_OLS4_BASE", base);
+    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
+    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
+    env.set(
+        "BIOMCP_DDINTER_DIR",
+        missing_ddinter.to_str().expect("UTF-8 fixture path"),
+    );
+    (env, root)
 }
 
-impl Drop for RequiredLabelFixtureEnv {
-    fn drop(&mut self) {
-        for (name, prior) in self.0.drain(..).rev() {
-            // SAFETY: the test holds serial_test's process-wide environment lock.
-            unsafe {
-                if let Some(value) = prior {
-                    std::env::set_var(name, value);
-                } else {
-                    std::env::remove_var(name);
-                }
-            }
-        }
-    }
-}
 
 async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -136,47 +143,818 @@ async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>
     (base, task)
 }
 
+/// A fixture server whose field-scoped label lookup answers with no match
+/// and whose product-data-elements fallback answer the caller selects: a
+/// transport failure status or a body past the read limit.
+#[derive(Clone, Copy)]
+enum ElementsFallbackAnswer {
+    Error,
+    Oversize,
+}
+
+async fn label_fallback_failure_server(
+    answer: ElementsFallbackAnswer,
+) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind label fallback fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 32 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]);
+                let (status, body): (&str, Vec<u8>) = if request.starts_with("GET /v1/query?") {
+                    (
+                        "200 OK",
+                        r#"{"total":1,"hits":[{"_id":"fixture-drug","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"fixture-drug","synonyms":[],"drug_interactions":[]}}]}"#.as_bytes().to_vec(),
+                    )
+                } else if request.starts_with("GET /drug/label.json?")
+                    && request.contains("spl_product_data_elements")
+                {
+                    match answer {
+                        ElementsFallbackAnswer::Error => (
+                            "500 Internal Server Error",
+                            r#"{"error":"private sentinel"}"#.as_bytes().to_vec(),
+                        ),
+                        // One byte past the 8 MiB source-body read limit.
+                        ElementsFallbackAnswer::Oversize => {
+                            ("200 OK", vec![b'x'; 8 * 1024 * 1024 + 1])
+                        }
+                    }
+                } else if request.starts_with("GET /drug/label.json?") {
+                    (
+                        "404 Not Found",
+                        r#"{"error":{"code":"NOT_FOUND"}}"#.as_bytes().to_vec(),
+                    )
+                } else {
+                    (
+                        "404 Not Found",
+                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                    )
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response head");
+                stream
+                    .write_all(&body)
+                    .await
+                    .or_else(|error| {
+                        // The oversize answer ends with the client closing the
+                        // connection once the read limit trips.
+                        if error.kind() == std::io::ErrorKind::UnexpectedEof
+                            || error.kind() == std::io::ErrorKind::BrokenPipe
+                            || error.kind() == std::io::ErrorKind::ConnectionReset
+                        {
+                            Ok(())
+                        } else {
+                            Err(error)
+                        }
+                    })
+                    .expect("write fixture response body");
+            });
+        }
+    });
+    (base, task)
+}
+
+async fn label_fallback_fixture_drug(base: &str, name: &str, sections: &[&str]) -> super::Drug {
+    let (_env, _ddinter) = drug_fixture_env(base, "label-fallback-ddinter-counter");
+    let sections: Vec<String> = sections.iter().map(|value| value.to_string()).collect();
+    super::get(name, &sections)
+        .await
+        .expect("label fallback fixture settles a card")
+}
+
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn required_label_failures_make_zero_ddinter_ready_calls() {
+async fn label_fetch_failures_settle_as_unavailable_outcomes() {
     let (base, server) = required_label_failure_server().await;
-    let root = crate::test_support::TempDirGuard::new("required-label-ddinter-counter");
-    let missing_ddinter = root.path().join("missing-ddinter");
-    // The guard bypasses every cache for the test without latching the
-    // process mode the way the former `BIOMCP_CACHE_MODE=off` set did
-    // (ticket 1261).
-    let _cache_mode = crate::sources::test_cache_mode::off();
-    let mut env = RequiredLabelFixtureEnv(Vec::new());
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
-    env.set("BIOMCP_OPENFDA_BASE", &base);
-    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set(
-        "BIOMCP_DDINTER_DIR",
-        missing_ddinter.to_str().expect("UTF-8 fixture path"),
-    );
+    let (_env, _ddinter) = drug_fixture_env(&base, "required-label-ddinter-counter");
 
-    crate::sources::ddinter::reset_ready_call_count();
-    assert!(
-        crate::sources::ddinter::DdinterClient::ready()
-            .await
-            .is_err()
-    );
-    assert_eq!(crate::sources::ddinter::ready_call_count(), 1);
-
-    crate::sources::ddinter::reset_ready_call_count();
+    // A requested label section whose fetch failed settles as
+    // an unavailable outcome instead of aborting the card, and the provider's
+    // error detail never leaks into the settled result.
     for sections in [
         vec!["label".to_string(), "interactions".to_string()],
         vec!["all".to_string()],
     ] {
-        let error = super::get("fixture-drug", &sections)
+        let drug = super::get("fixture-drug", &sections)
             .await
-            .expect_err("required OpenFDA label failure must abort the card");
-        assert!(error.to_string().contains("OpenFDA"), "{error}");
+            .unwrap_or_else(|error| panic!("label fetch failure must settle: {error}"));
+        let outcome = drug
+            .section_outcomes
+            .get("label")
+            .expect("label outcome completed");
         assert_eq!(
-            crate::sources::ddinter::ready_call_count(),
-            0,
-            "{sections:?}"
+            outcome.outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Unavailable
         );
+        assert_eq!(
+            outcome.message(),
+            Some("OpenFDA label evidence is temporarily unavailable.")
+        );
+        assert!(drug.label.is_none(), "{sections:?}");
     }
     server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn label_fallback_fetch_error_stays_an_error() {
+    let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Error).await;
+
+    // Review: the field-scoped miss must fall through to the
+    // identity-field fallback, and a real fallback fetch error settles as an
+    // unavailable outcome — never as a silent no-match empty.
+    let drug = label_fallback_fixture_drug(&base, "fixture-drug", &["label"]).await;
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
+    );
+    assert_eq!(
+        outcome.message(),
+        Some("OpenFDA label evidence is temporarily unavailable.")
+    );
+    assert!(drug.label.is_none());
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn label_elements_oversize_response_settles_as_unavailable_with_reason() {
+    let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Oversize).await;
+
+    // An identity-field fallback response past
+    // the body read limit can never succeed, and it is a provider-side
+    // failure rather than a source-confirmed zero, so it settles as an
+    // unavailable outcome that names the oversize reason.
+    let drug = label_fallback_fixture_drug(&base, "fixture-drug", &["label"]).await;
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
+    );
+    assert_eq!(
+        outcome.message(),
+        Some(
+            "The openFDA label product-data-elements search response was too large to read, so no label record could be confirmed."
+        )
+    );
+    assert!(drug.label.is_none());
+    server.abort();
+}
+
+/// The withdrawn Propulsid record's product data elements, captured from
+/// openFDA 2026-10-07 and shared with the identity-guard tests: three
+/// per-strength entries whose inactive excipients differ, and no populated
+/// `openfda` identity fields. Cisapride's only other label matches are other
+/// drugs' mentions, so the unfielded full-text answer for cisapride is
+/// 16.4 MB and unreadable.
+const PROPULSID_ELEMENTS: &str = super::label::PROPULSID_ELEMENTS;
+
+fn propulsid_label_body() -> String {
+    format!(
+        r#"{{"meta":{{"results":{{"skip":0,"limit":10,"total":1}}}},"results":[{{"set_id":"fdd8f491-28d6-49ae-9935-0224b8815e84","openfda":{{}},"spl_product_data_elements":["{PROPULSID_ELEMENTS}"],"indications_and_usage":["INDICATIONS AND USAGE PROPULSID (cisapride) is indicated for the symptomatic treatment of adult patients with nocturnal heartburn due to gastroesophageal reflux disease."]}},{{"set_id":"another-drug-mentioning-cisapride","openfda":{{"brand_name":["Otherdrug"],"generic_name":["otherdrug"]}},"spl_product_data_elements":["OTHERDRUG otherdrug OTHERDRUG OTHERDRUG STARCH"],"indications_and_usage":["OTHERDRUG interacts with cisapride."]}}]}}"#
+    )
+}
+
+/// A fixture server whose drug resolves as cisapride while both label
+/// lookups answer the caller's selection: the field-scoped search always
+/// misses (the live Propulsid record carries no openfda identity fields) and
+/// the product-data-elements fallback either returns the Propulsid record
+/// alongside another drug's mention or answers with no match.
+#[derive(Clone, Copy)]
+enum ElementsFallbackMatch {
+    Propulsid,
+    NoMatch,
+}
+
+async fn label_elements_match_server(
+    answer: ElementsFallbackMatch,
+) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind label elements fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 32 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]);
+                let (status, body): (&str, Vec<u8>) = if request.starts_with("GET /v1/query?") {
+                    (
+                        "200 OK",
+                        r#"{"total":1,"hits":[{"_id":"fixture-cisapride","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"cisapride","synonyms":[],"drug_interactions":[]}}]}"#
+                            .as_bytes()
+                            .to_vec(),
+                    )
+                } else if request.starts_with("GET /drug/label.json?")
+                    && request.contains("spl_product_data_elements")
+                {
+                    match answer {
+                        ElementsFallbackMatch::Propulsid => {
+                            ("200 OK", propulsid_label_body().into_bytes())
+                        }
+                        ElementsFallbackMatch::NoMatch => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                                .to_vec(),
+                        ),
+                    }
+                } else if request.starts_with("GET /drug/label.json?") {
+                    (
+                        "404 Not Found",
+                        br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#.to_vec(),
+                    )
+                } else {
+                    (
+                        "404 Not Found",
+                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                    )
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response head");
+                stream
+                    .write_all(&body)
+                    .await
+                    .expect("write fixture response body");
+            });
+        }
+    });
+    (base, task)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn label_elements_fallback_returns_the_own_record_not_an_empty() {
+    let (base, server) = label_elements_match_server(ElementsFallbackMatch::Propulsid).await;
+
+    // Second review: openFDA holds the withdrawn Propulsid
+    // label, so the identity-field fallback must return it even though its
+    // openfda fields are empty and another drug's mention ranks in the
+    // answer — never settle as an empty outcome for a drug the source has.
+    let drug = label_fallback_fixture_drug(&base, "cisapride", &["label"]).await;
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Data
+    );
+    assert_eq!(outcome.message(), None);
+    let label = drug.label.as_ref().expect("Propulsid label present");
+    assert!(
+        !label.indication_summary.is_empty()
+            || label
+                .indications
+                .as_deref()
+                .is_some_and(|text| text.contains("cisapride")),
+        "the Propulsid record's own indication text reached the card"
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn label_elements_fallback_no_match_settles_as_the_honest_empty() {
+    let (base, server) = label_elements_match_server(ElementsFallbackMatch::NoMatch).await;
+
+    // When the source truly holds no record — terfenadine has no openFDA
+    // SPL record at all — both lookups answer with no match, so the empty
+    // outcome must name the missing record rather than an oversize or
+    // unavailable answer.
+    let drug = label_fallback_fixture_drug(&base, "cisapride", &["label"]).await;
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
+    assert_eq!(
+        outcome.message(),
+        Some("No openFDA SPL label record matched this drug.")
+    );
+    assert!(drug.label.is_none());
+    server.abort();
+}
+
+/// Percent-decode one query-parameter value, so a fixture server can route on
+/// the decoded MyChem `q` term.
+fn decoded_query_param(request_target: &str, key: &str) -> Option<String> {
+    let query = request_target.split_once('?')?.1;
+    for pair in query.split('&') {
+        let (name, value) = pair.split_once('=')?;
+        if name != key {
+            continue;
+        }
+        let mut out = String::with_capacity(value.len());
+        let bytes = value.as_bytes();
+        let mut index = 0;
+        while index < bytes.len() {
+            match bytes[index] {
+                b'%' if index + 2 < bytes.len() => {
+                    let hex = std::str::from_utf8(&bytes[index + 1..index + 3]).ok()?;
+                    out.push(u8::from_str_radix(hex, 16).ok()? as char);
+                    index += 3;
+                }
+                b'+' => {
+                    out.push(' ');
+                    index += 1;
+                }
+                byte => {
+                    out.push(byte as char);
+                    index += 1;
+                }
+            }
+        }
+        return Some(out);
+    }
+    None
+}
+
+/// Extract a quoted field value (`field:"value"`) from a decoded search
+/// parameter, so a fixture server can route the product-data-elements
+/// search on the name it asks for.
+fn quoted_search_field_value(term: &str, field: &str) -> Option<String> {
+    let marker = format!("{field}:\"");
+    let start = term.find(&marker)? + marker.len();
+    let rest = &term[start..];
+    let end = rest.find('"')?;
+    Some(rest[..end].to_string())
+}
+
+/// A fixture server for the name-resolution flows: MyChem answers by decoded query term, each openFDA label search
+/// answers with the body the caller registered or a no-match 404 — the
+/// product-data-elements search routes on the quoted name it asks for,
+/// separate from the field-scoped and exact searches — and the OLS4
+/// discover search answers by decoded `q` term or a no-match 404.
+pub(super) async fn name_resolution_fixture_server(
+    mychem: Vec<(String, String)>,
+    label_searches: Vec<(String, String)>,
+    ols_searches: Vec<(String, String)>,
+) -> (String, tokio::task::JoinHandle<()>) {
+    name_resolution_fixture_server_with_elements(mychem, label_searches, ols_searches, Vec::new())
+        .await
+}
+
+async fn name_resolution_fixture_server_with_elements(
+    mychem: Vec<(String, String)>,
+    label_searches: Vec<(String, String)>,
+    ols_searches: Vec<(String, String)>,
+    elements_searches: Vec<(String, String)>,
+) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind name-resolution fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let mychem = mychem.clone();
+            let label_searches = label_searches.clone();
+            let ols_searches = ols_searches.clone();
+            let elements_searches = elements_searches.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 64 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]);
+                let target = request
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or_default()
+                    .to_string();
+                let (status, body): (&str, Vec<u8>) = if target.starts_with("/v1/query?") {
+                    let term = decoded_query_param(&target, "q").unwrap_or_default();
+                    match mychem.iter().find(|(query, _)| *query == term) {
+                        Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                        None => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
+                        ),
+                    }
+                } else if target.starts_with("/api/search?") {
+                    let term = decoded_query_param(&target, "q").unwrap_or_default();
+                    match ols_searches.iter().find(|(query, _)| *query == term) {
+                        Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                        None => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
+                        ),
+                    }
+                } else if target.starts_with("/drug/label.json?") {
+                    let term = decoded_query_param(&target, "search").unwrap_or_default();
+                    if let Some(name) =
+                        quoted_search_field_value(&term, "spl_product_data_elements")
+                    {
+                        match elements_searches.iter().find(|(query, _)| *query == name) {
+                            Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                            None => (
+                                "404 Not Found",
+                                br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                                    .to_vec(),
+                            ),
+                        }
+                    } else {
+                        let term = term
+                            .replace("openfda.generic_name:", "")
+                            .replace("openfda.brand_name:", "");
+                        match label_searches
+                            .iter()
+                            .find(|(query, _)| term.contains(query))
+                        {
+                            Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                            None => (
+                                "404 Not Found",
+                                br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                                    .to_vec(),
+                            ),
+                        }
+                    }
+                } else {
+                    (
+                        "404 Not Found",
+                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                    )
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response head");
+                stream
+                    .write_all(&body)
+                    .await
+                    .expect("write fixture response body");
+            });
+        }
+    });
+    (base, task)
+}
+
+async fn name_resolution_fixture_drug(base: &str, name: &str) -> super::Drug {
+    let (_env, _ddinter) = drug_fixture_env(base, "name-resolution-ddinter");
+    super::get(name, &["label".to_string()])
+        .await
+        .expect("name-resolution fixture settles a card")
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn terfenadine_returns_terfenadines_card_with_an_honest_empty_label() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "terfenadine".to_string(),
+            crate::transform::drug::name_resolution_tests::TERFENADINE_CAPTURE.to_string(),
+        )],
+        Vec::new(),
+        Vec::new(),
+    )
+    .await;
+
+    // MyChem's text query also returns fexofenadine through its
+    // "Terfenadine carboxylate" synonyms, but only terfenadine's own record
+    // (DB00342) may resolve the card; openFDA holds no terfenadine SPL
+    // record, so the label settles as the honest empty.
+    let drug = name_resolution_fixture_drug(&base, "terfenadine").await;
+    assert_eq!(drug.name, "terfenadine");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00342"));
+    assert!(
+        !serde_json::to_string(&drug)
+            .expect("card serializes")
+            .to_ascii_lowercase()
+            .contains("fexofenadine")
+    );
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
+    assert_eq!(
+        outcome.message(),
+        Some("No openFDA SPL label record matched this drug.")
+    );
+    assert!(drug.label.is_none());
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_text_only_match_refuses_and_names_what_matched() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "ferric oxide".to_string(),
+            crate::transform::drug::name_resolution_tests::FERRIC_OXIDE_TEXT_ONLY_CAPTURE
+                .to_string(),
+        )],
+        Vec::new(),
+        Vec::new(),
+    )
+    .await;
+
+    let (_env, _ddinter) = drug_fixture_env(&base, "refusal-ddinter");
+
+    // When no record names the query and openFDA's identity
+    // fields cannot resolve it either, the lookup refuses and says which
+    // other drugs the text search matched.
+    let err = super::get("ferric oxide", &["label".to_string()])
+        .await
+        .expect_err("a text-only match must refuse");
+    let message = err.to_string();
+    assert!(
+        message.contains("No drug card matches \"ferric oxide\""),
+        "{message}"
+    );
+    // The matched-drug names are the records' own identity
+    // names (zinc oxide, pramocaine), never another product's merged
+    // ingredient line.
+    assert!(message.contains("zinc oxide"), "{message}");
+    assert!(message.contains("pramocaine"), "{message}");
+    assert!(
+        message.contains("biomcp search drug -q \"ferric oxide\""),
+        "{message}"
+    );
+    server.abort();
+}
+
+/// A drug name miss pays the discover resolution twice on
+/// main — once in the entity refusal's rescue and again in the CLI alias
+/// fallback (which resolves the same query with the cache off). The alias
+/// fallback's per-process memo serves the second caller from the first
+/// answer, so the refusal path runs the OLS4 discover round exactly once.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_refusal_runs_the_discover_resolution_once_for_both_callers() {
+    use std::sync::Arc;
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind refusal-count fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream.read(&mut request).await.expect("read request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock refusal-count requests")
+                    .push(request.clone());
+                let (status, body) = if request.starts_with("GET /v1/query?") {
+                    // A text-only match: no record names the query, so `get`
+                    // refuses after the openFDA identity candidate and the
+                    // discover rescue decline.
+                    (
+                        "200 OK",
+                        r#"{"total":1,"hits":[{"_id":"C9999999","_score":17.0,"ndc":{"nonproprietaryname":"otherdrug","proprietaryname":"Otherdrug"}}]}"#,
+                    )
+                } else if request.starts_with("GET /api/search?") {
+                    // One drug concept at a contains-tier match: the rescue
+                    // declines it and the alias fallback lists it.
+                    (
+                        "200 OK",
+                        r#"{"response":{"docs":[{"iri":"http://purl.obolibrary.org/obo/DRON_0009999","ontology_prefix":"DRON","short_form":"DRON_0009999","obo_id":"DRON:0009999","label":"Fluxitol Related Molecule","description":[],"exact_synonyms":[],"type":"class"}],"numFound":1,"start":0,"maxScore":1.0}}"#,
+                    )
+                } else {
+                    ("404 Not Found", r#"{"error":{"code":"NOT_FOUND"}}"#)
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    let (_env, _ddinter) = drug_fixture_env(&base, "refusal-once-ddinter");
+
+    let err = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "drug".to_string(),
+        "Fluxitol".to_string(),
+        "label".to_string(),
+    ])
+    .await
+    .expect_err("the text-only match refuses");
+    let message = err.to_string();
+    assert!(
+        message.contains("could not map 'Fluxitol'"),
+        "the alias fallback answered the refusal: {message}"
+    );
+    task.abort();
+
+    let requests = requests
+        .lock()
+        .expect("lock refusal-count requests")
+        .join("\n");
+    let discover_rounds = requests
+        .lines()
+        .filter(|line| line.contains("GET /api/search?") && line.contains("Fluxitol"))
+        .count();
+    assert_eq!(
+        discover_rounds, 1,
+        "the refusal and the alias fallback share one discover round: {requests}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_brand_query_resolves_through_the_mychem_record_itself() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "TAGRISSO".to_string(),
+            crate::transform::drug::name_resolution_tests::TAGRISSO_CAPTURE.to_string(),
+        )],
+        Vec::new(),
+        Vec::new(),
+    )
+    .await;
+
+    // Fourth-review finding 1: live openFDA returns NOT_FOUND
+    // for `openfda.brand_name:"TAGRISSO"` (the label has no openFDA block),
+    // so the fixture answers every label search with no match — the brand
+    // must resolve through the drugcentral synonyms and NDC proprietary
+    // names on the osimertinib record itself and land on the generic
+    // identity.
+    let drug = name_resolution_fixture_drug(&base, "TAGRISSO").await;
+    assert_eq!(drug.name, "osimertinib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09330"));
+    server.abort();
+}
+
+/// A TCP server that accepts connections and never answers: a stalled
+/// discover source. Both refusal rounds — the entity rescue inside `get`
+/// and the CLI alias fallback — must bound their discover rounds against
+/// it.
+async fn stalled_ols4_server() -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind stalled OLS4 fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                // Never answers within any budget the tests allow: the
+                // connection stays open and the read parks on data that
+                // never arrives, so the stall is the fixture itself and
+                // no timer bounds it.
+                loop {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    if stream.read(&mut request).await.unwrap_or(0) == 0 {
+                        return;
+                    }
+                }
+            });
+        }
+    });
+    (base, task)
+}
+
+/// A refusal is two rounds over one discover source — the
+/// entity rescue and the CLI alias fallback — and a stalled source must
+/// not collect the refusal budget twice. The CLI refusal against a
+/// stalled source settles inside one budget (about two seconds plus the
+/// fixture rounds), where the earlier shape spent the entity's two
+/// seconds and then restarted the clock for its own.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_stalled_drug_refusal_costs_one_discover_budget() {
+    let (ols_base, ols_server) = stalled_ols4_server().await;
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "Fluxitol".to_string(),
+            r#"{"total":1,"hits":[{"_id":"C9999999","_score":17.0,"ndc":{"nonproprietaryname":"otherdrug","proprietaryname":"Otherdrug"}}]}"#
+                .to_string(),
+        )],
+        Vec::new(),
+        Vec::new(),
+    )
+    .await;
+    let (mut env, _ddinter) = drug_fixture_env(base.as_str(), "stalled-drug-refusal-ddinter");
+    env.set("BIOMCP_OLS4_BASE", &ols_base);
+
+    let started = std::time::Instant::now();
+    let err = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "drug".to_string(),
+        "Fluxitol".to_string(),
+        "label".to_string(),
+    ])
+    .await
+    .expect_err("the text-only match refuses");
+    let elapsed = started.elapsed();
+    drop(env);
+    ols_server.abort();
+    server.abort();
+
+    assert!(
+        err.to_string().contains("drug 'Fluxitol' not found"),
+        "{err}"
+    );
+    assert!(
+        elapsed <= crate::test_support::watchdog(3),
+        "the refusal must cost one discover budget, not two: {elapsed:?}"
+    );
+}
+
+/// The CLI alias fallback's own round gives up on the refusal budget
+///: a gene miss has no entity-side discover
+/// rescue, so the alias fallback's bounded round is the whole discover
+/// cost, and the refusal settles inside it. Setting the fallback timeout
+/// to an hour hangs this test past its watchdog.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_slow_alias_fallback_round_gives_up_within_the_refusal_budget() {
+    let (ols_base, ols_server) = stalled_ols4_server().await;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind mygene fixture");
+    let gene_base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let gene_server = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let Ok(len) = stream.read(&mut request).await else {
+                    return;
+                };
+                let _ = &request[..len];
+                let body = r#"{"total": 0, "hits": []}"#;
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            });
+        }
+    });
+
+    let mut env = crate::test_support::FixtureEnv::new();
+    env.set("BIOMCP_MYGENE_BASE", &gene_base);
+    env.set("BIOMCP_OLS4_BASE", &ols_base);
+
+    let started = std::time::Instant::now();
+    let err = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "gene".to_string(),
+        "FLUX1".to_string(),
+    ])
+    .await
+    .expect_err("a gene miss refuses");
+    let elapsed = started.elapsed();
+    drop(env);
+    ols_server.abort();
+    gene_server.abort();
+
+    assert!(err.to_string().contains("gene 'FLUX1' not found"), "{err}");
+    assert!(
+        elapsed <= crate::test_support::watchdog(3),
+        "the alias fallback round must give up on the refusal budget: {elapsed:?}"
+    );
 }

@@ -407,27 +407,20 @@ fn normalize_pathway_query(query: &str) -> String {
     }
 }
 
-fn kegg_disabled_from_env_value(value: Option<&str>) -> bool {
-    matches!(
-        value.map(str::trim),
-        Some("1") | Some("true") | Some("TRUE") | Some("yes") | Some("YES")
-    )
+fn kegg_disabled() -> bool {
+    crate::sources::disable::is_disabled("kegg")
 }
 
-fn kegg_disabled() -> bool {
-    kegg_disabled_from_env_value(std::env::var("BIOMCP_DISABLE_KEGG").ok().as_deref())
+fn kegg_disabled_reason() -> &'static str {
+    crate::sources::disable::reason("kegg").unwrap_or("disabled by --disable-sources kegg")
 }
 
 fn kegg_disabled_error(pathway_id: &str) -> BioMcpError {
-    BioMcpError::SourceUnavailable {
-        source_name: "kegg".to_string(),
-        reason: format!(
-            "KEGG pathway access for {pathway_id} is disabled by BIOMCP_DISABLE_KEGG=1."
-        ),
-        suggestion:
-            "Unset BIOMCP_DISABLE_KEGG or query a Reactome pathway ID such as R-HSA-5673001."
-                .to_string(),
-    }
+    BioMcpError::InvalidArgument(format!(
+        "KEGG pathway access for {pathway_id} is refused because kegg is {}. \
+Retry without disabling kegg, or query a Reactome pathway ID such as R-HSA-5673001.",
+        kegg_disabled_reason()
+    ))
 }
 
 fn normalize_pathway_match_text(value: &str) -> String {
@@ -685,7 +678,10 @@ pub async fn search_with_filters(
     let wikipathways = WikiPathwaysClient::new()?;
 
     let (reactome_res, kegg_res, wikipathways_res) = if kegg_disabled() {
-        warn!("KEGG pathway search disabled by BIOMCP_DISABLE_KEGG=1");
+        warn!(
+            "KEGG pathway search skipped: kegg is {}",
+            kegg_disabled_reason()
+        );
         let (reactome_res, wikipathways_res) = tokio::join!(
             client.search_pathways(&effective_query, limit),
             wikipathways.search_pathways(&effective_query, limit)
@@ -1292,23 +1288,13 @@ mod tests {
     }
 
     #[test]
-    fn kegg_disabled_flag_parsing_accepts_expected_values() {
-        assert!(kegg_disabled_from_env_value(Some("1")));
-        assert!(kegg_disabled_from_env_value(Some("true")));
-        assert!(kegg_disabled_from_env_value(Some("TRUE")));
-        assert!(kegg_disabled_from_env_value(Some("yes")));
-        assert!(kegg_disabled_from_env_value(Some("YES")));
-        assert!(!kegg_disabled_from_env_value(Some("0")));
-        assert!(!kegg_disabled_from_env_value(None));
-    }
-
-    #[test]
-    fn kegg_disabled_error_is_actionable() {
+    fn kegg_disabled_error_names_the_disable_reason_and_an_alternative() {
         let err = kegg_disabled_error("hsa05200");
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert_eq!(err.exit_code(), 2);
         let msg = err.to_string();
-        assert!(msg.contains("KEGG"));
-        assert!(msg.to_ascii_lowercase().contains("retry"));
-        assert!(!msg.contains("BIOMCP_DISABLE_KEGG=1"));
-        assert!(!msg.contains("R-HSA-5673001"));
+        assert!(msg.contains("KEGG pathway access for hsa05200"), "{msg}");
+        assert!(msg.contains("disabled by"), "{msg}");
+        assert!(msg.contains("R-HSA-5673001"), "{msg}");
     }
 }

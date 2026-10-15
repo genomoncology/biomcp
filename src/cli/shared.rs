@@ -442,13 +442,22 @@ pub(super) async fn try_alias_fallback_outcome(
     requested_entity: crate::entities::discover::DiscoverType,
     json_output: bool,
 ) -> anyhow::Result<Option<CommandOutcome>> {
-    match crate::entities::discover::resolve_query(
-        query,
-        crate::entities::discover::DiscoverMode::AliasFallback,
+    // A refusal never waits on a slow outside service: the
+    // alias suggestion gives up on the same budget the entity rescue uses,
+    // and the refusal prints without it when the round runs out. The two
+    // rounds share one budget: when the entity rescue already
+    // spent the budget against a stalled source, the remaining time — zero —
+    // is what this round gets, so a refusal costs one budget, not two.
+    let resolution = tokio::time::timeout(
+        crate::entities::discover::refusal_discover_remaining_budget(query),
+        crate::entities::discover::resolve_query(
+            query,
+            crate::entities::discover::DiscoverMode::AliasFallback,
+        ),
     )
-    .await
-    {
-        Ok(result) => {
+    .await;
+    match resolution {
+        Ok(Ok(result)) => {
             let decision =
                 crate::entities::discover::classify_alias_fallback(&result, requested_entity);
             match decision {
@@ -461,7 +470,7 @@ pub(super) async fn try_alias_fallback_outcome(
                 )?)),
             }
         }
-        Err(err) => {
+        Ok(Err(err)) => {
             warn!(
                 query = query.trim(),
                 entity = requested_entity.cli_name(),
@@ -469,6 +478,10 @@ pub(super) async fn try_alias_fallback_outcome(
             );
             Ok(None)
         }
+        // A timed-out round stays silent: the refusal prints without the
+        // suggestion, which is a normal degradation under load, not a
+        // diagnostic worth a stderr line on an otherwise clean refusal.
+        Err(_elapsed) => Ok(None),
     }
 }
 

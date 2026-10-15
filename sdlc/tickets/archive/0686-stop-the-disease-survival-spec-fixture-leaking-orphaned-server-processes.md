@@ -8,7 +8,7 @@ Carried over from March ticket 686 when BioMCP moved to the sdlc
 factory. The body below is March's, unchanged; it was already written to
 stand alone. Work products from any earlier attempt:
 
-    /home/ian/workspace/planning/biomcp/artifacts/686-stop-the-disease-survival-spec-fixture-leaking-orphaned-server-processes
+    ~/workspace/planning/biomcp/artifacts/686-stop-the-disease-survival-spec-fixture-leaking-orphaned-server-processes
 
 March recorded this as failed with the reason 'unknown'.
 That is an artefact of the queue being paused mid-flight, not a defeat:
@@ -35,7 +35,7 @@ The disease-survival spec fixture leaks its HTTP server process on abnormal exit
 |---|---|
 | `worktrees/678-repair-the-pmc-oa-package-url…` | 1d 9h (ticket merged) |
 | `worktrees/666-convert-disease-phenotype…` | 5h 37m, plus 5 more from repeated runs |
-| `/tmp/pytest-of-ian/pytest-903/test_routine_fixture_setup_doe1/workspace` | 3h 9m |
+| `/tmp/pytest-of-<user>/pytest-903/test_routine_fixture_setup_doe1/workspace` | 3h 9m |
 
 Command shape:
 

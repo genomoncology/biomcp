@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/087-fix-remaining-bioasq-product-gaps-protein-truncation-variant-targets-disease-features
+    ~/workspace/planning/biomcp/artifacts/087-fix-remaining-bioasq-product-gaps-protein-truncation-variant-targets-disease-features

@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/467-bound-cli-command-exit-after-output-for-disease-survival-and-ctgov-helpers
+    ~/workspace/planning/biomcp/artifacts/467-bound-cli-command-exit-after-output-for-disease-survival-and-ctgov-helpers

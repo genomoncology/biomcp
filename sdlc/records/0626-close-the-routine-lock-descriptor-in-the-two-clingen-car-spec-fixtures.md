@@ -8,4 +8,4 @@ Imported from March ticket 626. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/626-close-the-routine-lock-descriptor-in-the-two-clingen-car-spec-fixtures
+Artifacts: ~/workspace/planning/biomcp/artifacts/626-close-the-routine-lock-descriptor-in-the-two-clingen-car-spec-fixtures

@@ -8,4 +8,4 @@ Imported from March ticket 278. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/278-reformulation-loop-breaker-via-session-keyword-overlap-detection
+Artifacts: ~/workspace/planning/biomcp/artifacts/278-reformulation-loop-breaker-via-session-keyword-overlap-detection

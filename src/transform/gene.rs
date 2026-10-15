@@ -132,6 +132,16 @@ fn extract_kegg_pathways(value: Option<&serde_json::Value>) -> Option<Vec<GenePa
     if out.is_empty() { None } else { Some(out) }
 }
 
+/// MyGene carries these rows from KEGG's own annotation, so a disabled
+/// kegg drops them here: gene output shows no KEGG pathway names even
+/// though MyGene still returns them.
+fn carried_kegg_pathways(value: Option<&serde_json::Value>) -> Option<Vec<GenePathway>> {
+    if crate::sources::disable::is_disabled("kegg") {
+        return None;
+    }
+    extract_kegg_pathways(value)
+}
+
 fn format_genomic_coordinates(resp: &MyGeneRecord) -> Option<crate::entities::GenomicCoordinate> {
     let pos = resp.enrichment.genomic_pos.as_ref()?;
     let chr = pos.chr()?.trim();
@@ -155,7 +165,7 @@ pub fn from_mygene_get(
     let genomic_coordinates = format_genomic_coordinates(resp);
     let omim_id = extract_omim_id(resp.enrichment.mim.as_ref());
     let uniprot_id = extract_uniprot_id(resp.enrichment.uniprot.as_ref());
-    let pathways = extract_kegg_pathways(resp.enrichment.pathway.as_ref());
+    let pathways = carried_kegg_pathways(resp.enrichment.pathway.as_ref());
     let source_aliases = resp.aliases();
     let aliases = normalize_aliases(source_aliases.clone());
     let mut report = resp.conversion.clone();
@@ -304,6 +314,20 @@ mod tests {
         assert_eq!(pathways.len(), 2);
         assert_eq!(pathways[0].id, "hsa04010");
         assert_eq!(pathways[0].source, "KEGG");
+    }
+
+    #[test]
+    fn carried_kegg_pathways_survive_when_kegg_is_not_disabled() {
+        // The lazy state reads the real environment; this process leaves
+        // BIOMCP_DISABLE_SOURCES/BIOMCP_DISABLE_KEGG unset, so the rows
+        // MyGene carries from KEGG stay in gene output. The disabled
+        // branch is proven end to end by the disable-sources CLI tests,
+        // which run in their own processes.
+        let value = serde_json::json!({
+            "kegg": [{"id": "hsa04010", "name": "MAPK signaling pathway - Homo sapiens (human)"}]
+        });
+        let pathways = carried_kegg_pathways(Some(&value)).expect("pathways");
+        assert_eq!(pathways[0].id, "hsa04010");
     }
 
     #[test]

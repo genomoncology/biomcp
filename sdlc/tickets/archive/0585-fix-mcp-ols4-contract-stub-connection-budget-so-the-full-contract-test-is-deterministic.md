@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/585-fix-mcp-ols4-contract-stub-connection-budget-so-the-full-contract-test-is-deterministic
+    ~/workspace/planning/biomcp/artifacts/585-fix-mcp-ols4-contract-stub-connection-budget-so-the-full-contract-test-is-deterministic

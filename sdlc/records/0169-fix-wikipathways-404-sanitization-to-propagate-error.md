@@ -8,4 +8,4 @@ Imported from March ticket 169. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/169-fix-wikipathways-404-sanitization-to-propagate-error
+Artifacts: ~/workspace/planning/biomcp/artifacts/169-fix-wikipathways-404-sanitization-to-propagate-error

@@ -424,7 +424,7 @@ pub(super) fn section_fetch_limit(kind: SectionKind, input: &PreparedInput) -> u
 /// returned rows: the filter is unavailable, and the user must see that
 /// the results may include trials that are not recruiting. The note names
 /// the source in our words; the raw upstream error stays in the log line
-/// where it cannot paste upstream text into the card (ticket 1256).
+/// where it cannot paste upstream text into the card.
 pub(super) fn trial_recruiting_filter_note(
     preferred_error: &Option<BioMcpError>,
 ) -> Option<String> {

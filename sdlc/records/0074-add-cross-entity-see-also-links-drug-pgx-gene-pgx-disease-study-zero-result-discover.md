@@ -8,4 +8,4 @@ Imported from March ticket 074. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/074-add-cross-entity-see-also-links-drug-pgx-gene-pgx-disease-study-zero-result-discover
+Artifacts: ~/workspace/planning/biomcp/artifacts/074-add-cross-entity-see-also-links-drug-pgx-gene-pgx-disease-study-zero-result-discover

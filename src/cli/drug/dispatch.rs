@@ -141,7 +141,12 @@ pub(crate) async fn handle_search(
                 &footer,
             )?
         }
-        crate::entities::drug::DrugSearchPageWithRegion::All { us, eu, who } => {
+        crate::entities::drug::DrugSearchPageWithRegion::All {
+            us,
+            eu,
+            who,
+            who_note,
+        } => {
             let footers = crate::render::markdown::DrugSearchRegionFooters {
                 us: super::render::drug_region_continuation(
                     filters.query.as_deref(),
@@ -180,6 +185,7 @@ pub(crate) async fn handle_search(
                 &who.results,
                 who.total,
                 &footers,
+                who_note.as_deref(),
             )?
         }
     };

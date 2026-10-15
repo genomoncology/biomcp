@@ -8,4 +8,4 @@ Imported from March ticket 250. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/250-architecture-adopt-pdf-html-jats-to-markdown-crate-for-article-fulltext
+Artifacts: ~/workspace/planning/biomcp/artifacts/250-architecture-adopt-pdf-html-jats-to-markdown-crate-for-article-fulltext

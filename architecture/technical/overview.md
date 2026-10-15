@@ -268,7 +268,7 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 ## Release Pipeline
 
-v0.9.0 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `1.0.0-dev.1` and Python `1.0.0.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
+v0.9.2 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `1.0.0-dev.1` and Python `1.0.0.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
 
 `.github/workflows/release.yml` runs when a GitHub release is published, or on
 `workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
@@ -290,13 +290,25 @@ published v0.9.0 channels; `install.sh` resolves the latest release with
 platform assets rather than the latest merge to `main`.
 
 CI (`.github/workflows/ci.yml`) runs for pull requests and every push to
-`main`. Its `canonical-gates` job invokes
-`make lint`, `make test`, and `make spec` without copying smaller command lists
-into YAML. The build tools it drives are pinned by version (nextest, cargo-deny,
+`main` and the ticket branches. A `build` job runs `make prepare-test` once
+and uploads the dev build's nextest archive, binary, and MCP example binary
+as one artifact; the `lint`, `rust-tests`, `python-lane`, and `spec-lane` jobs
+download that artifact and run `make lint`, `make test-rust`,
+`make test-python`, and `make spec` in parallel, each through its Makefile
+target, without copying smaller command lists
+into YAML. One composite action under `.github/actions/lane-setup` holds the
+shared setup: the pinned Rust toolchain and build cache, Python with uv, the
+bubblewrap offline sandbox, and the pinned gate binaries. The build tools it drives are pinned by version (nextest, cargo-deny,
 ruff, mustmatch, protoc) while the four apt packages (bubblewrap, apparmor,
-apparmor-profiles, ripgrep) install unpinned from the distribution. Separate jobs retain full-feature, generated-source, Windows,
-repository-metadata, and container checks. The repository-contract checkout
-fetches full tag history so the pre-1.0 changelog boundary check is reliable.
+apparmor-profiles, ripgrep) install unpinned from the distribution. The
+all-features, Windows, stress, and release-panic jobs run only on pushes to
+`main`, so every release tag's needs-green-CI check still gates on them and
+a ticket whose changes only those jobs build runs `make full-feature-check`
+itself before landing. Separate jobs retain
+generated-source and repository-metadata checks on every push. The
+repository-contract checkout
+fetches full tag history so the pre-1.0 changelog boundary check is reliable,
+and the python lane's checkout fetches it for the release version contracts.
 Routine release proof uses `make release-gate`,
 which composes the routine lint/test graph, the named full-feature check, and
 release-profile specs; opt-in live
@@ -325,7 +337,8 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   the AlphaGenome behavior tests with `cargo test`, and builds the all-feature
   release CLI.
 - Repo-local `make test` runs `cargo nextest run` plus the Python/docs contract
-  lane against `target/spec/biomcp`. Python contract files use four bounded
+  lane against `target/debug/biomcp`, the same dev-profile binary every
+  routine gate builds once per ticket. Python contract files use four bounded
   pytest workers with file-based distribution; `PYTEST_WORKERS=1` is the
   diagnostic override. Routine `make spec` shares that selected binary; the CI
   `canonical-gates` job invokes those same Make targets, while the
@@ -342,22 +355,6 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   confidence is opt-in through `make verify` (`make release-live-smoke` aliases it).
 - The grounding implementation surfaces for this split are `Makefile`,
   `.github/workflows/ci.yml`, and `.github/workflows/contracts.yml`.
-
-#### March Validation Profiles
-
-The standard repo gates are `make lint`, `make test`, and `make spec`.
-March validation profiles are retired; the repository no longer keeps tracked
-profile files under `.march/` for routine proof routing.
-
-The exhaustive tracked and staged `.march/*` allowlist is
-`.march/code-review-log.md`. `.march/` remains ignored by `.gitignore`;
-allowlisted tracked files are rare explicit index exceptions, not ignore-rule
-negations. The Python cleanup contract rejects every other tracked `.march/*`
-path, and the pre-commit helper rejects staged non-deletion `.march/*` paths
-outside the same allowlist.
-
-Live public-upstream proof moved to the explicit opt-in `make verify` operator
-lane, with `make release-live-smoke` kept as an alias.
 
 ### 2. Spec Suite (`spec/`)
 

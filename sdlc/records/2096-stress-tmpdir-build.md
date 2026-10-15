@@ -1,0 +1,3 @@
+# 2096 build record — the stress lane prepares its temp dir
+
+Landed 2026-10-15 from branch ticket/2096-stress-tmpdir. The stress lane, main-only since the CI restructure and therefore never run on its branch, died creating its pytest basetemp because the stress target never depended on the target that creates it; one prerequisite line fixes it. Review: accept recorded on the branch tip 1ba1f49f0, whose CI run is green on the exact head; landed by direct merge because pm merge-branch refused twice on a self-race with an unchanged, green branch tip — filed with the PM. CI green on the reviewed tree.

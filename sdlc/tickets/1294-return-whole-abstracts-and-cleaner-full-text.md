@@ -42,4 +42,4 @@ Article JSON returns whole abstracts with no cut-off, and full text reads cleanl
 
 ## Review
 
-- Design review: ACCEPT 2026-10-03 on the second pass, dispatch 9962598b (fresh SWE-2 researcher, read-only). The first pass returned FIX; the revision addressed every finding.
+- Design review: ACCEPT 2026-10-03 on the second pass, dispatch 9962598b (fresh researcher, read-only). The first pass returned FIX; the revision addressed every finding.

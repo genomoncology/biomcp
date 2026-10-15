@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/330-fix-uv-project-build-hang-in-make-check-so-local-release-gate-completes
+    ~/workspace/planning/biomcp/artifacts/330-fix-uv-project-build-hang-in-make-check-so-local-release-gate-completes

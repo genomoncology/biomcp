@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/073-close-4-bioasq-product-gaps-fulltext-size-rare-disease-phenotypes-somatic-mutations-rare-drug-indications
+    ~/workspace/planning/biomcp/artifacts/073-close-4-bioasq-product-gaps-fulltext-size-rare-disease-phenotypes-somatic-mutations-rare-drug-indications

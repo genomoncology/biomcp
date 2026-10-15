@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
 import json
 import os
 import re
@@ -20,7 +19,6 @@ REQUIRED_EXAMPLE_MARKERS = (
     "**Expected output:**",
 )
 SPEC_BARE_PYTHON_PATTERN = re.compile(r"(?<![A-Za-z0-9_])python(?=(?: |$))")
-TRACKED_MARCH_ALLOWLIST = frozenset({".march/code-review-log.md"})
 
 
 def _read(path: str) -> str:
@@ -40,27 +38,6 @@ def _markdown_section_block(text: str, heading: str, next_heading: str) -> str:
     return remainder[:end]
 
 
-def _unexpected_tracked_march_paths(tracked_files: Iterable[str]) -> list[str]:
-    return sorted(
-        path
-        for path in tracked_files
-        if path.startswith(".march/") and path not in TRACKED_MARCH_ALLOWLIST
-    )
-
-
-def _format_unexpected_tracked_march_paths(paths: Sequence[str]) -> str:
-    lines = [
-        "Unexpected tracked .march artifacts detected.",
-        "Offending paths:",
-        *(f"- {path}" for path in paths),
-        "Allowed tracked .march paths:",
-        *(f"- {path}" for path in sorted(TRACKED_MARCH_ALLOWLIST)),
-        "Remove non-allowlisted artifacts from the index with:",
-        "git rm --cached -- <path>",
-    ]
-    return "\n".join(lines)
-
-
 def test_manifest_matches_directory_bundle_contract() -> None:
     manifest = _read_json("manifest.json")
     cargo = tomllib.loads(_read("Cargo.toml"))
@@ -71,7 +48,7 @@ def test_manifest_matches_directory_bundle_contract() -> None:
     assert manifest["display_name"] == "BioMCP"
     assert cargo["package"]["version"] == "1.0.0-dev.1"
     assert pyproject["project"]["version"] == "1.0.0.dev1"
-    assert manifest["version"] == "0.9.0"
+    assert manifest["version"] == "0.9.2"
     assert manifest["privacy_policies"] == ["https://biomcp.org/policies/"]
     assert "tools_generated" not in manifest
 
@@ -114,7 +91,6 @@ def test_packaging_workspace_is_ignored_and_bundle_payload_is_filtered() -> None
 
     for entry in (
         ".git/",
-        ".march/",
         "src/",
         "tests/",
         "docs/",
@@ -128,35 +104,12 @@ def test_packaging_workspace_is_ignored_and_bundle_payload_is_filtered() -> None
     gitignore = _read(".gitignore")
     assert "/server/" in gitignore
 
-    for entry in (".march/", ".claude/", ".agents/"):
+    for entry in (".claude/", ".agents/"):
         assert entry in gitignore
 
     assert "architecture/" in mcpbignore
     for removed_entry in ("design/", "demo/", "presentations/"):
         assert removed_entry not in mcpbignore
-
-
-def test_tracked_march_allowlist_is_exhaustive_and_actionable() -> None:
-    assert TRACKED_MARCH_ALLOWLIST == frozenset({".march/code-review-log.md"})
-
-    tracked_files = [
-        ".march/code-review-log.md",
-        ".march/verify-log.md",
-        ".march/blueprint.md",
-        ".claude/settings.local.json",
-    ]
-
-    unexpected_paths = _unexpected_tracked_march_paths(tracked_files)
-
-    assert unexpected_paths == [".march/blueprint.md", ".march/verify-log.md"]
-
-    message = _format_unexpected_tracked_march_paths(unexpected_paths)
-    for path in unexpected_paths:
-        assert path in message
-    for path in TRACKED_MARCH_ALLOWLIST:
-        assert path in message
-    assert "git rm --cached -- <path>" in message
-    assert ".claude/settings.local.json" not in unexpected_paths
 
 
 def test_repo_cleanup_removes_local_artifacts_and_deleted_dirs_from_git() -> None:
@@ -167,11 +120,6 @@ def test_repo_cleanup_removes_local_artifacts_and_deleted_dirs_from_git() -> Non
         capture_output=True,
         text=True,
     ).stdout.splitlines()
-
-    unexpected_march_paths = _unexpected_tracked_march_paths(tracked_files)
-    assert not unexpected_march_paths, _format_unexpected_tracked_march_paths(
-        unexpected_march_paths
-    )
 
     assert not [
         path for path in tracked_files if path.startswith((".claude/", ".agents/"))

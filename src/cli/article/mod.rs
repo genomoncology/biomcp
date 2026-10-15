@@ -4,7 +4,7 @@ use clap::{Args, Subcommand};
 
 mod annotations;
 mod fulltext_view;
-pub(super) use annotations::truncate_article_annotations;
+pub(super) use annotations::{truncate_article_annotations, verified_disease_get_commands};
 
 fn parse_article_year(value: &str) -> Result<u16, String> {
     if value.len() != 4 || !value.chars().all(|ch| ch.is_ascii_digit()) {
@@ -193,7 +193,7 @@ pub(super) struct ArticleSearchJsonMeta {
     suggestions: Vec<ArticleSuggestion>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     source_status: Vec<crate::entities::article::ArticleSourceStatus>,
-    /// Stale-cache serves recorded during this command (ticket 1263):
+    /// Stale-cache serves recorded during this command:
     /// the same `_meta.notes` channel the disease search uses.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     notes: Vec<String>,

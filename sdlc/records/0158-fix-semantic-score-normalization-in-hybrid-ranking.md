@@ -13,4 +13,4 @@ landed range have byte-identical ticket-owned patches after excluding discarded
 Both commit objects exist, the recorded base is the landed head's parent, and
 the landed head is an ancestor of current main.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/158-fix-semantic-score-normalization-in-hybrid-ranking
+Artifacts: ~/workspace/planning/biomcp/artifacts/158-fix-semantic-score-normalization-in-hybrid-ranking

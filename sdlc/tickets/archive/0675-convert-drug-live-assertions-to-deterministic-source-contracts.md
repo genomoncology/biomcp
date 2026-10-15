@@ -8,7 +8,7 @@ Carried over from March ticket 675 when BioMCP moved to the sdlc
 factory. The body below is March's, unchanged; it was already written to
 stand alone. Work products from any earlier attempt:
 
-    /home/ian/workspace/planning/biomcp/artifacts/675-convert-drug-live-assertions-to-deterministic-source-contracts
+    ~/workspace/planning/biomcp/artifacts/675-convert-drug-live-assertions-to-deterministic-source-contracts
 ## Why
 Ticket 645 classifies `spec/entity/drug.md` as convert: regional overlay, target selection, and bundle provenance are BioMCP source-mapping contracts, not provider availability. MyChem, EMA, and WHO evidence is not yet receipted.
 

@@ -8,4 +8,4 @@ Imported from March ticket 200. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/200-publish-daraxonrasib-six-commands-article-to-biomcp-org
+Artifacts: ~/workspace/planning/biomcp/artifacts/200-publish-daraxonrasib-six-commands-article-to-biomcp-org

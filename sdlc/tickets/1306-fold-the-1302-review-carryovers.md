@@ -19,7 +19,7 @@ fold scope land in one small pass.
 ## Evidence
 
 Recorded as non-blocking notes in the 1302 review
-(/tmp/review-1302-code.md mirrored in the ticket build status): the
+(verdict mirrored in the ticket build status): the
 second-seed refusal re-resolves both inputs through Europe PMC instead
 of reusing the first seed's resolved pair; a shape-invalid OCI on a
 matching row reports "was unavailable" when the index answered; and

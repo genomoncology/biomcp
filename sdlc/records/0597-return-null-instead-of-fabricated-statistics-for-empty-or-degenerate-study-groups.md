@@ -8,4 +8,4 @@ Imported from March ticket 597. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/597-return-null-instead-of-fabricated-statistics-for-empty-or-degenerate-study-groups
+Artifacts: ~/workspace/planning/biomcp/artifacts/597-return-null-instead-of-fabricated-statistics-for-empty-or-degenerate-study-groups

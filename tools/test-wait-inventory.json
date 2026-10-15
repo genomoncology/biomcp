@@ -112,10 +112,6 @@
       "count": 2,
       "language": "rust"
     },
-    "tests/biomcp_cli_shim.rs": {
-      "count": 1,
-      "language": "rust"
-    },
     "tests/json_error_contract.rs": {
       "count": 5,
       "language": "rust",
@@ -174,9 +170,24 @@
       "count": 0,
       "language": "rust",
       "markers": 1
+    },
+    "src/entities/variant/clinvar.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 3
+    },
+    "src/entities/variant/gwas/tests.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 2
+    },
+    "src/entities/drug/get/tests.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 2
     }
   },
-  "marker_total_ceiling": 43,
+  "marker_total_ceiling": 50,
   "raises": [
     {
       "file": "(global)",
@@ -257,6 +268,38 @@
       "to": 43,
       "reason": "re-pinned down to the tree's true marker count after the both-operator floor rule made several polls exempt; decreases are safe and need no review",
       "ticket": "1269"
+    },
+    {
+      "file": "src/entities/variant/clinvar.rs",
+      "field": "markers",
+      "from": 0,
+      "to": 3,
+      "reason": "the extracted ClinVar module's deadline tests hold three bounded waits: the held-open server leg and two two-second elapsed bounds",
+      "ticket": "1291"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 43,
+      "to": 46,
+      "reason": "three bounded deadline-test waits moved with the extracted ClinVar module",
+      "ticket": "1291"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 46,
+      "to": 48,
+      "reason": "the GWAS parallel proof holds each fixture reply 1.5 s and bounds the page at 2.5 s; the clock is the measured subject, marked on its two lines",
+      "ticket": "2089"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 48,
+      "to": 50,
+      "reason": "the drug-card parallel proof holds each of four fixture replies one second and bounds the card at two seconds; the clock is the measured subject, marked on its two lines",
+      "ticket": "2090"
     }
   ]
 }

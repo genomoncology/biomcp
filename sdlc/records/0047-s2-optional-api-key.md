@@ -8,4 +8,4 @@ Imported from March ticket 047. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/047-s2-optional-api-key
+Artifacts: ~/workspace/planning/biomcp/artifacts/047-s2-optional-api-key

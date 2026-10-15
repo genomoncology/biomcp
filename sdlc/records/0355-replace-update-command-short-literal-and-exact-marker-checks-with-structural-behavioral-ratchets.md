@@ -8,4 +8,4 @@ Imported from March ticket 355. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/355-replace-update-command-short-literal-and-exact-marker-checks-with-structural-behavioral-ratchets
+Artifacts: ~/workspace/planning/biomcp/artifacts/355-replace-update-command-short-literal-and-exact-marker-checks-with-structural-behavioral-ratchets

@@ -8,4 +8,4 @@ Imported from March ticket 505. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/505-profile-command-level-article-spec-runtime-before-choosing-another-optimization
+Artifacts: ~/workspace/planning/biomcp/artifacts/505-profile-command-level-article-spec-runtime-before-choosing-another-optimization

@@ -124,7 +124,7 @@ There is no `build.zig` in this BioMCP Rust/Python worktree, and no production b
 For another downstream experiment script, add the scripts directory to `PYTHONPATH` and import the package:
 
 ```bash
-export PYTHONPATH="/home/ian/workspace/repos/biomcp/architecture/experiments/381-spike-source-first-article-markdown-coverage/scripts:${PYTHONPATH:-}"
+export PYTHONPATH="~/workspace/repos/biomcp/architecture/experiments/381-spike-source-first-article-markdown-coverage/scripts:${PYTHONPATH:-}"
 uv run --no-sync python downstream_spike.py
 ```
 

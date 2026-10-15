@@ -1072,7 +1072,7 @@
       "item": "pub(crate) fn sanitize_provider_inline(value: &str) -> String {",
       "occurrence": 1,
       "owner": "render-contracts",
-      "reason": "Ticket 1186 freezes the Unicode-16 provider sanitizer; ticket 1142 is the first consumer.",
+      "reason": "Freezes the Unicode-16 provider sanitizer.",
       "removal_condition": "Remove when a Markdown renderer consumes sanitize_provider_inline."
     },
     {

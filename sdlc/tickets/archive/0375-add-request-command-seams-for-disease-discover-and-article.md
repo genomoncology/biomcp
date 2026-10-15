@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/375-add-request-command-seams-for-disease-discover-and-article
+    ~/workspace/planning/biomcp/artifacts/375-add-request-command-seams-for-disease-discover-and-article

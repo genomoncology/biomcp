@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/650-stop-comparing-the-erepo-detail-id-host-and-stop-reporting-our-own-identity-check-as-a-clingen-outage
+    ~/workspace/planning/biomcp/artifacts/650-stop-comparing-the-erepo-detail-id-host-and-stop-reporting-our-own-identity-check-as-a-clingen-outage

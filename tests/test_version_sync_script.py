@@ -43,7 +43,7 @@ def _copy_version_sync_fixture(tmp_path: Path) -> Path:
     _replace_citation_version(fixture_root / "CITATION.cff", "0.8.25")
     citation = fixture_root / "CITATION.cff"
     citation_text = citation.read_text(encoding="utf-8").replace(
-        "date-released: 2026-09-16", "date-released: 2026-07-07", 1
+        "date-released: 2026-10-11", "date-released: 2026-07-07", 1
     )
     citation.write_text(citation_text, encoding="utf-8")
     assert "date-released: 2026-07-07" in citation_text
@@ -375,7 +375,7 @@ def test_manifest_and_citation_versions_match_repo_metadata() -> None:
     assert _read_server_versions(REPO_ROOT / "server.json") == ("0.9.0", "0.9.0")
     assert _read_citation_version(REPO_ROOT / "CITATION.cff") == "0.9.0"
     citation_text = (REPO_ROOT / "CITATION.cff").read_text(encoding="utf-8")
-    assert "date-released: 2026-09-16" in citation_text
+    assert "date-released: 2026-10-11" in citation_text
 
 
 def test_uv_lock_matches_release_version_and_excludes_mustmatch_package() -> None:

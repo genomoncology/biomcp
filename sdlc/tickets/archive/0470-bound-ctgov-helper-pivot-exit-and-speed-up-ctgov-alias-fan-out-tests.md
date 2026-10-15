@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/470-bound-ctgov-helper-pivot-exit-and-speed-up-ctgov-alias-fan-out-tests
+    ~/workspace/planning/biomcp/artifacts/470-bound-ctgov-helper-pivot-exit-and-speed-up-ctgov-alias-fan-out-tests

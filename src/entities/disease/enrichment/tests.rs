@@ -484,7 +484,7 @@ fn top_genes_label_names_the_fallback_when_open_targets_did_not_produce_them() {
 #[test]
 fn top_genes_label_names_the_disgenet_seed_from_the_mydisease_hit() {
     // Open Targets produced nothing; the MyDisease hit's embedded DisGeNET
-    // block seeded the genes (ticket 1256). The label must credit
+    // block seeded the genes. The label must credit
     // DisGeNET, not Open Targets.
     let mut disease = test_disease("MONDO:0007947", "Huntington disease");
     disease.associated_genes = vec!["HTT".into()];

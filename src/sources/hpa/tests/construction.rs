@@ -22,7 +22,7 @@ fn protein_data_plan_rejects_invalid_ensembl_id() {
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
 }
 
-// Ticket 1213 acceptance 1: the cell line RNA plan targets the search download
+// The cell line RNA plan targets the search download
 // endpoint with the four documented parameters, and an unknown group fails
 // before any request.
 

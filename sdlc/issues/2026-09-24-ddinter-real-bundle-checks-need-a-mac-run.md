@@ -46,7 +46,7 @@ it.
 Ian assigned the run to the developer that day (the 2026-09-27
 review file's direction section).
 
-Environment: M5 (macOS, arm64), release binary built at repo commit
+Environment: a macOS arm64 host, release binary built at repo commit
 a7d503be (`cargo build --release`, rustc 1.95.0), reporting
 `biomcp 0.9.1-dev.1`. Data root on macOS is `dirs::data_dir()`:
 `~/Library/Application Support/biomcp/ddinter` (the issue's

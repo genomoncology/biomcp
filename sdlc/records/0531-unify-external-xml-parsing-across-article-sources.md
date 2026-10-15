@@ -8,4 +8,4 @@ Imported from March ticket 531. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/531-unify-external-xml-parsing-across-article-sources
+Artifacts: ~/workspace/planning/biomcp/artifacts/531-unify-external-xml-parsing-across-article-sources

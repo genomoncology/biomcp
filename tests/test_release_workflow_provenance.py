@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
 import re
+import shlex
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -19,7 +23,7 @@ EXPECTED_NEEDS = {
     "docs-live": ["version-check"],
     # PyPI last (2026-09-28): every build and smoke job first.
     "pypi-publish": ["pypi-build", "wheel-smoke", "docs-live", "build", "container-publish"],
-    # Ticket 1266: the release is public before the tap lands.
+    # The release is public before the tap lands.
     "homebrew-tap": [
         "build",
         "docs-live",
@@ -139,6 +143,10 @@ def _assert_release_contract(workflow: str) -> None:
 
     draft = _job_block(workflow, "create-draft")
     assert 'gh release create "$TAG" --draft --verify-tag' in draft
+    # Ticket 2064: the draft carries the tag's changelog section as
+    # its release notes, rendered from the checked-out tag.
+    assert "release/release_notes.py" in draft
+    assert "--notes-file" in draft
     build = _job_block(workflow, "build")
     assert 'gh release upload "$TAG"' in build and "--clobber" in build
     assert "skip-existing" not in workflow and "skip_existing" not in workflow
@@ -275,7 +283,6 @@ ALLOWED_STEP_IFS = {
 # `set +o errexit`, `trap -- 'exit 0' EXIT`, `|| exit $((0))`, or any
 # other spelling changes the step's text and fails the hash. The
 # patterns are gone on purpose — structure closed the class.
-#
 # Hash pinning: each load-bearing step is serialized from the parsed
 # workflow (so YAML folding cannot hide a change), its `run` body is
 # normalized to trivial whitespace (per-line trailing space stripped,
@@ -285,21 +292,27 @@ ALLOWED_STEP_IFS = {
 # with the step's name and the new hash; deliberate changes update
 # the hash here in the same commit.
     # Steps of the three pipeline jobs plus version-check's gate
-    # steps, pinned 2026-09-27 (ticket 1258). Update a hash only in
+    # steps, pinned 2026-09-27. Update a hash only in
     # the same commit as the deliberate workflow edit it records.
+    # The two pypi-build build steps were re-pinned 2026-10-08
+    #both now route through tools/with-build-identity
+    # so the shipped wheels report their commit. The two wheel-smoke
+    # install/run steps were re-pinned 2026-10-10: both now compare the printed --version with the tag.
+    # The container smoke was re-pinned again 2026-10-10:
+    # the tag now rides in with -e TAG.
 PINNED_STEPS: dict[tuple[str, str], str] = {
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "435261111ae8c13c6efd4c0122d30af2df68e5cbc57a7e92ccd1568897ae4024",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
     ("pypi-build", "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c"): "e5cf6427d1b42e2b776f2589adc36320874f109751f02494b68ee9068c79b0d5",
     ("pypi-build", "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b"): "4e605dbe89d4dcacdf70d170853634c9f4c518e1a41f5d2c5e2bd27cf4c89e7c",
     ("pypi-build", "Install pinned maturin"): "996e8a6336fff6d3d0b3a74230bb8b24021e34e7d06390412ac88bd2308173e0",
-    ("pypi-build", "Build wheels"): "a6e876869ef10c81eb4b505376e37e1a370b4ca36b809a68bc6ea20d52b87d3e",
-    ("pypi-build", "Build wheels inside the manylinux 2_28 container"): "21a93b7950bc2976defc9c23424265ac57d9cd4c2daf4a40940ad5ee683a8563",
+    ("pypi-build", "Build wheels"): "cbb986dad5ba25475c9731e0d012cfff7c3cefdbb280bd480e9024e51e6c3337",
+    ("pypi-build", "Build wheels inside the manylinux 2_28 container"): "d04d98be4ff1c1caee89a3337461678427197f11d91b9a36c4b8006413578b9b",
     ("pypi-build", "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"): "b9b6cca0e685928f03d3f444bac8c0825b2ee3510663d6503c24525218de1e23",
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
-    ("wheel-smoke", "Install the wheel into a clean venv"): "362a4ba663ff744574ec1f229c6ecd32e1f0f308ae95f0000f79efbf089bf6f9",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "d5495643fdb712f52fbaa636b5198909e890806d92a309d073dfc1bb328cffc4",
+    ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
+    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "aa05d59785ad1869b7a0dd819d3040b1a87092e6cbe0e0c7d40a8518856b6ebd",
     ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
     ("docs-live", "Check out the gate helper"): "afce43fafcab696d9cef03f29b0c43b6c9849baf126b749e198bdb9d83555430",
     ("docs-live", "Resolve the tag commit"): "b52e25a4026bed9172a0eff4b90f6a706ec984875307d7e89f9d450878a96e44",
@@ -307,6 +320,11 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "3ffb87228f0c77aecb87c34ee83d661a80bff50e397e911e917de5891db2a5fb",
     ("version-check", "Require the tag and committed versions to agree"): "8bdcc74fd872a7a77d8341bd5049e3a3845a89825f02875f4258e5d665243b8b",
     ("version-check", "Require the changelog to cover merged tickets"): "8dcf47fdb31ff44771a511058fa05d8e17d1a551744dcc1e8631fa7f8979118e",
+    # Ticket 2053: the release waits on a finished green ci.yml run
+    # for the exact tagged commit. Re-pinned 2026-10-13 for ticket
+    # 2060: gh has no --conclusion flag, so jq counts the successful
+    # conclusions.
+    ("version-check", "Require green CI on the tagged commit"): "6a5acafb79dbd43069bbf2e829d90763c5547be136331d275a8d71a2df0f7959",
 }
 
 
@@ -341,6 +359,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "Require the tag and committed versions to agree",
         "Require the changelog to cover merged tickets",
+        "Require green CI on the tagged commit",
     ],
     # 2026-09-28 round three: EVERY release job is pinned, not only
     # the four above — pypi-publish uploads to PyPI, so a new first
@@ -349,15 +368,19 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
     "pypi-publish": [
         "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
         "Install pinned uv",
-        "Publish to PyPI with trusted publishing",
+        "Publish to PyPI with trusted publishing (production only)",
     ],
     "homebrew-tap": [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "Download checksums from the release",
-        "Update Homebrew tap",
+        "Update Homebrew tap (production only)",
     ],
     "build": [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+        # The interpreter for tools/with-build-identity,
+        # which the host build steps run under so the shipped
+        # binaries report their commit.
+        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
         "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
         "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b",
         "Build release binary",
@@ -388,6 +411,10 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "Publish the GitHub release after every publisher succeeds",
     ],
     "create-draft": [
+        # Ticket 2064: the draft carries the tag's changelog section
+        # as its release notes.
+        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+        "Render the release notes from the changelog",
         "Create the draft release",
     ],
 }
@@ -494,6 +521,39 @@ def _step_sha(step: dict) -> str:
     return hashlib.sha256(_canonical_step(step).encode("utf-8")).hexdigest()
 
 EXPECTED_MATRICES = {
+    # Reopening pinned the moving matrix labels: the
+    # x86_64 macOS legs cross-compile on the macos-15 arm64 image and
+    # the Windows legs run on windows-2022, so no release job depends
+    # on a label GitHub can retarget on its own schedule.
+    "build": [
+        {
+            "os": "ubuntu-24.04",
+            "target": "x86_64-unknown-linux-gnu",
+            "artifact": "biomcp-linux-x86_64.tar.gz",
+            "container": "quay.io/pypa/manylinux_2_28_x86_64",
+        },
+        {
+            "os": "ubuntu-24.04-arm",
+            "target": "aarch64-unknown-linux-gnu",
+            "artifact": "biomcp-linux-arm64.tar.gz",
+            "container": "quay.io/pypa/manylinux_2_28_aarch64",
+        },
+        {
+            "os": "macos-14",
+            "target": "aarch64-apple-darwin",
+            "artifact": "biomcp-darwin-arm64.tar.gz",
+        },
+        {
+            "os": "macos-15",
+            "target": "x86_64-apple-darwin",
+            "artifact": "biomcp-darwin-x86_64.tar.gz",
+        },
+        {
+            "os": "windows-2022",
+            "target": "x86_64-pc-windows-msvc",
+            "artifact": "biomcp-windows-x86_64.zip",
+        },
+    ],
     "pypi-build": [
         {
             "os": "ubuntu-24.04",
@@ -506,8 +566,8 @@ EXPECTED_MATRICES = {
             "container": "quay.io/pypa/manylinux_2_28_aarch64",
         },
         {"os": "macos-14", "target": "aarch64-apple-darwin"},
-        {"os": "macos-latest", "target": "x86_64-apple-darwin"},
-        {"os": "windows-latest", "target": "x86_64-pc-windows-msvc"},
+        {"os": "macos-15", "target": "x86_64-apple-darwin"},
+        {"os": "windows-2022", "target": "x86_64-pc-windows-msvc"},
     ],
     "wheel-smoke": [
         {
@@ -537,7 +597,7 @@ EXPECTED_MATRICES = {
             "python": "bin/python",
         },
         {
-            "os": "windows-latest",
+            "os": "windows-2022",
             "artifact": "wheel-x86_64-pc-windows-msvc",
             "executable": "Scripts/biomcp.exe",
             "python": "Scripts/python.exe",
@@ -697,6 +757,58 @@ def test_pipeline_jobs_contract() -> None:
     _assert_no_defaults_shell(parsed)
     _assert_step_hashes(parsed)
     _assert_release_locked_builds(parsed)
+    _assert_build_identity_routing(parsed)
+
+
+def _assert_build_identity_routing(parsed: dict) -> None:
+    """Ticket 2024: released binaries must report their commit. The
+    0.9.1 wheels and tarballs shipped "git unknown, build unknown"
+    because the release workflow called cargo and maturin directly.
+    Host build steps run under tools/with-build-identity; the
+    manylinux container legs resolve the identity on the host (the
+    container has no git checkout of its own) and the container
+    build inherits it through --env-file.
+    """
+    for job in ("build", "pypi-build"):
+        for index, step in enumerate(parsed["jobs"][job]["steps"]):
+            run = str(step.get("run", ""))
+            where = f"{job} step {index}"
+            if "docker run" in run:
+                assert "tools/with-build-identity env" in run, (
+                    f"{where}: the container build must resolve the identity "
+                    "through tools/with-build-identity on the host checkout"
+                )
+                assert "grep '^BIOMCP_BUILD_'" in run, (
+                    f"{where}: the identity hand-off must select the "
+                    "BIOMCP_BUILD_ variables"
+                )
+                assert "--env-file" in run, (
+                    f"{where}: the container build must inherit the identity "
+                    "through --env-file; docker starts the command so "
+                    "actionlint keeps checking the container script"
+                )
+                continue
+            for line in run.splitlines():
+                if re.search(r"\b(?:cargo|maturin) build\b", line):
+                    assert "with-build-identity" in line, (
+                        f"{where}: {line.strip()[:60]} must run under "
+                        "tools/with-build-identity or the shipped binary "
+                        'prints "git unknown, build unknown"'
+                    )
+
+
+def test_build_identity_routing_assertion_catches_a_direct_build() -> None:
+    """Red proof: dropping the with-build-identity routing from a
+    host build step (the 0.9.1 shape) fails the routing contract."""
+    import copy
+
+    parsed = _load_release_pipeline()
+    planted = copy.deepcopy(parsed)
+    step = _step_by_name(planted, "pypi-build", "Build wheels")
+    step["run"] = step["run"].replace("tools/with-build-identity ", "")
+    assert "maturin build" in step["run"] and "with-build-identity" not in step["run"]
+    with pytest.raises(AssertionError, match="with-build-identity"):
+        _assert_build_identity_routing(planted)
 
 
 def _assert_release_locked_builds(parsed: dict) -> None:
@@ -845,8 +957,7 @@ def _retarget_matrix_os(job: str, key: str, value: str, os_name: str):
 HASH_DRIFT = "step text drifted from its pinned hash"
 
 PIPELINE_MUTATIONS = {
-    # --- Leak spellings the old phrase bans never named (ticket
-    # --- 1258): each edits a pinned step, so the hash fails.
+    # Leak spellings the old phrase bans never named: each edits a pinned step, so the hash fails.
     "or_echo_skip_on_the_venv_smoke": (
         _mutate_run(
             "wheel-smoke",
@@ -1015,6 +1126,14 @@ PIPELINE_MUTATIONS = {
         ),
         "matrix entries must be pinned exactly",
     ),
+    "windows_build_leg_back_on_the_moving_label": (
+        # Reopening: windows-latest is a moving label
+        # GitHub retargets on its own schedule; the pin is the fix.
+        _retarget_matrix_os(
+            "pypi-build", "target", "x86_64-pc-windows-msvc", "windows-latest"
+        ),
+        "matrix entries must be pinned exactly",
+    ),
     "if_false_on_the_runtime_floor_smoke": (
         _set_step_flag(
             "wheel-smoke",
@@ -1136,9 +1255,9 @@ PIPELINE_MUTATIONS = {
         ),
         "step text drifted from its pinned hash",
     ),
-    # --- Round three (ticket 1269): expression envs, hijack
-    # --- variable names, workflow-level PATH/ENV, and a new first
-    # --- step in pypi-publish itself.
+    # Round three: expression envs, hijack
+    # variable names, workflow-level PATH/ENV, and a new first
+    # step in pypi-publish itself.
     "expression_env_carrying_bash_env": (
         lambda parsed: parsed["jobs"]["wheel-smoke"].update(
             {"env": 'FAKE_EXPRESSION{ "BASH_ENV": "/tmp/poison.sh" }'}
@@ -1512,3 +1631,631 @@ def test_the_decision_case_accepts_exactly_zero_three_and_catchall() -> None:
         f"the decision case must have exactly 0), 3) and *), found {arms}"
     )
     assert '3|*)' not in block, "a widened stay arm would swallow script errors"
+
+
+# ---------------------------------------------------------------------------
+# GitHub refuses to run a workflow whose YAML repeats a
+# mapping key (release runs 38049457592 and 38041251226 died in zero
+# seconds as "workflow file issue" with no jobs), while PyYAML keeps
+# only the last key — so every contract above, which reads the parsed
+# document, is blind to a duplicate. And the manylinux wheel smoke
+# reads ${TAG#v} inside its container script (run 38049457592's
+# ancestors), but `docker run` passes no job environment into the
+# container, so under `set -u` the leg fails with an unbound variable.
+# ---------------------------------------------------------------------------
+
+
+class DuplicateWorkflowKey(AssertionError):
+    """A mapping key appears twice in the workflow document."""
+
+
+class _StrictLoader(yaml.SafeLoader):
+    """SafeLoader plus duplicate-key detection."""
+
+
+def _construct_mapping_without_duplicates(loader, node, deep=False):
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            raise DuplicateWorkflowKey(f"duplicate YAML key {key!r}")
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_StrictLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_mapping_without_duplicates,
+)
+
+
+def _load_workflow_strictly(text: str) -> dict:
+    return yaml.load(text, Loader=_StrictLoader)
+
+
+def test_no_mapping_key_appears_twice_anywhere_in_the_release_workflow() -> None:
+    """The strict parse must succeed; the plain parse above cannot
+    see a duplicate because PyYAML keeps the last key silently."""
+    text = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    parsed = _load_workflow_strictly(text)
+    assert set(parsed["jobs"]) == set(EXPECTED_NEEDS), (
+        "the strict parse must agree with the job set the contract pins"
+    )
+
+
+def test_the_strict_parse_rejects_the_duplicated_with_shape_github_refused() -> None:
+    """Red proof: the duplicated `with:` blocks that stopped release
+    runs 38049457592 and 38041251226 must fail this check, while the
+    ordinary SafeLoader parse of the same text keeps the last key and
+    stays quiet."""
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    # Anchored on the build job's checkout (the comment that follows
+    # it) so the plant cannot land inside version-check's with: block,
+    # which legitimately carries fetch-depth.
+    original = (
+        "        with:\n"
+        "          ref: ${{ inputs.tag || github.ref_name }}\n"
+        "\n"
+        "      # Ticket 2024: the build steps run tools/with-build-identity so"
+    )
+    duplicated = workflow.replace(
+        original,
+        "        with:\n"
+        "          ref: ${{ inputs.tag || github.ref_name }}\n"
+        "        with:\n"
+        "          fetch-depth: 0\n"
+        "\n"
+        "      # Ticket 2024: the build steps run tools/with-build-identity so",
+        1,
+    )
+    assert duplicated != workflow, "the build checkout with: block moved; replant it"
+    with pytest.raises(DuplicateWorkflowKey):
+        _load_workflow_strictly(duplicated)
+    quiet = yaml.safe_load(duplicated)["jobs"]["build"]["steps"][0]["with"]
+    assert quiet == {"fetch-depth": 0}, (
+        "the quiet parse must keep only the last key, dropping the ref with it, "
+        "which is why the strict check exists"
+    )
+
+
+# Variables a container runtime provides on its own; everything else
+# a container script reads must arrive through -e/--env on the docker
+# command line, because docker passes no job environment through.
+CONTAINER_PROVIDED_VARS = frozenset({"HOME"})
+
+DOCKER_C_MARKER = "bash -euo pipefail -c '"
+
+
+def _docker_c_scripts(parsed: dict):
+    """Yield (where, docker command, container script) for every step
+    whose run drives `docker run ... bash -euo pipefail -c '...'`.
+
+    The script runs to the step's last quote, so a single quote that
+    sneaks back inside a container script (the run-38041251226
+    break) stretches the extracted script instead of hiding the text
+    after it, and the variable scan below reports the script it
+    would truly run.
+    """
+    for job_id, job in parsed["jobs"].items():
+        for step in job.get("steps", []):
+            run = str(step.get("run", ""))
+            start = run.find("docker run")
+            if start == -1 or DOCKER_C_MARKER not in run:
+                # Steps without a -c script (plain image commands)
+                # share no environment question with this check.
+                continue
+            marker = run.index(DOCKER_C_MARKER)
+            where = f"{job_id}/{step.get('name') or step.get('uses')}"
+            yield (
+                where,
+                run[start:marker],
+                run[marker + len(DOCKER_C_MARKER) :].rpartition("'")[0],
+            )
+
+
+def _container_script_external_reads(script: str) -> set[str]:
+    """Variable names the script reads but does not set itself.
+
+    `${{ ... }}` templates are rendered by GitHub before docker runs,
+    so the container never sees them; assignments (`name=`, `for name
+    in`) and the runtime-provided names stay out of the result.
+    """
+    without_templates = re.sub(r"\$\{\{[^}]*\}\}", "", script)
+    reads = set(re.findall(r"\$\{([A-Za-z_][A-Za-z0-9_]*)", without_templates))
+    reads |= set(re.findall(r"\$([A-Za-z_][A-Za-z0-9_]*)", without_templates))
+    assigned = set(re.findall(r"(?:^|[\s;(&])([A-Za-z_][A-Za-z0-9_]*)=", script))
+    assigned |= set(re.findall(r"\bfor\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b", script))
+    return reads - assigned - CONTAINER_PROVIDED_VARS
+
+
+def _assert_docker_scripts_receive_their_variables(parsed: dict) -> None:
+    offenders = []
+    for where, command, script in _docker_c_scripts(parsed):
+        passed = set(
+            re.findall(r"(?:-e|--env)[ =]([A-Za-z_][A-Za-z0-9_]*)", command)
+        )
+        missing = sorted(_container_script_external_reads(script) - passed)
+        if missing:
+            offenders.append(f"{where} reads {missing} with no -e or --env for them")
+    assert not offenders, (
+        "every variable a docker-run container script reads must be passed "
+        "in with -e or --env: docker shares no job environment with the "
+        "container, and the scripts run under set -u; " + "; ".join(offenders)
+    )
+
+
+def test_docker_run_container_scripts_receive_every_variable_they_read() -> None:
+    """Ticket 2046: the manylinux wheel smoke read ${TAG#v} with TAG
+    never passed in, so every Linux smoke leg died on an unbound
+    variable once the tag comparison landed."""
+    _assert_docker_scripts_receive_their_variables(_load_release_pipeline())
+
+
+def test_the_docker_variable_check_catches_a_dropped_tag_pass() -> None:
+    """Red proof: removing the `-e TAG` the smoke now carries must
+    fail the check, naming the variable."""
+    parsed = _load_release_pipeline()
+    step = _step_by_name(
+        parsed, "wheel-smoke", "Run the wheel inside the manylinux 2_28 container"
+    )
+    run = str(step["run"])
+    assert ' -e TAG "' in run, "the manylinux smoke no longer passes -e TAG"
+    step["run"] = run.replace(' -e TAG "', '"', 1)
+    with pytest.raises(AssertionError, match=r"reads \['TAG'\]"):
+        _assert_docker_scripts_receive_their_variables(parsed)
+
+def test_image_references_come_from_the_repository() -> None:
+    """Ticket 2049 keep: no production image name is written in —
+    every image reference derives from the repository running the
+    workflow, so the rehearsal never tags the production image."""
+    text = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
+    for line in text.splitlines():
+        if "ghcr.io/" in line and "registry: ghcr.io" not in line:
+            assert "ghcr.io/${{ github.repository }}" in line or (
+                "ghcr.io/${GITHUB_REPOSITORY}" in line
+            ), (
+                f"image reference not derived from the repository: {line.strip()}"
+            )
+
+
+def test_container_image_source_build_argument_is_pinned_to_the_repository() -> None:
+    """Ticket 2053: the OCI source label rides in through the
+    IMAGE_SOURCE build argument and must follow the repository, not
+    a hardcoded production name."""
+    _assert_image_source_build_argument(_load_release_pipeline())
+
+
+def test_image_source_pin_catches_a_hardcoded_repository() -> None:
+    """Red proof: writing the production repository into
+    IMAGE_SOURCE fails the pin."""
+    import copy
+
+    parsed = copy.deepcopy(_load_release_pipeline())
+    step = _step_by_name(
+        parsed, "container-publish", "Build and push the versioned image"
+    )
+    step["with"]["build-args"] = str(step["with"]["build-args"]).replace(
+        "IMAGE_SOURCE=https://github.com/${{ github.repository }}",
+        "IMAGE_SOURCE=https://github.com/genomoncology/biomcp",
+    )
+    with pytest.raises(AssertionError, match="image source label"):
+        _assert_image_source_build_argument(parsed)
+
+
+# ---------------------------------------------------------------------------
+# Ticket 2053. The production-only publish guards are executed, not
+# read: each guarded step's own script (taken from the parsed
+# workflow) runs with stub uv, uvx, gh and git on PATH under both
+# repository names, and the stub log proves which publisher ran. A
+# guard whose script stops guarding — a deleted exit 0, uv publish
+# hoisted above the if, an extra exit 0 ahead of the production
+# upload — fails these tests even though its text still reads safe.
+# ---------------------------------------------------------------------------
+
+PRODUCTION_REPOSITORY = "genomoncology/biomcp"
+REHEARSAL_REPOSITORY = "genomoncology/biomcp-release-rehearsal"
+
+X86_CHECKSUM = "1" * 64
+ARM64_CHECKSUM = "2" * 64
+
+
+def _assert_image_source_build_argument(parsed: dict) -> None:
+    step = _step_by_name(
+        parsed, "container-publish", "Build and push the versioned image"
+    )
+    args = str(step["with"]["build-args"])
+    expected = "IMAGE_SOURCE=https://github.com/${{ github.repository }}"
+    assert expected in args, (
+        "the container image source label must follow the repository running "
+        f"the workflow; expected {expected!r} in build-args"
+    )
+
+
+def _guard_run_script(job: str, needle: str) -> str:
+    """The exact script the guarded step runs, from the parsed workflow."""
+    step = _step_by_name(_load_release_pipeline(), job, needle)
+    run = str(step["run"])
+    assert "${{" not in run, (
+        f"{job}/{needle}: the guard script must stay directly executable"
+    )
+    return run
+
+
+def _write_stub_tools(directory: Path, log: Path) -> None:
+    """Stub uv, uvx, gh and git on PATH; each records its invocation."""
+    directory.mkdir(parents=True, exist_ok=True)
+    quoted_log = shlex.quote(str(log))
+    bodies = {}
+    for name in ("uv", "uvx"):
+        bodies[name] = (
+            "#!/usr/bin/env bash\n"
+            f"printf '{name} %s\\n' \"$*\" >> {quoted_log}\n"
+            "exit 0\n"
+        )
+    bodies["git"] = (
+        "#!/usr/bin/env bash\n"
+        f"printf 'git %s\\n' \"$*\" >> {quoted_log}\n"
+        # A staged change exists, so the production path reaches its
+        # commit and push instead of stopping at "already current".
+        'if [ "$1" = "diff" ] && [ "$2" = "--cached" ]; then exit 1; fi\n'
+        "exit 0\n"
+    )
+    bodies["gh"] = (
+        "#!/usr/bin/env bash\n"
+        f"printf 'gh %s\\n' \"$*\" >> {quoted_log}\n"
+        'if [ -n "${GH_STUB_FAIL:-}" ]; then echo "gh failed" >&2; exit 1; fi\n'
+        'printf \'%s\' "${GH_RUN_LIST_REPLY-1}"\n'
+        "exit 0\n"
+    )
+    for name, body in bodies.items():
+        stub = directory / name
+        stub.write_text(body, encoding="utf-8")
+        stub.chmod(0o755)
+
+
+def _run_guard_script(
+    script: str,
+    tmp_path: Path,
+    *,
+    repository: str,
+    log: Path,
+    extra_env: dict[str, str] | None = None,
+    setup=None,
+) -> subprocess.CompletedProcess[str]:
+    stubs = tmp_path / "stub-bin"
+    _write_stub_tools(stubs, log)
+    scratch = tmp_path / repository.replace("/", "-")
+    scratch.mkdir(parents=True, exist_ok=True)
+    if setup is not None:
+        setup(scratch)
+    script_file = scratch / "guard.sh"
+    script_file.write_text(script, encoding="utf-8")
+    env = os.environ | {
+        "PATH": f"{stubs}{os.pathsep}{os.environ.get('PATH', '')}",
+        "GITHUB_REPOSITORY": repository,
+        "GITHUB_SHA": "f" * 40,
+        **(extra_env or {}),
+    }
+    # GitHub Actions runs `bash -e {0}` by default; mirror it so a
+    # failing command inside the script fails the step.
+    return subprocess.run(
+        ["bash", "-e", str(script_file)],
+        cwd=scratch,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+
+def _log_lines(log: Path) -> list[str]:
+    return log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+
+
+def _assert_tool_ran(log: Path, prefix: str, where: str) -> None:
+    assert any(line.startswith(prefix) for line in _log_lines(log)), (
+        f"{where}: {prefix} did not run"
+    )
+
+
+def _assert_tool_did_not_run(log: Path, prefix: str, where: str) -> None:
+    assert not any(line.startswith(prefix) for line in _log_lines(log)), (
+        f"{where}: {prefix} ran"
+    )
+
+
+def _write_release_checksums(scratch: Path, arm64: str | None = None) -> None:
+    """The dist/ the Homebrew step downloads: both platform checksums,
+    or only x86 when arm64 is None."""
+    dist = scratch / "dist"
+    dist.mkdir(parents=True, exist_ok=True)
+    (dist / "biomcp-darwin-x86_64.tar.gz.sha256").write_text(
+        f"{X86_CHECKSUM}  biomcp-darwin-x86_64.tar.gz\n", encoding="utf-8"
+    )
+    if arm64 is not None:
+        (dist / "biomcp-darwin-arm64.tar.gz.sha256").write_text(
+            f"{arm64}  biomcp-darwin-arm64.tar.gz\n", encoding="utf-8"
+        )
+
+
+def _assert_pypi_guard_behavior(script: str, tmp_path: Path) -> None:
+    """Under each repository name the guarded script runs the right
+    publisher and only that publisher."""
+    for repository, ran, stopped in (
+        (PRODUCTION_REPOSITORY, "uv publish", "uvx"),
+        (REHEARSAL_REPOSITORY, "uvx twine check", "uv publish"),
+    ):
+        log = tmp_path / f"pypi-{repository.replace('/', '-')}.log"
+        result = _run_guard_script(script, tmp_path, repository=repository, log=log)
+        assert result.returncode == 0, (
+            f"{repository}: the publish step must succeed under stubs: "
+            f"{result.stderr}"
+        )
+        _assert_tool_ran(log, ran, repository)
+        _assert_tool_did_not_run(log, stopped, repository)
+
+
+def _assert_homebrew_guard_behavior(script: str, tmp_path: Path) -> None:
+    """The step renders the formula from the release checksums under
+    both names, and only production touches git — even with a tap
+    token present in the rehearsal."""
+    for repository in (PRODUCTION_REPOSITORY, REHEARSAL_REPOSITORY):
+        log = tmp_path / f"homebrew-{repository.replace('/', '-')}.log"
+        runner_temp = tmp_path / f"runner-temp-{repository.replace('/', '-')}"
+        result = _run_guard_script(
+            script,
+            tmp_path,
+            repository=repository,
+            log=log,
+            extra_env={
+                "TAG": "v0.9.2",
+                "HOMEBREW_TAP_TOKEN": "stub-token",
+                "RUNNER_TEMP": str(runner_temp),
+            },
+            setup=lambda scratch: _write_release_checksums(scratch, ARM64_CHECKSUM),
+        )
+        assert result.returncode == 0, f"{repository}: {result.stderr}"
+        formula = (runner_temp / "Formula" / "biomcp.rb").read_text(
+            encoding="utf-8"
+        )
+        assert f'sha256 "{X86_CHECKSUM}"' in formula
+        assert f'sha256 "{ARM64_CHECKSUM}"' in formula
+        assert 'version "0.9.2"' in formula
+        # Ticket 2064: the rendered formula carries a Homebrew test
+        # block, so `brew audit` style checks pass on the tap.
+        assert "test do" in formula
+        assert (
+            'assert_match version.to_s, shell_output("#{bin}/biomcp --version")'
+            in formula
+        )
+        if repository == PRODUCTION_REPOSITORY:
+            _assert_tool_ran(log, "git clone", repository)
+            _assert_tool_ran(log, "git push origin HEAD:main", repository)
+        else:
+            assert _log_lines(log) == [], (
+                f"{repository}: the rehearsal must not touch git"
+            )
+            assert "not pushing" in result.stdout
+
+
+def test_pypi_publish_guard_runs_the_right_publisher_under_each_repository(
+    tmp_path: Path,
+) -> None:
+    """Ticket 2049's guard, executed: production uploads through uv,
+    the rehearsal checks wheel metadata through uvx and uploads
+    nothing."""
+    _assert_pypi_guard_behavior(
+        _guard_run_script("pypi-publish", "Publish to PyPI"), tmp_path
+    )
+
+
+def test_homebrew_guard_renders_and_checks_both_checksums_then_guards_the_push(
+    tmp_path: Path,
+) -> None:
+    """Ticket 2053: the rehearsal renders the production formula with
+    both release checksums and pushes nothing; production clones the
+    tap and pushes the same rendered formula."""
+    _assert_homebrew_guard_behavior(
+        _guard_run_script("homebrew-tap", "Update Homebrew tap"), tmp_path
+    )
+
+
+def test_homebrew_rehearsal_fails_when_a_release_checksum_is_missing(
+    tmp_path: Path,
+) -> None:
+    """The render must check both checksums before it exits: a dist/
+    without the arm64 checksum fails the rehearsal instead of passing
+    on nothing."""
+    log = tmp_path / "homebrew-missing-arm64.log"
+    result = _run_guard_script(
+        _guard_run_script("homebrew-tap", "Update Homebrew tap"),
+        tmp_path,
+        repository=REHEARSAL_REPOSITORY,
+        log=log,
+        extra_env={
+            "TAG": "v0.9.2",
+            "HOMEBREW_TAP_TOKEN": "stub-token",
+            "RUNNER_TEMP": str(tmp_path / "runner-temp-missing-arm64"),
+        },
+        setup=lambda scratch: _write_release_checksums(scratch),
+    )
+    assert result.returncode != 0, (
+        "the rehearsal must fail without both platform checksums"
+    )
+    assert _log_lines(log) == [], "the failed rehearsal must not touch git"
+
+
+def _move_publish_above_guard(script: str) -> str:
+    publish = "uv publish --trusted-publishing always dist/*\n"
+    guard = 'if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then\n'
+    without = script.replace(publish, "", 1)
+    return without.replace(guard, publish + guard, 1)
+
+
+PYPI_GUARD_MUTATIONS = {
+    # The rehearsal exit 0 deleted: the rehearsal run also reaches
+    # `uv publish`, which uploads from the rehearsal repository.
+    "rehearsal_exit_zero_deleted": (
+        lambda script: script.replace("  exit 0\n", "", 1),
+        "uv publish ran",
+    ),
+    # uv publish hoisted above the guard: it runs first under every
+    # repository name.
+    "uv_publish_moved_above_the_guard": (
+        _move_publish_above_guard,
+        "uv publish ran",
+    ),
+    # An extra exit 0 ahead of the production upload: production
+    # stops publishing while the rehearsal still checks metadata.
+    "extra_exit_zero_stops_production": (
+        lambda script: script.replace("fi\nuv publish", "fi\nexit 0\nuv publish", 1),
+        "uv publish did not run",
+    ),
+}
+
+
+@pytest.mark.parametrize("name", sorted(PYPI_GUARD_MUTATIONS))
+def test_pypi_guard_mutations_break_the_executed_behavior(
+    name: str, tmp_path: Path
+) -> None:
+    """Each recorded mutation of the publish step fails the executed
+    guard checks, so the guards cannot silently stop guarding."""
+    mutate, expected = PYPI_GUARD_MUTATIONS[name]
+    script = _guard_run_script("pypi-publish", "Publish to PyPI")
+    mutated = mutate(script)
+    assert mutated != script, f"{name}: the mutation no longer applies"
+    with pytest.raises(AssertionError, match=re.escape(expected)):
+        _assert_pypi_guard_behavior(mutated, tmp_path)
+
+
+def test_homebrew_rehearsal_exit_zero_deleted_lets_git_run(tmp_path: Path) -> None:
+    """Red proof: deleting the rehearsal exit 0 lets the rehearsal —
+    carrying a tap token — clone and push the production tap."""
+    script = _guard_run_script("homebrew-tap", "Update Homebrew tap")
+    mutated = script.replace("  exit 0\n", "", 1)
+    assert mutated != script
+    with pytest.raises(AssertionError, match="must not touch git"):
+        _assert_homebrew_guard_behavior(mutated, tmp_path)
+
+
+def _ci_gate_script() -> str:
+    return _guard_run_script("version-check", "Require green CI on the tagged commit")
+
+
+@pytest.mark.parametrize("repository", [PRODUCTION_REPOSITORY, REHEARSAL_REPOSITORY])
+def test_the_ci_gate_accepts_a_green_run_and_names_the_commit(
+    tmp_path: Path, repository: str
+) -> None:
+    """Ticket 2053: the release waits on ci.yml success for the exact
+    commit; the query names the workflow and the SHA, so it can never
+    pick another workflow's run."""
+    log = tmp_path / f"ci-green-{repository.replace('/', '-')}.log"
+    result = _run_guard_script(
+        _ci_gate_script(),
+        tmp_path,
+        repository=repository,
+        log=log,
+        extra_env={"GH_RUN_LIST_REPLY": "1"},
+    )
+    assert result.returncode == 0, result.stderr
+    assert "finished green" in result.stdout
+    calls = " ".join(_log_lines(log))
+    assert "gh run list --workflow ci.yml --commit " in calls
+    assert "f" * 40 in calls
+    assert "--limit 100" in calls
+    assert "--json conclusion" in calls
+    assert 'select(.conclusion == "success")' in calls
+    # Ticket 2060: the old filter used --status and --conclusion,
+    # flags no shipped gh accepts.
+    assert "--status completed" not in calls
+    assert " --conclusion " not in calls
+
+
+def test_the_ci_gate_flags_parse_on_the_real_gh_cli() -> None:
+    """Ticket 2060: the CI gate's gh flags must parse on a real gh
+    binary. Flag errors happen before any network call, so running
+    the step's exact invocation surfaces an unsupported flag at
+    once. The stub gh accepts every flag, and a runner's gh rejected
+    the release tag's --conclusion, so only the real binary can
+    prove the flag surface."""
+    gh = shutil.which("gh")
+    assert gh is not None, (
+        "the CI gate's flags must be proven against the real gh CLI "
+        "on PATH; the stub gh accepts any flag"
+    )
+    script = _ci_gate_script()
+    # Collapse the shell's line continuations, then take the exact
+    # gh invocation the step runs: from `gh run list` to the closing
+    # `)"` at the end of the assignment line.
+    one_line = re.sub(r"\\\n\s*", " ", script)
+    match = re.search(r'gh (run list [^\n]*?)\)"', one_line)
+    assert match is not None, "the CI gate must run gh run list"
+    command = match.group(1)
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("GH_")
+    }
+    env.update(
+        GH_REPO=PRODUCTION_REPOSITORY,
+        # A deliberately invalid token keeps the run from spending a
+        # host credential; flags parse before any request leaves.
+        GH_TOKEN="flag-parse-check-only",
+        GITHUB_SHA=commit,
+    )
+    result = subprocess.run(
+        ["bash", "-c", f'exec "{gh}" {command}'],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=REPO_ROOT,
+    )
+    output = result.stdout + result.stderr
+    assert "unknown flag" not in output, (
+        f"the CI gate uses a flag the real gh CLI rejects:\n{output}"
+    )
+    # An invalid flag makes gh print its usage text; a real answer
+    # (green, empty, or an auth failure) never does.
+    assert "Usage:" not in output, (
+        f"gh answered the CI gate with its usage text:\n{output}"
+    )
+
+
+@pytest.mark.parametrize("reply", ["0", "", "[]"])
+def test_the_ci_gate_refuses_when_no_green_run_exists(
+    tmp_path: Path, reply: str
+) -> None:
+    """A commit with no finished green ci.yml run — CI missing, still
+    running, or failed — fails the release. The count must be a
+    plain nonzero number: the jq filter turns an empty run list
+    into 0, and a raw [] or anything else means gh or jq answered
+    something other than a count, so the release refuses too."""
+    result = _run_guard_script(
+        _ci_gate_script(),
+        tmp_path,
+        repository=PRODUCTION_REPOSITORY,
+        log=tmp_path / f"ci-refuse-{reply or 'empty'}.log",
+        extra_env={"GH_RUN_LIST_REPLY": reply},
+    )
+    assert result.returncode != 0
+    assert "refusing to release" in result.stderr
+
+
+def test_the_ci_gate_fails_when_gh_fails(tmp_path: Path) -> None:
+    """A failing gh call must fail the step, not read as zero runs
+    and quietly release."""
+    result = _run_guard_script(
+        _ci_gate_script(),
+        tmp_path,
+        repository=PRODUCTION_REPOSITORY,
+        log=tmp_path / "ci-gh-fails.log",
+        extra_env={"GH_STUB_FAIL": "1"},
+    )
+    assert result.returncode != 0
+    assert "refusing to release" in result.stderr or "gh failed" in result.stderr

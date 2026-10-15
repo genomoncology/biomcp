@@ -8,4 +8,4 @@ Imported from March ticket 079. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/079-repo-cleanup-remove-tracked-march-artifacts-restore-test-contracts
+Artifacts: ~/workspace/planning/biomcp/artifacts/079-repo-cleanup-remove-tracked-march-artifacts-restore-test-contracts

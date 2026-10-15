@@ -295,7 +295,7 @@ fn facility_geo_keeps_shared_site_name_and_distance_match() {
 #[serial_test::serial(source_env)]
 async fn detail_parse_failure_keeps_the_row_and_marks_verification_incomplete() {
     let (base, requests, server) = ctgov_json_fixture(r#"{"unexpected":"detail"}"#).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let study = ctgov_search_results(vec![ctgov_search_study_fixture(
         "NCT00000001",

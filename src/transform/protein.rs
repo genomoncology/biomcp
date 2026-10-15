@@ -94,7 +94,10 @@ mod tests {
             organism: Some(UniProtOrganism {
                 scientific_name: Some("Homo sapiens".to_string()),
             }),
-            sequence: Some(UniProtSequence { length: Some(766) }),
+            sequence: Some(UniProtSequence {
+                length: Some(766),
+                value: None,
+            }),
             comments: vec![UniProtComment {
                 comment_type: Some("FUNCTION".to_string()),
                 texts: vec![UniProtTextValue {

@@ -12,7 +12,9 @@ and `inapplicable`. It is not a separate provider-status vocabulary.
 
 A successful Drugs@FDA lookup can truthfully return no approvals. The empty
 `approvals` array remains compatible, and both the entity and provenance record
-that OpenFDA successfully established the empty result.
+that OpenFDA successfully established the empty result. An empty outcome may
+also carry one bounded reason in its `message` when the zero itself needs
+naming, such as a drug label lookup that matched no SPL record.
 
 ```bash
 ../../tools/biomcp-ci --json get drug fixture-drug approvals \
@@ -180,11 +182,12 @@ exit=1'
 ```
 
 When label acquisition fails, a sole interaction card keeps DDInter evidence
-and credits DrugBank only when the retained row has its narrative. The required
-label shapes still fail instead of starting interaction settlement. The native
-`required_label_failures_make_zero_ddinter_ready_calls` test uses a direct
-test-only DDInter observer, proves the observer with one positive control, then
-asserts exactly zero DDInter ready calls for both required-label shapes.
+and credits DrugBank only when the retained row has its narrative. The
+required label shapes settle with an unavailable label outcome instead of
+aborting the card. The native
+`label_fetch_failures_settle_as_unavailable_outcomes` test drives the same
+fixture server and asserts the settled unavailable outcome for both
+required-label shapes without leaking the provider's error detail.
 
 ```bash
 BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-ddinter-openfda-fail interactions \
@@ -196,30 +199,27 @@ BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json 
 BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-drugbank-openfda-fail interactions \
   | jq '(.interactions[0].description == "DrugBank narrative survives OpenFDA failure.") and (.section_outcomes.interactions.outcome == "degraded") and (.section_outcomes.interactions.sources == ["DDInter","DrugBank"]) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL"; "i")) | not)' \
   | mustmatch 'true'
-assert_required_label_failure() {
+assert_label_fetch_failure_settles() {
   mode=$1; shift
-  set +e
   if test "$mode" = json; then
-    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@")
+    BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@" \
+      | jq -e '(.section_outcomes.label == {"outcome":"unavailable","sources":[],"message":"OpenFDA label evidence is temporarily unavailable."}) and (has("label") | not) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"unavailable","sources":[]}])' >/dev/null
   else
-    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" 2>&1)
+    BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" \
+      | mustmatch like '**FDA Label status (OpenFDA label):** unavailable; no conclusion can be drawn — OpenFDA label evidence is temporarily unavailable.
+Retry: `biomcp get drug fixture-drug-empty-openfda-fail label`'
   fi
-  status=$?
-  set -e
-  test "$status" -eq 1
-  case "$output" in *SENSITIVE-UPSTREAM-DETAIL*) return 1;; esac
-  if test "$mode" = json; then
-    printf '%s\n' "$output" | jq -e '.error == {"code":"api","message":"API request to OpenFDA failed.","source":"OpenFDA","recovery":"Retry the remote source."}' >/dev/null
-  else
-    test "$output" = 'Error: API request to OpenFDA failed. Retry the remote source.'
-  fi
+  BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" 2>&1 \
+    | mustmatch not like 'SENSITIVE-UPSTREAM-DETAIL'
+  BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@" \
+    | mustmatch not like 'SENSITIVE-UPSTREAM-DETAIL'
 }
-assert_required_label_failure markdown label interactions
-assert_required_label_failure json label interactions
-assert_required_label_failure markdown all
-assert_required_label_failure json all
-printf 'required-label failures abort before DDInter reads\n' \
-  | mustmatch 'required-label failures abort before DDInter reads'
+assert_label_fetch_failure_settles markdown label interactions
+assert_label_fetch_failure_settles json label interactions
+assert_label_fetch_failure_settles markdown all
+assert_label_fetch_failure_settles json all
+printf 'label fetch failures settle as unavailable outcomes\n' \
+  | mustmatch 'label fetch failures settle as unavailable outcomes'
 ```
 
 ## Unrequested sections stay distinguishable

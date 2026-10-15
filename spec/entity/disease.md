@@ -141,6 +141,115 @@ set -o pipefail
   | mustmatch 'true'
 ```
 
+## Ambiguous Abbreviations Refuse in Get Disease
+
+Ticket 2017. The synonym-field fix from 1295 brought every disease that
+holds an abbreviation into one result set, and `get disease` then picked one
+hit silently: the tie-break favoured records with no label (their ID is the
+shortest fallback name), and the gene section re-resolved the requested
+abbreviation in Open Targets, so `get disease MF` showed the Myotonia
+fluctuans definition with mycosis fungoides genes and `CAD` mixed cold
+agglutinin disease with coronary artery disease genes. `get disease` now
+refuses with every named candidate when several diseases hold the token
+exactly (the ticket 1297 pattern), and two-letter abbreviations such as `MM`
+refuse even when the source holds them on one disease, because a token that
+short cannot name one disease reliably. A single holder of three or more
+letters still resolves, and the card then assembles from that one record
+only. Non-human MONDO records (descendants of `non-human animal disease`,
+MONDO:0005583) never count toward the refusal, and a full word such as
+`myeloma` is ambiguous only when several records carry it as their exact
+NAME — the synonym holders that made `myeloma` refuse were the veterinary
+plasma-cell-myeloma record plus multiple myeloma itself. Candidates name
+themselves through the MONDO `label` when the search response carries no
+`name`. These rows replay recorded MyDisease responses through the routine
+disease fixture.
+
+| query | outcome |
+|---|---|
+| MF | {"code":"invalid_argument","candidates":2} |
+| CAD | {"code":"invalid_argument","candidates":3} |
+| MM | {"code":"invalid_argument","candidates":1} |
+| MDS | {"code":"invalid_argument","candidates":2} |
+| CRC | {"code":"ok","candidates":0,"id":"MONDO:0024331","name":"colorectal carcinoma"} |
+| myeloma | {"code":"ok","candidates":0,"id":"MONDO:0009693","name":"multiple myeloma"} |
+
+```bash each_row="Ambiguous Abbreviations Refuse in Get Disease"
+"$BIOMCP_BIN" --json --no-cache get disease '{{query}}' \
+  | jq -c 'if .error then {code: .error.code, candidates: ([.error.message | scan("- [^\\n]+")] | length)} else {code: "ok", candidates: 0, id: .id, name: .name} end' \
+  | mustmatch like '{{outcome}}'
+```
+
+Ticket 2040: the refusal also names a clinical reading no indexed source
+record holds, as a pointer line that never joins the candidates. `MM`
+points at multiple myeloma and `MF` points at myelofibrosis — the
+reading the ClinicalTrials.gov corpus carries most (28 of the first 50
+`MF` trials list a myelofibrosis condition, against 6 for mycosis
+fungoides, measured 2026-10-11) — because MyDisease, the Disease
+Ontology entry, and the NCI Thesaurus synonym lists hold `MM` and `MF`
+on no myeloma or myelofibrosis record at all (checked live 2026-10-11).
+
+```bash
+"$BIOMCP_BIN" --json --no-cache get disease MF \
+  | jq -r '.error.message' \
+  | grep -F "Clinical reading: 'MF' also names myelofibrosis (MONDO:0009692)" \
+  | mustmatch like 'also names myelofibrosis'
+"$BIOMCP_BIN" --json --no-cache get disease MM \
+  | jq -r '.error.message' \
+  | grep -F "Clinical reading: 'MM' usually means multiple myeloma (MONDO:0009693)" \
+  | mustmatch like 'usually means multiple myeloma'
+```
+
+A refusal names every holder with a working retry form.
+
+```bash run id=ambiguous-abbreviation-cad-refusal exit=2
+../../tools/biomcp-ci --json get disease CAD
+```
+
+```json expect=ambiguous-abbreviation-cad-refusal contains
+{
+  "error": {
+    "code": "invalid_argument",
+    "message": "Invalid argument: Ambiguous disease abbreviation 'CAD': 3 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- coronary artery disease (MONDO:0005010)\n- cold agglutinin disease (MONDO:0018922)\n- congenital alveolar dysplasia (MONDO:0100077)\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"CAD\"` to see every match."
+  }
+}
+```
+
+A short abbreviation's refusal also names the clinical reading the source
+cannot see (ticket 2032): MyDisease holds `MM` on Miyoshi muscular
+dystrophy alone, and no myeloma record carries `MM` in any indexed field,
+so the candidate list alone would hide the disease oncology usually means.
+The reading arrives as a pointer line with a working command, never as a
+source candidate, and `MM` still refuses — curated abbreviation
+preferences stay deferred.
+
+```bash run id=ambiguous-abbreviation-mm-refusal exit=2
+../../tools/biomcp-ci --json get disease MM
+```
+
+```json expect=ambiguous-abbreviation-mm-refusal contains
+{
+  "error": {
+    "code": "invalid_argument",
+    "message": "Invalid argument: Ambiguous disease abbreviation 'MM': the source holds it on 1 disease, but a token this short cannot name one disease reliably; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- Miyoshi muscular dystrophy (MONDO:0009685)\nClinical reading: 'MM' usually means multiple myeloma (MONDO:0009693); try `biomcp get disease \"multiple myeloma\"`.\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MM\"` to see every match."
+  }
+}
+```
+
+Search keeps surfacing every holder and now breaks exact-abbreviation ties
+by labelled first, then shorter canonical name: `MDS` ranks myelodysplastic
+syndrome above Miller-Dieker lissencephaly, and `CAD` leads with the
+labelled coronary artery disease instead of an unlabelled record.
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json search disease -q MDS --no-fallback --limit 2 \
+  | jq -r '[.results[].name] | join(" | ")' \
+  | mustmatch 'myelodysplastic syndrome | Miller-Dieker lissencephaly syndrome'
+../../tools/biomcp-ci --json search disease -q CAD --no-fallback --limit 1 \
+  | jq -r '.results[0].name' \
+  | mustmatch 'coronary artery disease'
+```
+
 
 ## Genes & Diagnostics
 

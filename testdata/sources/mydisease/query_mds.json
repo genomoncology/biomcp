@@ -1,0 +1,703 @@
+{
+ "took": 3,
+ "total": 12,
+ "max_score": 12.257807,
+ "hits": [
+  {
+   "_id": "MONDO:0006311",
+   "_score": 12.257807,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "myelodysplastic/myeloproliferative neoplasm",
+    "synonyms": {
+     "exact": [
+      "myelodysplastic myeloproliferative cancer",
+      "Myeloproliferative/Myelodysplastic syndromes"
+     ],
+     "related": [
+      "myelodysplastic myeloproliferative disease"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "MDS/MPN",
+      "MPD-MDS",
+      "MPD/MDS",
+      "myelodysplastic/myeloproliferative neoplasm",
+      "myelodysplastic/myeloproliferative neoplasms"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0005272",
+   "_score": 10.895903,
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0001897"
+     },
+     {
+      "hpo_id": "HP:0002094"
+     },
+     {
+      "hpo_id": "HP:0005528"
+     },
+     {
+      "hpo_id": "HP:0030872"
+     },
+     {
+      "hpo_id": "HP:0001873"
+     },
+     {
+      "hpo_id": "HP:0001875"
+     },
+     {
+      "hpo_id": "HP:0001892"
+     },
+     {
+      "hpo_id": "HP:0002863"
+     },
+     {
+      "hpo_id": "HP:0010972"
+     },
+     {
+      "hpo_id": "HP:0001972"
+     },
+     {
+      "hpo_id": "HP:0012133"
+     },
+     {
+      "hpo_id": "HP:0012150"
+     },
+     {
+      "hpo_id": "HP:0012378"
+     },
+     {
+      "hpo_id": "HP:0001895"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "MDS with single lineage dysplasia",
+      "MDS-SLD",
+      "RA",
+      "refractory anaemia",
+      "refractory anemia"
+     ],
+     "related": [
+      "aregenerative anaemia"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0009532",
+   "_score": 10.8138,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "Miller-Dieker lissencephaly syndrome",
+    "synonyms": {
+     "exact": [
+      "MDS",
+      "Miller-Dieker syndrome"
+     ]
+    }
+   },
+   "hpo": [
+    {
+     "inheritance": [
+      {
+       "hpo_id": "HP:0000006",
+       "hpo_name": "Autosomal dominant inheritance"
+      },
+      {
+       "hpo_id": "HP:0001466",
+       "hpo_name": "Contiguous gene syndrome"
+      }
+     ],
+     "phenotype_related_to_disease": [
+      {
+       "hpo_id": "HP:0000252"
+      },
+      {
+       "hpo_id": "HP:0001339"
+      },
+      {
+       "hpo_id": "HP:0011800"
+      },
+      {
+       "hpo_id": "HP:0001627"
+      },
+      {
+       "hpo_id": "HP:0002007"
+      },
+      {
+       "hpo_id": "HP:0000286"
+      },
+      {
+       "hpo_id": "HP:0025386"
+      },
+      {
+       "hpo_id": "HP:0002389"
+      },
+      {
+       "hpo_id": "HP:0000684"
+      },
+      {
+       "hpo_id": "HP:0002100"
+      },
+      {
+       "hpo_id": "HP:0001250"
+      },
+      {
+       "hpo_id": "HP:0003196"
+      },
+      {
+       "hpo_id": "HP:0010442"
+      },
+      {
+       "hpo_id": "HP:0012469"
+      },
+      {
+       "hpo_id": "HP:0006191"
+      },
+      {
+       "hpo_id": "HP:0000518"
+      },
+      {
+       "hpo_id": "HP:0007045"
+      },
+      {
+       "hpo_id": "HP:0000954"
+      },
+      {
+       "hpo_id": "HP:0000358"
+      },
+      {
+       "hpo_id": "HP:0001249"
+      },
+      {
+       "hpo_id": "HP:0000175"
+      },
+      {
+       "hpo_id": "HP:0000252"
+      },
+      {
+       "hpo_id": "HP:0002079"
+      },
+      {
+       "hpo_id": "HP:0004298"
+      },
+      {
+       "hpo_id": "HP:0011097"
+      },
+      {
+       "hpo_id": "HP:0012385"
+      },
+      {
+       "hpo_id": "HP:0001939"
+      },
+      {
+       "hpo_id": "HP:0001339"
+      },
+      {
+       "hpo_id": "HP:0001539"
+      },
+      {
+       "hpo_id": "HP:0004209"
+      },
+      {
+       "hpo_id": "HP:0000125"
+      },
+      {
+       "hpo_id": "HP:0000960"
+      },
+      {
+       "hpo_id": "HP:0000369"
+      },
+      {
+       "hpo_id": "HP:0008947"
+      },
+      {
+       "hpo_id": "HP:0000582"
+      },
+      {
+       "hpo_id": "HP:0000023"
+      },
+      {
+       "hpo_id": "HP:0000463"
+      },
+      {
+       "hpo_id": "HP:0002282"
+      },
+      {
+       "hpo_id": "HP:0031882"
+      },
+      {
+       "hpo_id": "HP:0001270"
+      },
+      {
+       "hpo_id": "HP:0001508"
+      },
+      {
+       "hpo_id": "HP:0007020"
+      },
+      {
+       "hpo_id": "HP:0030680"
+      },
+      {
+       "hpo_id": "HP:0000219"
+      },
+      {
+       "hpo_id": "HP:0001627"
+      },
+      {
+       "hpo_id": "HP:0001302"
+      },
+      {
+       "hpo_id": "HP:0000215"
+      },
+      {
+       "hpo_id": "HP:0001561"
+      },
+      {
+       "hpo_id": "HP:0000431"
+      },
+      {
+       "hpo_id": "HP:0009473"
+      },
+      {
+       "hpo_id": "HP:0001558"
+      },
+      {
+       "hpo_id": "HP:0001511"
+      },
+      {
+       "hpo_id": "HP:0002007"
+      },
+      {
+       "hpo_id": "HP:0000028"
+      },
+      {
+       "hpo_id": "HP:0000347"
+      },
+      {
+       "hpo_id": "HP:0002247"
+      }
+     ]
+    },
+    {
+     "phenotype_related_to_disease": [
+      {
+       "hpo_id": "HP:0000112"
+      },
+      {
+       "hpo_id": "HP:0000177"
+      },
+      {
+       "hpo_id": "HP:0000286"
+      },
+      {
+       "hpo_id": "HP:0000348"
+      },
+      {
+       "hpo_id": "HP:0000463"
+      },
+      {
+       "hpo_id": "HP:0000960"
+      },
+      {
+       "hpo_id": "HP:0001250"
+      },
+      {
+       "hpo_id": "HP:0001251"
+      },
+      {
+       "hpo_id": "HP:0001339"
+      },
+      {
+       "hpo_id": "HP:0001510"
+      },
+      {
+       "hpo_id": "HP:0001539"
+      },
+      {
+       "hpo_id": "HP:0001561"
+      },
+      {
+       "hpo_id": "HP:0001626"
+      },
+      {
+       "hpo_id": "HP:0002079"
+      },
+      {
+       "hpo_id": "HP:0002120"
+      },
+      {
+       "hpo_id": "HP:0002353"
+      },
+      {
+       "hpo_id": "HP:0003196"
+      },
+      {
+       "hpo_id": "HP:0004209"
+      }
+     ]
+    }
+   ],
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "lissencephaly due to 17p13.3 deletion",
+      "Miller-Dieker lissencephaly syndrome",
+      "Miller-Dieker syndrome",
+      "monosomy 17p13.3",
+      "telomeric deletion 17p"
+     ],
+     "related": [
+      "MDLS"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0044873",
+   "_score": 10.26833,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "childhood MDS",
+      "childhood myelodysplastic syndrome"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0018881",
+   "_score": 10.032156,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "myelodysplastic syndrome",
+    "synonyms": {}
+   },
+   "hpo": {
+    "inheritance": {
+     "hpo_id": "HP:0001442",
+     "hpo_name": "Typified by somatic mosaicism"
+    },
+    "phenotype_related_to_disease": {
+     "hpo_id": "HP:0002863"
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "dysmyelopoietic syndrome",
+      "hematopoeitic - myelodysplastic syndrome (MDS)",
+      "MDS",
+      "MDS, unclassifiable",
+      "MDS-U",
+      "myelodysplasia",
+      "myelodysplastic neoplasm",
+      "myelodysplastic syndrome",
+      "myelodysplastic syndrome, somatic",
+      "myelodysplastic syndrome, unclassifiable",
+      "myelodysplastic syndrome/neoplasm",
+      "Myelodysplastic Syndromes",
+      "myelodysplastic syndromes",
+      "oligoblastic leukaemia",
+      "oligoblastic leukemia",
+      "preleukemia",
+      "smoldering leukemia",
+      "smouldering leukaemia"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0019453",
+   "_score": 9.25127,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "MDS-MLD",
+      "RCMD",
+      "refractory cytopenia with multilineage dysplasia"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0042982",
+   "_score": 8.955592,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "GATA2 deficiency",
+      "GATA2 deficiency with susceptibility to MDS/AML"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0015040",
+   "_score": 7.9404573,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "MDS-EB-1",
+      "myelodysplastic syndrome with Excess blasts-1",
+      "RAEB-1",
+      "RAEB-I"
+     ],
+     "related": [
+      "refractory anaemia with excess blasts type 1"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0015041",
+   "_score": 7.9404573,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "MDS-EB-2",
+      "myelodysplastic syndrome with Excess blasts-2",
+      "RAEB-2",
+      "RAEB-II"
+     ],
+     "related": [
+      "refractory anaemia with excess blasts type 2"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0019157",
+   "_score": 5.4180937,
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0004828"
+     },
+     {
+      "hpo_id": "HP:0010972"
+     },
+     {
+      "hpo_id": "HP:0000980"
+     },
+     {
+      "hpo_id": "HP:0001895"
+     },
+     {
+      "hpo_id": "HP:0001897"
+     },
+     {
+      "hpo_id": "HP:0012132"
+     },
+     {
+      "hpo_id": "HP:0200143"
+     },
+     {
+      "hpo_id": "HP:0001231"
+     },
+     {
+      "hpo_id": "HP:0001744"
+     },
+     {
+      "hpo_id": "HP:0001873"
+     },
+     {
+      "hpo_id": "HP:0001931"
+     },
+     {
+      "hpo_id": "HP:0002240"
+     },
+     {
+      "hpo_id": "HP:0002863"
+     },
+     {
+      "hpo_id": "HP:0011447"
+     },
+     {
+      "hpo_id": "HP:0012136"
+     },
+     {
+      "hpo_id": "HP:0012137"
+     },
+     {
+      "hpo_id": "HP:0012143"
+     },
+     {
+      "hpo_id": "HP:0031035"
+     },
+     {
+      "hpo_id": "HP:0001635"
+     },
+     {
+      "hpo_id": "HP:0001875"
+     },
+     {
+      "hpo_id": "HP:0001876"
+     },
+     {
+      "hpo_id": "HP:0001892"
+     },
+     {
+      "hpo_id": "HP:0001894"
+     },
+     {
+      "hpo_id": "HP:0001913"
+     },
+     {
+      "hpo_id": "HP:0001974"
+     },
+     {
+      "hpo_id": "HP:0004808"
+     },
+     {
+      "hpo_id": "HP:0005513"
+     },
+     {
+      "hpo_id": "HP:0005528"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acquired idiopathic sideroblastic anaemia",
+      "acquired idiopathic sideroblastic anemia",
+      "AISA",
+      "MDS with ring sideroblasts",
+      "MDS-RS",
+      "myelodysplastic syndrome with Ring sideroblasts",
+      "primary acquired sideroblastic anaemia",
+      "primary acquired sideroblastic anemia",
+      "Pure sideroblastic Anaemia",
+      "Pure sideroblastic Anemia",
+      "RARS",
+      "refractory Anaemia with Ring sideroblasts",
+      "refractory Anaemia with ringed sideroblasts",
+      "refractory anaemia with ringed sideroblasts",
+      "refractory Anemia with Ring sideroblasts",
+      "refractory Anemia with ringed sideroblasts",
+      "refractory anemia with ringed sideroblasts"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0019454",
+   "_score": 5.1614294,
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0010972"
+     },
+     {
+      "hpo_id": "HP:0012378"
+     },
+     {
+      "hpo_id": "HP:0001017"
+     },
+     {
+      "hpo_id": "HP:0001945"
+     },
+     {
+      "hpo_id": "HP:0001962"
+     },
+     {
+      "hpo_id": "HP:0002875"
+     },
+     {
+      "hpo_id": "HP:0000573"
+     },
+     {
+      "hpo_id": "HP:0001873"
+     },
+     {
+      "hpo_id": "HP:0001892"
+     },
+     {
+      "hpo_id": "HP:0001974"
+     },
+     {
+      "hpo_id": "HP:0002653"
+     },
+     {
+      "hpo_id": "HP:0004808"
+     },
+     {
+      "hpo_id": "HP:0005528"
+     },
+     {
+      "hpo_id": "HP:0005561"
+     },
+     {
+      "hpo_id": "HP:0010741"
+     },
+     {
+      "hpo_id": "HP:0010876"
+     },
+     {
+      "hpo_id": "HP:0012116"
+     },
+     {
+      "hpo_id": "HP:0012136"
+     },
+     {
+      "hpo_id": "HP:0012148"
+     },
+     {
+      "hpo_id": "HP:0012150"
+     },
+     {
+      "hpo_id": "HP:0025065"
+     },
+     {
+      "hpo_id": "HP:0031035"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "MDS-EB",
+      "myelodysplastic syndrome with Excess blasts",
+      "RAEB",
+      "refractory Anaemia with an Excess of blasts",
+      "refractory Anaemia with Excess blasts",
+      "refractory Anemia with an Excess of blasts",
+      "refractory Anemia with Excess blasts"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0006450",
+   "_score": 5.068074,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute myeloid Leukaemias and myelodysplastic syndromes, therapy-related",
+      "therapy-related acute myeloid leukaemia and myelodysplastic syndrome",
+      "therapy-related acute myeloid leukemia and myelodysplastic syndrome",
+      "therapy-related AML and MDS",
+      "therapy-related myeloid neoplasm"
+     ],
+     "related": [
+      "therapy-related myeloid neoplasms",
+      "TMN"
+     ]
+    }
+   }
+  }
+ ]
+}

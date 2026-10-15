@@ -8,7 +8,7 @@ Carried over from March ticket 688 when BioMCP moved to the sdlc
 factory. The body below is March's, unchanged; it was already written to
 stand alone. Work products from any earlier attempt:
 
-    /home/ian/workspace/planning/biomcp/artifacts/688-broaden-the-dual-build-collision-corpus-to-the-measured-41-coordinates
+    ~/workspace/planning/biomcp/artifacts/688-broaden-the-dual-build-collision-corpus-to-the-measured-41-coordinates
 ## Why
 
 Ticket 687 shipped the build-inference runtime and one captured dual-build collision

@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/680-give-the-vaers-cvx-local-only-lookup-a-test-seam-so-three-tests-stop-reading-a-user-data-directory
+    ~/workspace/planning/biomcp/artifacts/680-give-the-vaers-cvx-local-only-lookup-a-test-seam-so-three-tests-stop-reading-a-user-data-directory

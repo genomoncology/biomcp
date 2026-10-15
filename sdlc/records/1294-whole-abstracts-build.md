@@ -2,13 +2,12 @@
 
 Ticket: sdlc/tickets/1294-return-whole-abstracts-and-cleaner-full-text.md
 Branch: tickets/1294-whole-abstracts, sha d00f515c
-Built by a lane worker across two cycles; reviewed fresh twice; driven by
-the branch lead.
+Built on a branch queue across two cycles; reviewed fresh twice.
 
 ## Prior evidence
 
 The owner measured abstracts of 1,467 to 5,057 characters (median about
-3,550); 0.9.1 served a 1,500-byte truncated form. The KB QA pass showed
+3,550); 0.9.1 served a 1,500-byte truncated form. The QA pass showed
 the truncation marker in reading output.
 
 ## Changes

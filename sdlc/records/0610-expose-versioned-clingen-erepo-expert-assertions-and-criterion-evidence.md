@@ -8,4 +8,4 @@ Imported from March ticket 610. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/610-expose-versioned-clingen-erepo-expert-assertions-and-criterion-evidence
+Artifacts: ~/workspace/planning/biomcp/artifacts/610-expose-versioned-clingen-erepo-expert-assertions-and-criterion-evidence

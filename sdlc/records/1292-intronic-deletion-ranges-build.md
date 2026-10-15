@@ -8,7 +8,7 @@ Built by the lane B worker; driven by the branch lead.
 ## Change 1: the exact failing commands and errors
 
 Recorded live on the branch parent (main carrying 1295 and 1301; the parse
-code is identical to 0.9.1, and ticket evidence from KB QA 0002 and experiment
+code is identical to 0.9.1, and ticket evidence from QA 0002 and experiment
 439 confirms the same behaviors on 0.9.1):
 
 - `biomcp get variant 'NM_000249.4(MLH1):c.678-14_678-3del' -j` exits 2

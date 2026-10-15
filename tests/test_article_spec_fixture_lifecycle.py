@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _wait_until(predicate, timeout: float = 10.0) -> None:
-    # Delegates to the shared, scaled, marked helper (ticket 1269):
+    # Delegates to the shared, scaled, marked helper:
     # one wait implementation instead of per-file duplicates.
     from support import wait_until
 
@@ -101,6 +101,13 @@ def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None
         "pmc_oa/pmc3040717.1.xml",
         "pubtator/export_20516115.json",
         "pubtator/export_30738221.json",
+        "pubtator/export_37887282.json",
+        "mydisease/query_xref_mesh_d002289.json",
+        "mydisease/query_xref_mesh_d009369.json",
+        "mydisease/query_xref_mesh_d000230.json",
+        "mydisease/query_xref_mesh_d000236.json",
+        "mydisease/query_xref_mesh_d008175.json",
+        "mygene/gene_symbols_3845_20261008.json",
         "semantic_scholar/pmid20516115-batch.json",
         "semantic_scholar/pmid20516115-citations.json",
         "semantic_scholar/pmid20516115-recommendations.json",
@@ -231,7 +238,9 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == (3 if mode == "spec-contracts" else 32)
+    # Added the drug label sections spec page as one more routine
+    # mustmatch invocation over the provider contract fixture.
+    assert len(invocations) == (3 if mode == "spec-contracts" else 33)
     article_args, article_base, article_origin = invocations[0]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args

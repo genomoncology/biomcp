@@ -46,7 +46,7 @@ the final commit.
 Residuals: the non-Unix GenCC acquisition is compile-only on the Linux
 gate host, covered by the shared helper's unit tests. The DDInter leg of
 the margin rerun reached only the clean source-unavailable error on
-yellow; the run with real synced DDInter data on the M5 is the remaining
+yellow; the run with real synced DDInter data on the Mac host is the remaining
 verification. The shipped profile stays pinned by the Python profile pin;
 the cargo test child is not treated as proof of it.
 

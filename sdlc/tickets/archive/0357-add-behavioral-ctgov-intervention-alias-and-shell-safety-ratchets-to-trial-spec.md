@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/357-add-behavioral-ctgov-intervention-alias-and-shell-safety-ratchets-to-trial-spec
+    ~/workspace/planning/biomcp/artifacts/357-add-behavioral-ctgov-intervention-alias-and-shell-safety-ratchets-to-trial-spec

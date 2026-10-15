@@ -216,6 +216,12 @@ pub struct PharmacoDbClient {
 
 impl PharmacoDbClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        if crate::sources::disable::is_disabled("pharmacodb") {
+            return Err(crate::sources::disable::source_disabled_error(
+                "PharmacoDB",
+                "pharmacodb",
+            ));
+        }
         Ok(Self {
             client: crate::sources::shared_client()?,
             base: crate::sources::env_base(PHARMACODB_BASE, PHARMACODB_BASE_ENV),

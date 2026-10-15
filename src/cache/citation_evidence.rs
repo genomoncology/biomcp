@@ -1,4 +1,4 @@
-//! Persistent citation-evidence sidecar for ticket 1199.
+//! Persistent citation-evidence sidecar.
 //!
 //! One file per resolved directed edge under
 //! `<cache root>/citation-evidence/v1/`, published atomically and read before

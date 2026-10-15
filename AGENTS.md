@@ -41,36 +41,27 @@ https://biomcp.org/:
 - Unit/static layers run with `make test`: Rust nextest first, then the Python
   CLI/MCP/docs contract lane.
 
-## Contract quick reference
+## Working
 
-spec/*.md
-make lint
-make test
-make spec
-rust-standards
-python-standards
-cli-design
-mustmatch
-testing-mindset
-
-## Gates
-
-Run the standard gates directly:
+Keep incremental compilation on for the whole edit loop:
 
 ```
-make lint
-make test
-make spec
+CARGO_INCREMENTAL=1 cargo nextest run --no-default-features -E 'test(...)'
 ```
+
+Keep `CARGO_INCREMENTAL` set for the whole loop and unset it for the gates:
+toggling the setting recompiles the crate.
+
+A test that takes more than a few seconds is a defect to fix, not a cost to
+accept. Run one Rust build at a time on a machine.
 
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
-`make spec` is the routine mustmatch contract gate.
-
-Routine gates use `--no-default-features` so lint, test, and spec share one
-small Cargo graph; that graph does not exercise AlphaGenome. Run `make
-full-feature-check` for all shipped features and the AlphaGenome behavior tests.
-`make release-gate` includes both lanes.
+`make spec` is the routine mustmatch contract gate. Routine gates use
+`--no-default-features` so lint, test, and spec share one small Cargo graph;
+that graph does not exercise AlphaGenome. Run `make full-feature-check` for all
+shipped features and the AlphaGenome behavior tests, and `make release-gate`
+for both lanes.
 
 ## BioData 1.0 migration verification
 
@@ -78,17 +69,9 @@ Run the repository-owned focused migration checks on M5 at the reviewed revision
 
 BioMCP ticket numbers use one global repository sequence. Create every new ticket with `pm ticket new` and keep its allocated number. This checkout declares only active milestone `1.0` targeting `biodata/biomcp-1.0`. Use component `backend` for integration work. Never infer a release from a ticket number or reserve a branch-specific range.
 
-## Skill rail
-
-Use this hybrid repo rail for dispatched work:
-
-- rust-standards
-- python-standards
-- cli-design
-- mustmatch
-- testing-mindset
-
 ## Releases
+
+A ticket merged for a release carries its changelog bullet in its own landing, so the release gate never finds a ticket without one. Keep the New features, Fixes and Internal headings of the release under way in place even when a section is empty, so no landing adds or moves a heading.
 
 `docs/reference/release-process.md` is the release runbook of record. A
 published release builds five platform archives, publishes PyPI wheels through
@@ -106,13 +89,12 @@ Every release works the checklist at `sdlc/release-checklist.md`, in order, with
 
 ## Hygiene
 
-Do not commit secrets, PHI, absolute local paths, planning notes, or March
-runtime artifacts. Keep `.march/` runtime state, `.march-runtime/`, local caches,
-and generated build outputs out of git.
+Do not commit secrets, PHI, absolute local paths, planning notes, or local
+runtime state. Keep local caches and generated build outputs out of git.
 
 ## CI and merging
 
-Push every change to a `tickets/*` branch first. CI runs on ticket branches; merge to main only after that branch's CI run has finished green. A started run does not count. No direct commits to main. A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on both points on 2026-09-29.
+A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on this on 2026-09-29.
 
 CI skips the Rust jobs only when every file a push changes is documentation, an `sdlc/` file, or a `notes/` file; the classify job decides by the changed files, never by the commit message, and the repository-contract job still runs the docs and record tests plus the strict documentation build. Never rely on a commit-message prefix to skip CI.
 

@@ -584,15 +584,35 @@ and a compact JSON disease anchor without bloating the default card.
 ### Headline significance names its source
 
 The default card labels the headline significance as derived: the source, the
-cached-copy basis, the newest evaluation date in that copy, and the `clinvar`
-section command all travel with the value. The recorded TP53 c.313G>A
-(VariationID 428884) MyVariant response picks "Pathogenic" from its cached RCV
-list.
+cached-copy basis, the newest evaluation date among the records carrying the
+shown classification, and the `clinvar` section command all travel with the
+value. The recorded TP53 c.313G>A (VariationID 428884) MyVariant response
+picks "Pathogenic" from its cached RCV list.
 
 ```bash
 biomcp --json --no-cache get variant 'TP53 G105S' \
   | jq '{significance, significance_source, significance_evaluated, derived_note: (.significance_note | test("cached ClinVar copy")), names_clinvar_command: (.significance_note | test("clinvar")), clinvar_absent: (has("clinvar") | not)}' \
   | mustmatch like '{"significance":"Pathogenic","significance_source":"MyVariant.info","significance_evaluated":"2023-09-15","derived_note":true,"names_clinvar_command":true,"clinvar_absent":true}'
+```
+
+The headline date belongs to the shown classification (ticket 2022). The
+recorded BRAF V600E responses carry 17 cached RCV rows: their newest date,
+2025-01-23, belongs to an Uncertain significance record (RCV005089260), so
+the Pathogenic headline carries 2023-10-22, the newest date among the
+Pathogenic records (RCV003458334), instead of another record's date. The
+GRCh37 coordinate lookup replays the dated recording; the phrase form follows
+the same transform on the same rows.
+
+```bash
+biomcp --json --no-cache get variant 'chr7:g.140453136A>T' \
+  | jq '{significance, significance_evaluated}' \
+  | mustmatch like '{"significance":"Pathogenic","significance_evaluated":"2023-10-22"}'
+```
+
+```bash
+biomcp --no-cache get variant 'chr7:g.140453136A>T' \
+  | grep '^Significance:' \
+  | mustmatch like 'Significance: Pathogenic — MyVariant.info (evaluated 2023-10-22)'
 ```
 
 ### Record-level classification wins when ClinVar answers
@@ -620,6 +640,34 @@ Most severe RCV classification in MyVariant.info'"'"'s cached ClinVar copy; run 
 biomcp --no-cache get variant 'TP53 G105S' clinvar \
   | grep 'Record-level germline' \
   | mustmatch like '- Record-level germline classification: Uncertain significance; reviewed by expert panel; evaluated 2026-06-04'
+```
+
+### A slow NCBI answer names the timeout and the fallback copy's age
+
+The fixture for this case is synthetic, not a recorded exchange. The switch to
+MyVariant.info never reproduced live: in the recorded reproduction runs NCBI's
+ClinVar efetch answered within 1.4 seconds, well inside the
+optional-enrichment deadline, and no provider control forces an eight-second
+server hold, so a live recording of the trigger is not reproducible on demand.
+The fixture stands in by holding the NCBI efetch answer open past the deadline.
+When NCBI ClinVar does not answer in time, the section keeps the MyVariant.info
+fallback but labels the section `degraded`, names the deadline miss as the
+reason the direct source dropped, and reports the newest evaluation date in
+the fallback copy so a reader can see how old it may be. The wording admits
+that a sustained rate limit causes the same deadline miss: the rate-limit
+retry waits run inside the dropped request, so the deadline cannot tell the
+two apart.
+
+```bash
+biomcp --json --no-cache get variant 'TP53 R273H' clinvar \
+  | jq -c '{outcome: .section_outcomes.clinvar.outcome, sources: .section_outcomes.clinvar.sources, message: .section_outcomes.clinvar.message, record_source: .clinvar.source, headline_source: .significance_source, headline_evaluated: .significance_evaluated}' \
+  | mustmatch like '{"outcome":"degraded","sources":["MyVariant.info"],"message":"NCBI ClinVar timed out (slow answer or sustained rate limiting); showing MyVariant.info fallback data (newest evaluation 2021-03-11).","record_source":"MyVariant.info","headline_source":"MyVariant.info","headline_evaluated":"2021-03-11"}'
+```
+
+```bash
+biomcp --no-cache get variant 'TP53 R273H' clinvar \
+  | grep -F 'ClinVar status' \
+  | mustmatch like '**ClinVar status (NCBI ClinVar / MyVariant.info):** degraded (partial/incomplete) — NCBI ClinVar timed out (slow answer or sustained rate limiting); showing MyVariant.info fallback data (newest evaluation 2021-03-11).'
 ```
 
 ## Population Frequency

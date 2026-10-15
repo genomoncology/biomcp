@@ -30,6 +30,6 @@ Ticket 1241. Coverage carries onto the card (additive JSON key,
 not-covered wording, template line); freshness derives from the cached
 load-time basis and the clock; synonyms reach the identity through a
 skip-serialized field with the identity test; corrupt bundles name the
-source and file. Deferred to the M5 leg: the 8 MB cap check against
+source and file. Deferred to the Mac leg: the 8 MB cap check against
 real file sizes and the real-bundle run. See
 `sdlc/records/1241-carry-ddinter-coverage-and-fix-the-drug-card.md`.

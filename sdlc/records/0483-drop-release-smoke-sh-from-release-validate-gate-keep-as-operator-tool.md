@@ -8,4 +8,4 @@ Imported from March ticket 483. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/483-drop-release-smoke-sh-from-release-validate-gate-keep-as-operator-tool
+Artifacts: ~/workspace/planning/biomcp/artifacts/483-drop-release-smoke-sh-from-release-validate-gate-keep-as-operator-tool

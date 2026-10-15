@@ -8,4 +8,4 @@ Imported from March ticket 089. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/089-reduce-agent-call-chains-article-batch-teaching-disease-id-coverage-type-filter-source-gap
+Artifacts: ~/workspace/planning/biomcp/artifacts/089-reduce-agent-call-chains-article-batch-teaching-disease-id-coverage-type-filter-source-gap

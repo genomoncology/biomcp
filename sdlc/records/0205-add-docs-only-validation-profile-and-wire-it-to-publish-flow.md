@@ -8,4 +8,4 @@ Imported from March ticket 205. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/205-add-docs-only-validation-profile-and-wire-it-to-publish-flow
+Artifacts: ~/workspace/planning/biomcp/artifacts/205-add-docs-only-validation-profile-and-wire-it-to-publish-flow

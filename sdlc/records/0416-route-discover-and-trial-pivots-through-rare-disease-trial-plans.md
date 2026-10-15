@@ -8,4 +8,4 @@ Imported from March ticket 416. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/416-route-discover-and-trial-pivots-through-rare-disease-trial-plans
+Artifacts: ~/workspace/planning/biomcp/artifacts/416-route-discover-and-trial-pivots-through-rare-disease-trial-plans

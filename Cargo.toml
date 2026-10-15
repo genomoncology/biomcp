@@ -11,12 +11,15 @@ readme = "README.md"
 keywords = ["bioinformatics", "mcp", "genomics", "clinical-trials", "pubmed"]
 categories = ["command-line-utilities", "science"]
 exclude = [
+    ".config/",
+    "CLAUDE.md",
     "architecture/",
     "protos/",
     "scripts/regenerate-alphagenome-proto",
     "sdlc/",
     "testdata/",
     "tools/alphagenome-proto-generator/",
+    "tools/measure-0-9-3-baseline",
     "tools/check-biodata-boundary.py",
     "tools/biodata-1.0-focused.toml",
     "tools/biodata_focused_pytest.py",
@@ -34,10 +37,6 @@ reason = "Cargo removes exact Git dependencies from registry packages"
 [[bin]]
 name = "biomcp"
 path = "src/main.rs"
-
-[[bin]]
-name = "biomcp-cli"
-path = "src/main_biomcp_cli.rs"
 
 [dependencies]
 biodata = { git = "https://github.com/genomoncology/biodata", rev = "c46b3e6cfaf9659a8add076734b44afb4bccd002" }
@@ -161,12 +160,3 @@ lto = "thin"
 codegen-units = 1
 panic = "unwind"
 strip = true
-
-[profile.spec]
-inherits = "release"
-lto = false
-codegen-units = 16
-# The spec binary exists to exercise contracts, not to be fast at runtime.
-# Inheriting release silently also inherited opt-level = 3, so every ticket
-# gate paid full -O3 codegen for a throwaway build.
-opt-level = 1

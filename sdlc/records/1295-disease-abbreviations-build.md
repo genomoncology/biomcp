@@ -2,7 +2,7 @@
 
 Ticket: sdlc/tickets/1295-find-diseases-by-common-abbreviation.md
 Branch: tickets/1295-disease-abbreviations, sha 4641dc5c
-Built by a lane worker; reviewed fresh; driven by the branch lead.
+Built on a branch queue; reviewed fresh.
 
 ## Prior evidence
 

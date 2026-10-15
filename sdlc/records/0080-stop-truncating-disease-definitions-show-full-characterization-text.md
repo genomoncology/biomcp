@@ -8,4 +8,4 @@ Imported from March ticket 080. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/080-stop-truncating-disease-definitions-show-full-characterization-text
+Artifacts: ~/workspace/planning/biomcp/artifacts/080-stop-truncating-disease-definitions-show-full-characterization-text

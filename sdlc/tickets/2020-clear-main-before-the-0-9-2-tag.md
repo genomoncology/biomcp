@@ -1,6 +1,6 @@
 # 2020 — Clear main before the 0.9.2 tag
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
@@ -24,3 +24,55 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: delete the probe and lower `MAX_PACKAGE_FILES` by one with a true comment; move the forbidden names out of the public repository into a local, untracked config that `pm lint forbidden-name` reads; restore the 1299 spec fences and matcher lines from `921f17c75`; clean the inventory metadata; run fresh code reviews on the 1304 landing and on the post-review deltas of 1299, 1302 and 1298, and record them; correct the 1298 design-review line; correct the 1284 records, the lane table and the milestone exit criteria, and record who waived the QA step.
 - Proof: `cargo package --list` has no probe; `mustmatch test -v article.md` runs the three 1299 blocks; `git grep` finds no private names in the tree; the reviews are recorded on the tickets.
 - Defers: rewriting public history that already carries leaked names. That is Ian's call, recorded in the review file.
+
+## Build status
+
+- Built on branch `tickets/2020-clear-main-before-the-0-9-2-tag`,
+  commits 04df5d21d through 4d85dff69, 2026-10-07, across two timeout
+  revivals with checkpoints (nothing lost).
+- Code review: REJECT 2026-10-07, both findings fixed the same day.
+  P1 (the who_pq removal_condition join surviving the item-4 repair)
+  fixed in fa51560e0, verified by grep-zero, the bare tool's
+  byte-identity, and ratchet exit 0. P2 (two team-sense phrases)
+  neutralized in the same commit, plus the sixth-go billing phrases.
+- Code re-review (fold delta da0bf7969..fa51560e0): ACCEPT 2026-10-07.
+  All three folds verified character-level; one residual P2 phrase in
+  the 1287 record reworded by the queue owner in 4d85dff69.
+
+## build failure record (2026-10-07; root cause corrected 2026-10-08)
+
+The first clean yellow run failed one spec block: the restored
+"Deadline Expiry Names Itself" fence (adf71898e). The reading recorded
+here first blamed the full-text fixture env; the second review proved
+that wrong (its blocker 7). The real root cause is a race: the deadline
+fixture overrides every article source, PubTator's 503 is retried
+three times with full-jitter backoff, and when the retry settles inside
+the block's 3-second deadline — about 38% of runs — the federated
+error pick returns PubTator's error and hides the deadline the block
+pins. Solo passes were luck, not the env. Ticket 2023's precedence fix
+closes the race and has landed, so 2020 gates again on the current
+bar; the fence itself was always correct.
+
+## Second-fix review
+
+- Code re-review (the post-4d85dff69 coverage the second review
+  demanded; branch tickets/2020-names-and-records head 185d8e458):
+  ACCEPT 2026-10-08. The names are fully out of tracked files with the
+  untracked-declaration guard proven by planted-name test; the rebase
+  unions carry main's landed history; MAX_PACKAGE_FILES 1_404 measured;
+  the lanes table, the 1284 records, and the QA waiver naming Ian's
+  dissolution are in; the restored deadline fences pass beside main's
+  cursor rewrite.
+
+## Fix2 review fold (2026-10-08)
+
+The Changes line's "that pm lint forbidden-name reads" is amended: the
+delivered design has the repo's own zero-coupling check read the
+untracked declaration; pm lint stays inert on the absent key by
+design. No guard on the real names runs in a checkout without the
+local untracked names file — that is the design, and the third review
+(ticket 2033, finding 11) confirmed it; the tracked example keeps the
+declaration's shape and the placeholder scan running everywhere. The
+pm-side change (teach pm to read the local declaration file) is handed
+to the sdlc repo by the inbox message filed today
+(repos/sdlc/inbox/biomcp/2026-10-08-pm-read-the-local-forbidden-name-declaration.md).

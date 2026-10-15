@@ -95,7 +95,10 @@ FDA label section, including boxed warnings when OpenFDA provides them:
 biomcp get drug vemurafenib label
 ```
 
-Long warning sections are truncated in the card and link to the full DailyMed label.
+JSON carries whole label sections, while the safety and interaction sections
+keep their own caps. Markdown caps long sections at a short
+form that links to the full DailyMed label; add `--raw` for the raw label
+text.
 
 Shortage section:
 

@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/478-add-homebrew-formula-and-release-automation-via-a-tap
+    ~/workspace/planning/biomcp/artifacts/478-add-homebrew-formula-and-release-automation-via-a-tap

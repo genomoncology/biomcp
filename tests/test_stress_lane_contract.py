@@ -24,12 +24,27 @@ def test_the_stress_target_exists() -> None:
 
 
 def test_the_build_is_not_pinned_but_the_tests_are() -> None:
+    """Ticket 2075: the lane runs the prepared dev build — the CI job
+    downloads the build job's archive instead of rebuilding it — so
+    the recipe must guard that the archive exists and never rebuild
+    it, while both test invocations stay pinned to the CPU set."""
     recipe = stress_recipe()
-    assert "$(MAKE) prepare-test" in recipe, "the archive must be prepared first"
+    assert "$(MAKE) prepare-test" not in recipe, (
+        "the lane must not rebuild the archive; it runs the prepared one"
+    )
+    assert "ROUTINE_TEST_ARCHIVE" in recipe, (
+        "the recipe must fail loudly when the prepared archive is missing"
+    )
     pinned_count = recipe.count("taskset -c 0,1 tools/run-offline")
     assert pinned_count >= 2, "both the cargo and pytest invocations must be pinned"
-    prepare_line = next(line for line in recipe.splitlines() if "prepare-test" in line)
-    assert "taskset" not in prepare_line, "the build must not be pinned to the CPU set"
+    guard_line = next(
+        line for line in recipe.splitlines() if "ROUTINE_TEST_ARCHIVE" in line
+    )
+    assert "taskset" not in guard_line, "the guard must not be pinned to the CPU set"
+    sync_line = next(
+        line for line in recipe.splitlines() if "sync-python-dev" in line
+    )
+    assert "taskset" not in sync_line, "the python sync must not be pinned"
 
 
 def test_the_rust_lane_pins_worker_parallelism() -> None:

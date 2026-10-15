@@ -8,4 +8,4 @@ Imported from March ticket 234. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/234-load-who-prequalified-vaccines-via-cvx-identity-bridge
+Artifacts: ~/workspace/planning/biomcp/artifacts/234-load-who-prequalified-vaccines-via-cvx-identity-bridge

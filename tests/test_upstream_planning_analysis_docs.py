@@ -675,7 +675,10 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "Live public-upstream confidence is opt-in through `make verify`"
         in technical_ws
     )
-    assert "v0.9.0 is the latest published release." in release_pipeline_section
+    assert "v0.9.1 is the latest published release." in release_pipeline_section
+    assert "the 0.9.2 release candidate at Cargo `0.9.2` and Python `0.9.2`" in (
+        release_pipeline_section
+    )
     assert (
         "Package versions are committed metadata, not values stamped from tags."
         in release_pipeline_section
@@ -893,7 +896,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     source_integration = _read_repo("architecture/technical/source-integration.md")
     drug_guide = _read_repo("docs/user-guide/drug.md")
     bioasq_reference = _read_repo("docs/reference/bioasq-benchmark.md")
-    # Ticket 1205 split the get/search selectors out of src/cli/commands.rs to
+    # Split the get/search selectors out of src/cli/commands.rs to
     # stay under the CLI line cap; their long-form help moved with them.
     cli_commands = _read_repo("src/cli/commands/selectors.rs")
     cli_drug_mod = _read_repo("src/cli/drug/mod.rs")
@@ -1136,14 +1139,22 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ci = _read_repo(".github/workflows/ci.yml")
     release = _read_repo(".github/workflows/release.yml")
     contracts_smoke = _read_repo(".github/workflows/contracts.yml")
-    canonical = _workflow_job_block(ci, "canonical-gates")
+    lane_setup = _read_repo(".github/actions/lane-setup/action.yml")
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
     assert "pull_request:" in ci
-    # 2026-09-29 (ticket 1275): ticket branches run CI too; the
+    # 2026-09-29: ticket branches run CI too; the
     # push trigger still names main first.
     assert "push:" in ci and "main" in ci and "tickets/**" in ci
-    for command in ("make lint", "make test", "make spec"):
-        assert f"run: {command}" in canonical
+    # Ticket 2075: one build job prepares the dev build; the lanes
+    # each run one Make target, so CI copies no smaller command list.
+    for job, command in (
+        ("build", "make prepare-test"),
+        ("lint", "make lint"),
+        ("rust-tests", "make test-rust"),
+        ("python-lane", "make test-python"),
+        ("spec-lane", "make spec"),
+    ):
+        assert f"run: {command}" in _workflow_job_block(ci, job)
     for version in (
         "1.93.1",
         "3.12.3",
@@ -1156,10 +1167,11 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ):
         assert version in ci
     # The rust cache is pinned by its v2 commit (2026-09-29
-    # review), so every action in the file carries a commit pin.
-    assert "@v" not in canonical and "@stable" not in canonical
-    assert "tools/bootstrap-lint-tools" in canonical
-    assert "secrets." not in canonical.replace("secrets.GITHUB_TOKEN", "")
+    # review), so every action in the files carries a commit pin.
+    assert "@v" not in ci and "@stable" not in ci
+    assert "@v" not in lane_setup and "@stable" not in lane_setup
+    assert "tools/bootstrap-lint-tools" in lane_setup
+    assert "secrets." not in ci.replace("secrets.GITHUB_TOKEN", "")
 
     assert 'version: "28.3"' in ci_generated_sources
     assert _workflow_run_steps(ci_generated_sources) == [
@@ -1184,7 +1196,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     runner = _read_repo("scripts/run-specs.sh")
     cargo_toml = _read_repo("Cargo.toml")
     assert (
-        ".PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
+        ".PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress"
         in makefile
     )
     assert "SPEC_PR_DESELECT_ARGS" not in makefile
@@ -1199,7 +1211,22 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^test:\n"
         r"\t\$\(MAKE\) prepare-test\n"
-        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)"\n'
+        r"\t\$\(MAKE\) test-rust\n"
+        r"\t\$\(MAKE\) test-python$",
+        makefile,
+        flags=re.MULTILINE,
+    )
+    # Ticket 2075: the two lane halves CI runs in parallel are real
+    # targets, so `make test` stays the developer's one command.
+    assert re.search(
+        r"^test-rust: prepare-routine-test-tmp\n"
+        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"$',
+        makefile,
+        flags=re.MULTILINE,
+    )
+    assert re.search(
+        r"^test-python: prepare-routine-test-tmp\n"
+        r"\t\$\(MAKE\) sync-python-dev\n"
         r"\t\$\(MAKE\) test-contracts-prepared$",
         makefile,
         flags=re.MULTILINE,
@@ -1210,17 +1237,20 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r'lto = "thin"\n'
         r"codegen-units = 1\n"
         r'panic = "unwind"\n'
-        r"strip = true\n\n"
-        r"^\[profile\.spec\]\n"
-        r'inherits = "release"\n'
-        r"lto = false\n"
-        r"codegen-units = 16$",
+        r"strip = true$",
         cargo_toml,
         flags=re.MULTILINE,
     )
-    assert "SPEC_PROFILE ?= spec" in makefile
+    # One dev build per ticket (2070): the routine gates run the dev test
+    # build's binary, the spec profile is gone, and the release profile
+    # stays for the release gate.
+    assert "[profile.spec]" not in cargo_toml
+    assert "SPEC_PROFILE ?= dev" in makefile
     assert "ROUTINE_CARGO_FEATURES ?= --no-default-features" in makefile
-    assert "SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp" in makefile
+    assert (
+        "SPEC_BIN ?= $(CURDIR)/target/$(if $(filter dev,$(SPEC_PROFILE)),debug,$(SPEC_PROFILE))/biomcp"
+        in makefile
+    )
     assert (
         'SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)'
         in makefile
@@ -1255,6 +1285,11 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^spec:\n"
         r"\t\$\(MAKE\) prepare-spec\n"
+        # The spec pages shell out to the project's Python
+        # environment (jsonschema at spec/entity/gene.md:408) and the
+        # parallel-isolation contracts resolve pytest, so the sync must
+        # happen before the run enters the offline namespace.
+        r"\t\$\(MAKE\) sync-python-dev\n"
         r'\ttools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_FEATURE_ON_BIN="\$\(if \$\(filter release,\$\(SPEC_PROFILE\)\),\$\(SPEC_BIN\),\)" bash scripts/run-specs\.sh spec$',
         makefile,
         flags=re.MULTILINE,
@@ -1283,7 +1318,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         "tests/surface/test_parallel_isolation_contract.py"
     ]
     assert 'verify) default_biomcp_bin="$ROOT/target/release/biomcp"' in runner
-    assert '*) default_biomcp_bin="$ROOT/target/spec/biomcp"' in runner
+    assert '*) default_biomcp_bin="$ROOT/target/debug/biomcp"' in runner
     assert 'BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"' in runner
     assert 'export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"' in runner
     for mode in ("spec|spec-pr", "spec-contracts"):
@@ -1593,18 +1628,13 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
 def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     runbook = _read_repo("RUN.md")
     contributing = _read_repo("CONTRIBUTING.md")
-    technical = _read_repo("architecture/technical/overview.md")
     runbook_prerequisites = _normalize_ws(_markdown_section(runbook, "Prerequisites"))
     runbook_premerge = _normalize_ws(_markdown_section(runbook, "Pre-Merge Checks"))
     contributing_hook = _normalize_ws(
-        _markdown_section(contributing, "Local Pre-Commit Hook", level=3)
-    )
-    march_profiles = _normalize_ws(
-        _markdown_section(technical, "March Validation Profiles", level=4)
+        _markdown_section(contributing, "Pre-Commit Hook", level=3)
     )
 
     assert "pre-commit hook" in runbook_premerge
-    assert "`scripts/pre-commit-reject-march-artifacts.sh`" in runbook_premerge
     assert "`cargo fmt --check`" in runbook_premerge
     assert (
         "`cargo clippy --no-default-features --lib --tests -- -D warnings`"
@@ -1625,33 +1655,14 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`make release-gate`" in runbook_premerge
     assert "`make test-contracts`" in runbook_premerge
     assert "git commit --no-verify" in runbook_premerge
-    assert ".march/code-review-log.md" in runbook_premerge
-    assert ".march/code-review-log.md" in contributing_hook
 
-    assert "opt in" in contributing_hook
-    assert "does not install it automatically" in contributing_hook
-    assert "`scripts/install-pre-commit-hook`" in contributing_hook
+    assert "withdrawn" in contributing_hook
+    assert "never run `scripts/install-pre-commit-hook`" in contributing_hook
+    assert "build machine" in contributing_hook
+    assert "CI stays the merge gate" in contributing_hook
     assert "`scripts/pre-commit`" in contributing_hook
-    assert "`scripts/pre-commit-reject-march-artifacts.sh`" in contributing_hook
     assert "`cargo fmt --check`" in contributing_hook
     assert (
         "`cargo clippy --no-default-features --lib --tests -- -D warnings`"
         in contributing_hook
-    )
-    assert "staged deletions" in contributing_hook
-
-    assert "March validation profiles are retired" in march_profiles
-    assert ".march/code-review-log.md" in march_profiles
-    assert ".march/verify-log.md" not in march_profiles
-    assert ".march/blueprint.md" not in march_profiles
-    assert "`.march/` remains ignored by `.gitignore`" in march_profiles
-    assert "Python cleanup contract" in march_profiles
-    assert "pre-commit helper" in march_profiles
-    assert (
-        "standard repo gates are `make lint`, `make test`, and `make spec`"
-        in march_profiles
-    )
-    assert (
-        "Live public-upstream proof moved to the explicit opt-in `make verify`"
-        in march_profiles
     )

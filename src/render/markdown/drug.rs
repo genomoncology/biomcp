@@ -55,6 +55,17 @@ pub fn drug_markdown_with_region(
         &drug.section_outcomes,
         Some(&discovery.recovery),
     );
+    // Markdown keeps a capped short form of label sections; JSON carries the
+    // whole section text stored on the entity.
+    let markdown_label = drug.label.as_ref().map(|label| {
+        crate::entities::drug::markdown_label_view(label, drug.label_set_id.as_deref())
+    });
+    // The short-form pointer only prints when the capped view actually cut
+    // content; nothing was omitted when every section fits the cap.
+    let label_truncated = drug
+        .label
+        .as_ref()
+        .is_some_and(crate::entities::drug::markdown_label_view_truncates);
     let safety_state = source_states
         .get("safety")
         .expect("registered drug safety state");
@@ -98,7 +109,14 @@ pub fn drug_markdown_with_region(
             Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage) => Some("in the DDInter coverage set"),
             None => None,
         },
-        label => &drug.label,
+        label => &markdown_label,
+        label_missing_reason => drug.section_outcomes.get("label").and_then(|outcome| {
+            (outcome.outcome() == SectionOutcomeState::Empty)
+                .then_some(outcome.message())
+                .flatten()
+        }),
+        label_truncated => label_truncated,
+        label_name_quoted => shell_quote_arg(&drug.name),
         raw_label => raw_label,
         civic => &drug.civic,
         show_label_section => show_label_section,
@@ -348,6 +366,7 @@ pub fn drug_search_markdown_with_region(
         who_total,
         pagination_footer,
         None,
+        None,
     )
 }
 
@@ -368,6 +387,7 @@ pub fn drug_search_markdown_all_regions(
     who_results: &[WhoPrequalificationSearchResult],
     who_total: Option<usize>,
     footers: &DrugSearchRegionFooters,
+    who_note: Option<&str>,
 ) -> Result<String, BioMcpError> {
     drug_search_markdown_with_region_and_footers(
         query,
@@ -380,6 +400,7 @@ pub fn drug_search_markdown_all_regions(
         who_total,
         "",
         Some(footers),
+        who_note,
     )
 }
 
@@ -395,6 +416,7 @@ fn drug_search_markdown_with_region_and_footers(
     who_total: Option<usize>,
     pagination_footer: &str,
     region_footers: Option<&DrugSearchRegionFooters>,
+    who_note: Option<&str>,
 ) -> Result<String, BioMcpError> {
     match region {
         DrugRegion::Us => {
@@ -592,7 +614,12 @@ fn drug_search_markdown_with_region_and_footers(
             );
 
             out.push_str("\n## WHO (WHO Prequalification)\n\n");
-            if who_results.is_empty() {
+            if let Some(note) = who_note {
+                // A degraded section is not a negative finding: state the
+                // reason instead of printing a bare no-results line the
+                // caller could read as checked-and-absent.
+                out.push_str(&format!("> {note}\n"));
+            } else if who_results.is_empty() {
                 out.push_str("No WHO-prequalified drugs found\n");
             } else {
                 let _ = writeln!(

@@ -1,9 +1,14 @@
 //! PubTator annotation aggregation for article detail views.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::entities::article::{AnnotationCount, AnnotationPosition, ArticleAnnotations};
 use crate::sources::pubtator::{PubTatorDetail, PubTatorDocument};
+use crate::entities::variant::{
+    VariantIdFormat, VariantInputKind, VariantShorthand, classify_variant_input,
+    is_exact_gene_token,
+};
+use crate::sources::pubtator::PubTatorDocument;
 
 /// Longest identifier or namespace value carried through to entity rows.
 const MAX_IDENTIFIER_BYTES: usize = 256;
@@ -37,15 +42,18 @@ fn annotation_kind(kind: &str) -> Option<AnnotationKind> {
 }
 
 /// A PubTator3 identifier paired with the namespace that names its registry.
-/// The namespace spelling matches the identifier form BioMCP can type back in.
-type AnnotationIdentity = (&'static str, String);
+/// The namespace spelling matches the identifier form BioMCP can type back in,
+/// and `name` carries the registry concept's own name for disease rows
+/// (`MESH:D008175` → `Lung Neoplasms`), which a follow-up link can match
+/// exactly.
+type AnnotationIdentity = (&'static str, String, Option<String>);
 
 fn clean_identifier(value: &str) -> Option<&str> {
     let value = value.trim();
     (!value.is_empty() && value != "-" && value.len() <= MAX_IDENTIFIER_BYTES).then_some(value)
 }
 
-fn registry_identity(identifier: &str) -> Option<AnnotationIdentity> {
+fn registry_identity(identifier: &str) -> Option<(&'static str, String)> {
     let identifier = clean_identifier(identifier)?;
     let upper = identifier.to_ascii_uppercase();
     if let Some(rest) = upper.strip_prefix("MESH:") {
@@ -59,7 +67,12 @@ fn registry_identity(identifier: &str) -> Option<AnnotationIdentity> {
 
 /// Read the identifier PubTator3 gives for one annotation. Variant mentions
 /// carry a tmVar composite in `identifier`, so their typed-back identifier is
-/// the rsID when one exists and the HGVS expression otherwise.
+/// the gene-qualified HGVS expression whenever the row's own annotations
+/// carry a gene and a protein change, the rsID while the document shows that
+/// rsID naming one change and the row lacks that pair, and the HGVS
+/// expression otherwise. Disease rows also keep PubTator3's concept name for
+/// the identifier, which the disease crosswalk matches exactly instead of
+/// opening whatever card a bare MeSH identifier happens to hit.
 fn annotation_identity(
     kind: AnnotationKind,
     identifier: Option<&str>,
@@ -84,6 +97,144 @@ fn annotation_identity(
             }
             None
         }
+        let hgvs = infons.hgvs.as_deref().and_then(clean_identifier)?;
+        if !is_protein_hgvs(hgvs) {
+            return Some(("HGVS", hgvs.to_string(), None));
+        }
+        // A shared rsID with a protein change reached here because no
+        // gene-qualified exact form exists, so no typed-back form names the
+        // row's allele.
+        return None;
+    }
+    infons
+        .hgvs
+        .as_deref()
+        .and_then(clean_identifier)
+        .map(|hgvs| ("HGVS", hgvs.to_string(), None))
+}
+
+/// Document-wide facts that disambiguate mutation identities: the gene symbol
+/// each NCBI Gene id carries, and the rsIDs whose mentions span more than one
+/// distinct protein change. The gene symbols feed the gene-qualified form;
+/// the multi-allele set guards the rsID fallback for rows that lack both
+/// parts of that form.
+struct MutationContext {
+    gene_symbols: HashMap<u64, String>,
+    multi_allele_rsids: HashSet<String>,
+}
+
+impl MutationContext {
+    fn collect(doc: &PubTatorDocument, official_symbols: &HashMap<u64, String>) -> Self {
+        let mut gene_tallies: HashMap<u64, HashMap<String, (u32, usize)>> = HashMap::new();
+        let mut rsid_changes: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut order = 0usize;
+
+        for passage in &doc.passages {
+            for ann in &passage.annotations {
+                if let (Some(text), Some(infons)) = (ann.text.as_deref(), ann.infons.as_ref())
+                    && let Some(kind) = infons.kind.as_deref().and_then(annotation_kind)
+                {
+                    match kind {
+                        AnnotationKind::Gene => {
+                            let text = text.trim();
+                            if let Some(identifier) = infons.identifier.as_deref().map(str::trim)
+                                && !text.is_empty()
+                                && text.len() <= 128
+                                && let Ok(gene_id) = identifier.parse::<u64>()
+                            {
+                                let tally = gene_tallies.entry(gene_id).or_default();
+                                tally
+                                    .entry(text.to_string())
+                                    .and_modify(|(count, _)| *count += 1)
+                                    .or_insert((1, order));
+                            }
+                        }
+                        AnnotationKind::Mutation => {
+                            if let Some(rsid) = first_rsid(infons)
+                                && let Some(hgvs) =
+                                    infons.hgvs.as_deref().and_then(clean_identifier)
+                            {
+                                rsid_changes
+                                    .entry(rsid.to_ascii_lowercase())
+                                    .or_default()
+                                    .insert(distinct_change_key(hgvs));
+                            }
+                        }
+                        AnnotationKind::Disease | AnnotationKind::Chemical => {}
+                    }
+                }
+                order += 1;
+            }
+        }
+
+        let gene_symbols = gene_tallies
+            .into_iter()
+            .filter_map(|(gene_id, texts)| {
+                // The symbol a reader can type back wins: most-mentioned
+                // symbol-shaped text first, ties break to the earliest
+                // mention and then to the lexicographically smaller text.
+                // A gene spelled "K-ras" or "K-RAS" in every mention has no
+                // such text, so the identifier's official symbol carries the
+                // form instead.
+                let symbol = texts
+                    .into_iter()
+                    .filter(|(text, _)| is_exact_gene_token(text))
+                    .min_by(
+                        |(left_text, (left_count, left_order)),
+                         (right_text, (right_count, right_order))| {
+                            right_count
+                                .cmp(left_count)
+                                .then_with(|| left_order.cmp(right_order))
+                                .then_with(|| left_text.cmp(right_text))
+                        },
+                    )
+                    .map(|(text, _)| text)
+                    .or_else(|| {
+                        official_symbols
+                            .get(&gene_id)
+                            .filter(|symbol| is_exact_gene_token(symbol))
+                            .cloned()
+                    });
+                symbol.map(|symbol| (gene_id, symbol))
+            })
+            .collect();
+        let multi_allele_rsids = rsid_changes
+            .into_iter()
+            .filter_map(|(rsid, changes)| (changes.len() > 1).then_some(rsid))
+            .collect();
+
+        Self {
+            gene_symbols,
+            multi_allele_rsids,
+        }
+    }
+
+    fn gene_qualified_change(
+        &self,
+        infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
+        hgvs: &str,
+    ) -> Option<String> {
+        let gene_id = infons.gene_id.or_else(|| {
+            infons
+                .gene_ids
+                .as_ref()
+                .and_then(|ids| ids.first().copied())
+        })?;
+        let symbol = self.gene_symbols.get(&gene_id)?;
+        let form = format!("{symbol} {hgvs}");
+        matches!(
+            classify_variant_input(&form),
+            VariantInputKind::Exact(VariantIdFormat::GeneProteinChange { .. })
+        )
+        .then_some(form)
+    }
+}
+
+/// Distinct-allele comparison key for the protein changes sharing one rsID.
+fn distinct_change_key(hgvs: &str) -> String {
+    match classify_variant_input(hgvs) {
+        VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly { change }) => change,
+        _ => hgvs.trim().to_string(),
     }
 }
 
@@ -97,6 +248,7 @@ struct AnnotationTally {
     first_seen_order: usize,
     namespace: Option<&'static str>,
     identifier: Option<String>,
+    name: Option<String>,
     positions: Vec<AnnotationPosition>,
 }
 
@@ -114,14 +266,22 @@ fn push_annotation_count(
     }
     let key = (
         t.to_ascii_lowercase(),
-        identity.as_ref().map(|(_, identifier)| identifier.clone()),
+        identity
+            .as_ref()
+            .map(|(_, identifier, _)| identifier.clone()),
     );
     let entry = map.entry(key).or_insert_with(|| AnnotationTally {
         text: t.to_string(),
         count: 0,
         first_seen_order: order,
-        namespace: identity.as_ref().map(|(namespace, _)| *namespace),
-        identifier: identity.as_ref().map(|(_, identifier)| identifier.clone()),
+        namespace: identity.as_ref().map(|(namespace, _, _)| *namespace),
+        identifier: identity
+            .as_ref()
+            .map(|(_, identifier, _)| identifier.clone()),
+        // One registry identifier carries one concept name; a row that lost
+        // its name to an earlier mention of the same identifier keeps the
+        // first one seen.
+        name: identity.and_then(|(_, _, name)| name),
         positions: Vec::new(),
     });
     entry.count += 1;
@@ -145,6 +305,7 @@ fn finalize_counts(map: HashMap<AnnotationKey, AnnotationTally>) -> Vec<Annotati
                     count: tally.count,
                     namespace: tally.namespace.map(str::to_string),
                     identifier: tally.identifier,
+                    name: tally.name,
                     positions: tally.positions,
                 },
                 tally.first_seen_order,
@@ -218,9 +379,78 @@ pub fn extract_detail_annotations(
 }
 
 pub(crate) fn retained_extract_annotations(
+
+
+/// NCBI Gene ids whose every mention text fails the symbol-shape check while
+/// a mutation row still pairs that gene id with a protein change. Only these
+/// ids can gain a gene-qualified form from an official symbol, so the caller
+/// resolves just them through MyGene.
+pub(crate) fn gene_ids_needing_official_symbols(doc: &PubTatorDocument) -> Vec<u64> {
+    let mut symbol_shaped: HashSet<u64> = HashSet::new();
+    let mut mutation_linked: HashSet<u64> = HashSet::new();
+    for passage in &doc.passages {
+        for ann in &passage.annotations {
+            let Some(infons) = ann.infons.as_ref() else {
+                continue;
+            };
+            let Some(kind) = infons.kind.as_deref().and_then(annotation_kind) else {
+                continue;
+            };
+            match kind {
+                AnnotationKind::Gene => {
+                    let text = ann.text.as_deref().map(str::trim).unwrap_or_default();
+                    if !text.is_empty()
+                        && text.len() <= 128
+                        && let Some(identifier) = infons.identifier.as_deref()
+                        && let Ok(gene_id) = identifier.trim().parse::<u64>()
+                        && is_exact_gene_token(text)
+                    {
+                        symbol_shaped.insert(gene_id);
+                    }
+                }
+                AnnotationKind::Mutation => {
+                    let protein_change = infons
+                        .hgvs
+                        .as_deref()
+                        .and_then(clean_identifier)
+                        .is_some_and(is_protein_hgvs);
+                    if protein_change {
+                        mutation_linked.extend(
+                            infons
+                                .gene_id
+                                .iter()
+                                .copied()
+                                .chain(infons.gene_ids.iter().flatten().copied()),
+                        );
+                    }
+                }
+                AnnotationKind::Disease | AnnotationKind::Chemical => {}
+            }
+        }
+    }
+    let mut ids: Vec<u64> = mutation_linked
+        .difference(&symbol_shaped)
+        .copied()
+        .collect();
+    ids.sort_unstable();
+    ids
+}
+
+pub fn extract_annotations(
     doc: &PubTatorDocument,
     include_positions: bool,
 ) -> Option<ArticleAnnotations> {
+    extract_annotations_with_official_symbols(doc, include_positions, &HashMap::new())
+}
+
+/// `extract_annotations` with official gene symbols resolved for gene ids
+/// whose mention texts never spell a symbol BioMCP accepts as exact input.
+pub fn extract_annotations_with_official_symbols(
+    doc: &PubTatorDocument,
+    include_positions: bool,
+    official_gene_symbols: &HashMap<u64, String>,
+) -> Option<ArticleAnnotations> {
+    let mutation_context = MutationContext::collect(doc, official_gene_symbols);
     let mut genes: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
     let mut diseases: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
     let mut chemicals: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();

@@ -8,4 +8,4 @@ Imported from March ticket 503. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/503-make-the-json-gene-not-found-contract-fully-local
+Artifacts: ~/workspace/planning/biomcp/artifacts/503-make-the-json-gene-not-found-contract-fully-local

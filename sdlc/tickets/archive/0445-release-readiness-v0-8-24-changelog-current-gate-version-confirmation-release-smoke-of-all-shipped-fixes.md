@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/445-release-readiness-v0-8-24-changelog-current-gate-version-confirmation-release-smoke-of-all-shipped-fixes
+    ~/workspace/planning/biomcp/artifacts/445-release-readiness-v0-8-24-changelog-current-gate-version-confirmation-release-smoke-of-all-shipped-fixes

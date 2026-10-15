@@ -8,4 +8,4 @@ Imported from March ticket 679. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/679-reject-the-pmc-proof-of-work-interstitial-instead-of-publishing-it-as-supplement-bytes
+Artifacts: ~/workspace/planning/biomcp/artifacts/679-reject-the-pmc-proof-of-work-interstitial-instead-of-publishing-it-as-supplement-bytes

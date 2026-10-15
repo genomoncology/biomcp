@@ -2092,7 +2092,7 @@ async fn strict_provider_candidates(
             Ok((rows, degraded)) if !execution.route_stopped("strict") || stopped_before => {
                 // A degraded strict leg kept rows a mid-flight failure
                 // truncated: the route still succeeded, but it is incomplete
-                // (ticket 1299 fold).
+                //.
                 if degraded {
                     incomplete = true;
                 }
@@ -2839,7 +2839,7 @@ async fn search_variant_articles_with_deadline(
 ) -> Result<VariantArticleOutcome, BioMcpError> {
     // Article search resolves identity through aliases a bare ClinVar
     // VariationID does not carry; refuse it instead of returning an empty
-    // resolution (ticket 1292 keeps this surface to `get variant`).
+    // resolution.
     if let crate::entities::variant::VariantInputKind::Exact(VariantIdFormat::ClinvarVariationId(
         _,
     )) = crate::entities::variant::classify_variant_input(input)
@@ -4646,7 +4646,7 @@ mod tests {
                 ));
             }
             if target.starts_with("/search") && target.contains("query=") {
-                // Ticket 1298 moved the wire from page= to cursorMark=; the
+                // Moved the wire from page= to cursorMark=; the
                 // first cursor page answers and every later cursor 503s.
                 let first_cursor = !target.contains("cursorMark=")
                     || target.contains("cursorMark=*")
@@ -5361,8 +5361,8 @@ mod tests {
     #[tokio::test]
     async fn article_search_refuses_a_bare_clinvar_variation_id() {
         // A bare ClinVar VariationID carries no article-search alias, so the
-        // search refuses it before any provider call (ticket 1297). Ticket
-        // 1292 turns this into a dedicated guard message; both spellings
+        // search refuses it before any provider call. A dedicated
+        // guard message covers it; both spellings
         // refuse with "Unrecognized variant format" naming the input, so this
         // assertion stays green through that merge.
         let error = search_variant_articles_with_deadline(

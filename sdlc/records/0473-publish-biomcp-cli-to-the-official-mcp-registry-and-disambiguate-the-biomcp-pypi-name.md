@@ -8,4 +8,4 @@ Imported from March ticket 473. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/473-publish-biomcp-cli-to-the-official-mcp-registry-and-disambiguate-the-biomcp-pypi-name
+Artifacts: ~/workspace/planning/biomcp/artifacts/473-publish-biomcp-cli-to-the-official-mcp-registry-and-disambiguate-the-biomcp-pypi-name

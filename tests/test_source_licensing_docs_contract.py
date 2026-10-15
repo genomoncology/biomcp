@@ -149,6 +149,9 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             "ordinary_url_policy",
             "provider_url_policy",
             "ca_bundle",
+            # The disabled-source registry is shared state over this
+            # inventory, not a provider client.
+            "disable",
         }
     ]
     assert sorted(discovered_modules) == sorted(DIRECT_SOURCE_MODULES)
@@ -163,6 +166,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
 
     allowed_auth = {"none", "optional_env", "required_env", "not_applicable"}
     allowed_modes = {"direct_api", "indirect_only"}
+    allowed_commercial_terms = {"license-required", "non-commercial"}
     for item in inventory:
         assert set(item) == {
             "id",
@@ -172,6 +176,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             "via",
             "bioMcp_surfaces",
             "bioMcp_auth",
+            "commercial_terms",
             "env_var",
             "provider_access",
             "license_summary",
@@ -184,7 +189,13 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
         assert item["tier"] in {1, 2, 3}
         assert item["integration_mode"] in allowed_modes
         assert item["bioMcp_auth"] in allowed_auth
-        # Ticket 1205: a provider that publishes no terms page gets a null
+        # The recorded commercial-terms shape draws the --disable-sources
+        # groups (license-required, non-commercial, and their union
+        # commercial-restricted); sources without a recorded commercial
+        # restriction carry null.
+        if item["commercial_terms"] is not None:
+            assert item["commercial_terms"] in allowed_commercial_terms
+        # A provider that publishes no terms page gets a null
         # terms_url rather than a link to something that is not terms, and its
         # licence summary has to say so.
         if item["terms_url"] is None:
@@ -245,7 +256,7 @@ def _stale_review_entries(today: date) -> tuple[list[str], list[str]]:
 def test_source_review_dates_warn_then_fail() -> None:
     # A print is invisible for passing tests (pytest hides captured
     # output), so approaching staleness warns and true staleness fails
-    # (ticket 1244, batch 2). The canonical test gate runs this file,
+    #. The canonical test gate runs this file,
     # so the assert fails CI exactly when a review passes 365 days.
     import warnings
 
@@ -566,3 +577,33 @@ def test_evidence_table_contract_rejects_one_missing_row(monkeypatch) -> None:
     )
     with pytest.raises(AssertionError, match="lost its rows"):
         test_the_evidence_table_keeps_one_row_per_line()
+def test_variant_and_article_mygene_uniprot_surfaces_are_listed() -> None:
+    """2038 finding 6: free-text variant routing, the variant numbering
+    check, and article gene-symbol resolution call MyGene (and UniProt for
+    the numbering check), and the registry and this page must list them so
+    the sources list matches the code.
+    """
+    mygene = _inventory_item("MyGene.info")
+    uniprot = _inventory_item("UniProt")
+    for surface in (
+        "search variant <free-text query>",
+        "get variant <gene> <change>",
+        "get article <id>; article entities",
+    ):
+        assert surface in mygene["bioMcp_surfaces"], surface
+    assert "get variant <gene> <change>" in uniprot["bioMcp_surfaces"]
+
+    licensing = _read("docs/reference/source-licensing.md")
+    mygene_section = _markdown_section_block(
+        licensing, "### MyGene.info\n", "\n### MyVariant.info"
+    )
+    uniprot_section = _markdown_section_block(
+        licensing, "### UniProt\n", "\n### VariantValidator"
+    )
+    for surface in (
+        "search variant <free-text query>",
+        "get variant <gene> <change>",
+        "get article <id>; article entities",
+    ):
+        assert surface in mygene_section, surface
+    assert "get variant <gene> <change>" in uniprot_section

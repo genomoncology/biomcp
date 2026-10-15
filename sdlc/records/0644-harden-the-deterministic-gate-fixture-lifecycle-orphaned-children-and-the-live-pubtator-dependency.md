@@ -8,4 +8,4 @@ Imported from March ticket 644. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/644-harden-the-deterministic-gate-fixture-lifecycle-orphaned-children-and-the-live-pubtator-dependency
+Artifacts: ~/workspace/planning/biomcp/artifacts/644-harden-the-deterministic-gate-fixture-lifecycle-orphaned-children-and-the-live-pubtator-dependency

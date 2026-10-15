@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/333-pin-biomcp-json-version-contract-emit-json-or-document-plain-text-exception
+    ~/workspace/planning/biomcp/artifacts/333-pin-biomcp-json-version-contract-emit-json-or-document-plain-text-exception

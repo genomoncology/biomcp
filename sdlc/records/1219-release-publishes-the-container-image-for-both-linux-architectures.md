@@ -49,7 +49,7 @@ pre-existing package-boundary failures need their own fix; `release/container.py
 still names the retired bookworm base and is inert. GitHub issue #281 is
 answered by the published image; the reply is Ian's.
 
-Verified on the M5 over Tailscale (imaurer-m5, macOS 26.4, Docker 29.4.3 arm64):
+Verified on a local arm64 macOS host (macOS 26.4, Docker 29.4.3 arm64):
 `docker pull ghcr.io/genomoncology/biomcp` resolved `linux/arm64` natively and
 `docker run --rm ghcr.io/genomoncology/biomcp --version` printed `biomcp 0.9.0`,
 `list` worked, and the running UID was 65532. The plain pull on that machine
@@ -63,4 +63,4 @@ works there.
 The same tag was pulled and run natively on Blink (`linux/amd64`):
 `biomcp 0.9.0`, revision `a450303872b7`, UID 65532. The release smoke covers
 `linux/arm64` on every publish. A reporter on Mac or Linux therefore gets a
-native image; the M5 credential-helper hang is local to that machine.
+native image; the credential-helper hang is local to the Mac host.

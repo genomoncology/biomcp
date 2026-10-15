@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/449-spike-scope-variant-to-protein-structure-annotation-residue-domain-pdb-alphafold-no-ddg
+    ~/workspace/planning/biomcp/artifacts/449-spike-scope-variant-to-protein-structure-annotation-residue-domain-pdb-alphafold-no-ddg

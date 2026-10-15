@@ -1,0 +1,3 @@
+# 2040 build record — the default trial source names ambiguous abbreviations
+
+Landed 2026-10-11 through landcheck-E onto main at e6488f42c. The default ClinicalTrials.gov search says in the page note that it ran a keyword search on an ambiguous abbreviation, naming the holders and the clinical reading pointer (MF also names myelofibrosis, MONDO:0009692, with the registry corpus measurement cited); the MF refusal gains the myelofibrosis reading; the NCI source truncates over-long conditions with a note instead of failing. Reviews: the branch head b6891d0f5 accepted by a gate-running reviewer who ran the 47 targeted tests, the live note/refusal/truncation checks, and make spec.

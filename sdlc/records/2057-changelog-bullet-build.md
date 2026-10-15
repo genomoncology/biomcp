@@ -1,0 +1,3 @@
+# 2057 build record — 2055 carries its changelog bullet
+
+Landed 2026-10-12 from branch ticket/2057-changelog-bullet. One Internal bullet with closing group (2055) describes the working-rules section and the March removal, and the expected-ticket set gains 2055. The release rehearsal run 38309046439 caught the gap (the seeded v0.9.1 tag made the coverage gate run), and a scratch-tag simulation at the reviewed head reports the changelog covers all 55 tickets merged since v0.9.1. Review: accept at 0b5a73898 by a gate-running reviewer, recorded on main before the merge. CI green on the reviewed head.

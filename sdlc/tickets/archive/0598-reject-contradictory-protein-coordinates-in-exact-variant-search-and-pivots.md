@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/598-reject-contradictory-protein-coordinates-in-exact-variant-search-and-pivots
+    ~/workspace/planning/biomcp/artifacts/598-reject-contradictory-protein-coordinates-in-exact-variant-search-and-pivots

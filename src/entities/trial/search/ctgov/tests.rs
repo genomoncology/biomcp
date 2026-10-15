@@ -629,7 +629,7 @@ fn count_all_returns_exact_for_no_post_filters() {
 async fn count_all_keeps_an_omitted_provider_total_unknown() {
     // Synthetic first-page envelope reproducing receipted provider optionality.
     let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     for filters in [
         TrialSearchFilters {
@@ -693,7 +693,7 @@ async fn trim_empty_provider_cursor_stops_without_repeating_page_one() {
 #[serial_test::serial(source_env)]
 async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() {
     let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         condition: Some("melanoma".into()),
@@ -715,7 +715,7 @@ async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() 
 #[serial_test::serial(source_env)]
 async fn alias_union_returns_the_traversal_limit_reason_at_its_cap() {
     let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         condition: Some("melanoma".into()),
@@ -1120,7 +1120,7 @@ fn page_twenty_exhaustion_is_terminal_while_a_cursor_is_capped() {
 #[serial_test::serial(source_env)]
 async fn bounded_alias_pages_are_stable_across_product_page_invocations() {
     let (base, requests, server) = alias_stability_fixture().await;
-    let _env = CtGovFixtureEnv::set(&base);
+    let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
         condition: Some("melanoma".into()),

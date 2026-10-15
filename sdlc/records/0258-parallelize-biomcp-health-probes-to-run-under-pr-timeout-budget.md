@@ -8,4 +8,4 @@ Imported from March ticket 258. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/258-parallelize-biomcp-health-probes-to-run-under-pr-timeout-budget
+Artifacts: ~/workspace/planning/biomcp/artifacts/258-parallelize-biomcp-health-probes-to-run-under-pr-timeout-budget

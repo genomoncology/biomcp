@@ -36,10 +36,8 @@ digits, slug unchanged), containing frontmatter
 (`flow: build`, `priority: 5`), the ticket's title, a few summary
 lines, and pointers to `~/workspace/planning/biomcp/artifacts/<slug>/`.
 Where recoverable, a matching record in `sdlc/records/` carries the
-landed commit range as `base:`/`head:` frontmatter. The sources and
-the recovery recipes (ticket → runs → sessions → commits) are
-documented in `~/workspace/repos/deck/sdlc/planning/march-harvest.md`;
-the ticket index is `~/workspace/planning/biomcp/tickets.json`
+landed commit range as `base:`/`head:` frontmatter. The ticket index is
+`~/workspace/planning/biomcp/tickets.json`
 (689 entries). Write this as a script, not by hand — it will run
 again for other teams.
 *Done when:* the script prints a coverage report — how many tickets

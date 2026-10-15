@@ -51,6 +51,7 @@ fn warning_drug() -> Drug {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     }
@@ -100,6 +101,45 @@ fn raw_label_and_safety_together_print_the_ordinary_warnings_once() {
         markdown.contains("### Boxed Warning"),
         "the boxed warning renders under the label section heading on this card"
     );
+}
+
+#[test]
+fn raw_label_and_safety_together_print_over_cap_warnings_once() {
+    // Keeps whole label sections on the entity while the safety
+    // field keeps its capped extraction. A warnings section past the
+    // Markdown cap must still dedup against its identical capped projection
+    // instead of printing the text twice under two Warnings headings.
+    let mut drug = warning_drug();
+    let long_warnings = "w".repeat(2137);
+    let capped_projection = format!(
+        "{}\n\n(truncated, 2137 chars total; full label: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=warning-set-123)",
+        "w".repeat(2000)
+    );
+    if let Some(label) = drug.label.as_mut() {
+        label.warnings = Some(long_warnings);
+    }
+    drug.us_safety_warnings = Some(capped_projection);
+
+    let markdown = drug_markdown_with_region(
+        &drug,
+        &["label".to_string(), "safety".to_string()],
+        DrugRegion::Us,
+        true,
+    )
+    .expect("markdown");
+    assert_eq!(markdown.matches("### Warnings").count(), 1, "{markdown}");
+    assert_eq!(
+        markdown.matches("(truncated, 2137 chars total").count(),
+        1,
+        "{markdown}"
+    );
+
+    // The safety-only card still prints its own warnings block.
+    let safety_only =
+        drug_markdown_with_region(&drug, &["safety".to_string()], DrugRegion::Us, true)
+            .expect("safety markdown");
+    assert_eq!(safety_only.matches("### Warnings").count(), 1);
+    assert!(safety_only.contains("(truncated, 2137 chars total"));
 }
 
 #[test]

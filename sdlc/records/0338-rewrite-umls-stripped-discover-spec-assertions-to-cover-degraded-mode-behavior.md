@@ -8,4 +8,4 @@ Imported from March ticket 338. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/338-rewrite-umls-stripped-discover-spec-assertions-to-cover-degraded-mode-behavior
+Artifacts: ~/workspace/planning/biomcp/artifacts/338-rewrite-umls-stripped-discover-spec-assertions-to-cover-degraded-mode-behavior

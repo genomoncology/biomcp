@@ -4,7 +4,7 @@ use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::europepmc::{EuropePmcClient, EuropePmcDetail};
 use crate::sources::pubmed::{PubMedCitation, PubMedCitationErrorKind, PubMedClient};
-use crate::sources::pubtator::PubTatorClient;
+use crate::sources::pubtator::{PubTatorClient, PubTatorDocument};
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 use crate::transform;
 

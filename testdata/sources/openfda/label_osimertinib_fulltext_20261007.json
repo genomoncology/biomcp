@@ -1,0 +1,294 @@
+{
+ "meta": {
+  "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+  "terms": "https://open.fda.gov/terms/",
+  "license": "https://open.fda.gov/license/",
+  "last_updated": "2026-10-06",
+  "results": {
+   "skip": 0,
+   "limit": 100,
+   "total": 5
+  }
+ },
+ "results": [
+  {
+   "set_id": "1466c070-9f97-4fa4-a955-6a6b59981fb8",
+   "effective_time": "20251111",
+   "openfda": {
+    "application_number": [
+     "BLA761210"
+    ],
+    "brand_name": [
+     "Rybrevant"
+    ],
+    "generic_name": [
+     "AMIVANTAMAB-VMJW"
+    ],
+    "manufacturer_name": [
+     "Janssen Biotech, Inc."
+    ],
+    "product_ndc": [
+     "57894-501"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "INTRAVENOUS"
+    ],
+    "substance_name": [
+     "AMIVANTAMAB"
+    ],
+    "rxcui": [
+     "2549734",
+     "2549739"
+    ],
+    "spl_id": [
+     "ce70b7e6-860b-49b8-8d74-c2a0f8c88c21"
+    ],
+    "spl_set_id": [
+     "1466c070-9f97-4fa4-a955-6a6b59981fb8"
+    ],
+    "package_ndc": [
+     "57894-501-00",
+     "57894-501-01"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0357894501015"
+    ],
+    "unii": [
+     "0JSR7Z0NB6"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Rybrevant amivantamab-vmjw AMIVANTAMAB AMIVANTAMAB EDETATE DISODIUM HISTIDINE HISTIDINE HYDROCHLORIDE MONOHYDRATE METHIONINE POLYSORBATE 20 SUCROSE WATER Colorlous to Pale Yellow"
+   ]
+  },
+  {
+   "set_id": "2950227c-6230-4ca4-a135-46e44d9424a0",
+   "effective_time": "20260527",
+   "openfda": {
+    "application_number": [
+     "BLA761394"
+    ],
+    "brand_name": [
+     "DATROWAY"
+    ],
+    "generic_name": [
+     "DATOPOTAMAB DERUXTECAN"
+    ],
+    "manufacturer_name": [
+     "Daiichi Sankyo Inc."
+    ],
+    "product_ndc": [
+     "65597-801"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "INTRAVENOUS"
+    ],
+    "substance_name": [
+     "DATOPOTAMAB DERUXTECAN"
+    ],
+    "rxcui": [
+     "2703040",
+     "2703046"
+    ],
+    "spl_id": [
+     "c5c6cd04-1bea-4809-a830-b1fb1ba94e97"
+    ],
+    "spl_set_id": [
+     "2950227c-6230-4ca4-a135-46e44d9424a0"
+    ],
+    "package_ndc": [
+     "65597-801-01"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "unii": [
+     "GD2OWY1DTK"
+    ]
+   },
+   "spl_product_data_elements": [
+    "DATROWAY Datopotamab Deruxtecan DATOPOTAMAB DERUXTECAN DATOPOTAMAB DERUXTECAN HISTIDINE HISTIDINE HYDROCHLORIDE MONOHYDRATE SUCROSE POLYSORBATE 80"
+   ]
+  },
+  {
+   "set_id": "5e81b4a7-b971-45e1-9c31-29cea8c87ce7",
+   "effective_time": "20240925",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB MANNITOL MICROCRYSTALLINE CELLULOSE SODIUM STEARYL FUMARATE POLYVINYL ALCOHOL, UNSPECIFIED TITANIUM DIOXIDE POLYETHYLENE GLYCOL 3350 TALC FERRIC OXIDE YELLOW FERRIC OXIDE RED FERROSOFERRIC OXIDE LOW-SUBSTITUTED HYDROXYPROPYL CELLULOSE, UNSPECIFIED beige biconvex AZ;40 TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB MANNITOL MICROCRYSTALLINE CELLULOSE SODIUM STEARYL FUMARATE POLYVINYL ALCOHOL, UNSPECIFIED TITANIUM DIOXIDE POLYETHYLENE GLYCOL 3350 TALC FERRIC OXIDE YELLOW FERRIC OXIDE RED FERROSOFERRIC OXIDE LOW-SUBSTITUTED HYDROXYPROPYL CELLULOSE, UNSPECIFIED beige biconvex AZ;80 TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB MANNITOL MICROCRYSTALLINE CELLULOSE SODIUM STEARYL FUMARATE POLYVINYL ALCOHOL, UNSPECIFIED TITANIUM DIOXIDE POLYETHYLENE GLYCOL 3350 TALC FERRIC OXIDE YELLOW FERRIC OXIDE RED FERROSOFERRIC OXIDE LOW-SUBSTITUTED HYDROXYPROPYL CELLULOSE, UNSPECIFIED beige biconvex AZ;40 TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB MANNITOL MICROCRYSTALLINE CELLULOSE SODIUM STEARYL FUMARATE POLYVINYL ALCOHOL, UNSPECIFIED TITANIUM DIOXIDE POLYETHYLENE GLYCOL 3350 TALC FERRIC OXIDE YELLOW FERRIC OXIDE RED FERROSOFERRIC OXIDE LOW-SUBSTITUTED HYDROXYPROPYL CELLULOSE, UNSPECIFIED beige biconvex AZ;80"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE TAGRISSO is a kinase inhibitor indicated for: \u2022 adjuvant therapy after tumor resection in adult patients with non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test. ( 1.1 , 2.2 ) \u2022 the treatment of adult patients with locally advanced, unresectable (stage III) NSCLC whose disease has not progressed during or following concurrent or sequential platinum-based chemoradiation therapy and whose tumors have EGFR exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test. ( 1.2 , 2.2 ) \u2022 the first-line treatment of adult patients with metastatic NSCLC whose tumors have EGFR exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test. ( 1.3 , 2.2 ) \u2022 in combination with pemetrexed and platinum-based chemotherapy, the first-line treatment of adult patients with locally advanced or metastatic NSCLC whose tumors have EGFR exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test. ( 1.4 , 2.2 ) \u2022 the treatment of adult patients with metastatic EGFR T790M mutation-positive NSCLC, as detected by an FDA-approved test, whose disease has progressed on or after EGFR TKI therapy. ( 1.5 , 2.2 ) 1.1 Adjuvant Treatment of EGFR Mutation-Positive Non-Small Cell Lung Cancer (NSCLC) TAGRISSO is indicated as adjuvant therapy after tumor resection in adult patients with non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test [see Dosage and Administration (2.2) ] . 1.2 Locally Advanced, Unresectable (Stage III) EGFR Mutation-Positive NSCLC TAGRISSO is indicated for the treatment of adult patients with locally advanced, unresectable (stage III) NSCLC whose disease has not progressed during or following concurrent or sequential platinum-based chemoradiation therapy and whose tumors have EGFR exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test [see Dosage and Administration (2.2)]. 1.3 First-line Treatment of EGFR Mutation-Positive Metastatic NSCLC TAGRISSO is indicated for the first-line treatment of adult patients with metastatic NSCLC whose tumors have EGFR exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test [see Dosage and Administration (2.2) ]. 1.4 First-line Treatment of EGFR Mutation-Positive Locally Advanced or Metastatic NSCLC TAGRISSO in combination with pemetrexed and platinum-based chemotherapy is indicated for the first-line treatment of adult patients with locally advanced or metastatic NSCLC whose tumors have EGFR exon 19 deletions or exon 21 L858R mutations, as detected by an FDA-approved test [see Dosage and Administration (2.2) ]. 1.5 Previously Treated EGFR T790M Mutation-Positive Metastatic NSCLC TAGRISSO is indicated for the treatment of adult patients with metastatic EGFR T790M mutation-positive NSCLC, as detected by an FDA-approved test, whose disease has progressed on or after EGFR tyrosine kinase inhibitor (TKI) therapy [see Dosage and Administration (2.2) ] ."
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS \u2022 Interstitial Lung Disease (ILD)/Pneumonitis : Monitor for new or worsening pulmonary symptoms indicative of ILD/pneumonitis. For patients receiving TAGRISSO who have not received recent definite platinum-based chemoradiation therapy, permanently discontinue TAGRISSO in patients diagnosed with ILD/Pneumonitis. For patients who received recent definitive platinum-based chemoradiation therapy with Grade 1 ILD/pneumonitis continue TAGRISSO or interrupt and restart, as appropriate. Permanently discontinue TAGRISSO in patients diagnosed with Grade \u22652 ILD/pneumonitis. ( 2.5 , 5.1 ) \u2022 QTc Interval Prolongation : Monitor electrocardiograms and electrolytes in patients who have a history or predisposition for QTc prolongation, or those who are taking medications that are known to prolong the QTc interval. Withhold, then restart at a reduced dose or permanently discontinue TAGRISSO based on severity. ( 2.5 , 5.2 ) \u2022 Cardiomyopathy : Occurred in 3.8% of patients. Conduct cardiac monitoring, including left ventricular ejection fraction (LVEF) assessment in patients with cardiac risk factors. ( 2.5 , 5.3 ) \u2022 Keratitis : Promptly refer patients with signs and symptoms of keratitis to an ophthalmologist for evaluation. ( 5.4 ) \u2022 Erythema Multiforme Major, Stevens-Johnson Syndrome, and Toxic Epidermal Necrolysis : Withhold TAGRISSO if erythema multiforme major (EMM), Stevens-Johnson syndrome (SJS), or toxic epidermal necrolysis (TEN) is suspected and permanently discontinue if confirmed. ( 2.5 , 5.5 ) \u2022 Cutaneous Vasculitis : Withhold TAGRISSO if cutaneous vasculitis is suspected, evaluate for systemic involvement, and consider dermatology consultation. If no other etiology can be identified, consider permanent discontinuation based on severity. ( 5.6 ) \u2022 Aplastic Anemia : Withhold TAGRISSO if aplastic anemia is suspected and permanently discontinue TAGRISSO if confirmed. ( 2.5 , 5.7 ) \u2022 Embryo-Fetal Toxicity : TAGRISSO can cause fetal harm. Advise females of potential risk to the fetus and to use effective contraception during treatment with TAGRISSO and for 6 weeks after last dose. Advise males to use effective contraception for 4 months after the last dose of TAGRISSO. ( 5.8 , 8.1 , 8.3 ) 5.1 Interstitial Lung Disease/Pneumonitis TAGRISSO can cause severe and fatal ILD/pneumonitis. Across clinical trials, interstitial lung disease (ILD)/pneumonitis occurred in 4% of the 1813 patients treated with TAGRISSO monotherapy who had not received recent definitive chemoradiation therapy; 0.4% of cases were fatal. ILD/Pneumonitis with TAGRISSO in Combination with Pemetrexed and Platinum-based Chemotherapy In the FLAURA2 study, ILD/pneumonitis occurred in 3.3% of the 276 patients who received TAGRISSO in combination with pemetrexed and platinum-based chemotherapy; 0.4% of cases were fatal. ILD/Pneumonitis Following Definitive Platinum-based Chemoradiation Therapy In the LAURA study, following definitive platinum-based chemoradiation therapy, ILD/pneumonitis, including radiation pneumonitis, occurred in 80 of the 143 patients (56%) who received TAGRISSO monotherapy and 28 of the 73 patients (38%) who received placebo. There was one fatal case (0.7%), 3.5% Grade 3, 34% Grade 2, and 18% Grade 1 adverse reactions of ILD/pneumonitis in TAGRISSO-treated patients. For TAGRISSO-treated patients, ILD/pneumonitis led to permanent discontinuation of TAGRISSO in 7% of patients and dosage interruptions of TAGRISSO in 35% of patients. Among the 46 patients who were rechallenged with TAGRISSO, 11% had recurrence of ILD/pneumonitis. In the 80 TAGRISSO-treated patients, ILD/pneumonitis resolved in 40%, resolved with sequelae in 1.3%, were resolving in 16%, did not resolve in 41%, and resulted in death in 1.3%. For patients receiving TAGRISSO who have not received recent definitive platinum-based chemoradiation therapy, withhold TAGRISSO and promptly investigate for ILD in patients who present with worsening or respiratory symptoms which may be indicative of ILD (e.g., dyspnea, cough, and fever). Permanently discontinue TAGRISSO if ILD/pneumonitis is confirmed [see Dosage and Administration (2.5) and Adverse Reactions (6.1) ]. For patients who have received recent definitive platinum-based chemoradiation therapy with Grade 1 ILD/pneumonitis continue TAGRISSO or interrupt and restart, as appropriate. Permanently discontinue TAGRISSO in patients diagnosed with Grade \u22652 ILD/pneumonitis [see Dosage and Administration (2.5) and Adverse Reactions (6.1) ]. 5.2 QTc Interval Prolongation TAGRISSO can cause heart rate-corrected QT (QTc) interval prolongation. Of the 1813 patients treated with TAGRISSO monotherapy in clinical trials, 1.1% were found to have a QTc >500 msec, and 4.3% of patients had an increase from baseline QTc >60 msec [see Clinical Pharmacology (12.2) ]. Of the 276 patients treated with TAGRISSO in combination with pemetrexed and platinum-based chemotherapy in the FLAURA2 study, 1.8% were found to have a QTc >500 msec, and 10.5% of patients had an increase from baseline QTc >60 msec. No QTc-related arrhythmias were reported. Clinical trials of TAGRISSO did not enroll patients with baseline QTc of >470 msec. Conduct periodic monitoring with ECGs and electrolytes in patients with congenital long QTc syndrome, congestive heart failure, electrolyte abnormalities, or those who are taking medications known to prolong the QTc interval. Permanently discontinue TAGRISSO in patients who develop QTc interval prolongation with signs/symptoms of life-threatening arrhythmia [see Dosage and Administration (2.5) ]. 5.3 Cardiomyopathy TAGRISSO can cause cardiomyopathy, including cardiac failure, chronic cardiac failure, congestive heart failure, pulmonary edema or decreased ejection fraction. Across clinical trials, cardiomyopathy occurred in 3.8% of the 1813 TAGRISSO-treated patients; 0.1% of cardiomyopathy cases were fatal. In the FLAURA2 study, cardiomyopathy occurred in 9% of the 276 patients who received TAGRISSO in combination with pemetrexed and platinum-based chemotherapy; 1.1% of cardiomyopathy cases were fatal. A decline in left ventricular ejection fraction (LVEF) \u226510 percentage points from baseline and to less than 50% LVEF occurred in 4.2% of 1557 patients who had baseline and at least one follow-up LVEF assessment. In the ADAURA study, 1.5% (5/325) of patients treated with TAGRISSO experienced LVEF decreases greater than or equal to 10 percentage points and a drop to less than 50%. In the LAURA study, following platinum-based chemoradiation therapy, 3% (4/135) of patients treated with TAGRISSO and no patients treated with placebo experienced LVEF decreases greater than or equal to 10 percentage points and a drop to less than 50%. In the FLAURA2 study, 8% (21/262) of patients treated with TAGRISSO in combination with pemetrexed and platinum-based chemotherapy, who had baseline and at least one follow-up LVEF assessment, experienced LVEF decreases greater than or equal to 10 percentage points and a drop to less than 50%. For patients who will be receiving TAGRISSO monotherapy, conduct cardiac monitoring, including assessment of LVEF at baseline and during treatment, in patients with cardiac risk factors. For patients who will be receiving TAGRISSO in combination with pemetrexed and platinum-based chemotherapy, conduct cardiac monitoring, including assessment of LVEF at baseline and during treatment, in all patients. Assess LVEF in patients who develop relevant cardiac signs or symptoms during treatment. For symptomatic congestive heart failure, permanently discontinue TAGRISSO [see Dosage and Administration (2.5) ]. 5.4 Keratitis Keratitis was reported in 0.6% of 1813 patients treated with TAGRISSO monotherapy in clinical trials. Promptly refer patients with signs and symptoms suggestive of keratitis (such as eye inflammation, lacrimation, light sensitivity, blurred vision, eye pain and/or red eye) to an ophthalmologist. 5.5 Erythema Multiforme Major, Stevens-Johnson Syndrome, and Toxic Epidermal Necrolysis Postmarketing cases consistent with erythema multiforme major (EMM), Stevens-Johnson syndrome (SJS) and toxic epidermal necrolysis (TEN) have been reported in patients receiving TAGRISSO [see Postmarketing (6.2) ] . Withhold TAGRISSO if EMM, SJS, or TEN is suspected and permanently discontinue if confirmed. 5.6 Cutaneous Vasculitis Postmarketing cases of cutaneous vasculitis including leukocytoclastic vasculitis, urticarial vasculitis, and IgA vasculitis have been reported in patients receiving TAGRISSO [see Postmarketing (6.2) ] . Withhold TAGRISSO if cutaneous vasculitis is suspected, evaluate for systemic involvement, and consider dermatology consultation. If no other etiology can be identified, consider permanent discontinuation of TAGRISSO based on severity. 5.7 Aplastic Anemia Aplastic anemia has been reported in patients treated with TAGRISSO in clinical trials (0.06% of 1813) and postmarketing [see Postmarketing (6.2) ] . Some cases had a fatal outcome. Inform patients of the signs and symptoms of aplastic anemia including but not limited to, new or persistent fevers, bruising, bleeding, and pallor. If aplastic anemia is suspected, withhold TAGRISSO and obtain a hematology consultation. If aplastic anemia is confirmed, permanently discontinue TAGRISSO [see Dosage and Administration (2.5) ] . Perform complete blood count with differential before starting TAGRISSO, periodically throughout treatment, and more frequently if indicated. 5.8 Embryo-Fetal Toxicity Based on data from animal studies and its mechanism of action, TAGRISSO can cause fetal harm when administered to a pregnant woman. In animal reproduction studies, osimertinib caused post-implantation fetal loss when administered during early development at a dose exposure 1.5 times the exposure at the recommended clinical dose. When males were treated prior to mating with untreated females, there was an increase in preimplantation embryonic loss at plasma exposures of approximately 0.5 times those observed at the recommended dose of 80 mg once daily. Verify pregnancy status of females of reproductive potential prior to initiating TAGRISSO. Advise pregnant women of the potential risk to a fetus. Advise females of reproductive potential to use effective contraception during treatment with TAGRISSO and for 6 weeks after the last dose. Advise males with female partners of reproductive potential to use effective contraception for 4 months after the last dose [see Use in Specific Populations (8.1 and 8.3) ]."
+   ],
+   "dosage_and_administration": [
+    "2 DOSAGE AND ADMINISTRATION Adjuvant treatment of early-stage NSCLC: 80 mg orally once daily, with or without food, until disease recurrence, or unacceptable toxicity, or for up to 3 years. ( 2.3 ) Locally advanced, unresectable (stage III) NSCLC: Following platinum-based chemoradiation therapy, 80 mg orally once daily, with or without food, until disease progression or unacceptable toxicity. ( 2.3 ) Metastatic NSCLC: 80 mg orally once daily, with or without food, until disease progression or unacceptable toxicity. ( 2.3 ) Locally advanced or metastatic NSCLC: 80 mg orally once daily administered in combination with pemetrexed and platinum-based chemotherapy, with or without food, until disease progression or unacceptable toxicity due to TAGRISSO. ( 2.3 ) 2.1 Recommended Evaluation and Testing Before Initiating TAGRISSO TAGRISSO Monotherapy \u2022 Before initiating TAGRISSO monotherapy in patients with cardiac risk factors, conduct cardiac monitoring, including assessment of left ventricular ejection fraction (LVEF) [see Warnings and Precautions (5.3) ] . \u2022 Before initiating TAGRISSO, perform complete blood count with differential [see Warnings and Precautions (5.7) ] . TAGRISSO in Combination with Pemetrexed and Platinum-based Chemotherapy \u2022 Before initiating TAGRISSO in combination with pemetrexed and platinum-based chemotherapy, conduct cardiac monitoring in all patients, including assessment of left ventricular ejection fraction (LVEF) [see Warnings and Precautions (5.3) ] . \u2022 Before initiating TAGRISSO, perform complete blood count with differential [see Warnings and Precautions (5.7) ] . 2.2 Patient Selection Table 1 below presents the patient selection criteria for treatment with TAGRISSO. Table 1: Patient Selection Select patients for treatment with TAGRISSO based on the presence of a mutation as detected by an FDA-approved test. Indication Treatment Regimen Required Mutation Source for Testing Adjuvant Treatment of EGFR Mutation-Positive NSCLC [see Indications and Usage (1.1) ] TAGRISSO monotherapy EGFR exon 19 deletions or exon 21 L858R mutations Tumor Locally Advanced, Unresectable (Stage III) EGFR Mutation-Positive NSCLC [see Indications and Usage (1.2) ] Following completion of platinum-based chemoradiation therapy, TAGRISSO monotherapy EGFR exon 19 deletions or exon 21 L858R mutations Tumor First-line Treatment of EGFR Mutation-Positive Metastatic NSCLC [see Indications and Usage (1.3) ] TAGRISSO monotherapy EGFR exon 19 deletions or exon 21 L858R mutations Plasma or tumor First-line Treatment of EGFR Mutation-Positive Locally Advanced or Metastatic NSCLC [see Indications and Usage (1.4) ] TAGRISSO in combination with pemetrexed and platinum-based chemotherapy EGFR exon 19 deletions or exon 21 L858R mutations Plasma or tumor Previously Treated EGFR T790M Mutation-Positive Metastatic NSCLC [see Indications and Usage (1.5) ] TAGRISSO monotherapy EGFR T790M Mutation Plasma or tumor Information on FDA-approved tests for the detection of EGFR mutations is available at http://www.fda.gov/companiondiagnostics . 2.3 Recommended Dosage and Administration Recommended Dosage Table 2 provides the recommended dosage of TAGRISSO by indication. Table 2: Recommended Dosage of TAGRISSO Indication Recommended Dosage of TAGRISSO Duration of Treatment Adjuvant Treatment of EGFR Mutation-Positive NSCLC 80 mg tablet orally once daily with or without food For a total of 3 years or until disease recurrence or unacceptable toxicity Locally Advanced, Unresectable (Stage III) EGFR Mutation-Positive NSCLC Following platinum-based chemoradiation therapy, 80 mg tablet orally once daily with or without food Until disease progression or unacceptable toxicity First-line Treatment of EGFR Mutation-Positive Metastatic NSCLC 80 mg tablet orally once daily with or without food Until disease progression or unacceptable toxicity First-line Treatment of EGFR Mutation-Positive Locally Advanced or Metastatic NSCLC 80 mg tablet orally once daily with or without food in combination with pemetrexed and platinum-based chemotherapy Refer to the Prescribing Information for pemetrexed and cisplatin or carboplatin for the respective dosing information. Until disease progression or unacceptable toxicity due to TAGRISSO Previously Treated EGFR T790M Mutation-Positive Metastatic NSCLC 80 mg tablet orally once daily with or without food Until disease progression or unacceptable toxicity Administration Administer TAGRISSO 80 mg tablet orally once daily with or without food. Tablets may be dispersed in water for patients who have difficulty swallowing, or for nasogastric tube administration [see Dosage and Administration (2.4) ]. Missed Dose If a dose of TAGRISSO is missed, do not make up the missed dose and take the next dose as scheduled. 2.4 Administration to Patients Who Have Difficulty Swallowing Solids Disperse TAGRISSO tablet in 60 mL (2 ounces) of non-carbonated water only. Stir until tablet is dispersed into small pieces (the tablet will not completely dissolve) and swallow immediately. Do not crush, heat, or ultrasonicate during preparation. Rinse the container with 120 mL to 240 mL (4 to 8 ounces) of water and immediately drink. If administration via nasogastric tube is required, disperse the TAGRISSO tablet as above in 15 mL of non-carbonated water, and then use an additional 15 mL of water to transfer any residues to the syringe. The resulting 30 mL liquid should be administered as per the nasogastric tube instructions with appropriate water flushes (approximately 30 mL). Repeat this step until no pieces remain in the syringe. This will help to ensure that the full prescribed dose of the TAGRISSO is given. The dispersion and residues should be administered within 30 minutes of the addition of the tablets to water. 2.5 Dosage Modifications for Adverse Reactions The recommended dose reductions for adverse reactions are provided in Table 3. Table 3. Recommended Dosage Modifications for TAGRISSO Target Organ Adverse Reaction Adverse reactions graded by the National Cancer Institute Common Terminology Criteria for Adverse Events version 5.0 (NCI CTCAE v5.0). Dosage Modification Pulmonary (Patients who have not received recent definitive platinum-based chemoradiation therapy) [see Warnings and Precautions (5.1)] Any Grade Interstitial lung disease (ILD)/Pneumonitis Permanently discontinue TAGRISSO. Pulmonary (Patients who have received recent definitive platinum-based chemoradiation therapy) [see Warnings and Precautions (5.1)] Grade 1 ILD/Pneumonitis Withhold or continue TAGRISSO, as clinically indicated. Grade \u22652 ILD/Pneumonitis Permanently discontinue TAGRISSO. Cardiac [see Warnings and Precautions (5.2, 5.3)] QTc QTc = QT interval corrected for heart rate interval greater than 500 msec on at least 2 separate ECGs ECGs = Electrocardiograms Withhold TAGRISSO until QTc interval is less than 481 msec or recovery to baseline if baseline QTc is greater than or equal to 481 msec, then resume at 40 mg dose. QTc interval prolongation with signs/symptoms of life-threatening arrhythmia Permanently discontinue TAGRISSO. Symptomatic congestive heart failure Permanently discontinue TAGRISSO. Cutaneous [see Warnings and Precautions (5.5)] Erythema Multiforme Major (EMM), Stevens-Johnson syndrome (SJS), and Toxic Epidermal Necrolysis (TEN) Withhold TAGRISSO if suspected and permanently discontinue if confirmed. Blood and bone marrow [see Warnings and Precautions (5.7)] Aplastic anemia Withhold TAGRISSO if aplastic anemia is suspected and permanently discontinue if confirmed. Other [see Adverse Reactions (6.1) ] Adverse reaction of Grade 3 or greater severity Withhold TAGRISSO for up to 3 weeks. If improvement to Grade 0-2 within 3 weeks Resume at 80 mg or 40 mg daily. If no improvement within 3 weeks Permanently discontinue TAGRISSO. Dosage Modifications for Combination Therapy When TAGRISSO is administered in combination with pemetrexed and platinum-based chemotherapy, modify the dose of any one of the treatments for the management of adverse reactions, as appropriate. For TAGRISSO dose modification instructions, see Table 3. Withhold, reduce the dose or permanently discontinue pemetrexed, cisplatin or carboplatin according to their respective Prescribing Information. Drug Interactions Strong CYP3A4 Inducers Avoid concomitant use of strong CYP3A4 inducers with TAGRISSO. If concurrent use is unavoidable, increase TAGRISSO dosage to 160 mg daily when co-administering with a strong CYP3A inducer. Resume TAGRISSO at 80 mg 3 weeks after discontinuation of the strong CYP3A4 inducer [see Drug Interactions (7) and Clinical Pharmacology (12.3) ] ."
+   ],
+   "drug_interactions": [
+    "7 DRUG INTERACTIONS Strong CYP3A Inducers : Avoid concomitant use. If not possible, increase TAGRISSO to 160 mg daily in patients receiving a strong CYP3A4 inducer. ( 2.5 , 7.1 ) 7.1 Effect of Other Drugs on Osimertinib Strong CYP3A Inducers Co-administering TAGRISSO with a strong CYP3A4 inducer decreased the exposure of osimertinib compared to administering TAGRISSO alone [see Clinical Pharmacology (12.3) ] . Decreased osimertinib exposure may lead to reduced efficacy. Avoid co-administering TAGRISSO with strong CYP3A inducers. Increase the TAGRISSO dosage when co-administering with a strong CYP3A4 inducer if concurrent use is unavoidable [see Dosage and Administration (2.5) ] . No dose adjustments are required when TAGRISSO is used with moderate and/or weak CYP3A inducers. 7.2 Effect of Osimertinib on Other Drugs Co-administering TAGRISSO with a breast cancer resistant protein (BCRP) or P-glycoprotein (P-gp) substrate increased the exposure of the substrate compared to administering it alone [see Clinical Pharmacology (12.3) ] . Increased BCRP or P-gp substrate exposure may increase the risk of exposure-related toxicity. Monitor for adverse reactions of the BCRP or P-gp substrate, unless otherwise instructed in its approved labeling, when co-administered with TAGRISSO. 7.3 Drugs That Prolong the QTc Interval The effect of co-administering medicinal products known to prolong the QTc interval with TAGRISSO is unknown. When feasible, avoid concomitant administration of drugs known to prolong the QTc interval with known risk of Torsades de pointes. If not feasible to avoid concomitant administration of such drugs, conduct periodic ECG monitoring [see Warnings and Precautions (5.3) and Clinical Pharmacology (12.2) ]."
+   ]
+  },
+  {
+   "set_id": "9e58b045-e352-4f62-99bf-77fae1bebc69",
+   "effective_time": "20260617",
+   "openfda": {
+    "application_number": [
+     "BLA761433"
+    ],
+    "brand_name": [
+     "Rybrevant Faspro"
+    ],
+    "generic_name": [
+     "AMIVANTAMAB AND HYALURONIDASE-LPUJ (HUMAN RECOMBINANT)"
+    ],
+    "manufacturer_name": [
+     "Janssen Biotech, Inc."
+    ],
+    "product_ndc": [
+     "57894-510",
+     "57894-514",
+     "57894-515",
+     "57894-522"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "SUBCUTANEOUS"
+    ],
+    "substance_name": [
+     "AMIVANTAMAB",
+     "HYALURONIDASE (HUMAN RECOMBINANT)"
+    ],
+    "rxcui": [
+     "2729297",
+     "2729304",
+     "2729306",
+     "2729307",
+     "2735796",
+     "2735797",
+     "2735803",
+     "2735804"
+    ],
+    "spl_id": [
+     "b4b42374-17ea-4cc5-8516-3f7731e71bf4"
+    ],
+    "spl_set_id": [
+     "9e58b045-e352-4f62-99bf-77fae1bebc69"
+    ],
+    "package_ndc": [
+     "57894-510-01",
+     "57894-514-01",
+     "57894-515-01",
+     "57894-522-01"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0357894522010"
+    ],
+    "nui": [
+     "N0000175531",
+     "M0009499"
+    ],
+    "pharm_class_epc": [
+     "Endoglycosidase [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Glycoside Hydrolases [CS]"
+    ],
+    "unii": [
+     "743QUY4VD8",
+     "0JSR7Z0NB6"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Rybrevant Faspro AMIVANTAMAB and HYALURONIDASE-lpuj (HUMAN RECOMBINANT) AMIVANTAMAB AMIVANTAMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) EDETATE DISODIUM ACETIC ACID METHIONINE POLYSORBATE 80 SODIUM ACETATE SUCROSE WATER Colorless to pale yellow Rybrevant Faspro AMIVANTAMAB and HYALURONIDASE-lpuj (HUMAN RECOMBINANT) AMIVANTAMAB AMIVANTAMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) EDETATE DISODIUM ACETIC ACID METHIONINE POLYSORBATE 80 SODIUM ACETATE SUCROSE WATER Colorless to pale yellow Rybrevant Faspro AMIVANTAMAB and HYALURONIDASE-lpuj (HUMAN RECOMBINANT) AMIVANTAMAB AMIVANTAMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) EDETATE DISODIUM ACETIC ACID METHIONINE POLYSORBATE 80 SODIUM ACETATE SUCROSE WATER Colorless to pale yellow Rybrevant Faspro AMIVANTAMAB and HYALURONIDASE-lpuj (HUMAN RECOMBINANT) AMIVANTAMAB AMIVANTAMAB HYALURONIDASE (HUMAN RECOMBINANT) HYALURONIDASE (HUMAN RECOMBINANT) EDETATE DISODIUM ACETIC ACID METHIONINE POLYSORBATE 80 SODIUM ACETATE SUCROSE WATER Colorless to pale yellow"
+   ]
+  },
+  {
+   "set_id": "c417f9ee-2027-4ed5-92ad-3c19266de16c",
+   "effective_time": "20260505",
+   "openfda": {
+    "application_number": [
+     "NDA219008"
+    ],
+    "brand_name": [
+     "LAZCLUZE"
+    ],
+    "generic_name": [
+     "LAZERTINIB"
+    ],
+    "manufacturer_name": [
+     "Janssen Biotech, Inc."
+    ],
+    "product_ndc": [
+     "57894-080",
+     "57894-240"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "LAZERTINIB"
+    ],
+    "rxcui": [
+     "2691156",
+     "2691162",
+     "2691164",
+     "2691166"
+    ],
+    "spl_id": [
+     "da4a9239-16d7-46cf-b089-e943e0080015"
+    ],
+    "spl_set_id": [
+     "c417f9ee-2027-4ed5-92ad-3c19266de16c"
+    ],
+    "package_ndc": [
+     "57894-240-30",
+     "57894-240-99",
+     "57894-080-60",
+     "57894-080-90"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175605",
+     "N0000175082",
+     "N0000182141",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Kinase Inhibitor [EPC]"
+    ],
+    "pharm_class_moa": [
+     "Kinase Inhibitors [MoA]",
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "4A2Y23XK11"
+    ]
+   },
+   "spl_product_data_elements": [
+    "LAZCLUZE lazertinib FERRIC OXIDE RED SILICON DIOXIDE CROSCARMELLOSE SODIUM MICROCRYSTALLINE CELLULOSE MANNITOL MAGNESIUM STEARATE POLYETHYLENE GLYCOL, UNSPECIFIED POLYVINYL ALCOHOL, UNSPECIFIED GLYCERYL MONOCAPRYLOCAPRATE TITANIUM DIOXIDE TALC FERROSOFERRIC OXIDE LAZERTINIB LAZERTINIB Reddish Purple capsule-shaped LZ;240 LAZCLUZE lazertinib SILICON DIOXIDE CROSCARMELLOSE SODIUM MICROCRYSTALLINE CELLULOSE MANNITOL MAGNESIUM STEARATE POLYETHYLENE GLYCOL, UNSPECIFIED POLYVINYL ALCOHOL, UNSPECIFIED GLYCERYL MONOCAPRYLOCAPRATE TITANIUM DIOXIDE TALC FERRIC OXIDE YELLOW LAZERTINIB LAZERTINIB capsule-shaped LZ;80"
+   ]
+  }
+ ]
+}

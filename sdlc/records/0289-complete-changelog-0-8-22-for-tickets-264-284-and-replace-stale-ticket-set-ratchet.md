@@ -8,4 +8,4 @@ Imported from March ticket 289. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/289-complete-changelog-0-8-22-for-tickets-264-284-and-replace-stale-ticket-set-ratchet
+Artifacts: ~/workspace/planning/biomcp/artifacts/289-complete-changelog-0-8-22-for-tickets-264-284-and-replace-stale-ticket-set-ratchet

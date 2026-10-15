@@ -35,56 +35,27 @@ to restore GRCh37 preference; an explicit `--assembly` always wins. If the same
 spelling identifies different records, BioMCP returns the preferred record and
 reports the other identity in `build_candidates` JSON and a Markdown warning.
 
-## rsID detail
-
-Use `biomcp get variant rs101` to retrieve an rsID detail card. BioMCP examines at most 1,000 source rows in 50-row pages and selects one distinct compatible identity after the scan completes. Exact duplicates and reordered assertion vectors collapse. Source ID case, verbatim assertion prefixes and assertion multiplicity preserve distinct identities. Annotation richness does not choose between them.
-
-A complete scan with only contradictory rows returns not found. Multiple compatible identities, unusable identity evidence and an incomplete scan produce distinct refusals. Without a reported total, a short page requires another request and only an empty page completes the scan. An empty page below any previously reported total refuses selection. Provider failures remain errors even after a provisional match.
-
-For a refusal, use an exact genomic HGVS ID or search with the rsID. Completion establishes identity within the provider results. It does not establish reference correctness. A unique complete result keeps the existing detail fields and provider default build. The separate GWAS-only route retains its behavior.
-
-## Transcript and gene coding detail
-
-Quote the complete identifier for `get variant`:
-
-```bash
-biomcp get variant 'NM_012345.7(TP53):c.19_20insAC' --json
-biomcp get variant 'NM_012345.7(TP53) c.19_20insAC'
-```
-
-These examples use invented identifiers. The wrapper requires a versioned `NM_` transcript, an exact uppercase gene and a complete supported coding fragment. Substitutions, deletions, duplications, insertions, delins, inversions and no-change assertions retain their exact spelling. A no-change assertion supplies source detail without establishing a clinical negative. Written offsets, uncertainty, decimal spelling and stated sequences remain unchanged. The original input must fit within 512 UTF-8 bytes before trimming. Prediction is supported only for parenthesized ordinary point substitutions without offsets or upstream/coding-end markers. Predicted deletions and other predicted edits, unsupported compounds and repeats, invalid insertion flanks, and an assembly option are refused. The wrapper is unavailable for variant articles. An unquoted spaced form makes the coding fragment a section argument.
-
-BioMCP queries the exact transcript and coding spelling. It selects a complete ClinVar preferred-name assertion or a single complete snpEff annotation with the same transcript version, gene and coding change. The detail card uses that whole assertion. A missing protein stays absent. Another transcript version cannot supply it. Independent annotations remain source facts and do not establish equivalence.
-
-Selection requires a complete bounded scan of at most 1,000 raw rows in 50-row pages. Duplicate rows still count. Conflicting matched protein assertions, including absent versus present protein, refuse selection before deduplication. Multiple identities, incomplete evidence and an incomplete scan have distinct refusals. Provider failures remain errors after a provisional match. Population and other optional sections keep their existing behavior.
-
-Accepted syntax and an exact source assertion do not establish reference validity, biological effects or live source qualification.
-
-## Gene and coding detail lookup
-
-Use `biomcp get variant 'TP53 c.215C>G'` to locate one source record by a written coding alias. The input contains exactly a gene symbol and an accession-free lowercase `c.` fragment. The complete original input must fit 512 UTF-8 bytes. Explicit `--assembly` requires a genomic coordinate.
-
-The checked nucleotide parser admits complete substitutions, deletions, duplications, insertions, delins, inversions and no-change assertions. Supported uncertain locations, offsets, upstream and coding-end markers, and predicted point substitutions retain their written spelling. Decimal padding has identity meaning: `c.0019C>T` does not match `c.19C>T`. Syntax admission does not validate a reference, project coordinates or infer a protein effect.
-
-BioMCP scans at most 1,000 raw rows in 50-row pages before selecting one compatible source identity. Duplicates and contradictory rows count toward that allowance. The largest reported total persists across pages. Without totals, only a terminal empty page completes the scan. Unexamined received rows prevent completion. Ambiguity, incomplete evidence and incomplete selection produce distinct refusals. A complete scan with no compatible identity returns not found. Provider failures remain errors after a provisional match.
-
-The result preserves the source's coherent transcript, coding and protein display tuple. A matching alias locates the record and does not select a transcript. The displayed coding alias can differ from the request. Use `biomcp search variant 'TP53 c.215C>G'` to inspect candidate records or supply an exact rsID or genomic HGVS ID after a refusal. CLI JSON and Markdown, typed MCP `get` and raw MCP commands use the same detail operation.
-
-## Protein point detail lookup
-
-Use a gene plus a checked protein substitution, for example `biomcp get variant 'GENE p.Ala11Val'`. BioMCP examines at most 1,000 candidates in 50-row pages. It returns a detail card only after the provider query completes and candidate selection succeeds. Exact duplicates and reordered assertions collapse. Additional assertions, assertion multiplicity and different written reference prefixes retain distinct identities.
-
-After a complete scan, distinct compatible genomic candidates resolve when exactly one carries a ClinVar record. Otherwise BioMCP refuses with the candidates and working exact input forms. Conflicting assertions on the same genomic identity, missing identity evidence and incomplete scans refuse to select a card. A returned page containing any unexamined row remains incomplete even if its reported total suggests completion. A complete scan with no compatible or uncertain candidate returns not found. Provider failures remain errors, including a failure after a provisional match.
-
-For a refusal, use an exact rsID or genomic HGVS ID, or search with the gene and protein change. Query completion establishes identity within the provider results. It does not validate a reference sequence or select a transcript. The displayed protein annotation belongs to the selected source record.
-
-## Protein interval detail lookup
-
-Gene plus protein deletion, duplication, insertion and delins inputs reach the detail lookup. For example, use `biomcp get variant 'GENE p.Ala11_Gly12del'` with a gene symbol. Bare changes and `p.` or `P.` prefixes use the existing checked interval syntax. Written prediction and decimal positions remain part of the request.
-
-BioMCP queries the checked one-letter and three-letter spellings. It examines at most 1,000 candidates in 50-row pages and returns a detail card only after the query completes with one compatible source identity. Ambiguous results, missing identity evidence and scans that reach the limit refuse to select a card. A complete scan with no compatible or uncertain candidate returns not found. Provider failures remain errors.
-
-The submitted input and each rendered query spelling must fit 512 bytes. Explicit `--assembly` requires a chromosome-prefixed genomic coordinate. The displayed protein annotation belongs to the selected source record. This lookup establishes identity within the completed provider query; syntax acceptance does not validate a reference sequence or resolve transcript selection.
+A gene-protein form names a protein change, and the same change can sit on
+several genomic variants; provider alias lists even carry other isoforms'
+spellings on different variants. `get variant` counts a hit as a match only
+when the transcript BioMCP headlines for it spells the requested change, and
+that headline prefers the MANE transcript the response marks (ClinVar names
+variants on MANE Select) over the annotation naming the request and the
+first NM_ annotation, so a response without any ClinVar name still resolves
+on the transcript that spells the request. When the resolved change does not
+spell the request, the answer checks the requested reference residue against
+the gene's canonical (MANE Select) protein sequence: a matching residue means
+the request's own numbering is valid on MANE, and if no record names the
+change there, `get variant` refuses with the only alias match as a candidate;
+a different residue means the request follows another transcript's numbering,
+and the answer says so with a note naming the transcript and spelling that
+matched. When the check cannot run — the request names no residue, or the
+sequence lookup is unavailable — the answer carries no note rather than an
+unproven claim. When exactly one matching variant carries the ClinVar record
+for that change, `get variant` resolves to it; when several variants match
+and none or several carry ClinVar records, it refuses with the candidates and
+a working input form instead of guessing. Retry with one of the listed genomic
+HGVS, rsID, ClinVar VariationID, or transcript-qualified HGVS spellings.
 
 ## ClinGen Allele Registry normalization
 
@@ -149,6 +120,15 @@ biomcp search variant -g PTPN22 R620W --limit 5
 
 Standalone protein shorthand like `R620W` returns variant-specific recovery
 guidance instead of falling back to gene or condition discovery.
+
+A free-text phrase whose first word is a gene's official symbol routes that
+word to the gene filter and searches the remaining words as the condition:
+`biomcp search variant "SCN5A Brugada"` reads as `gene=SCN5A,
+condition=Brugada`. Aliases and other words never route, so
+`"HCC liver cancer"` stays one whole-phrase condition search. Set
+`BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` to restore the whole-phrase search
+for every phrase. A phrase search that returns nothing states how it was
+read and prints a working alternative.
 
 Protein searches using `--hgvsp` or positional `GENE CHANGE`, plus coding-HGVS and rsID searches, are exact identity routes. BioMCP keeps
 the supplied spelling, normalizes aliases only for comparison, and excludes

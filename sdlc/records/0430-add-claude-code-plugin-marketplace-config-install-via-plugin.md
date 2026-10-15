@@ -8,4 +8,4 @@ Imported from March ticket 430. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/430-add-claude-code-plugin-marketplace-config-install-via-plugin
+Artifacts: ~/workspace/planning/biomcp/artifacts/430-add-claude-code-plugin-marketplace-config-install-via-plugin

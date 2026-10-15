@@ -37,7 +37,8 @@ def test_docs_publication_is_one_main_push_only_writer() -> None:
     assert list(workflow["jobs"]) == ["publish-docs"]
     job = workflow["jobs"]["publish-docs"]
     assert job["if"] == (
-        "github.event_name == 'push' && github.ref == 'refs/heads/main'"
+        "github.event_name == 'push' && github.ref == 'refs/heads/main' "
+        "&& github.repository == 'genomoncology/biomcp'"
     )
     assert job["permissions"] == {"contents": "write", "pages": "write"}
     assert "permissions" not in workflow

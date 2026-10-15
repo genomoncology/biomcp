@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
-use std::collections::HashSet;
-use std::sync::OnceLock;
+use std::collections::{HashMap, HashSet};
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
 use regex::Regex;
@@ -359,13 +359,109 @@ impl DiscoverConfidence {
     }
 }
 
+static ALIAS_FALLBACK_MEMO: OnceLock<Mutex<HashMap<String, DiscoverResult>>> = OnceLock::new();
+
+/// The alias-fallback memo's size bound: a long-running MCP server must not
+/// keep every answer for the process's lifetime, so a full memo clears and
+/// refills instead of growing without end.
+const ALIAS_FALLBACK_MEMO_CAP: usize = 512;
+
+fn alias_fallback_memo() -> &'static Mutex<HashMap<String, DiscoverResult>> {
+    ALIAS_FALLBACK_MEMO.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// The memo key for one query against one source address: two fixtures (or
+/// two deployments) that point OLS4 at different addresses never share an
+/// answer, because the address is part of the key.
+fn alias_fallback_memo_key(base_url: &str, query: &str) -> String {
+    format!("{base_url}\u{0}{}", query.trim().to_ascii_lowercase())
+}
+
+fn memoize_alias_fallback(key: String, result: &DiscoverResult) {
+    let mut memo = crate::utils::sync::recover_poison(alias_fallback_memo().lock());
+    if memo.len() >= ALIAS_FALLBACK_MEMO_CAP {
+        memo.clear();
+    }
+    memo.insert(key, result.clone());
+}
+
+/// The time budget one discover round gets on a refusal path:
+/// the entity rescue and the CLI alias fallback both give up when the
+/// outside service cannot answer within it, so a slow OLS4 round never
+/// holds a refusal hostage.
+pub(crate) const REFUSAL_DISCOVER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
+
+/// The refusal deadlines remembered for this process: a
+/// refusal is two rounds over one outside service — the entity rescue and
+/// the CLI alias fallback — and a stalled source must not collect the
+/// budget twice. A rescue that runs out of time remembers the deadline it
+/// started from, and the later alias-fallback round spends only what is
+/// left of that same budget instead of starting a fresh one.
+static REFUSAL_DISCOVER_STARTS: OnceLock<Mutex<HashMap<String, std::time::Instant>>> =
+    OnceLock::new();
+
+const REFUSAL_DISCOVER_DEADLINE_CAP: usize = 512;
+
+fn refusal_discover_starts() -> &'static Mutex<HashMap<String, std::time::Instant>> {
+    REFUSAL_DISCOVER_STARTS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn refusal_discover_deadline_key(query: &str) -> String {
+    query.trim().to_ascii_lowercase()
+}
+
+/// Remember the deadline one refusal discover round started from, so the
+/// next round against the same query shares it. The first writer wins: a
+/// round already inside a remembered budget never pushes it out.
+pub(crate) fn remember_refusal_discover_start(query: &str, started_at: std::time::Instant) {
+    let mut starts = crate::utils::sync::recover_poison(refusal_discover_starts().lock());
+    if starts.len() >= REFUSAL_DISCOVER_DEADLINE_CAP {
+        starts.clear();
+    }
+    starts
+        .entry(refusal_discover_deadline_key(query))
+        .or_insert(started_at);
+}
+
+/// The budget left for a refusal discover round over `query`: the time
+/// until a deadline an earlier round remembered, or the full budget when
+/// no round over this query has run out yet. `Duration::ZERO` means the
+/// shared budget is already spent and the round must not run.
+pub(crate) fn refusal_discover_remaining_budget(query: &str) -> Duration {
+    match crate::utils::sync::recover_poison(refusal_discover_starts().lock())
+        .get(&refusal_discover_deadline_key(query))
+    {
+        Some(started_at) => (*started_at + REFUSAL_DISCOVER_TIMEOUT)
+            .saturating_duration_since(std::time::Instant::now()),
+        None => REFUSAL_DISCOVER_TIMEOUT,
+    }
+}
+
 pub(crate) async fn resolve_query(
     query: &str,
     mode: DiscoverMode,
 ) -> Result<DiscoverResult, BioMcpError> {
     let request = DiscoverRequest::new(query, mode)?;
     let ols_client = crate::sources::ols4::OlsClient::new()?;
-    resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await
+    if mode != DiscoverMode::AliasFallback {
+        return resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await;
+    }
+    // A refusal pays this resolution twice: the entity rescue runs it once
+    // and the CLI alias fallback runs it again. The memo serves the second
+    // caller from the first answer, so the refusal path runs the discover
+    // round once per query per process. Only settled answers
+    // are memoized; a transient source error still retries, and the mapping
+    // is bounded and keyed by the source address the way the trial-alias
+    // cache is keyed by name.
+    let key = alias_fallback_memo_key(ols_client.base_url(), query);
+    if let Some(cached) = crate::utils::sync::recover_poison(alias_fallback_memo().lock()).get(&key)
+    {
+        return Ok(cached.clone());
+    }
+    let result =
+        resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await?;
+    memoize_alias_fallback(key, &result);
+    Ok(result)
 }
 
 pub(crate) async fn resolve_query_with_options(
@@ -483,7 +579,7 @@ async fn resolve_request_with_options(
         false => {
             // Boxed so the join's four-way state machine lives on the
             // heap: inlining it doubled the chain's future in every
-            // caller (ticket 1243). All-to-completion semantics are
+            // caller. All-to-completion semantics are
             // unchanged by boxing.
             Box::pin(async move {
                 tokio::join!(
@@ -800,7 +896,7 @@ pub(crate) async fn resolve_exact_article_keyword_entity(
     // The lookup rides alongside the article search that spawned it, so its
     // construction must not outlive a forced search deadline: cache epoch
     // construction under a held lock would otherwise block the whole
-    // invocation past its deadline (ticket 1299).
+    // invocation past its deadline.
     let construction_budget =
         OLS4_TIMEOUT.min(crate::entities::article::article_search_deadline_budget());
     let deadline = crate::sources::VariantArticleDeadline::from_now(construction_budget);
@@ -1712,7 +1808,8 @@ fn heuristic_type(label: &str, query: &str) -> DiscoverType {
         || text.contains("injection")
     {
         DiscoverType::Drug
-    } else if looks_like_gene_query(query) && crate::sources::is_valid_gene_symbol(label) {
+    } else if looks_like_gene_query(query) && crate::entities::gene::looks_like_symbol(label.trim())
+    {
         DiscoverType::Gene
     } else if text.contains("syndrome")
         || text.contains("disease")
@@ -2647,11 +2744,12 @@ fn alias_candidates(result: &DiscoverResult) -> Vec<AliasCandidateSummary> {
 #[cfg(test)]
 mod tests {
     use super::{
-        AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept, DiscoverConfidence,
-        DiscoverIntent, DiscoverMode, DiscoverOptions, DiscoverRequest, DiscoverResult,
-        DiscoverType, MatchTier, OLS4_TIMEOUT, apply_discover_options, build_result,
-        classify_alias_fallback, concept_from_ols, generate_commands, merge_candidate,
-        normalize_primary_id, ols_doc_identifier,
+        ALIAS_FALLBACK_MEMO_CAP, AliasFallbackDecision, ConceptSource, ConceptXref,
+        DiscoverConcept, DiscoverConfidence, DiscoverIntent, DiscoverMode, DiscoverOptions,
+        DiscoverRequest, DiscoverResult, DiscoverType, MatchTier, OLS4_TIMEOUT,
+        alias_fallback_memo, alias_fallback_memo_key, apply_discover_options, build_result,
+        classify_alias_fallback, concept_from_ols, generate_commands, memoize_alias_fallback,
+        merge_candidate, normalize_primary_id, ols_doc_identifier,
         resolve_exact_article_keyword_entity_from_ols_docs, symptom_disease_lookup_query,
         typed_gene_identity_concept,
     };
@@ -3826,6 +3924,28 @@ mod tests {
     }
 
     #[test]
+    fn a_gene_shaped_query_never_types_a_drug_label_as_a_gene() {
+        // `get drug 5-FU` refuses, and the alias fallback's
+        // candidate list named "Fluorouracil (Gene, MESH:D005472)" because
+        // the heuristic typed the MESH drug label as a gene — the loose
+        // format check accepted any alphanumeric word once the query looked
+        // gene-shaped. Only a gene-symbol-shaped label (BRCA1) may take the
+        // Gene type from a gene-shaped query.
+        let fluorouracil = concept_from_ols(
+            &ols_doc("mesh", "Fluorouracil", "MESH:D005472", &["5-FU"]),
+            "5-FU",
+        );
+        assert_ne!(
+            fluorouracil.primary_type,
+            DiscoverType::Gene,
+            "a drug label is never typed as a gene"
+        );
+
+        let symbol = concept_from_ols(&ols_doc("ncit", "BRCA1", "NCIT:C164709", &[]), "5-FU");
+        assert_eq!(symbol.primary_type, DiscoverType::Gene);
+    }
+
+    #[test]
     fn umbrella_disease_queries_stay_ambiguous_and_search_oriented() {
         let result = build_result(
             "diabetes",
@@ -3999,6 +4119,46 @@ mod tests {
             full: false,
             article_search: None,
         }
+    }
+
+    #[test]
+    fn alias_fallback_memo_keys_carry_the_source_address() {
+        // Two deployments or fixtures that point OLS4 at
+        // different addresses never share an answer, and one address
+        // shares across letter case only.
+        assert_ne!(
+            alias_fallback_memo_key("http://fixture-a/ols4", "  Keytruda "),
+            alias_fallback_memo_key("http://fixture-b/ols4", "keytruda")
+        );
+        assert_eq!(
+            alias_fallback_memo_key("http://fixture-a/ols4", "  Keytruda "),
+            alias_fallback_memo_key("http://fixture-a/ols4", "keytruda")
+        );
+    }
+
+    #[test]
+    fn alias_fallback_memo_stays_bounded() {
+        let memo = alias_fallback_memo();
+        crate::utils::sync::recover_poison(memo.lock()).clear();
+        for index in 0..ALIAS_FALLBACK_MEMO_CAP {
+            crate::utils::sync::recover_poison(memo.lock()).insert(
+                alias_fallback_memo_key("http://fixture", &format!("query-{index}")),
+                bounded_result(Vec::new()),
+            );
+        }
+        memoize_alias_fallback(
+            alias_fallback_memo_key("http://fixture", "overflow"),
+            &bounded_result(Vec::new()),
+        );
+        let guard = crate::utils::sync::recover_poison(memo.lock());
+        assert!(
+            guard.len() <= ALIAS_FALLBACK_MEMO_CAP,
+            "a full memo cleared instead of growing past its bound: {}",
+            guard.len()
+        );
+        assert!(guard.contains_key(&alias_fallback_memo_key("http://fixture", "overflow")));
+        drop(guard);
+        crate::utils::sync::recover_poison(memo.lock()).clear();
     }
 
     fn bounded_concept(label: &str, id: &str) -> DiscoverConcept {

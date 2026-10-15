@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/410-cancerhotspots-grade-recurrence-counts-for-somatic-oncogenicity-grading-os3-om3-op3
+    ~/workspace/planning/biomcp/artifacts/410-cancerhotspots-grade-recurrence-counts-for-somatic-oncogenicity-grading-os3-om3-op3

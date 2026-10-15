@@ -364,13 +364,15 @@ pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> 
 }
 
 #[derive(Serialize)]
-struct AliasError {
+struct AliasError<'a> {
     code: &'static str,
     message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     source: Option<&'static str>,
+    // The recovery may name a runtime location, so it borrows from the
+    // projection instead of holding a static spelling.
     #[serde(skip_serializing_if = "Option::is_none")]
-    recovery: Option<&'static str>,
+    recovery: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     limit_bytes: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -380,8 +382,8 @@ struct AliasError {
 }
 
 #[derive(Serialize)]
-struct ErrorJsonResponse {
-    error: AliasError,
+struct ErrorJsonResponse<'a> {
+    error: AliasError<'a>,
     _meta: ErrorMeta,
 }
 
@@ -422,7 +424,7 @@ pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> 
 
 #[derive(Serialize)]
 struct AliasJsonResponse<'a> {
-    error: AliasError,
+    error: AliasError<'a>,
     _meta: AliasMeta<'a>,
 }
 
@@ -466,7 +468,7 @@ enum AliasResolution<'a> {
 
 #[derive(Serialize)]
 struct VariantGuidanceJsonResponse<'a> {
-    error: AliasError,
+    error: AliasError<'a>,
     _meta: VariantGuidanceMeta<'a>,
 }
 
@@ -637,6 +639,10 @@ fn match_tier_name(match_tier: crate::entities::discover::MatchTier) -> &'static
         crate::entities::discover::MatchTier::Weak => "Weak",
     }
 }
+
+#[cfg(test)]
+#[path = "../../tests/unit/render/json_error.rs"]
+mod json_error_tests;
 
 #[cfg(test)]
 mod tests {
@@ -846,7 +852,7 @@ mod tests {
         let sentinels = [
             "https://provider.example/private?token=fake-credential",
             "/home/operator/fixture.json",
-            ".march/design-final.md",
+            ".local/design-final.md",
             "parser detail at byte 42",
         ];
         let errors = [
@@ -1024,6 +1030,7 @@ mod tests {
             ema_safety: None,
             ema_shortage: None,
             who_prequalification: None,
+            who_note: None,
             civic: None,
             cell_lines: None,
         };
@@ -1035,7 +1042,7 @@ mod tests {
         assert!(json.contains("\"targets\""));
         assert!(json.contains("\"boxed_warning\": \"WARNING: QT PROLONGATION\""));
         // The coverage status is additive and absent when not populated
-        // (ticket 1241); the synonym list never serializes.
+        //; the synonym list never serializes.
         assert!(
             !json.contains("interaction_coverage_status"),
             "absent coverage must not serialize: {json}"
@@ -1094,6 +1101,7 @@ mod tests {
             ema_safety: None,
             ema_shortage: None,
             who_prequalification: None,
+            who_note: None,
             civic: None,
             cell_lines: None,
         };

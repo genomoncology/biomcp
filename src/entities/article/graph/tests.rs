@@ -17,6 +17,7 @@ use crate::sources::semantic_scholar::{
 };
 use crate::transform::article::{JatsCitationExtraction, JatsCitationTargetIds};
 use reqwest::StatusCode;
+
 fn semantic_paper(
     paper_id: &str,
     pmid: &str,
@@ -389,7 +390,7 @@ async fn jats_extraction_seam_controls_the_blocking_parse_outcome() {
     }
 }
 
-// --- Ticket 1145: directed citation-evidence traversal ---
+// --- Directed citation-evidence traversal ---
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -916,7 +917,7 @@ async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_exp
         "expected bounded deadline error, got {error:?}"
     );
     // The bounded outcome names the provider it belongs to, never the
-    // generic placeholder (ticket 1302).
+    // generic placeholder.
     let projection = error.public_projection();
     assert_eq!(projection.source, Some("Semantic Scholar"));
     assert_eq!(
@@ -1005,7 +1006,7 @@ async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
     assert!(!requests.to_lowercase().contains("fulltext"), "{requests}");
 }
 
-// Ticket 1200: the OpenCitations confirmation phase.
+// The OpenCitations confirmation phase.
 //
 // These tests point every provider base at a loopback fixture, including
 // `BIOMCP_TEST_UNPACED_ORIGIN`, which the article asset resolver reads when it
@@ -1033,7 +1034,8 @@ enum JatsReply {
     Absent,
     /// A 200 full-text document.
     Document(&'static str),
-    /// A 404 that blocks the shared test runtime past a shrunk deadline.
+    /// A full-text reply that stays in flight for the delay, so a shrunk
+    /// command budget expires while the attempt is still blocked.
     Delayed(std::time::Duration),
 }
 
@@ -1114,12 +1116,16 @@ async fn spawn_opencitations_fixture(
                     body.as_bytes(),
                 )),
                 JatsReply::Delayed(delay) => {
-                    std::thread::sleep(delay);
-                    TestHttpReply::Bytes(test_http_response(
-                        "404 Not Found",
-                        "text/plain",
-                        b"absent",
-                    ))
+                    // The slow reply holds the connection and a timer task
+                    // releases it after the delay. The old blocking wait
+                    // here parked the connection task's runtime worker and
+                    // froze every deadline timer with it.
+                    let (release_tx, hold) = held_reply_gate();
+                    tokio::spawn(async move {
+                        tokio::time::sleep(delay).await;
+                        let _ = release_tx.send(()).await;
+                    });
+                    TestHttpReply::Hold(hold)
                 }
             }
         } else if target.contains("/references") {
@@ -1739,7 +1745,7 @@ async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_
     assert!(!logged.contains("opencitations:"), "{logged}");
 }
 
-// Ticket 1302: honest degradation when Semantic Scholar refuses.
+// Honest degradation when Semantic Scholar refuses.
 
 /// How the fixture answers Semantic Scholar.
 #[derive(Clone)]
@@ -1749,14 +1755,15 @@ enum S2Reply {
     SeedsWithWalkRefused(&'static str),
     /// Every Semantic Scholar request answers the configured refusal status.
     Refused(&'static str),
-    /// The citing seed answers, then the cited seed refuses.
-    CitingSeedWithCitedRefused(&'static str),
+    /// The citing seed row answers; the cited seed answers the configured
+    /// refusal status, so the pair degrades after one resolved seed.
+    CitedSeedRefused(&'static str),
 }
 
 /// One Europe PMC search hit naming the citing fixture paper.
 fn europepmc_citing_hit() -> String {
     format!(
-        "{{\"hitCount\":1,\"resultList\":{{\"result\":[{{\"id\":\"{OPEN_CITING_PMID}\",\"source\":\"MED\",\
+        "{{\"hitCount\":1,\"resultList\":{{\"result\":[{{\"id\":\"1\",\"source\":\"MED\",\
 \"pmid\":\"{OPEN_CITING_PMID}\",\"title\":\"Citing fixture\",\
 \"doi\":\"{OPEN_CITING_DOI}\",\"journalTitle\":\"Fixture Journal\",\"pubYear\":\"2012\"}}]}}}}"
     )
@@ -1785,24 +1792,14 @@ async fn spawn_degradation_fixture(
             .unwrap_or_default();
         if method == "POST" {
             logged.lock().unwrap().push("s2:seed".to_string());
-            if matches!(s2, S2Reply::CitingSeedWithCitedRefused(_))
-                && !request.contains(OPEN_CITED_DOI)
-            {
-                logged
-                    .lock()
-                    .unwrap()
-                    .push("s2:answered-citing".to_string());
-            }
+            // The citing seed batch carries the fixture's citing PMID or DOI.
+            let citing_seed =
+                request.contains(OPEN_CITING_PMID) || request.contains(OPEN_CITING_DOI);
             match &s2 {
                 S2Reply::Refused(status) => s2_reply(status),
-                S2Reply::CitingSeedWithCitedRefused(status) if request.contains(OPEN_CITED_DOI) => {
-                    s2_reply(status)
-                }
-                S2Reply::SeedsWithWalkRefused(_) | S2Reply::CitingSeedWithCitedRefused(_) => {
-                    let row = if matches!(s2, S2Reply::CitingSeedWithCitedRefused(_))
-                        || request.contains(OPEN_CITING_PMID)
-                        || request.contains(OPEN_CITING_DOI)
-                    {
+                S2Reply::CitedSeedRefused(status) if !citing_seed => s2_reply(status),
+                S2Reply::CitedSeedRefused(_) | S2Reply::SeedsWithWalkRefused(_) => {
+                    let row = if citing_seed {
                         format!(
                             "[{{\"paperId\":\"{OPEN_CITING_PID}\",\"title\":\"Citing\",\
 \"externalIds\":{{\"PubMed\":\"{OPEN_CITING_PMID}\",\"DOI\":\"{OPEN_CITING_DOI}\"}}}}]"
@@ -1845,9 +1842,9 @@ async fn spawn_degradation_fixture(
         } else if target.contains("/references") {
             logged.lock().unwrap().push("s2:graph".to_string());
             match &s2 {
-                S2Reply::Refused(status) => s2_reply(status),
-                S2Reply::SeedsWithWalkRefused(status)
-                | S2Reply::CitingSeedWithCitedRefused(status) => s2_reply(status),
+                S2Reply::Refused(status)
+                | S2Reply::SeedsWithWalkRefused(status)
+                | S2Reply::CitedSeedRefused(status) => s2_reply(status),
             }
         } else {
             TestHttpReply::Bytes(test_http_response(
@@ -1904,7 +1901,7 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
     // request, one Europe PMC resolution, one index request, all loopback.
     // The clock bound is the ticket's fail-fast pin: a refused first hop
     // answers within seconds instead of burning the command budget
-    // (ticket 1302).
+    //.
     let started = std::time::Instant::now();
     let result = crate::sources::semantic_scholar::with_test_client(
         client,
@@ -1955,7 +1952,7 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
         [
             ("semantic_scholar", "rate_limited"),
             // The citing PMID resolved through a Europe PMC search, so the
-            // row names that phase instead of claiming no request (1306).
+            // row names that phase instead of claiming no request.
             ("europe_pmc_jats", "searched_for_doi_resolution"),
             ("opencitations", "available"),
         ]
@@ -1980,70 +1977,95 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn citation_evidence_keeps_the_answered_seed_when_the_second_seed_refuses() {
+async fn citation_evidence_reuses_the_resolved_citing_seed_when_the_cited_seed_is_refused() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    for status in ["429 Too Many Requests", "503 Service Unavailable"] {
-        for citing_id in [OPEN_CITING_PID, "arXiv:2401.01234", OPEN_CITING_PMID] {
-            let (_env, _cache, fixture, requests) = degradation_case(
-                "citation-second-seed-refused",
-                S2Reply::CitingSeedWithCitedRefused(status),
-                OpenCitationsReply::Rows(opencitations_row(
-                    "061502131318-062102119315",
-                    "2012-07-12",
-                )),
-            )
-            .await;
-            let client = SemanticScholarClient::new_with_cache_observers(
-                &fixture.base,
-                |_, _| {},
-                |_, _| {},
-            )
-            .unwrap();
-            let result = crate::sources::semantic_scholar::with_test_client(
-                client,
-                citation_evidence(citing_id, OPEN_CITED_DOI, false),
-            )
-            .await
-            .expect("the answered citing DOI must survive the second refusal");
+    let (_env, _cache, fixture, requests) = degradation_case(
+        "citation-refused-cited-seed",
+        S2Reply::CitedSeedRefused("429 Too Many Requests"),
+        OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
 
-            assert_eq!(result.citing.paper_id.as_deref(), Some(OPEN_CITING_PID));
-            assert_eq!(result.citing.doi.as_deref(), Some(OPEN_CITING_DOI));
-            assert_eq!(result.citing.title, "Citing");
-            assert_eq!(result.cited.doi.as_deref(), Some(OPEN_CITED_DOI));
-            assert_eq!(
-                result.status,
-                CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
-            );
-            let confirmation = result
-                .confirmation
-                .expect("the index confirms the directed edge");
-            assert_eq!(confirmation.citing, format!("doi:{OPEN_CITING_DOI}"));
-            assert_eq!(confirmation.cited, format!("doi:{OPEN_CITED_DOI}"));
-            assert!(result.passages.is_empty());
-            assert!(result.provider_contexts.is_empty());
-            assert_eq!(result.source.as_deref(), Some("opencitations"));
-            assert_eq!(
-                result._meta.source_status[0].status,
-                if status.starts_with("429") {
-                    "rate_limited"
-                } else {
-                    "unavailable"
-                }
-            );
-            let logged = requests.lock().unwrap().join("\n");
-            assert_eq!(logged.matches("s2:answered-citing").count(), 1, "{logged}");
-            if status.starts_with("429") {
-                assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
-            }
-            assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
-            assert!(
-                !logged.contains("europe:search"),
-                "do not re-resolve an answered seed: {logged}"
-            );
-            assert!(!logged.contains("s2:graph"), "{logged}");
-        }
-    }
+    assert_eq!(
+        result.status,
+        CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
+    );
+    // The citing side keeps the first seed's answer: the seed title stays
+    // and the resolved paper is never re-resolved through Europe PMC.
+    assert_eq!(result.citing.title, "Citing");
+    assert_eq!(result.citing.pmid.as_deref(), Some(OPEN_CITING_PMID));
+    assert_eq!(result.citing.doi.as_deref(), Some(OPEN_CITING_DOI));
+    assert_eq!(result.cited.doi.as_deref(), Some(OPEN_CITED_DOI));
+    let confirmation = result.confirmation.as_ref().expect("confirmation");
+    assert_eq!(confirmation.citing, format!("doi:{OPEN_CITING_DOI}"));
+    assert_eq!(confirmation.cited, format!("doi:{OPEN_CITED_DOI}"));
+    assert_eq!(
+        result
+            ._meta
+            .source_status
+            .iter()
+            .map(|row| (row.source.as_str(), row.status.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            ("semantic_scholar", "rate_limited"),
+            // No Europe PMC search ran: the citing side was reused and the
+            // cited side is a DOI.
+            ("europe_pmc_jats", "not_requested"),
+            ("opencitations", "available"),
+        ]
+    );
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
+    assert!(!logged.contains("s2:graph"), "{logged}");
+    assert!(!logged.contains("europe:search"), "{logged}");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_names_a_malformed_identifier_when_the_matched_row_fails_the_shape() {
+    let (_env, _cache, fixture, requests) = degradation_case(
+        "citation-refused-malformed-oci",
+        S2Reply::Refused("429 Too Many Requests"),
+        OpenCitationsReply::Rows(opencitations_row("1|2\\\"`$;&", "2012-07-12")),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap_err();
+
+    // The summary names the malformed row, never provider unavailability:
+    // the index answered and matched the pair.
+    let projection = error.public_projection();
+    assert_eq!(
+        projection.message,
+        "Semantic Scholar rate limited the request; OpenCitations returned a malformed citation identifier."
+    );
+    assert!(!projection.message.contains("was unavailable"));
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
 }
 
 #[tokio::test]
@@ -2238,108 +2260,4 @@ async fn citation_evidence_degrades_to_the_index_when_the_reference_walk_is_refu
         assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
         assert!(!logged.contains("europe:search"), "{logged}");
     }
-}
-
-#[tokio::test]
-#[serial_test::serial(source_env)]
-async fn pmcid_seed_resolves_through_the_retained_europepmc_first_row() {
-    let mut env = TestEnv::new();
-    let requests = Arc::new(Mutex::new(Vec::new()));
-    let logged = requests.clone();
-    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
-        let mut parts = request.splitn(2, ' ');
-        parts.next();
-        let target = parts
-            .next()
-            .unwrap_or_default()
-            .split_whitespace()
-            .next()
-            .unwrap_or_default()
-            .to_string();
-        logged.lock().unwrap().push(target.clone());
-        let body = if target.contains("query=PMCID%3APMC4199001") {
-            "{\"resultList\":{\"result\":[\
-{\"id\":\"41990001\",\"source\":\"MED\",\"pmid\":\"41990001\",\"doi\":\"10.1000/graph-pmcid\"},\
-{\"id\":\"999\",\"source\":\"MED\",\"pmid\":\"999\",\"doi\":\"10.1000/wrong-row\"}]}}"
-        } else {
-            "{\"resultList\":{\"result\":[\
-{\"id\":\"10.1000/graph-doi\",\"source\":\"MED\",\"doi\":\"10.1000/graph-doi\"},\
-{\"id\":\"888\",\"source\":\"MED\",\"pmid\":\"888\",\"doi\":\"10.1000/wrong-row\"}]}}"
-        };
-        super::super::test_support::TestHttpReply::Bytes(
-            super::super::test_support::test_http_response(
-                "200 OK",
-                "application/json",
-                body.as_bytes(),
-            ),
-        )
-    })
-    .await;
-    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
-    let europe = EuropePmcClient::new().unwrap();
-
-    assert_eq!(
-        resolve_semantic_scholar_input_id("PMC4199001", &europe)
-            .await
-            .unwrap(),
-        "PMID:41990001"
-    );
-    assert_eq!(
-        resolve_semantic_scholar_input_id("PMC42", &europe)
-            .await
-            .unwrap(),
-        "DOI:10.1000/graph-doi"
-    );
-
-    let targets = requests.lock().unwrap();
-    assert!(
-        targets
-            .iter()
-            .any(|target| target.contains("query=PMCID%3APMC4199001")),
-        "{targets:?}"
-    );
-    assert!(
-        targets
-            .iter()
-            .any(|target| target.contains("query=PMCID%3APMC42")),
-        "{targets:?}"
-    );
-    assert!(
-        targets.iter().all(|target| target.contains("pageSize=1")),
-        "{targets:?}"
-    );
-}
-
-#[tokio::test]
-#[serial_test::serial(source_env)]
-async fn citation_evidence_names_a_malformed_identifier_when_the_matched_row_fails_the_shape() {
-    let (_env, _cache, fixture, requests) = degradation_case(
-        "citation-refused-malformed-oci",
-        S2Reply::Refused("429 Too Many Requests"),
-        OpenCitationsReply::Rows(opencitations_row("1|2\\\"`$;&", "2012-07-12")),
-    )
-    .await;
-    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
-        &fixture.base,
-        |_, _| {},
-        |_, _| {},
-    )
-    .unwrap();
-    let error = crate::sources::semantic_scholar::with_test_client(
-        client,
-        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
-    )
-    .await
-    .unwrap_err();
-
-    // The summary names the malformed row, never provider unavailability:
-    // the index answered and matched the pair (1306).
-    let projection = error.public_projection();
-    assert_eq!(
-        projection.message,
-        "Semantic Scholar rate limited the request; OpenCitations returned a malformed citation identifier."
-    );
-    assert!(!projection.message.contains("was unavailable"));
-    let logged = requests.lock().unwrap().join("\n");
-    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
 }

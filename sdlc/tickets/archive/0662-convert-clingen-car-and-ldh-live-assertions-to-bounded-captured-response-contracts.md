@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/662-convert-clingen-car-and-ldh-live-assertions-to-bounded-captured-response-contracts
+    ~/workspace/planning/biomcp/artifacts/662-convert-clingen-car-and-ldh-live-assertions-to-bounded-captured-response-contracts

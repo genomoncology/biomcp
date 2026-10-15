@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from pathlib import Path
 import re
 import subprocess
@@ -11,10 +12,14 @@ import sys
 
 MERGE_TICKET = re.compile(r"^Merge .*\btickets/([0-9]+)-")
 # Landings pushed straight to main carry the ticket in the subject
-# itself: "Land 1299: make the article search deadline honest". Only
-# the leading number counts, so a Land subject that mentions another
-# ticket in its text does not pull that ticket in.
-LAND_TICKET = re.compile(r"^Land ([0-9]+):")
+# itself: "Land 1299: make the article search deadline honest" and
+# "Land 2044 and 2045: MCP errors carry no local path" (a landing
+# may name several tickets, so no colon is required right after the
+# number). Only the leading number counts, so a Land subject that
+# mentions another ticket in its text does not pull that ticket in.
+LAND_TICKET = re.compile(r"^Land ([0-9]+)(?![0-9])")
+# A landing may name its branch instead: "Land tickets/2042-fix".
+LAND_BRANCH_TICKET = re.compile(r"^Land tickets/([0-9]+)-")
 # Ticket files only: sdlc/tickets/NNNN-*.md. The archive/ and
 # drafts/ subdirectories hold dead tickets and never count.
 TICKET_FILE = re.compile(r"^sdlc/tickets/([0-9]+)-")
@@ -59,7 +64,11 @@ def landing_subject_tickets(previous: str, tag: str) -> set[str]:
     return {
         match.group(1)
         for subject in subjects
-        for match in (MERGE_TICKET.match(subject), LAND_TICKET.match(subject))
+        for match in (
+            MERGE_TICKET.match(subject),
+            LAND_TICKET.match(subject),
+            LAND_BRANCH_TICKET.match(subject),
+        )
         if match is not None
     }
 
@@ -103,16 +112,28 @@ def completed_status_tickets(previous: str, tag: str) -> set[str]:
     names = run_git(
         "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/tickets/"
     ).splitlines()
+    # The tag's own release line: a v0.9.2 tag covers milestone 0.9.x
+    # tickets only. Carried tickets from another line (the 1.0
+    # planning records landed mid-cycle) complete on their own line
+    # and never demand a bullet here.
+    line = re.match(r"v(\d+)\.(\d+)", tag)
+    line_prefix = f"{line.group(1)}.{line.group(2)}" if line else None
     found: set[str] = set()
     for name in names:
         match = TICKET_FILE.match(name)
         if match is None:
             continue
+        content = run_git("show", f"{tag}:{name}")
         # The status is read at the tag, not at the add commit: a
         # ticket filed mid-cycle and closed later counts once it
         # reads complete at the release.
-        if status_token(run_git("show", f"{tag}:{name}")) == "complete":
-            found.add(match.group(1))
+        if status_token(content) != "complete":
+            continue
+        if line_prefix is not None:
+            milestone = re.search(r"^Milestone:\s*(\S+)", content, re.MULTILINE)
+            if milestone is not None and not milestone.group(1).startswith(line_prefix):
+                continue
+        found.add(match.group(1))
     return found
 
 
@@ -175,11 +196,25 @@ def described_tickets(section: str) -> set[str]:
     if current:
         bullets.append(" ".join(current))
     for text in bullets:
-        for ticket in re.findall(r"(?<![0-9])([0-9]+)(?![0-9])", text):
-            marker = re.compile(
-                rf"(?:\(#?{re.escape(ticket)}\)|#{re.escape(ticket)}\b|\b{re.escape(ticket)}\b)"
+        # Ticket 2049: a bullet covers a ticket when the bullet's closing
+        # group names it. The closing group sits at the bullet's end and
+        # reads (NNNN), (NNNN, MMMM) or (NNNN and MMMM); a number in the
+        # prose ("ticket 2039 tracks") is not coverage.
+        stripped = text.strip().rstrip(" .,;")
+        closing = ""
+        if stripped.endswith(")") and "(" in stripped:
+            opening = stripped.rindex("(")
+            closing = stripped[opening:]
+        group = (
+            re.findall(r"[0-9]+", closing)
+            if closing
+            and re.fullmatch(
+                r"\(\s*[0-9]+(?:\s*(?:,|and)\s*[0-9]+)*\s*\)", closing
             )
-            remainder = marker.sub("", text)
+            else []
+        )
+        for ticket in group:
+            remainder = re.sub(rf"\b{re.escape(ticket)}\b", "", text)
             # A bare number list is not a description: remove every
             # remaining bare number token and the separators around
             # them, then require at least three word characters of
@@ -191,6 +226,71 @@ def described_tickets(section: str) -> set[str]:
             if len(re.findall(r"[^\W\d_]", remainder, re.UNICODE)) >= 3:
                 found.add(ticket)
     return found
+
+
+# A cited ticket whose file is missing or milestone-less cannot prove
+# another release: the milestone convention arrived mid-0.9.2 and
+# tickets 1288 and 1289 carry no ticket file at all, so the tag run
+# tolerates both and fails only a ticket whose file names another
+# milestone.
+NO_TICKET_FILE = "no ticket file"
+NO_MILESTONE = "no milestone"
+
+
+def cited_tickets(section: str) -> set[str]:
+    """Ticket numbers a changelog section cites in parentheses."""
+    found: set[str] = set()
+    for group in re.findall(r"\(([^)]+)\)", section):
+        for token in re.split(r",|and", group):
+            token = token.strip()
+            if token.isdigit():
+                found.add(token)
+    return found
+
+
+def tag_ticket_reader(tag: str) -> Callable[[str], str | None]:
+    """Read a cited ticket's file as it stands at `tag`.
+
+    Ticket files move after a release, so the gate reads the tagged
+    tree, not the working tree.
+    """
+    paths = {
+        match.group(1): name
+        for name in run_git(
+            "ls-tree", "--name-only", tag, "--", "sdlc/tickets/"
+        ).splitlines()
+        if (match := TICKET_FILE.match(name)) is not None
+    }
+
+    def read(ticket: str) -> str | None:
+        path = paths.get(ticket)
+        return run_git("show", f"{tag}:{path}") if path is not None else None
+
+    return read
+
+
+def milestone_problems(
+    section: str, milestone: str, read_ticket: Callable[[str], str | None]
+) -> dict[str, str]:
+    """Why each ticket a section cites is not a ticket of `milestone`.
+
+    The value is NO_TICKET_FILE when no ticket file exists, NO_MILESTONE
+    when the file carries no Milestone line, and the milestone the file
+    carries otherwise. Only the last value proves the cited ticket
+    belongs to another release.
+    """
+    problems: dict[str, str] = {}
+    for ticket in sorted(cited_tickets(section), key=int):
+        content = read_ticket(ticket)
+        if content is None:
+            problems[ticket] = NO_TICKET_FILE
+            continue
+        found = re.search(r"^Milestone:\s*(\S+)", content, re.MULTILINE)
+        if found is None:
+            problems[ticket] = NO_MILESTONE
+        elif found.group(1) != milestone:
+            problems[ticket] = found.group(1)
+    return problems
 
 
 def main() -> int:
@@ -209,6 +309,9 @@ def main() -> int:
         tickets = merged_tickets(previous, args.tag)
         label, section = section_text(args.changelog, args.tag)
         described = described_tickets(section)
+        problems = milestone_problems(
+            section, args.tag.removeprefix("v"), tag_ticket_reader(args.tag)
+        )
     except RuntimeError as error:
         print(f"changelog coverage check failed: {error}", file=sys.stderr)
         return 1
@@ -217,6 +320,18 @@ def main() -> int:
         print(
             f"CHANGELOG {label} is missing described bullets for tickets merged since {previous}: "
             + ", ".join(missing),
+            file=sys.stderr,
+        )
+        return 1
+    conflicts = {
+        ticket: problem
+        for ticket, problem in sorted(problems.items(), key=lambda item: int(item[0]))
+        if problem not in (NO_TICKET_FILE, NO_MILESTONE)
+    }
+    if conflicts:
+        print(
+            f"CHANGELOG {label} cites tickets filed for another milestone: "
+            + ", ".join(f"{ticket} ({problem})" for ticket, problem in conflicts.items()),
             file=sys.stderr,
         )
         return 1

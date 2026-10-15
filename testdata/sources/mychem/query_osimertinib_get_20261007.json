@@ -1,0 +1,173 @@
+{
+ "took": 2,
+ "total": 7,
+ "max_score": 33.841045,
+ "hits": [
+  {
+   "_id": "DUYJMQONPNNFPI-UHFFFAOYSA-N",
+   "_score": 33.841045,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "osimertinib"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "drug_mechanisms": [
+     {
+      "action_type": "INHIBITOR",
+      "target_name": "Epidermal growth factor receptor"
+     }
+    ],
+    "molecule_chembl_id": "CHEMBL3353410",
+    "molecule_type": "Small molecule",
+    "pref_name": "OSIMERTINIB"
+   },
+   "drugbank": {
+    "_license": "https://bit.ly/3Hikpvm",
+    "id": "DB09330",
+    "name": "Osimertinib",
+    "synonyms": [
+     "Mereletinib",
+     "N-(2-{[2-(dimethylamino)ethyl](methyl)amino}-4-methoxy-5-{[4-(1-methyl-1H-indol-3-yl)pyrimidin-2-yl]amino}phenyl)prop-2-enamide",
+     "Osimertinib",
+     "Osimertinibum"
+    ]
+   },
+   "drugcentral": {
+    "_license": "http://bit.ly/2SeEhUy",
+    "approval": [
+     {
+      "agency": "PMDA",
+      "date": "2016-03-28"
+     },
+     {
+      "agency": "EMA",
+      "date": "2016-02-02"
+     },
+     {
+      "agency": "FDA",
+      "date": "2015-11-13"
+     }
+    ],
+    "drug_use": {
+     "indication": {
+      "concept_name": "Non-small cell lung cancer, positive for epidermal growth factor receptor expression"
+     }
+    }
+   },
+   "gtopdb": {
+    "_license": "https://www.guidetopharmacology.org/download.jsp",
+    "interaction_targets": [
+     {
+      "symbol": "EGFR"
+     }
+    ],
+    "name": "osimertinib"
+   },
+   "ndc": [
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "osimertinib",
+     "pharm_classes": [
+      "Cytochrome P450 1A2 Inducers [MoA]",
+      "Kinase Inhibitor [EPC]",
+      "Cytochrome P450 3A4 Inducers [MoA]",
+      "Cytochrome P450 3A Inhibitors [MoA]",
+      "Kinase Inhibitors [MoA]",
+      "Breast Cancer Resistance Protein Inhibitors [MoA]"
+     ]
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "osimertinib",
+     "pharm_classes": [
+      "Cytochrome P450 1A2 Inducers [MoA]",
+      "Kinase Inhibitor [EPC]",
+      "Cytochrome P450 3A4 Inducers [MoA]",
+      "Cytochrome P450 3A Inhibitors [MoA]",
+      "Kinase Inhibitors [MoA]",
+      "Breast Cancer Resistance Protein Inhibitors [MoA]"
+     ]
+    }
+   ],
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "OSIMERTINIB",
+    "unii": "3C06JJ0Z2O"
+   }
+  },
+  {
+   "_id": "FUKSNUHSJBTCFJ-UHFFFAOYSA-N",
+   "_score": 26.009884,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "osimertinib mesylate"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "drug_mechanisms": [
+     {
+      "action_type": "INHIBITOR",
+      "target_name": "Epidermal growth factor receptor"
+     }
+    ],
+    "molecule_chembl_id": "CHEMBL3545063",
+    "molecule_type": "Small molecule",
+    "pref_name": "OSIMERTINIB MESYLATE"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "OSIMERTINIB MESYLATE",
+    "unii": "RDL94R2A16"
+   }
+  },
+  {
+   "_id": "C4058810",
+   "_score": 23.3516
+  },
+  {
+   "_id": "0310-1251",
+   "_score": 23.344343,
+   "ndc": {
+    "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+    "nonproprietaryname": "osimertinib",
+    "pharm_classes": [
+     "Cytochrome P450 1A2 Inducers [MoA]",
+     "Kinase Inhibitor [EPC]",
+     "Cytochrome P450 3A4 Inducers [MoA]",
+     "Cytochrome P450 3A Inhibitors [MoA]",
+     "Kinase Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ]
+   }
+  },
+  {
+   "_id": "0310-1248",
+   "_score": 22.87318,
+   "ndc": {
+    "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+    "nonproprietaryname": "osimertinib",
+    "pharm_classes": [
+     "Cytochrome P450 1A2 Inducers [MoA]",
+     "Kinase Inhibitor [EPC]",
+     "Cytochrome P450 3A4 Inducers [MoA]",
+     "Cytochrome P450 3A Inhibitors [MoA]",
+     "Kinase Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ]
+   }
+  },
+  {
+   "_id": "C4058811",
+   "_score": 17.141884
+  },
+  {
+   "_id": "DUYJMQONPNNFPI-UHFFFAOYSA-O",
+   "_score": 16.796406,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "osimertinib(1+)"
+   }
+  }
+ ]
+}

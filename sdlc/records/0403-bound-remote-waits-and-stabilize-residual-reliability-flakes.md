@@ -8,4 +8,4 @@ Imported from March ticket 403. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/403-bound-remote-waits-and-stabilize-residual-reliability-flakes
+Artifacts: ~/workspace/planning/biomcp/artifacts/403-bound-remote-waits-and-stabilize-residual-reliability-flakes

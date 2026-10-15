@@ -45,6 +45,232 @@ async fn exact_resolution_fixture(
     )
 }
 
+fn holder_hits() -> Vec<MyDiseaseHit> {
+    vec![
+        // Human record holding the abbreviation `CAD` and the full word
+        // `word` as exact synonyms.
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005000",
+            "disease_ontology": {"name": "human synonym holder", "synonyms": {"exact": ["CAD", "word"]}}
+        }))
+        .expect("human synonym holder"),
+        // Non-human record holding the same tokens as exact synonyms:
+        // descended from MONDO:0005583 (non-human animal disease).
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:1013329",
+            "mondo": {
+                "synonym": {"exact": ["CAD", "word"]},
+                "ancestors": ["MONDO:0005583", "MONDO:0700102"]
+            }
+        }))
+        .expect("non-human synonym holder"),
+        // Exact NAME holder of the full word.
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0006000",
+            "mondo": {"name": "word"}
+        }))
+        .expect("name holder"),
+    ]
+}
+
+#[test]
+fn holder_counting_leaves_nonhuman_records_out() {
+    // `CAD` is an abbreviation-shaped token, so synonym holders count —
+    // but the veterinary record never counts toward the refusal.
+    let ids = exact_token_holder_ids("CAD", &holder_hits());
+    assert_eq!(ids, ["MONDO:0005000".to_string()]);
+}
+
+#[test]
+fn full_word_holders_count_only_exact_name_holds() {
+    // `word` is held as an exact NAME by MONDO:0006000, as an exact
+    // synonym by the human MONDO:0005000, and as an exact synonym by the
+    // veterinary record; a full word is ambiguous only by that name, so
+    // only the name holder counts.
+    let ids = exact_token_holder_ids("word", &holder_hits());
+    assert_eq!(ids, ["MONDO:0006000".to_string()]);
+}
+
+#[test]
+fn abbreviation_holders_count_name_and_synonym_holds() {
+    // An abbreviation-shaped token keeps the broader count: name and
+    // synonym holders both count (MF, CAD, MDS), which is what the refusal
+    // table pins.
+    let hits = vec![
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005233",
+            "mondo": {"name": "NSCLC", "synonym": {"exact": ["non-small cell lung carcinoma"]}}
+        }))
+        .expect("name holder"),
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005234",
+            "mondo": {"synonym": {"exact": ["NSCLC"]}}
+        }))
+        .expect("synonym holder"),
+    ];
+    let ids = exact_token_holder_ids("NSCLC", &hits);
+    assert_eq!(
+        ids,
+        ["MONDO:0005233".to_string(), "MONDO:0005234".to_string()]
+    );
+}
+
+#[test]
+fn holder_candidate_lines_fill_the_mondo_label() {
+    // A record with no `name` in the search response still names itself
+    // through the ontology `label`: CAD used to list
+    // `MONDO:0018922 (no label in the search response)`.
+    let hit: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+        "_id": "MONDO:0018922",
+        "mondo": {
+            "label": "cold agglutinin disease",
+            "synonym": {"exact": ["CAD"]}
+        }
+    }))
+    .expect("labelled record");
+    let lines = abbreviation_candidate_lines(&[hit]);
+    assert_eq!(lines, "- cold agglutinin disease (MONDO:0018922)\n");
+}
+
+/// A refusal names the clinical reading the source cannot
+/// see as a pointer line, never as a source candidate, and only for the
+/// abbreviations the table records.
+#[test]
+fn clinical_reading_pointer_is_a_pointer_not_a_candidate() {
+    let holder: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+        "_id": "MONDO:0009685",
+        "disease_ontology": {
+            "name": "Miyoshi muscular dystrophy",
+            "synonyms": {"exact": ["MM"]}
+        }
+    }))
+    .expect("single MM holder");
+    let message = ambiguous_abbreviation_error("MM", &[holder], true).to_string();
+    assert!(
+        message.contains("- Miyoshi muscular dystrophy (MONDO:0009685)\n"),
+        "{message}"
+    );
+    assert!(
+        message.contains("Clinical reading: 'MM' usually means multiple myeloma (MONDO:0009693)"),
+        "{message}"
+    );
+    assert!(
+        message.contains("get disease \"multiple myeloma\""),
+        "{message}"
+    );
+    assert!(!message.contains("- multiple myeloma"), "{message}");
+
+    let untouched = ambiguous_abbreviation_error("CAD", &holder_hits(), false).to_string();
+    assert!(!untouched.contains("Clinical reading"), "{untouched}");
+}
+
+fn mf_holder_hits() -> Vec<MyDiseaseHit> {
+    vec![
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0009691",
+            "disease_ontology": {
+                "name": "mycosis fungoides",
+                "synonyms": {"exact": ["MF"]}
+            }
+        }))
+        .expect("mycosis fungoides holder"),
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0020481",
+            "mondo": {
+                "label": "myotonia fluctuans",
+                "synonym": {"exact": ["MF"]}
+            }
+        }))
+        .expect("myotonia fluctuans holder"),
+    ]
+}
+
+/// The MF refusal kept hiding myelofibrosis because no
+/// indexed source record holds `MF` on a myelofibrosis record (checked
+/// live 2026-10-11 against MyDisease, the Disease Ontology entry, and
+/// the NCI Thesaurus synonym lists). The pointer names the reading the
+/// registry corpus carries most, with the ontology ID `get disease
+/// "myelofibrosis"` resolves to; it stays a pointer line, never a
+/// candidate.
+#[test]
+fn mf_refusal_names_the_myelofibrosis_reading() {
+    let message = ambiguous_abbreviation_error("MF", &mf_holder_hits(), false).to_string();
+    assert!(
+        message.contains("- mycosis fungoides (MONDO:0009691)\n"),
+        "{message}"
+    );
+    assert!(
+        message.contains("- myotonia fluctuans (MONDO:0020481)\n"),
+        "{message}"
+    );
+    assert!(
+        message.contains("Clinical reading: 'MF' also names myelofibrosis (MONDO:0009692)"),
+        "{message}"
+    );
+    assert!(
+        message.contains("get disease \"myelofibrosis\""),
+        "{message}"
+    );
+    // The pointer is not a candidate: no myelofibrosis line joins the
+    // holder list.
+    assert!(!message.contains("- myelofibrosis"), "{message}");
+}
+
+/// The default trial source asks for the refusal's data,
+/// not its error. An abbreviation-shaped condition that would refuse in
+/// `get disease` yields the holders, the reason, and the clinical
+/// reading; anything else yields nothing.
+#[tokio::test]
+async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
+    let (client, requests, server) = exact_resolution_fixture(|request| {
+        if request.contains("/query?") {
+            include_str!("../../../../testdata/sources/mydisease/query_mf.json")
+        } else {
+            r#"{"total":0,"hits":[]}"#
+        }
+    })
+    .await;
+
+    let ambiguity = resolve_abbreviated_disease_ambiguity(&client, "MF")
+        .await
+        .expect("the MF lookup should not error")
+        .expect("the recorded MF response must read as ambiguous");
+    assert_eq!(ambiguity.requested, "MF");
+    assert_eq!(
+        ambiguity.reason,
+        "2 diseases hold it as an exact name or synonym"
+    );
+    assert_eq!(
+        ambiguity.holders,
+        vec![
+            "mycosis fungoides (MONDO:0009691)".to_string(),
+            "myotonia fluctuans (MONDO:0020481)".to_string(),
+        ]
+    );
+    // A short abbreviation behaves the same in any letter case: `mf` names the same holders `MF` does.
+    let lowercase = resolve_abbreviated_disease_ambiguity(&client, "mf")
+        .await
+        .expect("the lowercase lookup should not error")
+        .expect("a short token grounds in any letter case");
+    assert_eq!(lowercase.requested, "mf");
+    assert_eq!(lowercase.holders, ambiguity.holders);
+
+    // A full-word condition never grounds through this surface, and a
+    // token the resolver would resolve yields no ambiguity.
+    let plain_word = resolve_abbreviated_disease_ambiguity(&client, "melanoma")
+        .await
+        .expect("full words never ground here");
+    assert!(plain_word.is_none());
+
+    server.abort();
+    let requests = requests.lock().expect("lock fixture requests").clone();
+    assert_eq!(
+        requests.len(),
+        2,
+        "only abbreviation-shaped conditions reach MyDisease: {requests:?}"
+    );
+}
+
 #[test]
 fn normalize_disease_id_basic() {
     assert_eq!(
@@ -202,7 +428,7 @@ fn rerank_disease_search_hits_prefers_canonical_exact_candidate_across_query_var
 
 #[test]
 fn rerank_disease_search_hits_ranks_exact_abbreviation_holder_first() {
-    // Ticket 1295: the source's exact synonym lists hold "NSCLC" for the
+    // The source's exact synonym lists hold "NSCLC" for the
     // parent only; a subtype holds the token inside a longer exact synonym.
     let ranked = rerank_disease_search_hits(
         "NSCLC",
@@ -389,7 +615,7 @@ async fn exact_resolution_rejects_incomplete_query_without_fetching_detail() {
 
 #[tokio::test]
 async fn exact_resolution_refuses_ambiguous_abbreviation_held_by_two_diseases() {
-    // Ticket 1295: "CAD" is an exact synonym of both coronary artery disease
+    // "CAD" is an exact synonym of both coronary artery disease
     // and cold agglutinin disease in the source's own lists. Exact resolution
     // must refuse the abbreviation instead of picking one identity.
     let (client, requests, server) = exact_resolution_fixture(|_| {
@@ -445,4 +671,26 @@ async fn exact_resolution_maps_selected_detail_inconsistency_to_safe_source_erro
     server.abort();
     assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     assert_eq!(requests.lock().expect("lock requests").len(), 1);
+}
+
+#[test]
+fn scored_best_candidate_breaks_ties_on_provider_names_like_rerank() {
+    // Both disease rankers read the provider-named tie-break.
+    // A record whose only label is the ontology `label` still displays a
+    // name, but it is not provider-named, and it must never outrank a named
+    // record the way it used to when this ranker read `hit_label` alone.
+    let label_only: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+        "_id": "MONDO:0000001",
+        "mondo": {"label": "fixture syndrome"}
+    }))
+    .expect("valid label-only hit");
+    let named = test_disease_hit("MONDO:0000002", "fixture syndrome", &[], &[]);
+
+    let queries = resolver_queries("fixture syndrome");
+    let best = scored_best_candidate_for_queries(&queries, vec![label_only, named])
+        .expect("a best hit should be selected");
+    assert_eq!(
+        best.id, "MONDO:0000002",
+        "the provider-named record outranks the label-only record"
+    );
 }

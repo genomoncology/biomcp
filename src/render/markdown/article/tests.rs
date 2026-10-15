@@ -26,8 +26,8 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
             ..Default::default()
         }],
     };
-    let markdown =
-        article_entities_markdown("22663011", Some(&annotations), Some(5)).expect("markdown");
+    let markdown = article_entities_markdown("22663011", Some(&annotations), Some(5), &|_| None)
+        .expect("markdown");
     assert!(markdown.contains("`biomcp search gene -q BRAF`"));
     assert!(markdown.contains("`biomcp search gene -q \"serine-threonine protein kinase\"`"));
     assert!(!markdown.contains("`biomcp get gene serine-threonine protein kinase`"));
@@ -79,14 +79,31 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
                 identifier: Some("NM_004333.6:c.1799T>A".to_string()),
                 ..Default::default()
             },
+            // rs121913529 spans G12A, G12D and G12V, so the rows carry the
+            // gene-qualified protein change instead of the shared rsID.
+            AnnotationCount {
+                text: "G12A".to_string(),
+                count: 1,
+                namespace: Some("HGVS".to_string()),
+                identifier: Some("KRAS p.G12A".to_string()),
+                ..Default::default()
+            },
         ],
     };
-    let markdown =
-        article_entities_markdown("30738221", Some(&annotations), Some(10)).expect("markdown");
-    assert!(markdown.contains("`biomcp get disease MESH:D002289`"));
-    assert!(markdown.contains("`biomcp get disease OMIM:155601`"));
+    let markdown = article_entities_markdown("30738221", Some(&annotations), Some(10), &|row| {
+        (row.identifier.as_deref() == Some("MESH:D002289"))
+            .then(|| "biomcp get disease MONDO:0005233".to_string())
+    })
+    .expect("markdown");
+
+    // A verified crosswalk hit opens the named disease; an unverified
+    // crosswalk identifier keeps the v0.9.1 search command.
+    assert!(markdown.contains("`biomcp get disease MONDO:0005233`"));
+    assert!(markdown.contains("`biomcp search disease --query melanoma`"));
+    // Variant rsIDs and accepted HGVS expressions resolve exactly.
     assert!(markdown.contains("`biomcp get variant rs121913530`"));
     assert!(markdown.contains("`biomcp get variant \"NM_004333.6:c.1799T>A\"`"));
+    assert!(markdown.contains("`biomcp get variant \"KRAS p.G12A\"`"));
     // `get gene` takes symbols, not NCBI Gene identifiers, so the row keeps
     // its text search; `get drug` takes names, not MeSH identifiers.
     assert!(markdown.contains("`biomcp search gene -q KRAS`"));
@@ -94,12 +111,8 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
     assert!(!markdown.contains("get gene 3845"));
     assert!(!markdown.contains("get drug MESH:D087240"));
     assert!(!markdown.contains("get disease NSCLC"));
-    annotations.diseases[0].identifier =
-        Some("MESH:D002289; printf injected $(printf substitution)".into());
-    let markdown = article_entities_markdown("30738221", Some(&annotations), Some(10)).unwrap();
-    assert!(markdown.contains(
-        r#"`biomcp get disease "MESH:D002289; printf injected \$(printf substitution)"`"#
-    ));
+    assert!(!markdown.contains("get disease MESH:"));
+    assert!(!markdown.contains("get disease OMIM:"));
 }
 
 #[test]

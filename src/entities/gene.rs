@@ -901,6 +901,13 @@ pub(crate) struct CanonicalGeneAlias {
 
 fn matching_canonical_aliases(query: &str, hits: &[MyGeneRecord]) -> Vec<CanonicalGeneAlias> {
     let symbols = matching_canonical_alias_symbols(query, hits);
+    canonical_aliases_for_symbols(symbols, hits)
+}
+
+fn canonical_aliases_for_symbols(
+    symbols: Vec<String>,
+    hits: &[MyGeneHit],
+) -> Vec<CanonicalGeneAlias> {
     symbols
         .into_iter()
         .filter_map(|symbol| {
@@ -935,6 +942,47 @@ pub(crate) async fn resolve_unique_canonical_alias(
         .search(&mygene_query_term(query), 10, 0, None)
         .await?;
     let mut matches = matching_canonical_aliases(query, &resp.hits);
+    Ok((matches.len() == 1).then(|| matches.remove(0)))
+}
+
+/// Matching rows whose official symbol IS the query, so alias matches never
+/// confirm: search routing accepts a first token only when it
+/// is the gene's official symbol.
+fn matching_official_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<String> {
+    let query = normalized_alias_key(query);
+    let mut out = Vec::new();
+    for hit in hits {
+        let Some(symbol) = hit
+            .symbol
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            continue;
+        };
+        if hit.entrezgene.is_none() {
+            continue;
+        }
+        if normalized_alias_key(symbol) == query && !out.iter().any(|existing| existing == symbol) {
+            out.push(symbol.to_string());
+        }
+    }
+    out
+}
+
+/// Resolve a first token that must BE one gene's official symbol, refusing
+/// aliases, ambiguity, and entrez-less rows. Variant search
+/// gene-first routing uses this oracle; `resolve_unique_canonical_alias`
+/// keeps accepting aliases for the `discover` path.
+pub(crate) async fn resolve_unique_official_symbol(
+    query: &str,
+) -> Result<Option<CanonicalGeneAlias>, BioMcpError> {
+    let client = MyGeneClient::new()?;
+    let resp = client
+        .search(&mygene_query_term(query), 10, 0, None)
+        .await?;
+    let symbols = matching_official_symbols(query, &resp.hits);
+    let mut matches = canonical_aliases_for_symbols(symbols, &resp.hits);
     Ok((matches.len() == 1).then(|| matches.remove(0)))
 }
 
@@ -1062,10 +1110,25 @@ fn extract_enrich_terms(
     Ok(out)
 }
 
+/// Names the disable setting in the section outcome when Enrichr is off;
+/// keeps the plain unavailable note for ordinary failures.
+fn enrichr_section_unavailable(err: &BioMcpError) -> SectionOutcome {
+    match crate::sources::disable::unavailable_disabled_reason(err) {
+        Some(reason) => {
+            SectionOutcome::unavailable_message(format!("Enrichr gene enrichment is {reason}."))
+        }
+        None => SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
+    }
+}
 async fn enrich_gene(
     symbol: &str,
     include: &[GeneIncludeType],
 ) -> Result<(Option<Vec<EnrichmentResult>>, Option<Vec<EnrichmentResult>>), BioMcpError> {
+    if crate::sources::disable::is_disabled("enrichr") {
+        return Err(crate::sources::disable::source_disabled_error(
+            "enrichr", "enrichr",
+        ));
+    }
     let enrichr = EnrichrClient::new()?;
     let list_id = enrichr.add_list(&[symbol]).await?;
 
@@ -2317,12 +2380,10 @@ async fn populate_sections_parallel_top(
         timing.push(entry);
         let (ontology, diseases) = match result {
             Ok(value) => value,
-            Err(_) => {
+            Err(err) => {
                 for section in &enrichr_sections {
-                    gene.section_outcomes.complete(
-                        section.as_str(),
-                        SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
-                    );
+                    gene.section_outcomes
+                        .complete(section.as_str(), enrichr_section_unavailable(&err));
                 }
                 (None, None)
             }
@@ -2644,13 +2705,11 @@ pub async fn get_with_report(
         let enrichr = enrich_gene(&gene.symbol, &enrichr_sections).await;
         let (ontology, diseases) = match enrichr {
             Ok(value) => value,
-            Err(_) => {
+            Err(err) => {
                 timing.record("enrichr", started, "error");
                 for section in &enrichr_sections {
-                    gene.section_outcomes.complete(
-                        section.as_str(),
-                        SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
-                    );
+                    gene.section_outcomes
+                        .complete(section.as_str(), enrichr_section_unavailable(&err));
                 }
                 (None, None)
             }
@@ -3412,6 +3471,50 @@ mod tests {
         let aliases = matching_canonical_aliases("ERBB1", &[mygene_hit("EGFR", &["ERBB1"])]);
         assert_eq!(
             aliases,
+            vec![CanonicalGeneAlias {
+                symbol: "EGFR".into(),
+                entrez_id: "1".into(),
+            }]
+        );
+    }
+    #[test]
+    fn official_symbol_matches_refuse_aliases() {
+        let hits = vec![
+            mygene_hit("HYCC1", &["HCC"]),
+            mygene_hit("HNF4A", &["MODY", "MODY1"]),
+            mygene_hit("ACVRL1", &["HHT"]),
+            mygene_hit("SCN5A", &["ALIAS_OF_SCN5A"]),
+        ];
+        // Only the official symbol routes, so the alias
+        // abbreviations from the review keep their whole-phrase search.
+        assert_eq!(
+            matching_official_symbols("HCC", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            matching_official_symbols("MODY", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            matching_official_symbols("HHT", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            matching_official_symbols("ALIAS_OF_SCN5A", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(matching_official_symbols("SCN5A", &hits), vec!["SCN5A"]);
+        // The normalized key still compares, so case differences match.
+        assert_eq!(matching_official_symbols("scn5a", &hits), vec!["SCN5A"]);
+    }
+    #[test]
+    fn official_symbol_identity_keeps_the_entrez_identifier() {
+        let official = canonical_aliases_for_symbols(
+            matching_official_symbols("EGFR", &[mygene_hit("EGFR", &["ERBB1"])]),
+            &[mygene_hit("EGFR", &["ERBB1"])],
+        );
+        assert_eq!(
+            official,
             vec![CanonicalGeneAlias {
                 symbol: "EGFR".into(),
                 entrez_id: "1".into(),

@@ -28,10 +28,11 @@ use super::gwas::add_gwas_section;
 use super::gwas::mark_gwas_unavailable;
 use super::resolution::parse_variant_id;
 use super::{
-    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, ResolvedPopulationCoordinate,
-    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
-    VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
-    classify_variant_input, gnomad_variant_slug, normalize_variant,
+    ClinvarRecord, GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus,
+    ResolvedPopulationCoordinate, TreatmentImplication, Variant, VariantCivicSection,
+    VariantIdFormat, VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
+    VariantOncoKbResult, classify_variant_input, gnomad_variant_slug, normalize_variant,
+    protein_changes_equivalent,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -182,18 +183,42 @@ fn protein_change_candidate(hit: &biodata::MyVariantHitProjection) -> String {
     }
 }
 
+/// The gene+protein arm's per-query transcript facts: the MANE transcript
+/// ClinVar's preferred names or the canonical record's MANE-Select
+/// cross-reference mark (None when neither source carries one), and the
+/// numbering note for a hit whose headline protein change does not spell
+/// the request.
+struct ProteinChangeContext {
+    mane_transcript: Option<String>,
+    numbering_note: Option<String>,
+}
+
 /// A gene+protein query names a protein change, not a genomic variant: the
 /// same alias can sit on several genomic variants (`DICER1 p.Met1483Ile`
-/// spans three alternate bases at chr14:g.95562808). Taking the first
-/// matching hit silently returns whichever variant the provider ranked
-/// first. Resolve only when one hit matches, or when exactly one matching
-/// hit carries the ClinVar record for that protein change; otherwise refuse
-/// with every candidate and a working input form (ticket 1297).
+/// spans three alternate bases at chr14:g.95562808), and dbNSFP merges other
+/// isoforms' protein names onto other variants, so the alias search also
+/// returns lookalikes (`TP53 C124Y` matches the `p.Cys135Tyr` variant
+/// chr17:g.7578526C>T through a shorter isoform). A hit carries the query
+/// only when the transcript BioMCP headlines for it — the ClinVar-named,
+/// MANE, change-naming, or first-NM_ SnpEff annotation — spells the
+/// requested change; ClinVar presence breaks ties among those hits but never outranks the named change itself. Resolve
+/// a single provider hit, a single carrying hit, or the one ClinVar record
+/// names among the true matches; otherwise refuse with every candidate and
+/// a working input form.
+/// `mane_transcript` is the query's MANE marker: the transcript stem
+/// ClinVar's preferred names agree on, or the canonical record's
+/// MANE-Select cross-reference when the response carries no ClinVar name
+///The marker decides which annotation headlines a hit, so
+/// it must reach this resolver before any hit is accepted: a ClinVar-free
+/// cohort where exactly one candidate names the change on MANE
+/// (`BRCA1 S1551Y`) resolves here, while the change-naming tier alone would
+/// treat every isoform spelling as a named match and refuse.
 fn resolve_protein_change_hit(
     id: &str,
     gene: &str,
     change: &str,
     mut hits: Vec<crate::sources::myvariant::MyVariantHit>,
+    mane_transcript: Option<&str>,
 ) -> Result<crate::sources::myvariant::MyVariantHit, BioMcpError> {
     if hits.is_empty() {
         return Err(BioMcpError::NotFound {
@@ -202,17 +227,48 @@ fn resolve_protein_change_hit(
             suggestion: format!("Try searching: biomcp search variant -g {gene} --hgvsp {change}"),
         });
     }
+    let names_change = |hit: &crate::sources::myvariant::MyVariantHit| {
+        hit_names_requested_change(hit, change, mane_transcript)
+    };
     if hits.len() == 1 {
         return Ok(hits.into_iter().next().expect("one compatible hit"));
     }
-    let clinvar_named = hits
+    let named = hits
         .iter()
-        .filter(|hit| hit_carries_clinvar_record(hit.source()))
+        .enumerate()
+        .filter(|(_, hit)| names_change(hit.source()))
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    if named.len() == 1 {
+        return Ok(hits.swap_remove(named[0]));
+    }
+    let refusal = |count: usize, reason: &str, candidates: &str| {
+        BioMcpError::InvalidArgument(format!(
+            "Ambiguous protein change '{id}': {count} variants match and {reason}; \
+BioMCP refuses rather than return the wrong variant.\n\
+Candidates:\n{candidates}\
+Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS.",
+        ))
+    };
+    if named.is_empty() {
+        let candidates = hits
+            .iter()
+            .map(|hit| format!("- {}\n", protein_change_candidate(hit)))
+            .collect::<String>();
+        return Err(refusal(
+            hits.len(),
+            "none of them names that change on its canonical (or ClinVar-named) transcript",
+            &candidates,
+        ));
+    }
+    let clinvar_named = named
+        .iter()
+        .filter(|index| hit_carries_clinvar_record(hits[**index].source()))
         .count();
     if clinvar_named == 1 {
-        let index = hits
-            .iter()
-            .position(|hit| hit_carries_clinvar_record(hit.source()))
+        let index = named
+            .into_iter()
+            .find(|index| hit_carries_clinvar_record(hits[*index].source()))
             .expect("one ClinVar-named hit");
         return Ok(hits.swap_remove(index));
     }
@@ -221,17 +277,462 @@ fn resolve_protein_change_hit(
     } else {
         format!("{clinvar_named} of them carry conflicting ClinVar records")
     };
-    let candidates = hits
+    let candidates = named
         .iter()
-        .map(|hit| format!("- {}\n", protein_change_candidate(hit.source())))
+        .map(|index| format!("- {}\n", protein_change_candidate(hits[*index].source())))
         .collect::<String>();
-    Err(BioMcpError::InvalidArgument(format!(
-        "Ambiguous protein change '{id}': {count} variants match and {reason}; \
-BioMCP refuses rather than return the wrong variant.\n\
-Candidates:\n{candidates}\
-Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS.",
-        count = hits.len(),
-    )))
+    Err(refusal(named.len(), &reason, &candidates))
+}
+
+/// The requested protein change confirms a hit only when the transcript
+/// BioMCP headlines for it spells that change. The dbNSFP alias list that
+/// matched the query merges every isoform's name, so it cannot tell the
+/// named variant from a lookalike.
+fn hit_names_requested_change(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> bool {
+    transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))
+        .is_some_and(|protein| protein_changes_equivalent(change, &protein))
+}
+
+/// A gene+protein query can resolve to a hit whose headline protein change
+/// does not spell the request (a unique provider hit, or the only named
+/// match): `TP53 R116Q` reaches the `p.Arg248Gln` variant through a shorter
+/// isoform's numbering. The answer must say which numbering matched instead
+/// of silently returning another transcript's spelling. One
+/// line, in the ticket's voice: name the transcript, its spelling, and that
+/// the request follows another transcript's numbering.
+fn protein_change_numbering_note(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> Option<String> {
+    super::normalize_protein_change(change)?;
+    let protein = transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))?;
+    if protein_changes_equivalent(change, &protein) {
+        return None;
+    }
+    let transcript = transform::variant::canonical_transcript(hit, mane_transcript, Some(change))?;
+    Some(format!(
+        "Numbering note: resolved on {transcript} as {protein}; the requested \
+         {change} follows another transcript's numbering."
+    ))
+}
+
+/// The requested reference residue and position of a compact substitution
+/// (`R209Q` → `('R', 209)`), when the request names one.
+fn requested_reference_residue(change: &str) -> Option<(char, u32)> {
+    let normalized = super::normalize_protein_substitution(change)?;
+    let bytes = normalized.as_bytes();
+    let digits = bytes.iter().position(|b| b.is_ascii_digit())?;
+    let end = bytes[digits..]
+        .iter()
+        .position(|b| !b.is_ascii_digit())
+        .map(|idx| digits + idx)?;
+    if digits != 1 || end < 2 || end + 1 != bytes.len() {
+        return None;
+    }
+    let position = normalized[digits..end].parse::<u32>().ok()?;
+    Some((normalized.as_bytes()[0] as char, position))
+}
+
+/// The gene's canonical (MANE Select) protein facts from UniProt: the accession, the reference residue at the
+/// requested position (None when the request names no position or the
+/// position falls outside the sequence), and the MANE Select transcript
+/// with its current RefSeq version from the record's MANE-Select
+/// cross-reference. Any lookup failure returns None and the answer prints
+/// no numbering note: the residue check narrows a note that could be false,
+/// and an unavailable sequence cannot prove the request's numbering either
+/// way.
+struct CanonicalProteinFacts {
+    accession: String,
+    residue: Option<char>,
+    /// The canonical sequence's length, so a requested position beyond it
+    /// (`BRCA1 Y1866D` against the 1863-residue P38398) is distinguishable
+    /// from an unreadable sequence: a position the protein cannot hold
+    /// proves the request follows another numbering by itself.
+    sequence_length: Option<u32>,
+    mane_transcript: Option<String>,
+}
+
+async fn canonical_protein_facts(
+    gene: &str,
+    position: Option<u32>,
+) -> Option<CanonicalProteinFacts> {
+    let accession = crate::entities::protein::resolve_accession(gene)
+        .await
+        .ok()?;
+    let record = crate::sources::uniprot::UniProtClient::new()
+        .ok()?
+        .get_record(&accession)
+        .await
+        .ok()?;
+    let sequence = record
+        .sequence
+        .as_ref()
+        .and_then(|sequence| sequence.value.as_deref())?;
+    let residue = position
+        .filter(|position| *position > 0)
+        .and_then(|position| sequence.chars().nth(position as usize - 1));
+    let sequence_length = u32::try_from(sequence.chars().count()).ok();
+    let mane_transcript = record.mane_select_transcript();
+    Some(CanonicalProteinFacts {
+        accession,
+        residue,
+        sequence_length,
+        mane_transcript,
+    })
+}
+
+/// A resolved hit whose headline does not spell the request on the MANE
+/// transcript. Decide the numbering story before anything prints: when the gene's canonical protein carries the requested
+/// reference residue at the requested position and no annotation on the
+/// marked MANE transcript spells the request, the request's own numbering
+/// is valid on MANE while the hit names a different change — the
+/// other-transcript note would be false here (`TP53 R209Q` matching
+/// `p.Arg248Gln` through a shorter isoform; `TP53 S183Y` whose only alias
+/// match spells the request on the shorter isoform while MANE names
+/// `p.Ser315Tyr`), so `get variant` refuses rather than return the
+/// lookalike. When the check instead
+/// finds a different residue at the position, the request really does
+/// follow another transcript's numbering and the answer says so. When the request names no residue, or the sequence lookup is
+/// unavailable, nothing is proven either way — and an unverified
+/// other-transcript claim is exactly the false note this rule removes
+/// so the answer stays silent.
+/// `prefetched` carries facts an earlier step already fetched (a
+/// ClinVar-free response needs them before resolution); a
+/// `None` with no MANE marker means the lookup already ran and failed, so
+/// the answer does not retry the dead source — and an answer with no
+/// facts at all must still say so instead of silently resolving another
+/// numbering: the headline spells the request under a note
+/// that says plainly the numbering could not be checked, or a headline
+/// naming a different change refuses.
+async fn refuse_or_note_numbering_mismatch(
+    id: &str,
+    gene: &str,
+    change: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
+    prefetched: Option<CanonicalProteinFacts>,
+) -> Result<Option<String>, BioMcpError> {
+    if transform::variant::mane_annotation_names_change(hit, change, mane_transcript) {
+        return Ok(None);
+    }
+    let Some((_, position)) = requested_reference_residue(change) else {
+        return Ok(None);
+    };
+    let facts = match prefetched {
+        Some(facts) => facts,
+        None if mane_transcript.is_some() => {
+            match canonical_protein_facts(gene, Some(position)).await {
+                Some(facts) => facts,
+                None => {
+                    return refuse_or_note_without_facts(id, gene, change, hit, mane_transcript);
+                }
+            }
+        }
+        None => return refuse_or_note_without_facts(id, gene, change, hit, mane_transcript),
+    };
+    refuse_or_note_with_facts(id, gene, change, hit, mane_transcript, &facts)
+}
+
+/// The numbering story when the canonical facts are unavailable — the
+/// gene-to-accession lookup failed, UniProt could not be reached, or the
+/// record carried no sequence. Nothing can be proven either
+/// way, so no other-numbering claim prints: a headline that spells the
+/// request resolves under a note saying plainly the numbering could not be
+/// checked against MANE, and a headline naming a different change refuses
+/// rather than answer a renumbered lookalike with no note at all.
+fn refuse_or_note_without_facts(
+    id: &str,
+    gene: &str,
+    change: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
+) -> Result<Option<String>, BioMcpError> {
+    let Some(protein) =
+        transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))
+    else {
+        return Err(protein_change_absent_refusal_message(
+            id,
+            gene,
+            change,
+            hit,
+            mane_transcript,
+        ));
+    };
+    let Some(transcript) =
+        transform::variant::canonical_transcript(hit, mane_transcript, Some(change))
+    else {
+        return Err(protein_change_absent_refusal_message(
+            id,
+            gene,
+            change,
+            hit,
+            mane_transcript,
+        ));
+    };
+    if protein_changes_equivalent(change, &protein) {
+        return Ok(Some(unchecked_numbering_note(
+            &transcript,
+            &protein,
+            change,
+        )));
+    }
+    Err(unchecked_numbering_refusal_message(
+        id,
+        gene,
+        change,
+        &protein,
+        &transcript,
+        hit,
+        mane_transcript,
+    ))
+}
+
+/// The note for a resolved answer whose numbering could not be checked
+/// against MANE: the canonical record was unreadable, or it named no MANE
+/// transcript. One spelling for both reasons — the answer
+/// says plainly what it could not do, and claims nothing else.
+fn unchecked_numbering_note(transcript: &str, protein: &str, change: &str) -> String {
+    format!(
+        "Numbering note: resolved on {transcript} as {protein}; the requested \
+         {change} could not be checked against MANE numbering."
+    )
+}
+
+/// The numbering decision once the canonical protein facts are in hand —
+/// pure, so the recorded shapes pin it offline.
+fn refuse_or_note_with_facts(
+    id: &str,
+    gene: &str,
+    change: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
+    facts: &CanonicalProteinFacts,
+) -> Result<Option<String>, BioMcpError> {
+    let Some((from, position)) = requested_reference_residue(change) else {
+        return Ok(None);
+    };
+    let Some(residue) = facts.residue else {
+        // No residue to compare: a requested position the canonical protein
+        // cannot hold proves the request follows another numbering without
+        // one (`BRCA1 Y1866D` past the 1863 residues of P38398),
+        // so the other-transcript note prints; a sequence the record never
+        // carried proves nothing either way and the
+        // answer stays silent.
+        if facts
+            .sequence_length
+            .is_some_and(|length| position > length)
+        {
+            // The note names the headline's own transcript and spelling; a
+            // record that cannot name one refuses like the no-protein-change
+            // case below instead of resolving silently.
+            if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
+                return Ok(Some(note));
+            }
+            return Err(protein_change_absent_refusal_message(
+                id,
+                gene,
+                change,
+                hit,
+                mane_transcript,
+            ));
+        }
+        return Ok(None);
+    };
+    if residue != from {
+        // The canonical protein holds a different residue at the requested
+        // position, so the request follows another transcript's numbering —
+        // proven by the record, not guessed. The answer must say so instead
+        // of resolving an isoform spelling silently: the
+        // standard note when the headline names a different change, and an
+        // equivalent headline's own note naming the transcript it resolved
+        // on; a record that cannot name its transcript or its protein change
+        // refuses rather than resolve with nothing to say.
+        if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
+            return Ok(Some(note));
+        }
+        let transcript =
+            transform::variant::canonical_transcript(hit, mane_transcript, Some(change));
+        let protein =
+            transform::variant::canonical_protein_change(hit, mane_transcript, Some(change));
+        return Ok(Some(match (transcript.as_deref(), protein.as_deref()) {
+            (Some(transcript), Some(protein)) => format!(
+                "Numbering note: resolved on {transcript} as {protein}; the requested \
+                 {change} follows another transcript's numbering."
+            ),
+            (Some(transcript), None) => format!(
+                "Numbering note: the requested {change} follows another transcript's \
+                 numbering; the record names no protein change on {transcript}."
+            ),
+            (None, _) => {
+                return Err(protein_change_absent_refusal_message(
+                    id,
+                    gene,
+                    change,
+                    hit,
+                    mane_transcript,
+                ));
+            }
+        }));
+    }
+    let Some(reference) = super::amino_acid_three_letter(residue) else {
+        return Ok(None);
+    };
+    let Some(protein) =
+        transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))
+    else {
+        // The request's numbering is valid on the canonical protein, but the
+        // record offers no protein change on a transcript BioMCP can
+        // headline: a protein-change request must not resolve to a bare
+        // genomic variant.
+        return Err(protein_change_absent_refusal_message(
+            id,
+            gene,
+            change,
+            hit,
+            mane_transcript,
+        ));
+    };
+    if protein_changes_equivalent(change, &protein) {
+        // The headline spells the request, so no other-numbering claim can
+        // print. With a known MANE transcript the headline is that
+        // transcript's own spelling (the caller already returned for a
+        // MANE-named change); without one the headline may still be another
+        // isoform's spelling of the request, so the answer says plainly the
+        // numbering could not be checked against MANE.
+        if mane_transcript.is_some() {
+            return Ok(None);
+        }
+        return Ok(
+            transform::variant::canonical_transcript(hit, mane_transcript, Some(change))
+                .map(|transcript| unchecked_numbering_note(&transcript, &protein, change)),
+        );
+    }
+    let Some(transcript) =
+        transform::variant::canonical_transcript(hit, mane_transcript, Some(change))
+    else {
+        return Ok(None);
+    };
+    Err(mane_numbering_refusal_message(
+        id,
+        gene,
+        change,
+        &facts.accession,
+        reference,
+        position,
+        &protein,
+        &transcript,
+        hit,
+        mane_transcript,
+    ))
+}
+
+/// The sentence that names the isoform spelling the request: when the record spells the requested change on a
+/// transcript other than the MANE one, the refusal says where, so the
+/// reader sees the request is a real spelling — on another numbering —
+/// instead of a bare candidate line that collapses in text mode.
+fn isoform_spelling_sentence(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> String {
+    match transform::variant::isoform_annotation_naming_change(hit, change, mane_transcript) {
+        Some((transcript, protein)) => {
+            format!("; the request is spelled {protein} on {transcript}, another transcript")
+        }
+        None => String::new(),
+    }
+}
+
+/// The refusal text for a request whose numbering is valid on the MANE
+/// protein while no matching record names it there. The retry line names the requested change, not the candidate:
+/// the candidate is already known to be a different change, so retrying its
+/// exact form cannot answer the request. The
+/// message names the isoform that spells the request and carries no bare
+/// `Candidates:` list.
+#[allow(clippy::too_many_arguments)]
+fn mane_numbering_refusal_message(
+    id: &str,
+    gene: &str,
+    change: &str,
+    accession: &str,
+    reference: &str,
+    position: u32,
+    protein: &str,
+    transcript: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
+) -> BioMcpError {
+    let isoform = isoform_spelling_sentence(hit, change, mane_transcript);
+    BioMcpError::InvalidArgument(format!(
+        "No MANE-numbered variant matches '{id}': the gene's canonical protein \
+         (UniProt {accession}) has {reference} at {position}, so the requested \
+         numbering is valid there, but no matching record names that change; \
+         the only alias match is {protein} on {transcript} — a different \
+         change{isoform}. BioMCP refuses rather than return the wrong variant.\n\
+Retry `biomcp get variant` with a transcript-qualified HGVS naming \
+'{change}', or search the spelling: biomcp search variant -g {gene} \
+--hgvsp {change}.",
+    ))
+}
+
+/// The refusal for a request whose numbering could not be checked because
+/// the canonical facts never arrived: the alias match names a
+/// different change, and without the residue check BioMCP cannot tell a
+/// MANE-numbered request no record names from another transcript's
+/// numbering — so it refuses rather than return the lookalike silently.
+fn unchecked_numbering_refusal_message(
+    id: &str,
+    gene: &str,
+    change: &str,
+    protein: &str,
+    transcript: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
+) -> BioMcpError {
+    let isoform = isoform_spelling_sentence(hit, change, mane_transcript);
+    BioMcpError::InvalidArgument(format!(
+        "No MANE-numbered variant matches '{id}': the canonical (MANE Select) \
+         protein could not be read, so the requested numbering could not be \
+         checked, and the only alias match is {protein} on {transcript} — a \
+         different change{isoform}. BioMCP refuses rather than return the wrong \
+         variant.\n\
+Retry `biomcp get variant` with a transcript-qualified HGVS naming \
+'{change}', or search the spelling: biomcp search variant -g {gene} \
+--hgvsp {change}.",
+    ))
+}
+
+/// The refusal for a protein-change request whose resolved record names no
+/// protein change on a transcript BioMCP can headline: a bare
+/// genomic variant cannot carry the numbering story the request asked for.
+/// The wording claims only what the record showed — a record can carry
+/// protein changes on rows that cannot be headlined (no transcript feature
+/// or no coding spelling), so "no protein change on any transcript" would
+/// overclaim — and it still names the isoform that spells the request when
+/// one exists.
+fn protein_change_absent_refusal_message(
+    id: &str,
+    gene: &str,
+    change: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_transcript: Option<&str>,
+) -> BioMcpError {
+    let isoform = isoform_spelling_sentence(hit, change, mane_transcript);
+    BioMcpError::InvalidArgument(format!(
+        "No protein change answers '{id}': the matching record offers no \
+         protein change on a transcript BioMCP can headline{isoform}, so the \
+         requested {change} could not be checked against MANE numbering. \
+         BioMCP refuses rather than return a genomic variant with no protein \
+         change.\n\
+Retry `biomcp get variant` with a transcript-qualified HGVS naming \
+'{change}', or search the spelling: biomcp search variant -g {gene} \
+--hgvsp {change}.",
+    ))
 }
 
 fn oncokb_alteration_from_variant(
@@ -384,10 +885,59 @@ fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
 /// hit carries the exact coding alias the search asked for. Identity
 /// comparison alone cannot confirm it: dbNSFP aliases arrive without
 /// transcript prefixes, so an unconfirmed hit stays refused.
-fn hit_confirms_transcript_alias(hit: &biodata::MyVariantHitProjection, id: &str) -> bool {
-    hit.clinvar()
+fn hit_confirms_transcript_alias(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    id: &str,
+) -> bool {
+    hit.source()
+        .clinvar()
         .and_then(|clinvar| clinvar.hgvs())
         .is_some_and(|hgvs| hgvs.coding().values().iter().any(|alias| alias == id))
+}
+
+async fn transcript_hgvs_clinvar_alias_hit(
+    myvariant: &MyVariantClient,
+    id: &str,
+) -> Result<Option<crate::sources::myvariant::MyVariantHit>, BioMcpError> {
+    let q = transcript_hgvs_clinvar_query(id);
+    let resp = myvariant
+        .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
+        .await?;
+    Ok(best_hit(
+        &resp
+            .hits
+            .into_iter()
+            .filter(|hit| hit_confirms_transcript_alias(hit, id))
+            .collect::<Vec<_>>(),
+    )
+    .cloned())
+}
+
+async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
+    match normalize_transcript_hgvs_for_get(id).await {
+        Ok(format) => Ok(format),
+        // Transcript normalization services refuse intronic deletion ranges
+        // and other aliases they cannot place; ClinVar's own coding alias list
+        // still names them, so the alias search resolves what normalization
+        // cannot.
+        Err(_) => {
+            let myvariant = MyVariantClient::new()?;
+            transcript_hgvs_clinvar_alias_hit(&myvariant, id)
+                .await?
+                .filter(|hit| {
+                    matches!(
+                        parse_variant_id(hit.id.trim()),
+                        Ok(VariantIdFormat::HgvsGenomic(_))
+                    )
+                })
+                .map(|hit| VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()))
+                .ok_or_else(|| BioMcpError::NotFound {
+                    entity: "variant".into(),
+                    id: id.to_string(),
+                    suggestion: transcript_hgvs_not_found_suggestion(id),
+                })
+        }
+    }
 }
 
 async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
@@ -514,7 +1064,7 @@ pub(super) async fn resolve_base_with_hit(
         candidate_matches_requested_identity(&requested, hit)
     };
     let myvariant = MyVariantClient::new()?;
-    let (hit, answering_build, build_candidates) = match &id_format {
+    let (hit, answering_build, build_candidates, protein_change_context) = match &id_format {
         VariantIdFormat::HgvsGenomic(hgvs) => {
             if let Some((hit, tuple)) = resolved_alias {
                 selected_tuple = Some(tuple);
@@ -547,12 +1097,14 @@ pub(super) async fn resolve_base_with_hit(
                             } else {
                                 Vec::new()
                             };
-                        (preferred_hit, Some(preferred), candidates)
+                        (preferred_hit, Some(preferred), candidates, None)
                     }
                     (Ok(hit), Err(error)) if error.is_not_found() => {
-                        (hit, Some(preferred), Vec::new())
+                        (hit, Some(preferred), Vec::new(), None)
                     }
-                    (Err(error), Ok(hit)) if error.is_not_found() => (hit, Some(other), Vec::new()),
+                    (Err(error), Ok(hit)) if error.is_not_found() => {
+                        (hit, Some(other), Vec::new(), None)
+                    }
                     (Err(first), Err(second)) if first.is_not_found() && second.is_not_found() => {
                         return Err(BioMcpError::NotFound {
                             entity: "variant".into(),
@@ -581,7 +1133,7 @@ pub(super) async fn resolve_base_with_hit(
                             }
                         })?;
                     selected_tuple = Some(tuple);
-                    (hit, Some(GenomeBuild::Grch37), Vec::new())
+                    (hit, effective_build.or(Some(GenomeBuild::Grch37)), Vec::new(), None)
                 } else {
                     let hit = direct.map_err(|error| match effective_build {
                         Some(build) => build_aware_not_found(hgvs, build, error),
@@ -606,7 +1158,7 @@ pub(super) async fn resolve_base_with_hit(
                             suggestion,
                         });
                     }
-                    (hit, effective_build, Vec::new())
+                    (hit, effective_build, Vec::new(), None)
                 }
             }
         }
@@ -636,40 +1188,122 @@ pub(super) async fn resolve_base_with_hit(
                 })?,
                 Some(GenomeBuild::Grch37),
                 Vec::new(),
+                None,
             )
         }
         VariantIdFormat::RsId(rsid) => (
             rsid_lookup::lookup(&myvariant, id, rsid, &requested).await?,
             Some(GenomeBuild::Grch37),
             Vec::new(),
+            None,
         ),
         VariantIdFormat::TranscriptGeneDeletion { .. }
         | VariantIdFormat::TranscriptGeneCodingChange { .. } => {
             return Err(BioMcpError::InvalidArgument(
                 "Transcript gene coding lookup could not prepare its request.".into(),
             ));
+        VariantIdFormat::GeneProteinChange { gene, change } => {
+            let q = format!(
+                "dbnsfp.genename:{} AND dbnsfp.hgvsp:\"p.{}\"",
+                gene,
+                MyVariantClient::escape_query_value(change)
+            );
+            let resp = myvariant
+                .query_with_fields(&q, 5, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
+                .await?;
+            let compatible_hits = resp
+                .hits
+                .into_iter()
+                .filter(&compatible)
+                .collect::<Vec<_>>();
+            let clinvar_mane = transform::variant::clinvar_mane_transcript(&compatible_hits);
+            // The canonical-residue check runs before any annotation that is
+            // not on the MANE transcript is accepted. A
+            // ClinVar-free response marks no MANE transcript of its own, so
+            // the gene's canonical (MANE Select) protein must be read up
+            // front: the record's MANE-Select cross-reference names the MANE
+            // transcript with its current version, and its sequence carries
+            // the requested position's residue. Without those facts an
+            // isoform annotation that spells the request would resolve with
+            // no check (`TP53 S183Y` → `p.Ser183Tyr` on NM_001126115.1
+            // while MANE names `p.Ser315Tyr`).
+            let canonical = if clinvar_mane.is_none() && !compatible_hits.is_empty() {
+                canonical_protein_facts(
+                    gene,
+                    requested_reference_residue(change).map(|(_, position)| position),
+                )
+                .await
+            } else {
+                None
+            };
+            let mane_transcript = clinvar_mane.or_else(|| {
+                canonical
+                    .as_ref()
+                    .and_then(|facts| facts.mane_transcript.clone())
+            });
+            let hit = resolve_protein_change_hit(
+                id,
+                gene,
+                change,
+                compatible_hits,
+                mane_transcript.as_deref(),
+            )?;
+            // The residue check runs before any note prints, so a ClinVar-free response never answers a
+            // MANE-numbered request with another transcript's spelling and
+            // a note claiming the request follows different numbering.
+            let numbering_note = match refuse_or_note_numbering_mismatch(
+                id,
+                gene,
+                change,
+                &hit,
+                mane_transcript.as_deref(),
+                canonical,
+            )
+            .await
+            {
+                Err(error) => return Err(error),
+                Ok(note) => note,
+            };
+            (
+                hit,
+                Some(GenomeBuild::Grch37),
+                Vec::new(),
+                Some(ProteinChangeContext {
+                    mane_transcript,
+                    numbering_note,
+                }),
+            )
         }
         VariantIdFormat::GeneCodingChange { gene, change } => (
             coding_lookup::lookup(&myvariant, id, gene, change, &requested).await?,
             Some(GenomeBuild::Grch37),
             Vec::new(),
-        ),
-        VariantIdFormat::GeneProteinChange { gene, change } => (
-            protein_lookup::lookup(&myvariant, id, gene, change, &requested).await?,
-            Some(GenomeBuild::Grch37),
-            Vec::new(),
+            None,
         ),
     };
 
-    let mut variant = match selected_tuple {
-        Some(tuple) => transform::variant::from_myvariant_hit_with_tuple(
+    let requested_change = match &id_format {
+        VariantIdFormat::GeneProteinChange { change, .. } => Some(change.as_str()),
+        _ => None,
+    };
+    let mut variant = match (selected_tuple, protein_change_context) {
+        (Some(tuple), _) => transform::variant::from_myvariant_hit_with_tuple(
             &hit,
             &tuple.gene,
             &tuple.transcript,
             &tuple.coding,
             tuple.protein.as_deref(),
         ),
-        None => transform::variant::from_myvariant_hit(&hit),
+        (None, Some(context)) => {
+            let mut variant = transform::variant::from_myvariant_hit_with_mane(
+                &hit,
+                context.mane_transcript.as_deref(),
+                requested_change,
+            );
+            variant.protein_numbering_note = context.numbering_note.clone();
+            variant
+        }
+        (None, None) => transform::variant::from_myvariant_hit(&hit),
     };
     variant.genome_build = answering_build;
     variant.genome_build_provenance = (answering_build == Some(GenomeBuild::Grch37)
@@ -691,6 +1325,11 @@ async fn resolve_base(
 }
 
 pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
+    if crate::sources::disable::is_disabled("oncokb") {
+        return Err(crate::sources::disable::source_disabled_error(
+            "OncoKB", "oncokb",
+        ));
+    }
     let (variant, id_format) = resolve_base(id, None).await?;
     let gene = variant.gene.trim();
     if gene.is_empty() {
@@ -1020,6 +1659,7 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         legacy_name: None,
         hgvs_c: None,
         transcript: None,
+        protein_numbering_note: None,
         rsid: Some(rsid.to_string()),
         cosmic_id: None,
         significance: None,

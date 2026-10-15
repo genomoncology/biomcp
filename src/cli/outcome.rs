@@ -46,6 +46,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
         command,
         json,
         no_cache,
+        disable_sources: _,
     } = cli;
 
     crate::sources::with_no_cache(no_cache, async move {
@@ -147,8 +148,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     let results = Box::pin(crate::cli::search_all::dispatch(&input)).await?;
                     if json {
                         // Search-all JSON carries the stale-cache note in a
-                        // `_meta.notes` channel like every other search body
-                        // (ticket 1263); omitted when nothing was recorded.
+                        // `_meta.notes` channel; omitted when nothing was recorded.
                         let notes = crate::sources::take_stale_serve_sentences();
                         let body = crate::cli::search_all::json_body(&results, input.counts_only, notes)?;
                         Ok(crate::render::json::to_pretty(&body)?)
@@ -351,11 +351,13 @@ async fn run_outcome_inner(
     cli: Cli,
     alias_suggestions_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    crate::sources::disable::init(cli.disable_sources.as_deref())?;
     super::shared::validate_cli_state_contract(&cli)?;
     let Cli {
         command,
         json,
         no_cache,
+        disable_sources: _,
     } = cli;
 
     match command {
@@ -563,6 +565,7 @@ async fn run_outcome_inner(
                 command,
                 json,
                 no_cache,
+                disable_sources: None,
             }))
             .await?,
         )),
@@ -574,7 +577,7 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
     let trusted_terminal_chart = is_charted_mcp_study_command(&cli).unwrap_or(false);
     let contract = JsonResponseContract::for_command(&cli.command);
     // The stale-cache scope wraps the command so every send inside it can
-    // record what it served stale (ticket 1256). The markdown note is
+    // record what it served stale. The markdown note is
     // appended inside the scope, before sanitization; JSON bodies get
     // their notes through the `_meta.notes` channel at payload build time.
     let command = crate::sources::with_stale_serve_notes(async {
@@ -614,7 +617,7 @@ async fn run_outcome_with_worker_stack(
     alias_suggestions_as_json: bool,
     drive: WorkerDrive,
 ) -> anyhow::Result<CommandOutcome> {
-    // Ticket 1225 pins the execute stack at 8 MiB: the command futures
+    // Pins the execute stack at 8 MiB: the command futures
     // once reached 145 KB, and deep render recursion needs the margin.
     const EXECUTE_STACK_BYTES: usize = 8 * 1024 * 1024;
     tokio::task::spawn_blocking(move || {
@@ -624,7 +627,7 @@ async fn run_outcome_with_worker_stack(
             .spawn(move || -> anyhow::Result<CommandOutcome> {
                 let command = async {
                     if alias_suggestions_as_json {
-                        // MCP path (ticket 1256): the helper scopes the
+                        // MCP path: the helper scopes the
                         // command with the stale-serve task-local (JSON
                         // bodies drain notes into _meta.notes inside
                         // run_outcome_inner) and appends the text note
@@ -691,7 +694,7 @@ pub async fn execute_mcp_cli(mut cli: Cli) -> anyhow::Result<CliOutput> {
     // The MCP path drives on the shared server runtime (falling back
     // to a one-shot only when no ambient runtime exists, e.g. a
     // standalone embedder): pooled connections survive between tool
-    // calls and no runtime is built per call (ticket 1243).
+    // calls and no runtime is built per call.
     let outcome = run_outcome_with_worker_stack(cli, true, WorkerDrive::for_shared_call()).await?;
     outcome_to_mcp_output(outcome)
 }

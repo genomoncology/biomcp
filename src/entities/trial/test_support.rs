@@ -1,57 +1,25 @@
 //! Shared test-only helpers for decomposed trial module sidecars.
 
 #[allow(unused_imports)]
-pub(super) use super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSource};
+pub(super) use super::{TrialCount, TrialSearchFilters, TrialSource};
 #[allow(unused_imports)]
 pub(super) use crate::error::BioMcpError;
 #[allow(unused_imports)]
-pub(super) use crate::sources::clinicaltrials::ClinicalTrialsClient;
+pub(super) use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovStudy};
 #[allow(unused_imports)]
 pub(super) use serde_json::json;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-pub(super) struct CtGovFixtureEnv {
-    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
-    _cache: tempfile::TempDir,
-}
+pub(super) use crate::test_support::FixtureEnv;
 
-impl CtGovFixtureEnv {
-    pub(super) fn set(base: &str) -> Self {
-        let cache = tempfile::tempdir().expect("CTGov fixture cache");
-        let mut prior = Vec::new();
-        for (key, value) in [
-            ("BIOMCP_CTGOV_BASE", base.to_owned()),
-            ("BIOMCP_TEST_UNPACED_ORIGIN", base.to_owned()),
-            (
-                "BIOMCP_CACHE_DIR",
-                cache.path().to_string_lossy().into_owned(),
-            ),
-        ] {
-            prior.push((key, std::env::var_os(key)));
-            // SAFETY: callers hold the serial-test process-wide environment lock.
-            unsafe { std::env::set_var(key, value) };
-        }
-        Self {
-            previous: prior,
-            _cache: cache,
-        }
-    }
-}
-
-impl Drop for CtGovFixtureEnv {
-    fn drop(&mut self) {
-        for (key, previous) in self.previous.drain(..).rev() {
-            // SAFETY: callers hold the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(previous) = previous {
-                    std::env::set_var(key, previous);
-                } else {
-                    std::env::remove_var(key);
-                }
-            }
-        }
-    }
+/// The CTGov fixture env: the shared scratch-cache guard with the registry
+/// and its pacing origin pointed at the fixture.
+pub(super) fn ctgov_fixture_env(base: &str) -> FixtureEnv {
+    let mut env = FixtureEnv::new();
+    env.set("BIOMCP_CTGOV_BASE", base);
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
+    env
 }
 
 pub(super) async fn ctgov_json_fixture(
@@ -111,26 +79,6 @@ pub(super) fn ctgov_search_study_fixture(
     })
 }
 
-pub(super) fn ctgov_search_results(
-    values: Vec<serde_json::Value>,
-) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
-    let bytes = serde_json::to_vec(&json!({"studies": values})).unwrap();
-    let filters = biodata::ClinicalTrialSearchFilters::new(
-        biodata::ClinicalTrialSearchFilterFields {
-            condition: Some("fixture".into()),
-            ..Default::default()
-        },
-        Default::default(),
-    )
-    .unwrap();
-    let plan = biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 50, None, true).unwrap();
-    biodata::ClinicalTrialsGovApiV2SearchPage::parse(&plan, &bytes, &Default::default())
-        .expect("valid CTGov search page")
-        .results()
-        .unwrap_or_default()
-        .to_vec()
-}
-
 pub(super) fn age_filtered_ctgov_filters() -> TrialSearchFilters {
     TrialSearchFilters {
         condition: Some("melanoma".into()),
@@ -147,11 +95,7 @@ pub(super) fn studies_with_age_matches(
 ) -> Vec<serde_json::Value> {
     (0..total)
         .map(|index| {
-            let group = prefix.parse::<usize>().unwrap_or_default();
-            let nct_id = format!(
-                "NCT{:08}",
-                group.saturating_mul(1_000).saturating_add(index)
-            );
+            let nct_id = format!("NCT{prefix}{index:07}");
             if index < eligible {
                 ctgov_search_study_fixture(&nct_id, "18 Years", "75 Years")
             } else {
@@ -159,4 +103,177 @@ pub(super) fn studies_with_age_matches(
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod reference_wire_tests {
+    use super::super::*;
+    use crate::entities::trial::shared::ExtensibleCode;
+
+    #[test]
+    fn trial_stores_shared_references_directly() {
+        let field: fn(&Trial) -> &Option<Vec<ClinicalTrialReference>> = |trial| &trial.references;
+        let _ = field;
+    }
+
+    fn shared_reference(
+        pmid: Option<&str>,
+        citation: Option<&str>,
+        source_type: Option<ExtensibleCode>,
+    ) -> ClinicalTrialReference {
+        ClinicalTrialReference::new(
+            pmid.map(str::to_owned),
+            citation.map(str::to_owned),
+            source_type,
+        )
+        .expect("shared reference")
+    }
+
+    fn trial_wire(references: Option<serde_json::Value>) -> serde_json::Value {
+        let mut value = serde_json::json!({
+            "nct_id": "NCT00000001",
+            "title": "Reference test",
+            "status": "RECRUITING",
+            "conditions": [],
+            "interventions": []
+        });
+        if let Some(references) = references {
+            value["references"] = references;
+        }
+        value
+    }
+
+    #[test]
+    fn trial_reference_wire_preserves_section_states_order_and_unicode() {
+        let missing: Trial = serde_json::from_value(trial_wire(None)).expect("missing section");
+        assert!(missing.references.is_none());
+        assert!(
+            serde_json::to_value(missing)
+                .expect("missing serialization")
+                .get("references")
+                .is_none()
+        );
+
+        let null: Trial = serde_json::from_value(trial_wire(Some(serde_json::Value::Null)))
+            .expect("null section");
+        assert!(null.references.is_none());
+
+        let empty: Trial =
+            serde_json::from_value(trial_wire(Some(serde_json::json!([])))).expect("empty section");
+        assert!(empty.references.as_ref().is_some_and(Vec::is_empty));
+        assert_eq!(
+            serde_json::to_value(empty).expect("empty serialization")["references"],
+            serde_json::json!([])
+        );
+
+        let populated = serde_json::json!([
+            {
+                "pmid":" 123 ",
+                "citation":" Étude α. ",
+                "source_type": {
+                    "authority": "other.example",
+                    "code": " DERIVED ",
+                    "display": " Dérivé ",
+                    "vocabulary_version": " 2026-β ",
+                    "recognized_meaning": " Supporting result "
+                }
+            },
+            {"citation":"研究 β", "pmid":" \t ", "source_type":null}
+        ]);
+        let trial: Trial =
+            serde_json::from_value(trial_wire(Some(populated.clone()))).expect("populated section");
+        let references = trial.references.as_ref().expect("shared values");
+        assert_eq!(references[0].pmid(), Some(" 123 "));
+        assert_eq!(references[0].citation(), Some(" Étude α. "));
+        assert_eq!(references[1].citation(), Some("研究 β"));
+        assert_eq!(
+            serde_json::to_value(trial).expect("populated serialization")["references"],
+            populated
+        );
+    }
+
+    #[test]
+    fn trial_reference_wire_emits_exact_complete_shapes() {
+        let mut trial: Trial = serde_json::from_value(trial_wire(None)).unwrap();
+        trial.references = Some(vec![
+            shared_reference(None, None, None),
+            shared_reference(
+                Some("pmid-α"),
+                Some("Citation β"),
+                Some(
+                    ExtensibleCode::new(
+                        "other.example",
+                        "PRIMARY",
+                        Some("Primary source"),
+                        Some("v2"),
+                        Some("Main publication"),
+                    )
+                    .unwrap(),
+                ),
+            ),
+            shared_reference(
+                None,
+                None,
+                Some(
+                    ExtensibleCode::new(
+                        "clinicaltrials.gov",
+                        "BACKGROUND",
+                        None::<String>,
+                        None::<String>,
+                        None::<String>,
+                    )
+                    .unwrap(),
+                ),
+            ),
+        ]);
+        assert_eq!(
+            serde_json::to_value(trial).unwrap()["references"],
+            serde_json::json!([
+                {"pmid":null,"citation":null,"source_type":null},
+                {"pmid":"pmid-α","citation":"Citation β","source_type":{"authority":"other.example","code":"PRIMARY","display":"Primary source","vocabulary_version":"v2","recognized_meaning":"Main publication"}},
+                {"pmid":null,"citation":null,"source_type":{"authority":"clinicaltrials.gov","code":"BACKGROUND","display":null,"vocabulary_version":null,"recognized_meaning":null}}
+            ])
+        );
+    }
+
+    #[test]
+    fn trial_reference_wire_accepts_every_shared_value_state() {
+        let references = serde_json::json!([
+            {"pmid":"123","citation":null,"source_type":null},
+            {"pmid":null,"citation":"Citation","source_type":null},
+            {"pmid":null,"citation":null,"source_type":{"authority":"nci.nih.gov","code":"OTHER","display":null,"vocabulary_version":null,"recognized_meaning":null}},
+            {"pmid":null,"citation":null,"source_type":null},
+            {"pmid":"456","citation":"Complete","source_type":{"authority":"example.org","code":"CODE","display":"Display","vocabulary_version":"v1","recognized_meaning":"Meaning"}}
+        ]);
+        let trial: Trial = serde_json::from_value(trial_wire(Some(references.clone()))).unwrap();
+        assert_eq!(
+            serde_json::to_value(trial).unwrap()["references"],
+            references
+        );
+    }
+
+    #[test]
+    fn trial_reference_wire_preserves_duplicates_for_strict_local_trial_rejection() {
+        let cases = [
+            r#"[{"pmid":"private-root","pmid":"duplicate","citation":null,"source_type":null}]"#,
+            r#"[{"pmid":null,"citation":null,"source_type":{"authority":"private-nested","authority":"duplicate","code":"TYPE","display":null,"vocabulary_version":null,"recognized_meaning":null}}]"#,
+            r#"[{"pmid":null,"citation":null,"source_type":null,"reference_type":"retired-private"}]"#,
+        ];
+        for references in cases {
+            let json = format!(
+                r#"{{"nct_id":"NCT00000001","title":"Reference test","status":"RECRUITING","conditions":[],"interventions":[],"references":{references}}}"#
+            );
+            let error = serde_json::from_str::<Trial>(&json).expect_err("invalid reference");
+            let message = error.to_string();
+            assert!(message.starts_with("invalid clinical trial reference"));
+            for private in [
+                "private-root",
+                "private-nested",
+                "retired-private",
+                "duplicate",
+            ] {
+                assert!(!message.contains(private));
+            }
+        }
+    }
 }

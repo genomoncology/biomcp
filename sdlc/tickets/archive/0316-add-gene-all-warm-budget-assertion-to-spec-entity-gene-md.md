@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/316-add-gene-all-warm-budget-assertion-to-spec-entity-gene-md
+    ~/workspace/planning/biomcp/artifacts/316-add-gene-all-warm-budget-assertion-to-spec-entity-gene-md

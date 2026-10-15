@@ -384,7 +384,7 @@ for _ in $(seq 1 100); do
 done
 
 base_url="$(cat "$ready_file")"
-binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
+binary="${BIOMCP_BIN:-$repo_root/target/debug/biomcp}"
 
 export BIOMCP_CACHE_MODE=off
 export BIOMCP_CACHE_DIR="$fixture_root/cache"

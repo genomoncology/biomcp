@@ -8,4 +8,4 @@ Imported from March ticket 512. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/512-return-complete-article-authors-without-silent-truncation
+Artifacts: ~/workspace/planning/biomcp/artifacts/512-return-complete-article-authors-without-silent-truncation

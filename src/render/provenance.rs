@@ -451,13 +451,6 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        drug.label.is_some(),
-        "label",
-        "FDA Label",
-        ["OpenFDA label"],
-    );
-    push_section(
-        &mut out,
         drug.shortage.is_some(),
         "shortage",
         "Shortage",
@@ -475,6 +468,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         &drug.section_outcomes,
         &[
             ("approvals", "Drugs@FDA Approvals"),
+            ("label", "FDA Label"),
             ("cell_lines", "Cell lines"),
             ("safety", "Safety"),
             ("targets", "Targets"),
@@ -523,8 +517,7 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
         top_gene_sources,
     );
     // Seeded DisGeNET rows (the MyDisease hit's embedded block) contribute
-    // to the associated-genes provenance when they are present (ticket
-    // 1256); otherwise the row keeps its existing sources.
+    // to the associated-genes provenance when they are present; otherwise the row keeps its existing sources.
     let mut associated_gene_sources = vec!["Monarch Initiative", "Open Targets"];
     if disease.gene_associations.iter().any(|row| {
         row.source
@@ -975,6 +968,7 @@ mod tests {
             hgvs_p: None,
             legacy_name: None,
             hgvs_c: None,
+            protein_numbering_note: None,
             transcript: None,
             rsid: Some("rs7903146".to_string()),
             cosmic_id: None,
@@ -1016,7 +1010,7 @@ mod tests {
     #[test]
     fn drug_interaction_note_covers_the_zero_rows_wordings() {
         // The covered-zero-rows arm must read as coverage information,
-        // not a clean bill (ticket 1254).
+        // not a clean bill.
         let mut drug: crate::entities::drug::Drug =
             serde_json::from_value(serde_json::json!({"name": "dabigatran"})).expect("drug");
         drug.interaction_coverage_status = Some(
@@ -1080,6 +1074,7 @@ mod tests {
             ema_safety: None,
             ema_shortage: None,
             who_prequalification: None,
+            who_note: None,
             civic: None,
             cell_lines: None,
         };
@@ -1157,6 +1152,7 @@ mod tests {
                 manufacturer: None,
                 responsible_nra: None,
             }]),
+            who_note: None,
             civic: None,
             cell_lines: None,
         };
@@ -1209,6 +1205,7 @@ mod tests {
             ema_safety: None,
             ema_shortage: None,
             who_prequalification: None,
+            who_note: None,
             civic: None,
             cell_lines: None,
         };

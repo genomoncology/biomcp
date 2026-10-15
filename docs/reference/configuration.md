@@ -46,7 +46,9 @@ The resolved root contains the managed HTTP response cache in `http/`, the
 ten-minute article-search loop-breaker records in `sessions/`, and the
 thirty-day directed citation-evidence sidecar in `citation-evidence/`. Cache reads,
 writes, statistics, and maintenance physically remove entries older than
-`max_age_secs`; opening the session store removes expired sessions.
+`max_age_secs`; opening the session store removes expired sessions. The
+automatic start-up clean runs at most once a day, and `biomcp cache clean`
+runs it now; `BIOMCP_CACHE_MODE=off` skips the start-up clean entirely.
 Managed directories and files are private to the current OS user. BioMCP
 repairs overly broad permissions inside the managed root and refuses linked
 regular files rather than risking access through another pathname.
@@ -74,14 +76,18 @@ future work. BioMCP resolves and parses the ordinary-provider bundle once per
 process, so set it before startup and restart BioMCP after rotating it.
 
 Free-text `search variant "GENE condition"` routes the first token to the gene
-filter only after the `BIOMCP_VARIANT_QUERY_GENE_ROUTING` source confirms it is
-a known gene symbol. The supported default is `mygene`: MyGene's unique
-canonical symbol/alias resolution is the same lookup `discover` already trusts
-for this question, and no offline gene list ships with BioMCP. A refused,
-ambiguous, timed-out, or unavailable lookup keeps the whole phrase as the
-condition search and prints the explicit `-g`/`--condition` working form when
-that search returns zero rows, because refusal beats wrong routing. `off`
-restores the whole-phrase condition search without the routing lookup.
+filter only after the `BIOMCP_VARIANT_QUERY_GENE_ROUTING` source confirms it
+is the gene's official symbol. The supported default is `mygene`: MyGene
+confirms a first token only when a unique entrez-backed row carries it as the
+official symbol, and refuses aliases, so phrases such as 'HCC liver cancer'
+(HYCC1), 'MODY diabetes' (HNF4A), and 'HHT telangiectasias' (ACVRL1) keep the
+whole-phrase condition search; no offline gene list ships with BioMCP. The
+`discover` path keeps its separate symbol/alias lookup. A refused, ambiguous,
+timed-out, or unavailable lookup keeps the whole phrase as the condition
+search and prints the condition search without the leading word when that
+search returns zero rows, because the gene filter needs the official symbol
+the lookup did not confirm. `off` restores
+the whole-phrase condition search without the routing lookup.
 
 ## Internal and Measurement Controls
 
@@ -141,7 +147,26 @@ Internal cBioPortal fixture/source-selection seams include
 
 | Variable | Purpose |
 |---|---|
-| `BIOMCP_DISABLE_KEGG` | Operator-supported degradation control that disables KEGG pathway calls when KEGG should be avoided |
+| `BIOMCP_DISABLE_SOURCES` | Comma- or pipe-separated source ids or group names to turn off; `--disable-sources` passes the same list for one invocation |
+| `BIOMCP_DISABLE_KEGG` | Legacy alias for `BIOMCP_DISABLE_SOURCES=kegg`; set to `1` to turn off KEGG |
+
+### Disabling sources by name or group
+
+`--disable-sources` and `BIOMCP_DISABLE_SOURCES` take a comma- or
+pipe-separated list of source ids and group names, matched
+case-insensitively with surrounding whitespace trimmed:
+`--disable-sources kegg,enrichr` and `BIOMCP_DISABLE_SOURCES=kegg|enrichr`
+behave identically, and the CLI and the MCP server read the same setting.
+An unknown id or group name is an error that lists the valid names. Valid
+ids come from [`sources.json`](source-licensing.md#how-to-read-this-page);
+the groups are `commercial-restricted`, `license-required`, and
+`non-commercial`, drawn from each source's recorded commercial terms in that
+file rather than from a list in code. A disabled source is never called, its
+fields are dropped when another service carries them (for example, gene
+records show no KEGG pathway names while `kegg` is off), `biomcp health`
+lists every disabled source with the setting that turned it off, and the MCP
+server's description names them for its clients. Sources that need a key
+stay off without one regardless of this setting.
 
 - Human-facing diagnostics and tracing go to stderr, never JSON stdout.
 - JSON query responses use `_meta.source_status` where a command has structured
@@ -157,4 +182,6 @@ Internal cBioPortal fixture/source-selection seams include
   usable evidence. Outcome-only helpers such as `variant structure` may expose
   the same state model on their documented status surface.
 - `SourceUnavailable` means the source is supported but temporarily unavailable.
-  It is distinct from unsupported sections or invalid command grammar.
+  It is distinct from unsupported sections or invalid command grammar. A
+  source disabled through `--disable-sources`/`BIOMCP_DISABLE_SOURCES` is
+  reported as disabled, not unavailable, and names the setting to change.

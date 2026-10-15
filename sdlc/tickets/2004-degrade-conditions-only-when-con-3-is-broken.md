@@ -6,9 +6,17 @@ deps: [2002]
 
 # 2004: Degrade conditions only when con-3 is broken
 
+Status: OPEN.
+
+Milestone: 1.0
+
 ## Outcome
 
 `get patient <id> conditions` marks the section `degraded` only when a Condition breaks FHIR R4 invariant con-3. Each row shows its own clinical status, or shows it as absent when the source omits it. On the blue demo server, patients whose Conditions all satisfy con-3 come back `data`, not `degraded`.
+
+## Evidence
+
+- Changes: `src/entities/section_outcome.rs` `spec/entity/patient.md`
 
 ## Current Facts
 

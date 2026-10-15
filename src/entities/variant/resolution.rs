@@ -64,7 +64,7 @@ fn clinvar_variation_id_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"^([1-9][0-9]{0,9})$").expect("valid regex"))
 }
 
-/// A bare positive integer is a ClinVar VariationID (ticket 1292).
+/// A bare positive integer is a ClinVar VariationID.
 pub(crate) fn parse_clinvar_variation_id(value: &str) -> Option<u64> {
     clinvar_variation_id_re()
         .captures(value.trim())
@@ -434,6 +434,62 @@ pub(crate) fn gnomad_variant_slug(id: &str) -> Option<String> {
         components.reference,
         components.alternate
     ))
+}
+
+fn amino_acid_one_letter(token: &str) -> Option<char> {
+    match token.trim().to_ascii_uppercase().as_str() {
+        "A" | "ALA" => Some('A'),
+        "R" | "ARG" => Some('R'),
+        "N" | "ASN" => Some('N'),
+        "D" | "ASP" => Some('D'),
+        "C" | "CYS" => Some('C'),
+        "Q" | "GLN" => Some('Q'),
+        "E" | "GLU" => Some('E'),
+        "G" | "GLY" => Some('G'),
+        "H" | "HIS" => Some('H'),
+        "I" | "ILE" => Some('I'),
+        "L" | "LEU" => Some('L'),
+        "K" | "LYS" => Some('K'),
+        "M" | "MET" => Some('M'),
+        "F" | "PHE" => Some('F'),
+        "P" | "PRO" => Some('P'),
+        "S" | "SER" => Some('S'),
+        "T" | "THR" => Some('T'),
+        "W" | "TRP" => Some('W'),
+        "Y" | "TYR" => Some('Y'),
+        "V" | "VAL" => Some('V'),
+        "*" | "TER" | "STOP" | "X" => Some('*'),
+        _ => None,
+    }
+}
+
+/// The three-letter amino-acid name for a one-letter code, for answers that
+/// name a reference residue.
+pub(crate) fn amino_acid_three_letter(one: char) -> Option<&'static str> {
+    match one.to_ascii_uppercase() {
+        'A' => Some("Ala"),
+        'R' => Some("Arg"),
+        'N' => Some("Asn"),
+        'D' => Some("Asp"),
+        'C' => Some("Cys"),
+        'Q' => Some("Gln"),
+        'E' => Some("Glu"),
+        'G' => Some("Gly"),
+        'H' => Some("His"),
+        'I' => Some("Ile"),
+        'L' => Some("Leu"),
+        'K' => Some("Lys"),
+        'M' => Some("Met"),
+        'F' => Some("Phe"),
+        'P' => Some("Pro"),
+        'S' => Some("Ser"),
+        'T' => Some("Thr"),
+        'W' => Some("Trp"),
+        'Y' => Some("Tyr"),
+        'V' => Some("Val"),
+        '*' => Some("Ter"),
+        _ => None,
+    }
 }
 
 pub(crate) fn protein_change_segment(value: &str) -> &str {

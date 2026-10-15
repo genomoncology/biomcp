@@ -11,7 +11,7 @@ const MYCHEM_BASE: &str = "https://mychem.info/v1";
 const MYCHEM_BASE_ENV: &str = "BIOMCP_MYCHEM_BASE";
 
 pub(crate) const MYCHEM_FIELDS_SEARCH: &str = "drugbank.id,drugbank.name,drugbank.synonyms,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,chembl.atc_classifications,gtopdb.name,gtopdb.interaction_targets.symbol,unii.unii,unii.display_name,ndc.nonproprietaryname,ndc.pharm_classes,chebi.name,openfda.generic_name,openfda.brand_name";
-pub(crate) const MYCHEM_FIELDS_GET: &str = "drugbank.id,drugbank.name,drugbank.synonyms,drugbank.drug_interactions,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,gtopdb.name,gtopdb.interaction_targets.symbol,drugcentral.drug_use.indication.concept_name,drugcentral.approval.agency,drugcentral.approval.date,ndc.nonproprietaryname,ndc.pharm_classes,unii.unii,unii.display_name,chebi.name,openfda.generic_name,openfda.brand_name";
+pub(crate) const MYCHEM_FIELDS_GET: &str = "drugbank.id,drugbank.name,drugbank.synonyms,drugbank.drug_interactions,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,gtopdb.name,gtopdb.interaction_targets.symbol,drugcentral.synonyms,drugcentral.drug_use.indication.concept_name,drugcentral.approval.agency,drugcentral.approval.date,ndc.nonproprietaryname,ndc.proprietaryname,ndc.pharm_classes,unii.unii,unii.display_name,chebi.name,openfda.generic_name,openfda.brand_name";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -151,7 +151,16 @@ impl MyChemClient {
             MYCHEM_FIELDS_SEARCH => biodata::MyChemProfile::Search,
             _ => return Err(projection::failure("MyChem request profile rejected")),
         };
-        self.get_identity(req, profile).await
+        let mut response = self.get_identity(req, profile).await?;
+        // MyChem carries the drugbank fields from DrugBank's own
+        // annotation; a disabled drugbank leaves none of them in drug
+        // output even though MyChem still returns them.
+        if crate::sources::disable::is_disabled("drugbank") {
+            for hit in &mut response.hits {
+                hit.drugbank = None;
+            }
+        }
+        Ok(response)
     }
 }
 
@@ -221,6 +230,11 @@ pub struct MyChemChemblDrugMechanism {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemDrugCentral {
+    /// Brand and alias names DrugCentral lists for the drug:
+    /// live records carry brands such as "tagrisso" here when no fetched
+    /// openFDA block does.
+    #[serde(default, deserialize_with = "de_vec_or_single")]
+    pub synonyms: Vec<String>,
     pub drug_use: Option<MyChemDrugCentralDrugUse>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
     pub approval: Vec<MyChemDrugCentralApproval>,
@@ -277,6 +291,9 @@ pub enum MyChemNdcField {
 pub struct MyChemNdc {
     #[serde(skip_deserializing)]
     pub nonproprietaryname: Option<String>,
+    /// The product's brand name: brands live here on the NDC
+    /// product rows, not on the ingredient record's name fields.
+    pub proprietaryname: Option<String>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
     pub pharm_classes: Vec<MyChemPharmClass>,
 }

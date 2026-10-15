@@ -374,3 +374,6 @@ fn adopted_and_legacy_details_share_annotation_aggregation() {
         );
     }
 }
+
+// --- Mutation identity: the row's typed-back variant identifier ---
+mod mutation_identity;

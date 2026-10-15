@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/646-close-the-named-coverage-gaps-in-alias-fanout-continuation-and-variant-article-batches
+    ~/workspace/planning/biomcp/artifacts/646-close-the-named-coverage-gaps-in-alias-fanout-continuation-and-variant-article-batches

@@ -8,4 +8,4 @@ Imported from March ticket 670. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/670-convert-pgx-live-assertions-to-deterministic-cpic-contracts
+Artifacts: ~/workspace/planning/biomcp/artifacts/670-convert-pgx-live-assertions-to-deterministic-cpic-contracts

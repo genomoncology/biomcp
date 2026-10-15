@@ -112,7 +112,8 @@ fn rejected_credential_recovery_points_to_configuration() {
         docs_url: "https://www.disgenet.com/".into(),
     };
     let context = DisgenetClient::error_context(&error);
-    let projection = error.with_source_context(context).public_projection();
+    let wrapped = error.with_source_context(context);
+    let projection = wrapped.public_projection();
 
     assert_eq!(projection.source, Some("DisGeNET"));
     assert_eq!(

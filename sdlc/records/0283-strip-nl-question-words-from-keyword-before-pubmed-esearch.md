@@ -8,4 +8,4 @@ Imported from March ticket 283. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/283-strip-nl-question-words-from-keyword-before-pubmed-esearch
+Artifacts: ~/workspace/planning/biomcp/artifacts/283-strip-nl-question-words-from-keyword-before-pubmed-esearch

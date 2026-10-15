@@ -23,9 +23,6 @@ ambiguity blocking v0.8.22.
 The ticket scoped three resolutions: ship public CLI, formalize as an
 internal harness, or delete the module.
 
-See `.march/survey.md` for the full inventory, dependency map, blast
-radius, and evidence.
-
 ## Decision
 
 **Option B — Internal/dev regression harness.** `src/cli/benchmark/`
@@ -302,7 +299,6 @@ that script's README. No ticket needed at this time.
 
 ## References
 
-- `.march/survey.md` — full investigation, evidence, blast radius.
 - `architecture/technical/cli-decomposition-2026.md` — currently
   stale; ticket 332 will refresh.
 - `architecture/technical/cli-module-decomposition.md` — durable

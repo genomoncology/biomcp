@@ -16,6 +16,8 @@ pub use self::anchors::{
 pub use self::annotations::extract_detail_annotations;
 pub(crate) use self::annotations::retained_extract_annotations;
 pub use self::europepmc::{from_europepmc_detail, merge_europepmc_detail_metadata};
+pub(crate) use self::annotations::gene_ids_needing_official_symbols;
+pub use self::annotations::{extract_annotations, extract_annotations_with_official_symbols};
 pub use self::federation::{
     from_europepmc_search_result, from_pubmed_esummary_entry, from_pubtator_search_result,
 };
@@ -92,6 +94,7 @@ mod tests {
     use crate::sources::pubmed::ESummaryEntry;
     use crate::sources::pubtator::{PubTatorDocument, PubTatorSearchResult};
     use crate::transform::article::{ArticleDocumentUnusable, ClassifiedArticleDocument};
+    use std::collections::HashMap;
 
     #[test]
     fn root_module_reexports_stable_article_transform_api() {
@@ -115,6 +118,10 @@ mod tests {
             as fn(&ESummaryEntry) -> Option<ArticleSearchResult>;
         let _ = crate::transform::article::retained_extract_annotations
             as fn(&PubTatorDocument, bool) -> Option<ArticleAnnotations>;
+        let _ = crate::transform::article::extract_annotations_with_official_symbols
+            as fn(&PubTatorDocument, bool, &HashMap<u64, String>) -> Option<ArticleAnnotations>;
+        let _ = crate::transform::article::gene_ids_needing_official_symbols
+            as fn(&PubTatorDocument) -> Vec<u64>;
         let _ = crate::transform::article::classify_jats_document
             as fn(&str) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable>;
         let _ = crate::transform::article::classify_html_document

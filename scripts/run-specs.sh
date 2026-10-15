@@ -24,6 +24,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/patient.md
   spec/entity/pathway.md
   spec/entity/trial.md
+  spec/entity/drug-label-sections.md
   spec/entity/drug.md
   spec/entity/gene.md
   spec/entity/drug-interactions.md
@@ -445,8 +446,8 @@ prepare_provider_page_request_log() {
   # BIOMCP_TEST_UNPACED_ORIGIN from it inline, and both consumers of that
   # signal require a bare origin (scheme+host+port, path "/"): the rate
   # limiter's unpaced bypass (UnpacedOrigin::parse_signal) and the GenCC
-  # fixture-override gate (fixture_override_allowed, required because the
-  # spec profile inherits release and debug_assertions is off). A
+  # fixture-override gate (fixture_override_allowed, still needed by the
+  # release-profile verify lane where debug_assertions is off). A
   # worker-prefixed signal silently disables both, which re-enables pacing
   # and denies the GenCC override. Pages that compose sub-bases from the
   # plain base log to the shared request log, which no page reads any more,
@@ -561,7 +562,7 @@ prepare_spec_artifacts() {
   }
   local -a arguments=(
     --mode "$mode"
-    --profile "${SPEC_PROFILE:-spec}"
+    --profile "${SPEC_PROFILE:-dev}"
     --output "$env_file"
   )
   local cargo_feature_arg
@@ -733,7 +734,7 @@ else
   case "$mode" in
     verify) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
     verify-nih-reporter) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
-    *) default_biomcp_bin="$ROOT/target/spec/biomcp" ;;
+    *) default_biomcp_bin="$ROOT/target/debug/biomcp" ;;
   esac
   BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"
   case "$BIOMCP_BIN" in

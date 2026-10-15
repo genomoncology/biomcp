@@ -15,4 +15,4 @@ Both commit objects exist, the recorded base is the landed head's parent, and
 the landed head is an ancestor of current main. This note deliberately does
 not claim whole-tree equivalence for the excluded paths.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/161-bridge-discover-to-search-phenotype-via-hpo-term-resolution
+Artifacts: ~/workspace/planning/biomcp/artifacts/161-bridge-discover-to-search-phenotype-via-hpo-term-resolution

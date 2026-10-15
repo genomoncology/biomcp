@@ -1,5 +1,4 @@
-//! One wall-clock deadline for a whole article search invocation (ticket
-//! 1293): candidate legs plus every enrichment pass share a single
+//! One wall-clock deadline for a whole article search invocation: candidate legs plus every enrichment pass share a single
 //! `VariantArticleDeadline` propagated through the existing task-local seam.
 //! These helpers wrap that deadline around source legs and translate its
 //! terminal state into `source_status` rows and `SourceUnavailable` errors.
@@ -18,13 +17,13 @@ use super::{
 /// same provider mix. The federated legs consume at most their own 12 s
 /// timeout, leaving ~48 s for the sequential Semantic Scholar batch and
 /// per-row PubTator/Europe PMC metadata fallback — the loops that took the
-/// measured 186-206 s commands past three minutes (ticket 1293).
+/// measured 186-206 s commands past three minutes.
 pub(super) const ARTICLE_SEARCH_DEADLINE: Duration = Duration::from_secs(60);
 
 /// The article-search deadline budget. The `BIOMCP_TEST_` override mirrors
-/// the citation-graph deadline seam: recorded fixtures run the release-shaped
-/// spec binary (no `debug_assertions`), so the hook is read unconditionally,
-/// exactly like `BIOMCP_TEST_UNPACED_ORIGIN`.
+/// the citation-graph deadline seam: recorded fixtures also run the release
+/// binary under `make verify` (no `debug_assertions`), so the hook is read
+/// unconditionally, exactly like `BIOMCP_TEST_UNPACED_ORIGIN`.
 pub(crate) fn article_search_deadline_budget() -> Duration {
     if let Ok(value) = std::env::var("BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS")
         && let Ok(millis) = value.trim().parse::<u64>()
@@ -81,12 +80,12 @@ where
 
 /// Prefix of the terminal deadline error's reason. The public error
 /// projection keys on it to carry the deadline sentence through to users
-/// (ticket 1299).
+///.
 pub(crate) const ARTICLE_SEARCH_DEADLINE_REASON_PREFIX: &str = "article search deadline exceeded";
 
 /// Suggestion the deadline error pairs with its reason. The public error
 /// projection reuses this static sentence when it carries the deadline
-/// reason through to users (ticket 1299).
+/// reason through to users.
 pub(crate) const ARTICLE_SEARCH_DEADLINE_SUGGESTION: &str =
     "Retry with a narrower query or a single --source";
 

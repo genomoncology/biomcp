@@ -10,7 +10,7 @@ The release path is proven for `d7176bce`. The artifacts would be right. Two sma
 
 - Rehearsal run 36896962624 ran on `9cbadbf3`, which is `de7ceb2d` plus one rehearsal commit. That commit removes the CI, contracts and docs workflows, stubs docs-live, replaces the PyPI upload with `twine check`, and points four image names at the scratch repository. `scripts/` is untouched. `environment: pypi` and `id-token: write` are kept.
 - `git diff de7ceb2d d7176bce` is empty for `.github/`, `scripts/`, `Dockerfile`, `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, `src/` and `tests/`.
-- Attempts 1 and 2 stopped at container-publish because GitHub refused to start the job for a billing reason. No step ran, so no flaky step passed on retry. Attempt 3 re-ran the failed jobs, and container-publish, pypi-publish, publish-release and homebrew-tap all passed. The upstream jobs passed on their only run.
+- Attempts 1 and 2 stopped at container-publish because GitHub refused to start the job: private-repository runners are not available to this account. No step ran, so no flaky step passed on retry. Attempt 3 re-ran the failed jobs, and container-publish, pypi-publish, publish-release and homebrew-tap all passed. The upstream jobs passed on their only run.
 - The attempt 3 logs show each path ran: the draft download with both checksums OK, both image smokes as uid 65532 printing `biomcp 0.9.1`, the `latest` move, `gh release edit --draft=false`, the Homebrew skip, and `twine check` passing all five wheels.
 - The rehearsal caught two real blockers. Ticket 1285 added the DDInter sync to wheel-smoke, and ticket 1286 pinned the Intel macOS runner. Each landed through a merge with a green branch run.
 - Main run 36924091357 at `d7176bce` passed all eight jobs, and documentation run 36924091356 passed. biomcp.org serves `d7176bce`.
@@ -56,7 +56,7 @@ The checklist's section 4 verification covers PyPI, Homebrew and the `latest` ta
 
 - The jobs on `ubuntu-latest` move to Ubuntu 26 from 2026-10-19. Tag before then, or pin the runner.
 - `ghcr.io/genomoncology/biomcp-release-rehearsal:0.9.1` and `:latest` are public and pullable without login. They hold a real `biomcp 0.9.1` binary built from a scratch copy. The repository description says the rehearsal is deleted after each run. Deleting the package needs Ian's authorization.
-- The scratch repository was made public without Ian's approval. Attempts 1 and 2 were blocked by a GitHub billing stop on the organization account.
+- The scratch repository was made public without Ian's approval. Attempts 1 and 2 were blocked because private-repository runners are not available to this account.
 
 ## Diff check of the tag candidate, 2026-10-01
 

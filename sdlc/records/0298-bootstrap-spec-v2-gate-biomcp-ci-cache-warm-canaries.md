@@ -8,4 +8,4 @@ Imported from March ticket 298. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/298-bootstrap-spec-v2-gate-biomcp-ci-cache-warm-canaries
+Artifacts: ~/workspace/planning/biomcp/artifacts/298-bootstrap-spec-v2-gate-biomcp-ci-cache-warm-canaries

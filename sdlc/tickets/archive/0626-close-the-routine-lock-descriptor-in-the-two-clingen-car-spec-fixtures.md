@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/626-close-the-routine-lock-descriptor-in-the-two-clingen-car-spec-fixtures
+    ~/workspace/planning/biomcp/artifacts/626-close-the-routine-lock-descriptor-in-the-two-clingen-car-spec-fixtures

@@ -83,6 +83,20 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, (Path(sys.argv[3]) / "get_p15056_20260812.json").read_bytes())
             return
 
+        # Ticket 2016 (ticket 2033 finding 3): this fixture owns the routine
+        # lane's UniProt base because it sources after the variant-identity
+        # fixture; serve the minimized records the MANE-numbering residue
+        # checks read (same bytes the variant-identity fixture serves).
+        if parsed.path == "/uniprotkb/P04637.json" and not query:
+            send_json(self, 200, (Path(sys.argv[3]) / "get_p04637_20261008.json").read_bytes())
+            return
+
+        # Ticket 2016 (ticket 2035 finding 4): BRCA1's residue checks read
+        # P38398.
+        if parsed.path == "/uniprotkb/P38398.json" and not query:
+            send_json(self, 200, (Path(sys.argv[3]) / "get_p38398_20261009.json").read_bytes())
+            return
+
         if parsed.path == "/uniprotkb/search":
             expected = {
                 "query": ["(BRAF) AND organism_id:9606 AND reviewed:true"],

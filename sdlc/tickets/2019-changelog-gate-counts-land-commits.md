@@ -42,9 +42,9 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 ## Landing
 
 - Landed 2026-10-07 as merge ad39a9c5d. Process deviation, recorded
-  honestly: the merge reached main through the coordinator's
+  honestly: the merge reached main through the queue owner's
   grammar-fix push (50c19bb35) before a green merged-tree run existed
-  — the first landcheck run failed on the coordinator's own
+  — the first landcheck run failed on the queue owner's own
   out-of-grammar review lines, and the fix push carried the merge
   with it. The verifying run then executed on the exact main tip
   (tickets/landcheck-2019 at 50c19bb35): completed, success. Every

@@ -27,7 +27,7 @@ DESIGN review correction: the same caller cases extend through existing CLI/MCP 
 
 ## BUILD release
 
-Ian released consumer BUILD against accepted design `475bcfb20eb468059daea5ff8dd0e53769f1d18f` and paired producer design `e031a07cc72091e6cfe519f71497321048ef692b`. Root owns producer0715, repository queues, fresh review, landing, push and paired closure. The consumer builder owns only2027. Producer LAND is `29e01881b24604a3d0ea079b79b0e60c2f506964`, BioData0.0.42. Sartre accepted corrected CODE `61bb5da2de09ee9652a968a067c3062055cefc87`. Its six public cases, lint and spec passed. The original whole test receipt applies to `ec60c80ae1b4271d153253ab53fe2e31d11d1d93`. The builder merged dedicated target `b46064c42cf94a9b4142f0922a49e0893d0a127d` without rebasing. GitHub internal server failures do not block authorized local implementation. Cargo uses the declared Git source and immutable full producer revision through the existing host Git cache. No source policy exception applies. Cleanup belongs to another agent.
+Ian released consumer BUILD against accepted design `475bcfb20eb468059daea5ff8dd0e53769f1d18f` and paired producer design `e031a07cc72091e6cfe519f71497321048ef692b`. Root owns producer0715, repository queues, fresh review, landing, push and paired closure. The consumer builder owns only2027. Producer LAND is `29e01881b24604a3d0ea079b79b0e60c2f506964`, the data platform0.0.42. Sartre accepted corrected CODE `61bb5da2de09ee9652a968a067c3062055cefc87`. Its six public cases, lint and spec passed. The original whole test receipt applies to `ec60c80ae1b4271d153253ab53fe2e31d11d1d93`. The builder merged dedicated target `b46064c42cf94a9b4142f0922a49e0893d0a127d` without rebasing. GitHub internal server failures do not block authorized local implementation. Cargo uses the declared Git source and immutable full producer revision through the existing host Git cache. No source policy exception applies. Cleanup belongs to another agent.
 
 ## CODE handoff
 
@@ -35,6 +35,5 @@ Checked consumer candidate: `ef17e572ec5f5f812e71e46799bdd191c9b5a3b5`. Exact pr
 
 ## Landing
 
-Reviews: accept
-Fresh Medium CODE review accepted ef17e572ec5f5f812e71e46799bdd191c9b5a3b5. Twelve affected Rust checks and147 Python checks passed, with one established Darwin deselection. Inherited whole-gate findings stay separate.
+Verification (carried ticket): ACCEPT 2026-10-09 — code review ACCEPT at ef17e572ec5f5f812e71e46799bdd191c9b5a3b5 by a fresh reviewer; twelve affected Rust checks and 147 Python checks passed, with one established Darwin deselection; inherited whole-gate findings stay separate.
 Landed: 22945b5ee0c31c97c79f6b2511068ca68f8c7dbb

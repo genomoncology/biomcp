@@ -8,4 +8,4 @@ Imported from March ticket 488. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/488-retire-biomcp-suggest-command-and-its-offline-regex-router-point-agents-at-skill-list
+Artifacts: ~/workspace/planning/biomcp/artifacts/488-retire-biomcp-suggest-command-and-its-offline-regex-router-point-agents-at-skill-list

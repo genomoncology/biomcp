@@ -111,6 +111,10 @@ MYCHEM = {
     "warfarin": fixture("mychem/query_warfarin_get_20260811.json"),
     "daraxonrasib": fixture("mychem/query_daraxonrasib_get_20260811.json"),
     "dabigatran": fixture("mychem/query_dabigatran_get_20260811.json"),
+    "osimertinib": fixture("mychem/query_osimertinib_get_20261007.json"),
+    "gefitinib": fixture("mychem/query_gefitinib_get_20261007.json"),
+    "mobocertinib": fixture("mychem/query_mobocertinib_get_20261007.json"),
+    "adavosertib": fixture("mychem/query_adavosertib_get_20261007.json"),
 }
 MYGENE = {
     "(symbol:BRAF OR alias:BRAF)": fixture("mygene/search_braf_20260811.json"),
@@ -121,8 +125,39 @@ MYGENE = {
         "hits": [{"symbol": "SCN5A", "entrezgene": 6331}],
     }).encode("utf-8"),
     "(symbol:BRUGADA OR alias:BRUGADA)": b'{"total":0,"hits":[]}',
-    # Synthetic refusal for the original three-word non-interval fallback.
-    "(symbol:GENE OR alias:GENE)": b'{"total":0,"hits":[]}',
+    # Ticket 2022: recorded MyGene shapes for alias-only abbreviations. Each
+    # resolves uniquely through the alias, so official-symbol routing must
+    # refuse them: HCC->HYCC1 (84668), MODY->HNF4A (3172), HHT->ACVRL1 (94).
+    "(symbol:HCC OR alias:HCC)": json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "HYCC1",
+            "alias": ["DRCTNNB1A", "FAM126A", "HCC", "HLD5"],
+            "entrezgene": "84668",
+            "name": "hyccin PI4KA lipid kinase complex subunit 1",
+        }],
+    }).encode("utf-8"),
+    "(symbol:MODY OR alias:MODY)": json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "HNF4A",
+            "alias": ["FRTS4", "HNF4", "HNF4a7", "HNF4a8", "HNF4a9",
+                       "HNF4alpha", "MODY", "MODY1", "NR2A1", "NR2A21",
+                       "TCF", "TCF-14", "TCF14"],
+            "entrezgene": "3172",
+            "name": "hepatocyte nuclear factor 4 alpha",
+        }],
+    }).encode("utf-8"),
+    "(symbol:HHT OR alias:HHT)": json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "ACVRL1",
+            "alias": ["ACVRLK1", "ALK-1", "ALK1", "HHT", "HHT2", "ORW2",
+                       "SKR3", "TSR-I"],
+            "entrezgene": "94",
+            "name": "activin A receptor like type 1",
+        }],
+    }).encode("utf-8"),
     "(symbol:ODC1 OR alias:ODC1)": json.dumps({
         "total": 4,
         "hits": [
@@ -258,6 +293,13 @@ GENCC_ODC1 = fixture("gencc/submissions-new-odc1.csv")
 GENCC_ETAG = '"6ebdbf28b305e99e349ed827a219214b"'
 GENCC_LAST_MODIFIED = "Sun, 06 Sep 2026 06:00:29 GMT"
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
+OPENFDA_LABEL_GEFITINIB = fixture("openfda/label_gefitinib_20261007.json")
+OPENFDA_LABEL_OSIMERTINIB_FULLTEXT = fixture(
+    "openfda/label_osimertinib_fulltext_20261007.json"
+)
+OPENFDA_LABEL_MOBOCERTINIB_FULLTEXT = fixture(
+    "openfda/label_mobocertinib_fulltext_20261007.json"
+)
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
 OPENFDA_DEVICE_510K = fixture("openfda/device_510k_brca1_20260811.json")
 OPENFDA_DEVICE_PMA = fixture("openfda/device_pma_brca1_20260811.json")
@@ -366,6 +408,10 @@ REACTOME_PARTICIPANTS = fixture("reactome/participants_r_hsa_5673001_20260811.js
 REACTOME_EVENTS = fixture("reactome/events_r_hsa_5673001_20260811.json")
 WIKIPATHWAYS_SEARCH = b'{"result":[]}'
 NCI_MELANOMA = fixture("nci_cts/search_melanoma_20260811.json")
+# Ticket 2040: the NCI truncation row sends a 600-byte condition; the
+# disease lookup truncates it to 512 bytes before the keyword request.
+NCI_TRUNCATED_KEYWORD = "m" * 512
+NCI_TRUNCATED_EMPTY = b'{"total":0,"data":[]}'
 
 
 # Synthetic FHIR R4 patients for spec/entity/patient.md. No real or demo
@@ -569,8 +615,31 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/openfda/drug/label.json":
             search = parse_qs(parsed.query).get("search", [""])[0].lower()
+            # Ticket 1300: the fallback is a phrase search of the records'
+            # own product data elements. The recorded broad full-text
+            # captures replay here so the identity guard still faces other
+            # drugs' records, which the live identity-field query would not
+            # return.
+            if search.startswith('spl_product_data_elements:"'):
+                term = search[len('spl_product_data_elements:"'):].rstrip('"')
+                if term == "osimertinib":
+                    send(self, 200, OPENFDA_LABEL_OSIMERTINIB_FULLTEXT)
+                    return
+                if term == "mobocertinib":
+                    send(self, 200, OPENFDA_LABEL_MOBOCERTINIB_FULLTEXT)
+                    return
+                # adavosertib and every other drug fall through: openFDA
+                # has no product-data-elements match either, so the default
+                # 404 stays honest.
             if "keytruda" in search or "pembrolizumab" in search:
                 send(self, 200, OPENFDA_LABEL)
+                return
+            if "gefitinib" in search:
+                send(self, 200, OPENFDA_LABEL_GEFITINIB)
+                return
+            if "osimertinib" in search or "mobocertinib" in search:
+                # The field-scoped lookup misses their sparse-metadata records.
+                send(self, 404, b'{"error":{"code":"NOT_FOUND","message":"No matches found!"}}')
                 return
         if parsed.path == "/openfda/drug/drugsfda.json":
             send(self, 200, OPENFDA_DRUGSFDA)
@@ -697,6 +766,9 @@ class Handler(BaseHTTPRequestHandler):
                 ("from", "0"),
             ]:
                 send(self, 200, NCI_MELANOMA)
+                return
+            if query == {"keyword": [NCI_TRUNCATED_KEYWORD], "size": ["1"], "from": ["0"]}:
+                send(self, 200, NCI_TRUNCATED_EMPTY)
                 return
 
         send(self, 404, b'{"error":"fixture route not found"}')

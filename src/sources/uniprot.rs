@@ -32,7 +32,14 @@ impl UniProtClient {
     pub fn new() -> Result<Self, BioMcpError> {
         let base = crate::sources::env_base(UNIPROT_BASE, UNIPROT_BASE_ENV);
         Ok(Self {
-            client: crate::sources::streaming_http_client(base.as_ref(), UNIPROT_BASE_ENV)?,
+            // The shared client carries BioMCP's HTTP cache, so the
+            // gene-to-accession search and the canonical-protein record
+            // serve from cache between runs: UniProt marks its JSON
+            // `Cache-Control: public, max-age=43200`, and the uncached
+            // streaming client cost the residue check 0.35–1.2 s on every
+            // gene+protein request. `--no-cache` still bypasses the cache through the
+            // shared stack's own no-cache path.
+            client: crate::sources::shared_client()?,
             base,
         })
     }
@@ -390,6 +397,9 @@ pub struct UniProtOrganism {
 #[derive(Debug, Clone, Deserialize)]
 pub struct UniProtSequence {
     pub length: Option<u32>,
+    /// The sequence string itself; the MANE-numbering check reads one
+    /// residue at the requested position.
+    pub value: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -447,6 +457,19 @@ pub struct UniProtPdbStructure {
 }
 
 impl UniProtRecord {
+    /// The MANE Select RefSeq mRNA accession this record's canonical
+    /// sequence corresponds to, with its current version, from the record's
+    /// MANE-Select cross-reference. UniProt's RefSeq entries
+    /// carry no MANE status of their own, so this cross-reference is the
+    /// record's only MANE statement.
+    pub fn mane_select_transcript(&self) -> Option<String> {
+        self.uni_prot_kb_cross_references
+            .iter()
+            .find(|xref| xref.database.as_deref() == Some("MANE-Select"))
+            .and_then(|xref| cross_ref_property(xref, "RefSeqNucleotideId"))
+            .filter(|value| value.starts_with("NM_"))
+    }
+
     pub fn display_name(&self) -> String {
         if let Some(desc) = self.protein_description.as_ref() {
             if let Some(value) = desc

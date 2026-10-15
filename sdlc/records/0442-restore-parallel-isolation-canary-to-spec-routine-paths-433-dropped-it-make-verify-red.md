@@ -8,4 +8,4 @@ Imported from March ticket 442. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/442-restore-parallel-isolation-canary-to-spec-routine-paths-433-dropped-it-make-verify-red
+Artifacts: ~/workspace/planning/biomcp/artifacts/442-restore-parallel-isolation-canary-to-spec-routine-paths-433-dropped-it-make-verify-red

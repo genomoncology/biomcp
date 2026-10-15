@@ -1,4 +1,4 @@
-//! Ticket 1213: fixture-backed tests for the HPA cell line helper. No network.
+//! Fixture-backed tests for the HPA cell line helper. No network.
 
 use reqwest::StatusCode;
 
@@ -156,7 +156,7 @@ fn every_leukemia_name_resolves_to_one_human_accession() {
     };
     assert_eq!(accession_of("MOLM-13"), Some("CVCL_2119".to_string()));
     assert_eq!(accession_of("OCI-AML-3"), Some("CVCL_1844".to_string()));
-    // The 1202 traps: NB4 is not SJNB-4, KG-1 is not KG1, HL-60 is not
+    // The traps: NB4 is not SJNB-4, KG-1 is not KG1, HL-60 is not
     // HL-60(TB). The matcher accepts an identifier and never a synonym.
     assert_eq!(accession_of("NB4"), Some("CVCL_0005".to_string()));
     assert_eq!(accession_of("KG-1"), Some("CVCL_0374".to_string()));

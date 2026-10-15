@@ -8,4 +8,4 @@ Imported from March ticket 153. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/153-map-nci-terminated-status-to-administratively-complete
+Artifacts: ~/workspace/planning/biomcp/artifacts/153-map-nci-terminated-status-to-administratively-complete

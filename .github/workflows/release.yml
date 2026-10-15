@@ -36,6 +36,9 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      # gh run list reads the workflow-run history; the default token
+      # carries this only when the job asks for it.
+      actions: read
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
@@ -50,6 +53,31 @@ jobs:
       - name: Require the changelog to cover merged tickets
         run: python3 scripts/check-changelog-coverage.py --tag "$TAG"
 
+      # Ticket 2053: a tag releases only from a commit whose CI passed.
+      # The filter names the workflow and the commit, so it can never
+      # pick another workflow's run, and a missing or failed run fails
+      # the release here, before any publisher starts.
+      # Ticket 2060: gh has no --conclusion flag on the versions the
+      # runners ship, so gh returns every conclusion for the commit
+      # and jq counts only the successful ones.
+      - name: Require green CI on the tagged commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          green="$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" \
+            --limit 100 \
+            --json conclusion \
+            --jq '[.[] | select(.conclusion == "success")] | length')"
+          # Refuse an empty count (gh or jq failed), zero successful
+          # runs, and anything that is not a plain number.
+          case "$green" in
+            '' | 0 | *[!0-9]*)
+              echo "ci.yml has no finished green run on ${GITHUB_SHA}; refusing to release" >&2
+              exit 1
+              ;;
+          esac
+          echo "ci.yml finished green on ${GITHUB_SHA}"
+
   create-draft:
     needs: [version-check]
     if: github.event_name == 'push'
@@ -63,10 +91,23 @@ jobs:
       GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
+      # Ticket 2064: v0.9.2 and v0.9.1 published with no release
+      # notes. The draft carries the tag's changelog section from the
+      # moment it exists, so a rehearsal reads the notes off the
+      # draft before publish-release makes it public.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Render the release notes from the changelog
+        run: |
+          python3 release/release_notes.py --changelog CHANGELOG.md \
+            --version "${TAG#v}" --output "$RUNNER_TEMP/release-notes.md"
+
       - name: Create the draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$TAG" --draft --verify-tag --title "$TAG"
+        run: gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
 
   build:
     needs: [version-check, create-draft]
@@ -88,10 +129,10 @@ jobs:
           - os: macos-14
             target: aarch64-apple-darwin
             artifact: biomcp-darwin-arm64.tar.gz
-          - os: macos-latest
+          - os: macos-15
             target: x86_64-apple-darwin
             artifact: biomcp-darwin-x86_64.tar.gz
-          - os: windows-latest
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
             artifact: biomcp-windows-x86_64.zip
     runs-on: ${{ matrix.os }}
@@ -105,6 +146,15 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ inputs.tag || github.ref_name }}
+
+      # Ticket 2024: the build steps run tools/with-build-identity so
+      # the shipped binaries report their commit instead of
+      # "git unknown, build unknown"; the non-Linux legs need the
+      # interpreter that script runs on.
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        if: runner.os != 'Linux'
+        with:
+          python-version: "3.12"
 
       - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
         if: runner.os != 'Linux'
@@ -121,18 +171,25 @@ jobs:
 
       - name: Build release binary
         if: runner.os != 'Linux'
+        shell: bash
         run: |
-          cargo build --release --locked --target ${{ matrix.target }}
+          python tools/with-build-identity cargo build --release --locked --target ${{ matrix.target }}
 
       # Linux tarballs build inside the same manylinux_2_28 container
       # as the wheels, so both artifact families carry one documented
       # glibc floor. The floor scan runs over the pre-tar binary: the
       # same bytes the archive ships. rustup is pinned by version and
-      # checksum; nothing pipes a remote script into a shell.
+      # checksum; nothing pipes a remote script into a shell. The
+      # container has no git checkout of its own, so the host resolves
+      # the build identity first and the container build inherits it
+      # through --env-file.
       - name: Build and package inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
-          docker run --rm -v "$PWD:/io" -w /io "${{ matrix.container }}" bash -euo pipefail -c '
+          tools/with-build-identity env | grep '^BIOMCP_BUILD_' > "$RUNNER_TEMP/biomcp-build-identity.env"
+          docker run --rm -v "$PWD:/io" -w /io \
+            --env-file "$RUNNER_TEMP/biomcp-build-identity.env" \
+            "${{ matrix.container }}" bash -euo pipefail -c '
             curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init
             curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init.sha256
             sha256sum -c rustup-init.sha256
@@ -196,9 +253,9 @@ jobs:
             container: quay.io/pypa/manylinux_2_28_aarch64
           - os: macos-14
             target: aarch64-apple-darwin
-          - os: macos-latest
+          - os: macos-15
             target: x86_64-apple-darwin
-          - os: windows-latest
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     steps:
@@ -230,18 +287,24 @@ jobs:
 
       - name: Build wheels
         if: runner.os != 'Linux'
-        run: maturin build --release --locked --target ${{ matrix.target }}
+        shell: bash
+        run: python tools/with-build-identity maturin build --release --locked --target ${{ matrix.target }}
 
       # Linux wheels build inside the manylinux_2_28 container so the
       # glibc 2.28 floor is true by construction, not merely tagged;
       # the platform tag is pinned with maturin and the scan step
       # enforces the floor against the artifact that ships. rustup is
       # pinned by version and checksum; nothing pipes a remote script
-      # into a shell.
+      # into a shell. The container has no git checkout of its own, so
+      # the host resolves the build identity first and the container
+      # build inherits it through --env-file.
       - name: Build wheels inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
-          docker run --rm -v "$PWD:/io" -w /io "${{ matrix.container }}" bash -euo pipefail -c '
+          tools/with-build-identity env | grep '^BIOMCP_BUILD_' > "$RUNNER_TEMP/biomcp-build-identity.env"
+          docker run --rm -v "$PWD:/io" -w /io \
+            --env-file "$RUNNER_TEMP/biomcp-build-identity.env" \
+            "${{ matrix.container }}" bash -euo pipefail -c '
             curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init
             curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init.sha256
             sha256sum -c rustup-init.sha256
@@ -275,6 +338,10 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
+      # The tag decides the version every smoke must print, read the
+      # same way check-release-versions.py reads it (v prefix
+      # stripped), so a binary printing anything else fails the leg.
+      TAG: ${{ inputs.tag || github.ref_name }}
     needs: [pypi-build]
     if: github.event_name == 'push'
     strategy:
@@ -295,17 +362,17 @@ jobs:
             artifact: wheel-aarch64-apple-darwin
             executable: bin/biomcp
             python: bin/python
-          # 2026-10-01 rehearsal (run 36885506628): GitHub moved
-          # macos-latest to arm64 (image macos-26-arm64), so pip
-          # refuses this x86_64 wheel on that host. The build legs
-          # cross-compile with an explicit --target and stay on the
-          # moving label; the smoke needs a matching host, so it pins
-          # the Intel image.
+          # 2026-10-01 rehearsal (run 36885506628): GitHub moved the
+          # macOS moving label to arm64 (image macos-26-arm64), so
+          # pip refuses this x86_64 wheel on that host. The build
+          # legs cross-compile with an explicit --target and pin the
+          # arm64 image (macos-15, ticket 2024's reopening); the
+          # smoke needs a matching host, so it pins the Intel image.
           - os: macos-15-intel
             artifact: wheel-x86_64-apple-darwin
             executable: bin/biomcp
             python: bin/python
-          - os: windows-latest
+          - os: windows-2022
             artifact: wheel-x86_64-pc-windows-msvc
             executable: Scripts/biomcp.exe
             python: Scripts/python.exe
@@ -325,7 +392,12 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/wheel-venv"
           "$RUNNER_TEMP/wheel-venv/${{ matrix.python }}" -m pip install "$RUNNER_TEMP"/wheel/*.whl
-          "$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}" --version
+          expected="${TAG#v}"
+          printed="$("$RUNNER_TEMP/wheel-venv/${{ matrix.executable }}" --version)"
+          printf '%s\n' "$printed"
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp $expected" ]; then
+            echo "wheel --version must print exactly 'biomcp $expected', got: $printed" >&2; exit 1
+          fi
 
       # Prove the glibc floor at runtime: install and run the wheel
       # inside the same manylinux_2_28 environment users on RHEL 8 or
@@ -333,9 +405,19 @@ jobs:
       - name: Run the wheel inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
-          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" "${{ matrix.container }}" bash -euo pipefail -c '
+          # The tag rides in with -e (ticket 2046): docker passes no
+          # job environment into the container, and the script reads
+          # ${TAG#v} under `set -u`. Only double quotes live inside
+          # the single-quoted script, so nothing closes it early.
+          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" -e TAG "${{ matrix.container }}" bash -euo pipefail -c '
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
-            /opt/python/cp312-cp312/bin/biomcp --version
+            printed="$(/opt/python/cp312-cp312/bin/biomcp --version)"
+            printf "%s\n" "$printed"
+            expected="${TAG#v}"
+            actual="$(printf "%s" "$printed" | tr -d "\015\012")"
+            if [ "$actual" != "biomcp $expected" ]; then
+              echo "wheel --version must print exactly biomcp $expected, got: $printed" >&2; exit 1
+            fi
             stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"
             case "$stats" in
               "{"*) ;;
@@ -505,13 +587,13 @@ jobs:
     # a failed container or tarball job is burned for good — PyPI
     # never accepts the same version twice. Every build and smoke
     # job must pass first, so a failed tag run can be deleted and
-    # retried without losing 0.9.1.
+    # retried without publishing the version.
     needs: [pypi-build, wheel-smoke, docs-live, build, container-publish]
     if: github.event_name == 'push'
     permissions:
       contents: read
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: pypi
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
@@ -525,8 +607,18 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
 
-      - name: Publish to PyPI with trusted publishing
-        run: uv publish --trusted-publishing always dist/*
+      - name: Publish to PyPI with trusted publishing (production only)
+        # Ticket 2049: the upload runs only in the production repository;
+        # anywhere else (the release rehearsal) a token cannot mint and a
+        # credential-free metadata check runs instead, so publish-release
+        # still gates on this job.
+        run: |
+          if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
+            echo "rehearsal: checking wheel metadata instead of uploading"
+            uvx twine check dist/*
+            exit 0
+          fi
+          uv publish --trusted-publishing always dist/*
 
   homebrew-tap:
     # The tap formula points at release tarballs, so the release
@@ -537,7 +629,7 @@ jobs:
     if: github.event_name == 'push'
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
       # directory it cannot discover the repository (the fourth
@@ -556,22 +648,22 @@ jobs:
           mkdir -p dist
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "*.sha256" --dir dist
 
-      - name: Update Homebrew tap
+      - name: Update Homebrew tap (production only)
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
-          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
-            echo "HOMEBREW_TAP_TOKEN is not configured; skip tap update."
-            exit 0
-          fi
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" tap
-          mkdir -p tap/Formula
           VERSION="${TAG#v}"
           X86_SHA256="$(awk '{print $1}' dist/biomcp-darwin-x86_64.tar.gz.sha256)"
           ARM64_SHA256="$(awk '{print $1}' dist/biomcp-darwin-arm64.tar.gz.sha256)"
-          cat > tap/Formula/biomcp.rb << FORMULA
+          test -n "$VERSION"
+          test -n "$X86_SHA256"
+          test -n "$ARM64_SHA256"
+          # Ticket 2053: the rehearsal renders the formula the
+          # production push would land, from the release checksums,
+          # and checks both platform checksums before it exits.
+          FORMULA_DIR="${RUNNER_TEMP:-$(mktemp -d)}"
+          mkdir -p "${FORMULA_DIR}/Formula"
+          cat > "${FORMULA_DIR}/Formula/biomcp.rb" << FORMULA
           class Biomcp < Formula
             desc "Biomedical MCP CLI and knowledge server"
             homepage "https://biomcp.org"
@@ -588,8 +680,28 @@ jobs:
             def install
               bin.install "biomcp"
             end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/biomcp --version")
+            end
           end
           FORMULA
+          for expected in "${X86_SHA256}" "${ARM64_SHA256}"; do
+            grep -q "\"${expected}\"" "${FORMULA_DIR}/Formula/biomcp.rb"
+          done
+          if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
+            echo "rehearsal: formula ${VERSION} renders with both release checksums; not pushing"
+            exit 0
+          fi
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "HOMEBREW_TAP_TOKEN is not configured; skip tap update."
+            exit 0
+          fi
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" tap
+          mkdir -p tap/Formula
+          cp "${FORMULA_DIR}/Formula/biomcp.rb" tap/Formula/biomcp.rb
           cd tap
           git add Formula/biomcp.rb
           if git diff --cached --quiet; then
@@ -606,7 +718,7 @@ jobs:
       (inputs.container_only == true && needs.version-check.result == 'success' &&
       needs.docs-live.result == 'success' && needs.create-draft.result == 'skipped' &&
       needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped'))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       # The draft release is the artifact source: `gh release
       # download` on a still-draft release needs write-level
@@ -679,17 +791,22 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/genomoncology/biomcp:${{ env.VERSION }}
+          tags: ghcr.io/${{ github.repository }}:${{ env.VERSION }}
           build-args: |
             SOURCE_SHA=${{ env.SOURCE_SHA }}
             VERSION=${{ env.VERSION }}
             CREATED=${{ env.CREATED }}
+            IMAGE_SOURCE=https://github.com/${{ github.repository }}
 
       - name: Smoke the linux/amd64 image from the registry
         run: |
-          IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY}:${VERSION}"
           docker pull --platform linux/amd64 "$IMAGE"
-          docker run --rm --platform linux/amd64 "$IMAGE" --version
+          printed="$(docker run --rm --platform linux/amd64 "$IMAGE" --version)"
+          printf '%s\n' "$printed"
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp ${VERSION}" ]; then
+            echo "$IMAGE --version must print exactly 'biomcp ${VERSION}', got: $printed" >&2; exit 1
+          fi
           UID_IN_CONTAINER="$(docker run --rm --platform linux/amd64 --entrypoint id "$IMAGE" -u)"
           if [ "$UID_IN_CONTAINER" = "0" ]; then
             echo "$IMAGE runs as root" >&2
@@ -706,9 +823,13 @@ jobs:
 
       - name: Smoke the linux/arm64 image from the registry
         run: |
-          IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY}:${VERSION}"
           docker pull --platform linux/arm64 "$IMAGE"
-          docker run --rm --platform linux/arm64 "$IMAGE" --version
+          printed="$(docker run --rm --platform linux/arm64 "$IMAGE" --version)"
+          printf '%s\n' "$printed"
+          if [ "$(printf '%s' "$printed" | tr -d '\r\n')" != "biomcp ${VERSION}" ]; then
+            echo "$IMAGE --version must print exactly 'biomcp ${VERSION}', got: $printed" >&2; exit 1
+          fi
           UID_IN_CONTAINER="$(docker run --rm --platform linux/arm64 --entrypoint id "$IMAGE" -u)"
           if [ "$UID_IN_CONTAINER" = "0" ]; then
             echo "$IMAGE runs as root" >&2
@@ -767,7 +888,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          IMAGE="ghcr.io/genomoncology/biomcp"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY}"
           VERSION="${TAG#v}"
           # A failed query must fail the job, not read as "no
           # published releases" and move latest (third go-request

@@ -73,12 +73,51 @@ fn clinvar_preferred_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotati
     })
 }
 
-pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usize> {
+/// The MANE marker this data carries: the versioned accession ClinVar's
+/// preferred names agree on. MyVariant.info's SnpEff and dbNSFP sections
+/// ship no MANE status of their own, but ClinVar names each variant on
+/// the gene's MANE Select transcript when one exists, so the transcript
+/// stem ClinVar's preferred names agree on marks the MANE transcript for
+/// the gene, and the accession's version is the current RefSeq one where
+/// the SnpEff build lags it (NM_000546.5 against NM_000546.6,
+/// finding 21). A cohort whose ClinVar-preferred stems disagree carries no
+/// marker.
+pub(crate) fn clinvar_mane_transcript(hits: &[MyVariantHit]) -> Option<String> {
+    let mut marker: Option<(String, String)> = None;
+    for hit in hits {
+        let Some(annotation) = clinvar_preferred_annotation(hit) else {
+            continue;
+        };
+        let Some(transcript) = annotation.transcript else {
+            continue;
+        };
+        let stem = accession_stem(&transcript).to_string();
+        match &marker {
+            Some((known, _)) if *known != stem => return None,
+            _ => marker = Some((stem, transcript)),
+        }
+    }
+    marker.map(|(_, transcript)| transcript)
+}
+
+/// Rank the SnpEff annotations: the hit's own ClinVar-preferred transcript
+/// first (ClinVar names on MANE Select), then the gene's MANE transcript
+/// when the query response marks one, then the annotation that spells the
+/// requested protein change (a response with no ClinVar name anywhere
+/// still names the request on the transcript it follows — the only MANE
+/// signal a ClinVar-free response carries), then
+/// the first NM_ transcript (yesterday's rule), then anything else.
+pub(crate) fn selected_snpeff_annotation_index(
+    hit: &MyVariantHit,
+    mane_transcript: Option<&str>,
+    requested_change: Option<&str>,
+) -> Option<usize> {
     let clinvar = clinvar_preferred_annotation(hit);
     let preferred_stem = clinvar
         .as_ref()
         .and_then(|value| value.transcript.as_deref())
         .map(accession_stem);
+    let mane_stem = mane_transcript.map(accession_stem);
     let annotations = hit.source().snpeff()?.annotations();
     annotations
         .iter()
@@ -86,33 +125,182 @@ pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usi
         .filter(|ann| ann.1.hgvs_c().is_some_and(|value| !value.trim().is_empty()))
         .min_by_key(|ann| {
             let feature = ann.1.feature_id().unwrap_or_default();
-            if preferred_stem.is_some_and(|preferred| accession_stem(feature) == preferred) {
+            let feature_stem = accession_stem(feature);
+            if preferred_stem.is_some_and(|preferred| feature_stem == preferred) {
                 0
-            } else if feature.starts_with("NM_") {
+            } else if mane_stem.is_some_and(|mane| feature_stem == mane) {
                 1
-            } else {
+            } else if requested_change.is_some_and(|change| {
+                ann.1
+                    .hgvs_p
+                    .as_deref()
+                    .and_then(crate::entities::variant::normalize_protein_change)
+                    .is_some_and(|protein| {
+                        crate::entities::variant::protein_changes_equivalent(change, &protein)
+                    })
+            }) {
                 2
+            } else if feature.starts_with("NM_") {
+                3
+            } else {
+                4
             }
         })
         .map(|(index, _)| index)
 }
 
-fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
+fn select_transcript_annotation(
+    hit: &MyVariantHit,
+    mane_transcript: Option<&str>,
+    requested_change: Option<&str>,
+) -> Option<TranscriptAnnotation> {
     let selected = hit
         .source()
         .snpeff()?
         .annotations()
-        .get(selected_snpeff_annotation_index(hit)?)?;
+        .get(selected_snpeff_annotation_index(
+            hit,
+            mane_transcript,
+            requested_change,
+        )?)?;
+    let feature = selected.feature_id().map(str::to_owned)?;
+    // ClinVar's preferred names carry the current RefSeq accession for the
+    // stem while the SnpEff build lags it, so the
+    // headline shows the current accession; the coding and protein
+    // spellings stay the selected annotation's own.
+    let transcript = clinvar_preferred_annotation(hit)
+        .and_then(|annotation| annotation.transcript)
+        .filter(|preferred| accession_stem(preferred) == accession_stem(&feature))
+        .or_else(|| {
+            mane_transcript
+                .filter(|mane| accession_stem(mane) == accession_stem(&feature))
+                .map(str::to_string)
+        })
+        .unwrap_or(feature);
     Some(TranscriptAnnotation {
         gene: selected.genename().map(str::to_owned),
-        transcript: selected.feature_id().map(str::to_owned),
+        transcript: Some(transcript),
         coding: selected.hgvs_c().map(str::to_owned),
         protein: selected.hgvs_p().map(str::to_owned),
     })
 }
 
-fn paired_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
-    select_transcript_annotation(hit).or_else(|| clinvar_preferred_annotation(hit))
+fn paired_annotation(
+    hit: &MyVariantHit,
+    mane_transcript: Option<&str>,
+    requested_change: Option<&str>,
+) -> Option<TranscriptAnnotation> {
+    select_transcript_annotation(hit, mane_transcript, requested_change)
+        .or_else(|| clinvar_preferred_annotation(hit))
+}
+
+/// The protein change on the transcript BioMCP headlines for a hit: the
+/// ClinVar-named, MANE, change-naming, or first-NM_ SnpEff annotation.
+/// dbNSFP's merged alias list (`dbnsfp.hgvsp`) carries other isoforms'
+/// spellings on other genomic variants, so only this value confirms a
+/// gene+protein query names the hit.
+pub(crate) fn canonical_protein_change(
+    hit: &MyVariantHit,
+    mane_transcript: Option<&str>,
+    requested_change: Option<&str>,
+) -> Option<String> {
+    paired_annotation(hit, mane_transcript, requested_change)
+        .and_then(|annotation| annotation.protein)
+}
+
+/// The transcript whose numbering the headline protein change uses.
+pub(crate) fn canonical_transcript(
+    hit: &MyVariantHit,
+    mane_transcript: Option<&str>,
+    requested_change: Option<&str>,
+) -> Option<String> {
+    paired_annotation(hit, mane_transcript, requested_change)
+        .and_then(|annotation| annotation.transcript)
+}
+
+/// True when any SnpEff annotation on the given transcript stem — or the
+/// hit's ClinVar-preferred annotation when it names that stem — spells the
+/// requested change. The headline annotation picks one isoform; this says
+/// whether the MANE transcript itself names the request, so the numbering
+/// rules never refuse a hit that does name it.
+pub(crate) fn mane_annotation_names_change(
+    hit: &MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> bool {
+    let Some(mane_stem) = mane_transcript.map(accession_stem) else {
+        return false;
+    };
+    let snpeff_names = hit.snpeff.as_ref().is_some_and(|snpeff| {
+        snpeff.ann.iter().any(|ann| {
+            ann.feature_id
+                .as_deref()
+                .is_some_and(|feature| accession_stem(feature) == mane_stem)
+                && ann
+                    .hgvs_p
+                    .as_deref()
+                    .and_then(crate::entities::variant::normalize_protein_change)
+                    .is_some_and(|protein| {
+                        crate::entities::variant::protein_changes_equivalent(change, &protein)
+                    })
+        })
+    });
+    snpeff_names
+        || clinvar_preferred_annotation(hit).is_some_and(|annotation| {
+            annotation
+                .transcript
+                .as_deref()
+                .is_some_and(|transcript| accession_stem(transcript) == mane_stem)
+                && annotation
+                    .protein
+                    .as_deref()
+                    .and_then(crate::entities::variant::normalize_protein_change)
+                    .is_some_and(|protein| {
+                        crate::entities::variant::protein_changes_equivalent(change, &protein)
+                    })
+        })
+}
+
+/// The record's annotation that spells the requested change on a transcript
+/// other than the MANE one — the isoform a refusal must name so the reader
+/// sees where the request is actually spelled.
+/// Protein-structure rows (`feature_type: interaction`) carry no transcript
+/// of their own, so only transcript-shaped features answer. Returns the
+/// transcript and its spelling of the request.
+pub(crate) fn isoform_annotation_naming_change(
+    hit: &MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> Option<(String, String)> {
+    let mane_stem = mane_transcript.map(accession_stem);
+    hit.snpeff.as_ref()?.ann.iter().find_map(|ann| {
+        let feature = ann.feature_id.as_deref()?.trim();
+        if feature.is_empty() || !looks_like_transcript(feature) {
+            return None;
+        }
+        if mane_stem.is_some_and(|mane| accession_stem(feature) == mane) {
+            return None;
+        }
+        let raw = ann
+            .hgvs_p
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())?;
+        let normalized = crate::entities::variant::normalize_protein_change(raw)?;
+        crate::entities::variant::protein_changes_equivalent(change, &normalized)
+            .then(|| (feature.to_string(), raw.to_string()))
+    })
+}
+
+/// A SnpEff feature that names a transcript: RefSeq accessions (`NM_`,
+/// `NR_`, `XM_`) and Ensembl transcripts (`ENST`). Protein-structure
+/// features such as `1JNX:X_1820-X_1857:NM_007294.3` do not count.
+fn looks_like_transcript(feature: &str) -> bool {
+    let stem = accession_stem(feature);
+    stem.starts_with("NM_")
+        || stem.starts_with("NR_")
+        || stem.starts_with("XM_")
+        || stem.starts_with("ENST")
 }
 
 fn legacy_name(gene: &str, protein: Option<&str>) -> Option<String> {
@@ -340,6 +528,11 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
 }
 
 fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
+    // MyVariant carries these fields from COSMIC's own annotation; a
+    // disabled cosmic leaves none of them in variant output.
+    if crate::sources::disable::is_disabled("cosmic") {
+        return None;
+    }
     let cosmic = hit.source().cosmic()?;
 
     let context = VariantCosmicContext {
@@ -364,6 +557,11 @@ fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
 }
 
 fn extract_cgi_associations(hit: &MyVariantHit) -> Vec<VariantCgiAssociation> {
+    // MyVariant carries these rows from the Cancer Genome Interpreter's
+    // own annotation; a disabled cancer-genome-interpreter drops them.
+    if crate::sources::disable::is_disabled("cancer-genome-interpreter") {
+        return Vec::new();
+    }
     hit.cached_cgi()
         .associations()
         .iter()
@@ -516,10 +714,28 @@ fn pick_significance(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-fn newest_rcv_evaluation_date(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
+/// Newest `last_evaluated` day among the records carrying the shown
+/// classification, so the headline date belongs to the printed
+/// term instead of a newer, differently classified record. Only strict
+/// day-shaped dates surface, under the one shared day-shape rule,
+/// `crate::utils::date::is_day_shaped`, which the ClinVar fallback age
+/// label reads too.
+fn newest_rcv_evaluation_date(
+    rcvs: &[MyVariantClinVarRcv],
+    significance: Option<&str>,
+) -> Option<String> {
+    let significance = significance?.trim();
+    if significance.is_empty() {
+        return None;
+    }
     rcvs.iter()
+        .filter(|rcv| {
+            rcv.clinical_significance()
+                .map(str::trim)
+                .is_some_and(|value| value.eq_ignore_ascii_case(significance))
+        })
         .filter_map(|rcv| rcv.last_evaluated().map(str::trim))
-        .filter(|value| !value.is_empty())
+        .filter(|value| crate::utils::date::is_day_shaped(value))
         .max()
         .map(str::to_string)
 }
@@ -613,7 +829,21 @@ pub(crate) fn normalize_oncokb_level(value: &str) -> String {
 }
 
 pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
-    from_myvariant_annotation(hit, paired_annotation(hit))
+    from_myvariant_annotation(hit, paired_annotation(hit, None, None))
+}
+
+/// Same as [`from_myvariant_hit`], with the gene's MANE transcript (the
+/// marker ClinVar's preferred names carry) so a hit without its own
+/// ClinVar record still headlines the MANE transcript when the query
+/// response marks one, and with the requested protein change so a
+/// ClinVar-free response still headlines the annotation that names the
+/// request.
+pub(crate) fn from_myvariant_hit_with_mane(
+    hit: &MyVariantHit,
+    mane_transcript: Option<&str>,
+    requested_change: Option<&str>,
+) -> Variant {
+    from_myvariant_annotation(hit, paired_annotation(hit, mane_transcript, requested_change))
 }
 
 /// Render all record facts with the caller-selected complete source assertion.
@@ -690,14 +920,17 @@ fn from_myvariant_annotation(
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    let cosmic_id = hit
-        .source()
-        .cosmic()
-        .and_then(biodata::MyVariantCosmicProjection::cosmic_id)
-        .into_iter()
-        .flat_map(biodata::MyVariantCosmicText::values)
-        .map(|s| s.trim().to_string())
-        .find(|s| !s.is_empty());
+    let cosmic_id = if crate::sources::disable::is_disabled("cosmic") {
+        None
+    } else {
+        hit.source()
+            .cosmic()
+            .and_then(biodata::MyVariantCosmicProjection::cosmic_id)
+            .into_iter()
+            .flat_map(biodata::MyVariantCosmicText::values)
+            .map(|s| s.trim().to_string())
+            .find(|s| !s.is_empty())
+    };
 
     let clinvar_id = hit
         .source()
@@ -733,7 +966,7 @@ fn from_myvariant_annotation(
     let significance_evaluated = hit
         .source()
         .clinvar()
-        .and_then(|c| newest_rcv_evaluation_date(c.rcv()));
+        .and_then(|c| newest_rcv_evaluation_date(c.rcv(), significance.as_deref()));
     let (significance_source, significance_note) = if significance.is_some() {
         (
             Some("MyVariant.info".to_string()),
@@ -765,6 +998,7 @@ fn from_myvariant_annotation(
         transcript: annotation
             .as_ref()
             .and_then(|value| value.transcript.clone()),
+        protein_numbering_note: None,
         rsid,
         cosmic_id,
         significance,
@@ -803,7 +1037,7 @@ fn from_myvariant_annotation(
 }
 
 pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
-    let annotation = paired_annotation(hit);
+    let annotation = paired_annotation(hit, None, None);
     let mut gene = hit.source().dbnsfp().map(pick_gene).unwrap_or_default();
     if gene.is_empty() {
         gene = hit
@@ -832,7 +1066,7 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let significance_evaluated = hit
         .source()
         .clinvar()
-        .and_then(|c| newest_rcv_evaluation_date(c.rcv()));
+        .and_then(|c| newest_rcv_evaluation_date(c.rcv(), significance.as_deref()));
     let clinvar_stars = hit
         .source()
         .clinvar()

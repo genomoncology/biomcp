@@ -6,6 +6,10 @@ deps: [2001]
 
 # 2002: Get one patient and their conditions from one FHIR server
 
+Status: complete.
+
+Milestone: 1.0
+
 ## Outcome
 
 An agent on stdio MCP or the CLI reads one patient and that patient's conditions from the FHIR server the operator configured. `serve-http` refuses. Decision record: `sdlc/planning/adr/0002-read-one-patient-fhir-record-as-the-patient-entity.md`. Search is ticket 2003.
@@ -41,7 +45,7 @@ biomcp get patient <id> conditions
 
 ## Exclusions
 
-No search, which is ticket 2003. No FHIRPath evaluator. No sign-in or token. No section beyond `conditions`. No BioData dependency. No new MCP tool. No live server in any gate.
+No search, which is ticket 2003. No FHIRPath evaluator. No sign-in or token. No section beyond `conditions`. No the data platform dependency. No new MCP tool. No live server in any gate.
 
 ## Acceptance
 
@@ -79,6 +83,6 @@ Synthetic bundles only, served by the existing spec fixture runner:
 
 ## Review
 
-- Design review: rejected and split (2026-09-23). Search moved to 2003. Added ID validation, same-origin paging and redirects, a page cap, one retry layer, one no-store request function, trace-level leak proof, and one serve-http check with a test per MCP path.
-- Design re-review: accepted with required change (2026-09-23). Set level 4 by the security floor, defined `search patient` before 2003, restored the CA-bundle client with its own redirect policy, added the `Patient/{id}` redirect case.
-- Code review: pending
+- Design review (item batch): REJECT 2026-09-23, resolved by the split below. Search moved to 2003. Added ID validation, same-origin paging and redirects, a page cap, one retry layer, one no-store request function, trace-level leak proof, and one serve-http check with a test per MCP path.
+- Design re-review (item batch): ACCEPT 2026-09-23 with the required change folded. Set level 4 by the security floor, defined `search patient` before 2003, restored the CA-bundle client with its own redirect policy, added the `Patient/{id}` redirect case.
+- Code review: PENDING (the 1.0 line owns it; ticket 2041 returns that branch to main first)

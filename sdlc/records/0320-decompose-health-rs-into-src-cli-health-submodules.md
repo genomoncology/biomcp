@@ -8,4 +8,4 @@ Imported from March ticket 320. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/320-decompose-health-rs-into-src-cli-health-submodules
+Artifacts: ~/workspace/planning/biomcp/artifacts/320-decompose-health-rs-into-src-cli-health-submodules

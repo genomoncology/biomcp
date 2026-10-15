@@ -8,4 +8,4 @@ Imported from March ticket 368. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/368-polish-v0-8-22-documentation-gaps-after-release-readiness-sweep
+Artifacts: ~/workspace/planning/biomcp/artifacts/368-polish-v0-8-22-documentation-gaps-after-release-readiness-sweep

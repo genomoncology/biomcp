@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/433-spike-drop-python-mcp-test-client-dep-verify-mcp-contract-from-rust-rmcp-client
+    ~/workspace/planning/biomcp/artifacts/433-spike-drop-python-mcp-test-client-dep-verify-mcp-contract-from-rust-rmcp-client

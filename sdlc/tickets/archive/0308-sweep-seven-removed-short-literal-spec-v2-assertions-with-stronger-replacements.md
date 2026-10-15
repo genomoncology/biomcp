@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/308-sweep-seven-removed-short-literal-spec-v2-assertions-with-stronger-replacements
+    ~/workspace/planning/biomcp/artifacts/308-sweep-seven-removed-short-literal-spec-v2-assertions-with-stronger-replacements

@@ -1,0 +1,99 @@
+{
+ "took": 0,
+ "total": 1,
+ "max_score": 12.190319,
+ "hits": [
+  {
+   "_id": "MONDO:0009685",
+   "_score": 12.190319,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "Miyoshi muscular dystrophy",
+    "synonyms": {
+     "exact": [
+      "Miyoshi myopathy"
+     ]
+    }
+   },
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0001288"
+     },
+     {
+      "hpo_id": "HP:0009027"
+     },
+     {
+      "hpo_id": "HP:0030051"
+     },
+     {
+      "hpo_id": "HP:0031108"
+     },
+     {
+      "hpo_id": "HP:0200101"
+     },
+     {
+      "hpo_id": "HP:0003547"
+     },
+     {
+      "hpo_id": "HP:0003551"
+     },
+     {
+      "hpo_id": "HP:0003698"
+     },
+     {
+      "hpo_id": "HP:0003731"
+     },
+     {
+      "hpo_id": "HP:0003738"
+     },
+     {
+      "hpo_id": "HP:0003749"
+     },
+     {
+      "hpo_id": "HP:0007126"
+     },
+     {
+      "hpo_id": "HP:0007149"
+     },
+     {
+      "hpo_id": "HP:0008944"
+     },
+     {
+      "hpo_id": "HP:0008963"
+     },
+     {
+      "hpo_id": "HP:0008994"
+     },
+     {
+      "hpo_id": "HP:0009053"
+     },
+     {
+      "hpo_id": "HP:0011399"
+     },
+     {
+      "hpo_id": "HP:0002505"
+     },
+     {
+      "hpo_id": "HP:0003326"
+     },
+     {
+      "hpo_id": "HP:0008981"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "Miyoshi distal myopathy",
+      "Miyoshi muscular dystrophy",
+      "MM"
+     ],
+     "related": [
+      "muscular dystrophy, distal, late onset, autosomal recessive"
+     ]
+    }
+   }
+  }
+ ]
+}

@@ -1,7 +1,7 @@
 pub(super) use super::VariantSearchPlan;
 use super::guidance::variant_guidance_outcome;
 use super::query::{
-    apply_gene_first_routing, confirm_gene_first_candidate, gene_first_working_form,
+    GeneFirstNote, apply_gene_first_routing, confirm_gene_first_candidate, gene_first_working_form,
     resolve_variant_query,
 };
 use super::{VariantCommand, VariantGetArgs, VariantSearchArgs};
@@ -240,6 +240,46 @@ struct VariantSearchRequest {
     offset: usize,
 }
 
+impl VariantSearchRequest {
+    /// Every explicit filter flag this request carries, in the command
+    /// line's own spelling, so the gene-first hints repeat what the caller
+    /// typed instead of dropping filters the search applied. `--limit` and `--offset`
+    /// are pagination, not filters, and stay out.
+    fn explicit_filter_flags(&self) -> Vec<(&'static str, String)> {
+        let mut flags = Vec::new();
+        flag_text(&mut flags, "--significance", self.significance.as_deref());
+        flag_number(&mut flags, "--max-frequency", self.max_frequency);
+        flag_number(&mut flags, "--min-cadd", self.min_cadd);
+        flag_text(&mut flags, "--review-status", self.review_status.as_deref());
+        flag_text(&mut flags, "--population", self.population.as_deref());
+        flag_number(&mut flags, "--revel-min", self.revel_min);
+        flag_number(&mut flags, "--gerp-min", self.gerp_min);
+        flag_text(&mut flags, "--tumor-site", self.tumor_site.as_deref());
+        flag_text(&mut flags, "--impact", self.impact.as_deref());
+        if self.lof {
+            flags.push(("--lof", String::new()));
+        }
+        flag_text(&mut flags, "--has", self.has.as_deref());
+        flag_text(&mut flags, "--missing", self.missing.as_deref());
+        flag_text(&mut flags, "--therapy", self.therapy.as_deref());
+        flags
+    }
+}
+
+/// Add a text-valued flag when the request carries a non-blank value.
+fn flag_text(flags: &mut Vec<(&'static str, String)>, flag: &'static str, value: Option<&str>) {
+    if let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) {
+        flags.push((flag, value.to_string()));
+    }
+}
+
+/// Add a number-valued flag when the request carries a value.
+fn flag_number(flags: &mut Vec<(&'static str, String)>, flag: &'static str, value: Option<f64>) {
+    if let Some(value) = value {
+        flags.push((flag, value.to_string()));
+    }
+}
+
 pub(crate) fn render_loaded_card(
     variant: &crate::entities::variant::Variant,
     has_clinvar_signal: bool,
@@ -312,6 +352,7 @@ async fn render_variant_search_outcome(
     guidance_as_json: bool,
     request: VariantSearchRequest,
 ) -> anyhow::Result<CommandOutcome> {
+    let explicit_filters = request.explicit_filter_flags();
     let VariantSearchRequest {
         gene,
         positional_query,
@@ -335,7 +376,7 @@ async fn render_variant_search_outcome(
         offset,
     } = request;
 
-    let (resolved, gene_first_fallback) =
+    let (resolved, gene_first_note) =
         match resolve_variant_query(gene, hgvsp, consequence, condition, positional_query)? {
             VariantSearchPlan::Standard(resolved) => (resolved, None),
             VariantSearchPlan::Guidance(guidance) => {
@@ -343,12 +384,21 @@ async fn render_variant_search_outcome(
             }
             VariantSearchPlan::GeneFirstCandidate {
                 gene,
+                protein_change,
                 condition,
                 hgvsp,
                 consequence,
             } => {
                 let confirmed = confirm_gene_first_candidate(&gene).await;
-                apply_gene_first_routing(gene, condition, confirmed, hgvsp, consequence)
+                apply_gene_first_routing(
+                    gene,
+                    protein_change,
+                    condition,
+                    confirmed,
+                    hgvsp,
+                    consequence,
+                    &explicit_filters,
+                )
             }
         };
 
@@ -389,17 +439,28 @@ async fn render_variant_search_outcome(
     let results = page.results;
     let mut pagination = PaginationMeta::offset(offset, limit, results.len(), page.total);
     pagination.has_more = page.has_more.unwrap_or(pagination.has_more);
-    let working_form = gene_first_fallback
-        .as_ref()
-        .filter(|_| results.is_empty())
-        .map(|fallback| gene_first_working_form(&fallback.gene, &fallback.condition));
+    let zero_row_note = gene_first_note.as_ref().filter(|_| results.is_empty());
+    let zero_row_command = zero_row_note.map(|note| match note {
+        GeneFirstNote::Refused {
+            condition,
+            hgvsp,
+            consequence,
+            ..
+        } => gene_first_working_form(
+            condition,
+            hgvsp.as_deref(),
+            consequence.as_deref(),
+            &explicit_filters,
+        ),
+        GeneFirstNote::Routed { alternative, .. } => alternative.clone(),
+    });
     if json_output {
         let mut next_commands = crate::render::markdown::search_next_commands_variant(
             &results,
             filters.gene.as_deref(),
             filters.condition.as_deref(),
         );
-        if let Some(command) = working_form.as_ref() {
+        if let Some(command) = zero_row_command.as_ref() {
             next_commands.push(command.clone());
         }
         let output = search_json_with_meta(results, pagination, next_commands)?;
@@ -432,13 +493,110 @@ async fn render_variant_search_outcome(
         ),
         _ => body,
     };
-    let body = match (working_form, gene_first_fallback.as_ref()) {
-        (Some(command), Some(fallback)) => format!(
-            "{body}\n\nNo variants matched the phrase as a condition. If {} is a gene symbol, \
-             try the working form: {command}",
-            fallback.gene
+    let body = match zero_row_note {
+        Some(GeneFirstNote::Refused {
+            gene,
+            condition,
+            hgvsp,
+            consequence,
+        }) => format!(
+            "{body}\n\nNo variants matched the phrase as a condition. Try the condition \
+             without {gene}: {}",
+            gene_first_working_form(
+                condition,
+                hgvsp.as_deref(),
+                consequence.as_deref(),
+                &explicit_filters,
+            )
         ),
-        _ => body,
+        Some(GeneFirstNote::Routed {
+            parsed,
+            alternative,
+        }) => format!(
+            "{body}\n\nNo variants matched the routed phrase. Read as {parsed}. \
+             Try the same filters without the condition: {alternative}"
+        ),
+        None => body,
     };
     Ok(CommandOutcome::stdout(body))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::VariantSearchRequest;
+
+    #[test]
+    fn explicit_filter_flags_state_every_flag_in_command_spelling() {
+        let request = VariantSearchRequest {
+            gene: None,
+            positional_query: Vec::new(),
+            hgvsp: None,
+            significance: Some("benign".into()),
+            max_frequency: Some(0.01),
+            min_cadd: Some(20.0),
+            consequence: None,
+            review_status: Some("2".into()),
+            population: Some("nfe".into()),
+            revel_min: Some(0.5),
+            gerp_min: None,
+            tumor_site: Some("skin".into()),
+            condition: None,
+            impact: None,
+            lof: true,
+            has: Some("clinvar".into()),
+            missing: None,
+            therapy: None,
+            limit: 10,
+            offset: 0,
+        };
+        assert_eq!(
+            request.explicit_filter_flags(),
+            vec![
+                ("--significance", "benign".to_string()),
+                ("--max-frequency", "0.01".to_string()),
+                ("--min-cadd", "20".to_string()),
+                ("--review-status", "2".to_string()),
+                ("--population", "nfe".to_string()),
+                ("--revel-min", "0.5".to_string()),
+                ("--tumor-site", "skin".to_string()),
+                ("--lof", String::new()),
+                ("--has", "clinvar".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn explicit_filter_flags_skip_unset_and_blank_values() {
+        let request = VariantSearchRequest {
+            significance: Some("   ".into()),
+            lof: false,
+            ..empty_request()
+        };
+        assert!(request.explicit_filter_flags().is_empty());
+    }
+
+    fn empty_request() -> VariantSearchRequest {
+        VariantSearchRequest {
+            gene: None,
+            positional_query: Vec::new(),
+            hgvsp: None,
+            significance: None,
+            max_frequency: None,
+            min_cadd: None,
+            consequence: None,
+            review_status: None,
+            population: None,
+            revel_min: None,
+            gerp_min: None,
+            tumor_site: None,
+            condition: None,
+            impact: None,
+            lof: false,
+            has: None,
+            missing: None,
+            therapy: None,
+            limit: 10,
+            offset: 0,
+        }
+    }
 }

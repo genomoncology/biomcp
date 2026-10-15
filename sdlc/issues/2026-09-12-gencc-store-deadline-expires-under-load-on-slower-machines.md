@@ -1,7 +1,7 @@
 # GenCC store deadline expires under full-suite load on slower machines
 
 Observed 2026-09-12 while running the full `make test` gate for ticket 1163 on
-yellow.local (4 cores, 15 GB RAM, Ubuntu 25.10), the first full-suite run of
+a 4-core, 15 GB RAM Ubuntu 25.10 host, the first full-suite run of
 this branch on hardware slower than the 16-core dev box.
 
 `entities::gene::gencc::tests::subprocess_lease_defers_old_generation_cleanup_until_reader_exits`

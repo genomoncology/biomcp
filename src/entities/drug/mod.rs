@@ -17,6 +17,7 @@ pub(crate) use self::get::{
 };
 pub use self::get::{get, get_with_region};
 pub(crate) use self::interactions::{DrugInteractionReport, interaction_report};
+pub(crate) use self::label::{markdown_label_view, markdown_label_view_truncates};
 pub use self::query::search_query_summary;
 #[allow(unused_imports)]
 pub use self::search::{
@@ -128,6 +129,13 @@ pub struct Drug {
     pub ema_shortage: Option<Vec<EmaShortageEntry>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub who_prequalification: Option<Vec<WhoPrequalificationEntry>>,
+    /// Why the WHO regulatory section is missing instead of a true
+    /// negative: set when the WHO Prequalification bundle could not be
+    /// read, so Markdown, JSON and MCP callers read the same reason. The
+    /// sentence never carries a local data path; those stay terminal-only
+    ///.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub who_note: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub civic: Option<CivicContext>,
     /// The PharmacoDB counts, asked for by name. `all` leaves it out.
@@ -592,6 +600,11 @@ pub enum DrugSearchPageWithRegion {
         us: RankedDrugSearchPage<DrugSearchResult>,
         eu: RankedDrugSearchPage<EmaDrugSearchResult>,
         who: RankedDrugSearchPage<WhoPrequalificationSearchResult>,
+        /// Why the WHO section is empty instead of a true negative: set when
+        /// the region-less search degraded after a WHO Prequalification sync
+        /// failure, so Markdown, JSON and MCP callers all read the same
+        /// reason.
+        who_note: Option<String>,
     },
 }
 
@@ -656,6 +669,18 @@ fn build_who_identity(requested_name: &str, drug: &Drug) -> WhoPqIdentity {
     WhoPqIdentity::with_aliases(requested_name, Some(&drug.name), &drug.brand_names)
 }
 
+/// Path-free degradation sentence shared by the drug search and the drug
+/// card when the WHO Prequalification bundle cannot be read: it names the
+/// source and the reason, and points at `biomcp who sync` and
+/// BIOMCP_WHO_DIR. Local data paths stay terminal-only, so no surface this note reaches may carry one;
+/// `surface` reads "search" or "card" so each output names itself.
+pub(crate) fn who_pq_degradation_note(err: &BioMcpError, surface: &str) -> String {
+    format!(
+        "WHO Prequalification data is unavailable ({reason}), so this {surface} omits the WHO section. Run `biomcp who sync` with network access or set BIOMCP_WHO_DIR.",
+        reason = err.public_projection().message,
+    )
+}
+
 async fn direct_drug_lookup(query: &str) -> Result<MyChemQueryResponse, BioMcpError> {
     MyChemClient::new()?
         .query_with_fields(query, 25, 0, MYCHEM_FIELDS_GET)
@@ -679,6 +704,7 @@ mod outcome_tests {
                 "civic",
                 "indications",
                 "interactions",
+                "label",
                 "safety",
                 "targets",
             ]

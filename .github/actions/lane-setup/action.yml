@@ -1,0 +1,123 @@
+name: Lane setup
+description: >-
+  The setup every CI lane shares: the pinned Rust toolchain and build
+  cache, Python with uv, the bubblewrap offline sandbox, and the
+  pinned gate binaries (nextest, mustmatch, cargo-deny, ruff and the
+  lint tools). A lane enables only the groups it uses, so no lane
+  installs another lane's tools (ticket 2075).
+inputs:
+  rust:
+    description: Install the pinned Rust toolchain.
+    default: false
+  components:
+    description: rustup components for the toolchain (empty for none).
+    default: ""
+  cache:
+    description: >-
+      Restore the rust cache: "job" uses and saves this job's own key,
+      "shared" saves the one lane-shared key (the build job alone),
+      "shared-restore" only reads the shared key (the lanes, so a
+      parallel job can never win the save race), empty installs none.
+    default: ""
+  python:
+    description: Install the pinned Python and uv.
+    default: false
+  offline:
+    description: Install the bubblewrap offline sandbox and load its AppArmor profile.
+    default: false
+  nextest:
+    description: Install the pinned cargo-nextest through the checksummed script.
+    default: false
+  mustmatch:
+    description: Install the pinned mustmatch binary.
+    default: false
+  lint-tools:
+    description: Install the pinned cargo-deny, ruff, shellcheck and actionlint.
+    default: false
+
+runs:
+  using: composite
+  steps:
+    - name: Install pinned Rust
+      if: ${{ inputs.rust == 'true' }}
+      uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+      with:
+        toolchain: 1.93.1
+        components: ${{ inputs.components }}
+    # The v2 tag dereferenced to its commit 2026-09-29; it runs
+    # after the toolchain install so its key uses the pinned rustc,
+    # and it caches the workspace crates so the biomcp crate itself
+    # is not rebuilt from scratch every run. The build job completes
+    # before its lanes start, so the shared key makes every lane
+    # compile against the same warm target directory and registry;
+    # only the build job saves it, because parallel savers race and
+    # the loser's entry silently replaces the build's. The crate
+    # download cache rides along (cache-all-crates): the offline
+    # contract tests compile the packaged crate and the test lane
+    # inside the sandbox, where no download can happen.
+    - name: Cache the Rust build
+      if: ${{ inputs.cache != '' }}
+      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+      with:
+        cache-workspace-crates: true
+        cache-all-crates: true
+        add-job-id-key: ${{ inputs.cache == 'job' }}
+        save-if: ${{ inputs.cache != 'shared-restore' }}
+    - name: Install pinned Python
+      if: ${{ inputs.python == 'true' }}
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      with:
+        python-version: 3.12.3
+    - name: Install pinned uv
+      if: ${{ inputs.python == 'true' }}
+      uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
+      with:
+        version: 0.8.0
+    # The AppArmor profile loads before any lane enters the offline
+    # namespace (2026-09-29 review) and before the lint tools'
+    # cargo install, which runs in this same action.
+    - name: Install the offline sandbox
+      if: ${{ inputs.offline == 'true' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          bubblewrap \
+          apparmor \
+          apparmor-profiles \
+          ripgrep
+        sudo install -m 0644 \
+          /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+          /etc/apparmor.d/bwrap-userns-restrict
+        sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+        test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
+        tools/run-offline -- true
+    - name: Install pinned nextest
+      if: ${{ inputs.nextest == 'true' }}
+      shell: bash
+      run: scripts/install-nextest.sh
+    - name: Install pinned mustmatch
+      if: ${{ inputs.mustmatch == 'true' }}
+      shell: bash
+      run: |
+        uv tool install "mustmatch==$MUSTMATCH_VERSION"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    - name: Install pinned lint tools
+      if: ${{ inputs.lint-tools == 'true' }}
+      shell: bash
+      run: |
+        cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
+        uv tool install "ruff==$RUFF_VERSION"
+        tools/bootstrap-lint-tools >> "$GITHUB_PATH"
+    - name: Record exact tool versions
+      # Informational only: the lanes enable different tool groups, so
+      # a tool this lane did not install prints nothing instead of
+      # failing the step.
+      shell: bash
+      run: |
+        set +e
+        for tool in rustc python uv ruff cargo cargo-deny mustmatch shellcheck actionlint bwrap apparmor_parser rg; do
+          if command -v "$tool" >/dev/null 2>&1; then
+            "$tool" --version
+          fi
+        done

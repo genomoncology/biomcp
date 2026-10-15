@@ -5,6 +5,7 @@ pub(in crate::entities::drug) struct ResolvedDrugBase {
     pub(in crate::entities::drug) drug: Drug,
     pub(in crate::entities::drug) label_response: Option<serde_json::Value>,
     pub(in crate::entities::drug) label_attempt_failed: bool,
+    pub(in crate::entities::drug) record_brand_spellings: Vec<String>,
     pub(in crate::entities::drug) trial_alias_candidates: Vec<TrialAlias>,
     pub(in crate::entities::drug) selected_hits: Vec<MyChemHit>,
     pub(in crate::entities::drug) source_pages: Vec<crate::sources::mychem::MyChemQueryResponse>,
@@ -421,10 +422,12 @@ pub(in crate::entities::drug) async fn resolve_drug_base_with_discover_report(
     }
 
     let trial_alias_candidates = trial_alias_candidates_from_hits(&selected);
+    let record_brand_spellings = transform::drug::brand_spellings_for_request(&selected, name);
     Ok(ResolvedDrugBase {
         drug,
         label_response: label_response_opt,
         label_attempt_failed,
+        record_brand_spellings,
         trial_alias_candidates,
         selected_hits: selected.into_iter().cloned().collect(),
         source_pages,

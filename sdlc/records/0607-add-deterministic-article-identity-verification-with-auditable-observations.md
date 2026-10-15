@@ -8,4 +8,4 @@ Imported from March ticket 607. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/607-add-deterministic-article-identity-verification-with-auditable-observations
+Artifacts: ~/workspace/planning/biomcp/artifacts/607-add-deterministic-article-identity-verification-with-auditable-observations

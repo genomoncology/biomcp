@@ -8,4 +8,4 @@ Imported from March ticket 448. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/448-run-contract-release-smokes-only-at-tag-release-time-gatekeep-release-remove-daily-cron-fix-stale-wikipathways-probe
+Artifacts: ~/workspace/planning/biomcp/artifacts/448-run-contract-release-smokes-only-at-tag-release-time-gatekeep-release-remove-daily-cron-fix-stale-wikipathways-probe

@@ -8,4 +8,4 @@ Imported from March ticket 367. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/367-prepare-and-publish-biomcp-v0-8-22-after-final-readiness-tickets
+Artifacts: ~/workspace/planning/biomcp/artifacts/367-prepare-and-publish-biomcp-v0-8-22-after-final-readiness-tickets

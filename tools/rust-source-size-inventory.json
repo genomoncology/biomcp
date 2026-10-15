@@ -4,13 +4,13 @@
   "entries": [
     {
       "path": "src/cache/manager.rs",
-      "baseline_lines": 1115,
+      "baseline_lines": 1183,
       "floor_lines": 985,
       "authorized_increase": {
-        "ticket": "1242",
-        "delta": 130,
-        "reason": "Batch 2: stale-serve marker helpers, the cache note consumer, the honest top-gene source label, and the required new struct field.",
-        "removal_condition": "Shrink when the stale label moves into per-source status plumbing and the test field inserts fold into shared fixtures."
+        "ticket": "2041",
+        "delta": 198,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
@@ -82,14 +82,9 @@
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 2345,
-      "floor_lines": 998,
-      "authorized_increase": {
-        "ticket": "1200, biodata-0152, 1302, qf-main-sync-20261007",
-        "delta": 1347,
-        "reason": "Ticket 1200's OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases (734 lines) beside the existing citation-evidence composition tests; BioData ticket 0152 later adds the retained Europe PMC PMCID first-row seed proof (70 lines). Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs. Preserve answered citing seeds across second-seed refusals and verify truthful deadline projections. Incorporate reviewed main 37631c35 through the retained shared model boundary; this allowance matches the actual integrated source.",
-        "removal_condition": "Move the OpenCitations confirmation-phase tests and the retained Europe PMC PMCID first-row seed proof to dedicated citation test submodules when the article test modules are next reorganized."
-      }
+      "baseline_lines": 2263,
+      "floor_lines": 2263,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/article/identity_verification.rs",
@@ -104,13 +99,13 @@
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1432,
+      "baseline_lines": 1439,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144, 1293, 1296 | 1299 | 1144, 1293, 1296",
-        "delta": 118,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them. | Re-export the article-search deadline budget and error text for the exact-keyword lookup and the public error projection | Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
-        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary. | Return to the prior baseline when the deadline seam moves to the sources layer | Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
+        "ticket": "2041",
+        "delta": 125,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
@@ -137,24 +132,36 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4060,
+      "baseline_lines": 4220,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "1243 | 1299 | 1243",
-        "delta": 366,
-        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it | Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
-        "removal_condition": "None; the boxing is the point. | Return to the prior baseline when the OLS client gains an unconditional deadline constructor | None; the boxing is the point."
+        "ticket": "2041",
+        "delta": 526,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
+      "path": "src/entities/drug/label.rs",
+      "baseline_lines": 1303,
+      "floor_lines": 1303,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/drug/search.rs",
+      "baseline_lines": 1005,
+      "floor_lines": 1005,
+      "authorized_increase": null
+    },
+    {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3870,
+      "baseline_lines": 3973,
       "floor_lines": 3812,
       "authorized_increase": {
-        "ticket": "1263",
-        "delta": 58,
-        "reason": "The stale-serve spawn-inheritance seam (ClinGen prefetch) and its tests in sources; the prefetch re-scope comment in gene.",
-        "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+        "ticket": "2041",
+        "delta": 161,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
@@ -181,8 +188,8 @@
     },
     {
       "path": "src/entities/pathway.rs",
-      "baseline_lines": 1314,
-      "floor_lines": 1314,
+      "baseline_lines": 1300,
+      "floor_lines": 1300,
       "authorized_increase": null
     },
     {
@@ -199,13 +206,13 @@
     },
     {
       "path": "src/entities/trial/search/ctgov.rs",
-      "baseline_lines": 1065,
+      "baseline_lines": 1134,
       "floor_lines": 995,
       "authorized_increase": {
-        "ticket": "biodata-0203",
-        "delta": 70,
-        "reason": "The BioData plan-bound CTGov path carries main detail-failure notes, age-before-detail filtering, and incomplete coverage for an unusable alias cursor.",
-        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+        "ticket": "2041",
+        "delta": 139,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
@@ -227,47 +234,58 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1428,
+      "baseline_lines": 2068,
       "floor_lines": 1428,
+      "authorized_increase": {
+        "ticket": "2041",
+        "delta": 640,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
+      }
+    },
+    {
+      "path": "src/entities/variant/get/protein_change_tests.rs",
+      "baseline_lines": 1392,
+      "floor_lines": 1392,
       "authorized_increase": null
     },
     {
       "path": "src/entities/variant/get/tests.rs",
-      "baseline_lines": 1248,
+      "baseline_lines": 1409,
       "floor_lines": 1248,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2041",
+        "delta": 161,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
+      }
     },
     {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1157,
+      "baseline_lines": 1213,
       "floor_lines": 1091,
       "authorized_increase": {
-        "ticket": "qf-main-sync-variant-inputs-20261006",
-        "delta": 66,
-        "reason": "Add ClinVar VariationID classification and unsupported-wrapper guidance while retaining shared HGVS adapters.",
-        "removal_condition": "Remove this allowance when the existing workflow is decomposed below the source-size threshold."
+        "ticket": "2041",
+        "delta": 122,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/entities/variant/search/mod.rs",
-      "baseline_lines": 1113,
-      "floor_lines": 1000,
-      "authorized_increase": {
-        "ticket": "1155, 1150",
-        "delta": 113,
-        "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner.",
-        "removal_condition": "Split exact-search result projection when the variant search workflow is next decomposed."
-      }
+      "baseline_lines": 1081,
+      "floor_lines": 1081,
+      "authorized_increase": null
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1418,
+      "baseline_lines": 1498,
       "floor_lines": 1109,
       "authorized_increase": {
-        "ticket": "biodata-0203, 1302, 1304, qf-main-sync-20261007",
-        "delta": 309,
-        "reason": "The FHIR error projection on the dedicated branch combines with main source and output error corrections. Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs. Ticket 1304 adds the WHO header-mismatch projection and its test. Incorporate reviewed main 37631c35 through the retained shared model boundary; this allowance matches the actual integrated source.",
-        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+        "ticket": "2041",
+        "delta": 389,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
@@ -278,25 +296,20 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2575,
+      "baseline_lines": 2707,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "biodata-0203",
-        "delta": 619,
-        "reason": "The dedicated patient gate and typed branches combine with the main flat typed MCP schema and argument-failure correction.",
-        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+        "ticket": "2041",
+        "delta": 751,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/mcp/shell/typed_get_tests.rs",
-      "baseline_lines": 1631,
-      "floor_lines": 1558,
-      "authorized_increase": {
-        "ticket": "biodata-0203, biodata-0664, biodata-0679",
-        "delta": 73,
-        "reason": "The normal main-to-1.0 merge preserves both independently reviewed behavior paths at this source boundary. Root migration coordinator retains that inherited 29-line allowance and owns the additional 44 total lines from accepted 0664's complete typed argument and invalid-parameter assertions: 15 scaffold lines and 29 net formatting lines. Ticket 0679 records the exact cumulative disposition.",
-        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs. Remove the inventory entry when the file reaches at most 1000 total lines."
-      }
+      "baseline_lines": 1550,
+      "floor_lines": 1550,
+      "authorized_increase": null
     },
     {
       "path": "src/render/chart.rs",
@@ -306,69 +319,64 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1590,
+      "baseline_lines": 1598,
       "floor_lines": 1561,
       "authorized_increase": {
-        "ticket": "1241",
-        "delta": 29,
-        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
-        "removal_condition": "Shrink when the drug card model is next refactored."
+        "ticket": "2041",
+        "delta": 37,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1335,
+      "baseline_lines": 1348,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1144, 1201, 1296",
-        "delta": 128,
-        "reason": "Pin the graph pagination footer and shared continuation command; ticket 1201 adds the header parameter to every article render context literal; ticket 1296 pins entity rows printing get commands by accepted identifier while gene and chemical rows keep their text searches.",
-        "removal_condition": "Extract graph and entities renderer tests when a package-neutral module split can preserve the exact source package boundary."
+        "ticket": "2041",
+        "delta": 141,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/render/markdown/drug/tests.rs",
+      "baseline_lines": 1149,
       "floor_lines": 954,
-      "baseline_lines": 1004,
       "authorized_increase": {
-        "ticket": "1254",
-        "delta": 50,
-        "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it.",
-        "removal_condition": "Shrink when the card fixtures share a builder."
+        "ticket": "2041",
+        "delta": 195,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/render/markdown/related.rs",
-      "baseline_lines": 1081,
+      "baseline_lines": 1082,
       "floor_lines": 1064,
       "authorized_increase": {
-        "ticket": "1202",
-        "delta": 17,
-        "reason": "Keep cell-line next commands beside the other entity related-command builders.",
-        "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed."
+        "ticket": "2041",
+        "delta": 18,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
-      "baseline_lines": 1078,
+      "baseline_lines": 1178,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1155, 1290",
-        "delta": 78,
-        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract. Maintenance reconciliation adds 8 total lines for significance provenance render contexts.",
-        "removal_condition": "Split variant-search renderer tests when the variant Markdown renderer tests are next decomposed."
+        "ticket": "2041",
+        "delta": 178,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1866,
-      "floor_lines": 1745,
-      "authorized_increase": {
-        "ticket": "biodata-0203, 1290",
-        "delta": 121,
-        "reason": "The dedicated patient and publication provenance paths combine with main disease and drug source-state corrections. Maintenance reconciliation adds 3 total lines for significance provenance fields in the retained variant test literal.",
-        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
-      }
+      "baseline_lines": 1863,
+      "floor_lines": 1863,
+      "authorized_increase": null
     },
     {
       "path": "src/sources/cbioportal_study.rs",
@@ -433,13 +441,13 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2790,
+      "baseline_lines": 2821,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "biodata-0203",
-        "delta": 943,
-        "reason": "The dedicated FHIR helper retains the shared TLS trust-failure strategy; main adds the plain-send trust-failure early return beside its error-chain extraction. Ticket 0203 review must accept the combined growth.",
-        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+        "ticket": "2041",
+        "delta": 974,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
@@ -461,37 +469,37 @@
     },
     {
       "path": "src/sources/who_pq.rs",
-      "baseline_lines": 1229,
+      "baseline_lines": 1299,
       "floor_lines": 1117,
       "authorized_increase": {
-        "ticket": "1196, 1304 | 1196 | 1196, 1304",
-        "delta": 112,
-        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches.",
-        "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed."
+        "ticket": "2041",
+        "delta": 182,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
     },
     {
       "path": "src/transform/disease.rs",
-      "baseline_lines": 1108,
+      "baseline_lines": 1128,
       "floor_lines": 1050,
       "authorized_increase": {
-        "ticket": "1256",
-        "delta": 58,
-        "reason": "The seeded gene-association helper and its tests.",
-        "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+        "ticket": "2041",
+        "delta": 78,
+        "reason": "The main-into-1.0 merge re-baselines the integrated sources: the 1.0 structure absorbs the 0.9 behavior that arrived with main through 2026-10-14, and each named file carries both lineages' reviewed growth.",
+        "removal_condition": "Re-baseline or extract when ticket 2097's 0.9 drug identity port and the deferred projection adaptations land."
       }
-    }
-  ],
-  "measured_files": [
-    {
-      "path": "src/entities/variant/resolution/genomic_lookup.rs",
-      "lines": 295,
-      "ticket": "biodata-0685"
     },
     {
-      "path": "src/entities/variant/resolution/genomic_lookup_tests.rs",
-      "lines": 382,
-      "ticket": "biodata-0685"
+      "path": "src/transform/drug.rs",
+      "baseline_lines": 1551,
+      "floor_lines": 1551,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/transform/variant.rs",
+      "baseline_lines": 1124,
+      "floor_lines": 1124,
+      "authorized_increase": null
     }
   ]
 }

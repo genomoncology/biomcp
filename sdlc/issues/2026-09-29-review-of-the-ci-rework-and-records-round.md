@@ -30,7 +30,7 @@ The three earlier review files stay open until each finding below is closed: `20
 
 ## Evidence and reviews
 
-- All five reviews ran on Pi GLM-5.3. Four ran as the worker agent, which can write. The fifth exited with code 1. The workspace rule requires fresh read-only reviewers from the owning agent's vendor unless Ian routes otherwise. Pi is for grunt work, and its reports need verification.
+- All five reviews ran on an external coding model. Four ran as a writing agent, which can write. The fifth exited with code 1. The workspace rule requires fresh read-only reviewers from the owning agent's vendor unless Ian routes otherwise. The external model is for grunt work, and its reports need verification.
 - Ticket 1268 had three REJECTs before its ACCEPT, not two as reported.
 - The final ACCEPT on 1268 covers `95a4998b`. Five later commits have no review, including the ruff fix, the rustfmt pass and the move of the trust tests into a directory module.
 - Records 1267 and 1268 still say `Code review: pending`, and their tickets say ACCEPT.

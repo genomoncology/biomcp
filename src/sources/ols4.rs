@@ -38,6 +38,13 @@ impl OlsClient {
         })
     }
 
+    /// The address this client reads: part of every memo key, so two
+    /// deployments or fixtures that point OLS4 at different addresses never
+    /// share an answer.
+    pub(crate) fn base_url(&self) -> &str {
+        &self.base
+    }
+
     pub(crate) async fn new_with_deadline(
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {

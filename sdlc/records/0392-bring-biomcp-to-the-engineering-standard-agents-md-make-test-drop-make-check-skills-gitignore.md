@@ -8,4 +8,4 @@ Imported from March ticket 392. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/392-bring-biomcp-to-the-engineering-standard-agents-md-make-test-drop-make-check-skills-gitignore
+Artifacts: ~/workspace/planning/biomcp/artifacts/392-bring-biomcp-to-the-engineering-standard-agents-md-make-test-drop-make-check-skills-gitignore

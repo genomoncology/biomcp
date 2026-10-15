@@ -33,6 +33,14 @@ pub struct SectionOutcome {
     sources: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     message: Option<String>,
+    /// A permanent unavailability (a retired upstream endpoint): no retry
+    /// recovers it, so rendering offers no retry command.
+    #[serde(skip_serializing_if = "not_permanent")]
+    permanent: bool,
+}
+
+fn not_permanent(value: &bool) -> bool {
+    !*value
 }
 
 impl SectionOutcome {
@@ -60,7 +68,21 @@ impl SectionOutcome {
         Self::successful(SectionOutcomeState::Empty, sources)
     }
 
-    pub fn degraded<I, S>(sources: I, message: &'static str) -> Self
+    /// A source-confirmed zero that names which zero it was.
+    ///
+    /// An empty section can carry one bounded reason so callers reading the
+    /// outcome alone learn why the section is empty (for example, a drug
+    /// label lookup that matched no SPL record).
+    pub fn empty_with_reason(source: impl Into<String>, message: &'static str) -> Self {
+        Self {
+            outcome: SectionOutcomeState::Empty,
+            sources: successful_sources([source]),
+            message: Some(bounded_message(message)),
+            permanent: false,
+        }
+    }
+
+    pub fn degraded<I, S>(sources: I, message: impl Into<String>) -> Self
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
@@ -68,7 +90,8 @@ impl SectionOutcome {
         Self {
             outcome: SectionOutcomeState::Degraded,
             sources: successful_sources(sources),
-            message: Some(bounded_message(message)),
+            message: Some(bounded_message(&message.into())),
+            permanent: false,
         }
     }
 
@@ -82,14 +105,36 @@ impl SectionOutcome {
             outcome: SectionOutcomeState::Inapplicable,
             sources: Vec::new(),
             message: Some(message),
+            permanent: false,
         }
     }
 
     pub fn unavailable(message: &'static str) -> Self {
+        Self::unavailable_message(message)
+    }
+
+    /// An unavailable outcome whose reason is built at runtime — the
+    /// retired-endpoint degrade carries the provider's own retirement
+    /// wording. Bounded and safety-checked like every other
+    /// public message.
+    pub fn unavailable_message(message: impl Into<String>) -> Self {
         Self {
             outcome: SectionOutcomeState::Unavailable,
             sources: Vec::new(),
-            message: Some(bounded_message(message)),
+            message: Some(bounded_message(&message.into())),
+            permanent: false,
+        }
+    }
+
+    /// An unavailable outcome no retry can recover, such as a retired
+    /// upstream endpoint: the message names the permanent gap, and
+    /// rendering offers no retry command.
+    pub fn unavailable_permanent(message: impl Into<String>) -> Self {
+        Self {
+            outcome: SectionOutcomeState::Unavailable,
+            sources: Vec::new(),
+            message: Some(bounded_message(&message.into())),
+            permanent: true,
         }
     }
 
@@ -102,6 +147,7 @@ impl SectionOutcome {
             outcome,
             sources: successful_sources(sources),
             message: None,
+            permanent: false,
         }
     }
 
@@ -115,6 +161,12 @@ impl SectionOutcome {
 
     pub fn message(&self) -> Option<&str> {
         self.message.as_deref()
+    }
+
+    /// Whether no retry can recover this outcome: rendering offers no
+    /// retry command for it.
+    pub fn permanent(&self) -> bool {
+        self.permanent
     }
 }
 
@@ -146,12 +198,16 @@ fn message_is_safe(message: &str) -> bool {
             .any(|word| word.starts_with('/') || word.contains(":\\"))
 }
 
-fn bounded_message(message: &'static str) -> String {
-    let message = message
-        .chars()
-        .filter(|ch| !ch.is_control())
-        .take(160)
-        .collect::<String>();
+fn bounded_message(message: &str) -> String {
+    let mut message: String = message.chars().filter(|ch| !ch.is_control()).collect();
+    if message.chars().count() > 160 {
+        message = message.chars().take(160).collect();
+        // Cut at the last complete word: no bounded reason ends mid-word
+        //.
+        if let Some(boundary) = message.rfind(' ') {
+            message.truncate(boundary);
+        }
+    }
     assert!(
         message_is_safe(&message),
         "unsafe public section outcome message"
@@ -166,6 +222,8 @@ struct SerializedSectionOutcome {
     sources: Vec<String>,
     #[serde(default)]
     message: Option<String>,
+    #[serde(default)]
+    permanent: bool,
 }
 
 impl<'de> Deserialize<'de> for SectionOutcome {
@@ -182,9 +240,10 @@ impl<'de> Deserialize<'de> for SectionOutcome {
             SectionOutcomeState::NotRequested => {
                 value.sources.is_empty() && value.message.is_none()
             }
-            SectionOutcomeState::Data | SectionOutcomeState::Empty => {
-                !value.sources.is_empty() && value.message.is_none()
-            }
+            SectionOutcomeState::Data => !value.sources.is_empty() && value.message.is_none(),
+            // Empty keeps its source-confirmed-zero claim and may name which
+            // zero it was through `empty_with_reason`.
+            SectionOutcomeState::Empty => !value.sources.is_empty(),
             SectionOutcomeState::Degraded => !value.sources.is_empty() && value.message.is_some(),
             SectionOutcomeState::Inapplicable => {
                 value.sources.is_empty()
@@ -195,7 +254,9 @@ impl<'de> Deserialize<'de> for SectionOutcome {
             }
             SectionOutcomeState::Unavailable => value.sources.is_empty() && value.message.is_some(),
         };
-        if !sources_are_valid || !message_is_valid || !shape_is_valid {
+        let permanent_is_valid =
+            !value.permanent || value.outcome == SectionOutcomeState::Unavailable;
+        if !sources_are_valid || !message_is_valid || !shape_is_valid || !permanent_is_valid {
             return Err(D::Error::custom(
                 "invalid section outcome state/source/message combination",
             ));
@@ -204,6 +265,7 @@ impl<'de> Deserialize<'de> for SectionOutcome {
             outcome: value.outcome,
             sources: value.sources,
             message: value.message,
+            permanent: value.permanent,
         })
     }
 }
@@ -223,6 +285,7 @@ impl SectionOutcomes {
                             outcome: SectionOutcomeState::NotRequested,
                             sources: Vec::new(),
                             message: None,
+                            permanent: false,
                         },
                     )
                 })
@@ -266,8 +329,17 @@ mod tests {
 
     #[test]
     fn registry_serializes_all_states_and_safe_messages() {
-        let mut outcomes = SectionOutcomes::with_keys(&["empty", "inapplicable", "unavailable"]);
+        let mut outcomes = SectionOutcomes::with_keys(&[
+            "empty",
+            "empty_with_reason",
+            "inapplicable",
+            "unavailable",
+        ]);
         outcomes.complete("empty", SectionOutcome::empty("Source"));
+        outcomes.complete(
+            "empty_with_reason",
+            SectionOutcome::empty_with_reason("Source", "No record matched this query."),
+        );
         outcomes.complete(
             "inapplicable",
             SectionOutcome::inapplicable("A required input is missing."),
@@ -279,6 +351,12 @@ mod tests {
         let value = serde_json::to_value(outcomes).unwrap();
         assert_eq!(value["empty"]["outcome"], "empty");
         assert_eq!(value["empty"]["sources"][0], "Source");
+        assert!(value["empty"].get("message").is_none());
+        let round_trip = serde_json::from_value::<SectionOutcomes>(value.clone()).unwrap();
+        assert_eq!(
+            round_trip.get("empty_with_reason").unwrap().message(),
+            Some("No record matched this query.")
+        );
         assert_eq!(value["inapplicable"]["outcome"], "inapplicable");
         assert_eq!(value["inapplicable"]["sources"], serde_json::json!([]));
         let round_trip = serde_json::from_value::<SectionOutcomes>(value.clone()).unwrap();
@@ -290,6 +368,58 @@ mod tests {
         assert_eq!(
             value["unavailable"]["message"],
             "Source data is unavailable."
+        );
+    }
+
+    #[test]
+    fn bounded_messages_cut_at_a_word_boundary() {
+        // No bounded reason ends mid-word. The retired-endpoint
+        // reason fits the bound whole; a longer one cuts at its last
+        // complete word.
+        let whole = SectionOutcome::unavailable_permanent(
+            "The legacy GWAS Catalog by-rsID endpoint retired upstream (HTTP 410); GWAS association data is unavailable until the v2 endpoint is wired.",
+        );
+        assert_eq!(
+            whole.message(),
+            Some(
+                "The legacy GWAS Catalog by-rsID endpoint retired upstream (HTTP 410); GWAS association data is unavailable until the v2 endpoint is wired."
+            )
+        );
+        assert!(whole.permanent());
+
+        let long = SectionOutcome::unavailable_message(format!(
+            "{} {}",
+            "word ".repeat(31),
+            "elephants dance"
+        ));
+        let message = long.message().expect("bounded message");
+        assert!(!long.permanent());
+        assert!(
+            message.chars().count() <= 160,
+            "the bound still holds: {message}"
+        );
+        let last = message.split_whitespace().next_back().expect("non-empty");
+        assert_eq!(
+            last, "word",
+            "the cut lands between words, never inside one: {message}"
+        );
+    }
+
+    #[test]
+    fn permanent_flag_serializes_and_validates() {
+        let outcome = SectionOutcome::unavailable_permanent("The endpoint retired.");
+        let value = serde_json::to_value(&outcome).unwrap();
+        assert_eq!(value["permanent"], true);
+        assert_eq!(
+            serde_json::from_value::<SectionOutcome>(value).unwrap(),
+            outcome
+        );
+        assert!(
+            serde_json::from_str::<SectionOutcome>(
+                r#"{"outcome":"data","sources":["Provider"],"permanent":true}"#
+            )
+            .is_err(),
+            "permanence belongs to unavailable outcomes only"
         );
     }
 
@@ -330,6 +460,9 @@ mod tests {
     fn deserialization_rejects_illegal_shapes_and_unsafe_messages() {
         for json in [
             r#"{"outcome":"data","sources":[]}"#,
+            r#"{"outcome":"data","sources":["Provider"],"message":"Data."}"#,
+            r#"{"outcome":"empty","sources":[]}"#,
+            r#"{"outcome":"empty","sources":["Provider"],"message":"See https://example.test"}"#,
             r#"{"outcome":"inapplicable","sources":[]}"#,
             r#"{"outcome":"inapplicable","sources":[],"message":"  "}"#,
             r#"{"outcome":"inapplicable","sources":["Provider"],"message":"Not applicable."}"#,

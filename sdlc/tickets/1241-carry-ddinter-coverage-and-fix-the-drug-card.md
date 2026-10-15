@@ -63,12 +63,12 @@ the reviewer verified every seam against the code).
    :525-526) gain the DDInter file name from the parse/read error's
    message, following the PMC-prefix and CaBundle precedent arms.
 5. Deferred, recorded here: the 8 MB cap check against the real
-   bundle's file sizes and the real-bundle run both defer to the M5
+   bundle's file sizes and the real-bundle run both defer to the Mac
    leg (Ian's machine, authorized separately); probing
    ddinter.scbdd.com from a test needs separate authorization.
 6. Scope of the problem statement's third symptom (aspirin resolving
    to a combination product): mitigated incidentally by synonyms and
-   verified honestly at the M5 real-bundle run; not separately fixed
+   verified honestly at the Mac real-bundle run; not separately fixed
    here.
 7. Compile ripple stated: 23 full-field `Drug` struct literals across
    11 files (json.rs, provenance.rs, transform/drug.rs, root_tests.rs,

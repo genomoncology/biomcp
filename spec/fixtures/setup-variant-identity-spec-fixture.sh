@@ -32,6 +32,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 import json
 import sys
+import time
 
 ROOT = Path(sys.argv[1])
 READY = Path(sys.argv[2])
@@ -43,9 +44,9 @@ SEARCH_RESPONSE = json.loads(
 )
 BRAF_MISSENSE_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_missense_20260805.json").read_bytes()
 BRAF_REVEL_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_bytes()
-BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_v600e_20260806.json").read_bytes()
+BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/query_braf_v600e_20261009.json").read_bytes()
 BRAF_V600E_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch38_20260806.json").read_bytes()
-BRAF_V600E_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e.json").read_bytes()
+BRAF_V600E_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch37_20261007.json").read_bytes()
 GRID1_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch37_20260806.json").read_bytes()
 GRID1_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch38_20260806.json").read_bytes()
 PTEN_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_pten_grch38_20260806.json").read_bytes()
@@ -65,13 +66,102 @@ RS334_GRCH38_RESPONSE = {
     "dbsnp": {"rsid": "rs334"},
     "clinvar": {"gene": {"symbol": "HBB"}},
 }
-MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
+# Ticket 2042: the August MYD88 reply (search_myd88_l265p_20260806.json)
+# carried no ClinVar or SnpEff section — its gene+protein query would now
+# refuse with no protein change to name — so the recurrence card replays the
+# reply re-captured with the current query shape.
+MYD88_L265P_CURRENT_RESPONSE = (ROOT / "testdata/sources/myvariant/query_myd88_l265p_20261009.json").read_bytes()
 TP53_G105S_RESPONSE = (ROOT / "testdata/sources/myvariant/search_tp53_g105s_20261003.json").read_bytes()
 # Ticket 1297: recorded gene+protein queries whose alias spans several
 # genomic variants. Only the DICER1 ClinVar record names one of its three.
 DICER1_M1483I_RESPONSE = (ROOT / "testdata/sources/myvariant/query_dicer1_m1483i_20261006.json").read_bytes()
 EGFR_M766I_RESPONSE = (ROOT / "testdata/sources/myvariant/query_egfr_m766i_20261006.json").read_bytes()
+# Ticket 2018: recorded KRAS codon-12 queries. rs121913529 names three alleles
+# (G12A, G12D, G12V); each gene+protein query names exactly one of them.
+KRAS_G12A_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12a_20261007.json").read_bytes()
+KRAS_G12D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12d_20261007.json").read_bytes()
+KRAS_G12V_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12v_20261007.json").read_bytes()
+RS121913529_RESPONSE = (ROOT / "testdata/sources/myvariant/query_rsid_rs121913529_20261007.json").read_bytes()
+# Ticket 2029: recorded KRAS codon-12/13 queries for the G12C and G13C rows,
+# which now print the gene+protein command; each resolves to the one variant
+# its rsID (rs121913530, rs121913535) opens.
+KRAS_G12C_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12c_20261007.json").read_bytes()
+KRAS_G13C_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g13c_20261007.json").read_bytes()
+# Ticket 2016: recorded gene+protein queries where the alias also names a
+# ClinVar-recorded lookalike on another isoform. The named change must win.
+TP53_C124Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_c124y_20261007.json").read_bytes()
+BRCA1_A314T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_a314t_20261007.json").read_bytes()
+BRCA1_C61G_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_c61g_20261007.json").read_bytes()
+# Ticket 2016 fix round: the numbering rows. R116Q resolves on the MANE
+# transcript under another isoform's numbering; A1844T past the BRCA1
+# isoform insert pins the answer to MANE numbering; I1568N's ClinVar-less
+# response carries no MANE marker, so the first-NM_ fallback applies.
+TP53_R116Q_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r116q_20261007.json").read_bytes()
+BRCA1_A1844T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_a1844t_20261007.json").read_bytes()
+BRCA1_I1568N_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_i1568n_20261007.json").read_bytes()
+# Ticket 2016 fix round 3 (ticket 2033 finding 3): requests whose numbering
+# is valid on the MANE protein while no record names the change there. The
+# alias search returns only the isoform lookalike; BioMCP must refuse
+# instead of resolving it with the other-transcript note.
+TP53_R209Q_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r209q_20261008.json").read_bytes()
+TP53_G112D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_g112d_20261008.json").read_bytes()
+TP53_R174H_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r174h_20261008.json").read_bytes()
+# Ticket 2036: recorded ClinVar-free queries where the alias match spells
+# the request only on another isoform, or where two alias hits compete and
+# exactly one names the change on MANE. The canonical-residue check must
+# run before the isoform annotation is accepted.
+TP53_S183Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_s183y_20261009.json").read_bytes()
+BRCA1_S1587F_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1587f_20261009.json").read_bytes()
+BRCA1_S1551Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s1551y_20261009.json").read_bytes()
+BRCA1_S395T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_s395t_20261009.json").read_bytes()
+# Ticket 2042: recorded ClinVar-free BRCA1 queries whose requested position
+# lies past the canonical protein's 1863 residues. Y1866D's response carries
+# ClinVar's MANE name (p.Tyr1845Asp on NM_007294.4); Q1878R's SnpEff list
+# carries 48 feature_type:interaction protein-structure rows beside the
+# transcript rows.
+BRCA1_Y1866D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_y1866d_20261009.json").read_bytes()
+BRCA1_Q1878R_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_q1878r_20261009.json").read_bytes()
+# The reference-residue check reads the gene's canonical (MANE Select)
+# protein sequence from UniProt; the records are minimized to the accession,
+# the sequence, and the MANE-Select cross-reference whose RefSeq mRNA names
+# the MANE transcript with its current version (ticket 2036). The
+# complexportal fixture owns the routine lane's UniProt base (it sources
+# later) and serves the same bytes.
+UNIPROT_P04637_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p04637_20261008.json").read_bytes()
+# Ticket 2035 finding 4: BRCA1's residue checks read P38398.
+UNIPROT_P38398_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p38398_20261009.json").read_bytes()
+# Ticket 2042/2047: the legacy GWAS Catalog REST endpoint retired upstream
+# (HTTP 410 since 2026-10), so the offline lane cannot reach it. The
+# fixture replays the retired endpoint's own 410 reply so the offline lane
+# exercises the same degrade the live source answers with (the honest gap
+# note), instead of the committed empty page that masked the live shape.
+GWAS_RETIRED_410_BODY = (ROOT / "testdata/sources/gwas/associations_retired_410_body.txt").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
+# Ticket 1291: the switch never reproduced live (the recorded
+# reproduction runs' efetch calls all answered within 1.4 s), so this
+# synthetic hold replays the code-confirmed trigger: an NCBI efetch
+# answer slower than the optional-enrichment deadline. The ClinVar
+# section must name the deadline miss and label the served
+# MyVariant.info copy as degraded with its newest evaluation date.
+# Every identifier here is invented (fourth review, finding 21): the
+# coordinate, VariationID, and RCV accession belong to no real variant,
+# so the synthetic hold cannot mislabel one.
+CLINVAR_TIMEOUT_HIT = {
+    "_id": "chr17:g.7676000G>A",
+    "dbnsfp": {"genename": "TP53", "hgvsp": "p.R273H"},
+    "clinvar": {
+        "gene": {"symbol": "TP53"},
+        "variant_id": 6000001,
+        "rcv": [{
+            "accession": "RCV006000001",
+            "clinical_significance": "Pathogenic",
+            "last_evaluated": "2021-03-11",
+            "number_submitters": 3,
+            "preferred_name": "NM_000546.6(TP53):c.818G>A (p.Arg273His)",
+            "review_status": "reviewed by expert panel",
+        }],
+    },
+}
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
     "dbnsfp": {
@@ -104,6 +194,29 @@ SCN5A_BRUGADA_HITS = [
 BRUGADA_CONDITION_HIT = {
     "_id": "chr12:g.50879715G>A",
     "dbnsfp": {"genename": "PKP2", "hgvsp": "p.Q63K"},
+}
+# Ticket 2022: condition rows for the alias-abbreviation phrases that keep
+# the whole-phrase condition search, and the gene-only/probe rows the
+# zero-classification of a routed gene+protein+condition search issues.
+HCC_CONDITION_HIT = {
+    "_id": "chr2:g.47461951C>T",
+    "dbnsfp": {"genename": "CTNNB1", "hgvsp": "p.S37F"},
+}
+MODY_CONDITION_HIT = {
+    "_id": "chr20:g.43036542C>T",
+    "dbnsfp": {"genename": "HNF4A", "hgvsp": "p.R127W"},
+}
+HHT_CONDITION_HIT = {
+    "_id": "chr12:g.52294067C>T",
+    "dbnsfp": {"genename": "ACVRL1", "hgvsp": "p.R189W"},
+}
+MELANOMA_CONDITION_HIT = {
+    "_id": "chr4:g.55138637C>T",
+    "dbnsfp": {"genename": "KIT", "hgvsp": "p.L576P"},
+}
+BRAF_GENE_ONLY_HIT = {
+    "_id": "chr7:g.140753336A>T",
+    "dbnsfp": {"genename": "BRAF", "hgvsp": "p.V600E"},
 }
 HSD17B4_TRANSCRIPT_HIT = {
     "_id": "chr5:g.118860951A>G",
@@ -220,6 +333,14 @@ def send_xml(handler, status, payload):
     handler.wfile.write(payload)
 
 
+def send_body(handler, status, content_type, payload):
+    handler.send_response(int(status.split(" ", 1)[0]))
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(payload)))
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -261,6 +382,13 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/efetch.fcgi":
             params = parse_qs(parsed.query)
             if params.get("db") == ["clinvar"] and params.get("id") == ["428884"]:
+                send_xml(self, 200, CLINVAR_428884_XML)
+                return
+            if params.get("db") == ["clinvar"] and params.get("id") == ["6000001"]:
+                # Ticket 1291: a synthetic hold, not a recorded exchange — no
+                # provider control forces a real eight-second NCBI hold. The
+                # optional-enrichment deadline fires before this answer lands.
+                time.sleep(20)
                 send_xml(self, 200, CLINVAR_428884_XML)
                 return
             send_json(self, 404, {"error": "fixture efetch record not found"})
@@ -400,6 +528,32 @@ class Handler(BaseHTTPRequestHandler):
             if query == 'clinvar.rcv.conditions.name:"brugada syndrome"':
                 send_json(self, 200, {"total": 1, "hits": [BRUGADA_CONDITION_HIT]})
                 return
+            # Ticket 2022: alias abbreviations keep the whole-phrase condition
+            # search, so each phrase answers as a condition-only query.
+            if query == 'clinvar.rcv.conditions.name:"HCC liver cancer"':
+                send_json(self, 200, {"total": 1, "hits": [HCC_CONDITION_HIT]})
+                return
+            if query == 'clinvar.rcv.conditions.name:"MODY diabetes"':
+                send_json(self, 200, {"total": 1, "hits": [MODY_CONDITION_HIT]})
+                return
+            if query == 'clinvar.rcv.conditions.name:"HHT telangiectasias"':
+                send_json(self, 200, {"total": 1, "hits": [HHT_CONDITION_HIT]})
+                return
+            # Ticket 2022: a routed gene+protein+condition phrase with no
+            # intersection. Exact-match branch first so the generic
+            # gene+protein branch below cannot answer the three-filter query.
+            if (
+                query
+                == 'dbnsfp.genename:BRAF AND dbnsfp.hgvsp:"p.V600E" AND clinvar.rcv.conditions.name:"melanoma"'
+            ):
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
+            if query == 'clinvar.rcv.conditions.name:"melanoma"':
+                send_json(self, 200, {"total": 1, "hits": [MELANOMA_CONDITION_HIT]})
+                return
+            if query == "dbnsfp.genename:BRAF":
+                send_json(self, 200, {"total": 1, "hits": [BRAF_GENE_ONLY_HIT]})
+                return
             if query == "dbnsfp.genename:H3F3A AND cadd.phred:[99 TO *]":
                 send_json(self, 200, {"total": 0, "hits": []})
                 return
@@ -436,10 +590,13 @@ class Handler(BaseHTTPRequestHandler):
                 send_json(self, 200, BRAF_V600E_RESPONSE)
                 return
             if "dbnsfp.genename:MYD88" in query and 'dbnsfp.hgvsp:"p.L265P"' in query:
-                send_json(self, 200, MYD88_L265P_RESPONSE)
+                send_json(self, 200, json.loads(MYD88_L265P_CURRENT_RESPONSE))
                 return
             if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.G105S"' in query:
                 send_json(self, 200, TP53_G105S_RESPONSE)
+                return
+            if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.R273H"' in query:
+                send_json(self, 200, {"total": 1, "hits": [CLINVAR_TIMEOUT_HIT]})
                 return
             if query == 'dbnsfp.genename:DICER1 AND dbnsfp.hgvsp:"p.M1483I"':
                 send_json(self, 200, json.loads(DICER1_M1483I_RESPONSE))
@@ -447,7 +604,80 @@ class Handler(BaseHTTPRequestHandler):
             if query == 'dbnsfp.genename:EGFR AND dbnsfp.hgvsp:"p.M766I"':
                 send_json(self, 200, json.loads(EGFR_M766I_RESPONSE))
                 return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G12A"':
+                send_json(self, 200, KRAS_G12A_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G12D"':
+                send_json(self, 200, KRAS_G12D_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G12V"':
+                send_json(self, 200, KRAS_G12V_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G12C"':
+                send_json(self, 200, KRAS_G12C_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G13C"':
+                send_json(self, 200, KRAS_G13C_RESPONSE)
+                return
+            if query == "dbsnp.rsid:rs121913529":
+                send_json(self, 200, RS121913529_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.C124Y"':
+                send_json(self, 200, json.loads(TP53_C124Y_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.A314T"':
+                send_json(self, 200, json.loads(BRCA1_A314T_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.C61G"':
+                send_json(self, 200, json.loads(BRCA1_C61G_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.R116Q"':
+                send_json(self, 200, json.loads(TP53_R116Q_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.A1844T"':
+                send_json(self, 200, json.loads(BRCA1_A1844T_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.I1568N"':
+                send_json(self, 200, json.loads(BRCA1_I1568N_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.R209Q"':
+                send_json(self, 200, json.loads(TP53_R209Q_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.G112D"':
+                send_json(self, 200, json.loads(TP53_G112D_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.R174H"':
+                send_json(self, 200, json.loads(TP53_R174H_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.S183Y"':
+                send_json(self, 200, json.loads(TP53_S183Y_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S1587F"':
+                send_json(self, 200, json.loads(BRCA1_S1587F_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S1551Y"':
+                send_json(self, 200, json.loads(BRCA1_S1551Y_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.S395T"':
+                send_json(self, 200, json.loads(BRCA1_S395T_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.Y1866D"':
+                send_json(self, 200, json.loads(BRCA1_Y1866D_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.Q1878R"':
+                send_json(self, 200, json.loads(BRCA1_Q1878R_RESPONSE))
+                return
             send_json(self, 400, {"error": "unexpected fixture query"})
+            return
+
+        if parsed.path == "/uniprotkb/P04637.json" and not parse_qs(parsed.query):
+            send_json(self, 200, UNIPROT_P04637_RESPONSE)
+            return
+        if parsed.path == "/uniprotkb/P38398.json" and not parse_qs(parsed.query):
+            send_json(self, 200, UNIPROT_P38398_RESPONSE)
+            return
+        if parsed.path.startswith("/gwas/rest/api/singleNucleotidePolymorphisms/") and parsed.path.endswith("/associations"):
+            send_body(self, "410 Gone", "text/plain; charset=utf-8", GWAS_RETIRED_410_BODY)
             return
 
         if parsed.path in CANCERHOTSPOTS_RESPONSES:
@@ -547,6 +777,8 @@ PY
   printf 'export BIOMCP_MUTALYZER_BASE_URL=%q\n' "$base_url/api"
   printf 'export BIOMCP_VARIANTVALIDATOR_BASE_URL=%q\n' "$base_url"
   printf 'export BIOMCP_CLINGEN_CAR_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_UNIPROT_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_GWAS_BASE=%q\n' "$base_url/gwas/rest/api"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"

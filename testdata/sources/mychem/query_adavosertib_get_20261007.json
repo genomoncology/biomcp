@@ -1,0 +1,46 @@
+{
+ "took": 2,
+ "total": 2,
+ "max_score": 26.54607,
+ "hits": [
+  {
+   "_id": "BKWJAKQVGHWELA-UHFFFAOYSA-N",
+   "_score": 26.54607,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "adavosertib"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "drug_mechanisms": [
+     {
+      "action_type": "INHIBITOR",
+      "target_name": "Wee1-like protein kinase"
+     }
+    ],
+    "molecule_chembl_id": "CHEMBL1976040",
+    "molecule_type": "Small molecule",
+    "pref_name": "ADAVOSERTIB"
+   },
+   "drugbank": {
+    "_license": "https://bit.ly/3Hikpvm",
+    "id": "DB11740",
+    "name": "Adavosertib",
+    "synonyms": []
+   },
+   "gtopdb": {
+    "_license": "https://www.guidetopharmacology.org/download.jsp",
+    "name": "adavosertib"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "ADAVOSERTIB",
+    "unii": "K2T6HJX3I3"
+   }
+  },
+  {
+   "_id": "C4688386",
+   "_score": 17.141884
+  }
+ ]
+}

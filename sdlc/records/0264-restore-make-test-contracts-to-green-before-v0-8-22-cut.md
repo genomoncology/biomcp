@@ -8,4 +8,4 @@ Imported from March ticket 264. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/264-restore-make-test-contracts-to-green-before-v0-8-22-cut
+Artifacts: ~/workspace/planning/biomcp/artifacts/264-restore-make-test-contracts-to-green-before-v0-8-22-cut

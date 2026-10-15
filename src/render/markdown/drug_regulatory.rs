@@ -272,9 +272,19 @@ fn render_eu_regulatory_block(heading: &str, rows: Option<&[EmaRegulatoryRow]>) 
     out
 }
 
-fn render_who_regulatory_block(heading: &str, rows: Option<&[WhoPrequalificationEntry]>) -> String {
+fn render_who_regulatory_block(
+    heading: &str,
+    rows: Option<&[WhoPrequalificationEntry]>,
+    note: Option<&str>,
+) -> String {
     let Some(rows) = rows else {
-        return String::new();
+        // No rows and no note: the section was never requested. With a
+        // note, the bundle could not be read, so the heading prints beside
+        // the reason instead of silently disappearing.
+        let Some(note) = note else {
+            return String::new();
+        };
+        return format!("{heading}\n\n{note}\n");
     };
 
     let mut out = String::new();
@@ -354,13 +364,19 @@ fn render_us_safety_block(
     // both label and safety are requested (both read the same DailyMed
     // field); printing them here too would show the text twice under
     // two Warnings headings. The caller says whether that section is
-    // actually rendering them on this card.
+    // actually rendering them on this card. The comparison uses the
+    // Markdown label projection, because the entity keeps whole label
+    // sections while the safety field keeps its capped extraction; both
+    // sides must be the capped text a combined card would print.
     let duplicated_by_raw_label = label_section_renders_warnings
         && drug
             .label
             .as_ref()
-            .and_then(|label| label.warnings.as_deref())
-            .is_some_and(|text| Some(text) == drug.us_safety_warnings.as_deref());
+            .and_then(|label| {
+                crate::entities::drug::markdown_label_view(label, drug.label_set_id.as_deref())
+                    .warnings
+            })
+            .is_some_and(|text| Some(&text) == drug.us_safety_warnings.as_ref());
     if !duplicated_by_raw_label {
         out.push_str("\n### Warnings\n");
         if let Some(warnings) = drug.us_safety_warnings.as_deref() {
@@ -593,6 +609,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
         DrugRegion::Who => render_who_regulatory_block(
             "## Regulatory (WHO Prequalification)",
             drug.who_prequalification.as_deref(),
+            drug.who_note.as_deref(),
         ),
         DrugRegion::All => {
             let us = render_us_approvals_block(
@@ -608,6 +625,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
             let who = render_who_regulatory_block(
                 "## Regulatory (WHO Prequalification)",
                 drug.who_prequalification.as_deref(),
+                drug.who_note.as_deref(),
             );
             [us, orphan, eu, who]
                 .into_iter()

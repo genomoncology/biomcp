@@ -80,7 +80,7 @@ fn medicines_captures_ship_title_case_headers_and_parse() {
 
 #[test]
 fn pre_1304_cache_with_alternative_listing_column_still_parses() {
-    // Caches the pre-1304 binary downloaded carry the old nine-column
+    // Caches an older binary downloaded carry the old nine-column
     // finished-pharma header including "Basis of Alternative Listing"
     // (title case, trailing empty date column); they must keep parsing and
     // populate the alternative listing basis (review fold).
@@ -100,7 +100,7 @@ fn pre_1304_cache_with_alternative_listing_column_still_parses() {
 
 #[test]
 fn pre_1304_cache_with_applicant_organization_column_still_parses() {
-    // The pre-1304 binary only ever accepted "Applicant Organization" on
+    // The older binary only ever accepted "Applicant Organization" on
     // the API export, so every old cache carries that spelling; it must
     // keep validating and supply the applicant field (review fold).
     let payload = "\"WHO Product ID\",INN,Grade,\"Therapeutic area\",\"Applicant organization\",\"Date of prequalification\",\"Confirmation of Prequalification Document Date\"\nWHOAPI-010,\"Abacavir (sulfate)\",Standard,HIV/AIDS,\"Matrix Pharmacorp Private Limited\",\"27  May,  2014\",\"19  Sep,  2025\"\n";

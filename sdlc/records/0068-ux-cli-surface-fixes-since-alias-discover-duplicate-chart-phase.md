@@ -8,4 +8,4 @@ Imported from March ticket 068. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/068-ux-cli-surface-fixes-since-alias-discover-duplicate-chart-phase
+Artifacts: ~/workspace/planning/biomcp/artifacts/068-ux-cli-surface-fixes-since-alias-discover-duplicate-chart-phase

@@ -9,20 +9,21 @@ use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::ema::{EmaClient, EmaSyncMode};
-use crate::sources::mychem::MyChemHit;
+use crate::sources::mychem::{MyChemHit, MyChemQueryResponse};
 use crate::sources::openfda::OpenFdaClient;
 use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
 
 use super::label::{
-    extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
-    extract_label_warnings_text,
+    ELEMENTS_SEARCH_OVERSIZE_NOTE, LABEL_UNAVAILABLE_MESSAGE, LabelLookup, NO_LABEL_TEXT_NOTE,
+    NO_SPL_RECORD_NOTE, extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
+    extract_label_warnings_text, lookup_label_response,
 };
 use super::metadata::{
-    apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
-    populate_top_adverse_event_preview,
+    apply_openfda_metadata, apply_top_adverse_event_preview, fetch_shortage_entries,
+    fetch_top_adverse_event_preview, map_drugsfda_approvals, orphan_aliases,
 };
-use super::targets::{enrich_indications, enrich_targets};
+use super::targets::{TargetSources, enrich_indications, enrich_targets, fetch_target_sources};
 use super::{
     DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CELL_LINES, DRUG_SECTION_CIVIC,
     DRUG_SECTION_INDICATIONS, DRUG_SECTION_INTERACTIONS, DRUG_SECTION_LABEL, DRUG_SECTION_NAMES,
@@ -164,13 +165,13 @@ fn is_section_only_requested(sections: &[String]) -> bool {
         .any(|section| section.trim().eq_ignore_ascii_case(DRUG_SECTION_ALL))
         && sections.iter().any(|section| !section.trim().is_empty())
 }
-async fn fetch_civic_therapy_context(name: &str) -> (Option<CivicContext>, SectionOutcome) {
+async fn fetch_civic_therapy_context(name: &str) -> CivicFetch {
     let name = name.trim();
     if name.is_empty() {
-        return (
-            Some(CivicContext::default()),
-            SectionOutcome::empty("CIViC"),
-        );
+        return CivicFetch {
+            context: Some(CivicContext::default()),
+            outcome: SectionOutcome::empty("CIViC"),
+        };
     }
 
     let civic_fut = async {
@@ -185,12 +186,15 @@ async fn fetch_civic_therapy_context(name: &str) -> (Option<CivicContext>, Secti
             } else {
                 SectionOutcome::data("CIViC")
             };
-            (Some(context), outcome)
+            CivicFetch {
+                context: Some(context),
+                outcome,
+            }
         }
-        Ok(Err(_)) | Err(_) => (
-            None,
-            SectionOutcome::unavailable("CIViC drug evidence is temporarily unavailable."),
-        ),
+        Ok(Err(_)) | Err(_) => CivicFetch {
+            context: None,
+            outcome: SectionOutcome::unavailable("CIViC drug evidence is temporarily unavailable."),
+        },
     }
 }
 fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, BioMcpError>) {
@@ -265,36 +269,125 @@ pub(crate) use trial_alias::{
 };
 use trial_alias::{optional_lookup, trial_alias_candidates_from_hits};
 
+/// The CIViC therapy fetch's answer: the context the target merge consumes
+/// and the outcome the civic section completes with. A fetch that never ran
+/// carries no context and the unavailable outcome, the pair the sequential
+/// card produced for a skipped fetch.
+struct CivicFetch {
+    context: Option<CivicContext>,
+    outcome: SectionOutcome,
+}
+
+/// The label fetch's answer once the drug is named: the chosen response,
+/// or the failure flags the label section's outcome needs. A request that
+/// fetches no label carries none of them.
+struct LabelFetchOutcome {
+    response: Option<serde_json::Value>,
+    attempt_failed: bool,
+    elements_oversize: bool,
+}
+
+/// The card's label lookup once the drug is named: the chosen response, or
+/// the failure flags the label section's outcome needs. A failed label
+/// fetch degrades the label section to an unavailable outcome instead of
+/// failing the card; sparse-metadata misses resolve through the guarded
+/// identity-field fallback in `lookup_label_response`. The label must
+/// match the brand or plain ingredient the user asked for, so the
+/// request's own name travels with the card's canonical name and the
+/// record's own spelling of the requested brand.
+async fn fetch_label_lookup(
+    requested_name: &str,
+    drug: &Drug,
+    record_brand_spellings: &[String],
+) -> LabelFetchOutcome {
+    let client = match OpenFdaClient::new() {
+        Ok(client) => client,
+        Err(_) => {
+            return LabelFetchOutcome {
+                response: None,
+                attempt_failed: true,
+                elements_oversize: false,
+            };
+        }
+    };
+    match lookup_label_response(&client, requested_name, &drug.name, record_brand_spellings).await {
+        Ok(LabelLookup::Response(response)) => LabelFetchOutcome {
+            response: Some(response),
+            attempt_failed: false,
+            elements_oversize: false,
+        },
+        Ok(LabelLookup::NoSplRecord) => LabelFetchOutcome::without_response(),
+        Ok(LabelLookup::ElementsSearchTooLarge) => LabelFetchOutcome {
+            response: None,
+            attempt_failed: false,
+            elements_oversize: true,
+        },
+        Err(_) => LabelFetchOutcome {
+            response: None,
+            attempt_failed: true,
+            elements_oversize: false,
+        },
+    }
+}
+
+/// Resolve a drug name to its base card through the resolver module's
+/// custody flow; the card's four parallel source fetches (the openFDA
+/// label, the CIViC context, the target sources and the adverse-event
+/// preview) start from the named card. The 0.9 label-identity voting and
+/// the ambiguous-shared-name refusal are ticket 2097's port into the
+/// resolver, not this merge.
+async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpError> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err(BioMcpError::InvalidArgument(
+            "Drug name is required. Example: biomcp get drug pembrolizumab".into(),
+        ));
+    }
+    if name.len() > 256 {
+        return Err(BioMcpError::InvalidArgument(
+            "Drug name is too long.".into(),
+        ));
+    }
+    resolve_drug_base(name, false, false).await
+}
+
 async fn populate_common_sections(
     requested_name: &str,
     drug: &mut Drug,
-    label_response: Option<&serde_json::Value>,
-    label_attempt_failed: bool,
+    label: &LabelFetchOutcome,
     section_flags: &DrugSections,
     raw_label: bool,
+    civic: CivicFetch,
+    target_sources: Option<TargetSources>,
 ) -> Result<(), BioMcpError> {
-    let (civic_context, civic_outcome) =
-        if section_flags.include_targets || section_flags.include_civic {
-            fetch_civic_therapy_context(&drug.name).await
-        } else {
-            (
-                None,
-                SectionOutcome::unavailable("CIViC drug evidence is temporarily unavailable."),
-            )
-        };
-
+    let label_response = label.response.as_ref();
     drug.label = if section_flags.include_label {
         label_response.and_then(|response| extract_inline_label(response, raw_label))
     } else {
         None
     };
 
+    if section_flags.include_label {
+        let outcome = if label.attempt_failed {
+            SectionOutcome::unavailable(LABEL_UNAVAILABLE_MESSAGE)
+        } else if drug.label.is_some() {
+            SectionOutcome::data("OpenFDA label")
+        } else if label_response.is_some() {
+            SectionOutcome::empty_with_reason("OpenFDA label", NO_LABEL_TEXT_NOTE)
+        } else if label.elements_oversize {
+            SectionOutcome::unavailable(ELEMENTS_SEARCH_OVERSIZE_NOTE)
+        } else {
+            SectionOutcome::empty_with_reason("OpenFDA label", NO_SPL_RECORD_NOTE)
+        };
+        drug.section_outcomes.complete("label", outcome);
+    }
+
     if section_flags.include_interactions {
         super::interactions::populate_card_interactions(
             requested_name,
             drug,
             label_response,
-            label_attempt_failed,
+            label.attempt_failed,
             section_flags.allow_partial_interactions,
         )
         .await?;
@@ -306,11 +399,16 @@ async fn populate_common_sections(
         drug.interaction_coverage_status = None;
     }
 
-    if section_flags.include_targets {
-        let outcome = enrich_targets(drug, civic_context.as_ref()).await;
-        drug.section_outcomes.complete("targets", outcome);
-    } else {
-        drug.variant_targets.clear();
+    // The target sources were fetched under the same section flag when the
+    // card was named, so a present fetch is the section running and an
+    // absent one is the section skipped; the merge still applies the CIViC
+    // context after both answers are in.
+    match target_sources {
+        Some(sources) => {
+            let outcome = enrich_targets(drug, civic.context.as_ref(), sources).await;
+            drug.section_outcomes.complete("targets", outcome);
+        }
+        None => drug.variant_targets.clear(),
     }
 
     if section_flags.include_indications {
@@ -319,8 +417,9 @@ async fn populate_common_sections(
     }
 
     if section_flags.include_civic {
-        drug.civic = Some(civic_context.unwrap_or_default());
-        drug.section_outcomes.complete("civic", civic_outcome);
+        let CivicFetch { context, outcome } = civic;
+        drug.civic = Some(context.unwrap_or_default());
+        drug.section_outcomes.complete("civic", outcome);
     } else {
         drug.civic = None;
     }
@@ -446,11 +545,39 @@ async fn populate_who_sections(
 ) -> Result<(), BioMcpError> {
     if !section_flags.include_regulatory {
         drug.who_prequalification = None;
+        drug.who_note = None;
         return Ok(());
     }
 
-    let client = WhoPqClient::ready(WhoPqSyncMode::Auto).await?;
+    let ready = WhoPqClient::ready(WhoPqSyncMode::Auto).await;
+    apply_who_sections_result(drug, requested_name, ready)
+}
+
+/// Apply the WHO bundle readiness to the card's WHO section. A readable
+/// bundle fills the section; a bundle that cannot be read degrades the
+/// section with a path-free note instead of failing the whole card, the
+/// way the all-region search degrades:
+/// a JSON or MCP caller still gets the rest of the card, the note names
+/// the WHO gap, and the local data path stays terminal-only.
+fn apply_who_sections_result(
+    drug: &mut Drug,
+    requested_name: &str,
+    ready: Result<WhoPqClient, BioMcpError>,
+) -> Result<(), BioMcpError> {
+    let client = match ready {
+        Ok(client) => client,
+        Err(err) => {
+            warn!(
+                name = %drug.name,
+                "WHO Prequalification data unavailable for drug card: {err}"
+            );
+            drug.who_prequalification = None;
+            drug.who_note = Some(crate::entities::drug::who_pq_degradation_note(&err, "card"));
+            return Ok(());
+        }
+    };
     let identity = build_who_identity(requested_name, drug);
+    drug.who_note = None;
     drug.who_prequalification = Some(client.regulatory(&identity, WhoProductTypeFilter::Both)?);
     Ok(())
 }
@@ -529,24 +656,71 @@ async fn get_with_region_owned(
         || section_flags.include_interactions
         || (region.includes_us() && section_flags.include_safety);
 
-    let mut resolved =
-        resolve_drug_base(&name, fetch_label_response, section_flags.include_label).await?;
+    let mut resolved = resolve_drug_identity(&name).await?;
+
+    // Once the drug is named, the card's four independent source fetches —
+    // the openFDA label, the CIViC context, the target sources and the
+    // adverse-event preview — start together, so the card waits for the
+    // slowest of them instead of their sum. None of the four needs
+    // another's answer: CIViC and the preview take the card's name, the
+    // target lookup takes its ChEMBL id, and the label's metadata
+    // application changes neither. Each fetch keeps its own guard, and a
+    // fetch whose guard is off is never started.
+    let label_fut = async {
+        if !fetch_label_response {
+            return LabelFetchOutcome::without_response();
+        }
+        fetch_label_lookup(&name, &resolved.drug, &resolved.record_brand_spellings).await
+    };
+    let civic_fut = async {
+        if !(section_flags.include_targets || section_flags.include_civic) {
+            return CivicFetch {
+                context: None,
+                outcome: SectionOutcome::unavailable(
+                    "CIViC drug evidence is temporarily unavailable.",
+                ),
+            };
+        }
+        fetch_civic_therapy_context(&resolved.drug.name).await
+    };
+    let targets_fut = async {
+        if !section_flags.include_targets {
+            return None;
+        }
+        Some(fetch_target_sources(resolved.drug.chembl_id.as_deref()).await)
+    };
+    let adverse_event_fut = async {
+        if !(region.includes_us() && (!section_only || section_flags.include_safety)) {
+            return None;
+        }
+        Some(fetch_top_adverse_event_preview(&resolved.drug.name).await)
+    };
+    let (label_lookup, civic, target_sources, adverse_event_fetch) =
+        tokio::join!(label_fut, civic_fut, targets_fut, adverse_event_fut);
+
+    if let Some(label_response) = label_lookup.response.as_ref() {
+        apply_openfda_metadata(&mut resolved.drug, label_response);
+        resolved.drug.label_set_id = extract_label_set_id(label_response);
+    }
+
     populate_common_sections(
         &name,
         &mut resolved.drug,
-        resolved.label_response.as_ref(),
-        resolved.label_attempt_failed,
+        &label_lookup,
         &section_flags,
         raw_label,
+        civic,
+        target_sources,
     )
     .await?;
 
-    let faers_failed = if region.includes_us() && (!section_only || section_flags.include_safety) {
-        Some(populate_top_adverse_event_preview(&mut resolved.drug).await)
-    } else {
-        resolved.drug.top_adverse_events.clear();
-        resolved.drug.faers_query = None;
-        None
+    let faers_failed = match adverse_event_fetch {
+        Some(result) => Some(apply_top_adverse_event_preview(&mut resolved.drug, result)),
+        None => {
+            resolved.drug.top_adverse_events.clear();
+            resolved.drug.faers_query = None;
+            None
+        }
     };
 
     if region.includes_us() {
@@ -554,7 +728,7 @@ async fn get_with_region_owned(
             &name,
             &mut resolved.drug,
             &resolved.selected_hits,
-            resolved.label_response.as_ref(),
+            label_lookup.response.as_ref(),
             &section_flags,
         )
         .await?;
@@ -579,6 +753,7 @@ async fn get_with_region_owned(
         populate_who_sections(&mut resolved.drug, &name, &section_flags).await?;
     } else {
         resolved.drug.who_prequalification = None;
+        resolved.drug.who_note = None;
     }
 
     if section_flags.include_safety && (region.includes_us() || region.includes_eu()) {
@@ -594,7 +769,7 @@ async fn get_with_region_owned(
                     contributors.push("OpenFDA FAERS");
                 }
             }
-            if resolved.label_attempt_failed {
+            if label_lookup.attempt_failed {
                 failed = true;
             } else {
                 successful_sources.push("OpenFDA label");

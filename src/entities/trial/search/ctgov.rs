@@ -5,9 +5,13 @@ use std::collections::{HashMap, HashSet};
 use futures::future::join_all;
 use tracing::warn;
 
+use crate::entities::disease::{
+    AbbreviationAmbiguity, clinical_reading_phrase, resolve_abbreviated_disease_ambiguity,
+};
 use crate::entities::drug::{TrialAlias, TrialAliasSource, resolve_trial_aliases_with_sources};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
+use crate::sources::mydisease::MyDiseaseClient;
 
 use super::super::ClinicalTrialSearchUnknownReason;
 use super::super::{
@@ -82,6 +86,61 @@ fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
     ))
 }
 
+/// The default source has no disease grounding, so an
+/// ambiguous abbreviation still runs the registry's own keyword search.
+/// The page must say so plainly, naming the holders `get disease` would
+/// offer and the clinical reading the source cannot see, instead of
+/// leaving the user to guess why the results mix conditions.
+async fn ctgov_abbreviation_note(filters: &TrialSearchFilters) -> Option<String> {
+    let condition = raw_condition_query(filters)?;
+    let client = match MyDiseaseClient::new() {
+        Ok(client) => client,
+        Err(err) => {
+            warn!(
+                condition,
+                error = %err,
+                "abbreviation ambiguity check unavailable; the keyword search runs without a note"
+            );
+            return None;
+        }
+    };
+    match resolve_abbreviated_disease_ambiguity(&client, condition).await {
+        Ok(Some(ambiguity)) => Some(ctgov_ambiguity_note_text(&ambiguity)),
+        Ok(None) => None,
+        Err(err) => {
+            warn!(
+                condition,
+                error = %err,
+                "abbreviation ambiguity check failed; the keyword search runs without a note"
+            );
+            None
+        }
+    }
+}
+
+fn ctgov_ambiguity_note_text(ambiguity: &AbbreviationAmbiguity) -> String {
+    let holders = ambiguity.holders.join(", ");
+    let reading = clinical_reading_phrase(&ambiguity.requested)
+        .map(|phrase| format!(" {phrase}."))
+        .unwrap_or_default();
+    format!(
+        "ClinicalTrials.gov search ran a plain keyword search for '{}', \
+an ambiguous abbreviation: {}. Holders: {}.{reading} \
+Results may mix several conditions' trials; retry with the full disease name.",
+        ambiguity.requested, ambiguity.reason, holders
+    )
+}
+
+/// Join a page-level note produced inside the search paths with the
+/// abbreviation note, keeping both visible when both apply.
+fn merge_page_note(existing: Option<String>, note: String) -> String {
+    match existing {
+        Some(existing) => format!("{existing}\n{note}"),
+        None => note,
+    }
+}
+
+#[derive(Debug)]
 struct CtGovRawPage {
     provider_total: biodata::ClinicalTrialProviderTotal,
     studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
@@ -818,9 +877,13 @@ pub(super) async fn search_page_with_ctgov_client(
     let normalized = validate_trial_search(filters)?;
     let context = prepare_ctgov_search_context(&normalized)?;
     let condition_query = raw_condition_query(filters);
+    // The ambiguity check costs one MyDisease query, and only for an
+    // abbreviation-shaped condition; ordinary conditions never ground
+    // here.
+    let abbreviation_note = ctgov_abbreviation_note(filters).await;
     let aliases = resolve_ctgov_intervention_aliases(filters).await?;
 
-    if aliases.len() > 1 {
+    let mut page = if aliases.len() > 1 {
         if next_page
             .as_deref()
             .map(str::trim)
@@ -828,7 +891,7 @@ pub(super) async fn search_page_with_ctgov_client(
         {
             return Err(fanout_next_page_error());
         }
-        return search_page_with_ctgov_union(
+        search_page_with_ctgov_union(
             client,
             filters,
             &context,
@@ -837,23 +900,27 @@ pub(super) async fn search_page_with_ctgov_client(
             limit,
             offset,
         )
-        .await;
+        .await?
+    } else {
+        let single_worker = ctgov_workers(condition_query, &aliases)
+            .into_iter()
+            .next()
+            .expect("single CTGov worker should exist");
+        search_page_with_single_ctgov_intervention(
+            client,
+            filters,
+            &context,
+            &single_worker,
+            limit,
+            offset,
+            next_page,
+        )
+        .await?
+    };
+    if let Some(note) = abbreviation_note {
+        page.partial_note = Some(merge_page_note(page.partial_note.take(), note));
     }
-
-    let single_worker = ctgov_workers(condition_query, &aliases)
-        .into_iter()
-        .next()
-        .expect("single CTGov worker should exist");
-    search_page_with_single_ctgov_intervention(
-        client,
-        filters,
-        &context,
-        &single_worker,
-        limit,
-        offset,
-        next_page,
-    )
-    .await
+    Ok(page)
 }
 
 async fn count_all_with_ctgov_union(
@@ -1063,3 +1130,5 @@ pub(super) async fn count_all_with_ctgov_client(
         super::exact_total(verified_total).map(Into::into)
     }
 }
+#[cfg(test)]
+mod abbreviation_note_tests;

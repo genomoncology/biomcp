@@ -136,9 +136,23 @@ fn resolve_cache_config_from_parts_with_max_age(
 }
 
 fn default_cache_root() -> PathBuf {
-    dirs::cache_dir()
-        .unwrap_or_else(std::env::temp_dir)
-        .join("biomcp")
+    // A test build never reads the machine's own cache: a
+    // developer host can hold hundreds of megabytes of cached source
+    // bodies, and the suite's time limits assume the small default graph.
+    // The per-process folder under the OS temp dir gives every test the
+    // isolation the hand-written env guards used to provide piecemeal,
+    // without deleting those guards' cache-mode control.
+    #[cfg(test)]
+    {
+        std::env::temp_dir().join(format!("biomcp-test-cache-{}", std::process::id()))
+    }
+    // Release builds keep the platform cache directory.
+    #[cfg(not(test))]
+    {
+        dirs::cache_dir()
+            .unwrap_or_else(std::env::temp_dir)
+            .join("biomcp")
+    }
 }
 
 fn config_file_path() -> Option<PathBuf> {
@@ -394,14 +408,39 @@ fn config_source_label(config_path: Option<&std::path::Path>) -> String {
 mod tests {
     use super::{
         CacheConfig, CacheConfigOrigins, ConfigOrigin, DEFAULT_MAX_AGE_SECS, DEFAULT_MAX_SIZE,
-        DEFAULT_MIN_DISK_FREE, DiskFreeThreshold, read_cache_toml, resolve_cache_config_from_parts,
-        resolve_cache_config_from_parts_with_max_age, resolve_cache_config_with_source,
+        DEFAULT_MIN_DISK_FREE, DiskFreeThreshold, default_cache_root, read_cache_toml,
+        resolve_cache_config_from_parts, resolve_cache_config_from_parts_with_max_age,
+        resolve_cache_config_with_source,
     };
     use crate::error::BioMcpError;
     use crate::test_support::TempDirGuard;
     use std::path::PathBuf;
     use std::str::FromStr;
     use std::time::Duration;
+
+    /// A test build's default cache root is a per-process
+    /// folder under the OS temp dir, never the machine's own platform
+    /// cache directory, so a test without a hand-written cache guard cannot
+    /// read a developer host's hundreds of megabytes of cached bodies.
+    #[test]
+    fn a_test_builds_default_cache_root_never_reads_the_machine_cache() {
+        let root = default_cache_root();
+        assert_ne!(
+            root,
+            dirs::cache_dir()
+                .unwrap_or_else(std::env::temp_dir)
+                .join("biomcp"),
+            "the test default never points at the platform cache: {root:?}"
+        );
+        assert!(
+            root.starts_with(std::env::temp_dir()),
+            "the test default lives under the OS temp dir: {root:?}"
+        );
+        assert!(
+            root.to_string_lossy().contains("biomcp-test-cache-"),
+            "the test default is a per-process biomcp folder: {root:?}"
+        );
+    }
 
     fn default_config_with_root(root: impl Into<PathBuf>) -> CacheConfig {
         CacheConfig {

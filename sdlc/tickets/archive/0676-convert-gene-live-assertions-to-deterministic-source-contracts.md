@@ -8,7 +8,7 @@ Carried over from March ticket 676 when BioMCP moved to the sdlc
 factory. The body below is March's, unchanged; it was already written to
 stand alone. Work products from any earlier attempt:
 
-    /home/ian/workspace/planning/biomcp/artifacts/676-convert-gene-live-assertions-to-deterministic-source-contracts
+    ~/workspace/planning/biomcp/artifacts/676-convert-gene-live-assertions-to-deterministic-source-contracts
 ## Why
 Ticket 645 classifies `spec/entity/gene.md` as convert: identity resolution, optional-section orchestration, and source-outcome rendering are BioMCP contracts that currently lack complete real capture evidence.
 

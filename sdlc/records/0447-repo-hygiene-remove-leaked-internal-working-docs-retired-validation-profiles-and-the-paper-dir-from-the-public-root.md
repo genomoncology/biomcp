@@ -8,4 +8,4 @@ Imported from March ticket 447. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/447-repo-hygiene-remove-leaked-internal-working-docs-retired-validation-profiles-and-the-paper-dir-from-the-public-root
+Artifacts: ~/workspace/planning/biomcp/artifacts/447-repo-hygiene-remove-leaked-internal-working-docs-retired-validation-profiles-and-the-paper-dir-from-the-public-root

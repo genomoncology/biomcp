@@ -434,7 +434,7 @@ fn entity_bearing_jats_is_not_rendered_through_fallback() {
     assert!(classify_jats_document(xml).is_err());
 }
 
-// --- Ticket 1145: citation-evidence extractor ---
+// --- Citation-evidence extractor ---
 mod citation_evidence;
 
 #[test]
@@ -486,6 +486,51 @@ fn extract_text_from_jats_separates_words_only_at_unmarked_boundaries() {
             // A bare ext-link URL separates from the preceding word.
             r#"<p xmlns:xlink="http://www.w3.org/1999/xlink">Data at<ext-link xlink:href="https://example.org/data"/></p>"#,
             "Data at https://example.org/data",
+        ),
+    ];
+
+    for (fragment, expected) in cases {
+        let xml = format!("<article><body>{fragment}</body></article>");
+        let out = extract_text_from_xml(&xml);
+        assert!(out.contains(expected), "missing {expected:?} in {out:?}");
+    }
+}
+
+#[test]
+fn extract_text_from_jats_keeps_words_wrapped_in_word_joining_elements_whole() {
+    // Small caps, styled content, monospace, and footnote markers wrap
+    // fragments of one word (`T<sc>able</sc>`, `PD<sc>L1</sc>`); the
+    // boundary space that separates surname/given-names runs must not split
+    // these words.
+    let cases: [(&str, &str); 6] = [
+        (
+            r#"<p>Values from T<sc>able</sc> 1.</p>"#,
+            "Values from Table 1.",
+        ),
+        (
+            r#"<p>Staining for PD<sc>L1</sc> and CD<styled-content>27</styled-content>.</p>"#,
+            "Staining for PDL1 and CD27.",
+        ),
+        (
+            r#"<p>The KR<monospace>AS</monospace> codon 12 assay.</p>"#,
+            "The KRAS codon 12 assay.",
+        ),
+        (
+            // The joining element may also close over the trailing
+            // fragment: both boundaries attach.
+            r#"<p>See the T<sc>abl</sc>e<fn>*</fn>note.</p>"#,
+            "See the Table*note.",
+        ),
+        (
+            // A word-joining element that starts its own word still keeps
+            // its leading space when the source has one.
+            r#"<p>Staining scored <sc>high</sc> positivity.</p>"#,
+            "Staining scored high positivity.",
+        ),
+        (
+            // Distinct words at unmarked boundaries keep their space.
+            r#"<p>Assay named <sc>Oncomine</sc> panel.</p>"#,
+            "Assay named Oncomine panel.",
         ),
     ];
 

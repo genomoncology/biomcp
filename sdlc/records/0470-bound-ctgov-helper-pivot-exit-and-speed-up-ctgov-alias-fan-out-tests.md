@@ -8,4 +8,4 @@ Imported from March ticket 470. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/470-bound-ctgov-helper-pivot-exit-and-speed-up-ctgov-alias-fan-out-tests
+Artifacts: ~/workspace/planning/biomcp/artifacts/470-bound-ctgov-helper-pivot-exit-and-speed-up-ctgov-alias-fan-out-tests

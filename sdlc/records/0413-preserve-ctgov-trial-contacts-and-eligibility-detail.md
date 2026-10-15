@@ -8,4 +8,4 @@ Imported from March ticket 413. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/413-preserve-ctgov-trial-contacts-and-eligibility-detail
+Artifacts: ~/workspace/planning/biomcp/artifacts/413-preserve-ctgov-trial-contacts-and-eligibility-detail

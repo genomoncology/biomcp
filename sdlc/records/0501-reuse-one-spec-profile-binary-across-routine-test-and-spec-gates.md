@@ -8,4 +8,4 @@ Imported from March ticket 501. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/501-reuse-one-spec-profile-binary-across-routine-test-and-spec-gates
+Artifacts: ~/workspace/planning/biomcp/artifacts/501-reuse-one-spec-profile-binary-across-routine-test-and-spec-gates

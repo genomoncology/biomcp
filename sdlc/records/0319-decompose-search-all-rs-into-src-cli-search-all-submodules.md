@@ -8,4 +8,4 @@ Imported from March ticket 319. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/319-decompose-search-all-rs-into-src-cli-search-all-submodules
+Artifacts: ~/workspace/planning/biomcp/artifacts/319-decompose-search-all-rs-into-src-cli-search-all-submodules
