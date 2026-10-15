@@ -5,6 +5,7 @@
 ### New features
 
 - `--disable-sources` and `BIOMCP_DISABLE_SOURCES` turn any source, or any recorded group, off in one setting: the list takes comma- or pipe-separated ids and group names, an unknown name fails with the valid names, `commercial-restricted` covers every source whose recorded terms restrict commercial use, a disabled source is never called and its carried fields drop from output, `biomcp health` and the MCP server description name what is off, and `BIOMCP_DISABLE_KEGG` keeps working as an alias. (2061)
+- GWAS Catalog queries, openFDA label searches, and openFDA adverse-event counts are now held for a day: a repeat within twenty-four hours is answered from BioMCP's cache without a network request, an older stored answer goes back to the provider, `--no-cache`, `BIOMCP_CACHE_MODE=off`, and an openFDA key still bypass the cache, and a stored GWAS body that no longer decodes is replaced by one fresh fetch. (2091)
 
 ### Fixes
 
@@ -13,9 +14,9 @@
 - Every documented install path works as the docs say: a pinned installer run reads the true version from the staged binary and records it in the receipt instead of the build-time field, the PyPI package keeps its `biomcp-cli` name and installs only the `biomcp` command — uvx users run `uvx --from biomcp-cli biomcp serve` — the install docs state the Python 3.10 floor, that Homebrew covers macOS only, and how to pull or pin the Docker image, the Homebrew formula the release renders carries a `test do` block, and the release publishes the changelog section as the GitHub release notes. (2064)
 - `get drug` now refuses a product name several drug products share: `get drug "Pain Relief"` exits 2 as an ambiguous drug name, lists the single ingredients the label records carry (lidocaine, menthol, acetaminophen, hexylresorcinol on the recorded reply), and names the ingredient form to try, where it used to exit as not found and list symptom names; "Sleep Aid" and "Cold and Flu" refuse the same way. (2085)
 - `search all` and `search gwas` with both a gene and a trait wait for one GWAS Catalog query instead of two: the gene query and the trait query are sent at the same time, so `search all --gene BRAF --disease melanoma` finishes its GWAS section inside the 12-second section limit with the same rows. (2089)
-- `get drug` now refuses a product name several drug products share: `get drug "Pain Relief"` exits 2 as an ambiguous drug name, lists the single ingredients the label records carry (lidocaine, menthol, acetaminophen, hexylresorhinol on the recorded reply), and names the ingredient form to try, where it used to exit as not found and list symptom names; "Sleep Aid" and "Cold and Flu" refuse the same way. (2085)
 - `get drug` now fetches the openFDA label, the CIViC context, the Open Targets data and the openFDA adverse-event preview at the same time once MyChem has named the drug, so the card waits for its slowest source instead of the sum of all four and returns byte-identical output. (2090)
 - `get trial NCT99999999` reports the trial as not found with its search suggestion instead of telling the caller to retry the remote source, `get article 999999999999` treats every all-digit identifier as a PMID and reports no article with that PMID instead of rejecting the identifier format, and `get variant "BRAF Z999Q"` exits 2 naming the residue letter Z that is not an amino acid instead of suggesting a search. (2087)
+- Every follow-up command a variant card prints uses the headline coordinate: a card whose population section resolved a GRCh37 rsID to a GRCh38 coordinate through dbSNP no longer points its CIViC pointer or its trials and articles commands at the resolved coordinate, so following the printed civic command returns the evidence the card counted, and each direct ClinVar row now prints `N submission(s)` from its submission count instead of an empty submitter count. (2067)
 
 ### Internal
 
@@ -27,6 +28,7 @@
 - Ticket branches no longer collide on the changelog: `CHANGELOG.md` merges with the union driver so two branches that each append a bullet land without a conflict, the dev-cycle changelog test checks the section's shape instead of a hand-kept ticket list, and every bullet's cited ticket must be filed for the milestone. (2083)
 - The HTTP cache's start-up clean now runs at most once a day per cache root, recorded in a marker under the HTTP cache, and `BIOMCP_CACHE_MODE=off` skips it entirely, so a command no longer scans a large cache index on every start-up. (2092)
 - CI builds once and runs the lanes in parallel: a `build` job runs `make prepare-test` and uploads the dev build's nextest archive and binaries as one artifact, the lint, Rust-test, Python and spec lanes download it and each run one Makefile target through a shared composite action, `make test` splits into `test-rust` and `test-python`, and the all-features, Windows, stress and release-panic jobs run only on pushes to `main`, where every release tag still needs their green run. (2075)
+- Dev and test builds pin line-tables-only debug info for the crate and none for dependencies, and a `debugging` profile gives full debug info when a debugger needs it; measured on the gate host, builds are byte-identical to before on cargo 1.93.1, which already defaults to this layout. (2101)
 
 ## 0.9.2 — 2026-10-11
 

@@ -45,12 +45,12 @@ Note: AlphaGenome reports this field as a gene-level identifier from its model o
 {% endif -%}
 {% if clinvar.record_status %}- VCV record status: {{ clinvar.record_status }}
 {% endif -%}
-{% if clinvar.number_submitters is not none %}- VCV submitters: {{ clinvar.number_submitters }}
+{% if clinvar.number_submitters is defined %}- VCV submitters: {{ clinvar.number_submitters }}
 {% endif -%}
 {% if clinvar.aggregates -%}
 ### Condition-specific aggregates
 {% for row in clinvar.aggregates -%}
-- {{ row.accession }}{% if row.version is not none %}.{{ row.version }}{% endif %} [{{ row.classification_domain }}]: {{ row.classification or "Not reported" }}{% if row.review_status %}; {{ row.review_status }}{% endif %}{% if row.evaluation_date %}; evaluated {{ row.evaluation_date }}{% endif %}{% if row.number_submitters is not none %}; {{ row.number_submitters }} submitter(s){% elif row.submission_count is not none %}; {{ row.submission_count }} submission(s){% endif %}{% if row.record_status %}; RCV status {{ row.record_status }}{% endif %}. Source: {{ row.source }}.{% if row.conditions %} Conditions: {{ row.conditions | join(", ") }}.{% endif %}
+- {{ row.accession }}{% if row.version is not none %}.{{ row.version }}{% endif %} [{{ row.classification_domain }}]: {{ row.classification or "Not reported" }}{% if row.review_status %}; {{ row.review_status }}{% endif %}{% if row.evaluation_date %}; evaluated {{ row.evaluation_date }}{% endif %}{% if row.number_submitters is defined %}; {{ row.number_submitters }} submitter(s){% elif row.submission_count is defined %}; {{ row.submission_count }} submission(s){% endif %}{% if row.record_status %}; RCV status {{ row.record_status }}{% endif %}. Source: {{ row.source }}.{% if row.conditions %} Conditions: {{ row.conditions | join(", ") }}.{% endif %}
 {% endfor -%}
 {% endif -%}
 {% if clinvar.submissions -%}

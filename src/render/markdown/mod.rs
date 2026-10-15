@@ -309,20 +309,10 @@ use crate::entities::variant::{
 use crate::error::BioMcpError;
 use crate::sources::nih_reporter::{NihReporterFundingSection, NihReporterGrant};
 
-fn preferred_variant_follow_up_id(variant: &Variant) -> &str {
-    variant
-        .population
-        .as_ref()
-        .and_then(|population| population.resolved_coordinate.as_ref())
-        .map(|coordinate| coordinate.id.trim())
-        .filter(|id| !id.is_empty())
-        .unwrap_or_else(|| variant.id.trim())
-}
-
 pub(crate) fn related_variant_with_recovery(variant: &Variant) -> Vec<String> {
     with_section_recovery(
         "variant",
-        preferred_variant_follow_up_id(variant),
+        variant.id.trim(),
         &variant.section_outcomes,
         related_variant(variant),
     )

@@ -352,7 +352,7 @@ pub(super) fn sections_gene(gene: &Gene, requested: &[String]) -> Vec<String> {
 }
 
 pub(super) fn sections_variant(variant: &Variant, requested: &[String]) -> Vec<String> {
-    let id = quote_arg(preferred_variant_follow_up_id(variant));
+    let id = quote_arg(variant.id.trim());
     if id.is_empty() {
         return Vec::new();
     }

@@ -1,8 +1,10 @@
 # 2091 — Cache GWAS and openFDA answers for a day
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 68b2d71, accept
 
 ## Outcome
 

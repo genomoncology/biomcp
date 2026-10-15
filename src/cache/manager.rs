@@ -58,6 +58,17 @@ fn stamp_stale_serve_marker(response: &mut HttpResponse, policy: &CachePolicy) {
         .insert(STALE_SERVE_AGE_HEADER.to_string(), age_seconds.to_string());
 }
 
+/// A day-cache lookup whose stored answer is at least a day old: the
+/// entry serves nothing, so the library refetches and re-stores a fresh
+/// answer. `BIOMCP_CACHE_MODE=infinite` keeps its meaning — serve
+/// expired entries without revalidation — so the day window yields to
+/// it.
+fn day_cache_entry_expired(policy: &CachePolicy) -> bool {
+    crate::sources::day_cache_request_active()
+        && !crate::sources::cache_is_infinite()
+        && policy.age(SystemTime::now()) >= crate::sources::DAY_CACHE_TTL
+}
+
 /// Strip the stale-serve marker. Called on every `put` path — both the
 /// revalidated cached response and a fresh 200 — so the stored entry and
 /// the served response never carry a marker a later serve would misread.
@@ -250,7 +261,18 @@ impl CacheManager for SizeAwareCacheManager {
             super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
             let stored = self.inner.get(cache_key).await;
             if let Ok(Some((mut response, policy))) = stored {
-                stamp_stale_serve_marker(&mut response, &policy);
+                if day_cache_entry_expired(&policy) {
+                    return Ok(None);
+                }
+                // A day-cache serve is fresh by BioMCP's own day window,
+                // not the provider's headers — a no-store provider answer
+                // is exactly what the kind stores — so it must not carry
+                // the stale-serve note that would append to printed
+                // bodies. Every other request keeps the provider-window
+                // marker.
+                if !crate::sources::day_cache_request_active() {
+                    stamp_stale_serve_marker(&mut response, &policy);
+                }
                 return Ok(Some((response, policy)));
             }
             stored

@@ -376,6 +376,33 @@ impl OpenFdaClient {
                 crate::error::SourceProvider::OPENFDA,
             ))
             .await?;
+        self.decode_response_optional::<T>(resp).await
+    }
+
+    /// The openFDA day-cache request kinds: label search and
+    /// adverse-event counts. The first 200 answer is stored whatever the
+    /// provider's headers say, and a repeat inside
+    /// [`crate::sources::DAY_CACHE_TTL`] is served without a network
+    /// call; an openFDA key keeps its unconditional cache bypass.
+    async fn get_day_cached_json_optional<T: DeserializeOwned>(
+        &self,
+        plan: &RequestPlan,
+    ) -> Result<Option<T>, BioMcpError> {
+        let resp = crate::sources::send_day_cached_with_source_context(
+            crate::sources::apply_day_cache_mode_with_auth(
+                request_from_plan(&self.client, self.base.as_ref(), plan),
+                self.api_key.is_some(),
+            ),
+            crate::error::SourceContext::retry(crate::error::SourceProvider::OPENFDA),
+        )
+        .await?;
+        self.decode_response_optional::<T>(resp).await
+    }
+
+    async fn decode_response_optional<T: DeserializeOwned>(
+        &self,
+        resp: reqwest::Response,
+    ) -> Result<Option<T>, BioMcpError> {
         let status = resp.status();
         let bytes = crate::sources::read_limited_source_body(
             resp,
@@ -410,20 +437,9 @@ impl OpenFdaClient {
     ) -> Result<Option<OpenFdaCountResponse>, BioMcpError> {
         let plans = Self::faers_count_plans(query, count_field, limit, self.api_key.as_deref())?;
         for (count_field, plan) in plans {
-            let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-            let resp = crate::sources::apply_cache_mode_with_auth(req, self.api_key.is_some())
-                .send_with_source_context(crate::error::SourceContext::retry(
-                    crate::error::SourceProvider::OPENFDA,
-                ))
-                .await?;
-            let status = resp.status();
-            let bytes = crate::sources::read_limited_source_body(
-                resp,
-                crate::error::SourceContext::narrow(crate::error::SourceProvider::OPENFDA),
-            )
-            .await?;
-
-            let Some(value) = Self::decode_json_optional::<serde_json::Value>(status, &bytes)?
+            let Some(value) = self
+                .get_day_cached_json_optional::<serde_json::Value>(&plan)
+                .await?
             else {
                 return Ok(None);
             };
@@ -450,8 +466,7 @@ impl OpenFdaClient {
         drug_name: &str,
     ) -> Result<Option<serde_json::Value>, BioMcpError> {
         let plan = Self::label_search_plan(drug_name, self.api_key.as_deref())?;
-        self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
+        self.get_day_cached_json_optional(&plan).await
     }
 
     pub(crate) async fn label_search_with_bytes(
@@ -865,6 +880,8 @@ pub struct DeviceEventText {
 mod tests {
     #[path = "construction.rs"]
     mod construction;
+    #[path = "day_cache.rs"]
+    mod day_cache;
     #[path = "parsing.rs"]
     mod parsing;
 }

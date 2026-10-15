@@ -1120,6 +1120,18 @@
       }
     },
     {
+      "path": "dbsnp/refsnp_113488022_20261015.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI dbSNP RefSNP",
+        "request": "https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/113488022",
+        "captured_at": "2026-10-15T15:57:39Z",
+        "sha256": "98dd1bc691723fce26da3202455f9b1857510490fbc09912d444638833c518aa",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public NCBI dbSNP RefSNP response through BioMCP's production request shape."
+      }
+    },
+    {
       "path": "dgidb/gene_braf_interactions.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
@@ -2587,6 +2599,18 @@
         "sha256": "0151884cf180b543017413f9cecd6f8cdeaf12c695f077716f1b512208664f6e",
         "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
         "provider_origin_statement": "Bytes were recorded from the public MyVariant.info response through BioMCP's production request shape."
+      }
+    },
+    {
+      "path": "ncbi_efetch/clinvar_13961_20261015.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI EFetch ClinVar",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=clinvar&rettype=vcv&is_variationid=true&id=13961",
+        "captured_at": "2026-10-15T15:57:39Z",
+        "sha256": "01496408969e4031dae6d2b24e5f7832c38f7cee81ca9a822a547858dac720b0",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public NCBI EFetch response through BioMCP's production request shape."
       }
     },
     {

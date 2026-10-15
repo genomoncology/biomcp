@@ -155,6 +155,26 @@ rexpect = "0.7.0"
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading"] }
 
+# Dev and test builds keep only line tables, so panic backtraces still name
+# file and line while builds compile, link, and fill target/ faster and
+# smaller; dependencies carry no debug info. Build with --profile debugging
+# for full debug info under a debugger.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.test]
+debug = "line-tables-only"
+
+[profile.test.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

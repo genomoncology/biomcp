@@ -730,6 +730,55 @@ pub(crate) fn apply_no_store(req: RequestBuilder) -> RequestBuilder {
     req.with_extension(CacheMode::NoStore)
 }
 
+/// How long the day-cache request kinds hold a stored answer: one day.
+/// GWAS Catalog queries, openFDA label searches, and openFDA
+/// adverse-event counts use this window instead of the provider's
+/// freshness headers.
+pub(crate) const DAY_CACHE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
+
+tokio::task_local! {
+    static DAY_CACHE_REQUEST: bool;
+}
+
+/// Whether the request being sent is one of the day-cache request
+/// kinds. [`send_day_cached_with_source_context`] holds the mark for
+/// the send, and the cache manager reads it on lookup to age-check the
+/// stored entry under [`DAY_CACHE_TTL`] instead of the provider's
+/// freshness headers.
+pub(crate) fn day_cache_request_active() -> bool {
+    matches!(DAY_CACHE_REQUEST.try_with(|v| *v), Ok(true))
+}
+
+/// Mark a request as one of the day-cache request kinds: the cache
+/// stores the first 200 answer whatever the provider's headers say, a
+/// repeat inside [`DAY_CACHE_TTL`] is served without a network call, and
+/// an older stored answer goes back to the provider. `--no-cache`,
+/// `BIOMCP_CACHE_MODE=off`, and authenticated requests keep their
+/// unconditional cache bypass.
+pub(crate) fn apply_day_cache_mode_with_auth(
+    req: RequestBuilder,
+    authenticated: bool,
+) -> RequestBuilder {
+    let no_cache = is_no_cache_enabled();
+    if let Some(mode) = resolve_cache_mode(no_cache, authenticated, current_cache_mode()) {
+        return req.with_extension(mode);
+    }
+    req.with_extension(CacheMode::IgnoreRules)
+}
+
+/// Send one day-cache request inside the mark the cache manager reads
+/// ([`day_cache_request_active`]): the send and its cache lookup share
+/// one task, so the mark reaches the lookup the same way the no-cache
+/// flag reaches the middleware.
+pub(crate) async fn send_day_cached_with_source_context(
+    req: RequestBuilder,
+    context: SourceContext,
+) -> Result<reqwest::Response, BioMcpError> {
+    DAY_CACHE_REQUEST
+        .scope(true, req.send_with_source_context(context))
+        .await
+}
+
 pub(crate) fn env_base(default: &'static str, env_var: &str) -> Cow<'static, str> {
     std::env::var(env_var)
         .ok()
