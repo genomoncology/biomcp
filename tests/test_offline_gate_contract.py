@@ -70,17 +70,21 @@ def test_the_release_history_checkout_lives_in_the_python_and_spec_lanes() -> No
         if step.get("uses", "").startswith("actions/checkout@")
         and step.get("with", {}).get("fetch-depth") == 0
     ]
-    # Four jobs need full history: changes (the docs-only
+    # Five jobs need full history: changes (the docs-only
     # classification diffs the whole push), repository-contracts
     # (record lineage), python-lane (the release version
-    # contracts) and spec-lane (spec/surface/mcp.md runs the
-    # tag-reading version-sync check) — the lane split carried the
-    # last two out of the old canonical-gates job.
+    # contracts), spec-lane (spec/surface/mcp.md runs the
+    # tag-reading version-sync check) and release-checks (the
+    # changelog walk reads the landings since the last tag and
+    # diffs against the merge-base with origin/main) — the lane
+    # split carried the middle two out of the old canonical-gates
+    # job.
     assert {job_id for job_id, _ in full_history_checkouts} == {
         "changes",
         "repository-contracts",
         "python-lane",
         "spec-lane",
+        "release-checks",
     }
     assert all(
         step["with"].get("filter") == "blob:none"
