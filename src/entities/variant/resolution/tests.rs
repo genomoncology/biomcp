@@ -229,14 +229,23 @@ fn parse_variant_id_refuses_protein_change_with_invalid_residue_letter() {
     let error = parse_variant_id("BRAF Z999Q").expect_err("invalid residue letter is refused");
     match &error {
         BioMcpError::InvalidArgument(message) => {
-            assert!(message.contains("'Z'"), "message names the letter: {message}");
-            assert!(message.contains("Z999Q"), "message names the change: {message}");
+            assert!(
+                message.contains("'Z'"),
+                "message names the letter: {message}"
+            );
+            assert!(
+                message.contains("Z999Q"),
+                "message names the change: {message}"
+            );
         }
         other => panic!("expected invalid argument, got {other:?}"),
     }
     match parse_variant_id("BRAF V600B").expect_err("invalid to-residue is refused") {
         BioMcpError::InvalidArgument(message) => {
-            assert!(message.contains("'B'"), "message names the letter: {message}");
+            assert!(
+                message.contains("'B'"),
+                "message names the letter: {message}"
+            );
         }
         other => panic!("expected invalid argument, got {other:?}"),
     }
