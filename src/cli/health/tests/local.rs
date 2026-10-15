@@ -31,7 +31,7 @@ fn ddinter_local_data_reports_available_when_default_root_is_complete() {
         std::fs::write(root.path().join(file_name), b"fixture").expect("write DDInter file");
     }
 
-    let outcome = ddinter_local_data_outcome(root.path(), false);
+    let outcome = ddinter_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(outcome.row.status, HealthStatus::Available);
@@ -43,7 +43,7 @@ fn ddinter_local_data_reports_available_when_default_root_is_complete() {
 fn ema_local_data_not_configured_when_default_root_is_empty() {
     let root = TempDirGuard::new("health");
 
-    let outcome = ema_local_data_outcome(root.path(), false);
+    let outcome = ema_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Excluded);
     assert_eq!(
@@ -60,7 +60,7 @@ fn ema_local_data_errors_when_default_root_is_partial() {
     let root = TempDirGuard::new("health");
     write_ema_files(root.path(), &[crate::sources::ema::EMA_REQUIRED_FILES[0]]);
 
-    let outcome = ema_local_data_outcome(root.path(), false);
+    let outcome = ema_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -71,7 +71,7 @@ fn ema_local_data_errors_when_default_root_is_partial() {
 fn ema_local_data_errors_when_env_root_is_missing_files() {
     let root = TempDirGuard::new("health");
 
-    let outcome = ema_local_data_outcome(root.path(), true);
+    let outcome = ema_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -84,7 +84,7 @@ fn ema_local_data_reports_available_when_default_root_is_complete() {
     set_stale_ema_mtimes(fixture_root.path());
     set_fresh_ema_mtimes(fixture_root.path());
 
-    let outcome = ema_local_data_outcome(fixture_root.path(), false);
+    let outcome = ema_local_data_outcome(fixture_root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(
@@ -102,7 +102,7 @@ fn ema_local_data_reports_configured_when_env_root_is_complete() {
     set_stale_ema_mtimes(fixture_root.path());
     set_fresh_ema_mtimes(fixture_root.path());
 
-    let outcome = ema_local_data_outcome(fixture_root.path(), true);
+    let outcome = ema_local_data_outcome(fixture_root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(outcome.row.status, HealthStatus::Configured);
@@ -114,7 +114,11 @@ fn ema_local_data_json_reports_healthy_row_without_affects() {
     let fixture_root = fixture_ema_root();
     set_stale_ema_mtimes(fixture_root.path());
     set_fresh_ema_mtimes(fixture_root.path());
-    let report = report_from_outcomes(vec![ema_local_data_outcome(fixture_root.path(), false)]);
+    let report = report_from_outcomes(vec![ema_local_data_outcome(
+        fixture_root.path(),
+        false,
+        false,
+    )]);
 
     let value = serde_json::to_value(&report).expect("serialize health report");
     let rows = value["rows"].as_array().expect("rows array");
@@ -135,7 +139,7 @@ fn ema_local_data_json_reports_healthy_row_without_affects() {
 fn ema_local_data_json_reports_error_row_with_affects() {
     let root = TempDirGuard::new("health");
     write_ema_files(root.path(), &[crate::sources::ema::EMA_REQUIRED_FILES[0]]);
-    let report = report_from_outcomes(vec![ema_local_data_outcome(root.path(), false)]);
+    let report = report_from_outcomes(vec![ema_local_data_outcome(root.path(), false, false)]);
 
     let value = serde_json::to_value(&report).expect("serialize health report");
     let rows = value["rows"].as_array().expect("rows array");
@@ -151,10 +155,46 @@ fn ema_local_data_json_reports_error_row_with_affects() {
 }
 
 #[test]
+fn mcp_local_rows_name_datasets_without_paths() {
+    let fixture_root = fixture_ema_root();
+    set_stale_ema_mtimes(fixture_root.path());
+
+    let outcome = ema_local_data_outcome(fixture_root.path(), false, true);
+
+    assert_eq!(outcome.class, ProbeClass::Warning);
+    assert_eq!(outcome.row.api, "EMA local data");
+    assert_eq!(outcome.row.local_path, None);
+    assert_eq!(outcome.row.stale, Some(true));
+}
+
+#[test]
+fn mcp_local_rows_serialize_and_render_without_local_paths() {
+    let fixture_root = fixture_ema_root();
+    set_stale_ema_mtimes(fixture_root.path());
+    let outcome = ema_local_data_outcome(fixture_root.path(), false, true);
+    let report = report_from_outcomes(vec![outcome]);
+
+    let value = serde_json::to_value(&report).expect("serialize health report");
+    let rows = value["rows"].as_array().expect("rows array");
+    let row = rows.first().expect("EMA row");
+    assert_eq!(row["api"], "EMA local data");
+    assert!(row.get("local_path").is_none(), "row={row}");
+    assert_eq!(row["stale"], true);
+
+    let markdown = report.to_markdown();
+    assert!(
+        markdown.contains("| EMA local data | available (default path, stale) |"),
+        "{markdown}"
+    );
+    let root = fixture_root.path().display().to_string();
+    assert!(!markdown.contains(root.as_str()));
+}
+
+#[test]
 fn cvx_local_data_not_configured_when_default_root_is_empty() {
     let root = TempDirGuard::new("health");
 
-    let outcome = cvx_local_data_outcome(root.path(), false);
+    let outcome = cvx_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Excluded);
     assert_eq!(
@@ -171,7 +211,7 @@ fn cvx_local_data_errors_when_default_root_is_partial() {
     let root = TempDirGuard::new("health");
     write_cvx_files(root.path(), &[crate::sources::cvx::CVX_FILE]);
 
-    let outcome = cvx_local_data_outcome(root.path(), false);
+    let outcome = cvx_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -183,7 +223,7 @@ fn cvx_local_data_reports_available_when_default_root_is_complete() {
     let root = TempDirGuard::new("health");
     write_cvx_files(root.path(), crate::sources::cvx::CVX_REQUIRED_FILES);
 
-    let outcome = cvx_local_data_outcome(root.path(), false);
+    let outcome = cvx_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(
@@ -203,7 +243,7 @@ fn cvx_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
         crate::sources::cvx::CVX_STALE_AFTER + std::time::Duration::from_secs(60),
     );
 
-    let outcome = cvx_local_data_outcome(root.path(), true);
+    let outcome = cvx_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
     assert_eq!(outcome.row.status, HealthStatus::Configured);
@@ -214,7 +254,7 @@ fn cvx_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
 fn who_local_data_not_configured_when_default_root_is_empty() {
     let root = TempDirGuard::new("health");
 
-    let outcome = who_local_data_outcome(root.path(), false);
+    let outcome = who_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Excluded);
     assert_eq!(
@@ -232,7 +272,7 @@ fn who_local_data_not_configured_when_default_root_is_empty() {
 fn who_local_data_errors_when_env_root_is_missing_file() {
     let root = TempDirGuard::new("health");
 
-    let outcome = who_local_data_outcome(root.path(), true);
+    let outcome = who_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -244,7 +284,7 @@ fn who_local_data_reports_available_when_default_root_is_complete() {
     let root = TempDirGuard::new("health");
     write_who_files(root.path(), crate::sources::who_pq::WHO_PQ_REQUIRED_FILES);
 
-    let outcome = who_local_data_outcome(root.path(), false);
+    let outcome = who_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(
@@ -263,7 +303,7 @@ fn who_local_data_reports_configured_when_env_root_is_complete() {
     let root = TempDirGuard::new("health");
     write_who_files(root.path(), crate::sources::who_pq::WHO_PQ_REQUIRED_FILES);
 
-    let outcome = who_local_data_outcome(root.path(), true);
+    let outcome = who_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(outcome.row.status, HealthStatus::Configured);
@@ -280,7 +320,7 @@ fn who_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
             .join(crate::sources::who_pq::WHO_PQ_API_CSV_FILE),
     );
 
-    let outcome = who_local_data_outcome(root.path(), true);
+    let outcome = who_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
     assert_eq!(outcome.row.status, HealthStatus::Configured);
@@ -297,7 +337,7 @@ fn who_local_data_reports_default_path_stale_when_complete_but_old() {
             .join(crate::sources::who_pq::WHO_PQ_API_CSV_FILE),
     );
 
-    let outcome = who_local_data_outcome(root.path(), false);
+    let outcome = who_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
     assert_eq!(outcome.row.status, HealthStatus::Available);
@@ -315,7 +355,7 @@ fn who_local_data_errors_when_only_api_file_is_missing() {
         ],
     );
 
-    let outcome = who_local_data_outcome(root.path(), true);
+    let outcome = who_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -333,7 +373,7 @@ fn who_local_data_errors_when_only_vaccine_file_is_missing() {
         ],
     );
 
-    let outcome = who_local_data_outcome(root.path(), true);
+    let outcome = who_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -344,7 +384,7 @@ fn who_local_data_errors_when_only_vaccine_file_is_missing() {
 fn who_ivd_local_data_not_configured_when_default_root_is_empty() {
     let root = TempDirGuard::new("health");
 
-    let outcome = who_ivd_local_data_outcome(root.path(), false);
+    let outcome = who_ivd_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Excluded);
     assert_eq!(
@@ -362,7 +402,7 @@ fn who_ivd_local_data_not_configured_when_default_root_is_empty() {
 fn who_ivd_local_data_errors_when_env_root_is_missing_file() {
     let root = TempDirGuard::new("health");
 
-    let outcome = who_ivd_local_data_outcome(root.path(), true);
+    let outcome = who_ivd_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -377,7 +417,7 @@ fn who_ivd_local_data_reports_available_when_default_root_is_complete() {
     let root = TempDirGuard::new("health");
     write_who_ivd_files(root.path(), crate::sources::who_ivd::WHO_IVD_REQUIRED_FILES);
 
-    let outcome = who_ivd_local_data_outcome(root.path(), false);
+    let outcome = who_ivd_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(
@@ -393,7 +433,7 @@ fn who_ivd_local_data_reports_configured_when_env_root_is_complete() {
     let root = TempDirGuard::new("health");
     write_who_ivd_files(root.path(), crate::sources::who_ivd::WHO_IVD_REQUIRED_FILES);
 
-    let outcome = who_ivd_local_data_outcome(root.path(), true);
+    let outcome = who_ivd_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(outcome.row.status, HealthStatus::Configured);
@@ -406,7 +446,7 @@ fn who_ivd_local_data_reports_configured_stale_when_env_root_is_complete_but_old
     write_who_ivd_files(root.path(), crate::sources::who_ivd::WHO_IVD_REQUIRED_FILES);
     set_stale_mtime(&root.path().join(crate::sources::who_ivd::WHO_IVD_CSV_FILE));
 
-    let outcome = who_ivd_local_data_outcome(root.path(), true);
+    let outcome = who_ivd_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
     assert_eq!(outcome.row.status, HealthStatus::Configured);
@@ -420,7 +460,7 @@ fn who_ivd_local_data_reports_configured_stale_when_env_root_is_complete_but_old
 fn gtr_local_data_not_configured_when_default_root_is_empty() {
     let root = TempDirGuard::new("health");
 
-    let outcome = gtr_local_data_outcome(root.path(), false);
+    let outcome = gtr_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Excluded);
     assert_eq!(
@@ -436,7 +476,7 @@ fn gtr_local_data_errors_when_default_root_is_partial() {
     let root = TempDirGuard::new("health");
     write_gtr_files(root.path(), &[crate::sources::gtr::GTR_TEST_VERSION_FILE]);
 
-    let outcome = gtr_local_data_outcome(root.path(), false);
+    let outcome = gtr_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.status, HealthStatus::Error);
@@ -448,7 +488,7 @@ fn gtr_local_data_reports_available_when_default_root_is_complete() {
     let root = TempDirGuard::new("health");
     write_gtr_files(root.path(), &crate::sources::gtr::GTR_REQUIRED_FILES);
 
-    let outcome = gtr_local_data_outcome(root.path(), false);
+    let outcome = gtr_local_data_outcome(root.path(), false, false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(outcome.row.status, HealthStatus::Available);
@@ -464,7 +504,7 @@ fn gtr_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
         crate::sources::gtr::GTR_STALE_AFTER + std::time::Duration::from_secs(60),
     );
 
-    let outcome = gtr_local_data_outcome(root.path(), true);
+    let outcome = gtr_local_data_outcome(root.path(), true, false);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
     assert_eq!(outcome.row.status, HealthStatus::Configured);
@@ -584,7 +624,7 @@ fn check_cache_dir_success_row_uses_resolved_path_and_ok_contract() {
     let cache_root = root.path().join("resolved-cache");
     let config = test_config(&cache_root, 1_024, DiskFreeThreshold::Percent(10));
 
-    let outcome = block_on(check_cache_dir_with(|| Ok(config)));
+    let outcome = block_on(check_cache_dir_with(|| Ok(config), false));
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(
@@ -603,7 +643,7 @@ fn probe_cache_dir_failure_preserves_error_contract() {
     let blocking_path = root.path().join("not-a-dir");
     std::fs::write(&blocking_path, b"occupied").expect("blocking file should exist");
 
-    let outcome = block_on(probe_cache_dir(&blocking_path));
+    let outcome = block_on(probe_cache_dir(&blocking_path, false));
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(
@@ -623,6 +663,17 @@ fn probe_cache_dir_failure_preserves_error_contract() {
 }
 
 #[test]
+fn mcp_cache_dir_row_names_the_cache_without_its_path() {
+    let root = TempDirGuard::new("health");
+
+    let outcome = block_on(probe_cache_dir(&root.path().join("cache"), true));
+
+    assert_eq!(outcome.class, ProbeClass::Healthy);
+    assert_eq!(outcome.row.api, "Cache dir");
+    assert_eq!(outcome.row.local_path, None);
+}
+
+#[test]
 fn check_cache_dir_config_error_matches_pinned_contract() {
     let root = TempDirGuard::new("health");
     let config_path = root.path().join("config-home/biomcp/cache.toml");
@@ -631,7 +682,7 @@ fn check_cache_dir_config_error_matches_pinned_contract() {
         config_path.display()
     ));
 
-    let outcome = block_on(check_cache_dir_with(|| Err(err)));
+    let outcome = block_on(check_cache_dir_with(|| Err(err), false));
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.api, "Cache dir");

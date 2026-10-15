@@ -312,9 +312,14 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2846,
+      "baseline_lines": 2848,
       "floor_lines": 2846,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "2065",
+        "delta": 2,
+        "reason": "tool_error documents its reply policy: sanitize_document keeps MCP error line breaks",
+        "removal_condition": "drop the two comment lines when the policy moves into a shared error-render helper"
+      }
     },
     {
       "path": "src/render/chart.rs",

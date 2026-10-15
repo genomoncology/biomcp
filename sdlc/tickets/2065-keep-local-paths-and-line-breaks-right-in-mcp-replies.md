@@ -1,8 +1,10 @@
 # 2065 — Keep local paths and line breaks right in MCP replies
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 9bc2f19, accept
 
 ## Outcome
 

@@ -167,7 +167,11 @@ fn markdown_status(row: &HealthRow) -> String {
         (HealthStatus::Available, Some(false)) => {
             "available (unauthenticated, shared rate limit)".to_string()
         }
-        (HealthStatus::Available, _) if row.local_path.is_some() => {
+        // Available with no key marker is a local-dataset row: key-bearing
+        // probes answer unauthenticated through the arm above, so this arm
+        // holds on both surfaces, including MCP rows that carry no
+        // `local_path`.
+        (HealthStatus::Available, None) => {
             if row.stale == Some(true) {
                 "available (default path, stale)".to_string()
             } else {
@@ -208,16 +212,25 @@ fn markdown_status(row: &HealthRow) -> String {
 /// # Errors
 ///
 /// Returns an error when the shared HTTP client cannot be created.
-pub async fn check(apis_only: bool, apis: &[String]) -> Result<HealthReport, BioMcpError> {
+pub async fn check(
+    apis_only: bool,
+    apis: &[String],
+    mcp: bool,
+) -> Result<HealthReport, BioMcpError> {
     let selected = select_sources(apis)?;
-    runner::check(apis_only || !apis.is_empty(), &selected).await
+    runner::check(apis_only || !apis.is_empty(), &selected, mcp).await
 }
 
+/// Renders the health report for one surface. `mcp` marks the MCP surface:
+/// local rows name their dataset without the resolved directory and carry
+/// no `local_path` field, because an MCP reply carries no local filesystem
+/// path; the CLI keeps its paths.
 pub(crate) async fn command(
     args: crate::cli::system::HealthArgs,
     json: bool,
+    mcp: bool,
 ) -> Result<crate::cli::CommandOutcome, BioMcpError> {
-    let report = check(args.apis_only, &args.apis).await?;
+    let report = check(args.apis_only, &args.apis, mcp).await?;
     let text = if json {
         report.to_json(args.fail_on_error)?
     } else {

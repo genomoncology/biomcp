@@ -109,7 +109,7 @@ TERMINAL_OUTPUT_BOUNDARY_SEAMS = {
     "src/mcp/shell.rs": [
         "sanitize_document(&text)",
         "sanitize_document(&content)",
-        "sanitize_inline(&message.into())",
+        "sanitize_document(&message.into())",
     ],
     "src/render/chart.rs": [
         "fn chart_text(value: &str)",
