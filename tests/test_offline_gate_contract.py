@@ -61,10 +61,15 @@ def test_website_dependencies_prepare_once_before_network_isolation() -> None:
     website_prepare = (ROOT / "website/prepare").read_text(encoding="utf-8")
     assert "npm" not in website_check
     assert 'npm --prefix "$root" ci --ignore-scripts' in website_prepare
-    canonical = WORKFLOW.split("  canonical-gates:\n", 1)[1].split(
-        "\n  full-features:", 1
+    # The parallel lanes carry the same ordering: the build job prepares the
+    # website before it builds the test archive, and the python lane
+    # prepares it before the contract gate.
+    build = WORKFLOW.split("  build:\n", 1)[1].split("\n  lint:\n", 1)[0]
+    assert build.index("make prepare-website") < build.index("make prepare-test")
+    python_lane = WORKFLOW.split("  python-lane:\n", 1)[1].split(
+        "\n  spec-lane:\n", 1
     )[0]
-    assert canonical.index("make prepare-website") < canonical.index("make test")
+    assert python_lane.index("make prepare-website") < python_lane.index("make test-python")
 
     runner = (ROOT / "tools/run-offline").read_text(encoding="utf-8")
     assert '--bind "$sandbox_tmp" /tmp' in runner
