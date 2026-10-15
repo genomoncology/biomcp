@@ -186,7 +186,8 @@ fn mcp_local_rows_serialize_and_render_without_local_paths() {
         markdown.contains("| EMA local data | available (default path, stale) |"),
         "{markdown}"
     );
-    assert!(!markdown.contains(fixture_root.path().display().to_string()));
+    let root = fixture_root.path().display().to_string();
+    assert!(!markdown.contains(root.as_str()));
 }
 
 #[test]
