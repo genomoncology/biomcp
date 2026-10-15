@@ -17,9 +17,14 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 ZERO_COUPLING_CHECKER = ROOT / "tools/check-zero-coupling.py"
 OFFLINE = ROOT / "tools/run-offline"
-# Raised the package by five authorized module paths:
+# Raised the package by six authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
+<<<<<<< HEAD
 # extractor, its tests, and the article CLI citation test sidecar.
+=======
+# extractor, its tests, the article CLI citation test sidecar, and the
+# article disease link rule tests module.
+>>>>>>> e01730cd3 (Raise the source package pin for the article link rule tests)
 MAX_PACKAGE_FILES = 1_420  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
