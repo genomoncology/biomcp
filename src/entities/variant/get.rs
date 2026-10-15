@@ -525,7 +525,12 @@ fn provider_value_spelling_requested_change(
     let source = hit.source();
     let mut candidates: Vec<String> = source
         .dbnsfp()
-        .map(|dbnsfp| dbnsfp.hgvsp().to_vec())
+        .map(|dbnsfp| {
+            biodata::MyVariantDbnsfpText::values(dbnsfp.hgvsp())
+                .into_iter()
+                .map(str::to_string)
+                .collect()
+        })
         .unwrap_or_default();
     if let Some(snpeff) = source.snpeff() {
         candidates.extend(
