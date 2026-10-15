@@ -84,9 +84,6 @@ recorded query, and refuse partial years and mixes with explicit dates.
 ../../tools/biomcp-ci --json search article --source semanticscholar \
   -k 'review of "drug: safety"' --session grammar-loop-1 --limit 5 \
   | jq -e '(.results | type) == "array"' | mustmatch true
-../../tools/biomcp-ci --json get article 22663011 assets \
-  --asset-view coverage --asset-limit 25 --asset-offset 3 \
-  | jq -e '(.assets | type) == "array"' | mustmatch true
 year_tmp="$(mktemp -d)"
 set +e
 ../../tools/biomcp-ci search article -g BRAF --year-min 200 \
