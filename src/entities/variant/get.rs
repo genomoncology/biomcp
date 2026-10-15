@@ -481,6 +481,19 @@ fn refuse_or_note_without_facts(
             change,
         )));
     }
+    // A provider value that itself spells the request keeps the answer
+    // honest without canonical facts: the hit carries the request's own
+    // spelling beside the selected annotation's other numbering (one
+    // editing event, two transcript numberings), so the card resolves
+    // through that spelling under the unchecked-numbering note instead of
+    // refusing a lookalike it can name.
+    if let Some(spelled) = provider_value_spelling_requested_change(hit, change) {
+        return Ok(Some(unchecked_numbering_note(
+            &transcript,
+            &spelled,
+            change,
+        )));
+    }
     Err(unchecked_numbering_refusal_message(
         id,
         gene,
@@ -501,6 +514,30 @@ fn unchecked_numbering_note(transcript: &str, protein: &str, change: &str) -> St
         "Numbering note: resolved on {transcript} as {protein}; the requested \
          {change} could not be checked against MANE numbering."
     )
+}
+
+/// A provider protein value on the hit that names the requested change:
+/// dbNSFP's HGVS protein list or a SnpEff annotation, whichever spells it.
+fn provider_value_spelling_requested_change(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+) -> Option<String> {
+    let source = hit.source();
+    let mut candidates: Vec<String> = source
+        .dbnsfp()
+        .map(|dbnsfp| dbnsfp.hgvsp().to_vec())
+        .unwrap_or_default();
+    if let Some(snpeff) = source.snpeff() {
+        candidates.extend(
+            snpeff
+                .annotations()
+                .iter()
+                .filter_map(|annotation| annotation.hgvs_p().map(str::to_string)),
+        );
+    }
+    candidates
+        .into_iter()
+        .find(|value| protein_changes_equivalent(change, value))
 }
 
 /// The numbering decision once the canonical protein facts are in hand —
