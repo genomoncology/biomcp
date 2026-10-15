@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 0922f47, accept
+
 ## Outcome
 
 A drug card's brand list names only products whose label names that drug as its sole active ingredient, and keeps a brand name the user typed when lookup resolved it.
