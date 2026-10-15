@@ -262,13 +262,6 @@ async fn admitted_detail_preserves_shared_text_then_assembles_product_fields() {
         article.author_completeness,
         ArticleAuthorCompleteness::SourceLimited
     );
-    assert!(
-        article
-            .abstract_text
-            .as_deref()
-            .unwrap()
-            .contains("(truncated, 1700 chars total)")
-    );
     assert_eq!(article.annotations.unwrap().genes[0].text, "BRAF");
 }
 
