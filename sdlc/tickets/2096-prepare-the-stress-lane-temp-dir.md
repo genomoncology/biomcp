@@ -1,6 +1,6 @@
 # 2096 — Prepare the stress lane temp dir
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
