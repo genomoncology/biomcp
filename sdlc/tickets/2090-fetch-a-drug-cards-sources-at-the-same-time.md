@@ -24,3 +24,7 @@ Once MyChem has named the drug, `biomcp get drug NAME` fetches the openFDA label
 - Proof: routine suite. A new test in `src/entities/drug/get/tests.rs` points the three base overrides at a local server that serves the recorded replies after a 1 s delay per request: the card completes in under 2 s (fails on current main at about 4 s), and its JSON and Markdown are identical to the output on the same replies with no delay. The existing drug card tests pass unchanged. On the build host, the reviewer runs `for i in $(seq 10); do BIOMCP_CACHE_MODE=infinite /usr/bin/time -f %e biomcp get drug imatinib | md5sum; done` on main and on the branch and records the medians and identical checksums.
 - Defers: caching openFDA replies (2091).
 - Order: runs alongside the build and test work. It edits `src/entities/drug/get.rs`, which 2085 and 2068 also edit. PM decision 2026-10-14: 2085 lands first, so 2090 rebases onto 2085 and lands before 2068 and 2091.
+
+- Code review: ACCEPT 2026-10-15 by Coordinator Review
+
+  Basis: the timed card test settles 1.05 s on the branch against the 2 s bound with the four ticket-named replies held, JSON and Markdown asserted identical to the undelayed run, guards keep never starting a fetch whose section flag or shape is off, and the baseline pins cover the grown modules; full-suite verification runs in the end-of-0.9.3 pass.

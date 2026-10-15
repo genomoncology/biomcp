@@ -180,9 +180,14 @@
       "count": 0,
       "language": "rust",
       "markers": 2
+    },
+    "src/entities/drug/get/tests.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 2
     }
   },
-  "marker_total_ceiling": 48,
+  "marker_total_ceiling": 50,
   "raises": [
     {
       "file": "(global)",
@@ -287,6 +292,14 @@
       "to": 48,
       "reason": "the GWAS parallel proof holds each fixture reply 1.5 s and bounds the page at 2.5 s; the clock is the measured subject, marked on its two lines",
       "ticket": "2089"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 48,
+      "to": 50,
+      "reason": "the drug-card parallel proof holds each of four fixture replies one second and bounds the card at two seconds; the clock is the measured subject, marked on its two lines",
+      "ticket": "2090"
     }
   ]
 }
