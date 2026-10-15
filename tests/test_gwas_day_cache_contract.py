@@ -35,6 +35,7 @@ GWAS_SEARCH_BODY = json.dumps(
                     "p_value": 5e-8,
                     "mapped_genes": ["BRAF"],
                     "reported_trait": ["melanoma"],
+                    "snp_allele": [{"rs_id": "rs121913524", "effect_allele": "T"}],
                 }
             ]
         },
