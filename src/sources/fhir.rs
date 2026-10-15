@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 
 use reqwest::Url;
-use reqwest::header::{ACCEPT, CACHE_CONTROL, PREFER};
+use reqwest::header::{ACCEPT, CACHE_CONTROL, HeaderName};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
 use serde_json::Value;
 
@@ -31,6 +31,8 @@ pub(crate) const MAX_PATIENT_ID_CHARS: usize = 64;
 const MAX_REDIRECTS: usize = 10;
 const ACCEPT_FHIR_JSON: &str = "application/fhir+json, application/json";
 const STRICT_HANDLING: &str = "handling=strict";
+/// The `Prefer` header name; the http crate ships no constant for it.
+const PREFER: HeaderName = HeaderName::from_static("prefer");
 
 /// What can go wrong between BioMCP and the FHIR server.
 ///
