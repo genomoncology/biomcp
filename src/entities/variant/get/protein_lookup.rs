@@ -132,7 +132,7 @@ async fn bounded_lookup(
             .map(|hit| hit.source().id().trim().to_string())
             .collect::<HashSet<_>>();
         if keys.len() == point_candidates.len() {
-            return super::resolve_protein_change_hit(id, gene, change, point_candidates);
+            return super::resolve_protein_change_hit(id, gene, change, point_candidates, None);
         }
     }
     if seen.len() > 1 {

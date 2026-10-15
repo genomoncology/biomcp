@@ -1186,7 +1186,7 @@ pub(super) async fn resolve_base_with_hit(
                     let transcript_input =
                         matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_));
                     let alias_confirmed =
-                        transcript_input && hit_confirms_transcript_alias(hit, id);
+                        transcript_input && hit_confirms_transcript_alias(&hit, id);
                     if transcript_input {
                         selected_tuple = Some(transcript_deletion_lookup::alias_tuple(&hit, id)?);
                     }
