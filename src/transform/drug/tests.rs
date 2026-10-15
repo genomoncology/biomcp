@@ -95,10 +95,11 @@ fn merge_mychem_hits_collects_deduped_mechanisms() {
 }
 
 #[test]
-fn merge_mychem_hits_feeds_anchor_synonyms_past_the_brand_cap() {
-    // More than three DrugBank synonyms: the fourth still reaches
-    // ddinter_synonyms even though brand_names caps at three, and
-    // the interactions seam passes it on (ticket 1254).
+fn merge_mychem_hits_keeps_synonyms_off_the_brand_list() {
+    // More than three DrugBank synonyms: every one still reaches
+    // ddinter_synonyms for interaction identity, and none reaches
+    // brand_names — a chemical name or alias is not a brand the drug's
+    // own labels carry. The interactions seam still sees it (ticket 1254).
     let anchor: MyChemHit = serde_json::from_value(serde_json::json!({
         "_id": "1",
         "_score": 10.0,
@@ -122,7 +123,11 @@ fn merge_mychem_hits_feeds_anchor_synonyms_past_the_brand_cap() {
             .iter()
             .any(|synonym| synonym.eq_ignore_ascii_case("acetylsalicylic acid"))
     );
-    assert!(drug.brand_names.len() <= 3);
+    assert!(
+        drug.brand_names.is_empty(),
+        "a DrugBank synonym never lists as a brand: {:?}",
+        drug.brand_names
+    );
 
     let identity =
         crate::entities::drug::interactions::ddinter_identity_for_anchor("aspirin", &drug);

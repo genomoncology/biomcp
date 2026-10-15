@@ -228,7 +228,7 @@ def test_a_failed_tip_then_markdown_still_classifies_false(scratch_repo: Path) -
     assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false"
 
 
-# --- Ticket 2086: the green-tip route. ---
+# --- the green-tip route. ---
 
 
 def _fake_gh_bin(tmp_path: Path) -> Path:

@@ -28,7 +28,7 @@ pub(super) fn is_doi(id: &str) -> bool {
     id.contains('/')
 }
 
-pub(super) fn parse_pmid(id: &str) -> Option<u32> {
+pub(super) fn parse_pmid(id: &str) -> Option<u64> {
     let id = id.trim();
     if id.is_empty() {
         return None;
@@ -36,7 +36,7 @@ pub(super) fn parse_pmid(id: &str) -> Option<u32> {
     if !id.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
-    id.parse::<u32>().ok()
+    id.parse::<u64>().ok()
 }
 
 pub(super) fn parse_pmcid(id: &str) -> Option<String> {
@@ -82,7 +82,7 @@ pub(super) fn parse_arxiv_id(id: &str) -> Option<String> {
 pub(super) enum ArticleIdType {
     Pmc(String),
     Doi(String),
-    Pmid(u32),
+    Pmid(u64),
     Invalid,
 }
 
@@ -249,7 +249,7 @@ pub(super) fn is_pubtator_lag_error(err: &BioMcpError) -> bool {
 }
 
 pub(super) async fn resolve_article_from_pmid(
-    pmid: u32,
+    pmid: u64,
     not_found_id: &str,
     suggestion_id: &str,
     pubtator: &PubTatorClient,
@@ -292,7 +292,7 @@ pub(super) async fn resolve_article_from_pmid(
     }
 }
 
-fn publication_pmid(pmid: u32) -> Result<biodata::PublicationIdentifier, BioMcpError> {
+fn publication_pmid(pmid: u64) -> Result<biodata::PublicationIdentifier, BioMcpError> {
     biodata::Pmid::new(&pmid.to_string())
         .map(biodata::PublicationIdentifier::Pmid)
         .map_err(|_| {

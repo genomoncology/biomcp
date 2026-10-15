@@ -23,8 +23,8 @@ def _make_target(name: str) -> str:
 
 
 def test_live_mcp_full_contracts_are_excluded_from_routine_test() -> None:
-    # The routine Rust lane is `test-rust` since ticket 2075 split
-    # `make test` so CI runs the halves in parallel; `make test`
+    # The routine Rust lane is `test-rust` since the lane split
+    # cut `make test` so CI runs the halves in parallel; `make test`
     # composes it, so the exclusion holds for the composed lane too.
     routine = _make_target("test-rust")
     assert "cargo nextest run --archive-file" in routine

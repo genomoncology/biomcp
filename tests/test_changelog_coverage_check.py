@@ -27,10 +27,11 @@ def _fake_git(
     """Answer git subprocess calls by leading subcommand, not by order.
 
     The coverage check runs `git tag`, `git log`, `git diff`, `git
-    ls-tree` and `git show <ref>:<path>` in whatever order it needs
-    them, so dispatching on the first argument keeps the harness
-    honest when the script changes. The `show` value maps `ref:path`
-    to a body.
+    ls-tree`, `git diff-tree` and `git show <ref>:<path>` in whatever
+    order it needs them, so dispatching on the first argument keeps
+    the harness honest when the script changes. The `show` value maps
+    `ref:path` to a body; the `diff-tree` value maps a commit sha to
+    the files it changed (the sha is the call's last argument).
     """
     script = directory / "git"
     body = "#!/usr/bin/env bash\nset -euo pipefail\n"
@@ -42,6 +43,12 @@ def _fake_git(
             for ref_path, content in lines.items():
                 safe = shlex.quote(content)
                 body += f"    if [ \"$*\" = \"show {shlex.quote(ref_path)}\" ]; then printf %s {safe}; exit 0; fi\n"
+            body += '    printf ""; exit 0 ;;\n'
+        elif subcommand == "diff-tree":
+            body += "  diff-tree)\n"
+            body += "    for last; do :; done\n"
+            for sha, files in lines.items():
+                body += f"    if [ \"$last\" = \"{sha}\" ]; then printf '%s\\n' {shlex.join(files)}; exit 0; fi\n"
             body += '    printf ""; exit 0 ;;\n'
         else:
             body += f"  {subcommand}) printf '%s\\n' {shlex.join(lines)}; exit 0 ;;\n"
@@ -671,8 +678,8 @@ def test_milestone_problems_names_each_kind_of_wrong_ticket() -> None:
 def test_cited_ticket_of_another_milestone_fails_the_tag_run(
     tmp_path: Path,
 ) -> None:
-    # Ticket 2083: a section that cites another milestone's ticket
-    # misfiles its bullets, and the release gate must refuse it.
+    # A section that cites another milestone's ticket misfiles its
+    # bullets, and the release gate must refuse it.
     result = _run(
         tmp_path,
         subjects=["Merge branch 'tickets/1234-gate'"],
@@ -702,12 +709,198 @@ def test_cited_ticket_without_a_milestone_line_passes_the_tag_run(
 def test_cited_ticket_without_a_ticket_file_passes_the_tag_run(
     tmp_path: Path,
 ) -> None:
-    # Tickets 1288 and 1289 carry no ticket file at all; a missing
+    # Some early tickets carry no ticket file at all; a missing
     # record proves nothing about the milestone.
     result = _run(
         tmp_path,
         subjects=["Merge branch 'tickets/1288-gate'"],
         changelog="# C\n\n## 0.9.1 — 2026-09-23\n\n- Recorded release planning. (1288)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+
+def _run_branch(
+    tmp_path: Path,
+    *,
+    changelog: str,
+    ref_name: str,
+    landings: dict[str, tuple[str, list[str]]],
+    branch_files: list[str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Drive the --branch form. `landings` maps a commit sha to its
+    subject and the files it changed; `branch_files` is the branch's
+    own diff against the trunk merge-base."""
+    _fake_git(
+        tmp_path,
+        {
+            "tag": ["v0.9.0", "v0.9.1"],
+            "log": [f"{sha}\t{subject}" for sha, (subject, _) in landings.items()],
+            "diff-tree": {sha: files for sha, (_, files) in landings.items()},
+            "merge-base": ["base0"],
+            "diff": list(branch_files or []),
+        },
+    )
+    path = tmp_path / "CHANGELOG.md"
+    path.write_text(changelog, encoding="utf-8")
+    return subprocess.run(
+        [sys.executable, str(CHECK), "--branch", "--changelog", str(path)],
+        capture_output=True,
+        text=True,
+        env=os.environ
+        | {
+            "PATH": f"{tmp_path}:{os.environ.get('PATH', '')}",
+            "GIT_FAKE_CALLS": str(tmp_path / "calls"),
+            "GITHUB_REF_NAME": ref_name,
+        },
+    )
+
+
+def test_branch_mode_fails_a_src_change_without_a_bullet(tmp_path: Path) -> None:
+    # A ticket branch whose own diff touches shipped behavior must
+    # carry its described bullet before review, not at the tag.
+    result = _run_branch(
+        tmp_path,
+        ref_name="ticket/1234-add-the-gate",
+        landings={},
+        branch_files=["src/cli/gate.rs"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1300)\n",
+    )
+    assert result.returncode == 1
+    assert "1234" in result.stderr
+
+
+def test_branch_mode_passes_the_same_branch_with_its_bullet(tmp_path: Path) -> None:
+    result = _run_branch(
+        tmp_path,
+        ref_name="ticket/1234-add-the-gate",
+        landings={},
+        branch_files=["src/cli/gate.rs"],
+        changelog="# C\n\n## Unreleased\n\n- Added the release gate. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_branch_mode_demands_no_bullet_for_record_and_test_changes(
+    tmp_path: Path,
+) -> None:
+    # A branch that changes no shipped behavior needs no bullet.
+    result = _run_branch(
+        tmp_path,
+        ref_name="ticket/1998-write-the-record",
+        landings={},
+        branch_files=["sdlc/records/1998-write.md", "tests/test_gate.py"],
+        changelog="# C\n\n## Unreleased\n\n- Unrelated work. (1300)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_branch_mode_demands_a_bullet_for_a_landed_src_landing(
+    tmp_path: Path,
+) -> None:
+    # A landing since the last tag that touched shipped behavior
+    # needs its bullet in the live section even on a bare push.
+    result = _run_branch(
+        tmp_path,
+        ref_name="main",
+        landings={"sha1": ("Land 1299: make the deadline honest", ["src/search.rs"])},
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1300)\n",
+    )
+    assert result.returncode == 1
+    assert "1299" in result.stderr
+
+
+def test_branch_mode_passes_that_landing_with_its_bullet(tmp_path: Path) -> None:
+    result = _run_branch(
+        tmp_path,
+        ref_name="main",
+        landings={"sha1": ("Land 1299: make the deadline honest", ["src/search.rs"])},
+        changelog="# C\n\n## Unreleased\n\n- Made the deadline honest. (1299)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_branch_mode_demands_no_bullet_for_a_record_only_landing(
+    tmp_path: Path,
+) -> None:
+    result = _run_branch(
+        tmp_path,
+        ref_name="main",
+        landings={
+            "sha1": ("Land 1998: write the record", ["sdlc/records/1998-record.md"])
+        },
+        changelog="# C\n\n## Unreleased\n\n- Unrelated work. (1300)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_branch_mode_counts_the_manifest_and_install_files_as_shipped(
+    tmp_path: Path,
+) -> None:
+    result = _run_branch(
+        tmp_path,
+        ref_name="main",
+        landings={
+            "sha1": ("Land 1299: bump the floor", ["Cargo.lock"]),
+            "sha2": ("Land 1300: pin the installer", ["install.sh"]),
+        },
+        changelog="# C\n\n## Unreleased\n\n- Unrelated work. (1301)\n",
+    )
+    assert result.returncode == 1
+    assert "1299" in result.stderr and "1300" in result.stderr
+
+
+def test_branch_mode_reads_the_legacy_branch_prefix_too(tmp_path: Path) -> None:
+    result = _run_branch(
+        tmp_path,
+        ref_name="tickets/1300-legacy-shape",
+        landings={},
+        branch_files=["docs/getting-started/index.md"],
+        changelog="# C\n\n## Unreleased\n\n- Unrelated work. (1301)\n",
+    )
+    assert result.returncode == 1
+    assert "1300" in result.stderr
+
+
+def test_branch_mode_ignores_a_pull_request_ref(tmp_path: Path) -> None:
+    # A pull request ref names no ticket branch; only landings count.
+    result = _run_branch(
+        tmp_path,
+        ref_name="42/merge",
+        landings={},
+        branch_files=[],
+        changelog="# C\n\n## Unreleased\n\n- Unrelated work. (1301)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_branch_mode_reads_the_release_under_way_not_dated_sections(
+    tmp_path: Path,
+) -> None:
+    # A dated section is closed; only an Unreleased or bare under-way
+    # heading carries the dev cycle's bullets.
+    result = _run_branch(
+        tmp_path,
+        ref_name="main",
+        landings={"sha1": ("Land 1299: make the deadline honest", ["src/search.rs"])},
+        changelog=(
+            "# C\n\n## 0.9.2 — 2026-09-23\n\n- Made the deadline honest. (1299)\n"
+        ),
+    )
+    assert result.returncode == 1
+    assert "no Unreleased or under-way version section" in result.stderr
+
+
+def test_branch_mode_passes_without_a_live_section_when_nothing_needs_one(
+    tmp_path: Path,
+) -> None:
+    result = _run_branch(
+        tmp_path,
+        ref_name="main",
+        landings={
+            "sha1": ("Land 1998: write the record", ["sdlc/records/1998-record.md"])
+        },
+        changelog="# C\n\n## 0.9.2 — 2026-09-23\n\n- Old release only. (1300)\n",
     )
     assert result.returncode == 0, result.stderr
 

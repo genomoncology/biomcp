@@ -359,6 +359,17 @@ pub fn parse_variant_id(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     }
 
     if let VariantInputKind::Exact(exact) = classify_variant_input(id) {
+        // The gene + substitution regex accepts any capital letter, so a
+        // change such as `BRAF Z999Q` reaches lookup carrying a letter that
+        // is not a residue. Refuse it here, naming the letter, before any
+        // source call reports it as not found.
+        if let VariantIdFormat::GeneProteinChange { change, .. } = &exact
+            && let Some(letter) = invalid_residue_letter(change)
+        {
+            return Err(BioMcpError::InvalidArgument(format!(
+                "invalid amino acid residue '{letter}' in protein change '{change}'"
+            )));
+        }
         return Ok(exact);
     }
 
@@ -436,6 +447,16 @@ pub(crate) fn gnomad_variant_slug(id: &str) -> Option<String> {
     ))
 }
 
+
+/// The first letter of a protein change that `amino_acid_one_letter` refuses,
+/// if any. Only capital letters and `*` are residue letters in the compact
+/// forms this path carries; lowercase suffixes such as `del` are not.
+fn invalid_residue_letter(change: &str) -> Option<char> {
+    change.chars().find(|&letter| {
+        (letter.is_ascii_uppercase() || letter == '*')
+            && amino_acid_one_letter(&letter.to_string()).is_none()
+    })
+}
 
 /// The three-letter amino-acid name for a one-letter code, for answers that
 /// name a reference residue.

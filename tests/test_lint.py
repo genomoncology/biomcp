@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.machinery
+import importlib.util
 import os
 import json
 import shutil
@@ -21,6 +23,16 @@ RUFF_GATE_PROBE = (
     / "_ruff_gate_probe"
     / "unused_import_probe.py"
 )
+
+_TEXT_LINT_SPEC = importlib.util.spec_from_file_location(
+    "check_tracked_text",
+    TEXT_LINT_SCRIPT,
+    loader=importlib.machinery.SourceFileLoader(
+        "check_tracked_text", str(TEXT_LINT_SCRIPT)
+    ),
+)
+TEXT_LINT = importlib.util.module_from_spec(_TEXT_LINT_SPEC)
+_TEXT_LINT_SPEC.loader.exec_module(TEXT_LINT)
 
 
 def _copy_lint_fixture(tmp_path: Path) -> Path:
@@ -417,3 +429,88 @@ def test_lint_still_fails_for_production_python_with_repo_ruff_config(
     assert "[FAIL] Python lint (ruff check .)" in result.stdout
     assert "scripts/production_probe.py" in result.stdout
     assert "F401" in result.stdout
+
+
+# The code-comment citation scan: a comment that names a ticket
+# number fails lint (the public repository carries no ticket
+# records, so the comment must state the constraint itself), while
+# runtime strings — recorded replies, error messages — keep their
+# numbers. The scan reads comments only, so its extraction is the
+# contract these tests pin.
+
+
+def test_comment_scan_reads_rust_comments_not_strings() -> None:
+    rust = (
+        "//! module proof drives the built binary\n"
+        'let url = "https://example.test/a//b ticket 77 reply";\n'
+        'let raw = r#"raw "quoted" ticket 78 body"#;\n'
+        "let ch = 't';\n"
+        "let label: &'static str = \"parked\"; // ticket 7900 parked\n"
+        "/* outer ticket 8000 opening\n"
+        "   /* nested still counts */\n"
+        "*/\n"
+    )
+    found = TEXT_LINT.comment_ticket_citations("src/proof.rs", rust)
+    assert found == [
+        "src/proof.rs:5:// ticket 7900 parked",
+        "src/proof.rs:6:/* outer ticket 8000 opening /* nested still counts */ */",
+    ]
+
+
+def test_comment_scan_reads_python_comments_not_strings() -> None:
+    python = (
+        '"""A docstring naming ticket 2049 is runtime data."""\n'
+        'subject = "Record ticket 1998 directly"  # trailing comment naming nothing\n'
+        "# Tickets 6600 and 6601 landed here\n"
+    )
+    found = TEXT_LINT.comment_ticket_citations("tests/test_probe.py", python)
+    assert found == ["tests/test_probe.py:3:# Tickets 6600 and 6601 landed here"]
+
+
+def test_lint_fails_on_a_planted_rust_ticket_comment(tmp_path: Path) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(
+        repo_root,
+        {"src/proof.rs": "// ticket 1234 planted citation\nfn main() {}\n"},
+    )
+
+    result = _run_lint(repo_root)
+
+    assert result.returncode == 1
+    assert "[FAIL] code-comment ticket citation scan" in result.stdout
+    assert "src/proof.rs:1:// ticket 1234 planted citation" in result.stdout
+
+
+def test_lint_fails_on_a_planted_python_ticket_comment(tmp_path: Path) -> None:
+    ruff = _require_ruff()
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(
+        repo_root,
+        {"scripts/probe.py": "# Ticket 1234 planted citation\nprint(1)\n"},
+    )
+
+    result = _run_lint(
+        repo_root, env={"PATH": f"{Path(ruff).parent}:/usr/bin:/bin"}
+    )
+
+    assert result.returncode == 1
+    assert "[FAIL] code-comment ticket citation scan" in result.stdout
+    assert "scripts/probe.py:1:# Ticket 1234 planted citation" in result.stdout
+
+
+def test_lint_passes_a_runtime_string_that_names_a_ticket(tmp_path: Path) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(
+        repo_root,
+        {
+            "src/proof.rs": (
+                '// recorded reply fixture naming its source\n'
+                'const REPLY: &str = "ticket 662 recorded reply body";\n'
+            ),
+        },
+    )
+
+    result = _run_lint(repo_root)
+
+    assert result.returncode == 0
+    assert "[PASS] code-comment ticket citation scan" in result.stdout

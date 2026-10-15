@@ -2603,7 +2603,7 @@ fn materialize_identity_verification_plan(
             )
             .status
                 == "unverified"
-                && candidate.row.pmid.parse::<u32>().is_ok()
+                && candidate.row.pmid.parse::<u64>().is_ok()
         })
         .count();
     execution.set_route_unit_plan("identity_verification", "pubtator", Some(units));
@@ -3270,7 +3270,7 @@ async fn search_variant_articles_identity(
                 candidate.identity = Some(captured);
                 continue;
             }
-            let incomplete = match candidate.row.pmid.parse::<u32>() {
+            let incomplete = match candidate.row.pmid.parse::<u64>() {
                 Ok(pmid) => {
                     let Some(unit) = execution
                         .begin_provider_unit("identity_verification", "pubtator")

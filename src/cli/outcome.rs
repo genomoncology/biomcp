@@ -205,7 +205,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 }
             },
             Commands::Health(args) => {
-                outcome_to_string(Box::pin(crate::cli::health::command(args, json)).await?)
+                outcome_to_string(Box::pin(crate::cli::health::command(args, json, false)).await?)
             }
             Commands::Cache { cmd } => match cmd {
                 super::cache::CacheCommand::Path => {
@@ -346,10 +346,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
     .await
 }
 
-async fn run_outcome_inner(
-    cli: Cli,
-    alias_suggestions_as_json: bool,
-) -> anyhow::Result<CommandOutcome> {
+/// `mcp` is true only when the command runs for an MCP caller: alias
+/// suggestions render as JSON and the health report leaves local paths out.
+async fn run_outcome_inner(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome> {
     crate::sources::disable::init(cli.disable_sources.as_deref())?;
     super::shared::validate_cli_state_contract(&cli)?;
     let Cli {
@@ -360,7 +359,7 @@ async fn run_outcome_inner(
     } = cli;
 
     match command {
-        Commands::Health(args) => crate::cli::health::command(args, json)
+        Commands::Health(args) => crate::cli::health::command(args, json, mcp)
             .await
             .map_err(Into::into),
         Commands::Cache {
@@ -397,7 +396,7 @@ async fn run_outcome_inner(
             entity: GetEntity::Gene(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::gene::handle_get(args, json, alias_suggestions_as_json).await
+                super::gene::handle_get(args, json, mcp).await
             }))
             .await
         }
@@ -405,7 +404,7 @@ async fn run_outcome_inner(
             entity: GetEntity::Drug(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::drug::handle_get(args, json, alias_suggestions_as_json).await
+                super::drug::handle_get(args, json, mcp).await
             }))
             .await
         }
@@ -413,7 +412,7 @@ async fn run_outcome_inner(
             entity: GetEntity::Variant(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::variant::handle_get_bounded(args, json, alias_suggestions_as_json).await
+                super::variant::handle_get_bounded(args, json, mcp).await
             }))
             .await
         }
@@ -421,7 +420,7 @@ async fn run_outcome_inner(
             entity: SearchEntity::Gene(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::gene::handle_search(args, json, alias_suggestions_as_json).await
+                super::gene::handle_search(args, json, mcp).await
             }))
             .await
         }
@@ -429,7 +428,7 @@ async fn run_outcome_inner(
             entity: SearchEntity::Variant(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::variant::handle_search_bounded(args, json, alias_suggestions_as_json).await
+                super::variant::handle_search_bounded(args, json, mcp).await
             }))
             .await
         }
@@ -446,7 +445,7 @@ async fn run_outcome_inner(
             entity: GetEntity::Article(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::article::handle_get(args, json, alias_suggestions_as_json).await
+                super::article::handle_get(args, json, mcp).await
             }))
             .await
         }
@@ -506,12 +505,8 @@ async fn run_outcome_inner(
             cmd: super::GeneCommand::Definition { symbol },
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::gene::handle_command(
-                    super::GeneCommand::Definition { symbol },
-                    json,
-                    alias_suggestions_as_json,
-                )
-                .await
+                super::gene::handle_command(super::GeneCommand::Definition { symbol }, json, mcp)
+                    .await
             }))
             .await
         }
@@ -519,12 +514,7 @@ async fn run_outcome_inner(
             cmd: super::DrugCommand::External(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::drug::handle_command(
-                    super::DrugCommand::External(args),
-                    json,
-                    alias_suggestions_as_json,
-                )
-                .await
+                super::drug::handle_command(super::DrugCommand::External(args), json, mcp).await
             }))
             .await
         }
@@ -532,12 +522,7 @@ async fn run_outcome_inner(
             cmd: super::GeneCommand::External(args),
         } => {
             Box::pin(crate::sources::with_no_cache(no_cache, async move {
-                super::gene::handle_command(
-                    super::GeneCommand::External(args),
-                    json,
-                    alias_suggestions_as_json,
-                )
-                .await
+                super::gene::handle_command(super::GeneCommand::External(args), json, mcp).await
             }))
             .await
         }
@@ -612,7 +597,7 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
 
 async fn run_outcome_with_worker_stack(
     cli: Cli,
-    alias_suggestions_as_json: bool,
+    mcp: bool,
     drive: WorkerDrive,
 ) -> anyhow::Result<CommandOutcome> {
     // Pins the execute stack at 8 MiB (command futures once hit 145 KB; render recursion needs the margin).
@@ -623,7 +608,7 @@ async fn run_outcome_with_worker_stack(
             .stack_size(EXECUTE_STACK_BYTES)
             .spawn(move || -> anyhow::Result<CommandOutcome> {
                 let command = async {
-                    if alias_suggestions_as_json {
+                    if mcp {
                         // MCP path: the helper scopes the command with the stale-serve task-local
                         // and appends the text note before shell.rs redacts MCP output.
                         let wants_text_note = !(cli.json

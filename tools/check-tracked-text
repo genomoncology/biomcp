@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import json
+import io
 import os
 import re
 import subprocess
 import sys
+import tokenize
 from collections import Counter
 from pathlib import Path
 
@@ -15,6 +17,7 @@ CHECK_LABELS = {
     "pycache": "stale __pycache__ scan",
     "deprecated_docs": "deprecated public-doc install string scan",
     "docs_test_code": "docs test-code leak scan",
+    "ticket_citations": "code-comment ticket citation scan",
 }
 TBD_SUFFIXES = {
     ".py",
@@ -68,6 +71,155 @@ def is_tbd_comment(relative: str, line: str) -> bool:
     if suffix in {".rs", ".zig", ".js", ".ts", ".tsx", ".jsx"}:
         return bool(re.match(r"^\s*//", line))
     return False
+
+
+# A comment cites a private ticket record when it names a ticket
+# number: the public repository ships no ticket records, so the
+# comment must state the constraint itself. Strings never count —
+# runtime data (error messages, recorded replies) legitimately
+# carries ticket numbers.
+TICKET_CITATION = re.compile(r"\btickets?\s+[0-9]+", re.IGNORECASE)
+# One char literal, escapes included; a lifetime or loop label never
+# matches, so it stays code and never opens a string.
+RUST_CHAR = re.compile(
+    r"'(?:[^'\\\n]|\\(?:[nrt0'\"\\]|x[0-9a-fA-F]{2}|u\{[0-9a-fA-F_]{1,6}\}))'"
+)
+# The identifier prefixes that make a quote open a raw string.
+RUST_RAW_PREFIX = re.compile(r"(?:b?r|br|cr)$")
+
+
+def python_comments(text: str) -> list[tuple[int, str]]:
+    """Every `#` comment as (line, comment); strings never count."""
+    try:
+        return [
+            (token.start[0], token.string)
+            for token in tokenize.generate_tokens(io.StringIO(text).readline)
+            if token.type == tokenize.COMMENT
+        ]
+    except (SyntaxError, IndentationError, tokenize.TokenError, ValueError):
+        # A file that does not tokenize still gets its comments read:
+        # cut each line at the first quote-safe `#`.
+        comments: list[tuple[int, str]] = []
+        for number, line in enumerate(text.splitlines(), start=1):
+            quote = ""
+            index = 0
+            while index < len(line):
+                char = line[index]
+                if quote:
+                    if char == "\\":
+                        index += 2
+                        continue
+                    if char == quote:
+                        quote = ""
+                elif char in "'\"":
+                    quote = char
+                elif char == "#":
+                    comments.append((number, line[index:]))
+                    break
+                index += 1
+        return comments
+
+
+def rust_comments(text: str) -> list[tuple[int, str]]:
+    """Every `//` and `/* */` comment as (line, comment).
+
+    Strings are skipped — a `//` inside one (a URL) is data — so the
+    scan tracks normal strings with escapes, raw strings by their
+    hash count, and char literals apart from lifetimes. No cargo
+    build may sit behind this check, so the scan is its own lexer.
+    """
+    comments: list[tuple[int, str]] = []
+    line = 1
+    index = 0
+    length = len(text)
+
+    def word_before(position: int) -> str:
+        start = position
+        while start > 0 and (text[start - 1].isalnum() or text[start - 1] == "_"):
+            start -= 1
+        return text[start:position]
+
+    def hashes_before(position: int) -> int:
+        start = position
+        while start > 0 and text[start - 1] == "#":
+            start -= 1
+        return position - start
+
+    while index < length:
+        char = text[index]
+        if char == "\n":
+            line += 1
+            index += 1
+        elif char == '"':
+            hashes = hashes_before(index)
+            if hashes == 0 and not RUST_RAW_PREFIX.fullmatch(word_before(index)):
+                # A normal string: skip to the closing quote, past escapes.
+                index += 1
+                while index < length:
+                    if text[index] == "\\":
+                        index += 2
+                        continue
+                    if text[index] == '"':
+                        index += 1
+                        break
+                    if text[index] == "\n":
+                        line += 1
+                    index += 1
+            else:
+                # A raw string (r"…", r#"…"#, br"…"): no escapes, and
+                # the same number of hashes closes it.
+                closing = '"' + "#" * hashes
+                end = text.find(closing, index + 1)
+                if end == -1:
+                    break
+                line += text.count("\n", index, end)
+                index = end + 1 + hashes
+        elif char == "'":
+            literal = RUST_CHAR.match(text, index)
+            if literal is None:
+                index += 1  # a lifetime or a label: code, not a string
+            else:
+                index = literal.end()
+        elif text.startswith("//", index):
+            end = text.find("\n", index)
+            end = length if end == -1 else end
+            comments.append((line, text[index:end]))
+            index = end
+        elif text.startswith("/*", index):
+            start_line = line
+            start_index = index
+            depth = 1
+            index += 2
+            while index < length and depth:
+                if text.startswith("/*", index):
+                    depth += 1
+                    index += 2
+                elif text.startswith("*/", index):
+                    depth -= 1
+                    index += 2
+                else:
+                    if text[index] == "\n":
+                        line += 1
+                    index += 1
+            comments.append((start_line, text[start_index:index]))
+        else:
+            index += 1
+    return comments
+
+
+def comment_ticket_citations(relative: str, text: str) -> list[str]:
+    suffix = Path(relative).suffix
+    if suffix == ".py":
+        comments = python_comments(text)
+    elif suffix == ".rs":
+        comments = rust_comments(text)
+    else:
+        return []
+    return [
+        f"{relative}:{number}:{' '.join(comment.split())}"
+        for number, comment in comments
+        if TICKET_CITATION.search(comment)
+    ]
 
 
 def docs_code_leaks(relative: str, lines: list[str]) -> list[str]:
@@ -146,6 +298,9 @@ def run(root: Path) -> tuple[dict[str, list[str]], Counter[str]]:
                         f"{relative}:{line_number}:{line}"
                     )
 
+        if relative.endswith((".py", ".rs")) and relative != "tests/test_lint.py":
+            findings["ticket_citations"].extend(comment_ticket_citations(relative, text))
+
         if relative.startswith("docs/") and relative.endswith(".md"):
             findings["docs_test_code"].extend(docs_code_leaks(relative, lines))
 
@@ -176,6 +331,11 @@ def main() -> int:
         "pycache": "Tracked __pycache__ paths found (add __pycache__/ to .gitignore):",
         "deprecated_docs": "Deprecated public-doc install strings found:",
         "docs_test_code": "Docs code blocks contain leaked test-code signatures:",
+        "ticket_citations": (
+            "Ticket numbers cited in code comments found (state the "
+            "constraint, not the ticket; the public repository carries no "
+            "ticket records):"
+        ),
     }
     failed = False
     for name, label in CHECK_LABELS.items():

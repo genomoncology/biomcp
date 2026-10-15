@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Require a described changelog bullet for every ticket merged since the prior release."""
+"""Require a described changelog bullet for every ticket merged since the prior release.
+
+At a tag, `--tag` is the release bar: every ticket merged since the
+previous tag must carry a described bullet in the tagged section. On
+a branch, `--branch` is the early form: the tickets landed since the
+last tag plus the branch's own ticket need bullets only when their
+diffs change shipped behavior, checked against the live section.
+"""
 
 from __future__ import annotations
 
 import argparse
+import os
 from collections.abc import Callable
 from pathlib import Path
 import re
@@ -30,10 +38,24 @@ STATUS_LINE = re.compile(r"^Status:\s*(.+)$", re.IGNORECASE)
 # capital-start included) is a ticket record, whatever its number.
 RECORD_TICKET = re.compile(r"^sdlc/records/([0-9]{4})-(?![0-9]{2}-[0-9]{2}-)")
 STABLE_TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
+# A landing branch names its ticket: ticket/2074-fix-the-gate. The
+# older tickets/ spelling still runs in CI, so both count.
+BRANCH_NAME_TICKET = re.compile(r"^tickets?/([0-9]+)-")
+# Shipped behavior (2026-10-14 ruling): a diff that touches these
+# paths changes what a release ships; anything else — tests,
+# scripts, CI, sdlc records — changes the repository only.
+SHIPPED_ROOTS = ("src/", "templates/", "skills/", "docs/", "crates/")
+SHIPPED_FILES = ("Cargo.toml", "Cargo.lock", "install.sh", "pyproject.toml")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tag", required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--tag", help="the release bar: cover every ticket since the previous tag")
+    mode.add_argument(
+        "--branch",
+        action="store_true",
+        help="the branch form: cover tickets whose diffs change shipped behavior",
+    )
     parser.add_argument("--changelog", type=Path, default=Path("CHANGELOG.md"))
     return parser.parse_args()
 
@@ -61,9 +83,16 @@ def previous_tag(tag: str) -> str | None:
 
 def landing_subject_tickets(previous: str, tag: str) -> set[str]:
     subjects = run_git("log", "--format=%s", f"{previous}..{tag}").splitlines()
+    found: set[str] = set()
+    for subject in subjects:
+        found |= subject_tickets(subject)
+    return found
+
+
+def subject_tickets(subject: str) -> set[str]:
+    """The tickets a landing subject names, across every shape."""
     return {
         match.group(1)
-        for subject in subjects
         for match in (
             MERGE_TICKET.match(subject),
             LAND_TICKET.match(subject),
@@ -170,6 +199,134 @@ def section_text(path: Path, tag: str) -> tuple[str, str]:
     )
 
 
+def latest_tag(head: str = "HEAD") -> str | None:
+    """The newest stable tag an object's history carries."""
+    tags = run_git("tag", "--merged", head, "--sort=version:refname").splitlines()
+    stable = [tag for tag in tags if STABLE_TAG.fullmatch(tag)]
+    return max(stable, key=version_key) if stable else None
+
+
+def landing_files(previous: str, head: str) -> dict[str, set[str]]:
+    """The files each landing since `previous` changed, by ticket.
+
+    A landing is a commit whose subject names its ticket, the same
+    subject shapes the tag run reads. A first-parent diff-tree gives
+    a merge landing its branch diff and a linear landing its plain
+    parent diff, so either shape attributes its files to its ticket.
+    A ticket that closed with no landing subject (record or status
+    only) has no diff here and never needs a bullet on a branch; the
+    tag run still demands it at the release.
+    """
+    files: dict[str, set[str]] = {}
+    log = run_git("log", "--format=%H%x09%s", f"{previous}..{head}")
+    for line in log.splitlines():
+        if not line:
+            continue
+        sha, _, subject = line.partition("\t")
+        for ticket in subject_tickets(subject):
+            changed = run_git(
+                "diff-tree",
+                "--no-commit-id",
+                "--name-only",
+                "-r",
+                "-m",
+                "--first-parent",
+                sha,
+            ).splitlines()
+            files.setdefault(ticket, set()).update(changed)
+    return files
+
+
+def branch_diff_files(base_ref: str = "origin/main") -> set[str]:
+    """The branch's own contribution: the diff since the merge-base
+    with the trunk."""
+    merge_base = run_git("merge-base", base_ref, "HEAD").strip()
+    if not merge_base:
+        raise RuntimeError(f"no merge-base with {base_ref}")
+    return set(run_git("diff", "--name-only", merge_base, "HEAD").splitlines())
+
+
+def touches_shipped_behavior(files: set[str]) -> bool:
+    return any(
+        path.startswith(SHIPPED_ROOTS) or path in SHIPPED_FILES for path in files
+    )
+
+
+LIVE_HEADING = re.compile(r"^## (Unreleased|[0-9]+\.[0-9]+\.[0-9]+)\s*$", re.MULTILINE)
+
+
+def live_section_text(path: Path) -> tuple[str, str] | None:
+    """The dev cycle's section, or None when the changelog has none.
+
+    A released section carries its date (`## 0.9.2 — 2026-10-11`),
+    so a heading with a suffix is closed; a bare version heading is
+    the release under way, and `## Unreleased` is the same thing
+    before its number is chosen.
+    """
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise RuntimeError(f"cannot read {path}: {error}") from error
+    heading = LIVE_HEADING.search(content)
+    if heading is None:
+        return None
+    body = re.search(
+        re.escape(heading.group(0)) + r"([\s\S]*?)(?=^## |\Z)", content, re.MULTILINE
+    )
+    assert body is not None  # the heading just matched, so its body exists
+    return heading.group(1), body.group(1)
+
+
+def branch_main(changelog: Path) -> int:
+    """The branch form of the gate: fail a branch that changes
+    shipped behavior without a described bullet in the live section.
+    """
+    ref_name = os.environ.get("GITHUB_REF_NAME", "")
+    previous = latest_tag()
+    if previous is None:
+        print("no previous release; nothing to cover")
+        return 0
+    tickets_files = landing_files(previous, "HEAD")
+    branch_match = BRANCH_NAME_TICKET.match(ref_name)
+    if branch_match is not None:
+        tickets_files.setdefault(branch_match.group(1), set()).update(
+            branch_diff_files()
+        )
+    needing = sorted(
+        (
+            ticket
+            for ticket, files in tickets_files.items()
+            if touches_shipped_behavior(files)
+        ),
+        key=int,
+    )
+    if not needing:
+        print(f"no ticket since {previous} changed shipped behavior")
+        return 0
+    section = live_section_text(changelog)
+    if section is None:
+        print(
+            "the changelog has no Unreleased or under-way version section to "
+            f"carry bullets for: {', '.join(needing)}",
+            file=sys.stderr,
+        )
+        return 1
+    label, body = section
+    missing = sorted(set(needing) - described_tickets(body), key=int)
+    if missing:
+        print(
+            f"CHANGELOG {label} is missing described bullets for tickets that "
+            f"changed shipped behavior since {previous}: " + ", ".join(missing),
+            file=sys.stderr,
+        )
+        return 1
+    print(
+        f"changelog {label} covers all {len(needing)} tickets that changed "
+        f"shipped behavior since {previous}"
+    )
+    return 0
+
+
 # Words that carry no description: a bullet made only of these
 # and ticket numbers is a bare list, not coverage.
 BOILERPLATE_WORDS = re.compile(
@@ -196,10 +353,10 @@ def described_tickets(section: str) -> set[str]:
     if current:
         bullets.append(" ".join(current))
     for text in bullets:
-        # Ticket 2049: a bullet covers a ticket when the bullet's closing
-        # group names it. The closing group sits at the bullet's end and
-        # reads (NNNN), (NNNN, MMMM) or (NNNN and MMMM); a number in the
-        # prose ("ticket 2039 tracks") is not coverage.
+        # A bullet covers a ticket when the bullet's closing group
+        # names it. The closing group sits at the bullet's end and
+        # reads (NNNN), (NNNN, MMMM) or (NNNN and MMMM); a number in
+        # the prose ("tracks 2039") is not coverage.
         stripped = text.strip().rstrip(" .,;")
         closing = ""
         if stripped.endswith(")") and "(" in stripped:
@@ -229,8 +386,8 @@ def described_tickets(section: str) -> set[str]:
 
 
 # A cited ticket whose file is missing or milestone-less cannot prove
-# another release: the milestone convention arrived mid-0.9.2 and
-# tickets 1288 and 1289 carry no ticket file at all, so the tag run
+# another release: the milestone convention arrived mid-cycle and
+# some early tickets carry no ticket file at all, so the tag run
 # tolerates both and fails only a ticket whose file names another
 # milestone.
 NO_TICKET_FILE = "no ticket file"
@@ -295,6 +452,12 @@ def milestone_problems(
 
 def main() -> int:
     args = parse_args()
+    if args.branch:
+        try:
+            return branch_main(args.changelog)
+        except RuntimeError as error:
+            print(f"changelog coverage check failed: {error}", file=sys.stderr)
+            return 1
     if not STABLE_TAG.fullmatch(args.tag):
         print(
             f"changelog coverage check failed: stable v-prefixed tag required: {args.tag}",

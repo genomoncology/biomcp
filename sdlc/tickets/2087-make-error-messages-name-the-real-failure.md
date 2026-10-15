@@ -1,8 +1,10 @@
 # 2087 — Make error messages name the real failure
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision eac19b0, accept
 
 ## Outcome
 

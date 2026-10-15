@@ -1054,7 +1054,7 @@ def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypas
         "src/mcp/shell.rs": {
             "sanitize_document(&text)",
             "sanitize_document(&content)",
-            "sanitize_inline(&message.into())",
+            "sanitize_document(&message.into())",
         },
         "src/render/chart.rs": {
             "fn chart_text(value: &str)",

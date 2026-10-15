@@ -385,25 +385,29 @@ pub(in crate::cli::health) fn report_from_outcomes(outcomes: Vec<ProbeOutcome>) 
 
 /// Runs connectivity checks for configured upstream APIs and local EMA/CVX/WHO/GTR/WHO IVD/cache readiness.
 ///
+/// `mcp` marks the MCP surface: local rows name their dataset without the
+/// resolved directory, because an MCP reply carries no local path.
+///
 /// # Errors
 ///
 /// Returns an error when the shared HTTP client cannot be created.
 pub(super) async fn check(
     apis_only: bool,
     selected_sources: &[SourceDescriptor],
+    mcp: bool,
 ) -> Result<HealthReport, BioMcpError> {
     let client = health_http_client()?;
     let mut outcomes = run_api_probes(client, selected_sources).await;
 
     if !apis_only {
-        outcomes.push(check_ema_local_data());
-        outcomes.push(check_cvx_local_data());
-        outcomes.push(check_ddinter_local_data());
-        outcomes.push(check_who_local_data());
-        outcomes.push(check_gtr_local_data());
-        outcomes.push(check_who_ivd_local_data());
+        outcomes.push(check_ema_local_data(mcp));
+        outcomes.push(check_cvx_local_data(mcp));
+        outcomes.push(check_ddinter_local_data(mcp));
+        outcomes.push(check_who_local_data(mcp));
+        outcomes.push(check_gtr_local_data(mcp));
+        outcomes.push(check_who_ivd_local_data(mcp));
         outcomes.push(check_fhir_config());
-        outcomes.push(check_cache_dir().await);
+        outcomes.push(check_cache_dir(mcp).await);
         outcomes.push(check_cache_limits().await);
     }
 

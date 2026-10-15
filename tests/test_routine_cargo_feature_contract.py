@@ -34,8 +34,8 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert "nextest archive --locked $(ROUTINE_CARGO_FEATURES)" in _target(
         makefile, "prepare-test"
     )
-    # Ticket 2075 split `make test` so the CI lanes can run the Rust
-    # half alone; the archive run is the rust lane's recipe.
+    # The lane split cut `make test` in two so the CI lanes can
+    # run the Rust half alone; the archive run is the rust lane's recipe.
     assert "nextest run --archive-file" in _target(makefile, "test-rust")
     assert "--cargo-feature-arg" in runner
     assert '"${routine_cargo_features[@]}"' in runner

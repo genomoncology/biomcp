@@ -499,6 +499,98 @@ impl Drop for OpenFdaFixture {
     }
 }
 
+const MYDISEASE_MM_RESPONSE: &[u8] = include_bytes!("../testdata/sources/mydisease/query_mm.json");
+const MYVARIANT_TP53_S183Y_RESPONSE: &[u8] =
+    include_bytes!("../testdata/sources/myvariant/query_tp53_s183y_20261009.json");
+const UNIPROT_P04637_RESPONSE: &[u8] =
+    include_bytes!("../testdata/sources/uniprot/get_p04637_20261008.json");
+const MYGENE_TP53_RESPONSE: &[u8] = br#"{"total":1,"hits":[{"symbol":"TP53","name":"tumor protein p53","entrezgene":7157,"type_of_gene":"protein-coding","ensembl":{"gene":"ENSG00000141510"},"uniprot":{"Swiss-Prot":"P04637"}}]}"#;
+
+/// Serves the recorded provider replies behind the two refusals whose line
+/// breaks must survive the MCP error path: the ambiguous `MM` disease
+/// abbreviation and the isoform-only `TP53 S183Y` protein change. The
+/// listener blocks on `accept` and `Drop` wakes it with a self-connect, so
+/// shutdown needs no clock wait.
+struct RefusalFixtureServer {
+    base: String,
+    addr: std::net::SocketAddr,
+    stop: Arc<AtomicBool>,
+    thread: Option<thread::JoinHandle<()>>,
+}
+
+impl RefusalFixtureServer {
+    fn start() -> anyhow::Result<Self> {
+        let listener = TcpListener::bind(("127.0.0.1", 0))?;
+        let addr = listener.local_addr()?;
+        let base = format!("http://{addr}");
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
+        let thread = thread::spawn(move || {
+            for stream in listener.incoming() {
+                if thread_stop.load(Ordering::SeqCst) {
+                    break;
+                }
+                let Ok(mut stream) = stream else {
+                    continue;
+                };
+                let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+                // The production GET field lists make a request line span
+                // TCP segments, so read until the headers end before routing.
+                let mut request = vec![0_u8; 32 * 1024];
+                let mut len = 0_usize;
+                loop {
+                    let Ok(read) = stream.read(&mut request[len..]) else {
+                        break;
+                    };
+                    len += read;
+                    if read == 0
+                        || len == request.len()
+                        || request[..len].windows(4).any(|w| w == b"\r\n\r\n")
+                    {
+                        break;
+                    }
+                }
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                let body: &[u8] = if request.contains("/uniprotkb/P04637.json") {
+                    UNIPROT_P04637_RESPONSE
+                } else if request.contains("/query?")
+                    && (request.contains("p.S183Y") || request.contains("dbnsfp"))
+                {
+                    MYVARIANT_TP53_S183Y_RESPONSE
+                } else if request.contains("/query?") && request.contains("MM") {
+                    MYDISEASE_MM_RESPONSE
+                } else if request.contains("/query?") {
+                    MYGENE_TP53_RESPONSE
+                } else {
+                    br#"{"total":0,"hits":[]}"#
+                };
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes());
+                let _ = stream.write_all(body);
+            }
+        });
+        Ok(Self {
+            base,
+            addr,
+            stop,
+            thread: Some(thread),
+        })
+    }
+}
+
+impl Drop for RefusalFixtureServer {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::SeqCst);
+        let _ = std::net::TcpStream::connect(self.addr);
+        if let Some(thread) = self.thread.take() {
+            thread.join().expect("join refusal fixture");
+        }
+    }
+}
+
 fn harness() -> ContractHarness {
     ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"))
 }
@@ -1496,6 +1588,69 @@ async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> 
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn mcp_health_names_local_datasets_without_local_paths() -> anyhow::Result<()> {
+    let harness = harness();
+    // Every API probe answers at one loopback origin, so the report renders
+    // from the local rows this test is about instead of upstream networks.
+    let probes = RequestCounterFixture::start()?;
+    let home = tempfile::tempdir()?;
+    let env = [
+        ("HOME", home.path().display().to_string()),
+        (
+            "XDG_DATA_HOME",
+            home.path().join("data").display().to_string(),
+        ),
+        (
+            "XDG_CONFIG_HOME",
+            home.path().join("config").display().to_string(),
+        ),
+        (
+            "XDG_CACHE_HOME",
+            home.path().join("xdg-cache").display().to_string(),
+        ),
+        (
+            "BIOMCP_CACHE_DIR",
+            home.path().join("cache").display().to_string(),
+        ),
+        ("BIOMCP_HEALTH_PROBE_BASE", probes.base.clone()),
+        ("BIOMCP_TEST_UNPACED_ORIGIN", probes.base.clone()),
+    ];
+    let client = harness.spawn_stdio_client(&env).await?;
+
+    let root = home.path().display().to_string();
+    let text_call = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp health").await?;
+    assert_eq!(text_call.is_error, Some(false));
+    let text = biomcp_mcp_contract_client::first_text(&text_call.content);
+    assert!(
+        !text.contains(&root),
+        "biomcp health named a local path: {text}"
+    );
+    assert!(
+        text.contains("EMA local data"),
+        "biomcp health lost the local dataset row: {text}"
+    );
+    assert!(
+        text.contains("Cache dir"),
+        "biomcp health lost the cache row: {text}"
+    );
+
+    let json_call = biomcp_mcp_contract_client::call_biomcp_json(&client, "biomcp health").await?;
+    assert_eq!(json_call.is_error, Some(false));
+    let value: serde_json::Value =
+        serde_json::from_str(biomcp_mcp_contract_client::first_text(&json_call.content))?;
+    let rows = value["rows"].as_array().expect("rows array");
+    assert!(
+        rows.iter().any(|row| row["api"] == "EMA local data"),
+        "no bare EMA row: {value}"
+    );
+    for row in rows {
+        assert!(row.get("local_path").is_none(), "row carried a path: {row}");
+    }
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness
@@ -1723,6 +1878,108 @@ async fn rmcp_streamable_http_client_verifies_full_contract() -> anyhow::Result<
 
     child.kill().await.ok();
     result
+}
+
+/// The shared environment behind the refusal tests: every provider the
+/// two refusals consult points at the recorded-fixture server, every other
+/// remote base refuses the connection at once, and all state stays inside
+/// `home`.
+fn refusal_env(
+    fixture: &RefusalFixtureServer,
+    home: &std::path::Path,
+) -> Vec<biomcp_mcp_contract_client::EnvVar> {
+    let refused = "http://127.0.0.1:9".to_string();
+    let mut env = vec![
+        ("HOME", home.display().to_string()),
+        ("XDG_DATA_HOME", home.join("data").display().to_string()),
+        ("XDG_CONFIG_HOME", home.join("config").display().to_string()),
+        (
+            "XDG_CACHE_HOME",
+            home.join("xdg-cache").display().to_string(),
+        ),
+        ("BIOMCP_CACHE_DIR", home.join("cache").display().to_string()),
+        ("BIOMCP_CACHE_MODE", "off".to_string()),
+        ("BIOMCP_MYDISEASE_BASE", fixture.base.clone()),
+        ("BIOMCP_MYGENE_BASE", fixture.base.clone()),
+        ("BIOMCP_MYVARIANT_BASE", fixture.base.clone()),
+        ("BIOMCP_UNIPROT_BASE", fixture.base.clone()),
+    ];
+    for name in [
+        "BIOMCP_CTGOV_BASE",
+        "BIOMCP_OLS4_BASE",
+        "BIOMCP_MYCHEM_BASE",
+        "BIOMCP_OPENTARGETS_BASE",
+        "BIOMCP_DBSNP_BASE",
+        "BIOMCP_GNOMAD_BASE",
+        "BIOMCP_MEDLINEPLUS_BASE",
+    ] {
+        env.push((name, refused.clone()));
+    }
+    env
+}
+
+fn run_cli_refusal(
+    harness: &ContractHarness,
+    env: &[biomcp_mcp_contract_client::EnvVar],
+    args: &[&str],
+) -> anyhow::Result<String> {
+    let output = std::process::Command::new(&harness.biomcp_bin)
+        .args(args)
+        .env_remove("BIOMCP_TEST_PANIC_TOOL")
+        .env_remove("RUST_MIN_STACK")
+        .envs(env.iter().cloned())
+        .output()?;
+    anyhow::ensure!(
+        output.status.code() == Some(2),
+        "the CLI refusal must exit 2: {args:?}, output={output:?}"
+    );
+    Ok(String::from_utf8_lossy(&output.stderr).into_owned())
+}
+
+fn assert_mcp_error_keeps_cli_lines(cli_text: &str, mcp_text: &str, command: &str) {
+    let cli_lines: Vec<&str> = cli_text.lines().map(str::trim_end).collect();
+    let mcp_lines: Vec<&str> = mcp_text.lines().map(str::trim_end).collect();
+    assert!(
+        cli_lines.len() > 1,
+        "{command}: the recorded CLI refusal must span several lines: {cli_text}"
+    );
+    let missing: Vec<&str> = cli_lines
+        .iter()
+        .copied()
+        .filter(|line| !line.is_empty() && !mcp_lines.contains(line))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "{command}: MCP error text lost or merged CLI lines {missing:?}\nCLI:\n{cli_text}\nMCP:\n{mcp_text}"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn mcp_error_text_keeps_each_cli_refusal_line() -> anyhow::Result<()> {
+    let harness = harness();
+    let fixture = RefusalFixtureServer::start()?;
+    let home = tempfile::tempdir()?;
+    let env = refusal_env(&fixture, home.path());
+    let client = harness.spawn_stdio_client(&env).await?;
+
+    for (command, cli_args) in [
+        ("biomcp get disease MM", vec!["get", "disease", "MM"]),
+        (
+            "biomcp get variant \"TP53 S183Y\"",
+            vec!["get", "variant", "TP53 S183Y"],
+        ),
+    ] {
+        let cli_text = run_cli_refusal(&harness, &env, &cli_args)?;
+        let result = biomcp_mcp_contract_client::call_biomcp(&client, command).await?;
+        assert_eq!(result.is_error, Some(true), "{command}");
+        assert_eq!(result.content.len(), 1, "{command}");
+        assert_eq!(result.structured_content, None, "{command}");
+        let mcp_text = biomcp_mcp_contract_client::first_text(&result.content);
+        assert_mcp_error_keeps_cli_lines(&cli_text, mcp_text, command);
+    }
+
+    client.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test(flavor = "multi_thread")]

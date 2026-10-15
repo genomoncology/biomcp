@@ -147,6 +147,81 @@ fn parse_variant_id_accepts_prefixed_short_gene_protein_change() {
 }
 
 #[test]
+fn parse_variant_id_accepts_gene_protein_range_deletions() {
+    match parse_variant_id("EGFR E746_A750del").unwrap() {
+        VariantIdFormat::GeneProteinChange { gene, change } => {
+            assert_eq!(gene, "EGFR");
+            assert_eq!(change, "E746_A750del");
+        }
+        _ => panic!("expected gene+protein range deletion"),
+    }
+    match parse_variant_id("EGFR p.Glu746_Ala750del").unwrap() {
+        VariantIdFormat::GeneProteinChange { gene, change } => {
+            assert_eq!(gene, "EGFR");
+            assert_eq!(change, "E746_A750del");
+        }
+        _ => panic!("expected long-form range deletion"),
+    }
+    assert!(parse_variant_id("EGFR E746_A750dup").is_err());
+    assert!(parse_variant_id("EGFR E746del").is_err());
+}
+
+#[test]
+fn parse_variant_id_refuses_protein_change_with_invalid_residue_letter() {
+    let error = parse_variant_id("BRAF Z999Q").expect_err("invalid residue letter is refused");
+    match &error {
+        BioMcpError::InvalidArgument(message) => {
+            assert!(
+                message.contains("'Z'"),
+                "message names the letter: {message}"
+            );
+            assert!(
+                message.contains("Z999Q"),
+                "message names the change: {message}"
+            );
+        }
+        other => panic!("expected invalid argument, got {other:?}"),
+    }
+    match parse_variant_id("BRAF V600B").expect_err("invalid to-residue is refused") {
+        BioMcpError::InvalidArgument(message) => {
+            assert!(
+                message.contains("'B'"),
+                "message names the letter: {message}"
+            );
+        }
+        other => panic!("expected invalid argument, got {other:?}"),
+    }
+    match parse_variant_id("BRAF V600X").expect("X stays a stop residue") {
+        VariantIdFormat::GeneProteinChange { change, .. } => assert_eq!(change, "V600X"),
+        _ => panic!("expected gene+protein"),
+    }
+}
+
+#[test]
+fn protein_range_deletions_normalize_across_one_and_three_letter_spellings() {
+    for alias in [
+        "E746_A750del",
+        "p.E746_A750del",
+        "p.Glu746_Ala750del",
+        "NP_005219.2:p.Glu746_Ala750del",
+    ] {
+        assert_eq!(
+            normalize_protein_change(alias).as_deref(),
+            Some("E746_A750del"),
+            "alias {alias}"
+        );
+    }
+    assert_ne!(
+        normalize_protein_change("E746_A751del"),
+        normalize_protein_change("p.Glu746_Ala750del")
+    );
+    assert!(protein_changes_equivalent(
+        "E746_A750del",
+        "NP_005219.2:p.Glu746_Ala750del"
+    ));
+}
+
+#[test]
 fn classify_variant_input_detects_search_only_shorthand() {
     match classify_variant_input("PTPN22 620W") {
         VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias {

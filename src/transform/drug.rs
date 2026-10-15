@@ -984,8 +984,8 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut drug_type: Option<String> = None;
     let mut mechanisms: Vec<String> = Vec::new();
     let mut mechanisms_seen: HashSet<String> = HashSet::new();
-    let mut brand_names: Vec<String> = Vec::new();
-    let mut brand_names_seen: HashSet<String> = HashSet::new();
+    let brand_names: Vec<String> = Vec::new();
+    let mut synonyms_seen: HashSet<String> = HashSet::new();
     let mut ddinter_synonyms: Vec<String> = Vec::new();
     // Only the chosen anchor hit feeds the synonym fold:
     // a pooled combination-product synonym would widen DDInter identity
@@ -1109,7 +1109,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     continue;
                 }
                 let key = synonym.to_ascii_lowercase();
-                if !brand_names_seen.insert(key.clone()) {
+                if !synonyms_seen.insert(key) {
                     hit.record(
                         claim_index,
                         "get merge synonyms",
@@ -1119,9 +1119,10 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     );
                     continue;
                 }
-                // The full synonym list feeds DDInter identity matching
-                //the card keeps the three-brand cap, so
-                // the loop does not break here.
+                // The synonym list feeds DDInter identity matching only:
+                // a synonym is not a brand the drug's own labels carry, so
+                // chemical names and aliases never reach brand_names, and
+                // the loop does not break at any cap.
                 hit.record(
                     claim_index,
                     "DDInter synonyms",
@@ -1133,22 +1134,11 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     "anchor-only 32-synonym policy",
                     (ddinter_synonyms.len() < 32).then(|| synonym.to_owned()),
                 );
-                hit.record(
-                    claim_index,
-                    "card brands",
-                    if brand_names.len() < 3 {
-                        "select"
-                    } else {
-                        "cap"
-                    },
-                    "three-brand card policy",
-                    (brand_names.len() < 3).then(|| synonym.to_owned()),
-                );
                 if ddinter_synonyms.len() < 32 {
                     ddinter_synonyms.push(synonym.to_string());
                 }
-                if brand_names.len() < 3 {
-                    brand_names.push(synonym.to_string());
+                if ddinter_synonyms.len() < 32 {
+                    ddinter_synonyms.push(synonym.to_string());
                 }
             }
         }
@@ -1268,12 +1258,10 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
 
     targets.sort();
     indications.sort();
-    brand_names.sort();
     interactions.sort_by(|a, b| a.drug.cmp(&b.drug));
     pharm_classes.truncate(6);
     targets.truncate(8);
     indications.truncate(6);
-    brand_names.truncate(3);
 
     if mechanisms.is_empty() {
         for hit in hits {

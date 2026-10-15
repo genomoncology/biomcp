@@ -118,7 +118,7 @@ impl PubTatorClient {
         )
     }
 
-    pub fn export_biocjson_plan(pmid: u32, api_key: Option<&str>) -> RequestPlan {
+    pub fn export_biocjson_plan(pmid: u64, api_key: Option<&str>) -> RequestPlan {
         let mut plan =
             RequestPlan::get("publications/export/biocjson").query("pmids", pmid.to_string());
         if let Some(key) = clean_api_key(api_key) {
@@ -129,7 +129,7 @@ impl PubTatorClient {
 
     // dead-code reason: pubtator::export_biocjson_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
-    pub fn export_biocjson_request_plan(&self, pmid: u32) -> PubTatorExportRequestPlan {
+    pub fn export_biocjson_request_plan(&self, pmid: u64) -> PubTatorExportRequestPlan {
         PubTatorExportRequestPlan {
             method: "GET",
             path: "/publications/export/biocjson",
@@ -149,7 +149,7 @@ impl PubTatorClient {
         }
     }
 
-    pub async fn export_biocjson(&self, pmid: u32) -> Result<PubTatorExportResponse, BioMcpError> {
+    pub async fn export_biocjson(&self, pmid: u64) -> Result<PubTatorExportResponse, BioMcpError> {
         let authenticated = self.api_key.is_some();
         let plan = Self::export_biocjson_plan(pmid, self.api_key.as_deref());
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);

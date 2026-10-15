@@ -147,7 +147,7 @@ rejects the raw `biomcp` description above 4,000 bytes. The 22,600-byte /
 5,800-token CI budget applies to the current 1.0.0-dev.1 development build. Exact current counts
 belong to that executable measurement rather than hand-copied documentation.
 
-Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, `skill status`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Status remains CLI-only because probing an arbitrary skill directory can reveal workstation-local paths. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
+Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, `skill status`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Status remains CLI-only because probing an arbitrary skill directory can reveal workstation-local paths. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context. The `health` tool names local datasets and the cache dir without their filesystem paths, so an MCP health reply reports readiness without disclosing where the server keeps its data.
 
 ### Resources
 

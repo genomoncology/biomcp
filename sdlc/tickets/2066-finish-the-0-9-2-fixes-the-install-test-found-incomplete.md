@@ -19,15 +19,15 @@ Filed 2026-10-13 from the post-release install and product test of v0.9.2 (tag `
   - `src/entities/disease/resolution.rs:797-805`, which builds the refusal.
   - `src/entities/disease/resolution/ambiguity.rs`: the `CLINICAL_ABBREVIATION_READINGS` table and `clinical_reading_line` (line 91), whose retry is a `get disease` command.
   - `src/entities/trial/search/nci.rs:65-71`, which passes the disease refusal through unchanged.
-  - `src/entities/disease/article_links.rs`: `crosswalk_hit_holds_name` accepts a match on synonyms; `exact_named_crosswalk_hit` (line 71) requires exactly one holder.
+  - `src/entities/disease/article_links.rs`: `crosswalk_hit_holds_name` accepts a match on the name, label or synonyms; `exact_named_crosswalk_hit` (line 71) requires exactly one holder.
   - Tests: `src/entities/disease/resolution/tests.rs`, `src/entities/disease/get/tests.rs`, `src/entities/trial/search/nci/tests.rs`, `src/cli/article/tests/entities_disease_links.rs`.
 - Keeps: every recorded refusal and resolution 2032, 2040 and 2047 pinned.
 - Decisions:
   - MM: the clinical reading's disease becomes the first line under "Candidates:", in the same `- label (ID)` form, followed by the other matches. The "Clinical reading" line stays.
   - Trial search: `nci.rs` rewrites the refusal's retry to `biomcp search trial -c "<reading label>" --source nci`.
-  - Disease links: a disease record matches a row's concept name only through its primary name or MONDO label, not through synonyms. A row with no match keeps its text-search command.
-  - Before coding the link rule, record the MyDisease reply for MESH:D012878 and confirm the benign card matched through a synonym. If it matched through its label, stop and report to the coordinator.
+  - Disease links (ruled 2026-10-15 after the recorded MESH:D012878 reply): MONDO:0002531 matched through its own MONDO label, "skin neoplasm". The card shows "skin benign neoplasm" because its title comes from the Disease Ontology name. A synonym rule cannot fix this, and a rule on the card title alone would drop the pinned "Neoplasms" link (MONDO:0005070, titled "disease of cellular proliferation"). Keep the current matching on the primary name, MONDO label and synonyms, and add one refusal: a hit does not hold the row's concept name when the card title it would show is a narrower form of that name. A title is narrower when it holds every word of the concept name, after the existing case, punctuation and final-word plural folding, plus at least one more word. "skin benign neoplasm" is narrower than "Skin Neoplasms", so the skin row finds no holder and keeps its text-search command. The pinned links for MONDO:0021117, MONDO:0004970, MONDO:0004972 and MONDO:0005070 keep linking.
+  - The card title itself stays as it is. Titling disease cards from the MONDO label when the Disease Ontology name disagrees changes every card and is out of scope.
 - Changes: claims `src/entities/disease/resolution.rs` `src/entities/disease/resolution/**` `src/entities/disease/get/tests.rs` `src/entities/disease/article_links.rs` `src/cli/article/tests/entities_disease_links.rs` `src/entities/trial/search/nci.rs` `src/entities/trial/search/nci/**` `testdata/sources/mydisease/**` `testdata/sources/capture-receipts.json` `spec/entity/disease.md` `CHANGELOG.md` `tests/test_docs_changelog_refresh.py`.
-- Proof: recorded-reply tests for all three fixes, each failing on current main; the 2047 Lung Cancers test (MESH:D008175) still passes; one live run of each command, recorded in the review.
+- Proof: recorded-reply tests for all three fixes, each failing on current main; the skin test uses the recorded MESH:D012878 reply; the 2047 test (MESH:D008175 and the other pinned descriptors) still passes unchanged; one live run of each command, recorded in the review.
 - Defers: Europe PMC paging (2084); shared drug names (2085).
 - Order: safe alongside anything; it shares no code file with 2065, 2070, 2071, 2084 or 2085.

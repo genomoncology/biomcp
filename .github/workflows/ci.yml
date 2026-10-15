@@ -452,3 +452,58 @@ jobs:
       - run: cmp --silent install.sh docs/install.sh
       - run: bash scripts/check-version-sync.sh
       - run: bash scripts/check-no-climb-tracked.sh
+
+  # The release checks on every push (2026-10-14 direction): a
+  # branch that changes shipped behavior must carry its changelog
+  # bullet before review, and the release's green-CI query must
+  # parse on the real gh the runners ship. Both failures used to
+  # surface only at a tag, 13 seconds into the release workflow's
+  # version check, after a 26-minute CI run. This lane is git,
+  # python3, gh and jq only — no Rust build — so it runs on every
+  # push, docs-only pushes included; the heavy release-shaped jobs
+  # stay main-only.
+  release-checks:
+    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # gh run list reads the workflow-run history; a job-level
+      # permissions block replaces the workflow's, so this restates
+      # contents: read and adds the query's actions: read.
+      actions: read
+    steps:
+      # Full history: the changelog check walks the landings since
+      # the last tag and diffs against the merge-base with
+      # origin/main.
+      - name: Check out the exact revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - name: Require the changelog to cover the branch
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: python3 scripts/check-changelog-coverage.py --branch
+      - name: Require the release's green-CI query to run
+        # The release runs this exact gh command against the tagged
+        # commit and refuses a zero count. A branch has no finished
+        # run of its own to ask about, so this step asks the
+        # merge-base with origin/main — a trunk commit — and checks
+        # the query runs, not its answer: it fails only when gh or jq
+        # errors (a flag only a stub accepted, as at the 0.9.2 tag),
+        # never on the count itself.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          merge_base="$(git merge-base origin/main "$GITHUB_SHA")"
+          green="$(gh run list --workflow ci.yml --commit "$merge_base" \
+            --limit 100 \
+            --json conclusion \
+            --jq '[.[] | select(.conclusion == "success")] | length')"
+          case "$green" in
+            '' | *[!0-9]*)
+              echo "the release's green-CI query failed against ${merge_base}: gh or jq errored" >&2
+              exit 1
+              ;;
+          esac
+          echo "the green-CI query runs on the real gh (${merge_base}: ${green} successful run(s))"

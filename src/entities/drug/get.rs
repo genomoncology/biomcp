@@ -22,7 +22,7 @@ use super::label::{
 };
 use super::metadata::{
     apply_openfda_metadata, apply_top_adverse_event_preview, fetch_shortage_entries,
-    fetch_top_adverse_event_preview, map_drugsfda_approvals, orphan_aliases,
+    fetch_top_adverse_event_preview, map_drugsfda_approvals, merge_unique_casefold, orphan_aliases,
 };
 use super::targets::{TargetSources, enrich_indications, enrich_targets, fetch_target_sources};
 use super::{

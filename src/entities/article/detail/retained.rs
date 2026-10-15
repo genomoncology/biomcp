@@ -18,7 +18,7 @@ pub(in crate::entities::article) fn first_europepmc_hit(
 
 #[allow(clippy::too_many_arguments)]
 pub(in crate::entities::article) async fn resolve_article_from_pmid_with_context(
-    pmid: u32,
+    pmid: u64,
     not_found_id: &str,
     suggestion_id: &str,
     pubtator: &PubTatorClient,
@@ -44,7 +44,7 @@ pub(in crate::entities::article) async fn resolve_article_from_pmid_with_context
 }
 
 pub(in crate::entities::article) async fn resolve_variant_article_from_pmid(
-    pmid: u32,
+    pmid: u64,
     not_found_id: &str,
     suggestion_id: &str,
     europe_hint: Option<&EuropePmcResult>,
@@ -117,7 +117,7 @@ pub(in crate::entities::article) async fn resolve_variant_article_from_pmid(
 }
 
 async fn variant_europepmc_hit<'a>(
-    pmid: u32,
+    pmid: u64,
     execution: &'a VariantArticleExecutionContext,
 ) -> Result<Option<(EuropePmcResult, VariantArticleProviderUnit<'a>)>, BioMcpError> {
     let Some(unit) = execution
