@@ -37,6 +37,13 @@ const POST_WRITE_FINALIZATION_ERROR: &str =
 /// freshly revalidated response can never carry it.
 pub(crate) const STALE_SERVE_AGE_HEADER: &str = "x-biomcp-cache-stale-age";
 
+/// Marker file under the HTTP cache directory recording when the automatic
+/// start-up clean last ran. It holds the clean time in milliseconds since
+/// the Unix epoch; a missing or malformed marker means the clean is due.
+const STARTUP_CLEAN_MARKER_FILE: &str = ".last-startup-clean";
+/// Minimum spacing between automatic start-up cleans: one day.
+const STARTUP_CLEAN_INTERVAL_MS: u128 = 24 * 60 * 60 * 1_000;
+
 /// Stamp the stale-serve marker from the stored policy when the entry is
 /// past its freshness window. The age comes from the policy clock, not the
 /// file's write time, and the marker is never stamped on a fresh entry.
@@ -108,20 +115,7 @@ impl SizeAwareCacheManager {
         config: ResolvedCacheConfig,
         now_ms: u128,
     ) -> Result<Self, BioMcpError> {
-        if let Some(_maintenance) = super::try_lock_cache_maintenance(&config.cache_root)? {
-            execute_cache_clean(
-                &path,
-                CleanOptions {
-                    max_age: None,
-                    max_size: None,
-                    dry_run: false,
-                },
-                &config,
-                now_ms,
-            )?;
-        } else {
-            debug!("cache initialization cleanup skipped while another cache operation is active");
-        }
+        run_startup_clean_at(&path, &config, now_ms)?;
         Ok(Self::build_with_services(path, config, default_services()))
     }
 
@@ -438,6 +432,78 @@ fn current_time_ms() -> u128 {
         .as_millis()
 }
 
+/// The start-up clean. It is skipped without touching the cache when the
+/// process cache mode is off, and otherwise runs only while holding the
+/// maintenance lock and only when [`STARTUP_CLEAN_MARKER_FILE`] is missing
+/// or older than [`STARTUP_CLEAN_INTERVAL_MS`]; each clean rewrites the
+/// marker. Reading the marker under the lock keeps two processes starting
+/// together from both running the day's clean.
+fn run_startup_clean_at(
+    cache_path: &Path,
+    config: &ResolvedCacheConfig,
+    now_ms: u128,
+) -> Result<(), BioMcpError> {
+    if crate::sources::current_cache_mode() == Some(http_cache_reqwest::CacheMode::NoStore) {
+        debug!("cache mode off; start-up cache clean skipped");
+        return Ok(());
+    }
+    let Some(_maintenance) = super::try_lock_cache_maintenance(&config.cache_root)? else {
+        debug!("cache initialization cleanup skipped while another cache operation is active");
+        return Ok(());
+    };
+    let marker = cache_path.join(STARTUP_CLEAN_MARKER_FILE);
+    if !startup_clean_due(&marker, now_ms) {
+        debug!("start-up cache clean skipped; last run within a day");
+        return Ok(());
+    }
+    execute_cache_clean(
+        cache_path,
+        CleanOptions {
+            max_age: None,
+            max_size: None,
+            dry_run: false,
+        },
+        config,
+        now_ms,
+    )?;
+    write_startup_clean_marker(&marker, now_ms)?;
+    Ok(())
+}
+
+/// Whether the start-up clean is due: the marker is missing, unreadable, or
+/// malformed, or it records a clean at least a day old.
+fn startup_clean_due(marker: &Path, now_ms: u128) -> bool {
+    match read_startup_clean_marker(marker) {
+        Some(last_clean_ms) => now_ms.saturating_sub(last_clean_ms) >= STARTUP_CLEAN_INTERVAL_MS,
+        None => true,
+    }
+}
+
+/// The clean time recorded in the start-up marker, or `None` when the
+/// marker is missing, unreadable, or not a number.
+fn read_startup_clean_marker(marker: &Path) -> Option<u128> {
+    use std::io::Read;
+    let mut file = super::private::open_managed_read(marker).ok()?;
+    let mut text = String::new();
+    file.read_to_string(&mut text).ok()?;
+    text.trim().parse().ok()
+}
+
+/// Record the clean time in the start-up marker, created private to the
+/// current user like every other managed cache file. Ensures the HTTP
+/// cache directory exists first: direct construction can reach the clean
+/// before any other step has created it.
+fn write_startup_clean_marker(marker: &Path, now_ms: u128) -> io::Result<()> {
+    use std::io::Write;
+    if let Some(parent) = marker.parent() {
+        super::private::secure_managed_dir(parent)?;
+    }
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    let mut file = super::private::open_private(&mut options, marker)?;
+    file.write_all(now_ms.to_string().as_bytes())
+}
+
 fn spawn_eviction_task(
     cache_path: PathBuf,
     config: ResolvedCacheConfig,
@@ -592,6 +658,8 @@ mod tests {
 
     #[path = "stale_marker_tests.rs"]
     mod stale_marker_tests;
+    #[path = "startup_clean_tests.rs"]
+    mod startup_clean_tests;
     #[path = "write_security_tests.rs"]
     mod write_security_tests;
     #[path = "write_security_windows_tests.rs"]

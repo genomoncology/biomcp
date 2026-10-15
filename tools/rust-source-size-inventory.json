@@ -4,13 +4,13 @@
   "entries": [
     {
       "path": "src/cache/manager.rs",
-      "baseline_lines": 1115,
+      "baseline_lines": 1183,
       "floor_lines": 985,
       "authorized_increase": {
-        "ticket": "1242",
-        "delta": 130,
-        "reason": "Batch 2: stale-serve marker helpers, the cache note consumer, the honest top-gene source label, and the required new struct field.",
-        "removal_condition": "Shrink when the stale label moves into per-source status plumbing and the test field inserts fold into shared fixtures."
+        "ticket": "2092",
+        "delta": 198,
+        "reason": "Ticket 2092: the start-up clean gate skips the scan when the cache mode is off, runs only when the daily marker under the HTTP cache is missing or a day old, rewrites the marker after each clean, and wires its tests into the manager's tests module.",
+        "removal_condition": "Extract the start-up clean gate and its marker helpers into the cache maintenance module once a second construction path or the eviction cycle shares the marker logic."
       }
     },
     {

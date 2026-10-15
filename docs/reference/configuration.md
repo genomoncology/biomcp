@@ -45,7 +45,9 @@ The resolved root contains the managed HTTP response cache in `http/`, the
 ten-minute article-search loop-breaker records in `sessions/`, and the
 thirty-day directed citation-evidence sidecar in `citation-evidence/`. Cache reads,
 writes, statistics, and maintenance physically remove entries older than
-`max_age_secs`; opening the session store removes expired sessions.
+`max_age_secs`; opening the session store removes expired sessions. The
+automatic start-up clean runs at most once a day, and `biomcp cache clean`
+runs it now; `BIOMCP_CACHE_MODE=off` skips the start-up clean entirely.
 Managed directories and files are private to the current OS user. BioMCP
 repairs overly broad permissions inside the managed root and refuses linked
 regular files rather than risking access through another pathname.

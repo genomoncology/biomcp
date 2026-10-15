@@ -18,6 +18,7 @@
 - `cargo deny check advisories` passes again: rustls moved from 0.23.45 to 0.23.46, past the fresh advisories that turned every lane's lint and CI red, with the rest of the lockfile unchanged. (2093)
 - The repository now carries one baseline record and its measuring script for the 0.9.3 work: binary and build-folder size, build times, dependency counts, gate times, test counts, coverage, CI cost, and command run times, each printed with the command behind it and measured twice on the build host against tag v0.9.2, so the 0.9.3 changes have before-and-after numbers from one source. (2069)
 - Ticket branches no longer collide on the changelog: `CHANGELOG.md` merges with the union driver so two branches that each append a bullet land without a conflict, the dev-cycle changelog test checks the section's shape instead of a hand-kept ticket list, and every bullet's cited ticket must be filed for the milestone. (2083)
+- The HTTP cache's start-up clean now runs at most once a day per cache root, recorded in a marker under the HTTP cache, and `BIOMCP_CACHE_MODE=off` skips it entirely, so a command no longer scans a large cache index on every start-up. (2092)
 
 ## 0.9.2 — 2026-10-11
 
