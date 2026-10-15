@@ -568,12 +568,14 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
     out
 }
 
-/// The brands a label response's own products carry for the card's drug:
-/// a result contributes its brands — the `brand_name` field, or the brand
-/// an element line opens with when the record is sparse — only when the
-/// record's own generic line names the card's drug as the card's own
-/// product, so another drug's record that only matched the search never
-/// donates its brand.
+/// The brands a label response's own products carry for the card's drug.
+/// A record that states an openFDA generic line contributes its brands only
+/// when that line names the card's drug as the card's own product, so
+/// another drug's record that only matched the search never donates its
+/// brand. A sparse record — no `openfda` identity block at all — contributes
+/// the brand its SPL product data element opens with: such records reach a
+/// card only through the identity-guarded elements escalation, which keeps
+/// records whose own element identity matches the searched name.
 pub(super) fn card_own_label_brands(
     label_response: &serde_json::Value,
     card_name: &str,
@@ -583,21 +585,15 @@ pub(super) fn card_own_label_brands(
     };
     let mut out = Vec::new();
     for result in results {
-        let sparse = is_sparse_identity_record(result);
-        let generic_lines = if sparse {
-            sparse_element_identity_names(result).1
-        } else {
-            extract_openfda_values_from_result(result, "generic_name")
-        };
-        if !generic_lines
-            .iter()
-            .any(|generic| label_generic_names_card(generic, card_name))
-        {
+        if is_sparse_identity_record(result) {
+            out.extend(sparse_element_identity_names(result).0);
             continue;
         }
-        out.extend(extract_openfda_values_from_result(result, "brand_name"));
-        if sparse {
-            out.extend(sparse_element_identity_names(result).0);
+        let names_card = extract_openfda_values_from_result(result, "generic_name")
+            .iter()
+            .any(|generic| label_generic_names_card(generic, card_name));
+        if names_card {
+            out.extend(extract_openfda_values_from_result(result, "brand_name"));
         }
     }
     out
