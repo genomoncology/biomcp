@@ -62,11 +62,11 @@ pub(crate) enum TestHttpReply {
 /// worker thread, and the runtime's timers keep firing while the hold lasts
 ///. The hold releases when every clone of the sender side
 /// drops.
-pub(super) type HeldReplyGate = std::sync::Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<()>>>;
+pub(crate) type HeldReplyGate = std::sync::Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<()>>>;
 
 /// Create a held-reply gate. Keep the sender alive while the reply must
 /// stay held; dropping every clone releases it.
-pub(super) fn held_reply_gate() -> (tokio::sync::mpsc::Sender<()>, HeldReplyGate) {
+pub(crate) fn held_reply_gate() -> (tokio::sync::mpsc::Sender<()>, HeldReplyGate) {
     let (release, receiver) = tokio::sync::mpsc::channel(1);
     (
         release,
