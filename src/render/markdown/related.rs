@@ -272,7 +272,7 @@ pub(super) fn related_variant(variant: &Variant) -> Vec<String> {
         out.push(format!("biomcp search drug --target {gene}"));
     }
 
-    let id = quote_arg(preferred_variant_follow_up_id(variant));
+    let id = quote_arg(variant.id.trim());
     if !id.is_empty() {
         out.push(format!("biomcp variant trials {id}"));
         out.push(format!("biomcp variant articles {id}"));
