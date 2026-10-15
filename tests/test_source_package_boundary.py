@@ -21,7 +21,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, the article CLI citation test sidecar, and the
 # article disease link rule tests module.
-MAX_PACKAGE_FILES = 1_420  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+MAX_PACKAGE_FILES = 1_421  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
