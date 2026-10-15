@@ -374,4 +374,3 @@ fn adopted_and_legacy_details_share_annotation_aggregation() {
         );
     }
 }
-

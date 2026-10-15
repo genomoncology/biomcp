@@ -1,4 +1,4 @@
-//! Frozen independent expectations from accepted BioData ticket 0224.
+//! Frozen independent expectations accepted from an upstream review.
 use super::{projection, *};
 use biodata::{Document, MyChemFieldState, MyChemProfile};
 use serde_json::{Value, json};

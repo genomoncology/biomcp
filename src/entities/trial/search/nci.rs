@@ -132,8 +132,7 @@ pub(super) async fn search_page_with_nci_clients(
     limit: usize,
     offset: usize,
 ) -> Result<super::TrialSearchPage, BioMcpError> {
-    let grounding =
-        resolve_nci_disease_grounding(mydisease, filters.condition.as_deref()).await?;
+    let grounding = resolve_nci_disease_grounding(mydisease, filters.condition.as_deref()).await?;
     let degrade_note = grounding.as_ref().and_then(|g| g.degrade_note.clone());
     let plan = biodata::NciCtsV2SearchPlan::new(
         &normalized.biodata,

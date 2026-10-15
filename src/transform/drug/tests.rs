@@ -99,7 +99,7 @@ fn merge_mychem_hits_keeps_synonyms_off_the_brand_list() {
     // More than three DrugBank synonyms: every one still reaches
     // ddinter_synonyms for interaction identity, and none reaches
     // brand_names — a chemical name or alias is not a brand the drug's
-    // own labels carry. The interactions seam still sees it (ticket 1254).
+    // own labels carry. The interactions seam still sees it.
     let anchor: MyChemHit = serde_json::from_value(serde_json::json!({
         "_id": "1",
         "_score": 10.0,
@@ -141,7 +141,7 @@ fn merge_mychem_hits_does_not_pool_synonyms_across_hits() {
     // A combination product's synonym must not widen the anchor's
     // DDInter identity: pooled, "dipyridamole" would name a real
     // interaction partner and the aggregation would skip that row
-    // because both sides match the anchor (ticket 1254).
+    // because both sides match the anchor.
     let anchor: MyChemHit = serde_json::from_value(serde_json::json!({
         "_id": "1",
         "_score": 10.0,

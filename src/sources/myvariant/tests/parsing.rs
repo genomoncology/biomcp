@@ -57,8 +57,6 @@ fn snpeff_embedding_preserves_siblings_encoding_and_private_debug() {
     }
 }
 
-
-
 macro_rules! fixture {
     ($name:expr) => {
         include_bytes!(concat!(

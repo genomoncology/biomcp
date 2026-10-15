@@ -319,7 +319,6 @@ async fn all_digit_pmid_past_u32_reports_not_found_with_the_full_identifier() {
             .any(|line| line.contains("pmids=999999999999")),
         "the full PMID reaches the source request: {requests:?}"
     );
-
 }
 
 #[tokio::test]

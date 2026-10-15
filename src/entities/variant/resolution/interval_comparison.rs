@@ -43,7 +43,9 @@ impl<'a> IntervalAssertion<'a> {
             Some("hgvs_input_limit")
         } else {
             self.envelope.as_ref().and_then(|e| {
-                e.disposition().diagnostic().map(|diagnostic| diagnostic.code())
+                e.disposition()
+                    .diagnostic()
+                    .map(|diagnostic| diagnostic.code())
             })
         }
     }
@@ -76,7 +78,11 @@ impl fmt::Debug for IntervalAssertion<'_> {
         f.debug_struct("IntervalAssertion")
             .field(
                 "route",
-                &if self.over_limit() { "resource" } else { "interval" },
+                &if self.over_limit() {
+                    "resource"
+                } else {
+                    "interval"
+                },
             )
             .field("source_bytes", &self.source.len())
             .field("candidate_bytes", &self.candidate_bytes)
@@ -84,7 +90,8 @@ impl fmt::Debug for IntervalAssertion<'_> {
             .field("body_bytes", &self.body.len())
             .field(
                 "prediction",
-                &self.envelope
+                &self
+                    .envelope
                     .as_ref()
                     .and_then(|e| e.disposition().parsed())
                     .map(|p| p.is_predicted()),
@@ -101,7 +108,9 @@ pub(super) struct Comparison<'a> {
 }
 
 fn hinted(body: &str) -> bool {
-    ["del", "dup", "ins"].iter().any(|marker| body.contains(marker))
+    ["del", "dup", "ins"]
+        .iter()
+        .any(|marker| body.contains(marker))
 }
 
 pub(super) fn compare<'a>(left: &'a str, right: &'a str) -> Comparison<'a> {
@@ -121,8 +130,16 @@ pub(super) fn compare<'a>(left: &'a str, right: &'a str) -> Comparison<'a> {
         return result;
     }
     if let (Some(left), Some(right)) = (
-        result.left.envelope.as_ref().and_then(|e| e.disposition().parsed()),
-        result.right.envelope.as_ref().and_then(|e| e.disposition().parsed()),
+        result
+            .left
+            .envelope
+            .as_ref()
+            .and_then(|e| e.disposition().parsed()),
+        result
+            .right
+            .envelope
+            .as_ref()
+            .and_then(|e| e.disposition().parsed()),
     ) {
         result.equivalent = same_interval(left, right);
     }

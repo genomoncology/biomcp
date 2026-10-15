@@ -447,7 +447,6 @@ pub(crate) fn gnomad_variant_slug(id: &str) -> Option<String> {
     ))
 }
 
-
 /// The first letter of a protein change that no residue spelling accepts,
 /// if any. Only capital letters and `*` are residue letters in the compact
 /// forms this path carries; lowercase suffixes such as `del` are not, and

@@ -28,11 +28,10 @@ use super::gwas::add_gwas_section;
 use super::gwas::mark_gwas_unavailable;
 use super::resolution::parse_variant_id;
 use super::{
-    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus,
-    ResolvedPopulationCoordinate, TreatmentImplication, Variant, VariantCivicSection,
-    VariantIdFormat, VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
-    VariantOncoKbResult, classify_variant_input, gnomad_variant_slug, normalize_variant,
-    protein_changes_equivalent,
+    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, ResolvedPopulationCoordinate,
+    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
+    VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
+    classify_variant_input, gnomad_variant_slug, normalize_variant, protein_changes_equivalent,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -924,10 +923,7 @@ fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
 /// hit carries the exact coding alias the search asked for. Identity
 /// comparison alone cannot confirm it: dbNSFP aliases arrive without
 /// transcript prefixes, so an unconfirmed hit stays refused.
-fn hit_confirms_transcript_alias(
-    hit: &crate::sources::myvariant::MyVariantHit,
-    id: &str,
-) -> bool {
+fn hit_confirms_transcript_alias(hit: &crate::sources::myvariant::MyVariantHit, id: &str) -> bool {
     hit.source()
         .clinvar()
         .and_then(|clinvar| clinvar.hgvs())
@@ -959,13 +955,11 @@ fn transcript_hgvs_clinvar_query(id: &str) -> String {
     )
 }
 
-
 fn best_hit(
     hits: &[crate::sources::myvariant::MyVariantHit],
 ) -> Option<&crate::sources::myvariant::MyVariantHit> {
     hits.iter().max_by_key(|h| score_myvariant_hit(h))
 }
-
 
 fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
     let mut score = 0;
@@ -981,7 +975,8 @@ fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
     if hit
         .source()
         .dbnsfp()
-        .is_some_and(|d| d.hgvsp().first().is_some()) {
+        .is_some_and(|d| d.hgvsp().first().is_some())
+    {
         score += 10;
     }
     if hit.source().dbsnp().is_some_and(|d| d.rsid().is_some()) {
@@ -989,7 +984,6 @@ fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
     }
     score
 }
-
 
 async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     match normalize_transcript_hgvs_for_get(id).await {
@@ -1216,7 +1210,12 @@ pub(super) async fn resolve_base_with_hit(
                             }
                         })?;
                     selected_tuple = Some(tuple);
-                    (hit, effective_build.or(Some(GenomeBuild::Grch37)), Vec::new(), None)
+                    (
+                        hit,
+                        effective_build.or(Some(GenomeBuild::Grch37)),
+                        Vec::new(),
+                        None,
+                    )
                 } else {
                     let hit = direct.map_err(|error| match effective_build {
                         Some(build) => build_aware_not_found(hgvs, build, error),

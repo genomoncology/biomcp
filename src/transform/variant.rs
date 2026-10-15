@@ -836,7 +836,10 @@ pub(crate) fn from_myvariant_hit_with_mane(
     mane_transcript: Option<&str>,
     requested_change: Option<&str>,
 ) -> Variant {
-    from_myvariant_annotation(hit, paired_annotation(hit, mane_transcript, requested_change))
+    from_myvariant_annotation(
+        hit,
+        paired_annotation(hit, mane_transcript, requested_change),
+    )
 }
 
 /// Render all record facts with the caller-selected complete source assertion.

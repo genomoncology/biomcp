@@ -104,7 +104,6 @@ pub(super) fn drug_fixture_env(
     (env, root)
 }
 
-
 async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await

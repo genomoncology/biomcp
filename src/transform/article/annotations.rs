@@ -3,10 +3,8 @@
 use std::collections::HashMap;
 
 use crate::entities::article::{AnnotationCount, AnnotationPosition, ArticleAnnotations};
+use crate::entities::variant::{VariantInputKind, VariantShorthand, classify_variant_input};
 use crate::sources::pubtator::{PubTatorDetail, PubTatorDocument};
-use crate::entities::variant::{
-    VariantInputKind, VariantShorthand, classify_variant_input,
-};
 
 /// Longest identifier or namespace value carried through to entity rows.
 const MAX_IDENTIFIER_BYTES: usize = 256;
@@ -71,9 +69,8 @@ fn annotation_identity(
     hgvs: Option<&str>,
 ) -> Option<AnnotationIdentity> {
     match kind {
-        AnnotationKind::Gene => {
-            clean_identifier(identifier?).map(|identifier| ("NCBIGene", identifier.to_string(), None))
-        }
+        AnnotationKind::Gene => clean_identifier(identifier?)
+            .map(|identifier| ("NCBIGene", identifier.to_string(), None)),
         AnnotationKind::Disease | AnnotationKind::Chemical => registry_identity(identifier?)
             .map(|(namespace, identifier)| (namespace, identifier, None)),
         AnnotationKind::Mutation => {
@@ -90,10 +87,6 @@ fn annotation_identity(
         }
     }
 }
-
-
-
-
 
 /// Distinct-allele comparison key for the protein changes sharing one rsID.
 fn distinct_change_key(hgvs: &str) -> String {
@@ -321,10 +314,7 @@ pub(crate) fn retained_extract_annotations(
 /// a mutation row still pairs that gene id with a protein change. Only these
 /// ids can gain a gene-qualified form from an official symbol, so the caller
 /// resolves just them through MyGene.
-pub(crate) 
-
-
-fn finish_annotations(
+pub(crate) fn finish_annotations(
     genes: HashMap<AnnotationKey, AnnotationTally>,
     diseases: HashMap<AnnotationKey, AnnotationTally>,
     chemicals: HashMap<AnnotationKey, AnnotationTally>,

@@ -345,8 +345,8 @@ async fn fetch_label_lookup(
 /// custody flow; the card's four parallel source fetches (the openFDA
 /// label, the CIViC context, the target sources and the adverse-event
 /// preview) start from the named card. The 0.9 label-identity voting and
-/// the ambiguous-shared-name refusal are ticket 2097's port into the
-/// resolver, not this merge.
+/// the ambiguous-shared-name refusal stay out of this merge; they port
+/// into the resolver with the open drug-identity work, not here.
 async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpError> {
     let name = name.trim();
     if name.is_empty() {

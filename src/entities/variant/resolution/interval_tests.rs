@@ -1,15 +1,14 @@
 //! Literal transcription of accepted 0673 cases, MIT, BioData contributors.
 //! Independently authored synthetic specifications; no provider payload or execution-derived gold.
+use super::interval_comparison::{self, INPUT_LIMIT, IntervalAssertion};
 use super::*;
-use super::interval_comparison::{self, IntervalAssertion, INPUT_LIMIT};
 use biodata::{HgvsProteinCoordinate, HgvsProteinIntervalEdit, HgvsProteinIntervalLocation};
 use serde_json::{Value, json};
 
 // Pinned producer declaration ordinals expose typed getter values without point-only markers.
 const RESIDUES: [&str; 25] = [
-    "Ala", "Arg", "Asn", "Asp", "Cys", "Gln", "Glu", "Gly", "His", "Ile",
-    "Leu", "Lys", "Met", "Phe", "Pro", "Ser", "Thr", "Trp", "Tyr", "Val",
-    "Asx", "Glx", "Sec", "Xaa", "Ter",
+    "Ala", "Arg", "Asn", "Asp", "Cys", "Gln", "Glu", "Gly", "His", "Ile", "Leu", "Lys", "Met",
+    "Phe", "Pro", "Ser", "Thr", "Trp", "Tyr", "Val", "Asx", "Glx", "Sec", "Xaa", "Ter",
 ];
 // Complete semantic gold: prediction, location, ordered residue/decimal endpoints, edit, sequence.
 #[rustfmt::skip]
@@ -89,7 +88,10 @@ fn observe(assertion: &IntervalAssertion<'_>, expected: &str) {
         assert_eq!(e.disposition().code(), code);
         let diagnostic = e.disposition().diagnostic().unwrap();
         assert_eq!(diagnostic.code(), code);
-        assert_eq!(diagnostic.span().map(|s| (s.start(), s.end())), Some((0, e.input_bytes())));
+        assert_eq!(
+            diagnostic.span().map(|s| (s.start(), s.end())),
+            Some((0, e.input_bytes()))
+        );
         return;
     }
     assert_eq!(e.disposition().code(), "hgvs_protein_interval_parsed");
@@ -100,16 +102,44 @@ fn observe(assertion: &IntervalAssertion<'_>, expected: &str) {
     assert_eq!(p.reference_span(), None);
     let (shape, endpoints) = match p.location() {
         HgvsProteinIntervalLocation::Point(c) => ("Point", coordinate(c)),
-        HgvsProteinIntervalLocation::Range { start, end } => ("Range", format!("{},{}", coordinate(start), coordinate(end))),
-        HgvsProteinIntervalLocation::InsertionFlanks { left, right } => ("InsertionFlanks", format!("{},{}", coordinate(left), coordinate(right))),
+        HgvsProteinIntervalLocation::Range { start, end } => (
+            "Range",
+            format!("{},{}", coordinate(start), coordinate(end)),
+        ),
+        HgvsProteinIntervalLocation::InsertionFlanks { left, right } => (
+            "InsertionFlanks",
+            format!("{},{}", coordinate(left), coordinate(right)),
+        ),
     };
     let (edit, sequence) = match p.edit() {
         HgvsProteinIntervalEdit::Deletion => ("Deletion", String::new()),
         HgvsProteinIntervalEdit::Duplication => ("Duplication", String::new()),
-        HgvsProteinIntervalEdit::Insertion { inserted } => ("Insertion", inserted.residues().iter().map(|r| RESIDUES[*r as usize]).collect::<Vec<_>>().join(",")),
-        HgvsProteinIntervalEdit::Delins { inserted } => ("Delins", inserted.residues().iter().map(|r| RESIDUES[*r as usize]).collect::<Vec<_>>().join(",")),
+        HgvsProteinIntervalEdit::Insertion { inserted } => (
+            "Insertion",
+            inserted
+                .residues()
+                .iter()
+                .map(|r| RESIDUES[*r as usize])
+                .collect::<Vec<_>>()
+                .join(","),
+        ),
+        HgvsProteinIntervalEdit::Delins { inserted } => (
+            "Delins",
+            inserted
+                .residues()
+                .iter()
+                .map(|r| RESIDUES[*r as usize])
+                .collect::<Vec<_>>()
+                .join(","),
+        ),
     };
-    assert_eq!(format!("{}|{shape}|{endpoints}|{edit}|{sequence}", u8::from(p.is_predicted())), expected);
+    assert_eq!(
+        format!(
+            "{}|{shape}|{endpoints}|{edit}|{sequence}",
+            u8::from(p.is_predicted())
+        ),
+        expected
+    );
 }
 
 // Whole/location/marker/second-residue/second-decimal/sequence/inserted spans, Q41–Q48.
@@ -137,12 +167,22 @@ fn spans(a: &IntervalAssertion<'_>, gold: [usize; 11], long: bool) {
         _ => panic!("two complete endpoints required"),
     };
     assert_eq!(span(first.residue_span()), (2, if long { 5 } else { 3 }));
-    assert_eq!(span(first.position_span()), (if long { 5 } else { 3 }, if long { 7 } else { 5 }));
+    assert_eq!(
+        span(first.position_span()),
+        (if long { 5 } else { 3 }, if long { 7 } else { 5 })
+    );
     assert_eq!(span(second.residue_span()), (gold[4], gold[5]));
     assert_eq!(span(second.position_span()), (gold[6], gold[7]));
     let sequence = (gold[10] == 1).then_some((gold[8], gold[9]));
     assert_eq!(p.sequence_span().map(span), sequence);
-    assert_eq!(p.residue_spans().iter().copied().map(span).collect::<Vec<_>>(), sequence.into_iter().collect::<Vec<_>>());
+    assert_eq!(
+        p.residue_spans()
+            .iter()
+            .copied()
+            .map(span)
+            .collect::<Vec<_>>(),
+        sequence.into_iter().collect::<Vec<_>>()
+    );
     assert_eq!((a.body_offset, a.body.len()), (2, gold[0] - 2));
     assert_eq!(a.source_span(p.location_span()), Some((2, gold[1])));
     assert_eq!(a.source, a.envelope.as_ref().unwrap().source());
@@ -152,7 +192,12 @@ fn spans(a: &IntervalAssertion<'_>, gold: [usize; 11], long: bool) {
 #[test]
 fn interval_alias_pair_resource_privacy_table() {
     for (i, &(left, right, equal, route, l, r)) in PAIRS.iter().enumerate() {
-        assert_eq!(protein_changes_equivalent(left, right), equal, "Q{:02}", i + 1);
+        assert_eq!(
+            protein_changes_equivalent(left, right),
+            equal,
+            "Q{:02}",
+            i + 1
+        );
         if route == "I" {
             let result = interval_comparison::compare(left, right);
             assert_eq!(result.equivalent, equal);
@@ -171,16 +216,47 @@ fn interval_alias_pair_resource_privacy_table() {
     }
     let reversed = interval_comparison::compare(PAIRS[22].1, PAIRS[22].0);
     assert!(!reversed.equivalent);
-    observe(&reversed.left, "0|InsertionFlanks|Ala:11,Gly:12|Insertion|Ser");
+    observe(
+        &reversed.left,
+        "0|InsertionFlanks|Ala:11,Gly:12|Insertion|Ser",
+    );
     observe(&reversed.right, "invalid");
     assert!(!protein_changes_equivalent(PAIRS[22].1, PAIRS[22].0));
-    for (index, expected) in [(0, None), (22, Some("hgvs_protein_interval_invalid")), (24, Some("hgvs_protein_interval_unsupported_legacy_x"))] {
+    for (index, expected) in [
+        (0, None),
+        (22, Some("hgvs_protein_interval_invalid")),
+        (24, Some("hgvs_protein_interval_unsupported_legacy_x")),
+    ] {
         let result = interval_comparison::compare(PAIRS[index].0, PAIRS[index].1);
-        let (bytes, prediction) = if index == 22 { (13, "None") } else if index == 24 { (8, "None") } else { (8, "Some(false)") };
-        debug(&result.left, "interval", bytes, bytes, 2, bytes - 2, prediction, expected);
+        let (bytes, prediction) = if index == 22 {
+            (13, "None")
+        } else if index == 24 {
+            (8, "None")
+        } else {
+            (8, "Some(false)")
+        };
+        debug(
+            &result.left,
+            "interval",
+            bytes,
+            bytes,
+            2,
+            bytes - 2,
+            prediction,
+            expected,
+        );
     }
     let reference = interval_comparison::compare(PAIRS[11].0, PAIRS[11].1);
-    debug(&reference.left, "interval", 20, 8, 14, 6, "Some(false)", None);
+    debug(
+        &reference.left,
+        "interval",
+        20,
+        8,
+        14,
+        6,
+        "Some(false)",
+        None,
+    );
     assert_eq!(reference.left.reference, Some("NP_000001.1"));
     assert!(!format!("{:?}", reference.left).contains("NP_000001.1"));
     let d = "1".repeat(INPUT_LIMIT - 8);
@@ -192,7 +268,9 @@ fn interval_alias_pair_resource_privacy_table() {
     assert_eq!(result.right.candidate_bytes, Some(INPUT_LIMIT));
     for a in [&result.left, &result.right] {
         let p = a.envelope.as_ref().unwrap().disposition().parsed().unwrap();
-        let HgvsProteinIntervalLocation::Point(c) = p.location() else { panic!("Point") };
+        let HgvsProteinIntervalLocation::Point(c) = p.location() else {
+            panic!("Point")
+        };
         assert_eq!(c.position(), d);
     }
     let d = "1".repeat(INPUT_LIMIT - 7);
@@ -200,7 +278,16 @@ fn interval_alias_pair_resource_privacy_table() {
     assert!(!protein_changes_equivalent(&left, &right));
     let result = interval_comparison::compare(&left, &right);
     assert!(result.left.envelope.is_none() && result.right.envelope.is_none());
-    debug(&result.right, "resource", INPUT_LIMIT + 1, INPUT_LIMIT + 1, 2, INPUT_LIMIT - 1, "None", Some("hgvs_input_limit"));
+    debug(
+        &result.right,
+        "resource",
+        INPUT_LIMIT + 1,
+        INPUT_LIMIT + 1,
+        2,
+        INPUT_LIMIT - 1,
+        "None",
+        Some("hgvs_input_limit"),
+    );
     let oversized = format!("p.A{}del", "1".repeat(INPUT_LIMIT));
     assert!(protein_changes_equivalent(&oversized, &oversized));
     let source = format!("{}:p.A11del", "R".repeat(4097));
@@ -215,70 +302,179 @@ fn interval_alias_pair_resource_privacy_table() {
     for (a, end, residue_end) in [(&q1.left, 5, 3), (&q1.right, 7, 5)] {
         let p = a.envelope.as_ref().unwrap().disposition().parsed().unwrap();
         assert_eq!((p.span().start(), p.span().end()), (0, end + 3));
-        assert_eq!((p.location_span().start(), p.location_span().end()), (2, end));
-        assert_eq!((p.marker_span().start(), p.marker_span().end()), (end, end + 3));
-        let HgvsProteinIntervalLocation::Point(c) = p.location() else { panic!("Point") };
-        assert_eq!((c.residue_span().start(), c.residue_span().end()), (2, residue_end));
-        assert_eq!((c.position_span().start(), c.position_span().end()), (residue_end, end));
+        assert_eq!(
+            (p.location_span().start(), p.location_span().end()),
+            (2, end)
+        );
+        assert_eq!(
+            (p.marker_span().start(), p.marker_span().end()),
+            (end, end + 3)
+        );
+        let HgvsProteinIntervalLocation::Point(c) = p.location() else {
+            panic!("Point")
+        };
+        assert_eq!(
+            (c.residue_span().start(), c.residue_span().end()),
+            (2, residue_end)
+        );
+        assert_eq!(
+            (c.position_span().start(), c.position_span().end()),
+            (residue_end, end)
+        );
         assert_eq!(p.sequence_span(), None);
         assert!(p.residue_spans().is_empty());
     }
     let q5 = interval_comparison::compare(PAIRS[4].0, PAIRS[4].1);
-    spans(&q5.left, [13,9,9,12,6,7,7,9,12,13,1], false);
-    spans(&q5.right, [19,13,13,16,8,11,11,13,16,19,1], true);
+    spans(&q5.left, [13, 9, 9, 12, 6, 7, 7, 9, 12, 13, 1], false);
+    spans(&q5.right, [19, 13, 13, 16, 8, 11, 11, 13, 16, 19, 1], true);
     let q13 = interval_comparison::compare(PAIRS[12].0, PAIRS[12].1);
     assert_eq!((q13.left.body_offset, q13.left.body.len()), (2, 6));
-    let p = reference.left.envelope.as_ref().unwrap().disposition().parsed().unwrap();
-    assert_eq!(reference.left.source_span(p.location_span()), Some((14, 17)));
+    let p = reference
+        .left
+        .envelope
+        .as_ref()
+        .unwrap()
+        .disposition()
+        .parsed()
+        .unwrap();
+    assert_eq!(
+        reference.left.source_span(p.location_span()),
+        Some((14, 17))
+    );
 }
 
-fn debug(a: &IntervalAssertion<'_>, route: &str, source: usize, candidate: usize, offset: usize, body: usize, prediction: &str, diagnostic: Option<&str>) {
-    assert_eq!(format!("{a:?}"), format!("IntervalAssertion {{ route: {route:?}, source_bytes: {source}, candidate_bytes: Some({candidate}), body_offset: {offset}, body_bytes: {body}, prediction: {prediction}, diagnostic: {diagnostic:?} }}"));
+fn debug(
+    a: &IntervalAssertion<'_>,
+    route: &str,
+    source: usize,
+    candidate: usize,
+    offset: usize,
+    body: usize,
+    prediction: &str,
+    diagnostic: Option<&str>,
+) {
+    assert_eq!(
+        format!("{a:?}"),
+        format!(
+            "IntervalAssertion {{ route: {route:?}, source_bytes: {source}, candidate_bytes: Some({candidate}), body_offset: {offset}, body_bytes: {body}, prediction: {prediction}, diagnostic: {diagnostic:?} }}"
+        )
+    );
 }
 
 fn request(protein: &str) -> RequestedVariantIdentity {
     RequestedVariantIdentity {
         clinvar_variation_id: None,
-        gene: Some("EGFR".into()), protein_change: Some(protein.into()),
-        coding_change: None, transcript: None, genomic_accession: None, genome_build: None,
-        position: None, reference: None, alternate: None, rsid: None,
+        gene: Some("EGFR".into()),
+        protein_change: Some(protein.into()),
+        coding_change: None,
+        transcript: None,
+        genomic_accession: None,
+        genome_build: None,
+        position: None,
+        reference: None,
+        alternate: None,
+        rsid: None,
     }
 }
 
 #[test]
 fn interval_identity_comparison_table() {
     for i in 0..18 {
-        let pair = match i { 0..=3 => [0,2,4,5][i], 10..=17 => i + 30, _ => 0 };
+        let pair = match i {
+            0..=3 => [0, 2, 4, 5][i],
+            10..=17 => i + 30,
+            _ => 0,
+        };
         let mut requested = request(PAIRS[pair].0);
         let mut source = SourceVariantIdentity {
-            genomic_id: "chr7:g.55242465_55242479del".into(), genome_build: "GRCh37".into(),
-            genes: vec!["EGFR".into()], protein_changes: vec![format!("NP_1:{}", PAIRS[pair].1)],
-            coding_changes: vec![], rsids: vec![],
+            genomic_id: "chr7:g.55242465_55242479del".into(),
+            genome_build: "GRCh37".into(),
+            genes: vec!["EGFR".into()],
+            protein_changes: vec![format!("NP_1:{}", PAIRS[pair].1)],
+            coding_changes: vec![],
+            rsids: vec![],
         };
-        let mut expected = VariantIdentityComparison::Compatible { matched_alias: source.protein_changes[0].clone() };
+        let mut expected = VariantIdentityComparison::Compatible {
+            matched_alias: source.protein_changes[0].clone(),
+        };
         match i {
-            4 => { source.protein_changes.clear(); expected = VariantIdentityComparison::Indeterminate { field: "protein_change" }; }
-            5 => { source.protein_changes = vec!["NP_1:p.Ala12del".into()]; expected = VariantIdentityComparison::Contradictory { field: "protein_change" }; }
-            6 => { source.genes = vec!["OTHER".into()]; expected = VariantIdentityComparison::Contradictory { field: "gene" }; }
-            7 => { source.genes.push("OTHER".into()); expected = VariantIdentityComparison::Indeterminate { field: "gene_annotation_tuple" }; }
-            8 => { source.protein_changes = vec!["NP_bad:p.X11del".into(), "NP_1:p.Ala11del".into(), "NP_2:p.A11del".into()]; }
-            9 => { requested.transcript = Some("NM_1".into()); source.coding_changes = vec!["NM_2:c.1A>T".into()]; expected = VariantIdentityComparison::Contradictory { field: "transcript" }; }
-            10..=17 => expected = VariantIdentityComparison::Contradictory { field: "protein_change" },
+            4 => {
+                source.protein_changes.clear();
+                expected = VariantIdentityComparison::Indeterminate {
+                    field: "protein_change",
+                };
+            }
+            5 => {
+                source.protein_changes = vec!["NP_1:p.Ala12del".into()];
+                expected = VariantIdentityComparison::Contradictory {
+                    field: "protein_change",
+                };
+            }
+            6 => {
+                source.genes = vec!["OTHER".into()];
+                expected = VariantIdentityComparison::Contradictory { field: "gene" };
+            }
+            7 => {
+                source.genes.push("OTHER".into());
+                expected = VariantIdentityComparison::Indeterminate {
+                    field: "gene_annotation_tuple",
+                };
+            }
+            8 => {
+                source.protein_changes = vec![
+                    "NP_bad:p.X11del".into(),
+                    "NP_1:p.Ala11del".into(),
+                    "NP_2:p.A11del".into(),
+                ];
+            }
+            9 => {
+                requested.transcript = Some("NM_1".into());
+                source.coding_changes = vec!["NM_2:c.1A>T".into()];
+                expected = VariantIdentityComparison::Contradictory {
+                    field: "transcript",
+                };
+            }
+            10..=17 => {
+                expected = VariantIdentityComparison::Contradictory {
+                    field: "protein_change",
+                }
+            }
             _ => {}
         }
         let before = (requested.clone(), source.clone());
-        assert_eq!(compare_variant_identity(&requested, &source), expected, "C{:02}", i + 1);
+        assert_eq!(
+            compare_variant_identity(&requested, &source),
+            expected,
+            "C{:02}",
+            i + 1
+        );
         assert_eq!((requested, source), before);
     }
 }
 
 pub(crate) fn annotation_table<T>(
     matches: impl Fn(&biodata::MyVariantSnpEffAnnotation, &RequestedVariantIdentity) -> bool,
-    retain: impl Fn(&RequestedVariantIdentity, crate::sources::myvariant::MyVariantHit, &mut std::collections::HashSet<String>, &mut Vec<T>) -> bool,
-    finalize: impl Fn(&RequestedVariantIdentity, Vec<T>, usize, usize, bool, bool) -> crate::entities::variant::search::VariantSearchPage,
+    retain: impl Fn(
+        &RequestedVariantIdentity,
+        crate::sources::myvariant::MyVariantHit,
+        &mut std::collections::HashSet<String>,
+        &mut Vec<T>,
+    ) -> bool,
+    finalize: impl Fn(
+        &RequestedVariantIdentity,
+        Vec<T>,
+        usize,
+        usize,
+        bool,
+        bool,
+    ) -> crate::entities::variant::search::VariantSearchPage,
 ) {
     for i in 0..16 {
-        let pair = match i { 0..=3 => [0,2,4,5][i], 8..=15 => i + 32, _ => 0 };
+        let pair = match i {
+            0..=3 => [0, 2, 4, 5][i],
+            8..=15 => i + 32,
+            _ => 0,
+        };
         let mut requested = request(PAIRS[pair].0);
         let mut annotation = json!({
             "genename":"EGFR", "feature_id":"NM_1",
@@ -293,13 +489,23 @@ pub(crate) fn annotation_table<T>(
         }
         let hit: crate::sources::myvariant::MyVariantHit = serde_json::from_value(json!({
             "_id":"x", "snpeff":{"ann":annotation}
-        })).unwrap();
+        }))
+        .unwrap();
         let annotation = &hit.source().snpeff().unwrap().annotations()[0];
         let before = requested.clone();
-        assert_eq!(matches(annotation, &requested), i < 4, "A{}", if i < 8 { i + 1 } else { i + 2 });
+        assert_eq!(
+            matches(annotation, &requested),
+            i < 4,
+            "A{}",
+            if i < 8 { i + 1 } else { i + 2 }
+        );
         assert_eq!(requested, before);
     }
-    for (protein, count) in [("NP_005219.2:p.E746_A750del", 1), ("NP_005219.2:p.E746_S750del", 0), ("NP_005219.2:p.E746_A0750del", 0)] {
+    for (protein, count) in [
+        ("NP_005219.2:p.E746_A750del", 1),
+        ("NP_005219.2:p.E746_S750del", 0),
+        ("NP_005219.2:p.E746_A0750del", 0),
+    ] {
         let requested = request("p.Glu746_Ala750del");
         let before = requested.clone();
         let input = json!({
@@ -308,7 +514,12 @@ pub(crate) fn annotation_table<T>(
             "snpeff":{"ann":[{"feature_id":"NM_005228.5", "genename":"EGFR", "hgvs_c":"c.2235_2249del", "hgvs_p":protein}]}
         });
         let (mut seen, mut retained) = (std::collections::HashSet::new(), Vec::new());
-        let uncertain = retain(&requested, serde_json::from_value(input).unwrap(), &mut seen, &mut retained);
+        let uncertain = retain(
+            &requested,
+            serde_json::from_value(input).unwrap(),
+            &mut seen,
+            &mut retained,
+        );
         assert!(!uncertain);
         assert_eq!((seen.len(), retained.len()), (count, count));
         let actual = finalize(&requested, retained, 0, 10, false, true);
@@ -338,17 +549,21 @@ fn page_projection(p: crate::entities::variant::search::VariantSearchPage) -> Va
 }
 
 fn page_gold(count: usize) -> Value {
-    let rows = if count == 0 { json!([]) } else { json!([{
-        "id":"chr7:g.55242465_55242479del", "genome_build":"GRCh37",
-        "genome_build_provenance":"MyVariant.info provider default", "gene":"EGFR",
-        "hgvs_p":"NP_005219.2:p.E746_A750del", "hgvs_c":"c.2235_2249del", "transcript":"NM_005228.5",
-        "legacy_name":null, "significance":null, "clinvar_stars":null, "gnomad_af":null, "revel":null, "gerp":null,
-        "source_identity":{"genomic_id":"chr7:g.55242465_55242479del", "genome_build":"GRCh37", "genes":["EGFR"],
-            "protein_changes":["NP_005219.2:p.E746_A750del"], "coding_changes":[], "rsids":[]},
-        "matched_alias":"NP_005219.2:p.E746_A750del", "transcript_annotations_complete":true,
-        "transcript_annotations":[{"source":"myvariant.info/snpeff.ann", "gene":"EGFR", "transcript":"NM_005228.5",
-            "hgvs_c":"c.2235_2249del", "hgvs_p":"NP_005219.2:p.E746_A750del", "roles":["displayed","matched"]}]
-    }]) };
+    let rows = if count == 0 {
+        json!([])
+    } else {
+        json!([{
+            "id":"chr7:g.55242465_55242479del", "genome_build":"GRCh37",
+            "genome_build_provenance":"MyVariant.info provider default", "gene":"EGFR",
+            "hgvs_p":"NP_005219.2:p.E746_A750del", "hgvs_c":"c.2235_2249del", "transcript":"NM_005228.5",
+            "legacy_name":null, "significance":null, "clinvar_stars":null, "gnomad_af":null, "revel":null, "gerp":null,
+            "source_identity":{"genomic_id":"chr7:g.55242465_55242479del", "genome_build":"GRCh37", "genes":["EGFR"],
+                "protein_changes":["NP_005219.2:p.E746_A750del"], "coding_changes":[], "rsids":[]},
+            "matched_alias":"NP_005219.2:p.E746_A750del", "transcript_annotations_complete":true,
+            "transcript_annotations":[{"source":"myvariant.info/snpeff.ann", "gene":"EGFR", "transcript":"NM_005228.5",
+                "hgvs_c":"c.2235_2249del", "hgvs_p":"NP_005219.2:p.E746_A750del", "roles":["displayed","matched"]}]
+        }])
+    };
     json!({"results":rows, "total":count,
         "requested_variant":{"gene":"EGFR", "protein_change":"p.Glu746_Ala750del", "coding_change":null,
             "transcript":null, "genomic_accession":null, "genome_build":null, "position":null,

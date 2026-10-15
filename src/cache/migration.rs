@@ -159,7 +159,9 @@ pub(crate) async fn with_epoch_lock_contention_observer<F: Future>(
     signal: std::sync::Arc<tokio::sync::Notify>,
     future: F,
 ) -> F::Output {
-    EPOCH_LOCK_CONTENTION.scope((cache_root, signal), future).await
+    EPOCH_LOCK_CONTENTION
+        .scope((cache_root, signal), future)
+        .await
 }
 
 pub(crate) async fn ensure_body_limited_cache_epoch_until(

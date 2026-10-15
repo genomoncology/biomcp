@@ -181,9 +181,9 @@ pub(crate) use self::resolution::{
     VariantArticleResolutionBasis, VariantArticleResolutionContext, VariantIdentityComparison,
     VariantProviderValidation, VariantProviderValidationStatus, VariantResolutionStatus,
     VariantSearchResolution, amino_acid_three_letter, coding_change_segment,
-    compare_variant_identity, gnomad_variant_slug, is_rsid,
-    normalize_genomic_coordinate, normalize_protein_change, normalize_protein_substitution,
-    protein_change_segment, protein_changes_equivalent,
+    compare_variant_identity, gnomad_variant_slug, is_rsid, normalize_genomic_coordinate,
+    normalize_protein_change, normalize_protein_substitution, protein_change_segment,
+    protein_changes_equivalent,
 };
 #[cfg(test)]
 pub(crate) use self::search::VariantFilterEvaluationStatus;

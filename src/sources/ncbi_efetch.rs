@@ -247,8 +247,6 @@ pub(crate) mod clinvar {
         NcbiClinVarVcv::parse_record_bytes(requested_id, body).map_err(|_| provider_error())
     }
 
-
-
     /// Distinguishes NCBI's rate-limit refusal from other provider failures so
     /// a degraded section can name why the direct source dropped. The marker
     /// is shared with the entity-side classifier; keep both uses on this const.

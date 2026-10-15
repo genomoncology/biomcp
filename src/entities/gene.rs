@@ -952,7 +952,11 @@ fn matching_official_symbols(query: &str, hits: &[MyGeneRecord]) -> Vec<String> 
     let query = normalized_alias_key(query);
     let mut out = Vec::new();
     for hit in hits {
-        let Some(symbol) = hit.symbol().map(str::trim).filter(|value| !value.is_empty()) else {
+        let Some(symbol) = hit
+            .symbol()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
             continue;
         };
         if hit.code("NCBI Gene").is_none() {
