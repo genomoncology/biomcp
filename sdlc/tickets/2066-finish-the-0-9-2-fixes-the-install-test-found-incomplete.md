@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision a37d733, accept
+
 ## Outcome
 
 `get disease MM` lists multiple myeloma as its first candidate, `search trial -c MM --source nci` refuses with a trial-search retry, and `article entities 22663011` no longer links the "skin neoplasms" row to the skin benign neoplasm card.
