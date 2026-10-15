@@ -451,11 +451,91 @@ FHIR_PATIENTS = {
     "SYNTH-PT-PROBLEM",
     "SYNTH-PT-EXEMPT",
 }
+# Ticket 2003: synthetic CapabilityStatements and Patient search bundles. The
+# capability declares exactly the parameters `search patient` checks, and the
+# no-* bases drop one each for the refusal contracts.
+def fhir_capability(params):
+    capability = {
+        "resourceType": "CapabilityStatement",
+        "status": "active",
+        "kind": "instance",
+        "fhirVersion": "4.0.1",
+        "format": ["application/fhir+json"],
+        "rest": [
+            {
+                "mode": "server",
+                "resource": [
+                    {
+                        "type": "Patient",
+                        "searchParam": [{"name": name, "type": "token"} for name in params],
+                    }
+                ],
+            }
+        ],
+    }
+    return json.dumps(capability).encode("utf-8")
+
+
+FHIR_SEARCH_PARAMS = ["_id", "gender", "birthdate", "_has"]
+FHIR_CAPABILITY_VARIANTS = {
+    "/fhir-nohas/metadata": "_has",
+    "/fhir-nobirthdate/metadata": "birthdate",
+    "/fhir-nogender/metadata": "gender",
+}
+
+
+def fhir_search_patient(pid, gender, birth):
+    # Full synthetic patients: the fixture ignores `_elements`, so the output
+    # must drop these fields itself.
+    return {
+        "resourceType": "Patient",
+        "id": pid,
+        "gender": gender,
+        "birthDate": birth,
+        "name": [{"family": "Synthetic", "given": ["Synthia"]}],
+        "address": [{"city": "Synthville"}],
+        "telecom": [{"system": "phone", "value": "555-0100"}],
+    }
+
+
+def fhir_patient_search_bundle():
+    patients = [
+        fhir_search_patient("SYNTH-PT-1", "female", "1970-01-01"),
+        fhir_search_patient("a/b", "male", "1980-02-02"),
+        fhir_search_patient("SYNTH-PT-3", "other", "1990-03-03"),
+    ]
+    entries = [
+        {"resource": patient, "search": {"mode": "match"}} for patient in patients
+    ]
+    entries.append(
+        {"resource": fhir_condition("synthetic-search-condition", "Synthetic search condition"), "search": {"mode": "match"}}
+    )
+    bundle = {"resourceType": "Bundle", "type": "searchset", "entry": entries}
+    return json.dumps(bundle).encode("utf-8")
+
+
+def fhir_patient_count_bundle(total=7):
+    bundle = {"resourceType": "Bundle", "type": "searchset", "total": total}
+    return json.dumps(bundle).encode("utf-8")
+
+
+FHIR_PATIENTS = {"SYNTH-PT-1", "SYNTH-PT-EMPTY", "SYNTH-PT-OFFSITE"}
 FHIR_PAGE_TWO = "/fhir?_getpages=synth-pt-1&_getpagesoffset=1"
 
 
 def fhir_response(parsed):
     path = parsed.path
+    if path in FHIR_CAPABILITY_VARIANTS:
+        dropped = FHIR_CAPABILITY_VARIANTS[path]
+        params = [p for p in FHIR_SEARCH_PARAMS if p != dropped]
+        return 200, fhir_capability(params)
+    if path == "/fhir/metadata":
+        return 200, fhir_capability(FHIR_SEARCH_PARAMS)
+    if path == "/fhir/Patient":
+        params = parse_qs(parsed.query)
+        if params.get("_summary") == ["count"]:
+            return 200, fhir_patient_count_bundle()
+        return 200, fhir_patient_search_bundle()
     if path.startswith("/fhir/Patient/"):
         pid = path.rsplit("/", 1)[1]
         if pid in FHIR_PATIENTS:
@@ -561,7 +641,7 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/healthz":
             send(self, 200, b'{"status":"ok"}')
             return
-        if parsed.path == "/fhir" or parsed.path.startswith("/fhir/"):
+        if parsed.path == "/fhir" or parsed.path.startswith("/fhir"):
             answer = fhir_response(parsed)
             if answer is not None:
                 send(self, answer[0], answer[1], "application/fhir+json")
