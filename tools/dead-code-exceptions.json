@@ -338,24 +338,6 @@
       "removal_condition": "Remove when `pub fn gwas_search_markdown(` is used by every compiled target or deleted."
     },
     {
-      "path": "src/sources/cancerhotspots.rs",
-      "scope": "item",
-      "item": "pub hugo_symbol: Option<String>,",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "cancerhotspots::hugo_symbol preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub hugo_symbol: Option<String>,` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/cancerhotspots.rs",
-      "scope": "item",
-      "item": "pub amino_acid_position: Option<serde_json::Value>,",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "cancerhotspots::amino_acid_position preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub amino_acid_position: Option<serde_json::Value>,` is used by every compiled target or deleted."
-    },
-    {
       "path": "src/sources/cbioportal.rs",
       "scope": "item",
       "item": "pub total_mutations: Option<i32>,",
