@@ -396,13 +396,15 @@ impl OpenFdaClient {
             crate::error::SourceContext::retry(crate::error::SourceProvider::OPENFDA),
         )
         .await?;
-        self.decode_response_optional::<T>(resp).await
+        self.decode_response_optional::<T>(resp)
+            .await
+            .map(|value| value.map(|(value, _)| value))
     }
 
     async fn decode_response_optional<T: DeserializeOwned>(
         &self,
         resp: reqwest::Response,
-    ) -> Result<Option<T>, BioMcpError> {
+    ) -> Result<Option<(T, Vec<u8>)>, BioMcpError> {
         let status = resp.status();
         let bytes = crate::sources::read_limited_source_body(
             resp,
