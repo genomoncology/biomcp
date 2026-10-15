@@ -4579,7 +4579,10 @@ for one invocation. It does not override explicit output paths or provider
 retention. In particular, it neither deletes nor force-refreshes the GenCC
 durable dataset; use <code>biomcp gencc sync</code> for explicit revalidation.
 <code>BIOMCP_CACHE_MAX_AGE</code> overrides <code>[cache].max_age_secs</code>; both values are
-positive integer seconds.</p>
+positive integer seconds.
+GWAS Catalog queries, openFDA label searches, and openFDA adverse-event counts
+are held for a day: a repeat inside that window is answered from the cache and
+the next request goes back to the provider.</p>
 <p>Ordinary provider HTTPS trusts the bundled webpki roots plus any operator PEM
 bundle. <code>BIOMCP_CA_BUNDLE</code> is read first, and a blank or whitespace-only value
 counts as unset. <code>SSL_CERT_FILE</code> is read only when <code>BIOMCP_CA_BUNDLE</code> is unset;
