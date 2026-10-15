@@ -43,12 +43,16 @@ runs:
     # The v2 tag dereferenced to its commit 2026-09-29; it runs
     # after the toolchain install so its key uses the pinned rustc,
     # and it caches the workspace crates so the biomcp crate itself
-    # is not rebuilt from scratch every run.
+    # is not rebuilt from scratch every run. add-job-id-key is off so
+    # every lane restores the build job's entry: the build job
+    # completes before its lanes start, so they compile against the
+    # same warm target directory and registry instead of their own.
     - name: Cache the Rust build
       if: ${{ inputs.cache == 'true' }}
       uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       with:
         cache-workspace-crates: true
+        add-job-id-key: false
     - name: Install pinned Python
       if: ${{ inputs.python == 'true' }}
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0

@@ -81,6 +81,13 @@ jobs:
           nextest: true
       - name: Build the dev test archive and binaries
         run: make prepare-test
+      - name: Fetch the offline lanes' cargo registry
+        # The python lane's contract tests resolve and compile the
+        # packaged crate with default features inside the offline
+        # namespace; prepare-test fetches only the no-default routine
+        # graph, so the default-feature half of the lockfile lands here,
+        # where the lanes' shared cache save persists it.
+        run: cargo fetch --locked
       - name: Upload the dev build
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -115,12 +122,14 @@ jobs:
         with:
           name: dev-build
       - name: Set up the lane
+        # The quality ratchet's spec lint shells out to mustmatch.
         uses: ./.github/actions/lane-setup
         with:
           rust: true
           components: rustfmt, clippy
           cache: true
           python: true
+          mustmatch: true
           lint-tools: true
       - name: Canonical lint gate
         run: make lint
