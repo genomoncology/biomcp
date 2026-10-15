@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision b45d3c4, accept
+
 ## Outcome
 
 A ticket-branch push whose only change since a tip with a green CI run is under `sdlc/` finishes CI in a few minutes, and every other push runs the full gates as today.
