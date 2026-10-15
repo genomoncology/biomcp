@@ -4,10 +4,15 @@ use std::io;
 use std::path::PathBuf;
 
 use super::super::HealthStatus;
-use super::super::local::{ProbeClass, check_cache_dir_with, check_cache_limits_with};
-use super::{test_blob, test_config, test_entry, test_snapshot};
-use crate::cache::{DiskFreeThreshold, FilesystemSpace};
+use super::super::local::{check_cache_dir_with, check_cache_limits_with, probe_cache_dir};
+use super::super::runner::ProbeClass;
+use super::{
+    assert_cache_dir_affects, assert_millisecond_latency, block_on, test_blob, test_config,
+    test_entry, test_snapshot,
+};
+use crate::cache::{CachePlannerError, DiskFreeThreshold, FilesystemSpace};
 use crate::error::BioMcpError;
+use crate::test_support::TempDirGuard;
 
 #[test]
 fn check_cache_limits_within_limits_returns_healthy_row() {
