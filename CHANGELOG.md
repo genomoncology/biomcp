@@ -16,6 +16,7 @@
 - `get drug` now refuses a product name several drug products share: `get drug "Pain Relief"` exits 2 as an ambiguous drug name, lists the single ingredients the label records carry (lidocaine, menthol, acetaminophen, hexylresorhinol on the recorded reply), and names the ingredient form to try, where it used to exit as not found and list symptom names; "Sleep Aid" and "Cold and Flu" refuse the same way. (2085)
 - `get drug` now fetches the openFDA label, the CIViC context, the Open Targets data and the openFDA adverse-event preview at the same time once MyChem has named the drug, so the card waits for its slowest source instead of the sum of all four and returns byte-identical output. (2090)
 - `get trial NCT99999999` reports the trial as not found with its search suggestion instead of telling the caller to retry the remote source, `get article 999999999999` treats every all-digit identifier as a PMID and reports no article with that PMID instead of rejecting the identifier format, and `get variant "BRAF Z999Q"` exits 2 naming the residue letter Z that is not an amino acid instead of suggesting a search. (2087)
+- The stale-cache tests pass on a nearly full filesystem: the fixtures behind the article-search, search-all and ClinGen gene-card stale serves pin the smallest legal `BIOMCP_CACHE_MIN_DISK_FREE` value beside their cache directory, and every test built on the shared fixture guard gets the same pin, so disk-pressure eviction cannot remove the cached reply before the stale serve. Reported by Seungwon Lee, GitHub #291. (2100)
 
 ### Internal
 

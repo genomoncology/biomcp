@@ -163,6 +163,13 @@ async fn run(args: &[&str]) -> String {
         .expect("command succeeds against the fixture")
 }
 
+/// The disk-free floor every constructor pins beside the cache
+/// directory: `1B` is the smallest legal value, so no host
+/// filesystem's free space can evict the cached reply before the
+/// stale serve. A test that sets its own floor after the
+/// constructor still wins.
+const MIN_DISK_FREE: &str = "1B";
+
 struct StaleNoteEnv {
     /// Held (never read) so the cache directory outlives the env.
     // dead-code reason: held-for-drop guard keeps the temp cache root alive
@@ -177,9 +184,15 @@ impl StaleNoteEnv {
     fn two_bases(mygene: &str, clingen: &str, keys: &[&'static str]) -> Self {
         let root = crate::test_support::TempDirGuard::new("stale-json-notes");
         let mut previous = Vec::new();
-        for key in keys.iter().copied().chain(["BIOMCP_CACHE_DIR"]) {
+        for key in keys
+            .iter()
+            .copied()
+            .chain(["BIOMCP_CACHE_DIR", "BIOMCP_CACHE_MIN_DISK_FREE"])
+        {
             let value = if key == "BIOMCP_CACHE_DIR" {
                 root.path().to_str().expect("utf-8 cache root").to_string()
+            } else if key == "BIOMCP_CACHE_MIN_DISK_FREE" {
+                MIN_DISK_FREE.to_string()
             } else if key == "BIOMCP_MYGENE_BASE" {
                 mygene.to_string()
             } else {
@@ -213,6 +226,11 @@ impl StaleNoteEnv {
                 "BIOMCP_CACHE_DIR",
                 root.path().to_str().expect("utf-8 cache root"),
             );
+            previous.push((
+                "BIOMCP_CACHE_MIN_DISK_FREE",
+                std::env::var("BIOMCP_CACHE_MIN_DISK_FREE").ok(),
+            ));
+            std::env::set_var("BIOMCP_CACHE_MIN_DISK_FREE", MIN_DISK_FREE);
         }
         Self { root, previous }
     }
@@ -220,7 +238,11 @@ impl StaleNoteEnv {
     fn new(base: &str, keys: &[&'static str]) -> Self {
         let root = crate::test_support::TempDirGuard::new("stale-json-notes");
         let mut previous = Vec::new();
-        for key in keys.iter().copied().chain(["BIOMCP_CACHE_DIR"]) {
+        for key in keys
+            .iter()
+            .copied()
+            .chain(["BIOMCP_CACHE_DIR", "BIOMCP_CACHE_MIN_DISK_FREE"])
+        {
             // SAFETY: serialized on the source_env key; values restore on drop.
             unsafe {
                 previous.push((key, std::env::var(key).ok()));
@@ -228,6 +250,8 @@ impl StaleNoteEnv {
                     key,
                     if key == "BIOMCP_CACHE_DIR" {
                         root.path().to_str().expect("utf-8 cache root")
+                    } else if key == "BIOMCP_CACHE_MIN_DISK_FREE" {
+                        MIN_DISK_FREE
                     } else {
                         base
                     },
