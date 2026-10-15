@@ -28,6 +28,28 @@ def owned_git_root(root: Path) -> Path | None:
     return candidate if candidate == root.resolve() else None
 
 
+def cargo_package_version(root: Path) -> str:
+    # tomllib needs Python 3.11 and the gate hosts run older system Pythons;
+    # cargo metadata reads the same manifest everywhere this wrapper runs.
+    result = subprocess.run(
+        ["cargo", "metadata", "--no-deps", "--format-version", "1"],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=root,
+    )
+    if result.returncode != 0:
+        raise SystemExit("with-build-identity: cargo metadata failed")
+    import json
+
+    manifest = str((root / "Cargo.toml").resolve())
+    packages = json.loads(result.stdout)["packages"]
+    for package in packages:
+        if package["manifest_path"] == manifest:
+            return package["version"]
+    raise SystemExit("with-build-identity: cargo metadata omits this manifest")
+
+
 def identity_environment(root: Path) -> dict[str, str]:
     environment = dict(os.environ)
     repository = owned_git_root(root)
@@ -36,11 +58,7 @@ def identity_environment(root: Path) -> dict[str, str]:
 
     package_version = environment.get("CARGO_PKG_VERSION")
     if package_version is None:
-        import tomllib
-
-        package_version = tomllib.loads((root / "Cargo.toml").read_text())["package"][
-            "version"
-        ]
+        package_version = cargo_package_version(root)
     base_sha = git(repository, "rev-parse", "--short=8", "HEAD") or "unknown"
     dirty = git(
         repository,
