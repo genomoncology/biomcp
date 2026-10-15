@@ -1162,8 +1162,11 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         (Some(canonical), None) => canonical,
         (None, None) => hits
             .iter()
-            .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
-            .or_else(|| hits.iter().find_map(|hit| best_name_from_hit(hit)))
+            .find_map(|hit| best_name_from_hit(hit))
+            .or_else(|| {
+                hits.iter()
+                    .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
+            })
             .unwrap_or_else(|| requested.clone()),
     };
     // A combination card shows product-level identifiers or
