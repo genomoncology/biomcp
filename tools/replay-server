@@ -59,9 +59,9 @@ CONTENT_TYPE_EXTENSIONS = (
 )
 
 # Providers whose default endpoint is not declared as a `*_BASE` const plus a
-# `*_BASE_ENV` const in src/sources. Keep this exactly as small as the source
-# allows; the golden contract test fails when a provider literal appears that
-# neither the const pairs nor this table covers.
+# `*_BASE_ENV` const in src. Keep this exactly as small as the source allows;
+# the golden contract test fails when a provider literal appears that neither
+# the const pairs nor these tables cover.
 EXPLICIT_PROVIDER_ROUTES = {
     "BIOMCP_ALPHAGENOME_BASE": "https://gdmscience.googleapis.com:443",
     "BIOMCP_GENCC_BASE": (
@@ -69,6 +69,16 @@ EXPLICIT_PROVIDER_ROUTES = {
     ),
     "BIOMCP_ONCOKB_BASE": "https://www.oncokb.org/api/v1",
     "BIOMCP_ORCID_BASE": "https://pub.orcid.org/v3.0",
+}
+
+# Overrides the clients accept as a bare origin only, substituting it into
+# provider URLs whose paths keep their real first segment (ldh, cspec,
+# large-docs). Each maps (path prefix, live upstream); the prefix is matched
+# but kept in the upstream path.
+ORIGIN_SUBSTITUTION_ROUTES = {
+    "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": ("ldh", "https://ldh.genome.network"),
+    "BIOMCP_CSPEC_FIXTURE_ORIGIN": ("cspec", "https://cspec.clinicalgenome.org"),
+    "BIOMCP_CTGOV_CDN_BASE": ("large-docs", "https://cdn.clinicaltrials.gov"),
 }
 
 # Overrides that are not provider endpoints. The health probe hook belongs to
@@ -79,7 +89,7 @@ CONST_STRING_RE = re.compile(r'const\s+([A-Z0-9_]+)\s*:\s*&\s*str\s*=\s*"([^"\n]
 
 
 def provider_routes(sources_dir: Path) -> dict[str, str]:
-    """Map every provider override variable to its default live endpoint."""
+    """Map every base-style override variable to its default live endpoint."""
     routes: dict[str, str] = {}
     for path in sorted(sources_dir.rglob("*.rs")):
         consts: dict[str, str] = {}
@@ -101,6 +111,8 @@ def provider_routes(sources_dir: Path) -> dict[str, str]:
                     break
     routes.update(EXPLICIT_PROVIDER_ROUTES)
     for name in EXCLUDED_OVERRIDES:
+        routes.pop(name, None)
+    for name in ORIGIN_SUBSTITUTION_ROUTES:
         routes.pop(name, None)
     return routes
 
@@ -184,11 +196,23 @@ class ReplayStore:
 
 
 class ReplayServer:
-    def __init__(self, routes: dict[str, str], store: ReplayStore, log_write, record: bool) -> None:
+    def __init__(
+        self,
+        routes: dict[str, str],
+        substitution_routes: dict[str, tuple[str, str]],
+        store: ReplayStore,
+        log_write,
+        record: bool,
+    ) -> None:
         self.by_prefix = {
-            prefix_for(name): upstream for name, upstream in routes.items()
+            prefix_for(name): (upstream, False) for name, upstream in routes.items()
         }
-        if len(self.by_prefix) != len(routes):
+        for name, (prefix, upstream) in substitution_routes.items():
+            self.by_prefix[prefix] = (upstream, True)
+        prefixes = [prefix_for(name) for name in routes] + [
+            prefix for prefix, _ in substitution_routes.values()
+        ]
+        if len(set(prefixes)) != len(prefixes):
             raise SystemExit("provider override prefixes collide; rename one")
         self.store = store
         self.log_write = log_write
@@ -211,8 +235,11 @@ class ReplayServer:
         route = self.by_prefix.get(segments[0])
         if route is None:
             return None
-        suffix = f"/{segments[1]}" if len(segments) > 1 else ""
-        return segments[0], route, suffix
+        upstream, keep_prefix = route
+        suffix = path if keep_prefix else (
+            f"/{segments[1]}" if len(segments) > 1 else ""
+        )
+        return segments[0], upstream, suffix
 
     def upstream_url(self, upstream: str, suffix: str, query: str) -> str:
         base, separator, base_query = upstream.partition("?")
@@ -389,8 +416,15 @@ class Handler(BaseHTTPRequestHandler):
         return
 
 
-def write_env_file(path: Path, origin: str, routes: dict[str, str]) -> None:
+def write_env_file(
+    path: Path,
+    origin: str,
+    routes: dict[str, str],
+    substitution_routes: dict[str, tuple[str, str]],
+) -> None:
     lines = [f"export {name}={origin}/{prefix_for(name)}\n" for name in sorted(routes)]
+    # Origin-substitution clients accept a bare origin only, with no path.
+    lines.extend(f"export {name}={origin}\n" for name in sorted(substitution_routes))
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(lines), encoding="utf-8")
 
@@ -412,9 +446,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    routes = provider_routes(args.root / "src" / "sources")
+    routes = provider_routes(args.root / "src")
     if not routes:
-        raise SystemExit("no provider overrides found under src/sources")
+        raise SystemExit("no provider overrides found under src")
     store = ReplayStore(args.root / "testdata" / "replay")
     log_handle = None
     if args.request_log is not None:
@@ -426,12 +460,12 @@ def main(argv: list[str] | None = None) -> int:
             log_handle.write(line + "\n")
             log_handle.flush()
 
-    server = ReplayServer(routes, store, log_write, args.record)
+    server = ReplayServer(routes, ORIGIN_SUBSTITUTION_ROUTES, store, log_write, args.record)
     httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     httpd.replay = server  # type: ignore[attr-defined]
     origin = f"http://127.0.0.1:{httpd.server_port}"
     if args.env_file is not None:
-        write_env_file(args.env_file, origin, routes)
+        write_env_file(args.env_file, origin, routes, ORIGIN_SUBSTITUTION_ROUTES)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

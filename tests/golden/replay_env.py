@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Iterator
+from urllib.parse import urlsplit
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPLAY_SERVER = REPO_ROOT / "tools" / "replay-server"
@@ -192,8 +193,8 @@ def replay_environment(record: bool = False) -> Iterator[ReplayEnvironment]:
                 if env_file.is_file():
                     provider_env = _read_env_file(env_file)
                     if provider_env:
-                        first = sorted(provider_env.values())[0]
-                        origin = first.rsplit("/", 1)[0]
+                        first = urlsplit(sorted(provider_env.values())[0])
+                        origin = f"{first.scheme}://{first.netloc}"
                         break
                 time.sleep(0.05)
             if origin is None:
