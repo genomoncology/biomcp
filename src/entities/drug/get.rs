@@ -390,7 +390,11 @@ async fn populate_common_sections(
         } else {
             SectionOutcome::empty_with_reason("OpenFDA label", NO_SPL_RECORD_NOTE)
         };
-        drug.section_outcomes.complete("label", outcome);
+        // The 1.0 drug card carries no label source-state row, so the
+        // outcome completes only when the registry declares one.
+        if drug.section_outcomes.get("label").is_some() {
+            drug.section_outcomes.complete("label", outcome);
+        }
     }
 
     if section_flags.include_interactions {
