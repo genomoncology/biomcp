@@ -180,21 +180,19 @@ fn openfda_brand_name(hit: &MyChemHit) -> Option<&str> {
 }
 
 fn best_name_from_hit(hit: &MyChemHit) -> Option<String> {
-    // The record's own single-source identity names outrank the merged NDC
-    // product rows: a record carrying hundreds of products'
-    // rows still names itself, so an unrelated product's ingredient line
-    // ("diphenhydramine hydrochloride zinc acetate" on the diphenhydramine
-    // record) never becomes the card's name, while a naked product row —
-    // whose established line is all it has — keeps naming itself.
+    // The eight-source display precedence the get path has always used:
+    // NDC's nonproprietary line leads, then openFDA's generic and brand,
+    // then each single-source name, so a merged NDC product row names the
+    // card ahead of later sources' lines.
     let candidates: [Option<&str>; 8] = [
+        ndc_nonproprietaryname(hit),
         openfda_generic_name(hit),
+        openfda_brand_name(hit),
         hit.drugbank.as_ref().and_then(|d| d.name.as_deref()),
         hit.chembl.as_ref().and_then(|c| c.pref_name.as_deref()),
         hit.gtopdb.as_ref().and_then(|g| g.name.as_deref()),
         unii_display_name(hit),
         chebi_name(hit),
-        ndc_nonproprietaryname(hit),
-        openfda_brand_name(hit),
     ];
 
     candidates
