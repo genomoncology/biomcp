@@ -528,7 +528,7 @@ fn provider_value_spelling_requested_change(
         .map(|dbnsfp| {
             biodata::MyVariantDbnsfpText::values(dbnsfp.hgvsp())
                 .into_iter()
-                .map(str::to_string)
+                .cloned()
                 .collect()
         })
         .unwrap_or_default();
