@@ -56,6 +56,62 @@ async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
     );
 }
 
+#[serial_test::serial(source_env)]
+#[tokio::test]
+async fn all_digit_pmid_past_u32_reports_not_found_with_the_full_identifier() {
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use std::sync::{Arc, Mutex};
+
+    let requests = Arc::new(Mutex::new(Vec::<String>::new()));
+    let logged = requests.clone();
+    let fixture = TestHttpFixture::spawn(move |request| {
+        logged
+            .lock()
+            .unwrap()
+            .push(request.lines().next().unwrap_or_default().to_string());
+        TestHttpReply::Bytes(test_http_response(
+            "200 OK",
+            "application/json",
+            br#"{"PubTator3":[]}"#,
+        ))
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("article-pmid-past-u32");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+
+    let pubtator = PubTatorClient::new().expect("pubtator client");
+    let europe = EuropePmcClient::new().expect("europepmc client");
+    let error = get_article_base_with_clients("999999999999", &pubtator, &europe, false)
+        .await
+        .expect_err("an all-digit identifier is looked up as a PMID");
+
+    match &error {
+        BioMcpError::NotFound {
+            entity,
+            id,
+            suggestion,
+        } => {
+            assert_eq!(entity, "article");
+            assert_eq!(id, "999999999999");
+            assert!(suggestion.contains("biomcp search article"));
+        }
+        other => panic!("expected not found, got {other:?}"),
+    }
+    let requests = requests.lock().unwrap();
+    assert!(
+        requests
+            .iter()
+            .any(|line| line.contains("pmids=999999999999")),
+        "the full PMID reaches the source request: {requests:?}"
+    );
+}
+
 #[tokio::test]
 async fn get_rejects_pdf_without_fulltext_section() {
     let err = get(
@@ -260,6 +316,16 @@ fn parse_pmid_basic() {
     assert_eq!(parse_pmid(""), None);
     assert_eq!(parse_pmid("10.1056/NEJMoa1203421"), None);
     assert_eq!(parse_pmid("abc"), None);
+}
+
+#[test]
+fn parse_pmid_accepts_all_digit_identifiers_past_u32() {
+    assert_eq!(parse_pmid("999999999999"), Some(999_999_999_999));
+    assert_eq!(parse_pmid("4294967296"), Some(4_294_967_296));
+    match parse_article_id("999999999999") {
+        ArticleIdType::Pmid(pmid) => assert_eq!(pmid, 999_999_999_999),
+        _ => panic!("expected an all-digit identifier to be a PMID"),
+    }
 }
 
 #[test]
