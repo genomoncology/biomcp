@@ -27,11 +27,20 @@ mod tests {
     fn every_reconstructible_lock_uses_the_shared_helper() {
         let ddinter = include_str!("../sources/ddinter.rs");
         let gencc = include_str!("../sources/gencc/store.rs");
+        // The drug get split moved its locks into the resolver and alias
+        // modules; the invariant covers every module of the split.
         let drug_get = include_str!("../entities/drug/get.rs");
+        let drug_resolver = include_str!("../entities/drug/get/resolver.rs");
+        let drug_trial_alias = include_str!("../entities/drug/get/trial_alias.rs");
         let cache_clear = include_str!("../cache/clear.rs");
         assert_eq!(ddinter.matches("recover_poison(").count(), 3);
         assert_eq!(gencc.matches("recover_poison(").count(), 2);
-        assert_eq!(drug_get.matches("recover_poison(").count(), 2);
+        assert_eq!(
+            drug_get.matches("recover_poison(").count()
+                + drug_resolver.matches("recover_poison(").count()
+                + drug_trial_alias.matches("recover_poison(").count(),
+            4
+        );
         assert_eq!(cache_clear.matches("recover_poison(").count(), 3);
     }
 }
