@@ -2,18 +2,9 @@
 # Shared ownership records for runner-owned routine fixture process groups.
 set -euo pipefail
 
-canonical_dir() {
-  realpath -e "$1"
-}
-
-proc_start_identity() {
-  local stat rest
-  stat="$(<"/proc/$1/stat")" || return 1
-  rest="${stat#*) }"
-  local -a fields
-  read -r -a fields <<<"$rest"
-  printf '%s\n' "${fields[19]}"
-}
+_ownership_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=fixture-supervisor.sh
+source "${_ownership_script_dir}/fixture-supervisor.sh"
 
 new_owner_arg() {
   local kind="$1" root="$2" token canonical_root
@@ -34,7 +25,7 @@ write_record() {
   token="${owner_arg#routine-fixture-owner:${kind}:}"
   token="${token%%:*}"
   [[ "$owner_arg" == "routine-fixture-owner:${kind}:${token}:${canonical_root}" ]] || return 1
-  start="$(proc_start_identity "$pid")"
+  start="$(_fixture_proc_start_identity "$pid")"
   record_file="$(ownership_record_file "$workspace" "$kind")"
   {
     printf '%s_RECORD_VERSION=1\n' "$prefix"
@@ -90,7 +81,7 @@ cleanup_record() {
   local workspace="$1" kind="$2" prefix="$3" record_file
   record_file="$(ownership_record_file "$workspace" "$kind")"
   [[ -f "$record_file" ]] || return 0
-  local version pid pgid root start worktree token owner_arg actual_pgid actual_start cmdline
+  local version pid pgid root start worktree token owner_arg actual_pgid actual_start cmdline fd8_file
   record_has_only_known_fields "$record_file" "$prefix" || { rm -f "$record_file"; return 0; }
   version="$(record_value "$record_file" "${prefix}_RECORD_VERSION")" || { rm -f "$record_file"; return 0; }
   pid="$(record_value "$record_file" "${prefix}_PID")" || { rm -f "$record_file"; return 0; }
@@ -104,14 +95,24 @@ cleanup_record() {
   [[ "$owner_arg" == "routine-fixture-owner:${kind}:${token}:${root}" ]] || { rm -f "$record_file"; return 0; }
   [[ "$worktree" == "$(canonical_dir "$workspace")" ]] || { rm -f "$record_file"; return 0; }
   root_is_owned "$workspace" "$kind" "$root" || { rm -f "$record_file"; return 0; }
-  [[ -r "/proc/$pid/stat" && -r "/proc/$pid/cmdline" ]] || { rm -f "$record_file"; return 0; }
+  kill -0 "$pid" 2>/dev/null || { rm -f "$record_file"; return 0; }
   actual_pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')" || { rm -f "$record_file"; return 0; }
-  actual_start="$(proc_start_identity "$pid")" || { rm -f "$record_file"; return 0; }
-  cmdline="$(tr '\0' ' ' <"/proc/$pid/cmdline")"
+  actual_start="$(_fixture_proc_start_identity "$pid")" || { rm -f "$record_file"; return 0; }
+  if [[ -r "/proc/$pid/cmdline" ]]; then
+    cmdline="$(tr '\0' ' ' <"/proc/$pid/cmdline")"
+  else
+    cmdline="$(ps -ww -o command= -p "$pid" 2>/dev/null)"
+  fi
   [[ "$actual_pgid" == "$pgid" && "$actual_start" == "$start" && "$cmdline" == *"$owner_arg"* ]] || { rm -f "$record_file"; return 0; }
-  if [[ -n "${ROUTINE_FIXTURE_LOCK_PATH:-}" ]] && \
-    { [[ ! -e "/proc/$pid/fd/8" ]] || [[ ! "/proc/$pid/fd/8" -ef "$ROUTINE_FIXTURE_LOCK_PATH" ]]; }; then
-    return 0
+  if [[ -n "${ROUTINE_FIXTURE_LOCK_PATH:-}" ]]; then
+    if [[ -d /proc ]]; then
+      { [[ ! -e "/proc/$pid/fd/8" ]] || [[ ! "/proc/$pid/fd/8" -ef "$ROUTINE_FIXTURE_LOCK_PATH" ]]; } && return 0
+    else
+      # lsof names the descriptor's file where procfs is absent; a record
+      # whose process no longer holds the lock descriptor is left alone.
+      fd8_file="$(lsof -a -p "$pid" -d 8 -Fn 2>/dev/null | sed -n 's/^n//p' | head -1)"
+      [[ "$fd8_file" == "$ROUTINE_FIXTURE_LOCK_PATH" ]] || return 0
+    fi
   fi
   kill -TERM -- "-$pgid" 2>/dev/null || true
   for _ in $(seq 1 50); do

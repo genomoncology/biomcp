@@ -18,19 +18,52 @@ MARKER_RE = re.compile(
     r"^routine-fixture-owner:([a-z0-9][a-z0-9-]*):([0-9a-f]{32}):(/.+)$"
 )
 
+# A ps command line joins arguments with single spaces, so the marker's root
+# path can run past its own end; accept it only when it also validates as a
+# canonical fixture child.
+MARKER_LINE_RE = re.compile(
+    r"routine-fixture-owner:([a-z0-9][a-z0-9-]*):([0-9a-f]{32}):(/.+)$", re.DOTALL
+)
 
-def proc_fields(pid: int) -> tuple[int, int, int] | None:
-    """Return (parent PID, process group, start identity) from procfs."""
+PROCFS = Path("/proc").is_dir()
+
+
+def proc_fields(pid: int) -> tuple[int, int, str] | None:
+    """Return (parent PID, process group, start identity) for a live PID.
+
+    procfs supplies all three on Linux; without it `ps` does, with a start
+    identity coarse to the second. The identity is only compared for equality
+    on the host that produced it.
+    """
+    if PROCFS:
+        try:
+            stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+            _, fields = stat.rsplit(") ", 1)
+            values = fields.split()
+            return int(values[1]), int(values[2]), values[19]
+        except (FileNotFoundError, IndexError, OSError, ValueError):
+            return None
     try:
-        stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
-        _, fields = stat.rsplit(") ", 1)
-        values = fields.split()
-        return int(values[1]), int(values[2]), int(values[19])
-    except (FileNotFoundError, IndexError, OSError, ValueError):
+        listing = subprocess.run(
+            ["ps", "-o", "ppid=,pgid=,lstart=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if listing.returncode != 0 or not listing.stdout.strip():
+        return None
+    values = listing.stdout.split()
+    if len(values) < 7:
+        return None
+    try:
+        return int(values[0]), int(values[1]), " ".join(values[2:])
+    except ValueError:
         return None
 
 
-def valid_identity(pid: int, start_id: int) -> bool:
+def valid_identity(pid: int, start_id: str) -> bool:
     fields = proc_fields(pid)
     return fields is not None and fields[2] == start_id
 
@@ -73,22 +106,34 @@ def marker_root(
     return None
 
 
-def process_marker_root(
-    pid: int, parent: Path, kind: str, prefix: str
-) -> Path | None:
-    try:
-        argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
-    except (FileNotFoundError, PermissionError, OSError):
-        return None
-    # The detached supervisor also carries the server's marker in its argv and
-    # normally has PPID 1. Recovery targets its separately sessioned child.
-    if len(argv) > 2 and argv[2] == b"launch":
-        try:
-            if Path(os.fsdecode(argv[1])).resolve() == Path(__file__).resolve():
-                return None
-        except OSError:
-            return None
-    return marker_root(argv, parent, kind, prefix)
+def marker_root_in_line(line: str, parent: Path, kind: str, prefix: str) -> Path | None:
+    """Find a marker in one ps command line, spaces included.
+
+    The path may continue into later arguments; extend it across each space
+    boundary and accept the first extent that validates canonically, so a
+    real space in the path still resolves while a truncated prefix of another
+    argument's text never does.
+    """
+    for matched in MARKER_LINE_RE.finditer(line):
+        if matched.group(1) != kind:
+            continue
+        rest = matched.group(3)
+        boundaries = [index for index, char in enumerate(rest) if char == " "]
+        boundaries.append(len(rest))
+        for boundary in boundaries:
+            root = validated_root(parent, rest[:boundary], prefix)
+            if root is not None:
+                return root
+    return None
+
+
+def is_supervisor_command(command: str) -> bool:
+    """True for a supervisor launch, whose argv also carries the marker.
+
+    Recovery targets the separately sessioned server child, never the live
+    supervisor watching it.
+    """
+    return "fixture-supervisor.py launch " in command
 
 
 def remove_root(root: Path, parent: Path, prefix: str) -> None:
@@ -133,23 +178,37 @@ def stop_group(pgid: int, child: subprocess.Popen[bytes] | None = None) -> None:
 
 
 def wait_for_owner_or_child(
-    owner_pid: int, owner_start_id: int, pidfd: int | None, child: subprocess.Popen[bytes]
+    owner_pid: int, owner_start_id: str, pidfd: int | None, child: subprocess.Popen[bytes]
 ) -> None:
     poller: select.poll | None = None
     if pidfd is not None:
         poller = select.poll()
         poller.register(pidfd, select.POLLIN | select.POLLHUP | select.POLLERR)
+    next_identity_check = 0.0
     while child.poll() is None:
         if poller is not None:
             if poller.poll(100):
                 return
         else:
-            if not valid_identity(owner_pid, owner_start_id):
+            # Without a pidfd, check the owner cheaply and revalidate its full
+            # identity on a slow cadence so a long run does not spawn one `ps`
+            # per poll on platforms without procfs.
+            try:
+                os.kill(owner_pid, 0)
+            except ProcessLookupError:
                 return
+            except PermissionError:
+                pass
+            now = time.monotonic()
+            if now >= next_identity_check:
+                if not valid_identity(owner_pid, owner_start_id):
+                    return
+                next_identity_check = now + 5
+            time.sleep(0.2)
     return
 
 
-def open_owner_pidfd(pid: int, start_id: int) -> int | None:
+def open_owner_pidfd(pid: int, start_id: str) -> int | None:
     try:
         pidfd = os.pidfd_open(pid)
     except (AttributeError, OSError):
@@ -160,9 +219,27 @@ def open_owner_pidfd(pid: int, start_id: int) -> int | None:
     return pidfd
 
 
+def ensure_detached_session() -> None:
+    """Move into a new session like setsid(1), forking if a group leader.
+
+    Detaching here replaces the setsid(1) binary, which the macOS gate host
+    does not ship, and keeps the detached lifecycle defined in one place.
+    """
+    try:
+        os.setsid()
+        return
+    except OSError:
+        if os.getpid() != os.getpgrp():
+            raise
+    if os.fork() != 0:
+        os._exit(0)
+    os.setsid()
+
+
 def launch(args: argparse.Namespace) -> int:
+    ensure_detached_session()
     if not valid_identity(args.owner_pid, args.owner_start_id):
-        raise ValueError("owner PID and start identity do not match procfs")
+        raise ValueError("owner PID and start identity do not match the running process")
     parent = Path(args.parent)
     root = validated_root(parent, args.root, args.prefix)
     if root is None:
@@ -189,6 +266,43 @@ def launch(args: argparse.Namespace) -> int:
             remove_root(root, parent, args.prefix)
 
 
+def iter_processes() -> list[tuple[int, tuple[int, int, str] | None, str]]:
+    """One snapshot of every process as (pid, fields, command line)."""
+    snapshot: list[tuple[int, tuple[int, int, str] | None, str]] = []
+    if PROCFS:
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdecimal():
+                continue
+            pid = int(entry.name)
+            try:
+                command = Path(f"/proc/{pid}/cmdline").read_bytes().replace(
+                    b"\0", b" "
+                ).decode("utf-8", "replace").rstrip(" ")
+            except (FileNotFoundError, PermissionError, OSError):
+                command = ""
+            snapshot.append((pid, proc_fields(pid), command))
+        return snapshot
+    try:
+        listing = subprocess.run(
+            ["ps", "-axo", "pid=,ppid=,pgid=,command="],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return snapshot
+    for line in listing.stdout.splitlines():
+        values = line.split(maxsplit=3)
+        if len(values) < 4:
+            continue
+        try:
+            pid, ppid, pgid = (int(value) for value in values[:3])
+        except ValueError:
+            continue
+        snapshot.append((pid, (ppid, pgid, ""), values[3]))
+    return snapshot
+
+
 def recover(args: argparse.Namespace) -> int:
     parent = Path(args.parent)
     try:
@@ -196,19 +310,17 @@ def recover(args: argparse.Namespace) -> int:
     except OSError:
         raise ValueError("fixture cache parent does not exist") from None
     collected = 0
-    for entry in Path("/proc").iterdir():
-        if not entry.name.isdecimal():
-            continue
-        pid = int(entry.name)
-        fields = proc_fields(pid)
+    for pid, fields, command in iter_processes():
         if fields is None or fields[0] != 1 or fields[1] != pid:
             continue
+        if is_supervisor_command(command):
+            continue
         start_id = fields[2]
-        root = process_marker_root(pid, parent, args.kind, args.prefix)
+        root = marker_root_in_line(command, parent, args.kind, args.prefix)
         if root is None:
             continue
-        # Procfs observations are mutable: authenticate the same process again
-        # immediately before any signal or filesystem mutation.
+        # Process-table observations are mutable: authenticate the same process
+        # again immediately before any signal or filesystem mutation.
         fields = proc_fields(pid)
         if (
             fields is None
@@ -217,7 +329,7 @@ def recover(args: argparse.Namespace) -> int:
             or fields[2] != start_id
         ):
             continue
-        if process_marker_root(pid, parent, args.kind, args.prefix) != root:
+        if marker_root_in_line(process_command(pid), parent, args.kind, args.prefix) != root:
             continue
         stop_group(pid)
         remove_root(root, parent, args.prefix)
@@ -229,12 +341,39 @@ def recover(args: argparse.Namespace) -> int:
     return 0
 
 
+def process_command(pid: int) -> str:
+    """Re-read one process's command line for revalidation."""
+    if PROCFS:
+        try:
+            return (
+                Path(f"/proc/{pid}/cmdline")
+                .read_bytes()
+                .replace(b"\0", b" ")
+                .decode("utf-8", "replace")
+                .rstrip(" ")
+            )
+        except (FileNotFoundError, PermissionError, OSError):
+            return ""
+    try:
+        listing = subprocess.run(
+            ["ps", "-ww", "-o", "command=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return ""
+    if listing.returncode != 0:
+        return ""
+    return listing.stdout.splitlines()[0] if listing.stdout else ""
+
+
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser()
     commands = result.add_subparsers(dest="mode", required=True)
     launch_parser = commands.add_parser("launch")
     launch_parser.add_argument("owner_pid", type=int)
-    launch_parser.add_argument("owner_start_id", type=int)
+    launch_parser.add_argument("owner_start_id")
     launch_parser.add_argument("kind")
     launch_parser.add_argument("parent")
     launch_parser.add_argument("root")
