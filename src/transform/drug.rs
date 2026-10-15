@@ -334,23 +334,6 @@ fn hit_own_names(hit: &MyChemHit) -> Vec<String> {
     out
 }
 
-fn drug_type_from_hit(hit: &MyChemHit) -> Option<String> {
-    let v = hit
-        .chembl
-        .as_ref()
-        .and_then(|c| c.molecule_type.as_deref())
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .map(|v| v.to_ascii_lowercase());
-
-    match v.as_deref() {
-        Some("antibody") => Some("biologic".into()),
-        Some("small molecule") => Some("small-molecule".into()),
-        Some(other) => Some(other.to_string()),
-        None => None,
-    }
-}
-
 fn title_case_words(value: &str) -> String {
     value
         .split_whitespace()
