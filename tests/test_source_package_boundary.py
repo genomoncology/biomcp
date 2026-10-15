@@ -101,16 +101,15 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     )
 
 
-def test_verified_source_package_is_zero_coupled_and_compiles_offline(
-    tmp_path: Path,
-) -> None:
-    package_target = tmp_path / "package-target"
+def _package_source_tree_unverified(package_target: Path) -> Path:
+    """Pack the source tree without compiling it, and return the archive."""
     subprocess.run(
         [
             OFFLINE,
             "--",
             "cargo",
             "package",
+            "--no-verify",
             "--locked",
             "--offline",
             "--allow-dirty",
@@ -122,7 +121,11 @@ def test_verified_source_package_is_zero_coupled_and_compiles_offline(
     )
     archives = list((package_target / "package").glob("biomcp-cli-*.crate"))
     assert len(archives) == 1
-    archive = archives[0]
+    return archives[0]
+
+
+def test_source_package_archive_is_zero_coupled(tmp_path: Path) -> None:
+    archive = _package_source_tree_unverified(tmp_path / "package-target")
     with tarfile.open(archive, "r:gz") as source:
         members = source.getmembers()
         assert len(members) == MAX_PACKAGE_FILES
@@ -130,6 +133,13 @@ def test_verified_source_package_is_zero_coupled_and_compiles_offline(
     subprocess.run(
         [sys.executable, ZERO_COUPLING_CHECKER, "--archive", archive], check=True
     )
+
+
+@pytest.mark.release_gate
+def test_packaged_crate_compiles_offline_cold(tmp_path: Path) -> None:
+    archive = _package_source_tree_unverified(tmp_path / "package-target")
+    with tarfile.open(archive, "r:gz") as source:
+        source.extractall(tmp_path / "unpacked", filter="data")
     unpacked = tmp_path / "unpacked" / archive.name.removesuffix(".crate")
     env = os.environ | {"CARGO_TARGET_DIR": str(tmp_path / "check-target")}
     subprocess.run(

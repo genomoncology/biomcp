@@ -73,7 +73,12 @@ def test_biomcp_ci_wrapper_is_tracked_and_executable() -> None:
     assert os.access(WRAPPER_SCRIPT, os.X_OK), "tools/biomcp-ci must be executable"
 
 
-def test_biomcp_ci_wrapper_sets_repo_cache_env_and_forwards_args(tmp_path: Path) -> None:
+def test_biomcp_ci_wrapper_sets_repo_cache_env_and_forwards_args(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # This test asserts the wrapper's default folder, so pytest's own
+    # cache guard must stay out of the wrapper's environment.
+    monkeypatch.delenv("BIOMCP_CACHE_DIR", raising=False)
     result = _run_wrapper(tmp_path, "search", "gene", "BRAF", "--limit", "1")
 
     assert result.returncode == 0, result.stderr

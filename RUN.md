@@ -105,7 +105,7 @@ Run the heavier local ticket proofs explicitly:
 make lint               # repo lint plus quality ratchet
 make test               # Rust nextest plus Python/docs contract lane
 make spec               # offline deterministic routine spec gate
-make release-gate       # routine gates + full-feature proof + release specs
+make release-gate       # routine gates + packaged-crate check + full-feature proof + release specs
 make verify             # opt-in live public-upstream confidence
 make test-contracts     # rerun just Python/docs contract lane
 ```
@@ -130,10 +130,14 @@ lanes and before release-profile specs.
 `cargo nextest run` plus the Python/docs contract lane, so landing-copy,
 Python, and strict-docs regressions fail the same local test gate. Python
 contracts use four bounded file-distributed workers; set `PYTEST_WORKERS=1`
-for a one-worker diagnostic run. Use
+for a one-worker diagnostic run. No Python test in that lane compiles the
+crate or reads the developer's own HTTP cache: every test gets its own
+cache root, and the checks marked `release_gate` are deselected. Use
 `make release-gate` for the single release-readiness signal; it runs routine
 lint and test, the named full-feature proof, then specs against the all-feature
-release binary. There is no supported `make check` command. Use
+release binary. `make release-gate` also runs the packaged-crate check:
+`pytest -m release_gate` cold-compiles the unpacked source package offline
+right after `make test`. There is no supported `make check` command. Use
 `make verify` only as an explicit opt-in live public-upstream confidence lane;
 `make release-live-smoke` is a compatibility alias for that operator lane.
 `make spec-pr` remains available for the offline executable-spec corpus by
