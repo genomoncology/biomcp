@@ -17,6 +17,39 @@ export BIOMCP_FHIR_BASE=https://fhir.example.org/fhir
 
 The value must be an `http` or `https` URL with no credentials, query, or fragment. With the variable unset, patient commands fail and name it, and `biomcp health` reports the FHIR row as not configured. Health sends no request to the FHIR server.
 
+## Search patients
+
+```bash
+biomcp search patient --gender female --born-after 1950-01-01 --condition "http://snomed.info/sct|44054006" --limit 10
+biomcp search patient --condition "http://snomed.info/sct|44054006" --count
+```
+
+`search patient` finds people by typed facts, never free text: `--gender`
+(male, female, other, unknown), `--born-after` and `--born-before` (FHIR dates
+`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`, exclusive bounds), and `--condition` as
+`system|code`. At least one filter is required. `--limit` runs 1-50 with a
+default of 10. No comma is allowed in any value.
+
+Every value is checked before any request. The command then reads the server's
+`metadata` and refuses a filter whose search parameter (`gender`, `birthdate`,
+or `_has`) the server does not declare for Patient, naming the parameter. The
+search itself is sent with `Prefer: handling=strict`, so a server that would
+silently ignore a parameter fails instead. One page is read; there is no
+paging.
+
+Output keeps only the id, gender, and birth date of each Patient entry. A
+Patient whose id breaks the FHIR id rule still lists its row but prints no id
+and no `get patient` command.
+
+`--count` sends the same filters with `_summary=count` and prints `Bundle.total`
+labeled as server-reported. When the server sends no `total`, the command says
+the server reported no count; it never counts entries itself. `--limit` does
+not apply with `--count`.
+
+Over MCP, run searches through the shell tool, for example
+`biomcp search patient --gender female --count`; the typed `search` tool for
+patient takes no filters on purpose, so the value rules live in one place.
+
 ## Get a patient record
 
 ```bash
@@ -52,7 +85,9 @@ A failed first page makes the section `unavailable`. A search with no matches is
 
 ## Helper commands
 
-`search patient` is not yet available. It fails with a message and sends no request. Use `get patient <id>` for one known patient.
+`search patient` covers finding patients by typed facts; `get patient <id>`
+reads one known patient's record. There is no other helper family for
+patient.
 
 ## JSON mode
 

@@ -110,6 +110,14 @@
 
 ### New features
 
+- Added `search patient` for typed-fact search on the FHIR server in
+  `BIOMCP_FHIR_BASE`: `--gender`, `--born-after`/`--born-before` FHIR dates,
+  and `--condition system|code`, with `--limit` (1-50, default 10) and
+  `--count` for the server-reported total. Values are checked before any
+  request, the server's `metadata` must declare each search parameter the
+  command sends, the search runs one page with `Prefer: handling=strict`, and
+  output keeps only id, gender, and birth date. MCP callers search through the
+  shell tool; the typed `search` tool for patient stays filterless. (2003)
 - Primary gene search and detail use shared BioData gene values while retaining
   source assertions, conversion losses, ordering and terminal errors. Publisher
   HGNC assertions remain unqualified. (2007)
@@ -119,7 +127,7 @@
   redirects only on the configured server for at most 20 pages. Errors name no
   URL or patient ID. Patient commands run on the CLI and stdio MCP only, and
   `serve-http` refuses them. `biomcp health` reports the FHIR row as
-  configured or not configured. `search patient` is not yet available. (2002)
+  configured or not configured. (2002)
 - Linux wheels now target `manylinux_2_28` (built in the official
   manylinux containers and verified against the glibc 2.28 symbol floor)
   and a Linux ARM64 wheel ships, so `pip install biomcp-cli` works on
