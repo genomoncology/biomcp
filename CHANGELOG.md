@@ -237,6 +237,10 @@
 
 ### Internal
 
+- `make lint` now fails when a ticket filed on the 1.0 line reuses a
+  number `origin/main` already filed under a different file, or when a
+  ticket that exists only on the 1.0 line is numbered below 2001. The
+  check passes silently on main and on branches built from it. (2006)
 - Test waits that polled the clock now wait on signals: the GenCC lease
   child handshakes over a pipe and exits when its parent's stdin closes
   (a dying parent can no longer leave it polling for two minutes), the
