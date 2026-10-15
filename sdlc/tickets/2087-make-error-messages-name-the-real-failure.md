@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision eac19b0, accept
+
 ## Outcome
 
 `get trial NCT99999999` reports the trial as not found, `get article 999999999999` reports no article with that PMID, and `get variant "BRAF Z999Q"` refuses the invalid residue with exit 2.
