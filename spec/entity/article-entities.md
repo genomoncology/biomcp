@@ -79,7 +79,10 @@ provider's document-global character offsets, one span per counted mention.
 
 A disease row's MeSH identifier opens a card only when the MyDisease
 crosswalk holds exactly one hit naming the identifier's PubTator3 concept
-name, so the link names that hit's ontology ID; anything else keeps the
+name, so the link names that hit's ontology ID; a holder whose card title
+narrows the concept — every concept word plus at least one more, like
+"skin neoplasms" against the "skin benign neoplasm" card — counts as no
+holder; anything else keeps the
 v0.9.1 search command, because several MONDO records crosswalk one broad
 MeSH descriptor and a bare identifier opens whichever card sorts first —
 `MESH:D008175` for "Lung Cancers" opened lung benign neoplasm. The
