@@ -155,8 +155,6 @@ pub(super) async fn hang_guard<T>(
     }
 }
 
-pub(super) fn test_http_response(status: &str, content_type: &str, body: &[u8]) -> Vec<u8> {
-
 pub(crate) fn test_http_response(status: &str, content_type: &str, body: &[u8]) -> Vec<u8> {
     let mut response = format!(
         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",

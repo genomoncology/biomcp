@@ -1,3 +1,5 @@
+//! Variant entity models and workflows exposed through the stable variant facade.
+
 mod clinvar {
     use std::time::Duration;
 
@@ -121,8 +123,6 @@ mod clinvar {
         }
     }
 }
-
-//! Variant entity models and workflows exposed through the stable variant facade.
 
 use crate::error::BioMcpError;
 use biodata::ClinVarRecordProjection;
