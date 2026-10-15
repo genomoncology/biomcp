@@ -29,6 +29,13 @@ jobs:
   changes:
     timeout-minutes: 5
     runs-on: ubuntu-24.04
+    # The green-tip route (ticket 2086) asks for the previous
+    # tip's ci.yml run through gh api; a job-level permissions
+    # block replaces the workflow's, so this restates contents:
+    # read for the checkout and adds actions: read for that query.
+    permissions:
+      contents: read
+      actions: read
     outputs:
       docs_only: ${{ steps.classify.outputs.docs_only }}
     steps:
@@ -42,6 +49,8 @@ jobs:
         env:
           PUSH_BASE_REF: origin/main
           PUSH_AFTER: ${{ github.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
         run: scripts/ci-classify-push.sh
 
   canonical-gates:

@@ -1,8 +1,10 @@
 # 2086 — Skip the full gates for a push that adds only ticket records to a green tip
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision b45d3c4, accept
 
 ## Outcome
 
@@ -32,3 +34,11 @@ A ticket-branch push whose only change since a tip with a green CI run is under 
 
 - Changes: remove `AGENTS.md` from the merge-base route's allow list in `scripts/ci-classify-push.sh`, and update the allow-list string `tests/test_ci_workflow_contract.py` strips.
 - Proof: a case in `tests/test_ci_classify_push_script.py` where a push changing only `AGENTS.md` gives `docs_only=false`; it fails on current main.
+
+- Built on `ticket/2086-ci-record-skip` from main at `a81c61028` (green again after `ec4029345`). `scripts/ci-classify-push.sh` runs the merge-base route first and, only when that says full CI, the green-tip route: ticket branch (`refs/heads/ticket/*` or `refs/heads/tickets/*`), `PUSH_BEFORE` a real ancestor (all zeros, a missing sha, or a non-ancestor force push each refuse), every path in `git diff --name-only PUSH_BEFORE PUSH_AFTER` under `sdlc/`, and the newest `ci.yml` push run for the previous tip (`gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$PUSH_BEFORE&event=push&per_page=1"`) `completed` with conclusion `success`; any error, missing run, or unfinished run runs full CI. Every exit prints the deciding route and reason.
+- Proof (red on main, `a81c61028`): `tests/test_ci_classify_push_script.py` against main's script — 5 failed, 25 passed. Failing: `test_sdlc_only_push_over_green_tip_classifies_true` (both `ticket/*` and `tickets/*` refs), `test_second_route_counts_only_sdlc_paths`, `test_force_push_before_not_ancestor_runs_full_ci` (main prints no route), `test_agents_md_only_push_runs_full_ci` (main still allows `AGENTS.md`). All the false cases (failed/cancelled/missing/in-progress/queued tip, gh error, non-ticket branch, all-zeros before, no `PUSH_BEFORE`) pass on main.
+- Proof (tests, Yellow, `40fe4c85a`): `tests/test_ci_classify_push_script.py` (19 cases incl. the parametrized green-tip set, both branch spellings, the fake `gh` recording the URL it was asked) and `tests/test_ci_workflow_contract.py` (now pins `PUSH_BEFORE: ${{ github.event.before }}`, `GH_TOKEN: ${{ github.token }}`, and the changes job's `permissions: contents: read, actions: read`) — 28 passed. `make lint` green on Yellow at `40fe4c85a` (one earlier ratchet run failed and a rerun of the same command on the same tree passed; the recorded state is green). `make test`'s changelog lane covers the new bullet through CI.
+- Beyond the claimed files: `tests/test_docs_changelog_refresh.py` (the 0.9.3 dev-cycle ticket set gains 2086; CI run 38636480337 on `1843c9fd` failed on exactly that and commit `40fe4c85` closed it).
+- Proof (CI): run 38640267374 on `40fe4c85a23f267a40a724a50a9ee338a2e3e7b8` green, every job, 27m15s wall (21:26:24Z–21:53:39Z). The changes job log shows the route print working in production: `classify: full CI by the merge-base route (a path outside the allow list changed since origin/main)` then `classify: green-tip route refused (tests/test_docs_changelog_refresh.py is outside sdlc/)` — the code push never skips.
+- Proof (durations, this branch's own pushes): the code push `40fe4c85` ran every gate in 27m15s; the record push that appends this evidence runs against that green tip through the new route — its duration follows in the next evidence commit.
+- Proof (durations, closed): the record push `66ec6533` (run 38643865172, this evidence) classified `docs_only=true` by the green-tip route — the changes log prints `classify: docs-only by the green-tip route (every path since 40fe4c85a23f267a40a724a50a9ee338a2e3e7b8 is under sdlc/, and that tip's ci.yml push run concluded success)` — and finished green in 2m31s (21:54:56Z–21:57:27Z) with `canonical-gates`, `stress-lane`, `release-panic`, `full-features`, `generated-sources`, and `windows-contracts` all skipped and only `repository-contracts` running, against the code push's 27m15s on the same branch.
