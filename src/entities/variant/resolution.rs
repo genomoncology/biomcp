@@ -515,24 +515,7 @@ pub(crate) fn protein_changes_equivalent(left: &str, right: &str) -> bool {
 }
 
 pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
-    normalize_protein_range_deletion(protein_alias_body(value))
-        .or_else(|| point_alias::point_assertion(value, None, false).alias())
-}
-
-fn protein_range_deletion_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"^([A-Z*][a-z]{0,2})(\d+)_([A-Z*][a-z]{0,2})(\d+)del$").expect("valid regex")
-    })
-}
-
-/// Protein-range deletions such as EGFR `E746_A750del` or `p.Glu746_Ala750del`
-/// normalize to the one-letter compact spelling.
-fn normalize_protein_range_deletion(value: &str) -> Option<String> {
-    let caps = protein_range_deletion_re().captures(value)?;
-    let from = point_alias::residue(&caps[1])?.0;
-    let to = point_alias::residue(&caps[3])?.0;
-    Some(format!("{from}{}_{to}{}del", &caps[2], &caps[4]))
+    point_alias::point_assertion(value, None, false).alias()
 }
 
 /// Search filters normalize only complete supported point substitutions.

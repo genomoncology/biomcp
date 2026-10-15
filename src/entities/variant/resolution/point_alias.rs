@@ -97,7 +97,7 @@ fn tokens_re() -> &'static Regex {
     })
 }
 
-pub(super) fn residue(token: &str) -> Option<(&'static str, &'static str)> {
+fn residue(token: &str) -> Option<(&'static str, &'static str)> {
     Some(match token.to_ascii_uppercase().as_str() {
         "A" | "ALA" => ("A", "Ala"),
         "R" | "ARG" => ("R", "Arg"),
