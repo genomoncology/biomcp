@@ -862,6 +862,13 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
         }
     }
 
+    // Nothing the page carries names the request: the page still answers
+    // with its own rows (the all-hit fallback the get path has always
+    // kept), sorted by richness, and the caller states what it served.
+    if out.is_empty() {
+        out = hits.iter().collect();
+    }
+
     // Prefer richer hits first (more sources).
     out.sort_by_key(|h| {
         let mut score: i32 = 0;
