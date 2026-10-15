@@ -323,7 +323,7 @@ async fn a_pubtator_empty_reply_falls_back_to_europe_pmc_without_a_warning() {
     assert!(
         requests
             .iter()
-            .any(|target| target.starts_with("/search?query=EXT_ID:20516115")),
-        "Europe PMC covers the row: {requests:?}"
+            .any(|target| target.starts_with("/search?query=EXT_ID%3A20516115")),
+        "Europe PMC covers the row (the colon arrives percent-encoded): {requests:?}"
     );
 }
