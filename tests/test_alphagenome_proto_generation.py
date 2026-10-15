@@ -70,9 +70,12 @@ def test_regeneration_is_explicit_pinned_atomic_and_checkable() -> None:
     assert "generated provider client includes members unused by this runtime" in (
         generator
     )
+    # Protoc installs only where regeneration runs: the
+    # generated-sources job (ticket 2075 kept protoc out of the
+    # routine lanes, which never regenerate the proto).
     assert (
         workflow.count("arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b")
-        == 2
+        == 1
     )
     assert 'version: "28.3"' in workflow
     assert "scripts/regenerate-alphagenome-proto --check" in workflow
