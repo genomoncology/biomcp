@@ -541,7 +541,9 @@ impl BioMcpServer {
     }
 
     fn tool_error(message: impl Into<String>) -> CallToolResult {
-        let message = crate::render::human::sanitize_inline(&message.into());
+        // Document policy: error text keeps its line breaks, matching the
+        // CLI, while controls and bidi overrides still strip.
+        let message = crate::render::human::sanitize_document(&message.into());
         CallToolResult::error(vec![Content::text(message)])
     }
 

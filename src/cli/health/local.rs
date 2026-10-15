@@ -26,10 +26,14 @@ fn local_data_is_stale(root: &Path, files: &[&str], stale_after: Duration) -> bo
     })
 }
 
+/// `mcp` marks the MCP surface: the row names the dataset without its
+/// resolved directory, because an MCP reply carries no local filesystem
+/// path. The CLI keeps the full label and the `local_path` field.
 fn local_data_outcome<F>(
     label: &str,
     root: &Path,
     env_configured: bool,
+    mcp: bool,
     required_files: &[&str],
     stale_after: Duration,
     affects: &'static str,
@@ -38,7 +42,10 @@ fn local_data_outcome<F>(
 where
     F: for<'a> Fn(&'a Path, &[&'a str]) -> Vec<&'a str>,
 {
-    let api = format!("{label} ({})", root.display());
+    let api = match mcp {
+        true => label.to_string(),
+        false => format!("{label} ({})", root.display()),
+    };
     let missing = missing_files(root, required_files);
 
     if missing.is_empty() {
@@ -50,7 +57,7 @@ where
             (false, true) => (HealthStatus::Available, ProbeClass::Warning, Some(affects)),
         };
         let mut row = health_row(&api, status, "n/a".into(), row_affects, None);
-        row.local_path = Some(root.display().to_string());
+        row.local_path = (!mcp).then(|| root.display().to_string());
         row.stale = stale.then_some(true);
         return outcome(row, class);
     }
@@ -76,11 +83,13 @@ where
 pub(in crate::cli::health) fn ema_local_data_outcome(
     root: &Path,
     env_configured: bool,
+    mcp: bool,
 ) -> ProbeOutcome {
     local_data_outcome(
         "EMA local data",
         root,
         env_configured,
+        mcp,
         crate::sources::ema::EMA_REQUIRED_FILES,
         crate::sources::ema::EMA_STALE_AFTER,
         EMA_LOCAL_DATA_AFFECTS,
@@ -88,20 +97,22 @@ pub(in crate::cli::health) fn ema_local_data_outcome(
     )
 }
 
-pub(in crate::cli::health) fn check_ema_local_data() -> ProbeOutcome {
+pub(in crate::cli::health) fn check_ema_local_data(mcp: bool) -> ProbeOutcome {
     let env_configured = configured_key("BIOMCP_EMA_DIR").is_some();
     let root = crate::sources::ema::resolve_ema_root();
-    ema_local_data_outcome(&root, env_configured)
+    ema_local_data_outcome(&root, env_configured, mcp)
 }
 
 pub(in crate::cli::health) fn cvx_local_data_outcome(
     root: &Path,
     env_configured: bool,
+    mcp: bool,
 ) -> ProbeOutcome {
     local_data_outcome(
         "CDC CVX/MVX local data",
         root,
         env_configured,
+        mcp,
         crate::sources::cvx::CVX_REQUIRED_FILES,
         crate::sources::cvx::CVX_STALE_AFTER,
         CVX_LOCAL_DATA_AFFECTS,
@@ -109,20 +120,22 @@ pub(in crate::cli::health) fn cvx_local_data_outcome(
     )
 }
 
-pub(in crate::cli::health) fn check_cvx_local_data() -> ProbeOutcome {
+pub(in crate::cli::health) fn check_cvx_local_data(mcp: bool) -> ProbeOutcome {
     let env_configured = configured_key("BIOMCP_CVX_DIR").is_some();
     let root = crate::sources::cvx::resolve_cvx_root();
-    cvx_local_data_outcome(&root, env_configured)
+    cvx_local_data_outcome(&root, env_configured, mcp)
 }
 
 pub(in crate::cli::health) fn ddinter_local_data_outcome(
     root: &Path,
     env_configured: bool,
+    mcp: bool,
 ) -> ProbeOutcome {
     local_data_outcome(
         "DDInter local data",
         root,
         env_configured,
+        mcp,
         crate::sources::ddinter::DDINTER_REQUIRED_FILES,
         crate::sources::ddinter::DDINTER_STALE_AFTER,
         DDINTER_LOCAL_DATA_AFFECTS,
@@ -130,7 +143,7 @@ pub(in crate::cli::health) fn ddinter_local_data_outcome(
     )
 }
 
-pub(in crate::cli::health) fn check_ddinter_local_data() -> ProbeOutcome {
+pub(in crate::cli::health) fn check_ddinter_local_data(mcp: bool) -> ProbeOutcome {
     if crate::sources::disable::is_disabled("ddinter") {
         let mut row = super::runner::health_row(
             "DDInter local data",
@@ -144,17 +157,19 @@ pub(in crate::cli::health) fn check_ddinter_local_data() -> ProbeOutcome {
     }
     let env_configured = configured_key("BIOMCP_DDINTER_DIR").is_some();
     let root = crate::sources::ddinter::resolve_ddinter_root();
-    ddinter_local_data_outcome(&root, env_configured)
+    ddinter_local_data_outcome(&root, env_configured, mcp)
 }
 
 pub(in crate::cli::health) fn who_local_data_outcome(
     root: &Path,
     env_configured: bool,
+    mcp: bool,
 ) -> ProbeOutcome {
     local_data_outcome(
         "WHO Prequalification local data",
         root,
         env_configured,
+        mcp,
         crate::sources::who_pq::WHO_PQ_REQUIRED_FILES,
         crate::sources::who_pq::WHO_PQ_STALE_AFTER,
         WHO_LOCAL_DATA_AFFECTS,
@@ -162,20 +177,22 @@ pub(in crate::cli::health) fn who_local_data_outcome(
     )
 }
 
-pub(in crate::cli::health) fn check_who_local_data() -> ProbeOutcome {
+pub(in crate::cli::health) fn check_who_local_data(mcp: bool) -> ProbeOutcome {
     let env_configured = configured_key("BIOMCP_WHO_DIR").is_some();
     let root = crate::sources::who_pq::resolve_who_pq_root();
-    who_local_data_outcome(&root, env_configured)
+    who_local_data_outcome(&root, env_configured, mcp)
 }
 
 pub(in crate::cli::health) fn gtr_local_data_outcome(
     root: &Path,
     env_configured: bool,
+    mcp: bool,
 ) -> ProbeOutcome {
     local_data_outcome(
         "GTR local data",
         root,
         env_configured,
+        mcp,
         &crate::sources::gtr::GTR_REQUIRED_FILES,
         crate::sources::gtr::GTR_STALE_AFTER,
         GTR_LOCAL_DATA_AFFECTS,
@@ -194,20 +211,22 @@ pub(in crate::cli::health) fn gtr_local_data_outcome(
     )
 }
 
-pub(in crate::cli::health) fn check_gtr_local_data() -> ProbeOutcome {
+pub(in crate::cli::health) fn check_gtr_local_data(mcp: bool) -> ProbeOutcome {
     let env_configured = configured_key("BIOMCP_GTR_DIR").is_some();
     let root = crate::sources::gtr::resolve_gtr_root();
-    gtr_local_data_outcome(&root, env_configured)
+    gtr_local_data_outcome(&root, env_configured, mcp)
 }
 
 pub(in crate::cli::health) fn who_ivd_local_data_outcome(
     root: &Path,
     env_configured: bool,
+    mcp: bool,
 ) -> ProbeOutcome {
     local_data_outcome(
         "WHO IVD local data",
         root,
         env_configured,
+        mcp,
         crate::sources::who_ivd::WHO_IVD_REQUIRED_FILES,
         crate::sources::who_ivd::WHO_IVD_STALE_AFTER,
         WHO_IVD_LOCAL_DATA_AFFECTS,
@@ -215,17 +234,20 @@ pub(in crate::cli::health) fn who_ivd_local_data_outcome(
     )
 }
 
-pub(in crate::cli::health) fn check_who_ivd_local_data() -> ProbeOutcome {
+pub(in crate::cli::health) fn check_who_ivd_local_data(mcp: bool) -> ProbeOutcome {
     let env_configured = configured_key("BIOMCP_WHO_IVD_DIR").is_some();
     let root = crate::sources::who_ivd::resolve_who_ivd_root();
-    who_ivd_local_data_outcome(&root, env_configured)
+    who_ivd_local_data_outcome(&root, env_configured, mcp)
 }
 
-pub(in crate::cli::health) async fn check_cache_dir() -> ProbeOutcome {
-    check_cache_dir_with(crate::cache::resolve_cache_config).await
+pub(in crate::cli::health) async fn check_cache_dir(mcp: bool) -> ProbeOutcome {
+    check_cache_dir_with(crate::cache::resolve_cache_config, mcp).await
 }
 
-pub(in crate::cli::health) async fn check_cache_dir_with<R>(resolve_config: R) -> ProbeOutcome
+pub(in crate::cli::health) async fn check_cache_dir_with<R>(
+    resolve_config: R,
+    mcp: bool,
+) -> ProbeOutcome
 where
     R: FnOnce() -> Result<crate::cache::ResolvedCacheConfig, BioMcpError>,
 {
@@ -251,7 +273,7 @@ where
             );
         }
     };
-    probe_cache_dir(&dir).await
+    probe_cache_dir(&dir, mcp).await
 }
 
 pub(in crate::cli::health) async fn check_cache_limits() -> ProbeOutcome {
@@ -276,7 +298,7 @@ pub(in crate::cli::health) async fn check_cache_limits() -> ProbeOutcome {
     }
 }
 
-pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome {
+pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path, mcp: bool) -> ProbeOutcome {
     let start = Instant::now();
     let suffix = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -295,10 +317,14 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome 
     }
     .await;
 
+    let api = match mcp {
+        true => "Cache dir".to_string(),
+        false => format!("Cache dir ({})", dir.display()),
+    };
     match result {
         Ok(()) => outcome(
             HealthRow {
-                api: format!("Cache dir ({})", dir.display()),
+                api,
                 status: HealthStatus::Ok,
                 latency: format!("{}ms", start.elapsed().as_millis()),
                 affects: None,
@@ -315,7 +341,7 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome 
         ),
         Err(err) => outcome(
             HealthRow {
-                api: format!("Cache dir ({})", dir.display()),
+                api,
                 status: HealthStatus::Error,
                 latency: format!("{:?}", err.kind()),
                 affects: Some("local cache-backed lookups and downloads".into()),
