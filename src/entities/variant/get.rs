@@ -28,7 +28,7 @@ use super::gwas::add_gwas_section;
 use super::gwas::mark_gwas_unavailable;
 use super::resolution::parse_variant_id;
 use super::{
-    ClinvarRecord, GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus,
+    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus,
     ResolvedPopulationCoordinate, TreatmentImplication, Variant, VariantCivicSection,
     VariantIdFormat, VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
     VariantOncoKbResult, classify_variant_input, gnomad_variant_slug, normalize_variant,
