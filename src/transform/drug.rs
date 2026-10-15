@@ -1243,7 +1243,6 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
             "get merge",
         );
         record_codes(hit, "unii", "unii", unii.is_none(), "get merge");
-        if drugbank_id.is_none() {
         if drugbank_id.is_none() && !combination_card {
             drugbank_id = hit
                 .drugbank

@@ -65,14 +65,6 @@ fn registry_identity(identifier: &str) -> Option<(&'static str, String)> {
     }
 }
 
-/// Read the identifier PubTator3 gives for one annotation. Variant mentions
-/// carry a tmVar composite in `identifier`, so their typed-back identifier is
-/// the gene-qualified HGVS expression whenever the row's own annotations
-/// carry a gene and a protein change, the rsID while the document shows that
-/// rsID naming one change and the row lacks that pair, and the HGVS
-/// expression otherwise. Disease rows also keep PubTator3's concept name for
-/// the identifier, which the disease crosswalk matches exactly instead of
-/// opening whatever card a bare MeSH identifier happens to hit.
 fn annotation_identity(
     kind: AnnotationKind,
     identifier: Option<&str>,
@@ -82,35 +74,23 @@ fn annotation_identity(
 ) -> Option<AnnotationIdentity> {
     match kind {
         AnnotationKind::Gene => {
-            clean_identifier(identifier?).map(|identifier| ("NCBIGene", identifier.to_string()))
+            clean_identifier(identifier?).map(|identifier| ("NCBIGene", identifier.to_string(), None))
         }
-        AnnotationKind::Disease | AnnotationKind::Chemical => registry_identity(identifier?),
+        AnnotationKind::Disease | AnnotationKind::Chemical => registry_identity(identifier?)
+            .map(|(namespace, identifier)| (namespace, identifier, None)),
         AnnotationKind::Mutation => {
             if let Some(rsid) = rsid.and_then(clean_identifier) {
-                return Some(("rsID", rsid.to_string()));
+                return Some(("rsID", rsid.to_string(), None));
             }
             if let Some(rsid) = first_rsid.and_then(clean_identifier) {
-                return Some(("rsID", rsid.to_string()));
+                return Some(("rsID", rsid.to_string(), None));
             }
             if let Some(hgvs) = hgvs.and_then(clean_identifier) {
-                return Some(("HGVS", hgvs.to_string()));
+                return Some(("HGVS", hgvs.to_string(), None));
             }
             None
         }
-        let hgvs = infons.hgvs.as_deref().and_then(clean_identifier)?;
-        if !is_protein_hgvs(hgvs) {
-            return Some(("HGVS", hgvs.to_string(), None));
-        }
-        // A shared rsID with a protein change reached here because no
-        // gene-qualified exact form exists, so no typed-back form names the
-        // row's allele.
-        return None;
     }
-    infons
-        .hgvs
-        .as_deref()
-        .and_then(clean_identifier)
-        .map(|hgvs| ("HGVS", hgvs.to_string(), None))
 }
 
 /// Document-wide facts that disambiguate mutation identities: the gene symbol
