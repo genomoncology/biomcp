@@ -17,6 +17,7 @@
 
 ### Internal
 
+- The release checks now run on every branch push instead of only at tag time: a branch that changes shipped behavior fails CI until its changelog bullet lands, a branch that changes only records and tests needs no bullet, the branch lane runs the release's green-CI `gh` query against the merge-base so a flag the real `gh` rejects fails a branch run instead of a release, and lint fails on a ticket number cited in a Rust or Python comment. (2074)
 - A ticket-branch push that changes only `sdlc/` records over a tip whose own CI run finished green now skips the Rust gates and finishes in minutes instead of running every gate for half an hour; a failed, missing, or in-progress previous run, a force push, any path outside `sdlc/`, and every other branch still run the full gates, and an `AGENTS.md`-only push runs them too because the contract pages read that file. (2086)
 - One dev build now serves every routine gate: the empty build script that made cargo rescan the package and recompile the crate after any edit is gone, the Python and spec lanes run the dev test build's binary instead of building a second spec-profile binary, and the documented targeted-test loop sets `CARGO_INCREMENTAL=1` for the edit loop. (2070)
 - `cargo deny check advisories` passes again: rustls moved from 0.23.45 to 0.23.46, past the fresh advisories that turned every lane's lint and CI red, with the rest of the lockfile unchanged. (2093)

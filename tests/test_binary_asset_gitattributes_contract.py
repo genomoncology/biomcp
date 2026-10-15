@@ -41,8 +41,8 @@ def test_binary_asset_gitattributes_contract_is_exact() -> None:
 
 
 def test_changelog_merges_with_the_union_driver() -> None:
-    # Ticket 2083: two branches that each append a bullet must merge
-    # without a conflict, so the union driver has to be live in git.
+    # Two branches that each append a bullet must merge without a
+    # conflict, so the union driver has to be live in git.
     assert _git_check_attr("CHANGELOG.md")["merge"] == "union"
 
 

@@ -18,7 +18,7 @@ def test_ci_reuses_the_canonical_python_contract_gate() -> None:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 
     # Each lane runs its whole gate through the Makefile target
-    # (ticket 2075 split `make test` into `test-rust` and
+    # (the lane split cut `make test` into `test-rust` and
     # `test-python` for exactly this); CI never copies a smaller
     # command list. repository-contracts runs the binary-less subset
     # for docs-only pushes (2026-09-29 review); a bare full-suite

@@ -1,11 +1,13 @@
 # 2074 — Run release checks on every ticket branch
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Depends on: 2083
 Depends on: 2075
+
+Reviews: revision 9f9adfd, accept
 
 ## Outcome
 
