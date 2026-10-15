@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 1.0
 
+Reviews: revision 58f21d0, accept
+
 ## Outcome
 
 `make lint` fails when a ticket number on the 1.0 line duplicates a number main already uses in a different file, or when a 1.0-only ticket uses a number below 2001. Main's 1000s and the 1.0 line's 2000s never collide again.
