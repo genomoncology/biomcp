@@ -1,5 +1,5 @@
-//! Outside-in proof for `--disable-sources` / `BIOMCP_DISABLE_SOURCES`
-//! (ticket 2061): each test drives the built binary against one local
+//! Outside-in proof for `--disable-sources` / `BIOMCP_DISABLE_SOURCES`:
+//! each test drives the built binary against one local
 //! fixture server that replays recorded reply shapes and logs every
 //! request, so "makes no request to the disabled source" is asserted
 //! from the provider's side of the wire.

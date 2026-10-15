@@ -671,8 +671,8 @@ def test_milestone_problems_names_each_kind_of_wrong_ticket() -> None:
 def test_cited_ticket_of_another_milestone_fails_the_tag_run(
     tmp_path: Path,
 ) -> None:
-    # Ticket 2083: a section that cites another milestone's ticket
-    # misfiles its bullets, and the release gate must refuse it.
+    # A section that cites another milestone's ticket misfiles its
+    # bullets, and the release gate must refuse it.
     result = _run(
         tmp_path,
         subjects=["Merge branch 'tickets/1234-gate'"],
@@ -702,7 +702,7 @@ def test_cited_ticket_without_a_milestone_line_passes_the_tag_run(
 def test_cited_ticket_without_a_ticket_file_passes_the_tag_run(
     tmp_path: Path,
 ) -> None:
-    # Tickets 1288 and 1289 carry no ticket file at all; a missing
+    # Some early tickets carry no ticket file at all; a missing
     # record proves nothing about the milestone.
     result = _run(
         tmp_path,

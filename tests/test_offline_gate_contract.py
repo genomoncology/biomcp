@@ -39,7 +39,7 @@ def test_live_verify_lane_is_not_network_isolated() -> None:
 
 
 def test_lane_setup_installs_unpinned_gate_tools() -> None:
-    # The shared setup (ticket 2075) installs the apt packages the
+    # The shared setup installs the apt packages the
     # offline lanes need, unpinned from the distribution like the
     # 2026-09-29 review ruled, and each lane runs its gate through
     # the Makefile target, never a copied command list.
@@ -74,7 +74,7 @@ def test_the_release_history_checkout_lives_in_the_python_and_spec_lanes() -> No
     # classification diffs the whole push), repository-contracts
     # (record lineage), python-lane (the release version
     # contracts) and spec-lane (spec/surface/mcp.md runs the
-    # tag-reading version-sync check) — ticket 2075 carried the
+    # tag-reading version-sync check) — the lane split carried the
     # last two out of the old canonical-gates job.
     assert {job_id for job_id, _ in full_history_checkouts} == {
         "changes",

@@ -30,7 +30,7 @@ def test_normal_build_consumes_only_committed_alphagenome_rust() -> None:
     manifest = _read("Cargo.toml")
     alphagenome = _read("src/sources/alphagenome.rs")
 
-    # The package carries no build script at all (ticket 2070): an empty one
+    # The package carries no build script at all: an empty one
     # made cargo rescan every package file and recompile the crate after any
     # edit, Rust or not.
     assert not (REPO_ROOT / "build.rs").exists()
@@ -71,8 +71,8 @@ def test_regeneration_is_explicit_pinned_atomic_and_checkable() -> None:
         generator
     )
     # Protoc installs only where regeneration runs: the
-    # generated-sources job (ticket 2075 kept protoc out of the
-    # routine lanes, which never regenerate the proto).
+    # generated-sources job (protoc stays out of the routine
+    # lanes, which never regenerate the proto).
     assert (
         workflow.count("arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b")
         == 1

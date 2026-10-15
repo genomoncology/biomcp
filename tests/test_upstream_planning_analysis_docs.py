@@ -1123,8 +1123,8 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     # 2026-09-29: ticket branches run CI too; the
     # push trigger still names main first.
     assert "push:" in ci and "main" in ci and "tickets/**" in ci
-    # Ticket 2075: one build job prepares the dev build; the lanes
-    # each run one Make target, so CI copies no smaller command list.
+    # One build job prepares the dev build; the lanes each run one
+    # Make target, so CI copies no smaller command list.
     for job, command in (
         ("build", "make prepare-test"),
         ("lint", "make lint"),
@@ -1194,8 +1194,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         makefile,
         flags=re.MULTILINE,
     )
-    # Ticket 2075: the two lane halves CI runs in parallel are real
-    # targets, so `make test` stays the developer's one command.
+    # The two lane halves CI runs in parallel are real targets,
+    # so `make test` stays the developer's one command.
     assert re.search(
         r"^test-rust: prepare-routine-test-tmp\n"
         r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"$',

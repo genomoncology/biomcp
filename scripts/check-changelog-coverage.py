@@ -196,10 +196,10 @@ def described_tickets(section: str) -> set[str]:
     if current:
         bullets.append(" ".join(current))
     for text in bullets:
-        # Ticket 2049: a bullet covers a ticket when the bullet's closing
-        # group names it. The closing group sits at the bullet's end and
-        # reads (NNNN), (NNNN, MMMM) or (NNNN and MMMM); a number in the
-        # prose ("ticket 2039 tracks") is not coverage.
+        # A bullet covers a ticket when the bullet's closing group
+        # names it. The closing group sits at the bullet's end and
+        # reads (NNNN), (NNNN, MMMM) or (NNNN and MMMM); a number in
+        # the prose ("tracks 2039") is not coverage.
         stripped = text.strip().rstrip(" .,;")
         closing = ""
         if stripped.endswith(")") and "(" in stripped:
@@ -229,8 +229,8 @@ def described_tickets(section: str) -> set[str]:
 
 
 # A cited ticket whose file is missing or milestone-less cannot prove
-# another release: the milestone convention arrived mid-0.9.2 and
-# tickets 1288 and 1289 carry no ticket file at all, so the tag run
+# another release: the milestone convention arrived mid-cycle and
+# some early tickets carry no ticket file at all, so the tag run
 # tolerates both and fails only a ticket whose file names another
 # milestone.
 NO_TICKET_FILE = "no ticket file"

@@ -143,8 +143,8 @@ def _assert_release_contract(workflow: str) -> None:
 
     draft = _job_block(workflow, "create-draft")
     assert 'gh release create "$TAG" --draft --verify-tag' in draft
-    # Ticket 2064: the draft carries the tag's changelog section as
-    # its release notes, rendered from the checked-out tag.
+    # The draft carries the tag's changelog section as its release
+    # notes, rendered from the checked-out tag.
     assert "release/release_notes.py" in draft
     assert "--notes-file" in draft
     build = _job_block(workflow, "build")
@@ -320,10 +320,9 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "3ffb87228f0c77aecb87c34ee83d661a80bff50e397e911e917de5891db2a5fb",
     ("version-check", "Require the tag and committed versions to agree"): "8bdcc74fd872a7a77d8341bd5049e3a3845a89825f02875f4258e5d665243b8b",
     ("version-check", "Require the changelog to cover merged tickets"): "8dcf47fdb31ff44771a511058fa05d8e17d1a551744dcc1e8631fa7f8979118e",
-    # Ticket 2053: the release waits on a finished green ci.yml run
-    # for the exact tagged commit. Re-pinned 2026-10-13 for ticket
-    # 2060: gh has no --conclusion flag, so jq counts the successful
-    # conclusions.
+    # The release waits on a finished green ci.yml run for the exact
+    # tagged commit. Re-pinned 2026-10-13: gh has no --conclusion
+    # flag, so jq counts the successful conclusions.
     ("version-check", "Require green CI on the tagged commit"): "6a5acafb79dbd43069bbf2e829d90763c5547be136331d275a8d71a2df0f7959",
 }
 
@@ -411,8 +410,8 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "Publish the GitHub release after every publisher succeeds",
     ],
     "create-draft": [
-        # Ticket 2064: the draft carries the tag's changelog section
-        # as its release notes.
+        # The draft carries the tag's changelog section as its
+        # release notes.
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "Render the release notes from the changelog",
         "Create the draft release",
@@ -1843,7 +1842,7 @@ def test_image_source_pin_catches_a_hardcoded_repository() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Ticket 2053. The production-only publish guards are executed, not
+# The production-only publish guards are executed, not
 # read: each guarded step's own script (taken from the parsed
 # workflow) runs with stub uv, uvx, gh and git on PATH under both
 # repository names, and the stub log proves which publisher ran. A
@@ -2020,8 +2019,8 @@ def _assert_homebrew_guard_behavior(script: str, tmp_path: Path) -> None:
         assert f'sha256 "{X86_CHECKSUM}"' in formula
         assert f'sha256 "{ARM64_CHECKSUM}"' in formula
         assert 'version "0.9.2"' in formula
-        # Ticket 2064: the rendered formula carries a Homebrew test
-        # block, so `brew audit` style checks pass on the tap.
+        # The rendered formula carries a Homebrew test block, so
+        # `brew audit` style checks pass on the tap.
         assert "test do" in formula
         assert (
             'assert_match version.to_s, shell_output("#{bin}/biomcp --version")'
@@ -2164,8 +2163,8 @@ def test_the_ci_gate_accepts_a_green_run_and_names_the_commit(
     assert "--limit 100" in calls
     assert "--json conclusion" in calls
     assert 'select(.conclusion == "success")' in calls
-    # Ticket 2060: the old filter used --status and --conclusion,
-    # flags no shipped gh accepts.
+    # The old filter used --status and --conclusion, flags no
+    # shipped gh accepts.
     assert "--status completed" not in calls
     assert " --conclusion " not in calls
 
