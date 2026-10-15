@@ -168,17 +168,19 @@ register_cleanup() {
 }
 
 cleanup_parallel_spec_workers() {
+  # Bash 3.2 (macOS) treats "${arr[@]}" on an empty array as an unbound
+  # variable under set -u; the ${arr[@]+...} expansion stays safe everywhere.
   local pid
-  for pid in "${PARALLEL_SPEC_PIDS[@]}"; do
+  for pid in ${PARALLEL_SPEC_PIDS[@]+"${PARALLEL_SPEC_PIDS[@]}"}; do
     kill -TERM -- "-$pid" 2>/dev/null || true
   done
-  if ((${#PARALLEL_SPEC_PIDS[@]})); then
+  if ((${#PARALLEL_SPEC_PIDS[@]} > 0)); then
     sleep 0.2
   fi
-  for pid in "${PARALLEL_SPEC_PIDS[@]}"; do
+  for pid in ${PARALLEL_SPEC_PIDS[@]+"${PARALLEL_SPEC_PIDS[@]}"}; do
     kill -KILL -- "-$pid" 2>/dev/null || true
   done
-  for pid in "${PARALLEL_SPEC_PIDS[@]}"; do
+  for pid in ${PARALLEL_SPEC_PIDS[@]+"${PARALLEL_SPEC_PIDS[@]}"}; do
     wait "$pid" 2>/dev/null || true
   done
   PARALLEL_SPEC_PIDS=()
