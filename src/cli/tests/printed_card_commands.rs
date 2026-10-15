@@ -398,7 +398,7 @@ fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<
     (
         "404 Not Found",
         "application/json",
-        format!(r#"{{"error":"fixture path not found: {target}"}}}"#).into_bytes(),
+        format!(r#"{{"error":"fixture path not found: {target}"}}"#).into_bytes(),
     )
 }
 
