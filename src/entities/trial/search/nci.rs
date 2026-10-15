@@ -233,8 +233,8 @@ mod tests {
 
     #[test]
     fn overlong_conditions_truncate_on_a_char_boundary() {
-        let (condition, truncated) =
-            truncate_condition_for_grounding(&"a".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES));
+        let exact = "a".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES);
+        let (condition, truncated) = truncate_condition_for_grounding(&exact);
         assert_eq!(condition.len(), NCI_CONDITION_GROUNDING_LIMIT_BYTES);
         assert!(!truncated);
         let long = format!("{}{}", "ä".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES), "z");

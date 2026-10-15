@@ -87,7 +87,7 @@ pub(crate) async fn interaction_report(
     limit: usize,
     offset: usize,
 ) -> Result<DrugInteractionReport, BioMcpError> {
-    let resolved = super::get::resolve_drug_base(&name, true).await?;
+    let resolved = super::get::resolve_drug_base(&name, true, true).await?;
     interaction_report_from_base(name, resolved.drug, resolved.label_response, limit, offset).await
 }
 
