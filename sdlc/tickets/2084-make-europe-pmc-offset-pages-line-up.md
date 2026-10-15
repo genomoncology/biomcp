@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 1691261, accept
+
 ## Outcome
 
 For a Europe PMC relevance search, `--limit 5` and then `--limit 5 --offset 5` return the same ten rows, in the same order, as `--limit 10`.
