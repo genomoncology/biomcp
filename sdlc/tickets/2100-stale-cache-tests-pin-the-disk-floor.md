@@ -22,3 +22,11 @@ The three stale-cache tests in `src/cli/stale_json_note_tests.rs` pass on a host
 - Proof: run the three tests with `BIOMCP_CACHE_MIN_DISK_FREE=100%` exported, which forces eviction the way 1188 reproduced it. All three fail on current main and pass after the change. No production code changes.
 - Defers: a shared test-wide disk floor for every fixture that sets `BIOMCP_CACHE_DIR`. File it if a third report arrives.
 - Order: any time. It shares only `CHANGELOG.md` with other tickets.
+
+## Amendment 2026-10-15: the whole suite, not three tests
+
+A sweep on main at 679412883 ran the full Rust suite (4,233 tests) three ways. With no settings it passed. With a `cache.toml` setting `max_size = 1` placed in the user config folder it also passed. With `BIOMCP_CACHE_MIN_DISK_FREE=100%` exported, which acts like a full disk, five tests failed: the three from the issue, plus `entities::disease::get::tests::a_stale_disease_card_tells_the_clinician_the_cache_age` and `a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels`. The two disease tests use the shared `test_support::FixtureEnv::scratch_cache_only`, which isolates the cache folder but not the disk floor.
+
+- Changes: also claims `src/test_support.rs`. `FixtureEnv::scratch_cache` records and pins `BIOMCP_CACHE_MIN_DISK_FREE=1B` beside `BIOMCP_CACHE_DIR`, so every test built on `FixtureEnv` stops inheriting the host's free space. `StaleNoteEnv` gets the same pin as above. A test that sets its own floor still wins, because it sets the variable after the fixture does.
+- Proof: replaces the proof above. The full routine Rust suite passes with `BIOMCP_CACHE_MIN_DISK_FREE=100%` exported. The five tests fail that way on current main.
+- Defers: moving `StaleNoteEnv` onto `FixtureEnv`.
