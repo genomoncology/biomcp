@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 7dfeec2, accept
+
 ## Outcome
 
 The stress lane on main runs its pytest rounds without dying on a missing temp dir.

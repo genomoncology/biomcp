@@ -154,7 +154,7 @@ validate-skills:
 # One-CPU pinning is avoided deliberately: it deadlocks the pipe
 # handshake child deterministically (issue
 # sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md).
-stress:
+stress: prepare-routine-test-tmp
 	@test -s "$(ROUTINE_TEST_ARCHIVE)" && test -x "$(SPEC_RUN_BIN)" || { \
 	  echo "stress needs the prepared dev build at $(ROUTINE_TEST_ARCHIVE) and $(SPEC_RUN_BIN); run: make prepare-test" >&2; \
 	  exit 2; }
