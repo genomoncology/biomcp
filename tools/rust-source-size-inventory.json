@@ -368,14 +368,9 @@
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
-      "baseline_lines": 1252,
-      "floor_lines": 1000,
-      "authorized_increase": {
-        "ticket": "2067",
-        "delta": 252,
-        "reason": "the ClinVar submission-count renderer proof adds one test to the pinned sidecar",
-        "removal_condition": "ticket 2067 lands or its review rejects the test"
-      }
+      "baseline_lines": 1251,
+      "floor_lines": 1251,
+      "authorized_increase": null
     },
     {
       "path": "src/render/provenance.rs",

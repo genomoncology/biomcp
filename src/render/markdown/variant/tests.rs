@@ -338,8 +338,7 @@ fn variant_clinvar_rows_print_the_submission_count_when_submitters_are_absent() 
     }))
     .expect("variant should deserialize");
 
-    let markdown =
-        variant_markdown(&variant, &["clinvar".to_string()]).expect("rendered markdown");
+    let markdown = variant_markdown(&variant, &["clinvar".to_string()]).expect("rendered markdown");
     assert!(
         markdown.contains(
             "RCV000014992.24 [germline]: Pathogenic; no assertion criteria provided; \

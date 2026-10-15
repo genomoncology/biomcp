@@ -301,8 +301,7 @@ const DBSNP_113488022_REPLY: &[u8] = include_bytes!(concat!(
 /// its protein change ("BRAF Val600Glu"): CIViC knows the variant as
 /// "BRAF V600E", so the accepted-evidence count the section prints is
 /// zero and the cached MyVariant copy is the evidence the card counts.
-const BRAF_V600E_CIVIC_GRAPHQL_REPLY: &str =
-    r#"{"data":{"evidenceItems":{"totalCount":0,"nodes":[]},"assertions":{"totalCount":0,"nodes":[]}}}"#;
+const BRAF_V600E_CIVIC_GRAPHQL_REPLY: &str = r#"{"data":{"evidenceItems":{"totalCount":0,"nodes":[]},"assertions":{"totalCount":0,"nodes":[]}}}"#;
 
 const BRAF_V600E_GNOMAD_REPLY: &str = r#"{"data":{"variant":{"variant_id":"7-140753336-A-T","exome":{"ac":2,"an":2000,"homozygote_count":0,"hemizygote_count":0,"filters":[],"faf95":null,"populations":[]},"genome":null}}}"#;
 
@@ -345,7 +344,11 @@ fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<
     }
     if target.starts_with("/v1/variant/chr7:g.140453136A%3ET") {
         return if target.contains("assembly=hg19") {
-            ("200 OK", "application/json", BRAF_V600E_GRCH37_REPLY.to_vec())
+            (
+                "200 OK",
+                "application/json",
+                BRAF_V600E_GRCH37_REPLY.to_vec(),
+            )
         } else {
             (
                 "404 Not Found",
@@ -356,7 +359,11 @@ fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<
     }
     if target.starts_with("/v1/variant/chr7:g.140753336A%3ET") {
         return if target.contains("assembly=hg38") {
-            ("200 OK", "application/json", BRAF_V600E_GRCH38_REPLY.to_vec())
+            (
+                "200 OK",
+                "application/json",
+                BRAF_V600E_GRCH38_REPLY.to_vec(),
+            )
         } else {
             (
                 "404 Not Found",
@@ -369,18 +376,10 @@ fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<
         && target.contains("db=clinvar")
         && target.contains("id=13961")
     {
-        return (
-            "200 OK",
-            "application/xml",
-            BRAF_V600E_CLINVAR_XML.to_vec(),
-        );
+        return ("200 OK", "application/xml", BRAF_V600E_CLINVAR_XML.to_vec());
     }
     if target.starts_with("/refsnp/113488022") {
-        return (
-            "200 OK",
-            "application/json",
-            DBSNP_113488022_REPLY.to_vec(),
-        );
+        return ("200 OK", "application/json", DBSNP_113488022_REPLY.to_vec());
     }
     if request.starts_with("POST /graphql") {
         return (
