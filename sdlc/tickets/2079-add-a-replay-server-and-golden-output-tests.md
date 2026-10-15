@@ -15,7 +15,7 @@ Every command's JSON and Markdown output is checked against committed golden fil
 
 - Starts from: `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, step 6.
 - Keeps: mustmatch for reader-facing spec assertions, not extended.
-- Changes: claims `tools/replay-server` `tests/golden/test_golden_output.py` `tests/golden/replay_env.py` `tests/golden/cases/**` `testdata/replay/**` `CHANGELOG.md`; the developer renames these on this ticket to the files the first batch creates, before its first push.
+- Changes: claims `tools/replay-server` `tests/golden/test_golden_output.py` `tests/golden/replay_env.py` `tests/golden/conftest.py` `tests/golden/cases/**` `testdata/replay/**` `CHANGELOG.md`; the developer renames these on this ticket to the files the first batch creates, before its first push.
   - One replay server over the recorded replies with a request log and a record mode. It reads `testdata/sources` and never changes it, so the product tickets' recorded replies and `capture-receipts.json` stay theirs; record mode writes new replies under `testdata/replay/`.
   - `tests/golden/replay_env.py` sets every `BIOMCP_*_BASE` to the replay server.
   - `tests/golden/test_golden_output.py` runs each case's command and diffs its JSON and Markdown against the committed files under `tests/golden/cases/`, with `--update` to rewrite them.
