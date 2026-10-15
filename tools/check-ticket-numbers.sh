@@ -6,6 +6,8 @@
 # main already filed under that number. The check enforces on the 1.0
 # line only — the branch that must dodge main — and passes silently
 # everywhere else, main included. Run from `make lint`.
+#
+# Written for the macOS-bundled Bash 3.2: no associative arrays.
 
 set -euo pipefail
 
@@ -34,53 +36,56 @@ fi
 
 require_ref "$MAIN_REF"
 
-# number<TAB>path for the numbered ticket files directly in
-# sdlc/tickets/; archived and draft tickets never count.
-head_ticket_lines() {
-  local path name
-  for path in "$TICKETS_DIR"/*.md; do
-    [ -f "$path" ] || continue
-    name="${path##*/}"
-    if [[ $name =~ ^([0-9]+)- ]]; then
-      printf '%d\t%s\n' "$((10#${BASH_REMATCH[1]}))" "$path"
-    fi
-  done
+# number<TAB>path lines for the numbered ticket files directly in
+# sdlc/tickets/; archived and draft tickets never count. Main's files
+# come first, one marker line apart, and awk holds both sides of the
+# comparison.
+ticket_number_of() {
+  local name="$1"
+  if [[ $name =~ ^([0-9]+)- ]]; then
+    printf '%s' "$((10#${BASH_REMATCH[1]}))"
+  fi
 }
 
-main_ticket_lines() {
-  local path name
+{
   while IFS= read -r path; do
-    name="${path##*/}"
-    if [[ $name =~ ^([0-9]+)- ]]; then
-      printf '%d\t%s\n' "$((10#${BASH_REMATCH[1]}))" "$path"
+    number="$(ticket_number_of "${path##*/}")"
+    if [ -n "$number" ]; then
+      printf '%s\t%s\n' "$number" "$path"
     fi
   done < <(git ls-tree --name-only "$MAIN_REF" -- "$TICKETS_DIR/")
-}
-
-declare -A main_path_for_number=()
-declare -A main_paths=()
-while IFS=$'\t' read -r number path; do
-  main_path_for_number["$number"]="$path"
-  main_paths["$path"]=1
-done < <(main_ticket_lines)
-
-failures=0
-while IFS=$'\t' read -r number path; do
-  main_path="${main_path_for_number[$number]:-}"
-  if [[ -n "$main_path" && "$main_path" != "$path" ]]; then
-    printf '%s: ticket %s already exists on %s as %s\n' \
-      "$path" "$number" "$MAIN_REF" "$main_path"
-    failures=$((failures + 1))
-  fi
-  if [[ -z "${main_paths[$path]:-}" && "$number" -lt "$LINE_TICKET_FLOOR" ]]; then
-    printf '%s: ticket %s is below %d on the 1.0 line\n' \
-      "$path" "$number" "$LINE_TICKET_FLOOR"
-    failures=$((failures + 1))
-  fi
-done < <(head_ticket_lines)
-
-if [ "$failures" -gt 0 ]; then
-  printf 'ticket-number check: %d number(s) collide with %s or sit below %d\n' \
-    "$failures" "$MAIN_REF" "$LINE_TICKET_FLOOR"
-  exit 1
-fi
+  printf 'HEAD-TICKETS\n'
+  for path in "$TICKETS_DIR"/*.md; do
+    [ -f "$path" ] || continue
+    number="$(ticket_number_of "${path##*/}")"
+    if [ -n "$number" ]; then
+      printf '%s\t%s\n' "$number" "$path"
+    fi
+  done
+} | awk -v floor="$LINE_TICKET_FLOOR" -v main_ref="$MAIN_REF" '
+  $0 == "HEAD-TICKETS" { in_head = 1; next }
+  {
+    tab = index($0, "\t")
+    number = substr($0, 1, tab - 1) + 0
+    path = substr($0, tab + 1)
+    if (!in_head) {
+      main_path[number] = path
+      main_file[path] = 1
+      next
+    }
+    if (number in main_path && main_path[number] != path) {
+      printf "%s: ticket %d already exists on %s as %s\n", path, number, main_ref, main_path[number]
+      failures++
+    }
+    if (!(path in main_file) && number < floor) {
+      printf "%s: ticket %d is below %d on the 1.0 line\n", path, number, floor
+      failures++
+    }
+  }
+  END {
+    if (failures > 0) {
+      printf "ticket-number check: %d number(s) collide with %s or sit below %d\n", failures, main_ref, floor
+      exit 1
+    }
+  }
+'
