@@ -274,6 +274,10 @@ def test_the_cache_follows_checkout_and_toolchain_and_is_pinned() -> None:
     assert cache_step["with"]["cache-workspace-crates"] is True, (
         "the workspace crate must be cached or every run rebuilds it"
     )
+    assert cache_step["with"]["cache-all-crates"] is True, (
+        "the crate download cache must ride along: the offline contract "
+        "tests compile inside the sandbox, where no download can happen"
+    )
     for jid in RUST_JOBS:
         if jid == "windows-contracts":
             checkout = _step_index(jid, "actions/checkout")

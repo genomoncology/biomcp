@@ -51,12 +51,16 @@ runs:
     # before its lanes start, so the shared key makes every lane
     # compile against the same warm target directory and registry;
     # only the build job saves it, because parallel savers race and
-    # the loser's entry silently replaces the build's.
+    # the loser's entry silently replaces the build's. The crate
+    # download cache rides along (cache-all-crates): the offline
+    # contract tests compile the packaged crate and the test lane
+    # inside the sandbox, where no download can happen.
     - name: Cache the Rust build
       if: ${{ inputs.cache != '' }}
       uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       with:
         cache-workspace-crates: true
+        cache-all-crates: true
         add-job-id-key: ${{ inputs.cache == 'job' }}
         save-if: ${{ inputs.cache != 'shared-restore' }}
     - name: Install pinned Python
