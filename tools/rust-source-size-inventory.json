@@ -137,14 +137,20 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1577,
+      "baseline_lines": 1692,
       "floor_lines": 1273,
       "authorized_increase": {
-        "ticket": "2085",
-        "delta": 304,
-        "reason": "the shared-name refusal adds the identity-answer enum, the candidate ranking, the refusal builder, and their call-site updates to the resolver",
-        "removal_condition": "extract the label identity vote and its refusal into the label module when the next drug-resolution ticket touches the resolver"
+        "ticket": "2090",
+        "delta": 419,
+        "reason": "the parallel source fetch splits the label lookup, the CIViC fetch, and the target and adverse-event previews into fetch-and-apply halves the card's get path starts together and joins",
+        "removal_condition": "move the fetch and apply halves and their answer structs into the source modules they wrap when the drug get module is next split"
       }
+    },
+    {
+      "path": "src/entities/drug/get/tests.rs",
+      "baseline_lines": 1124,
+      "floor_lines": 1124,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/drug/label.rs",

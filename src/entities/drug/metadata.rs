@@ -470,19 +470,41 @@ pub(super) async fn fetch_top_adverse_events(
     Ok((extract_top_adverse_events(&resp), Some(q)))
 }
 
-pub(super) async fn populate_top_adverse_event_preview(drug: &mut Drug) -> bool {
+/// Fetch the adverse-event preview inside its 8-second safety budget: the
+/// ranked top events and the FAERS query that produced them, or the
+/// failure that degrades the section.
+pub(super) async fn fetch_top_adverse_event_preview(
+    drug_name: &str,
+) -> Result<(Vec<String>, Option<String>), BioMcpError> {
     match tokio::time::timeout(
         super::OPTIONAL_SAFETY_TIMEOUT,
-        fetch_top_adverse_events(&drug.name),
+        fetch_top_adverse_events(drug_name),
     )
     .await
     {
-        Ok(Ok((events, faers_query))) => {
+        Ok(result) => result,
+        Err(_) => Err(BioMcpError::SourceUnavailable {
+            source_name: "OpenFDA FAERS".to_string(),
+            reason: "request timed out".to_string(),
+            suggestion: "Retry the request.".to_string(),
+        }),
+    }
+}
+
+/// Apply a fetched adverse-event preview to the card: the events and query
+/// on success, and the degraded empty preview on failure, returning the
+/// safety outcome's failure flag.
+pub(super) fn apply_top_adverse_event_preview(
+    drug: &mut Drug,
+    result: Result<(Vec<String>, Option<String>), BioMcpError>,
+) -> bool {
+    match result {
+        Ok((events, faers_query)) => {
             drug.top_adverse_events = events;
             drug.faers_query = faers_query;
             false
         }
-        Ok(Err(_)) | Err(_) => true,
+        Err(_) => true,
     }
 }
 

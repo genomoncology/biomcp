@@ -10,71 +10,101 @@ use crate::sources::opentargets::{OpenTargetsClient, OpenTargetsTarget};
 use super::Drug;
 use super::metadata::merge_unique_casefold;
 
+/// The target section's fetched sources: the ChEMBL mechanism rows and
+/// the Open Targets sections their own requests returned, each `None`
+/// when its fetch did not run or failed. The fetch and the merge are
+/// separate steps so the card can fetch its target sources at the same
+/// time as its other sources and merge them in today's order, with the
+/// CIViC context, once every answer is in.
+#[derive(Default)]
+pub(super) struct TargetSources {
+    chembl_rows: Option<Vec<ChemblTarget>>,
+    opentargets_targets: Option<Vec<OpenTargetsTarget>>,
+    failed: bool,
+}
+
+/// Fetch the target section's two sources for one ChEMBL id: the ChEMBL
+/// mechanism rows first, then the Open Targets drug sections, one after
+/// the other as before. A drug with no ChEMBL id fetches nothing.
+pub(super) async fn fetch_target_sources(chembl_id: Option<&str>) -> TargetSources {
+    let mut sources = TargetSources::default();
+    let Some(chembl_id) = chembl_id else {
+        return sources;
+    };
+    sources.chembl_rows = match ChemblClient::new() {
+        Ok(client) => client.drug_targets(chembl_id, 15).await.ok(),
+        Err(_) => None,
+    };
+    sources.opentargets_targets = match OpenTargetsClient::new() {
+        Ok(client) => client
+            .drug_sections(chembl_id, 15)
+            .await
+            .ok()
+            .map(|sections| sections.targets),
+        Err(_) => None,
+    };
+    sources.failed = sources.chembl_rows.is_none() || sources.opentargets_targets.is_none();
+    sources
+}
+
+/// Merge the fetched target sources into the card: the ChEMBL and Open
+/// Targets rows into the card's targets and mechanisms, the CIViC context
+/// into the variant targets, and the family inference over the merged
+/// rows. The caller owns the fetch, so the merge runs once every source
+/// the card waited for has answered.
 pub(super) async fn enrich_targets(
     drug: &mut Drug,
     civic_context: Option<&CivicContext>,
+    sources: TargetSources,
 ) -> SectionOutcome {
     let mut chembl_rows = Vec::new();
     let mut opentargets_targets = Vec::new();
     let mut successful_sources = vec!["Guide to PHARMACOLOGY"];
     let mut contributors = Vec::new();
-    let mut failed = false;
+    let mut failed = sources.failed;
     if !drug.targets.is_empty() {
         contributors.push("Guide to PHARMACOLOGY");
     }
-    if let Some(chembl_id) = drug.chembl_id.as_deref() {
-        match ChemblClient::new() {
-            Ok(client) => match client.drug_targets(chembl_id, 15).await {
-                Ok(rows) => {
-                    successful_sources.push("ChEMBL");
-                    if rows
-                        .iter()
-                        .any(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
-                    {
-                        contributors.push("ChEMBL");
-                    }
-                    let targets = rows
-                        .iter()
-                        .filter(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
-                        .map(|row| row.target.clone())
-                        .collect::<Vec<_>>();
-                    merge_unique_casefold(&mut drug.targets, targets);
+    if drug.chembl_id.is_some() {
+        if let Some(rows) = sources.chembl_rows {
+            successful_sources.push("ChEMBL");
+            if rows
+                .iter()
+                .any(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
+            {
+                contributors.push("ChEMBL");
+            }
+            let targets = rows
+                .iter()
+                .filter(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
+                .map(|row| row.target.clone())
+                .collect::<Vec<_>>();
+            merge_unique_casefold(&mut drug.targets, targets);
 
-                    let mechanisms = rows
-                        .iter()
-                        .filter(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
-                        .map(|row| {
-                            row.mechanism
-                                .clone()
-                                .unwrap_or_else(|| format!("{} of {}", row.action, row.target))
-                        })
-                        .collect::<Vec<_>>();
-                    merge_unique_casefold(&mut drug.mechanisms, mechanisms);
-                    chembl_rows = rows;
-                }
-                Err(_) => failed = true,
-            },
-            Err(_) => failed = true,
+            let mechanisms = rows
+                .iter()
+                .filter(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
+                .map(|row| {
+                    row.mechanism
+                        .clone()
+                        .unwrap_or_else(|| format!("{} of {}", row.action, row.target))
+                })
+                .collect::<Vec<_>>();
+            merge_unique_casefold(&mut drug.mechanisms, mechanisms);
+            chembl_rows = rows;
         }
 
-        match OpenTargetsClient::new() {
-            Ok(client) => match client.drug_sections(chembl_id, 15).await {
-                Ok(sections) => {
-                    successful_sources.push("Open Targets");
-                    if !sections.targets.is_empty() {
-                        contributors.push("Open Targets");
-                    }
-                    let targets = sections
-                        .targets
-                        .iter()
-                        .map(|t| t.approved_symbol.clone())
-                        .collect::<Vec<_>>();
-                    merge_unique_casefold(&mut drug.targets, targets);
-                    opentargets_targets = sections.targets;
-                }
-                Err(_) => failed = true,
-            },
-            Err(_) => failed = true,
+        if let Some(targets) = sources.opentargets_targets {
+            successful_sources.push("Open Targets");
+            if !targets.is_empty() {
+                contributors.push("Open Targets");
+            }
+            let symbols = targets
+                .iter()
+                .map(|t| t.approved_symbol.clone())
+                .collect::<Vec<_>>();
+            merge_unique_casefold(&mut drug.targets, symbols);
+            opentargets_targets = targets;
         }
     }
 
