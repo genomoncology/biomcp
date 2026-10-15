@@ -447,11 +447,11 @@ def test_other_trial_section_and_not_found_still_work(tmp_path: Path) -> None:
         assert len(trial["interventions"]) == 2
         assert len(trial["arm_intervention_assignments"]) == 2
         assert "intervention_details" not in trial
-        missing = _run_reference(base, tmp_path, "NCT00000000", "references")
+        missing = _run_reference(base, tmp_path, "NCT99999999", "references")
         assert missing.returncode != 0
         combined = missing.stdout + missing.stderr
         assert "not found" in combined.lower()
-        assert 'biomcp search trial -c "NCT00000000"' in combined
+        assert 'biomcp search trial -c "NCT99999999"' in combined
         assert "panicked" not in missing.stderr.lower()
 
 
