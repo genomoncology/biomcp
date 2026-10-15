@@ -29,6 +29,7 @@ fn local_data_is_stale(root: &Path, files: &[&str], stale_after: Duration) -> bo
 /// `mcp` marks the MCP surface: the row names the dataset without its
 /// resolved directory, because an MCP reply carries no local filesystem
 /// path. The CLI keeps the full label and the `local_path` field.
+#[allow(clippy::too_many_arguments)]
 fn local_data_outcome<F>(
     label: &str,
     root: &Path,
