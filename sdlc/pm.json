@@ -7,7 +7,7 @@
   "evidenceFromTicketNumber": 2009,
   "landedProofFromTicketNumber": 1,
   "mailroom": {
-    "repo": "sdlc",
+    "repo": "agents",
     "name": "biomcp"
   },
   "lanesTable": {
