@@ -404,7 +404,7 @@ def test_release_panic_contract_runs_in_ci_and_is_pinned() -> None:
     setup_steps = [
         s
         for s in job["steps"]
-        if str(s.get("uses", "")).startswith(".github/actions/lane-setup")
+        if ".github/actions/lane-setup" in str(s.get("uses", ""))
     ]
     assert len(setup_steps) == 1, "release-panic: one lane-setup step"
     assert setup_steps[0]["with"]["nextest"] is True
