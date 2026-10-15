@@ -247,7 +247,7 @@ fn recovery_commands_round_trip_to_their_registered_routes() {
         let mut outcomes = SectionOutcomes::with_keys(&[row.key]);
         let key = row.key;
         outcomes.complete(key, SectionOutcome::unavailable("provider unavailable"));
-        commands =
+        let commands =
             crate::render::markdown::section_recovery_commands(row.entity, identity, &outcomes);
         assert_eq!(commands.len(), 1, "{}/{}", row.entity, row.key);
         let command = &commands[0];
