@@ -451,7 +451,7 @@ def test_other_trial_section_and_not_found_still_work(tmp_path: Path) -> None:
         assert missing.returncode != 0
         combined = missing.stdout + missing.stderr
         assert "not found" in combined.lower()
-        assert "Retry the remote source" in combined
+        assert 'biomcp search trial -c "NCT00000000"' in combined
         assert "panicked" not in missing.stderr.lower()
 
 

@@ -445,7 +445,13 @@ impl ClinicalTrialsClient {
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let (status, bytes) = self.send(req).await?;
         Self::decode_detail_response(nct_id, sections, status, &bytes).map_err(|error| {
-            if matches!(error, BioMcpError::WithSourceContext { .. }) {
+            // A 404 already says the trial does not exist; wrapping it in
+            // the retry context would tell the caller to retry a source that
+            // answered correctly.
+            if matches!(
+                error,
+                BioMcpError::WithSourceContext { .. } | BioMcpError::NotFound { .. }
+            ) {
                 error
             } else {
                 error.with_source_context(crate::error::SourceContext::retry(
