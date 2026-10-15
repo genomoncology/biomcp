@@ -11,16 +11,31 @@ pub struct PatientGetArgs {
     pub sections: Vec<String>,
 }
 
-/// `search patient` takes no filters until patient search ships.
+/// Typed patient search: no free text, at least one filter.
 #[derive(Args, Debug)]
-pub struct PatientSearchArgs {}
+pub struct PatientSearchArgs {
+    /// Gender: male, female, other, or unknown
+    #[arg(long)]
+    pub gender: Option<String>,
+    /// Birth date strictly after this FHIR date (YYYY, YYYY-MM, or YYYY-MM-DD)
+    #[arg(long)]
+    pub born_after: Option<String>,
+    /// Birth date strictly before this FHIR date (YYYY, YYYY-MM, or YYYY-MM-DD)
+    #[arg(long)]
+    pub born_before: Option<String>,
+    /// Coded condition as system|code (e.g. "http://snomed.info/sct|44054006")
+    #[arg(long)]
+    pub condition: Option<String>,
+    /// Maximum results, 1-50 (default: 10)
+    #[arg(short, long, default_value = "10", value_parser = clap::value_parser!(usize).range(1..=50))]
+    pub limit: usize,
+    /// Print the count the server reports instead of the list
+    #[arg(long)]
+    pub count: bool,
+}
 
 mod dispatch;
 pub(super) use self::dispatch::{handle_get, handle_search};
-
-/// The refusal `search patient` returns until patient search ships.
-pub(crate) const SEARCH_NOT_YET_AVAILABLE: &str =
-    "search patient is not yet available. Use `biomcp get patient <id>` for one known patient.";
 
 /// Help text for `biomcp get patient`, kept with the entity.
 pub(super) const GET_AFTER_HELP: &str = "\

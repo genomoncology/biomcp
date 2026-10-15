@@ -242,7 +242,18 @@ EXAMPLES:
 See also: biomcp list pathway"
     )]
     Pathway(pathway::PathwaySearchArgs),
-    /// Patient search is not yet available; use `get patient <id>`
+    /// Search patients on the FHIR server by typed facts: gender, birth date range, or coded condition
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp search patient --gender female --limit 5
+  biomcp search patient --born-after 1950-01-01 --born-before 2000-12-31
+  biomcp search patient --condition \"http://snomed.info/sct|44054006\" --count
+
+Patient search takes typed facts only, no free text, and needs at least one
+of --gender, --born-after, --born-before, or --condition. Dates are FHIR
+dates (YYYY, YYYY-MM, or YYYY-MM-DD). A condition is system|code. The server
+is the one named in BIOMCP_FHIR_BASE.
+See also: biomcp list patient")]
     Patient(patient::PatientSearchArgs),
     /// Search proteins by name or accession (UniProt)
     #[command(after_help = "\

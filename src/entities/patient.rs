@@ -231,7 +231,7 @@ fn first_code(concept: Option<&Value>) -> Option<String> {
         .find_map(|coding| text_at(coding, "code"))
 }
 
-fn text_at(value: &Value, key: &str) -> Option<String> {
+pub(crate) fn text_at(value: &Value, key: &str) -> Option<String> {
     value
         .get(key)
         .and_then(Value::as_str)
@@ -239,6 +239,8 @@ fn text_at(value: &Value, key: &str) -> Option<String> {
         .filter(|text| !text.is_empty())
         .map(ToOwned::to_owned)
 }
+
+pub(crate) mod search;
 
 #[cfg(test)]
 mod tests;

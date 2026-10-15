@@ -1,0 +1,11 @@
+# Patient Search
+
+{% if count == 0 -%}
+No patients matched the search.
+{% else -%}
+| ID | Gender | Birth date | Next |
+|---|---|---|---|
+{% for row in results -%}
+| {{ (row.id or "-") | markdown_cell }} | {{ (row.gender or "-") | markdown_cell }} | {{ (row.birth_date or "-") | markdown_cell }} | {{ row.next or "-" }} |
+{% endfor -%}
+{% endif -%}

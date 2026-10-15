@@ -2,6 +2,63 @@
 
 use super::*;
 use crate::entities::patient::Patient;
+use crate::entities::patient::search::PatientSearchRow;
+
+/// One `get patient` command per row whose id passes the FHIR id rule.
+/// A row without a usable id contributes no command. Kept here rather than
+/// beside the other entities' builders: the related module sits at its
+/// line-count ceiling, and the patient renderer already owns the search row.
+pub fn search_next_commands_patient(rows: &[PatientSearchRow]) -> Vec<String> {
+    let out = rows
+        .iter()
+        .filter_map(|row| row.id.as_deref())
+        .map(|id| format!("biomcp get patient {id}"))
+        .collect::<Vec<_>>();
+    dedupe_markdown_commands(out)
+}
+
+/// The command text one search row prints for a usable id. A bad id
+/// prints no id and no command.
+pub fn patient_search_next_command(id: &str) -> String {
+    markdown_command_code_span(&format!("biomcp get patient {id}"))
+}
+
+#[derive(serde::Serialize)]
+struct PatientSearchRowView<'a> {
+    id: Option<&'a str>,
+    gender: Option<&'a str>,
+    birth_date: Option<&'a str>,
+    next: Option<String>,
+}
+
+impl<'a> PatientSearchRowView<'a> {
+    fn new(row: &'a PatientSearchRow) -> Self {
+        Self {
+            id: row.id.as_deref(),
+            gender: row.gender.as_deref(),
+            birth_date: row.birth_date.as_deref(),
+            next: row.id.as_deref().map(patient_search_next_command),
+        }
+    }
+}
+
+pub fn patient_search_markdown(rows: &[PatientSearchRow]) -> Result<String, BioMcpError> {
+    let tmpl = env()?.get_template("patient_search.md.j2")?;
+    let body = tmpl.render(context! {
+        count => rows.len(),
+        results => rows.iter().map(PatientSearchRowView::new).collect::<Vec<_>>(),
+    })?;
+    Ok(body)
+}
+
+/// The count the server reported, labeled as server-reported. BioMCP
+/// never counts entries itself.
+pub fn patient_count_markdown(total: Option<u64>) -> String {
+    match total {
+        Some(total) => format!("Server-reported patient count: {total}"),
+        None => "The server reported no count.".to_string(),
+    }
+}
 
 pub fn patient_markdown(
     patient: &Patient,

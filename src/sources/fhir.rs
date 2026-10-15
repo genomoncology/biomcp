@@ -2,15 +2,16 @@
 //! `BIOMCP_FHIR_BASE`.
 //!
 //! Nothing here logs, and no error carries a URL, a body, or a patient ID.
-//! Every FHIR GET goes through [`FhirClient::get_json`], which sends it with
-//! no-store and strips the URL from any transport error. Redirects and next
-//! links stay on the origin and base path of the configured server.
+//! Every FHIR GET is built by the one private [`FhirClient::request`] builder
+//! and read through [`FhirClient::send_json`], which sends it with no-store
+//! and strips the URL from any transport error. Redirects and next links stay
+//! on the origin and base path of the configured server.
 
 use std::collections::HashSet;
 use std::time::Duration;
 
 use reqwest::Url;
-use reqwest::header::{ACCEPT, CACHE_CONTROL};
+use reqwest::header::{ACCEPT, CACHE_CONTROL, PREFER};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
 use serde_json::Value;
 
@@ -29,6 +30,7 @@ pub(crate) const MAX_PATIENT_ID_CHARS: usize = 64;
 
 const MAX_REDIRECTS: usize = 10;
 const ACCEPT_FHIR_JSON: &str = "application/fhir+json, application/json";
+const STRICT_HANDLING: &str = "handling=strict";
 
 /// What can go wrong between BioMCP and the FHIR server.
 ///
@@ -55,6 +57,10 @@ pub enum FhirError {
     Status(u16),
     #[error("the FHIR server sent a response that is not the expected FHIR JSON")]
     Decode,
+    #[error(
+        "the FHIR server does not support the `{0}` search parameter on Patient, so no search was sent"
+    )]
+    UnsupportedSearchParam(&'static str),
 }
 
 /// A patient ID checked against `[A-Za-z0-9\-.]{1,64}`, the FHIR id rule.
@@ -216,9 +222,15 @@ impl FhirClient {
         )
     }
 
-    /// The one FHIR request function. Every GET goes through it.
+    /// One FHIR read: builds the request and reads its body.
     async fn get_json(&self, url: Url) -> Result<Value, FhirError> {
-        let response = self.request(url).send().await.map_err(transport_error)?;
+        self.send_json(self.request(url)).await
+    }
+
+    /// Sends one built request and reads its FHIR JSON body. The status and
+    /// body handling live here so every GET shares them.
+    async fn send_json(&self, request: RequestBuilder) -> Result<Value, FhirError> {
+        let response = request.send().await.map_err(transport_error)?;
         let status = response.status();
         let body = response
             .bytes()
@@ -242,6 +254,33 @@ impl FhirClient {
             return Err(FhirError::Decode);
         }
         Ok(resource)
+    }
+
+    /// Reads `metadata`, the server CapabilityStatement.
+    pub(crate) async fn read_metadata(&self) -> Result<Value, FhirError> {
+        let capability = self
+            .get_json(self.base.resource_url(&["metadata"], &[]))
+            .await?;
+        if capability.get("resourceType").and_then(Value::as_str) != Some("CapabilityStatement") {
+            return Err(FhirError::Decode);
+        }
+        Ok(capability)
+    }
+
+    /// Runs one Patient search page under `Prefer: handling=strict`, so a
+    /// server that would ignore a parameter fails instead. It follows no
+    /// next link.
+    pub(crate) async fn search_patients(&self, query: &[(&str, &str)]) -> Result<Value, FhirError> {
+        let bundle = self
+            .send_json(
+                self.request(self.base.resource_url(&["Patient"], query))
+                    .header(PREFER, STRICT_HANDLING),
+            )
+            .await?;
+        if bundle.get("resourceType").and_then(Value::as_str) != Some("Bundle") {
+            return Err(FhirError::Decode);
+        }
+        Ok(bundle)
     }
 
     /// Reads `Condition?patient={id}&_count=100` and follows next links.
@@ -387,7 +426,7 @@ fn next_link(page: &Value) -> Option<&str> {
     })
 }
 
-fn array(value: Option<&Value>) -> impl Iterator<Item = &Value> {
+pub(crate) fn array(value: Option<&Value>) -> impl Iterator<Item = &Value> {
     value.and_then(Value::as_array).into_iter().flatten()
 }
 
