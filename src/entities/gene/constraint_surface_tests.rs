@@ -144,7 +144,7 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
     let selected = Arc::clone(&response);
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = Arc::clone(&requests);
-    let (release, wait) = std::sync::mpsc::channel();
+    let (release, wait) = std::sync::mpsc::channel::<()>();
     let hold = Arc::new(Mutex::new(wait));
     let fixture = TestHttpFixture::spawn(move |request| {
             captured.lock().unwrap().push(request.to_owned());

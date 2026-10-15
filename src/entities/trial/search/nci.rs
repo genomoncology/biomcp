@@ -238,7 +238,7 @@ mod tests {
         assert_eq!(condition.len(), NCI_CONDITION_GROUNDING_LIMIT_BYTES);
         assert!(!truncated);
         let long = format!("{}{}", "ä".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES), "z");
-        let (condition, truncated) = truncate_condition_for_grounding(&long);
+        let (condition, truncated) = truncate_condition_for_grounding(long.as_str());
         assert!(truncated);
         assert!(condition.len() < NCI_CONDITION_GROUNDING_LIMIT_BYTES);
         assert!(condition.is_char_boundary(NCI_CONDITION_GROUNDING_LIMIT_BYTES - 1));
