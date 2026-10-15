@@ -36,7 +36,7 @@ uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --sources-mod "$SOURCES_MOD" \
   --health-file "$HEALTH_FILE" \
   --cli-line-cap-allowlist "$CLI_LINE_CAP_ALLOWLIST" \
-  "${audit_args[@]}" || status=$?
+  ${audit_args[@]+"${audit_args[@]}"} || status=$?
 
 # The ratchet reports per-audit findings only in its JSON artifacts, so
 # a failing run used to exit with no output at all. Print the summary and
