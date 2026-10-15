@@ -13,8 +13,12 @@ inputs:
     description: rustup components for the toolchain (empty for none).
     default: ""
   cache:
-    description: Restore the pinned rust build cache.
-    default: false
+    description: >-
+      Restore the rust cache: "job" uses and saves this job's own key,
+      "shared" saves the one lane-shared key (the build job alone),
+      "shared-restore" only reads the shared key (the lanes, so a
+      parallel job can never win the save race), empty installs none.
+    default: ""
   python:
     description: Install the pinned Python and uv.
     default: false
@@ -43,16 +47,18 @@ runs:
     # The v2 tag dereferenced to its commit 2026-09-29; it runs
     # after the toolchain install so its key uses the pinned rustc,
     # and it caches the workspace crates so the biomcp crate itself
-    # is not rebuilt from scratch every run. add-job-id-key is off so
-    # every lane restores the build job's entry: the build job
-    # completes before its lanes start, so they compile against the
-    # same warm target directory and registry instead of their own.
+    # is not rebuilt from scratch every run. The build job completes
+    # before its lanes start, so the shared key makes every lane
+    # compile against the same warm target directory and registry;
+    # only the build job saves it, because parallel savers race and
+    # the loser's entry silently replaces the build's.
     - name: Cache the Rust build
-      if: ${{ inputs.cache == 'true' }}
+      if: ${{ inputs.cache != '' }}
       uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       with:
         cache-workspace-crates: true
-        add-job-id-key: false
+        add-job-id-key: ${{ inputs.cache == 'job' }}
+        save-if: ${{ inputs.cache != 'shared-restore' }}
     - name: Install pinned Python
       if: ${{ inputs.python == 'true' }}
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0

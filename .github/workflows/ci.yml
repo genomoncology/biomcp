@@ -76,7 +76,7 @@ jobs:
         uses: ./.github/actions/lane-setup
         with:
           rust: true
-          cache: true
+          cache: shared
           python: true
           nextest: true
       - name: Build the dev test archive and binaries
@@ -127,7 +127,7 @@ jobs:
         with:
           rust: true
           components: rustfmt, clippy
-          cache: true
+          cache: shared-restore
           python: true
           mustmatch: true
           lint-tools: true
@@ -199,7 +199,7 @@ jobs:
         uses: ./.github/actions/lane-setup
         with:
           rust: true
-          cache: true
+          cache: shared-restore
           python: true
           offline: true
           mustmatch: true
@@ -236,7 +236,7 @@ jobs:
         uses: ./.github/actions/lane-setup
         with:
           rust: true
-          cache: true
+          cache: shared-restore
           python: true
           offline: true
           mustmatch: true
@@ -300,7 +300,7 @@ jobs:
         uses: ./.github/actions/lane-setup
         with:
           rust: true
-          cache: true
+          cache: job
           nextest: true
       - name: Release-mode panic recovery contract
         run: |
@@ -321,7 +321,7 @@ jobs:
         with:
           rust: true
           components: clippy
-          cache: true
+          cache: job
       - run: make full-feature-check
 
   generated-sources:
@@ -344,7 +344,7 @@ jobs:
         uses: ./.github/actions/lane-setup
         with:
           rust: true
-          cache: true
+          cache: job
       - run: scripts/regenerate-alphagenome-proto --check
 
   windows-contracts:
