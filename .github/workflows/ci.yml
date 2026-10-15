@@ -203,6 +203,13 @@ jobs:
           python: true
           offline: true
           mustmatch: true
+      - name: Fetch the cargo registry for the offline contract tests
+        # The contract tests compile the packaged crate and the
+        # no-default test lane inside the offline sandbox, where no
+        # download can happen. This fetches the registry the way
+        # prepare-test did when the gates shared one job; the restored
+        # cache only shortens it.
+        run: cargo fetch --locked
       - name: Canonical Python contract gate
         run: make test-python
 
