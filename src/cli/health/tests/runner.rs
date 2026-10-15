@@ -65,6 +65,48 @@ async fn health_fda_server(
     (format!("http://{address}"), requests, task)
 }
 
+async fn health_fda_redirect_server() -> (String, tokio::task::JoinHandle<()>) {
+    let app = axum::Router::new().route(
+        "/OOPD_Results.cfm",
+        axum::routing::post(|| async {
+            (
+                axum::http::StatusCode::FOUND,
+                [(
+                    axum::http::header::LOCATION,
+                    axum::http::HeaderValue::from_static("/blocked/abuse-detection"),
+                )],
+                String::new(),
+            )
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    (format!("http://{address}"), task)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn fda_orphan_redirect_answer_names_the_block_in_the_row() {
+    let source = super::super::catalog::HEALTH_SOURCES
+        .iter()
+        .find(|source| source.api == "FDA Orphan Drug Designations")
+        .unwrap();
+    let (base, server) = health_fda_redirect_server().await;
+    let _base = FdaBaseGuard::set(&base);
+    let report = report_from_outcomes(vec![probe_source(reqwest::Client::new(), source).await]);
+    server.abort();
+    assert_eq!((report.healthy, report.error, report.total), (0, 1, 1));
+    assert_eq!(report.rows[0].status, HealthStatus::Error);
+    assert!(
+        report.rows[0]
+            .latency
+            .contains("(HTTP 302, blocked: the FDA site redirects scripted clients)"),
+        "the row names the redirect it got: {}",
+        report.rows[0].latency
+    );
+}
+
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn fda_orphan_fixture_probe_reconciles_rows_counts_and_fail_policy() {

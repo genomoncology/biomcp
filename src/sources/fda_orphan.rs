@@ -672,30 +672,64 @@ fn unavailable() -> FdaOrphanDesignations {
     }
 }
 
-pub(crate) async fn health_probe(_client: reqwest::Client) -> Result<(), BioMcpError> {
-    let client = crate::sources::ca_bundle::build_client(
+/// The health probe's answer, kept as a class so the health row can name
+/// what happened without re-deriving it from an error string: a redirect
+/// is the FDA site blocking scripted clients, and BioMCP does not follow
+/// it or try to get past the block.
+pub(crate) enum FdaOrphanHealth {
+    Ok,
+    /// The site answered the scripted POST with this redirect status.
+    Redirect(u16),
+    Failed,
+}
+
+pub(crate) async fn health_probe(_client: reqwest::Client) -> FdaOrphanHealth {
+    let client = match crate::sources::ca_bundle::build_client(
         reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION"))),
-    )?;
+    ) {
+        Ok(client) => client,
+        Err(_) => return FdaOrphanHealth::Failed,
+    };
     let base = crate::sources::env_base(BASE, BASE_ENV);
     let url = format!("{}/OOPD_Results.cfm", base.trim_end_matches('/'));
-    let response = client
+    let response = match client
         .post(url)
         .form(&ordered_form("eflornithine hydrochloride"))
         .send()
         .await
-        .map_err(BioMcpError::from)?;
-    if response.status() != reqwest::StatusCode::OK {
-        return Err(source_error("unexpected HTTP status"));
+    {
+        Ok(response) => response,
+        Err(_) => return FdaOrphanHealth::Failed,
+    };
+    let status = response.status();
+    if status.is_redirection() {
+        return FdaOrphanHealth::Redirect(status.as_u16());
     }
-    let bytes =
-        crate::sources::read_limited_body_with_limit(response, FDA_ORPHAN_SOURCE, MAX_BODY).await?;
-    let (_, fully_valid) = parse_records(parse_table(&bytes)?, &[])?;
+    if status != reqwest::StatusCode::OK {
+        return FdaOrphanHealth::Failed;
+    }
+    let bytes = match crate::sources::read_limited_body_with_limit(
+        response,
+        FDA_ORPHAN_SOURCE,
+        MAX_BODY,
+    )
+    .await
+    {
+        Ok(bytes) => bytes,
+        Err(_) => return FdaOrphanHealth::Failed,
+    };
+    let fully_valid = match parse_table(&bytes)
+        .and_then(|table| parse_records(table, &[]).map(|(_, fully_valid)| fully_valid))
+    {
+        Ok(fully_valid) => fully_valid,
+        Err(_) => return FdaOrphanHealth::Failed,
+    };
     if fully_valid {
-        Ok(())
+        FdaOrphanHealth::Ok
     } else {
-        Err(source_error("malformed row"))
+        FdaOrphanHealth::Failed
     }
 }
 
