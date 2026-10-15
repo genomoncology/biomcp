@@ -27,6 +27,7 @@
 - Ticket branches no longer collide on the changelog: `CHANGELOG.md` merges with the union driver so two branches that each append a bullet land without a conflict, the dev-cycle changelog test checks the section's shape instead of a hand-kept ticket list, and every bullet's cited ticket must be filed for the milestone. (2083)
 - The HTTP cache's start-up clean now runs at most once a day per cache root, recorded in a marker under the HTTP cache, and `BIOMCP_CACHE_MODE=off` skips it entirely, so a command no longer scans a large cache index on every start-up. (2092)
 - CI builds once and runs the lanes in parallel: a `build` job runs `make prepare-test` and uploads the dev build's nextest archive and binaries as one artifact, the lint, Rust-test, Python and spec lanes download it and each run one Makefile target through a shared composite action, `make test` splits into `test-rust` and `test-python`, and the all-features, Windows, stress and release-panic jobs run only on pushes to `main`, where every release tag still needs their green run. (2075)
+- Dev and test builds write line tables instead of full debug info and their dependencies none, so routine builds compile, link, and fill `target/` faster and smaller while panic backtraces still name the file and line; a `debugging` profile inherits dev with full debug info for a debugger session, and release builds stay as they were. (2101)
 
 ## 0.9.2 — 2026-10-11
 
