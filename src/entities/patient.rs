@@ -190,6 +190,9 @@ fn condition_from_resource(resource: &Value) -> PatientCondition {
         .or_else(|| text_at(resource, "onsetString"));
     let clinical_status = first_code(resource.get("clinicalStatus"));
     let verification_status = first_code(resource.get("verificationStatus"));
+    let breaks_con_3 = has_problem_list_category(resource)
+        && clinical_status.is_none()
+        && verification_status.as_deref() != Some("entered-in-error");
     PatientCondition {
         id: text_at(resource, "id"),
         text,
@@ -198,9 +201,7 @@ fn condition_from_resource(resource: &Value) -> PatientCondition {
         verification_status,
         onset,
         recorded_date: text_at(resource, "recordedDate"),
-        breaks_con_3: has_problem_list_category(resource)
-            && clinical_status.is_none()
-            && verification_status.as_deref() != Some("entered-in-error"),
+        breaks_con_3,
     }
 }
 
