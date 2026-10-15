@@ -907,11 +907,11 @@
     {
       "path": "src/sources/pubtator.rs",
       "scope": "item",
-      "item": "pub fn export_biocjson_request_plan(&self, pmid: u32) -> PubTatorExportRequestPlan {",
+      "item": "pub fn export_biocjson_request_plan(&self, pmid: u64) -> PubTatorExportRequestPlan {",
       "occurrence": 1,
       "owner": "source-contracts",
       "reason": "pubtator::export_biocjson_request_plan preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub fn export_biocjson_request_plan(&self, pmid: u32) -> PubTatorExportRequestPlan {` is used by every compiled target or deleted."
+      "removal_condition": "Remove when `pub fn export_biocjson_request_plan(&self, pmid: u64) -> PubTatorExportRequestPlan {` is used by every compiled target or deleted."
     },
     {
       "path": "src/sources/pubtator.rs",
