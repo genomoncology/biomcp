@@ -94,8 +94,7 @@ fn extract_top_adverse_events_ranks_by_frequency() {
 /// only matched the search.
 #[test]
 fn apply_openfda_metadata_lists_only_the_cards_own_label_products() {
-    let label_response: serde_json::Value =
-        recorded!("openfda", "label_trastuzumab_20261015.json");
+    let label_response: serde_json::Value = recorded!("openfda", "label_trastuzumab_20261015.json");
     let mut drug = card_named("Trastuzumab");
     assert_eq!(drug.name, "trastuzumab");
 

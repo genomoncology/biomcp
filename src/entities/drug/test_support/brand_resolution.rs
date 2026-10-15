@@ -389,18 +389,14 @@ async fn tarceva_lists_the_typed_brand_and_no_chemical_synonym() {
 #[serial_test::serial(source_env)]
 async fn trastuzumab_lists_only_brands_whose_labels_name_trastuzumab() {
     let (base, server) = name_resolution_fixture_server(
-        vec![
-            (
-                "trastuzumab".to_string(),
-                recorded!("mychem", "query_trastuzumab_get_20261015.json"),
-            ),
-        ],
-        vec![
-            (
-                "trastuzumab".to_string(),
-                recorded!("openfda", "label_trastuzumab_20261015.json"),
-            ),
-        ],
+        vec![(
+            "trastuzumab".to_string(),
+            recorded!("mychem", "query_trastuzumab_get_20261015.json"),
+        )],
+        vec![(
+            "trastuzumab".to_string(),
+            recorded!("openfda", "label_trastuzumab_20261015.json"),
+        )],
         Vec::new(),
     )
     .await;
