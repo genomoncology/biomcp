@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 1.0
 
+Reviews: revision 14b5ab3, accept
+
 ## Outcome
 
 The 1.0 branch carries every commit on the release line. The release line flows into 1.0 continuously, so the branch must sit zero commits behind `main`. It is 206 behind at the time of writing, which is the largest single source of merge risk on this line.
