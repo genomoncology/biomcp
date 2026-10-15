@@ -38,6 +38,6 @@ def test_a_lane_command_keeps_its_http_cache_out_of_home(
         capture_output=True,
     )
     cache_root = os.environ.get("BIOMCP_CACHE_DIR")
+    assert not list(sentinel.rglob("biomcp")), "the binary used the home cache"
     assert cache_root, "the lane's own cache root must be set for every test"
     assert Path(cache_root).is_dir(), "the command never built its cache root"
-    assert not list(sentinel.rglob("biomcp")), "the binary used the home cache"
