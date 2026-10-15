@@ -225,6 +225,28 @@ fn parse_variant_id_accepts_gene_protein_range_deletions() {
 }
 
 #[test]
+fn parse_variant_id_refuses_protein_change_with_invalid_residue_letter() {
+    let error = parse_variant_id("BRAF Z999Q").expect_err("invalid residue letter is refused");
+    match &error {
+        BioMcpError::InvalidArgument(message) => {
+            assert!(message.contains("'Z'"), "message names the letter: {message}");
+            assert!(message.contains("Z999Q"), "message names the change: {message}");
+        }
+        other => panic!("expected invalid argument, got {other:?}"),
+    }
+    match parse_variant_id("BRAF V600B").expect_err("invalid to-residue is refused") {
+        BioMcpError::InvalidArgument(message) => {
+            assert!(message.contains("'B'"), "message names the letter: {message}");
+        }
+        other => panic!("expected invalid argument, got {other:?}"),
+    }
+    match parse_variant_id("BRAF V600X").expect("X stays a stop residue") {
+        VariantIdFormat::GeneProteinChange { change, .. } => assert_eq!(change, "V600X"),
+        _ => panic!("expected gene+protein"),
+    }
+}
+
+#[test]
 fn protein_range_deletions_normalize_across_one_and_three_letter_spellings() {
     for alias in [
         "E746_A750del",
