@@ -5,7 +5,6 @@ mod diagnostics;
 mod entities_disease_links;
 mod exact_lookup;
 mod filters;
-mod help;
 mod json;
 mod next_commands;
 mod outage;
