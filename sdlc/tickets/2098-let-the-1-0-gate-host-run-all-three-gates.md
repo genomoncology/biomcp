@@ -25,3 +25,12 @@ Fix causes 1 and 2 as code: the lint bootstrap gains a Darwin-arm64 case; the sp
 ## Acceptance
 
 1. On M5, `make lint`, `make test`, and `make spec` each run to their own verdicts (pass or real findings) at the 1.0 line tip, in one pm job, with no step exiting on a missing platform.
+
+## Ruling 2026-10-15: Node pin and the offline sandbox on macOS
+
+The PM rules on the two gaps a lane could not decide.
+
+- Cause 3 (Node): keep the `website/prepare` pin at v22.22.3. The 1.0 line merges `main` continuously, so a pin that moves on 1.0 alone diverges from `main` and from CI on every merge. The gate host installs Node v22.22.3 in the user's own toolchain directory beside its current Node, and `website/prepare` finds it the way it does on Linux. Moving the pin is a `main` ticket for a later release.
+- Cause 4 (offline sandbox): `tools/run-offline` keeps its Linux network sandbox. On macOS it runs the command without the sandbox and prints one line to stderr saying the run is not network-isolated, instead of refusing. Linux CI stays the proof that the suite runs offline. A test that reaches the network on macOS while CI stays green is a test defect, filed as its own ticket.
+- Changes: adds `tools/run-offline` to this ticket's work beside the lint bootstrap and the two spec scripts.
+- Proof: acceptance 1 stands, and the `make test` log on the macOS host carries the not-network-isolated line.
