@@ -31,10 +31,10 @@ GWAS_SEARCH_BODY = json.dumps(
         "_embedded": {
             "associations": [
                 {
-                    "accessionId": "GCST90002321",
-                    "pValue": 5e-8,
-                    "mappedGenes": ["BRAF"],
-                    "reportedTrait": ["melanoma"],
+                    "accession_id": "GCST90002321",
+                    "p_value": 5e-8,
+                    "mapped_genes": ["BRAF"],
+                    "reported_trait": ["melanoma"],
                 }
             ]
         },
