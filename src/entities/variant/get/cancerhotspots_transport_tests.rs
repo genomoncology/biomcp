@@ -258,7 +258,7 @@ fn hotspots_flattened_detail_restores_required_source_and_literal_target() {
 #[serial_test::serial(source_env)]
 async fn hotspots_detail_timeout_preserves_other_enrichment() {
     let (fixture, _) = fixture(CAPTURE.to_vec(), false).await;
-    let (release, receiver) = std::sync::mpsc::channel();
+    let (release, receiver) = std::sync::mpsc::channel::<()>();
     let receiver = Arc::new(Mutex::new(receiver));
     let contacted = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let calls = contacted.clone();
