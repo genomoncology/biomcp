@@ -5,7 +5,7 @@ use crate::test_support::TempDirGuard;
 /// The recorded 25-row Europe PMC relevance reply: one full provider cursor
 /// page for a BRAF melanoma query, receipted in testdata/sources.
 const EUROPE_PMC_CURSOR_PAGE: &[u8] = include_bytes!(
-    "../../../../testdata/sources/europepmc/search_braf_melanoma_2012_page1_25rows.json"
+    "../../../../../testdata/sources/europepmc/search_braf_melanoma_2012_page1_25rows.json"
 );
 
 #[serial_test::serial(source_env)]
