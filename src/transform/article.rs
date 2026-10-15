@@ -92,7 +92,6 @@ mod tests {
     use crate::sources::pubmed::ESummaryEntry;
     use crate::sources::pubtator::{PubTatorDocument, PubTatorSearchResult};
     use crate::transform::article::{ArticleDocumentUnusable, ClassifiedArticleDocument};
-    use std::collections::HashMap;
 
     #[test]
     fn root_module_reexports_stable_article_transform_api() {

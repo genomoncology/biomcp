@@ -36,7 +36,7 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
 
 #[test]
 fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
-    let mut annotations = ArticleAnnotations {
+    let annotations = ArticleAnnotations {
         genes: vec![AnnotationCount {
             text: "KRAS".to_string(),
             count: 12,

@@ -227,9 +227,6 @@ fn resolve_protein_change_hit(
             suggestion: format!("Try searching: biomcp search variant -g {gene} --hgvsp {change}"),
         });
     }
-    let names_change = |hit: &crate::sources::myvariant::MyVariantHit| {
-        hit_names_requested_change(hit, change, mane_transcript)
-    };
     if hits.len() == 1 {
         return Ok(hits.into_iter().next().expect("one compatible hit"));
     }

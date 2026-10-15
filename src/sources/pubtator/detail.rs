@@ -14,7 +14,7 @@ pub enum PubTatorDetail {
 impl PubTatorClient {
     #[cfg(test)]
     pub fn publication_detail_plan(
-        pmid: u32,
+        pmid: u64,
         api_key: Option<&str>,
     ) -> Result<RequestPlan, BioMcpError> {
         let detail_plan = biodata_detail_plan(pmid)?;
@@ -23,7 +23,7 @@ impl PubTatorClient {
 
     pub async fn publication_detail(
         &self,
-        pmid: u32,
+        pmid: u64,
     ) -> Result<Option<PubTatorDetail>, BioMcpError> {
         let detail_plan = biodata_detail_plan(pmid)?;
         let plan = request_plan_from_biodata(&detail_plan, self.api_key.as_deref())?;
@@ -52,7 +52,7 @@ pub(crate) fn validate_detail_transport(
     crate::sources::ensure_json_content_type(context, content_type, bytes)
 }
 
-fn biodata_detail_plan(pmid: u32) -> Result<biodata::PubTator3DetailPlan, BioMcpError> {
+fn biodata_detail_plan(pmid: u64) -> Result<biodata::PubTator3DetailPlan, BioMcpError> {
     let pmid = biodata::Pmid::new(&pmid.to_string()).map_err(|_| {
         BioMcpError::InvalidArgument("PMID must be a nonzero canonical identifier".into())
     })?;
@@ -79,7 +79,7 @@ fn request_plan_from_biodata(
 
 #[cfg(test)]
 pub(crate) fn parse_publication_detail(
-    pmid: u32,
+    pmid: u64,
     bytes: &[u8],
 ) -> Result<Option<PubTatorDetail>, BioMcpError> {
     let plan = biodata_detail_plan(pmid)?;

@@ -448,13 +448,15 @@ pub(crate) fn gnomad_variant_slug(id: &str) -> Option<String> {
 }
 
 
-/// The first letter of a protein change that `amino_acid_one_letter` refuses,
+/// The first letter of a protein change that no residue spelling accepts,
 /// if any. Only capital letters and `*` are residue letters in the compact
-/// forms this path carries; lowercase suffixes such as `del` are not.
+/// forms this path carries; lowercase suffixes such as `del` are not, and
+/// `X` rides along as an unspecified residue rather than a refusal.
 fn invalid_residue_letter(change: &str) -> Option<char> {
     change.chars().find(|&letter| {
         (letter.is_ascii_uppercase() || letter == '*')
-            && amino_acid_one_letter(&letter.to_string()).is_none()
+            && letter != 'X'
+            && amino_acid_three_letter(letter).is_none()
     })
 }
 

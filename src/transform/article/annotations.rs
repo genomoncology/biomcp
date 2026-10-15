@@ -1,12 +1,11 @@
 //! PubTator annotation aggregation for article detail views.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::entities::article::{AnnotationCount, AnnotationPosition, ArticleAnnotations};
 use crate::sources::pubtator::{PubTatorDetail, PubTatorDocument};
 use crate::entities::variant::{
-    VariantIdFormat, VariantInputKind, VariantShorthand, classify_variant_input,
-    is_exact_gene_token,
+    VariantInputKind, VariantShorthand, classify_variant_input,
 };
 
 /// Longest identifier or namespace value carried through to entity rows.
