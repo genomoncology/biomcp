@@ -1025,7 +1025,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut drug_type: Option<String> = None;
     let mut mechanisms: Vec<String> = Vec::new();
     let mut mechanisms_seen: HashSet<String> = HashSet::new();
-    let mut brand_names: Vec<String> = Vec::new();
+    let brand_names: Vec<String> = Vec::new();
     let mut synonyms_seen: HashSet<String> = HashSet::new();
     let mut ddinter_synonyms: Vec<String> = Vec::new();
     // Only the chosen anchor hit feeds the synonym fold:

@@ -25,7 +25,7 @@ fn card_named(name: &str) -> Drug {
         "drugbank": {"id": "DBTESTCARD", "name": name},
     }))
     .expect("valid card hit");
-    let selected = vec![hit];
+    let selected = [&hit];
     crate::transform::drug::merge_mychem_hits(&selected, name)
 }
 
