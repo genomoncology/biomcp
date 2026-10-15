@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision ae9442e, accept
+
 ## Outcome
 
 A command run with `BIOMCP_CACHE_MODE=off` never scans the HTTP cache, and with the cache on, the start-up clean runs at most once every 24 hours.
