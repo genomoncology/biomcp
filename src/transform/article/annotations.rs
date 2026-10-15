@@ -379,7 +379,78 @@ pub fn extract_detail_annotations(
 }
 
 pub(crate) fn retained_extract_annotations(
+    doc: &PubTatorDocument,
+    include_positions: bool,
+) -> Option<ArticleAnnotations> {
+    let mut genes: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
+    let mut diseases: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
+    let mut chemicals: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
+    let mut mutations: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
+    let mut next_order = 0usize;
 
+    for passage in &doc.passages {
+        for ann in &passage.annotations {
+            let Some(text) = ann.text.as_deref() else {
+                continue;
+            };
+            let Some(infons) = ann.infons.as_ref() else {
+                continue;
+            };
+            let Some(kind) = infons.kind.as_deref().and_then(annotation_kind) else {
+                continue;
+            };
+            let identity = annotation_identity(
+                kind,
+                infons.identifier.as_deref(),
+                infons.rsid.as_deref(),
+                infons
+                    .rsids
+                    .as_ref()
+                    .and_then(|values| values.first())
+                    .map(String::as_str),
+                infons.hgvs.as_deref(),
+            );
+
+            match kind {
+                AnnotationKind::Gene => push_annotation_count(
+                    &mut genes,
+                    text,
+                    identity,
+                    &ann.locations,
+                    include_positions,
+                    next_order,
+                ),
+                AnnotationKind::Disease => push_annotation_count(
+                    &mut diseases,
+                    text,
+                    identity,
+                    &ann.locations,
+                    include_positions,
+                    next_order,
+                ),
+                AnnotationKind::Chemical => push_annotation_count(
+                    &mut chemicals,
+                    text,
+                    identity,
+                    &ann.locations,
+                    include_positions,
+                    next_order,
+                ),
+                AnnotationKind::Mutation => push_annotation_count(
+                    &mut mutations,
+                    text,
+                    identity,
+                    &ann.locations,
+                    include_positions,
+                    next_order,
+                ),
+            }
+            next_order += 1;
+        }
+    }
+
+    finish_annotations(genes, diseases, chemicals, mutations)
+}
 
 /// NCBI Gene ids whose every mention text fails the symbol-shape check while
 /// a mutation row still pairs that gene id with a protein change. Only these
