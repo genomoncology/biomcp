@@ -9,7 +9,8 @@ use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPap
 
 use super::candidates::finalize_article_candidates;
 use super::detail::{
-    parse_pmid, resolve_article_from_pmid_with_context, resolve_variant_article_from_pmid,
+    first_europepmc_hit, parse_pmid, resolve_article_from_pmid_with_context,
+    resolve_variant_article_from_pmid,
 };
 use super::{
     Article, ArticleSearchFilters, ArticleSearchResult, ArticleSearchTiming, ArticleSource,
@@ -298,6 +299,74 @@ fn merge_article_search_row_with_article_base(row: &mut ArticleSearchResult, art
     }
 }
 
+/// Settle one visible-row fallback after the PubTator/Europe PMC resolve
+/// failed: a row Europe PMC still covers logs the failure at debug and
+/// takes the covering metadata, and only a row both sources failed warns.
+fn settle_visible_row_metadata_fallback(
+    row: &mut ArticleSearchResult,
+    err: &crate::error::BioMcpError,
+    europe_hit: Option<&crate::sources::europepmc::EuropePmcResult>,
+) {
+    match europe_hit {
+        Some(hit) => {
+            crate::error::debug_external_failure(
+                err,
+                crate::error::SourceProvider::PUBTATOR3,
+                "visible article metadata fallback",
+            );
+            merge_article_search_row_with_article_base(
+                row,
+                &crate::transform::article::from_europepmc_result(hit),
+            );
+        }
+        None => crate::error::warn_external_failure(
+            err,
+            crate::error::SourceProvider::PUBTATOR3,
+            "visible article metadata fallback",
+        ),
+    }
+}
+
+/// One budget-honoring Europe PMC lookup that can still cover a row the
+/// variant-article resolve could not, reusing one deadline client across
+/// the rows that need it. `None` means no covering hit: the caller warns.
+async fn variant_visible_row_europe_fallback(
+    execution: &super::variant_search::VariantArticleExecutionContext,
+    client: &mut Option<EuropePmcClient>,
+    pmid: u64,
+) -> Option<crate::sources::europepmc::EuropePmcResult> {
+    let unit = execution
+        .begin_provider_unit("enrichment", "europepmc")
+        .await?;
+    execution.add_route_unit("enrichment", "europepmc");
+    if client.is_none() {
+        match EuropePmcClient::new_with_deadline(execution.deadline()).await {
+            Ok(built) => *client = Some(built),
+            Err(error) => {
+                unit.record_error(&error);
+                return None;
+            }
+        }
+    }
+    let built = client.as_ref().expect("client built above");
+    match built.search_by_pmid(&pmid.to_string()).await {
+        Ok(search) => match first_europepmc_hit(search) {
+            Some(hit) => {
+                unit.record("ok", 1);
+                Some(hit)
+            }
+            None => {
+                unit.record("ok", 1);
+                None
+            }
+        },
+        Err(error) => {
+            unit.record_error(&error);
+            None
+        }
+    }
+}
+
 pub(super) async fn enrich_visible_article_search_rows_with_article_base(
     rows: &mut [ArticleSearchResult],
 ) -> Vec<ArticleSourceStatus> {
@@ -325,6 +394,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         return Vec::new();
     }
     if let Some(execution) = execution {
+        let mut europe_fallback: Option<EuropePmcClient> = None;
         for (row_idx, pmid) in lookup_positions {
             let lookup_id = rows[row_idx].pmid.clone();
             match resolve_variant_article_from_pmid(pmid, &lookup_id, &lookup_id, None, execution)
@@ -333,11 +403,12 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 Ok(article) => {
                     merge_article_search_row_with_article_base(&mut rows[row_idx], &article)
                 }
-                Err(err) => crate::error::warn_external_failure(
-                    &err,
-                    crate::error::SourceProvider::PUBTATOR3,
-                    "visible article metadata fallback",
-                ),
+                Err(err) => {
+                    let hit =
+                        variant_visible_row_europe_fallback(execution, &mut europe_fallback, pmid)
+                            .await;
+                    settle_visible_row_metadata_fallback(&mut rows[row_idx], &err, hit.as_ref());
+                }
             }
         }
         return Vec::new();
@@ -402,11 +473,14 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         .await;
         match result {
             Ok(article) => merge_article_search_row_with_article_base(&mut rows[row_idx], &article),
-            Err(err) => crate::error::warn_external_failure(
-                &err,
-                crate::error::SourceProvider::PUBTATOR3,
-                "visible article metadata fallback",
-            ),
+            Err(err) => {
+                let hit = europe
+                    .search_by_pmid(&pmid.to_string())
+                    .await
+                    .ok()
+                    .and_then(first_europepmc_hit);
+                settle_visible_row_metadata_fallback(&mut rows[row_idx], &err, hit.as_ref());
+            }
         }
     }
     statuses
