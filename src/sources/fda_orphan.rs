@@ -710,16 +710,13 @@ pub(crate) async fn health_probe(_client: reqwest::Client) -> FdaOrphanHealth {
     if status != reqwest::StatusCode::OK {
         return FdaOrphanHealth::Failed;
     }
-    let bytes = match crate::sources::read_limited_body_with_limit(
-        response,
-        FDA_ORPHAN_SOURCE,
-        MAX_BODY,
-    )
-    .await
-    {
-        Ok(bytes) => bytes,
-        Err(_) => return FdaOrphanHealth::Failed,
-    };
+    let bytes =
+        match crate::sources::read_limited_body_with_limit(response, FDA_ORPHAN_SOURCE, MAX_BODY)
+            .await
+        {
+            Ok(bytes) => bytes,
+            Err(_) => return FdaOrphanHealth::Failed,
+        };
     let fully_valid = match parse_table(&bytes)
         .and_then(|table| parse_records(table, &[]).map(|(_, fully_valid)| fully_valid))
     {

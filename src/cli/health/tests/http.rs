@@ -221,8 +221,7 @@ mod orcid_row {
 
     /// Counts connections; serves one canned 200 response per connection;
     /// records each request's Authorization header value, if any.
-    fn probe_server(
-    ) -> (
+    fn probe_server() -> (
         String,
         std::sync::Arc<std::sync::Mutex<usize>>,
         std::sync::Arc<std::sync::Mutex<Vec<String>>>,

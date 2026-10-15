@@ -304,7 +304,10 @@ async fn a_pubtator_empty_reply_falls_back_to_europe_pmc_without_a_warning() {
         .filter(|(level, _)| *level == tracing::Level::WARN)
         .cloned()
         .collect();
-    assert!(warns.is_empty(), "fallback that works must not warn: {warns:?}");
+    assert!(
+        warns.is_empty(),
+        "fallback that works must not warn: {warns:?}"
+    );
     assert!(
         events
             .iter()
