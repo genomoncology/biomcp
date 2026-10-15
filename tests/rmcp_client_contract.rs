@@ -508,9 +508,12 @@ const MYGENE_TP53_RESPONSE: &[u8] = br#"{"total":1,"hits":[{"symbol":"TP53","nam
 
 /// Serves the recorded provider replies behind the two refusals whose line
 /// breaks must survive the MCP error path: the ambiguous `MM` disease
-/// abbreviation and the isoform-only `TP53 S183Y` protein change.
+/// abbreviation and the isoform-only `TP53 S183Y` protein change. The
+/// listener blocks on `accept` and `Drop` wakes it with a self-connect, so
+/// shutdown needs no clock wait.
 struct RefusalFixtureServer {
     base: String,
+    addr: std::net::SocketAddr,
     stop: Arc<AtomicBool>,
     thread: Option<thread::JoinHandle<()>>,
 }
@@ -518,20 +521,19 @@ struct RefusalFixtureServer {
 impl RefusalFixtureServer {
     fn start() -> anyhow::Result<Self> {
         let listener = TcpListener::bind(("127.0.0.1", 0))?;
-        listener.set_nonblocking(true)?;
-        let base = format!("http://{}", listener.local_addr()?);
+        let addr = listener.local_addr()?;
+        let base = format!("http://{addr}");
         let stop = Arc::new(AtomicBool::new(false));
         let thread_stop = Arc::clone(&stop);
         let thread = thread::spawn(move || {
-            while !thread_stop.load(Ordering::SeqCst) {
-                let Ok((mut stream, _)) = listener.accept() else {
-                    thread::sleep(Duration::from_millis(5));
+            for stream in listener.incoming() {
+                if thread_stop.load(Ordering::SeqCst) {
+                    break;
+                }
+                let Ok(mut stream) = stream else {
                     continue;
                 };
-                // The listener is nonblocking for accept-polling; routing
-                // needs the whole request line, so read this connection in
-                // blocking mode instead of racing the first bytes.
-                let _ = stream.set_nonblocking(false);
+                let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
                 // The production GET field lists make a request line span
                 // TCP segments, so read until the headers end before routing.
                 let mut request = vec![0_u8; 32 * 1024];
@@ -572,6 +574,7 @@ impl RefusalFixtureServer {
         });
         Ok(Self {
             base,
+            addr,
             stop,
             thread: Some(thread),
         })
@@ -581,6 +584,7 @@ impl RefusalFixtureServer {
 impl Drop for RefusalFixtureServer {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::SeqCst);
+        let _ = std::net::TcpStream::connect(self.addr);
         if let Some(thread) = self.thread.take() {
             thread.join().expect("join refusal fixture");
         }
