@@ -1906,7 +1906,7 @@ fn run_cli_refusal(
         .args(args)
         .env_remove("BIOMCP_TEST_PANIC_TOOL")
         .env_remove("RUST_MIN_STACK")
-        .envs(env.iter().copied())
+        .envs(env.iter().cloned())
         .output()?;
     anyhow::ensure!(
         output.status.code() == Some(2),
