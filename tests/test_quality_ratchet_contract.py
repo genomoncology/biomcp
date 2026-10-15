@@ -703,12 +703,12 @@ def test_graph_inventory_pins_exact_cumulative_provenance(tmp_path: Path) -> Non
     source = inventory.read_text(encoding="utf-8")
     entry = next(r for r in json.loads(source)["entries"] if r["path"] == graph)
     auth = entry["authorized_increase"]
-    assert (entry["baseline_lines"], entry["floor_lines"]) == (1802, 998)
-    assert (auth["ticket"], auth["delta"]) == ("1200, biodata-0152", 804)
+    assert (entry["baseline_lines"], entry["floor_lines"]) == (2263, 998)
+    assert (auth["ticket"], auth["delta"]) == ("1200, biodata-0152, 1302, qf-main-sync-20261007, 2041", 1265)
     assert all(part in auth["reason"] for part in ("1200", "734", "0152", "70"))
     for needle, replacement in (
-        ('"baseline_lines": 1802', '"baseline_lines": 1803'),
-        ('"delta": 804', '"delta": 805'),
+        ('"baseline_lines": 2263', '"baseline_lines": 2264'),
+        ('"delta": 1265', '"delta": 1266'),
         (graph, "src/../escaped.rs"),
     ):
         mutated = tmp_path / "inventory.json"
