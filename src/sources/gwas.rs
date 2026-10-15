@@ -1,7 +1,6 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use http_cache_reqwest::CacheMode;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 use serde::Deserialize;
@@ -70,13 +69,21 @@ impl GwasClient {
         Ok(plan)
     }
 
-    pub(crate) fn request_no_store(
+    /// The GWAS request kind: day-cached. The first 200 answer is stored
+    /// whatever the provider's headers say, and a repeat inside
+    /// [`crate::sources::DAY_CACHE_TTL`] is served without a network
+    /// call. The source once pinned `CacheMode::NoStore` because stale
+    /// cached bodies failed to decode; [`GwasClient::decode_day_cached`]
+    /// now replaces a body that fails to decode with one fresh fetch,
+    /// so the day cache cannot resurrect that failure class.
+    pub(crate) fn request_day_cached(
         &self,
         plan: &RequestPlan,
     ) -> reqwest_middleware::RequestBuilder {
-        // GWAS responses occasionally produce cache decode failures when a stale
-        // body entry is reused. Always bypass persistence for this source.
-        request_from_plan(&self.client, self.base.as_ref(), plan).with_extension(CacheMode::NoStore)
+        crate::sources::apply_day_cache_mode_with_auth(
+            request_from_plan(&self.client, self.base.as_ref(), plan),
+            false,
+        )
     }
 
     pub(crate) fn decode_json_optional<T: DeserializeOwned>(
@@ -105,41 +112,69 @@ impl GwasClient {
     /// failure the live source now returns.
     async fn get_json_by_rsid<T: DeserializeOwned>(
         &self,
-        req: reqwest_middleware::RequestBuilder,
+        plan: &RequestPlan,
     ) -> Result<Option<T>, BioMcpError> {
-        let resp = req
-            .send_with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::GWAS,
-            ))
-            .await?;
+        let resp = self.send_day_cached(plan).await?;
         let status = resp.status();
         if status == StatusCode::GONE {
             return Err(retired_gwas_endpoint_error());
         }
+        self.decode_day_cached::<T>(plan, resp).await
+    }
+
+    async fn get_json_optional<T: DeserializeOwned>(
+        &self,
+        plan: &RequestPlan,
+    ) -> Result<Option<T>, BioMcpError> {
+        let resp = self.send_day_cached(plan).await?;
+        self.decode_day_cached::<T>(plan, resp).await
+    }
+
+    async fn send_day_cached(&self, plan: &RequestPlan) -> Result<reqwest::Response, BioMcpError> {
+        crate::sources::send_day_cached_with_source_context(
+            self.request_day_cached(plan),
+            crate::error::SourceContext::retry(crate::error::SourceProvider::GWAS),
+        )
+        .await
+    }
+
+    /// Decode one day-cached GWAS body. A 200 body that fails to decode
+    /// is replaced by one fresh provider fetch through
+    /// `CacheMode::NoStore`, which also drops the stored copy: the
+    /// historical GWAS decode failures were bodies held by the cache,
+    /// so the command succeeds and the next repeat stores a good answer.
+    async fn decode_day_cached<T: DeserializeOwned>(
+        &self,
+        plan: &RequestPlan,
+        resp: reqwest::Response,
+    ) -> Result<Option<T>, BioMcpError> {
+        let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
         let bytes = crate::sources::read_limited_source_body(
             resp,
             crate::error::SourceContext::narrow(crate::error::SourceProvider::GWAS),
         )
         .await?;
-        Self::decode_json_optional(status, content_type.as_ref(), &bytes).map_err(|error| {
-            error.with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::GWAS,
-            ))
-        })
+        match Self::decode_json_optional(status, content_type.as_ref(), &bytes) {
+            Ok(value) => Ok(value),
+            Err(error) if is_body_decode_failure(&error) => self.decode_no_store::<T>(plan).await,
+            Err(error) => Err(
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::GWAS,
+                )),
+            ),
+        }
     }
 
-    async fn get_json_optional<T: DeserializeOwned>(
+    async fn decode_no_store<T: DeserializeOwned>(
         &self,
-        req: reqwest_middleware::RequestBuilder,
+        plan: &RequestPlan,
     ) -> Result<Option<T>, BioMcpError> {
-        // No apply_cache_mode here on purpose (2026-09-28 review):
-        // under BIOMCP_CACHE_MODE=infinite it would replace the
-        // request's NoStore mark with force-cache, serving stale GWAS
-        // bodies — the decode failures that made this source
-        // no-store in the first place. NoStore always holds for
-        // GWAS; --no-cache and authenticated requests are already
-        // no-store everywhere else.
+        let req = crate::sources::apply_no_store(request_from_plan(
+            &self.client,
+            self.base.as_ref(),
+            plan,
+        ));
         let resp = req
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::GWAS,
@@ -152,10 +187,6 @@ impl GwasClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::GWAS),
         )
         .await?;
-
-        if status == reqwest::StatusCode::NOT_FOUND {
-            return Ok(None);
-        }
         Self::decode_json_optional(status, content_type.as_ref(), &bytes).map_err(|error| {
             error.with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::GWAS,
@@ -169,10 +200,10 @@ impl GwasClient {
         limit: usize,
     ) -> Result<Vec<GwasAssociation>, BioMcpError> {
         let plan = Self::associations_by_rsid_plan(rsid, limit)?;
-        let req = self.request_no_store(&plan);
-
-        let Some(resp): Option<GwasAssociationsResponse> =
-            self.get_json_by_rsid(req).await.map_err(remap_gwas_error)?
+        let Some(resp): Option<GwasAssociationsResponse> = self
+            .get_json_by_rsid(&plan)
+            .await
+            .map_err(remap_gwas_error)?
         else {
             return Ok(Vec::new());
         };
@@ -187,9 +218,8 @@ impl GwasClient {
         limit: usize,
     ) -> Result<GwasAssociationSearchPage, BioMcpError> {
         let plan = Self::association_search_plan(gene, trait_query, limit)?;
-        let req = self.request_no_store(&plan);
         let Some(resp): Option<GwasV2AssociationsResponse> = self
-            .get_json_optional(req)
+            .get_json_optional(&plan)
             .await
             .map_err(remap_gwas_error)?
         else {
@@ -309,6 +339,17 @@ fn gwas_status_is_transient(message: &str) -> bool {
     };
 
     status == 408 || status == 429 || (500..=599).contains(&status)
+}
+
+/// Whether an error is a failed decode of a 200 body — the class a
+/// stale stored GWAS body produced. Wrapped contexts unwrap the same way
+/// [`is_retired_endpoint_error`] unwraps them.
+fn is_body_decode_failure(error: &BioMcpError) -> bool {
+    match error {
+        BioMcpError::ApiJson { .. } => true,
+        BioMcpError::WithSourceContext { source, .. } => is_body_decode_failure(source),
+        _ => false,
+    }
 }
 
 /// The honest gap note for the retired legacy endpoint: the

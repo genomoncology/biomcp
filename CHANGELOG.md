@@ -5,6 +5,7 @@
 ### New features
 
 - `--disable-sources` and `BIOMCP_DISABLE_SOURCES` turn any source, or any recorded group, off in one setting: the list takes comma- or pipe-separated ids and group names, an unknown name fails with the valid names, `commercial-restricted` covers every source whose recorded terms restrict commercial use, a disabled source is never called and its carried fields drop from output, `biomcp health` and the MCP server description name what is off, and `BIOMCP_DISABLE_KEGG` keeps working as an alias. (2061)
+- GWAS Catalog queries, openFDA label searches, and openFDA adverse-event counts are now held for a day: a repeat within twenty-four hours is answered from BioMCP's cache without a network request, an older stored answer goes back to the provider, `--no-cache`, `BIOMCP_CACHE_MODE=off`, and an openFDA key still bypass the cache, and a stored GWAS body that no longer decodes is replaced by one fresh fetch. (2091)
 
 ### Fixes
 
