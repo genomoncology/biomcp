@@ -1296,7 +1296,7 @@ pub(super) async fn resolve_base_with_hit(
                 MyVariantClient::escape_query_value(change)
             );
             let resp = myvariant
-                .query_with_fields(&q, 5, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
+                .query_with_fields(&q, 50, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
                 .await?;
             let compatible_hits = resp
                 .hits
