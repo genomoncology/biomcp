@@ -10,6 +10,8 @@ Reviews: revision 9a8bd3c, accept
 
 Reviews: revision e94e166, accept
 
+Reviews: revision e94e166, accept
+
 ## Outcome
 
 Every follow-up command a variant card prints uses the headline's coordinate, following the printed civic command returns the evidence the card counted, and each ClinVar row shows its submission count.
