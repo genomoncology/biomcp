@@ -335,7 +335,7 @@ impl Drop for RecordedReplyEnv {
 
 fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<u8>) {
     let target = request.split_whitespace().nth(1).unwrap_or_default();
-    if target.starts_with("/v1/query?") && target.contains("Val600Glu") {
+    if target.starts_with("/v1/query?") && target.contains("p.V600E") {
         return (
             "200 OK",
             "application/json",
