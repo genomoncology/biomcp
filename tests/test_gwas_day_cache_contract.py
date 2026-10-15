@@ -77,7 +77,9 @@ class _CountingGwasServer(ThreadingHTTPServer):
     state: _CountingGwasState
 
 
-def _run_search_gwas(base_url: str, cache_home: Path) -> subprocess.CompletedProcess[str]:
+def _run_search_gwas(
+    base_url: str, cache_home: Path
+) -> subprocess.CompletedProcess[str]:
     assert BIOMCP_BIN.exists(), f"missing biomcp binary: {BIOMCP_BIN}"
     env = os.environ.copy()
     env.update(
