@@ -57,6 +57,9 @@ retention. In particular, it neither deletes nor force-refreshes the GenCC
 durable dataset; use `biomcp gencc sync` for explicit revalidation.
 `BIOMCP_CACHE_MAX_AGE` overrides `[cache].max_age_secs`; both values are
 positive integer seconds.
+GWAS Catalog queries, openFDA label searches, and openFDA adverse-event counts
+are held for a day: a repeat inside that window is answered from the cache and
+the next request goes back to the provider.
 
 Ordinary provider HTTPS trusts the bundled webpki roots plus any operator PEM
 bundle. `BIOMCP_CA_BUNDLE` is read first, and a blank or whitespace-only value
