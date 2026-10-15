@@ -1,8 +1,10 @@
 # 2068 — Make drug brand lists name only the drug's own brands
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 0922f47, accept
 
 ## Outcome
 

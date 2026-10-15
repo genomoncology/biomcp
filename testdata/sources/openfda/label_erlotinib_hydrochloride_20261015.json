@@ -1,0 +1,299 @@
+{
+ "meta": {
+  "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+  "terms": "https://open.fda.gov/terms/",
+  "license": "https://open.fda.gov/license/",
+  "last_updated": "2026-10-14",
+  "results": {
+   "skip": 0,
+   "limit": 5,
+   "total": 6
+  }
+ },
+ "results": [
+  {
+   "set_id": "ab6f3cb3-34a8-4492-a5d7-fb6b055a2d6b",
+   "effective_time": "20240610",
+   "openfda": {
+    "application_number": [
+     "ANDA214719"
+    ],
+    "brand_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "generic_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "manufacturer_name": [
+     "Alembic Pharmaceuticals Limited"
+    ],
+    "product_ndc": [
+     "46708-565",
+     "46708-566",
+     "46708-567"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "rxcui": [
+     "603203",
+     "603206",
+     "603208"
+    ],
+    "spl_id": [
+     "966e67f7-6259-4b1c-8c6a-b2589d57e1ed"
+    ],
+    "spl_set_id": [
+     "ab6f3cb3-34a8-4492-a5d7-fb6b055a2d6b"
+    ],
+    "package_ndc": [
+     "46708-565-30",
+     "46708-565-90",
+     "46708-566-30",
+     "46708-566-90",
+     "46708-567-30",
+     "46708-567-90"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0346708567309",
+     "0346708566302",
+     "0346708565305"
+    ],
+    "unii": [
+     "DA87705X9K"
+    ]
+   }
+  },
+  {
+   "set_id": "ccf1e415-4980-462f-8ac2-87979bda149e",
+   "effective_time": "20230217",
+   "openfda": {
+    "application_number": [
+     "ANDA214719"
+    ],
+    "brand_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "generic_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "manufacturer_name": [
+     "Alembic Pharmaceuticals Inc."
+    ],
+    "product_ndc": [
+     "62332-565",
+     "62332-566",
+     "62332-567"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "rxcui": [
+     "603203",
+     "603206",
+     "603208"
+    ],
+    "spl_id": [
+     "78cde6f1-5cd7-428e-8ae8-e707d4d5f484"
+    ],
+    "spl_set_id": [
+     "ccf1e415-4980-462f-8ac2-87979bda149e"
+    ],
+    "package_ndc": [
+     "62332-565-30",
+     "62332-565-90",
+     "62332-566-30",
+     "62332-566-90",
+     "62332-567-30",
+     "62332-567-90"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0362332567300",
+     "0362332566303"
+    ],
+    "unii": [
+     "DA87705X9K"
+    ]
+   }
+  },
+  {
+   "set_id": "4cff04f5-3693-4d87-a9f8-a2b195e3d26e",
+   "effective_time": "20191203",
+   "openfda": {
+    "application_number": [
+     "ANDA214366"
+    ],
+    "brand_name": [
+     "Erlotinib Hydrochloride"
+    ],
+    "generic_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "manufacturer_name": [
+     "Novadoz Pharmaceuticals LLC"
+    ],
+    "product_ndc": [
+     "72205-080",
+     "72205-081",
+     "72205-082"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "rxcui": [
+     "603203",
+     "603206",
+     "603208"
+    ],
+    "spl_id": [
+     "4cff04f5-3693-4d87-a9f8-a2b195e3d26e"
+    ],
+    "spl_set_id": [
+     "4cff04f5-3693-4d87-a9f8-a2b195e3d26e"
+    ],
+    "package_ndc": [
+     "72205-080-30",
+     "72205-081-30",
+     "72205-082-30"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0372205081307",
+     "0372205082304",
+     "0372205080300"
+    ],
+    "unii": [
+     "DA87705X9K"
+    ]
+   }
+  },
+  {
+   "set_id": "2c4c7353-b81c-4651-8aac-6d15e88145af",
+   "effective_time": "20191025",
+   "openfda": {
+    "application_number": [
+     "ANDA211960"
+    ],
+    "brand_name": [
+     "Erlotinib"
+    ],
+    "generic_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "manufacturer_name": [
+     "Armas Pharmaceuticals Inc."
+    ],
+    "product_ndc": [
+     "72485-218"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "rxcui": [
+     "603203"
+    ],
+    "spl_id": [
+     "bc4532f4-6a0a-4fd1-a630-8b524c02c7aa"
+    ],
+    "spl_set_id": [
+     "2c4c7353-b81c-4651-8aac-6d15e88145af"
+    ],
+    "package_ndc": [
+     "72485-218-30"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0372485218301"
+    ],
+    "unii": [
+     "DA87705X9K"
+    ]
+   }
+  },
+  {
+   "set_id": "53cf8868-cfd8-4c6e-ad9d-3171ff1e4d8c",
+   "effective_time": "20191025",
+   "openfda": {
+    "application_number": [
+     "ANDA211960"
+    ],
+    "brand_name": [
+     "Erlotinib"
+    ],
+    "generic_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "manufacturer_name": [
+     "Armas Pharmaceuticals Inc."
+    ],
+    "product_ndc": [
+     "72485-217"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ERLOTINIB HYDROCHLORIDE"
+    ],
+    "rxcui": [
+     "603208"
+    ],
+    "spl_id": [
+     "35e3a161-752e-4479-b27c-3dc8efd3ca9e"
+    ],
+    "spl_set_id": [
+     "53cf8868-cfd8-4c6e-ad9d-3171ff1e4d8c"
+    ],
+    "package_ndc": [
+     "72485-217-30"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0372485217304"
+    ],
+    "unii": [
+     "DA87705X9K"
+    ]
+   }
+  }
+ ]
+}

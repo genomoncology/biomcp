@@ -22,7 +22,7 @@ use super::label::{
 };
 use super::metadata::{
     apply_openfda_metadata, apply_top_adverse_event_preview, fetch_shortage_entries,
-    fetch_top_adverse_event_preview, map_drugsfda_approvals, orphan_aliases,
+    fetch_top_adverse_event_preview, map_drugsfda_approvals, merge_unique_casefold, orphan_aliases,
 };
 use super::search::search_page;
 use super::targets::{TargetSources, enrich_indications, enrich_targets, fetch_target_sources};
@@ -1032,6 +1032,11 @@ async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpErr
 
     let mut lookup_name = name.to_string();
     let mut resp = direct_drug_lookup(name).await?;
+    // The brand the user typed, when a rescue resolved it to a canonical
+    // card: the swap below renames the card for the canonical drug, so the
+    // typed brand would otherwise be lost — a withdrawn brand holds no
+    // openFDA label of its own that could carry it onto the card.
+    let mut resolved_brand: Option<String> = None;
 
     if resp.hits.is_empty() {
         let fallback_filters = DrugSearchFilters {
@@ -1109,6 +1114,7 @@ async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpErr
                         lookup_name = candidate;
                         resp = candidate_resp;
                         selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+                        resolved_brand = Some(name.to_string());
                     }
                     None => return Err(name_miss_not_found(name, &resp.hits)),
                 }
@@ -1190,6 +1196,17 @@ async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpErr
                 SparseDrugDiscoverRescue::None => {}
             }
         }
+    }
+
+    // The brand rescue's typed name stays listed: the card now names the
+    // canonical drug, so the brand the user typed — which no openFDA label
+    // of its own carries — reaches the card's brand list here. A typed
+    // name that resolved to itself is the card's own name, not a brand.
+    if let Some(brand) = resolved_brand
+        && !brand.trim().eq_ignore_ascii_case(drug.name.trim())
+        && !brand.trim().is_empty()
+    {
+        merge_unique_casefold(&mut drug.brand_names, [brand]);
     }
 
     // The brand as the resolved record itself spells it: MyChem carries the
