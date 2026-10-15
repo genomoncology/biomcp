@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 68b2d71, accept
+
 ## Outcome
 
 A repeat of the same GWAS Catalog query, openFDA label search or openFDA adverse-event count within 24 hours is answered from BioMCP's cache without a network request, and one after 24 hours goes to the provider again; `--no-cache` and `BIOMCP_CACHE_MODE=off` still bypass the cache.
