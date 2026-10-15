@@ -1,6 +1,6 @@
 # 2041 — merge-main-into-the-1-0-line-again
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 
