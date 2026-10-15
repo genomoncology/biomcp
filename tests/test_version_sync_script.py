@@ -371,9 +371,9 @@ def test_manifest_and_citation_versions_match_repo_metadata() -> None:
 
     assert cargo["package"]["version"] == "1.0.0-dev.1"
     assert pyproject["project"]["version"] == "1.0.0.dev1"
-    assert _read_manifest_version(REPO_ROOT / "manifest.json") == "0.9.0"
-    assert _read_server_versions(REPO_ROOT / "server.json") == ("0.9.0", "0.9.0")
-    assert _read_citation_version(REPO_ROOT / "CITATION.cff") == "0.9.0"
+    assert _read_manifest_version(REPO_ROOT / "manifest.json") == "0.9.2"
+    assert _read_server_versions(REPO_ROOT / "server.json") == ("0.9.2", "0.9.2")
+    assert _read_citation_version(REPO_ROOT / "CITATION.cff") == "0.9.2"
     citation_text = (REPO_ROOT / "CITATION.cff").read_text(encoding="utf-8")
     assert "date-released: 2026-10-11" in citation_text
 
