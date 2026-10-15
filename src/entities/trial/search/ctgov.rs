@@ -140,7 +140,6 @@ fn merge_page_note(existing: Option<String>, note: String) -> String {
     }
 }
 
-#[derive(Debug)]
 struct CtGovRawPage {
     provider_total: biodata::ClinicalTrialProviderTotal,
     studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,

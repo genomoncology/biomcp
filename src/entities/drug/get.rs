@@ -288,6 +288,16 @@ struct LabelFetchOutcome {
     elements_oversize: bool,
 }
 
+impl LabelFetchOutcome {
+    fn without_response() -> Self {
+        Self {
+            response: None,
+            attempt_failed: false,
+            elements_oversize: false,
+        }
+    }
+}
+
 /// The card's label lookup once the drug is named: the chosen response, or
 /// the failure flags the label section's outcome needs. A failed label
 /// fetch degrades the label section to an unavailable outcome instead of
