@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 9bc2f19, accept
+
 ## Outcome
 
 No MCP `health` reply contains a local filesystem path, and MCP error text keeps every line break the CLI prints.
