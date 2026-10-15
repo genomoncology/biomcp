@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 2976713, accept
+
 ## Outcome
 
 A full ticket-branch CI run takes the build job plus its longest routine lane, with a median wall time of at most 20 minutes over the branch's own full runs, down from 25.4 to 27.4 minutes in the 2069 baseline, and the all-features, Windows, stress and release-panic jobs run only on pushes to `main`.
