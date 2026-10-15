@@ -27,6 +27,7 @@ fn expected_health_submodule_files(root: &Path) -> Vec<PathBuf> {
         root.join("src/cli/health/http.rs"),
         root.join("src/cli/health/local.rs"),
         root.join("src/cli/health/runner.rs"),
+        root.join("src/cli/health/tests/cache.rs"),
         root.join("src/cli/health/tests/catalog.rs"),
         root.join("src/cli/health/tests/http.rs"),
         root.join("src/cli/health/tests/local.rs"),
