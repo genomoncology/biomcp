@@ -237,11 +237,18 @@ mod tests {
         let (condition, truncated) = truncate_condition_for_grounding(&exact);
         assert_eq!(condition.len(), NCI_CONDITION_GROUNDING_LIMIT_BYTES);
         assert!(!truncated);
-        let long = format!("{}{}", "ä".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES), "z");
-        let (condition, truncated) = truncate_condition_for_grounding(long.as_str());
+        // A multibyte tail that lands exactly on the limit keeps the whole
+        // boundary-aligned prefix; a ragged boundary backs up to the last
+        // char boundary inside the limit.
+        let even = "ä".repeat(NCI_CONDITION_GROUNDING_LIMIT_BYTES / 2);
+        let (condition, truncated) = truncate_condition_for_grounding(&even);
+        assert!(!truncated);
+        assert_eq!(condition.len(), NCI_CONDITION_GROUNDING_LIMIT_BYTES);
+        let ragged = format!("{even}äz");
+        let (condition, truncated) = truncate_condition_for_grounding(&ragged);
         assert!(truncated);
-        assert!(condition.len() < NCI_CONDITION_GROUNDING_LIMIT_BYTES);
-        assert!(condition.is_char_boundary(NCI_CONDITION_GROUNDING_LIMIT_BYTES - 1));
+        assert!(condition.len() <= NCI_CONDITION_GROUNDING_LIMIT_BYTES);
+        assert!(ragged.is_char_boundary(condition.len()));
     }
 
     #[test]
