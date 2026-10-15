@@ -45,11 +45,7 @@ async fn europepmc_relevance_offset_page_lines_up_with_cursor_page() {
         .chain(tail.results.iter())
         .map(|row| row.pmid.as_str())
         .collect();
-    let unpage: Vec<&str> = whole
-        .results
-        .iter()
-        .map(|row| row.pmid.as_str())
-        .collect();
+    let unpage: Vec<&str> = whole.results.iter().map(|row| row.pmid.as_str()).collect();
     assert_eq!(
         paged, unpage,
         "offset page 1 must return the same articles in the same order as cursor page 1"
