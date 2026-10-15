@@ -44,8 +44,9 @@ fn plan_value(p: &VariantSearchPlan) -> Value {
             condition,
             hgvsp,
             consequence,
+            protein_change,
         } => json!({"variant":"GeneFirstCandidate","gene":gene,"condition":condition,
-                "hgvsp":hgvsp,"consequence":consequence}),
+                "hgvsp":hgvsp,"consequence":consequence,"protein_change":protein_change}),
         VariantSearchPlan::Guidance(g) => json!({"variant":"Guidance","guidance":{
             "query":g.query,"kind":g.kind,"next_commands":g.next_commands}}),
     }

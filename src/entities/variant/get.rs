@@ -1107,7 +1107,12 @@ pub(super) async fn resolve_base_with_hit(
         VariantIdFormat::HgvsGenomic(hgvs) => {
             if let Some((hit, tuple)) = resolved_alias {
                 selected_tuple = Some(tuple);
-                (hit, Some(GenomeBuild::Grch37), Vec::new())
+                (
+                    hit,
+                    effective_build.or(Some(GenomeBuild::Grch37)),
+                    Vec::new(),
+                    None,
+                )
             } else if normalized_coordinate
                 .as_ref()
                 .is_some_and(|coordinate| coordinate.requires_comparison)
@@ -1181,7 +1186,7 @@ pub(super) async fn resolve_base_with_hit(
                     let transcript_input =
                         matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_));
                     let alias_confirmed =
-                        transcript_input && hit_confirms_transcript_alias(hit.source(), id);
+                        transcript_input && hit_confirms_transcript_alias(hit, id);
                     if transcript_input {
                         selected_tuple = Some(transcript_deletion_lookup::alias_tuple(&hit, id)?);
                     }
