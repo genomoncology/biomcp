@@ -14,18 +14,15 @@ import json
 import os
 import shlex
 import subprocess
-import time
 import urllib.request
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Iterator
-from urllib.parse import urlsplit
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPLAY_SERVER = REPO_ROOT / "tools" / "replay-server"
-STARTUP_TIMEOUT_SECONDS = 30.0
 
 # Provider API credentials change the request URLs and the replies; a golden
 # run must not inherit any of them from the calling environment.
@@ -184,21 +181,14 @@ def replay_environment(record: bool = False) -> Iterator[ReplayEnvironment]:
             text=True,
         )
         try:
-            deadline = time.monotonic() + STARTUP_TIMEOUT_SECONDS
-            origin = None
-            while time.monotonic() < deadline:
-                if process.poll() is not None:
-                    stderr = process.stderr.read() if process.stderr else ""
-                    raise RuntimeError(f"replay server exited: {stderr.strip()}")
-                if env_file.is_file():
-                    provider_env = _read_env_file(env_file)
-                    if provider_env:
-                        first = urlsplit(sorted(provider_env.values())[0])
-                        origin = f"{first.scheme}://{first.netloc}"
-                        break
-                time.sleep(0.05)
-            if origin is None:
-                raise RuntimeError("replay server did not report its routes in time")
+            ready = process.stdout.readline() if process.stdout else ""
+            if not ready:
+                stderr = process.stderr.read() if process.stderr else ""
+                raise RuntimeError(f"replay server exited before serving: {stderr.strip()}")
+            marker, _, origin = ready.strip().partition(" ")
+            if marker != "READY":
+                raise RuntimeError(f"replay server greeted unexpectedly: {ready.strip()!r}")
+            provider_env = _read_env_file(env_file)
             with urllib.request.urlopen(f"{origin}/healthz", timeout=5) as probe:
                 if probe.status != 200:
                     raise RuntimeError("replay server health probe failed")
