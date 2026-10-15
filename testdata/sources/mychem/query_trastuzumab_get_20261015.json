@@ -1,0 +1,123 @@
+{
+ "took": 9,
+ "total": 100,
+ "max_score": 23.727459,
+ "hits": [
+  {
+   "_id": "67457-991",
+   "_score": 19.983921,
+   "ndc": {
+    "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+    "nonproprietaryname": "trastuzumab",
+    "pharm_classes": [
+     "HER2/Neu/cerbB2 Antagonists [MoA]",
+     "HER2/neu Receptor Antagonist [EPC]"
+    ],
+    "proprietaryname": "OGIVRI"
+   }
+  },
+  {
+   "_id": "78206-147",
+   "_score": 19.983921,
+   "ndc": {
+    "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+    "nonproprietaryname": "trastuzumab",
+    "pharm_classes": [
+     "HER2/Neu/cerbB2 Antagonists [MoA]",
+     "HER2/neu Receptor Antagonist [EPC]"
+    ],
+    "proprietaryname": "Ontruzant"
+   }
+  },
+  {
+   "_id": "P188ANX8CK",
+   "_score": 19.983921,
+   "drugbank": {
+    "_license": "https://bit.ly/3Hikpvm",
+    "id": "DB00072",
+    "name": "Trastuzumab",
+    "synonyms": [
+     "GB221",
+     "RHUMAB HER2",
+     "Trastuzumab",
+     "Trastuzumab beta",
+     "trastuzumab-anns",
+     "trastuzumab-dkst",
+     "trastuzumab-dttb",
+     "Trastuzumab-herw",
+     "trastuzumab-pkrb",
+     "trastuzumab-qyyp",
+     "Trastuzumab-strf",
+     "Trastuzumab-zerc"
+    ]
+   },
+   "drugcentral": {
+    "_license": "http://bit.ly/2SeEhUy",
+    "approval": [
+     {
+      "agency": "EMA",
+      "date": "2000-08-28"
+     },
+     {
+      "agency": "FDA",
+      "date": "1998-09-25"
+     },
+     {
+      "agency": "PMDA",
+      "date": "2001-04-04"
+     }
+    ],
+    "drug_use": {
+     "indication": [
+      {
+       "concept_name": "HER2-positive carcinoma of breast"
+      },
+      {
+       "concept_name": "Secondary malignant neoplasm of female breast"
+      },
+      {
+       "concept_name": "Secondary malignant neoplasm of stomach"
+      },
+      {
+       "concept_name": "Human epidermal growth factor 2 positive gastric cancer"
+      },
+      {
+       "concept_name": "HER2-positive salivary gland tumors"
+      },
+      {
+       "concept_name": "HER2-positive colon cancer"
+      },
+      {
+       "concept_name": "HER2-positive rectal cancer"
+      }
+     ]
+    },
+    "synonyms": [
+     "trastuzumab-dkst",
+     "ogivri",
+     "trastuzumab",
+     "herceptin",
+     "trastuzumab (genetical recombination)"
+    ]
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "TRASTUZUMAB",
+    "unii": "P188ANX8CK"
+   }
+  },
+  {
+   "_id": "50242-132",
+   "_score": 19.700676,
+   "ndc": {
+    "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+    "nonproprietaryname": "Trastuzumab",
+    "pharm_classes": [
+     "HER2/Neu/cerbB2 Antagonists [MoA]",
+     "HER2/neu Receptor Antagonist [EPC]"
+    ],
+    "proprietaryname": "Herceptin"
+   }
+  }
+ ]
+}

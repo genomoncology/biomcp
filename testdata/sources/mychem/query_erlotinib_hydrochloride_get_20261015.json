@@ -1,0 +1,361 @@
+{
+ "took": 7,
+ "total": 6,
+ "max_score": 54.598755,
+ "hits": [
+  {
+   "_id": "AAKJLRGGTJKAMG-UHFFFAOYSA-N",
+   "_score": 54.598755,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "erlotinib"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "molecule_chembl_id": "CHEMBL553",
+    "molecule_type": "Small molecule",
+    "pref_name": "ERLOTINIB"
+   },
+   "drugbank": {
+    "_license": "https://bit.ly/3Hikpvm",
+    "id": "DB00530",
+    "name": "Erlotinib",
+    "synonyms": [
+     "[6,7-Bis-(2-methoxy-ethoxy)-quinazolin-4-yl]-(3-ethynyl-phenyl)-amine",
+     "Erlotinib"
+    ]
+   },
+   "drugcentral": {
+    "_license": "http://bit.ly/2SeEhUy",
+    "approval": [
+     {
+      "agency": "FDA",
+      "date": "2004-11-18"
+     },
+     {
+      "agency": "EMA",
+      "date": "2005-09-19"
+     }
+    ],
+    "drug_use": {
+     "indication": [
+      {
+       "concept_name": "Non-small cell lung cancer"
+      },
+      {
+       "concept_name": "Adenocarcinoma of pancreas"
+      }
+     ]
+    },
+    "synonyms": [
+     "erlotinib hydrochloride",
+     "tarceva",
+     "erlotinib",
+     "CP-358,774-01",
+     "OSI-774",
+     "erlotinib HCl"
+    ]
+   },
+   "gtopdb": {
+    "_license": "https://www.guidetopharmacology.org/download.jsp",
+    "interaction_targets": [
+     {
+      "symbol": "SLCO2B1"
+     },
+     {
+      "symbol": "EGFR"
+     }
+    ],
+    "name": "erlotinib"
+   },
+   "ndc": [
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib hydrochloride",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib hydrochloride",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib hydrochloride",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib Hydrochloride",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib Hydrochloride"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib Hydrochloride",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib Hydrochloride"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib Hydrochloride",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib Hydrochloride"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "ERLOTINIB HYDROCHLORIDE",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "ERLOTINIB HYDROCHLORIDE"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "ERLOTINIB HYDROCHLORIDE",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "ERLOTINIB HYDROCHLORIDE"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "ERLOTINIB HYDROCHLORIDE",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "ERLOTINIB HYDROCHLORIDE"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "ERLOTINIB HYDROCHLORIDE",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "ERLOTINIB HYDROCHLORIDE"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "ERLOTINIB HYDROCHLORIDE",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "ERLOTINIB HYDROCHLORIDE"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "ERLOTINIB HYDROCHLORIDE",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "ERLOTINIB HYDROCHLORIDE"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Erlotinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ],
+     "proprietaryname": "Erlotinib"
+    }
+   ],
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "ERLOTINIB",
+    "unii": "J4T82NDH7E"
+   }
+  },
+  {
+   "_id": "GTTBEUCJPZQMDZ-UHFFFAOYSA-N",
+   "_score": 46.546577,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "erlotinib hydrochloride"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "drug_mechanisms": [
+     {
+      "action_type": "INHIBITOR",
+      "target_name": "Epidermal growth factor receptor"
+     }
+    ],
+    "molecule_chembl_id": "CHEMBL1079742",
+    "molecule_type": "Small molecule",
+    "pref_name": "ERLOTINIB HYDROCHLORIDE"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "ERLOTINIB HYDROCHLORIDE",
+    "unii": "DA87705X9K"
+   }
+  },
+  {
+   "_id": "31722-263",
+   "_score": 36.026367,
+   "ndc": {
+    "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+    "nonproprietaryname": "ERLOTINIB",
+    "pharm_classes": [
+     "Protein Kinase Inhibitors [MoA]",
+     "Kinase Inhibitor [EPC]"
+    ],
+    "proprietaryname": "ERLOTINIB"
+   }
+  }
+ ]
+}

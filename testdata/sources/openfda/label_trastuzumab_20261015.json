@@ -1,0 +1,322 @@
+{
+ "meta": {
+  "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+  "terms": "https://open.fda.gov/terms/",
+  "license": "https://open.fda.gov/license/",
+  "last_updated": "2026-10-14",
+  "results": {
+   "skip": 0,
+   "limit": 5,
+   "total": 8
+  }
+ },
+ "results": [
+  {
+   "set_id": "b6465b44-a6dd-f99c-d009-6851cf05169c",
+   "effective_time": "20260626",
+   "openfda": {
+    "application_number": [
+     "BLA761074"
+    ],
+    "brand_name": [
+     "OGIVRI"
+    ],
+    "generic_name": [
+     "TRASTUZUMAB-DKST"
+    ],
+    "manufacturer_name": [
+     "Biocon Biologics Inc."
+    ],
+    "product_ndc": [
+     "83257-001",
+     "83257-004",
+     "83257-003"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "INTRAVENOUS"
+    ],
+    "substance_name": [
+     "TRASTUZUMAB"
+    ],
+    "rxcui": [
+     "2179753",
+     "2179758",
+     "2179760",
+     "2179763"
+    ],
+    "spl_id": [
+     "ed1bbb0a-ad1a-6cb6-e955-e9ae2ce9c40f"
+    ],
+    "spl_set_id": [
+     "b6465b44-a6dd-f99c-d009-6851cf05169c"
+    ],
+    "package_ndc": [
+     "83257-004-12",
+     "83257-003-11",
+     "83257-002-11",
+     "83257-003-01",
+     "83257-001-11"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175661",
+     "N0000020008"
+    ],
+    "pharm_class_epc": [
+     "HER2/neu Receptor Antagonist [EPC]"
+    ],
+    "pharm_class_moa": [
+     "HER2/Neu/cerbB2 Antagonists [MoA]"
+    ],
+    "unii": [
+     "P188ANX8CK"
+    ]
+   }
+  },
+  {
+   "set_id": "9a94f5b2-b84e-4987-8ea1-c4346db5a5fa",
+   "effective_time": "20260623",
+   "openfda": {
+    "application_number": [
+     "BLA761073"
+    ],
+    "brand_name": [
+     "Kanjinti"
+    ],
+    "generic_name": [
+     "TRASTUZUMAB-ANNS"
+    ],
+    "manufacturer_name": [
+     "Amgen, Inc"
+    ],
+    "product_ndc": [
+     "55513-132",
+     "55513-141"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "INTRAVENOUS"
+    ],
+    "substance_name": [
+     "TRASTUZUMAB"
+    ],
+    "rxcui": [
+     "2174804",
+     "2174809",
+     "2257297",
+     "2257300"
+    ],
+    "spl_id": [
+     "0dfd83de-fa6d-43e4-8fb0-4a7c9b134ca7"
+    ],
+    "spl_set_id": [
+     "9a94f5b2-b84e-4987-8ea1-c4346db5a5fa"
+    ],
+    "package_ndc": [
+     "55513-132-01",
+     "55513-132-21",
+     "55513-141-01",
+     "55513-141-21"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175661",
+     "N0000020008"
+    ],
+    "pharm_class_epc": [
+     "HER2/neu Receptor Antagonist [EPC]"
+    ],
+    "pharm_class_moa": [
+     "HER2/Neu/cerbB2 Antagonists [MoA]"
+    ],
+    "unii": [
+     "P188ANX8CK"
+    ]
+   }
+  },
+  {
+   "set_id": "492dbdb2-077e-4064-bff3-372d6af0a7a2",
+   "effective_time": "20260529",
+   "openfda": {
+    "application_number": [
+     "BLA103792"
+    ],
+    "brand_name": [
+     "Herceptin"
+    ],
+    "generic_name": [
+     "TRASTUZUMAB"
+    ],
+    "manufacturer_name": [
+     "Genentech, Inc."
+    ],
+    "product_ndc": [
+     "50242-132"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "INTRAVENOUS"
+    ],
+    "substance_name": [
+     "TRASTUZUMAB"
+    ],
+    "rxcui": [
+     "1922509",
+     "1922512"
+    ],
+    "spl_id": [
+     "7517f775-6a10-4ddd-8dfb-6704ece413d0"
+    ],
+    "spl_set_id": [
+     "492dbdb2-077e-4064-bff3-372d6af0a7a2"
+    ],
+    "package_ndc": [
+     "50242-132-01"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175661",
+     "N0000020008"
+    ],
+    "pharm_class_epc": [
+     "HER2/neu Receptor Antagonist [EPC]"
+    ],
+    "pharm_class_moa": [
+     "HER2/Neu/cerbB2 Antagonists [MoA]"
+    ],
+    "unii": [
+     "P188ANX8CK"
+    ]
+   }
+  },
+  {
+   "set_id": "7e67e73e-ddf4-4e4d-8b50-09d7514910b6",
+   "effective_time": "20260515",
+   "openfda": {
+    "application_number": [
+     "BLA761139"
+    ],
+    "brand_name": [
+     "Enhertu"
+    ],
+    "generic_name": [
+     "FAM-TRASTUZUMAB DERUXTECAN-NXKI"
+    ],
+    "manufacturer_name": [
+     "Daiichi Sankyo Inc."
+    ],
+    "product_ndc": [
+     "65597-406"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "INTRAVENOUS"
+    ],
+    "substance_name": [
+     "TRASTUZUMAB DERUXTECAN"
+    ],
+    "rxcui": [
+     "2267576",
+     "2267581"
+    ],
+    "spl_id": [
+     "a4106ba4-f398-4663-980c-2b7195283edd"
+    ],
+    "spl_set_id": [
+     "7e67e73e-ddf4-4e4d-8b50-09d7514910b6"
+    ],
+    "package_ndc": [
+     "65597-406-01"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "unii": [
+     "5384HK7574"
+    ]
+   }
+  },
+  {
+   "set_id": "ce2a2492-85e3-4b0a-872a-047f44e4203d",
+   "effective_time": "20260420",
+   "openfda": {
+    "application_number": [
+     "BLA761100"
+    ],
+    "brand_name": [
+     "Ontruzant"
+    ],
+    "generic_name": [
+     "TRASTUZUMAB",
+     "ONTRUZANT"
+    ],
+    "manufacturer_name": [
+     "Organon LLC"
+    ],
+    "product_ndc": [
+     "78206-147",
+     "78206-148"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "INTRAVENOUS"
+    ],
+    "substance_name": [
+     "TRASTUZUMAB"
+    ],
+    "rxcui": [
+     "2289227",
+     "2289232",
+     "2289234",
+     "2289237"
+    ],
+    "spl_id": [
+     "9b665849-a59e-4da6-ae51-36b3c885b85b"
+    ],
+    "spl_set_id": [
+     "ce2a2492-85e3-4b0a-872a-047f44e4203d"
+    ],
+    "package_ndc": [
+     "78206-147-99",
+     "78206-147-01",
+     "78206-148-01",
+     "78206-191-99",
+     "78206-149-89"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175661",
+     "N0000020008"
+    ],
+    "pharm_class_epc": [
+     "HER2/neu Receptor Antagonist [EPC]"
+    ],
+    "pharm_class_moa": [
+     "HER2/Neu/cerbB2 Antagonists [MoA]"
+    ],
+    "unii": [
+     "P188ANX8CK"
+    ]
+   }
+  }
+ ]
+}
