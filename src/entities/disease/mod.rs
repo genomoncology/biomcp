@@ -371,8 +371,10 @@ pub(crate) use self::fallback::fallback_search_page;
 pub use self::get::get;
 pub(crate) use self::get::get_with_context;
 pub(crate) use self::resolution::resolve_disease_hit_by_name;
+pub(crate) use self::resolution::resolve_disease_hit_by_name_with_retry;
 pub(crate) use self::resolution::{
-    AbbreviationAmbiguity, clinical_reading_phrase, resolve_abbreviated_disease_ambiguity,
+    AbbreviationAmbiguity, clinical_reading_label, clinical_reading_phrase,
+    resolve_abbreviated_disease_ambiguity,
 };
 pub(crate) use self::resolution::{ExactDiseaseTerms, resolve_exact_disease_terms};
 pub(crate) use self::search::validate_phenotype_search_window;

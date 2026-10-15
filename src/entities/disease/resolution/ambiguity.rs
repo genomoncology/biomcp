@@ -7,15 +7,39 @@ use super::{
 };
 use crate::sources::mydisease::MyDiseaseHit;
 
+/// How strongly oncology holds a clinical reading no indexed source
+/// record carries: the default reading the holders never offer, or an
+/// additional reading beside holders that already name clinical
+/// diseases.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ReadingRelation {
+    /// The reading is the one oncology means when no holder does. It
+    /// leads the refusal's candidate list, because the holders alone
+    /// would bury the disease clinicians mean under rare records
+    /// (`MM` usually means multiple myeloma, not Miyoshi muscular
+    /// dystrophy).
+    Default,
+    /// The holders already name clinical diseases, so the reading stays
+    /// a pointer line and never joins the candidates (`MF` also names
+    /// myelofibrosis beside mycosis fungoides and myotonia fluctuans).
+    Additional,
+}
+
+impl ReadingRelation {
+    fn phrase(self) -> &'static str {
+        match self {
+            Self::Default => "usually means",
+            Self::Additional => "also names",
+        }
+    }
+}
+
 /// A clinical reading an abbreviation names that no indexed source
-/// record holds. `relation` states how strongly oncology holds the
-/// reading (`usually means` for the default reading, `also names` when
-/// the holders already offer one clinical reading and the pointer adds
-/// another).
+/// record holds.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct ClinicalAbbreviationReading {
     pub(crate) token: &'static str,
-    pub(crate) relation: &'static str,
+    pub(crate) relation: ReadingRelation,
     pub(crate) label: &'static str,
     pub(crate) ontology_id: &'static str,
 }
@@ -23,7 +47,8 @@ pub(crate) struct ClinicalAbbreviationReading {
 /// Abbreviations whose clinical meaning the source cannot see, with the
 /// sources checked and measured for each entry. The
 /// refusal stands on the source holders alone; this table only adds a
-/// pointer line naming a reading no holder carries.
+/// reading no holder carries — as the first candidate line for a
+/// default reading, or as a pointer line for an additional one.
 /// `MM` → multiple myeloma (MONDO:0009693): MyDisease holds `MM` on
 ///   Miyoshi muscular dystrophy (MONDO:0009685) alone. Checked live
 ///   2026-10-08 and again 2026-10-11: `mondo.synonym.exact:"MM"` and
@@ -51,13 +76,13 @@ pub(crate) struct ClinicalAbbreviationReading {
 const CLINICAL_ABBREVIATION_READINGS: &[ClinicalAbbreviationReading] = &[
     ClinicalAbbreviationReading {
         token: "MM",
-        relation: "usually means",
+        relation: ReadingRelation::Default,
         label: "multiple myeloma",
         ontology_id: "MONDO:0009693",
     },
     ClinicalAbbreviationReading {
         token: "MF",
-        relation: "also names",
+        relation: ReadingRelation::Additional,
         label: "myelofibrosis",
         ontology_id: "MONDO:0009692",
     },
@@ -71,6 +96,13 @@ fn clinical_reading(requested: &str) -> Option<ClinicalAbbreviationReading> {
         .find(|reading| reading.token.eq_ignore_ascii_case(requested))
 }
 
+/// The reading's disease label for the requested token, so a command
+/// surface other than `get disease` can name the same reading in its
+/// own retry.
+pub(crate) fn clinical_reading_label(requested: &str) -> Option<&'static str> {
+    clinical_reading(requested).map(|reading| reading.label)
+}
+
 /// The pointer phrase both the `get disease` refusal and the default
 /// trial source's keyword-search note use, so one reading
 /// keeps one wording across surfaces.
@@ -79,7 +111,7 @@ pub(crate) fn clinical_reading_phrase(requested: &str) -> Option<String> {
         format!(
             "Clinical reading: '{}' {} {} ({})",
             requested.trim(),
-            reading.relation,
+            reading.relation.phrase(),
             reading.label,
             reading.ontology_id
         )
@@ -94,9 +126,30 @@ pub(super) fn clinical_reading_line(requested: &str) -> Option<String> {
         format!(
             "Clinical reading: '{requested}' {} {} ({}); \
 try `biomcp get disease \"{}\"`.",
-            reading.relation, reading.label, reading.ontology_id, reading.label
+            reading.relation.phrase(),
+            reading.label,
+            reading.ontology_id,
+            reading.label
         )
     })
+}
+
+/// The default reading's disease as the first line under the refusal's
+/// `Candidates:`, in the same `- label (ontology ID)` form the holders
+/// use. Only the default reading leads: additional readings stay
+/// pointer lines, so tokens like `MF` keep the holders' list intact.
+pub(super) fn default_reading_candidate_line(requested: &str) -> Option<String> {
+    clinical_reading(requested)
+        .filter(|reading| reading.relation == ReadingRelation::Default)
+        .map(|reading| format!("- {} ({})\n", reading.label, reading.ontology_id))
+}
+
+/// The `get disease` refusal's retry sentence.
+pub(super) fn get_disease_retry(requested: &str) -> String {
+    format!(
+        "Retry `biomcp get disease` with one candidate's ontology ID or full name, \
+or run `biomcp search disease -q \"{requested}\"` to see every match."
+    )
 }
 
 /// Why the requested token cannot name one disease: several holders, or

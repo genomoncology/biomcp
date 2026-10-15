@@ -672,16 +672,21 @@ async fn get_disease_cad_refuses_naming_every_exact_holder() {
 /// The refusal still refuses, but the candidate surface
 /// also names the oncology reading the source cannot see. MyDisease
 /// holds `MM` on Miyoshi muscular dystrophy alone and no myeloma record
-/// carries `MM`, so the refusal adds a pointer line rather than hiding
-/// the disease a clinician's `MM` usually means.
+/// carries `MM`, so the default reading leads the candidate list and a
+/// pointer line follows, rather than burying the disease a clinician's
+/// `MM` usually means under the rare holder.
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn get_disease_mm_refusal_names_the_oncology_reading() {
+async fn get_disease_mm_refusal_leads_with_the_oncology_reading() {
     let error = get_disease_card_or_error("MM")
         .await
         .expect_err("a two-letter abbreviation must not resolve to Miyoshi");
+    // The clinical reading is the first candidate, ahead of the
+    // source's only holder.
     assert!(
-        error.contains("Miyoshi muscular dystrophy (MONDO:0009685)"),
+        error.contains(
+            "Candidates:\n- multiple myeloma (MONDO:0009693)\n- Miyoshi muscular dystrophy (MONDO:0009685)\n"
+        ),
         "{error}"
     );
     assert!(
@@ -696,9 +701,6 @@ async fn get_disease_mm_refusal_names_the_oncology_reading() {
         error.contains("get disease \"multiple myeloma\""),
         "{error}"
     );
-    // The pointer is not a source candidate: myeloma holds no `MM` in the
-    // source, so it never joins the holder list.
-    assert!(!error.contains("- multiple myeloma"), "{error}");
 }
 
 #[tokio::test]
