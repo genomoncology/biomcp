@@ -21,3 +21,5 @@ After this merge, the branch merges `main` daily, and a day that cannot merge cl
 ## Risk this reduces
 
 Every day the branch stays behind, a conflict that would have been one file becomes a conflict across many. The release line is what people download, so a 1.0 that cannot absorb it is a 1.0 that cannot ship.
+
+Reviews: revision d9d725f0222bb25f15d9c9124dd5256e5d551999, accept
