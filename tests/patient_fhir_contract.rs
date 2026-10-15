@@ -16,14 +16,53 @@ use serde_json::json;
 
 const ID: &str = "SYNTH-PT-7Q.42";
 const REFUSAL: &str = "`serve-http` refuses them";
-const NOT_YET: &str = "search patient is not yet available";
+const NEEDS_FILTER: &str =
+    "needs at least one of --gender, --born-after, --born-before, or --condition";
+const SNOMED_DIABETES: &str = "http://snomed.info/sct|44054006";
+
+/// The CapabilityStatement params the command looks for, in flag order.
+const PATIENT_SEARCH_PARAMS: &[&str] = &["_id", "gender", "birthdate", "_has"];
+
+fn capability(params: &[&str]) -> serde_json::Value {
+    json!({
+        "resourceType": "CapabilityStatement",
+        "rest": [{
+            "mode": "server",
+            "resource": [{
+                "type": "Patient",
+                "searchParam": params.iter().map(|name| json!({"name": name})).collect::<Vec<_>>()
+            }]
+        }]
+    })
+}
+
+/// A Patient search bundle with `total` and the given entry resources.
+fn patient_bundle(entries: Vec<serde_json::Value>, total: Option<u64>) -> serde_json::Value {
+    let mut bundle = json!({
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "entry": entries
+            .into_iter()
+            .map(|resource| json!({"resource": resource, "search": {"mode": "match"}}))
+            .collect::<Vec<_>>()
+    });
+    if let Some(total) = total {
+        bundle["total"] = json!(total);
+    }
+    bundle
+}
+
+fn search_patient(id: &str) -> serde_json::Value {
+    json!({"resourceType": "Patient", "id": id, "gender": "female", "birthDate": "1970-01-01"})
+}
 
 type Route = dyn Fn(&str) -> (u16, Vec<(String, String)>, String) + Send + Sync;
 
-/// A blocking HTTP/1.1 fixture that records each request target.
+/// A blocking HTTP/1.1 fixture that records each request target and head.
 struct FhirFixture {
     base: String,
     targets: Arc<Mutex<Vec<String>>>,
+    heads: Arc<Mutex<Vec<String>>>,
     stop: Arc<AtomicBool>,
     thread: Option<thread::JoinHandle<()>>,
 }
@@ -35,9 +74,11 @@ impl FhirFixture {
         let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind fixture");
         let base = format!("http://{}", listener.local_addr().expect("address"));
         let targets = Arc::new(Mutex::new(Vec::new()));
+        let heads = Arc::new(Mutex::new(Vec::new()));
         let stop = Arc::new(AtomicBool::new(false));
         let route: Arc<Route> = Arc::new(route);
-        let (thread_targets, thread_stop) = (Arc::clone(&targets), Arc::clone(&stop));
+        let (thread_targets, thread_heads, thread_stop) =
+            (Arc::clone(&targets), Arc::clone(&heads), Arc::clone(&stop));
         let thread = thread::spawn(move || {
             while !thread_stop.load(Ordering::SeqCst) {
                 match listener.accept() {
@@ -60,6 +101,7 @@ impl FhirFixture {
                             .unwrap_or_default()
                             .to_string();
                         thread_targets.lock().expect("targets").push(target.clone());
+                        thread_heads.lock().expect("heads").push(text.to_string());
                         let (status, headers, body) = route(&target);
                         let mut head = format!(
                             "HTTP/1.1 {status} Fixture\r\nContent-Length: {}\r\nConnection: close\r\n",
@@ -79,6 +121,7 @@ impl FhirFixture {
         Self {
             base,
             targets,
+            heads,
             stop,
             thread: Some(thread),
         }
@@ -90,6 +133,15 @@ impl FhirFixture {
 
     fn requests(&self) -> usize {
         self.targets.lock().expect("targets").len()
+    }
+
+    fn targets(&self) -> Vec<String> {
+        self.targets.lock().expect("targets").clone()
+    }
+
+    /// The full request head (request line and headers) at `index`.
+    fn head(&self, index: usize) -> String {
+        self.heads.lock().expect("heads")[index].clone()
     }
 }
 
@@ -233,11 +285,11 @@ async fn stdio_typed_get_reads_the_patient_and_conditions() -> anyhow::Result<()
         .peer()
         .call_tool(typed("search", json!({"entity": "patient"})))
         .await?;
-    assert!(first_text(&search.content).contains(NOT_YET));
+    assert!(first_text(&search.content).contains(NEEDS_FILTER));
     let requests = fixture.requests();
 
     let shell = call_biomcp(&client, "biomcp search patient").await?;
-    assert!(first_text(&shell.content).contains(NOT_YET));
+    assert!(first_text(&shell.content).contains(NEEDS_FILTER));
     client.cancel().await?;
     assert_eq!(requests, 2, "one Patient read and one Condition page");
     assert_eq!(fixture.requests(), 2, "search patient sent a request");
@@ -279,15 +331,399 @@ fn an_unset_base_names_the_variable_and_exits_non_zero() {
 }
 
 #[test]
-fn search_patient_is_not_yet_available_and_sends_no_request() {
+fn search_patient_without_a_filter_fails_and_sends_no_request() {
     let fixture = healthy_fixture();
     let output = cli(
         &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
         &["search", "patient"],
     );
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains(NOT_YET));
+    assert!(String::from_utf8_lossy(&output.stderr).contains(NEEDS_FILTER));
     assert_eq!(fixture.requests(), 0);
+}
+
+/// A FHIR fixture that answers `metadata` with `cap` and every Patient
+/// search with `bundle`.
+fn search_fixture(cap: serde_json::Value, bundle: serde_json::Value) -> FhirFixture {
+    FhirFixture::start(move |target| {
+        if target.starts_with("/fhir/metadata") {
+            json_reply(200, cap.clone())
+        } else if target.starts_with("/fhir/Patient?") {
+            json_reply(200, bundle.clone())
+        } else {
+            json_reply(
+                404,
+                json!({"resourceType": "OperationOutcome", "issue": [{"severity": "error"}]}),
+            )
+        }
+    })
+}
+
+/// A full patient that ignores `_elements` and carries fields the output
+/// must never show.
+fn full_patient(id: &str) -> serde_json::Value {
+    json!({
+        "resourceType": "Patient",
+        "id": id,
+        "gender": "female",
+        "birthDate": "1970-01-01",
+        "name": [{"family": "Synthetic", "given": ["Synthia"]}],
+        "address": [{"city": "Synthville"}],
+        "telecom": [{"value": "555-0100"}]
+    })
+}
+
+const PATIENT_SEARCH_QUERY_PREFIX: &str = "/fhir/Patient?";
+const ENCODED_CONDITION: &str =
+    "_has%3ACondition%3Apatient%3Acode=http%3A%2F%2Fsnomed.info%2Fsct%7C44054006";
+const ENCODED_ELEMENTS: &str = "_elements=id%2Cgender%2CbirthDate";
+
+#[test]
+fn search_sends_the_exact_query_string_with_strict_handling() {
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(vec![search_patient("SYNTH-PT-1")], None),
+    );
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &[
+            "search",
+            "patient",
+            "--gender",
+            "female",
+            "--born-after",
+            "1950-01-01",
+            "--condition",
+            SNOMED_DIABETES,
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        fixture.targets(),
+        [
+            "/fhir/metadata",
+            format!(
+                "{PATIENT_SEARCH_QUERY_PREFIX}gender=female&birthdate=gt1950-01-01&{ENCODED_CONDITION}&{ENCODED_ELEMENTS}&_count=10"
+            )
+            .as_str()
+        ]
+    );
+    let head = fixture.head(1);
+    assert!(
+        head.to_ascii_lowercase()
+            .contains("prefer: handling=strict"),
+        "search lacks strict handling: {head}"
+    );
+
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(vec![search_patient("SYNTH-PT-1")], None),
+    );
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &[
+            "search",
+            "patient",
+            "--born-before",
+            "1960-12-31",
+            "--limit",
+            "3",
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        fixture.targets(),
+        [
+            "/fhir/metadata",
+            format!(
+                "{PATIENT_SEARCH_QUERY_PREFIX}birthdate=lt1960-12-31&{ENCODED_ELEMENTS}&_count=3"
+            )
+            .as_str()
+        ]
+    );
+
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(vec![], Some(7)),
+    );
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &[
+            "search",
+            "patient",
+            "--condition",
+            SNOMED_DIABETES,
+            "--count",
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        fixture.targets(),
+        [
+            "/fhir/metadata",
+            format!("{PATIENT_SEARCH_QUERY_PREFIX}{ENCODED_CONDITION}&_summary=count").as_str()
+        ]
+    );
+}
+
+#[test]
+fn a_capability_without_a_needed_parameter_refuses_and_sends_no_search() {
+    for (missing, flag, value) in [
+        ("_has", "--condition", SNOMED_DIABETES),
+        ("birthdate", "--born-after", "1950-01-01"),
+        ("gender", "--gender", "female"),
+    ] {
+        let params: Vec<&str> = PATIENT_SEARCH_PARAMS
+            .iter()
+            .copied()
+            .filter(|param| *param != missing)
+            .collect();
+        let fixture = search_fixture(capability(&params), patient_bundle(vec![], None));
+        let output = cli(
+            &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+            &["search", "patient", flag, value],
+        );
+        assert!(!output.status.success(), "missing {missing}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains(&format!("`{missing}`")), "{stderr}");
+        // The metadata read happened; no Patient search followed it.
+        assert_eq!(fixture.targets(), ["/fhir/metadata"]);
+    }
+}
+
+#[test]
+fn bad_filter_values_fail_and_send_no_request() {
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(vec![], None),
+    );
+    let cases: &[(&str, [&str; 2])] = &[
+        ("upper-case gender", ["--gender", "F"]),
+        ("comma gender", ["--gender", "male,female"]),
+        ("bad month", ["--born-after", "1950-13-01"]),
+        ("bad day", ["--born-after", "1950-02-30"]),
+        ("date prefix", ["--born-after", "ge1950"]),
+        ("comma dates", ["--born-before", "1950,1960"]),
+        ("code only", ["--condition", "44054006"]),
+        ("empty system", ["--condition", "|44054006"]),
+        ("empty code", ["--condition", "http://snomed.info/sct|"]),
+        ("comma code", ["--condition", "http://snomed.info/sct|1,2"]),
+    ];
+    for (name, [flag, value]) in cases {
+        let output = cli(
+            &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+            &["search", "patient", flag, value],
+        );
+        assert!(!output.status.success(), "{name}");
+        assert!(
+            !String::from_utf8_lossy(&output.stderr).is_empty(),
+            "{name}: no error text"
+        );
+    }
+    assert_eq!(fixture.requests(), 0);
+}
+
+#[test]
+fn count_prints_the_server_reported_total_or_the_no_count_message() {
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(vec![search_patient("SYNTH-PT-1")], Some(42)),
+    );
+    for extra in [&[][..], &["--limit", "3"][..]] {
+        let mut args = vec![
+            "search",
+            "patient",
+            "--condition",
+            SNOMED_DIABETES,
+            "--count",
+        ];
+        args.extend_from_slice(extra);
+        let output = cli(&[("BIOMCP_FHIR_BASE", fixture.fhir_base())], &args);
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            stdout.contains("Server-reported patient count: 42"),
+            "{stdout}"
+        );
+    }
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &[
+            "--json",
+            "search",
+            "patient",
+            "--condition",
+            SNOMED_DIABETES,
+            "--count",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let body: serde_json::Value = serde_json::from_str(&stdout).expect("count json");
+    assert_eq!(body["server_reported_count"], json!(42), "{stdout}");
+
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(vec![], None),
+    );
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &[
+            "search",
+            "patient",
+            "--condition",
+            SNOMED_DIABETES,
+            "--count",
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("The server reported no count."), "{stdout}");
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &[
+            "--json",
+            "search",
+            "patient",
+            "--condition",
+            SNOMED_DIABETES,
+            "--count",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let body: serde_json::Value = serde_json::from_str(&stdout).expect("no-count json");
+    assert_eq!(body["server_reported_count"], serde_json::Value::Null);
+}
+
+#[test]
+fn out_of_range_limits_fail_and_send_no_request() {
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(vec![], None),
+    );
+    for limit in ["0", "51"] {
+        let output = cli(
+            &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+            &["search", "patient", "--gender", "female", "--limit", limit],
+        );
+        assert!(!output.status.success(), "{limit}");
+    }
+    assert_eq!(fixture.requests(), 0);
+}
+
+#[test]
+fn a_bundle_that_ignores_elements_is_trimmed_to_three_fields_and_the_limit() {
+    let entries = vec![
+        full_patient("SYNTH-PT-A"),
+        json!({
+            "resourceType": "Condition",
+            "id": "synthetic-condition-1",
+            "code": {"text": "Synthetic condition one"}
+        }),
+        full_patient("a/b"),
+        full_patient("SYNTH-PT-B"),
+        full_patient("SYNTH-PT-C"),
+    ];
+    let fixture = search_fixture(
+        capability(PATIENT_SEARCH_PARAMS),
+        patient_bundle(entries, None),
+    );
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &["search", "patient", "--gender", "female", "--limit", "3"],
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("SYNTH-PT-A"), "{stdout}");
+    assert!(stdout.contains("biomcp get patient SYNTH-PT-A"), "{stdout}");
+    for leak in [
+        "Synthia",
+        "Synthville",
+        "555-0100",
+        "Synthetic condition",
+        "a/b",
+        "SYNTH-PT-C",
+    ] {
+        assert!(!stdout.contains(leak), "text leaked {leak}: {stdout}");
+    }
+    let data_rows = stdout
+        .lines()
+        .filter(|line| line.starts_with("| ") && !line.starts_with("| ID"))
+        .count();
+    assert_eq!(data_rows, 3, "at most --limit entries: {stdout}");
+
+    let output = cli(
+        &[("BIOMCP_FHIR_BASE", fixture.fhir_base())],
+        &[
+            "--json", "search", "patient", "--gender", "female", "--limit", "3",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let body: serde_json::Value = serde_json::from_str(&stdout).expect("search json");
+    assert_eq!(body["count"], json!(3), "{stdout}");
+    assert_eq!(body["results"].as_array().map(Vec::len), Some(3));
+    for leak in ["name", "address", "telecom", "Condition", "a/b"] {
+        assert!(!stdout.contains(leak), "JSON leaked {leak}: {stdout}");
+    }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn serve_http_refuses_patient_search_with_filters() -> anyhow::Result<()> {
+    assert_http_refuses(shell(format!(
+        "biomcp search patient --gender female --condition \"{SNOMED_DIABETES}\" --count"
+    )))
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn stdio_typed_search_with_a_filter_is_an_unknown_field_and_sends_no_request()
+-> anyhow::Result<()> {
+    let fixture = healthy_fixture();
+    let cache = tempfile::tempdir()?;
+    let env = [
+        ("BIOMCP_FHIR_BASE", fixture.fhir_base()),
+        ("BIOMCP_CACHE_DIR", cache.path().display().to_string()),
+    ];
+    let client = harness().spawn_stdio_client(&env).await?;
+    let response = client
+        .peer()
+        .call_tool(typed(
+            "search",
+            json!({"entity": "patient", "gender": "female"}),
+        ))
+        .await?;
+    let text = first_text(&response.content).to_string();
+    assert_eq!(response.is_error, Some(true), "{text}");
+    assert!(
+        text.contains("unknown patient search field: gender"),
+        "{text}"
+    );
+    client.cancel().await?;
+    assert_eq!(fixture.requests(), 0, "typed filter reached the CLI");
+    Ok(())
 }
 
 fn files_containing(root: &Path, needle: &str) -> Vec<String> {
