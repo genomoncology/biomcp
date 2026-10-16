@@ -9,7 +9,7 @@
 #   RESULT <key> = <value>
 #
 # so a record can hold the exact evidence and a second run can be compared
-# key by key. The script is written for the Yellow build host: it holds
+# key by key. The script is written for the Linux gate host: it holds
 # ~/.yr-checkout.lock and ~/.yellow-gate.lock for the whole run and refuses
 # to start while any build, test, or gate process is still alive.
 #
@@ -19,8 +19,8 @@
 # Options:
 #   --dry-run        print every command without running anything
 #   --only a,b,c     run only the named sections
-#   --no-locks       do not take or hold the Yellow locks (for read-only
-#                    sections such as ci-history on another host)
+#   --no-locks       do not take or hold the Linux gate host's locks (for
+#                    read-only sections such as ci-history elsewhere)
 #   --expect-tag T   fail unless the clone's HEAD is exactly at tag T
 #
 # The clone must be a clean checkout of the tree to measure (ticket 2069
