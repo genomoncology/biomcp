@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 8ef4567, accept
+
 ## Outcome
 
 Article searches warn only when every metadata fallback fails, public author reads work without an ORCID token, and FDA health reports scripted-client redirects without following them.
