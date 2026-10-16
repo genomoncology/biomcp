@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 4e30978, accept
+
 ## Outcome
 
 Every command's JSON and Markdown output is checked against committed golden files served by one replay server over the recorded provider replies, and a format change is regenerate, read the diff, commit.
