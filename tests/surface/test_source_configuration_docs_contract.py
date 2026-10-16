@@ -49,6 +49,8 @@ PRODUCTION_READ_ENV_ALLOWLIST = {
     "BIOMCP_TEST_CITATION_CACHE_TTL_MS": "debug-only citation sidecar TTL seam, not operator configuration",
     "BIOMCP_TEST_AUTHOR_PAPERS_DEADLINE_MS": "debug-only author papers deadline seam, not operator configuration",
     "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS": "debug-only article search deadline seam, not operator configuration",
+    "BIOMCP_TEST_RETRY_SLEEP_OFF": "recorded-fixture retry back-off switch, not operator configuration",
+    "BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS": "debug-only federated article leg timeout seam, not operator configuration",
     "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": "fixture-only signal, not operator configuration",
     "BIOMCP_BUILD_DATE": "compile-time build metadata, not runtime operator configuration",
     "BIOMCP_BUILD_GIT_SHA": "compile-time build metadata, not runtime operator configuration",

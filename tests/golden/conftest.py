@@ -10,9 +10,6 @@ from pathlib import Path
 
 import pytest
 
-if TYPE_CHECKING:
-    from replay_env import ReplayEnvironment
-
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
