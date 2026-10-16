@@ -1264,9 +1264,15 @@ fn redact_mcp_text(mut text: String, value: &Value) -> String {
 
 fn redact_mcp_json_value(value: &mut Value) -> bool {
     match value {
-        Value::Array(values) => values.iter_mut().fold(false, |changed, value| {
-            redact_mcp_json_value(value) || changed
-        }),
+        // A for loop, not `any`: redaction must visit every element, and
+        // `any` stops at the first hit.
+        Value::Array(values) => {
+            let mut changed = false;
+            for value in values.iter_mut() {
+                changed = redact_mcp_json_value(value) || changed;
+            }
+            changed
+        }
         Value::Object(map) => {
             let removed_path = map.remove("full_text_path");
             let removed_path_field = removed_path.is_some();
