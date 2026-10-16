@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision caeac3e, accept
+
 ## Outcome
 
 A build from main between releases reports the coming version as a dev build, such as `0.9.4-dev+g1a2b3c4d`, never the last released number.
