@@ -297,11 +297,14 @@ const DBSNP_113488022_REPLY: &[u8] = include_bytes!(concat!(
     "/testdata/sources/dbsnp/refsnp_113488022_20261015.json"
 ));
 
-/// The live CIViC GraphQL answer for the profile name the card spells from
-/// its protein change ("BRAF Val600Glu"): CIViC knows the variant as
-/// "BRAF V600E", so the accepted-evidence count the section prints is
-/// zero and the cached MyVariant copy is the evidence the card counts.
-const BRAF_V600E_CIVIC_GRAPHQL_REPLY: &str = r#"{"data":{"evidenceItems":{"totalCount":0,"nodes":[]},"assertions":{"totalCount":0,"nodes":[]}}}"#;
+/// The recorded CIViC GraphQL answer for the profile name the card spells
+/// from its protein change (`BRAF V600E`): 115 accepted evidence items and
+/// 3 assertions, captured 2026-10-16 with the exact query the civic section
+/// sends.
+const BRAF_V600E_CIVIC_GRAPHQL_REPLY: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/civic/graphql_braf_v600e_20261016.json"
+));
 
 const BRAF_V600E_GNOMAD_REPLY: &str = r#"{"data":{"variant":{"variant_id":"7-140753336-A-T","exome":{"ac":2,"an":2000,"homozygote_count":0,"hemizygote_count":0,"filters":[],"faf95":null,"populations":[]},"genome":null}}}"#;
 
@@ -385,7 +388,7 @@ fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<
         return (
             "200 OK",
             "application/json",
-            BRAF_V600E_CIVIC_GRAPHQL_REPLY.as_bytes().to_vec(),
+            BRAF_V600E_CIVIC_GRAPHQL_REPLY.to_vec(),
         );
     }
     if request.starts_with("POST /") && request.contains("7-140753336-A-T") {
@@ -532,6 +535,16 @@ async fn braf_v600e_card_prints_follow_ups_on_the_headline_coordinate() {
         .and_then(|count| count.parse::<usize>().ok())
         .expect("the pointer counts its predictive evidence");
     assert_eq!(counted_predictive, 13);
+    assert!(
+        pointer.contains("3 assertion(s)"),
+        "the pointer counts the assertions the recorded CIViC reply holds: {pointer}"
+    );
+
+    // The civic section itself reports the accepted evidence CIViC holds
+    // for the one-letter profile name, not an empty page.
+    assert!(markdown.contains("### GraphQL Context"), "{markdown}");
+    assert!(markdown.contains("- Evidence Items: 115"), "{markdown}");
+    assert!(markdown.contains("- Assertions: 3"), "{markdown}");
 
     // Following the printed civic command reports the counted evidence.
     let argv = shlex::split(&format!("biomcp {civic_pointer_command}"))
@@ -546,6 +559,14 @@ async fn braf_v600e_card_prints_follow_ups_on_the_headline_coordinate() {
             .expect("rendered civic follow-up card");
     assert!(
         follow_up_markdown.contains("### Cached Evidence (MyVariant)"),
+        "{follow_up_markdown}"
+    );
+    assert!(
+        follow_up_markdown.contains("### GraphQL Context"),
+        "{follow_up_markdown}"
+    );
+    assert!(
+        follow_up_markdown.contains("- Evidence Items: 115"),
         "{follow_up_markdown}"
     );
     assert_eq!(

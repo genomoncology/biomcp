@@ -764,57 +764,153 @@ fn workflow_signal_detects_clinvar_metadata_before_section_stripping() {
     assert!(has_clinvar_workflow_signal(&variant));
 }
 
-#[test]
-fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
-    let variant = Variant {
-        section_outcomes: super::super::default_variant_section_outcomes(),
-        gene: "BRAF".into(),
-        id: "chr7:g.140453136A>T".into(),
-        genome_build: None,
-        genome_build_provenance: None,
-        build_ambiguous: None,
-        build_candidates: Vec::new(),
-        hgvs_p: Some("p.V600E".into()),
-        legacy_name: None,
-        hgvs_c: None,
-        protein_numbering_note: None,
-        transcript: None,
-        rsid: None,
-        cosmic_id: None,
-        significance: None,
-        significance_source: None,
-        significance_evaluated: None,
-        significance_note: None,
-        clinvar_id: None,
-        clinvar_review_status: None,
-        clinvar_review_stars: None,
-        conditions: Vec::new(),
-        clinvar: None,
-        consequence: None,
-        cadd_score: None,
-        sift_pred: None,
-        polyphen_pred: None,
-        conservation: None,
-        expanded_predictions: Vec::new(),
-        population: None,
-        cosmic_context: None,
-        cgi_associations: Vec::new(),
-        civic: None,
-        clinvar_conditions: Vec::new(),
-        clinvar_condition_reports: None,
-        top_disease: None,
-        cancerhotspots: None,
-        cancer_frequencies: Vec::new(),
-        cancer_frequency_source: None,
-        gwas: Vec::new(),
-        gwas_unavailable_reason: None,
-        supporting_pmids: None,
-        prediction: None,
-    };
+/// The recorded CIViC GraphQL answers for the profile names the one-letter
+/// spelling produces, captured 2026-10-16 with the exact query the civic
+/// section sends (status ACCEPTED, first 10): `BRAF V600E` answers 115
+/// accepted evidence items and 3 assertions; `EGFR C797S` answers 2 and 0.
+const BRAF_V600E_CIVIC_GRAPHQL_REPLY: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/civic/graphql_braf_v600e_20261016.json"
+));
+const EGFR_C797S_CIVIC_GRAPHQL_REPLY: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/civic/graphql_egfr_c797s_20261016.json"
+));
 
+/// The answer CIViC gives a profile name it does not know: a healthy empty
+/// page, the reply the three-letter spelling received before the one-letter
+/// conversion.
+const UNKNOWN_PROFILE_CIVIC_REPLY: &str = r#"{"data":{"evidenceItems":{"totalCount":0,"nodes":[]},"assertions":{"totalCount":0,"nodes":[]}}}"#;
+
+fn requested_civic_profile(request: &str) -> Option<String> {
+    request
+        .split_once("\r\n\r\n")
+        .and_then(|(_, body)| serde_json::from_str::<serde_json::Value>(body).ok())
+        .and_then(|value| {
+            value["variables"]["molecularProfileName"]
+                .as_str()
+                .map(str::to_string)
+        })
+}
+
+async fn civic_recorded_reply_server()
+-> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind CIViC recorded-reply fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock requests")
+                    .push(request.clone());
+                let body = requested_civic_profile(&request)
+                    .map(|profile| match profile.as_str() {
+                        "BRAF V600E" => BRAF_V600E_CIVIC_GRAPHQL_REPLY.to_vec(),
+                        "EGFR C797S" => EGFR_C797S_CIVIC_GRAPHQL_REPLY.to_vec(),
+                        _ => UNKNOWN_PROFILE_CIVIC_REPLY.as_bytes().to_vec(),
+                    })
+                    .unwrap_or_else(|| UNKNOWN_PROFILE_CIVIC_REPLY.as_bytes().to_vec());
+                stream
+                    .write_all(&fixture_response(&String::from_utf8_lossy(&body)))
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+#[test]
+fn civic_molecular_profile_name_sends_the_one_letter_change() {
+    let mut variant = braf_variant_stub();
+    variant.hgvs_p = Some("p.Val600Glu".into());
     assert_eq!(
         civic_molecular_profile_name(&variant).as_deref(),
         Some("BRAF V600E")
+    );
+
+    variant.gene = "EGFR".into();
+    variant.hgvs_p = Some("p.Cys797Ser".into());
+    assert_eq!(
+        civic_molecular_profile_name(&variant).as_deref(),
+        Some("EGFR C797S")
+    );
+
+    variant.hgvs_p = Some("p.Gly717_Ser719insVal".into());
+    assert_eq!(
+        civic_molecular_profile_name(&variant).as_deref(),
+        Some("EGFR Gly717_Ser719insVal")
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn civic_reports_the_accepted_evidence_the_one_letter_name_finds() {
+    let (base, requests, server) = civic_recorded_reply_server().await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_CIVIC_BASE", &base);
+    env.set("BIOMCP_CACHE_MODE", "off");
+
+    let mut braf = braf_variant_stub();
+    braf.hgvs_p = Some("p.Val600Glu".into());
+    add_civic(&mut braf).await;
+    let braf_outcome = serde_json::to_value(
+        braf.section_outcomes
+            .get("civic")
+            .expect("civic outcome must be completed"),
+    )
+    .expect("outcome serializes");
+    let braf_context = braf
+        .civic
+        .expect("CIViC section")
+        .graphql
+        .expect("recorded CIViC context");
+    assert_eq!(braf_outcome["outcome"], "data", "{braf_outcome}");
+    assert_eq!(braf_context.evidence_total_count, 115);
+    assert_eq!(braf_context.assertion_total_count, 3);
+
+    let mut egfr = braf_variant_stub();
+    egfr.gene = "EGFR".into();
+    egfr.hgvs_p = Some("p.Cys797Ser".into());
+    add_civic(&mut egfr).await;
+    let egfr_outcome = serde_json::to_value(
+        egfr.section_outcomes
+            .get("civic")
+            .expect("civic outcome must be completed"),
+    )
+    .expect("outcome serializes");
+    let egfr_context = egfr
+        .civic
+        .expect("CIViC section")
+        .graphql
+        .expect("recorded CIViC context");
+    assert_eq!(egfr_outcome["outcome"], "data", "{egfr_outcome}");
+    assert_eq!(egfr_context.evidence_total_count, 2);
+    assert_eq!(egfr_context.assertion_total_count, 0);
+
+    server.abort();
+    let requested = requests
+        .lock()
+        .expect("lock requests")
+        .iter()
+        .filter_map(|request| requested_civic_profile(request))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        requested,
+        vec!["BRAF V600E".to_string(), "EGFR C797S".to_string()],
+        "CIViC must receive the one-letter profile names"
     );
 }
 
