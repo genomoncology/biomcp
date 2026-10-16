@@ -419,7 +419,8 @@ def test_the_release_checks_lane_runs_the_releases_exact_gh_query() -> None:
     accepted — against the merge-base with origin/main, and check
     the query runs, not its answer: only a gh or jq error fails, so
     the refusal case accepts a zero count where the release's
-    version-check refuses one."""
+    version-check refuses one. Ticket 2125: the exact command now
+    filters to push runs on main, as the release's gate does."""
     job = _job("release-checks")
     gh_step = next(
         s for s in job["steps"] if "gh run list" in str(s.get("run", ""))
@@ -429,9 +430,11 @@ def test_the_release_checks_lane_runs_the_releases_exact_gh_query() -> None:
     for fragment in (
         'git merge-base origin/main "$GITHUB_SHA"',
         'gh run list --workflow ci.yml --commit "$merge_base"',
+        "--branch main",
+        "--event push",
         "--limit 100",
-        "--json conclusion",
-        '--jq \'[.[] | select(.conclusion == "success")] | length\'',
+        "--json conclusion,event,headBranch",
+        '| jq \'[.[] | select(.event == "push" and .headBranch == "main" and .conclusion == "success")] | length\'',
     ):
         assert fragment in run, f"the green-CI query must keep its release shape: {fragment}"
     assert " | 0 |" not in run, (

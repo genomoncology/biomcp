@@ -27,11 +27,13 @@ def _fake_git(
     """Answer git subprocess calls by leading subcommand, not by order.
 
     The coverage check runs `git tag`, `git log`, `git diff`, `git
-    ls-tree`, `git diff-tree` and `git show <ref>:<path>` in whatever
-    order it needs them, so dispatching on the first argument keeps
-    the harness honest when the script changes. The `show` value maps
-    `ref:path` to a body; the `diff-tree` value maps a commit sha to
-    the files it changed (the sha is the call's last argument).
+    ls-tree` and `git show <ref>:<path>` in whatever order it needs
+    them, so dispatching on the first argument keeps the harness
+    honest when the script changes. The `show` value maps `ref:path`
+    to a body; the `diff-files` value maps a commit sha to the files
+    the landing at that sha changed (the sha is the call's last
+    argument), falling back to the plain `diff` lines for every
+    other `git diff` call.
     """
     script = directory / "git"
     body = "#!/usr/bin/env bash\nset -euo pipefail\n"
@@ -44,13 +46,20 @@ def _fake_git(
                 safe = shlex.quote(content)
                 body += f"    if [ \"$*\" = \"show {shlex.quote(ref_path)}\" ]; then printf %s {safe}; exit 0; fi\n"
             body += '    printf ""; exit 0 ;;\n'
-        elif subcommand == "diff-tree":
-            body += "  diff-tree)\n"
+        elif subcommand == "diff-files":
+            # The landing diff `git diff --name-only <sha>^1 <sha>`
+            # (ticket 2125): keyed on the sha, the call's last
+            # argument, with the plain diff lines answering every
+            # other `git diff` call.
+            body += "  diff)\n"
             body += "    for last; do :; done\n"
             for sha, files in lines.items():
                 body += f"    if [ \"$last\" = \"{sha}\" ]; then printf '%s\\n' {shlex.join(files)}; exit 0; fi\n"
-            body += '    printf ""; exit 0 ;;\n'
+            plain = responses.get("diff", [])
+            body += f"    printf '%s\\n' {shlex.join(plain)}; exit 0 ;;\n"
         else:
+            if subcommand == "diff" and "diff-files" in responses:
+                continue
             body += f"  {subcommand}) printf '%s\\n' {shlex.join(lines)}; exit 0 ;;\n"
     body += 'esac\necho "unexpected git call: $*" >&2\nexit 1\n'
     script.write_text(body, encoding="utf-8")
@@ -736,7 +745,7 @@ def _run_branch(
         {
             "tag": ["v0.9.0", "v0.9.1"],
             "log": [f"{sha}\t{subject}" for sha, (subject, _) in landings.items()],
-            "diff-tree": {sha: files for sha, (_, files) in landings.items()},
+            "diff-files": {sha: files for sha, (_, files) in landings.items()},
             "merge-base": ["base0"],
             "diff": list(branch_files or []),
         },
@@ -808,6 +817,57 @@ def test_branch_mode_demands_a_bullet_for_a_landed_src_landing(
     )
     assert result.returncode == 1
     assert "1299" in result.stderr
+    # Ticket 2125: a landing is charged with the diff against its
+    # first parent, exactly this call.
+    calls = (tmp_path / "calls").read_text(encoding="utf-8")
+    assert "diff --name-only sha1^1 sha1" in calls
+
+
+def test_a_stale_branch_merge_is_charged_only_with_its_own_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Ticket 2125: the 2116 landing, on a real repository.
+
+    A merge landing is charged with the diff against its first
+    parent alone. The old `diff-tree -m --first-parent` also diffed
+    the merge against its second parent, so a stale branch's landing
+    was charged with every file main gained since it forked and the
+    branch lane went red on a branch that changed one file."""
+
+    def git(*args: str, cwd: Path) -> None:
+        subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+    repo = tmp_path / "repo"
+    (repo / "src").mkdir(parents=True)
+    (repo / "CHANGELOG.md").write_text("# Changelog\n", encoding="utf-8")
+    git("init", "-q", "-b", "main", cwd=repo)
+    git("config", "user.email", "t@example.com", cwd=repo)
+    git("config", "user.name", "t", cwd=repo)
+    (repo / "src" / "base.rs").write_text("base\n", encoding="utf-8")
+    git("add", "-A", cwd=repo)
+    git("commit", "-q", "-m", "base", cwd=repo)
+    git("tag", "v0.9.2", cwd=repo)
+    git("checkout", "-q", "-b", "ticket/2116-audit", cwd=repo)
+    (repo / "src" / "own.rs").write_text("own\n", encoding="utf-8")
+    git("add", "-A", cwd=repo)
+    git("commit", "-q", "-m", "branch work", cwd=repo)
+    git("checkout", "-q", "main", cwd=repo)
+    for index in range(1, 4):
+        (repo / f"main-gained-{index}.rs").write_text("main\n", encoding="utf-8")
+        git("add", "-A", cwd=repo)
+        git("commit", "-q", "-m", f"main advance {index}", cwd=repo)
+    git(
+        "merge",
+        "-q",
+        "--no-ff",
+        "-m",
+        "Land 2116: the stale branch lands",
+        "ticket/2116-audit",
+        cwd=repo,
+    )
+
+    monkeypatch.chdir(repo)
+    assert _MODULE.landing_files("v0.9.2", "HEAD") == {"2116": {"src/own.rs"}}
 
 
 def test_branch_mode_passes_that_landing_with_its_bullet(tmp_path: Path) -> None:

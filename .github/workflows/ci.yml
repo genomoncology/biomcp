@@ -480,13 +480,14 @@ jobs:
         run: |
           merge_base="$(git merge-base origin/main "$GITHUB_SHA")"
           green="$(gh run list --workflow ci.yml --commit "$merge_base" \
+            --branch main --event push \
             --limit 100 \
-            --json conclusion \
-            --jq '[.[] | select(.conclusion == "success")] | length')"
+            --json conclusion,event,headBranch \
+            | jq '[.[] | select(.event == "push" and .headBranch == "main" and .conclusion == "success")] | length')"
           case "$green" in
             '' | *[!0-9]*)
               echo "the release's green-CI query failed against ${merge_base}: gh or jq errored" >&2
               exit 1
               ;;
           esac
-          echo "the green-CI query runs on the real gh (${merge_base}: ${green} successful run(s))"
+          echo "the green-CI query runs on the real gh (${merge_base}: ${green} successful main run(s))"

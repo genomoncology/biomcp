@@ -16,9 +16,12 @@ RELEASE_WORKFLOW = WORKFLOWS / "release.yml"
 
 EXPECTED_NEEDS = {
     "version-check": [],
+    "release-gate": ["version-check"],
     "create-draft": ["version-check"],
-    "build": ["version-check", "create-draft"],
-    "pypi-build": ["version-check"],
+    # Ticket 2125: no archive is built before the release-gate marker
+    # set passes, so build and pypi-build wait on the marker job.
+    "build": ["version-check", "create-draft", "release-gate"],
+    "pypi-build": ["version-check", "release-gate"],
     "wheel-smoke": ["pypi-build"],
     "docs-live": ["version-check"],
     # PyPI last (2026-09-28): every build and smoke job first.
@@ -98,6 +101,7 @@ def _assert_release_contract(workflow: str) -> None:
         "pypi-publish": "if: github.event_name == 'push'",
         "homebrew-tap": "if: github.event_name == 'push'",
         "publish-release": "if: github.event_name == 'push'",
+        "release-gate": "if: github.event_name == 'push'",
     }
     for job, condition in expected_ifs.items():
         assert condition in _job_block(workflow, job), job
@@ -126,8 +130,16 @@ def _assert_release_contract(workflow: str) -> None:
     for escape in ("|| true", "|| :", "; exit 0", "if: false", "if: ${{ false }}"):
         assert escape not in version, escape
 
+    # Ticket 2125: the release-gate marker set runs through the same
+    # Makefile target `make release-gate` runs, so the packaged-crate
+    # cold compile cannot sit behind a marker the release skips.
+    gate = _job_block(workflow, "release-gate")
+    assert "make release-gate-markers" in gate
+    assert "cargo fetch --locked" in gate
+
     permissions = {
         "version-check": "contents: read",
+        "release-gate": "contents: read",
         "create-draft": "contents: write",
         "build": "contents: write",
         "pypi-build": "contents: read",
@@ -322,8 +334,16 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("version-check", "Require the changelog to cover merged tickets"): "8dcf47fdb31ff44771a511058fa05d8e17d1a551744dcc1e8631fa7f8979118e",
     # The release waits on a finished green ci.yml run for the exact
     # tagged commit. Re-pinned 2026-10-13: gh has no --conclusion
-    # flag, so jq counts the successful conclusions.
-    ("version-check", "Require green CI on the tagged commit"): "6a5acafb79dbd43069bbf2e829d90763c5547be136331d275a8d71a2df0f7959",
+    # flag, so jq counts the successful conclusions. Re-pinned for
+    # ticket 2125: only a push run on main counts — the branch and
+    # the event ride with the gh flags and the jq filter, and the
+    # count is piped through jq so the filter runs in this script.
+    ("version-check", "Require green CI on the tagged commit"): "8af9d987bd8989ca1e5d1af8ee8120d374fb8faca5033985d1cdc25f9bf0c59b",
+    # Ticket 2125: the marker-set job's run steps are pinned like the
+    # pipeline jobs' — the fetch feeds the offline compile and the
+    # make target is the marker selection itself.
+    ("release-gate", "Fetch the cargo registry for the offline marker set"): "bd8a3eea8fbfa7f0592cc9160f727c40bf2cac4f30ca475277ea9ce01a8b7403",
+    ("release-gate", "Run the release-gate marker set"): "477790ec0a17570da21b61265e5ac11c81b6b047fe889e57570aa4f334f266bb",
 }
 
 
@@ -415,6 +435,16 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "Render the release notes from the changelog",
         "Create the draft release",
+    ],
+    "release-gate": [
+        # Ticket 2125: the marker set runs before any archive is
+        # built; build and pypi-build wait on this job.
+        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+        "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+        "astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a",
+        "Fetch the cargo registry for the offline marker set",
+        "Run the release-gate marker set",
     ],
 }
 
@@ -866,6 +896,7 @@ def test_release_locked_build_assertion_catches_a_dropped_flag(tmp_path: Path) -
 # and must break the contract.
 EXPECTED_JOB_IFS = {
     "create-draft": "github.event_name == 'push'",
+    "release-gate": "github.event_name == 'push'",
     "build": "github.event_name == 'push'",
     "pypi-build": "github.event_name == 'push'",
     "wheel-smoke": "github.event_name == 'push'",
@@ -1903,6 +1934,18 @@ def _write_stub_tools(directory: Path, log: Path) -> None:
         "#!/usr/bin/env bash\n"
         f"printf 'gh %s\\n' \"$*\" >> {quoted_log}\n"
         'if [ -n "${GH_STUB_FAIL:-}" ]; then echo "gh failed" >&2; exit 1; fi\n'
+        # gh's own --jq flag runs its filter over the JSON the API
+        # returned, so the stub emulates that: a gate that counts
+        # inside gh (the pre-2125 shape) sees real counting, not a
+        # raw reply a shell case would refuse anyway.
+        "filter=''\n"
+        "while [ $# -gt 0 ]; do\n"
+        '  case "$1" in\n'
+        '    --jq) filter="$2"; shift 2 ;;\n'
+        "    *) shift ;;\n"
+        "  esac\n"
+        "done\n"
+        'if [ -n "$filter" ]; then printf \'%s\' "${GH_RUN_LIST_REPLY-1}" | jq "$filter"; exit 0; fi\n'
         'printf \'%s\' "${GH_RUN_LIST_REPLY-1}"\n'
         "exit 0\n"
     )
@@ -2141,32 +2184,87 @@ def _ci_gate_script() -> str:
 
 
 @pytest.mark.parametrize("repository", [PRODUCTION_REPOSITORY, REHEARSAL_REPOSITORY])
-def test_the_ci_gate_accepts_a_green_run_and_names_the_commit(
+def test_the_ci_gate_accepts_a_green_main_push_run_and_names_the_commit(
     tmp_path: Path, repository: str
 ) -> None:
     """Ticket 2053: the release waits on ci.yml success for the exact
     commit; the query names the workflow and the SHA, so it can never
-    pick another workflow's run."""
+    pick another workflow's run. Ticket 2125: only a push run on main
+    counts, so the query carries the branch and the event and jq
+    selects on them in this script."""
     log = tmp_path / f"ci-green-{repository.replace('/', '-')}.log"
     result = _run_guard_script(
         _ci_gate_script(),
         tmp_path,
         repository=repository,
         log=log,
-        extra_env={"GH_RUN_LIST_REPLY": "1"},
+        extra_env={
+            "GH_RUN_LIST_REPLY": (
+                '[{"conclusion":"success","event":"push","headBranch":"main"}]'
+            )
+        },
     )
     assert result.returncode == 0, result.stderr
-    assert "finished green" in result.stdout
+    assert "finished green on main" in result.stdout
     calls = " ".join(_log_lines(log))
     assert "gh run list --workflow ci.yml --commit " in calls
     assert "f" * 40 in calls
+    assert "--branch main" in calls and "--event push" in calls
     assert "--limit 100" in calls
-    assert "--json conclusion" in calls
-    assert 'select(.conclusion == "success")' in calls
+    assert "--json conclusion,event,headBranch" in calls
     # The old filter used --status and --conclusion, flags no
     # shipped gh accepts.
     assert "--status completed" not in calls
     assert " --conclusion " not in calls
+
+
+def test_the_ci_gate_refuses_a_commit_whose_only_green_run_is_a_branch_run(
+    tmp_path: Path,
+) -> None:
+    """Ticket 2125: 393737eae carried a failed ci.yml run on main and
+    a green ticket-branch run of the same commit, and the gate that
+    counted any successful run would have released a tag there — a
+    fast-forwarded ticket branch is green without the main-only
+    lanes. Only a push run of ci.yml on main counts, so the gate
+    refuses; against the pre-2125 script this test fails, because
+    that script counts the branch run."""
+    reply = (
+        '[{"conclusion":"failure","event":"push","headBranch":"main"},'
+        '{"conclusion":"success","event":"push",'
+        '"headBranch":"ticket/2074-release-checks-on-every-branch-push"}]'
+    )
+    result = _run_guard_script(
+        _ci_gate_script(),
+        tmp_path,
+        repository=PRODUCTION_REPOSITORY,
+        log=tmp_path / "ci-branch-only.log",
+        extra_env={"GH_RUN_LIST_REPLY": reply},
+    )
+    assert result.returncode != 0
+    assert "refusing to release" in result.stderr
+
+
+def test_the_ci_gate_counts_only_the_main_push_run_among_mixed_runs(
+    tmp_path: Path,
+) -> None:
+    """Ticket 2125: pull-request runs and ticket-branch runs of the
+    same commit, green or not, count for nothing; one green main
+    push run is the release's green run."""
+    reply = (
+        '[{"conclusion":"success","event":"push","headBranch":"ticket/2074-x"},'
+        '{"conclusion":"success","event":"pull_request","headBranch":"ticket/2074-x"},'
+        '{"conclusion":"failure","event":"push","headBranch":"main"},'
+        '{"conclusion":"success","event":"push","headBranch":"main"}]'
+    )
+    result = _run_guard_script(
+        _ci_gate_script(),
+        tmp_path,
+        repository=PRODUCTION_REPOSITORY,
+        log=tmp_path / "ci-mixed.log",
+        extra_env={"GH_RUN_LIST_REPLY": reply},
+    )
+    assert result.returncode == 0, result.stderr
+    assert "finished green on main" in result.stdout
 
 
 def test_the_ci_gate_flags_parse_on_the_real_gh_cli() -> None:
@@ -2189,6 +2287,10 @@ def test_the_ci_gate_flags_parse_on_the_real_gh_cli() -> None:
     match = re.search(r'gh (run list [^\n]*?)\)"', one_line)
     assert match is not None, "the CI gate must run gh run list"
     command = match.group(1)
+    # Ticket 2125: the branch and event filters are part of the
+    # query the runner must accept, not text only jq sees.
+    assert "--branch main" in command and "--event push" in command
+    assert "--json conclusion,event,headBranch" in command
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=REPO_ROOT,
@@ -2258,3 +2360,22 @@ def test_the_ci_gate_fails_when_gh_fails(tmp_path: Path) -> None:
     )
     assert result.returncode != 0
     assert "refusing to release" in result.stderr or "gh failed" in result.stderr
+
+
+def test_the_release_gate_marker_job_and_make_run_the_same_selection() -> None:
+    """Ticket 2125: the release workflow's release-gate job runs the
+    marker set through the same Makefile target `make release-gate`
+    runs, so the packaged-crate cold compile cannot sit behind a
+    marker nothing runs; build and pypi-build wait on the job before
+    they build any archive."""
+    makefile = (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
+    markers = makefile[makefile.index("release-gate-markers:") :]
+    assert "pytest tests/ -m release_gate -v" in markers
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    gate = _job_block(workflow, "release-gate")
+    assert "make release-gate-markers" in gate
+    for job in ("build", "pypi-build"):
+        assert "release-gate" in _needs(_job_block(workflow, job)), (
+            f"{job} must wait on the release-gate marker job before it "
+            "builds any archive"
+        )

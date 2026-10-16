@@ -210,12 +210,16 @@ def landing_files(previous: str, head: str) -> dict[str, set[str]]:
     """The files each landing since `previous` changed, by ticket.
 
     A landing is a commit whose subject names its ticket, the same
-    subject shapes the tag run reads. A first-parent diff-tree gives
-    a merge landing its branch diff and a linear landing its plain
-    parent diff, so either shape attributes its files to its ticket.
-    A ticket that closed with no landing subject (record or status
-    only) has no diff here and never needs a bullet on a branch; the
-    tag run still demands it at the release.
+    subject shapes the tag run reads. A landing is charged with the
+    diff against its first parent, `git diff --name-only <sha>^1
+    <sha>`, so a merge landing is charged with its branch's own
+    files alone: a `diff-tree -m --first-parent` also adds the diff
+    against the second parent, which charged a stale branch's
+    landing with everything main gained since it forked (the 2116
+    landing, ticket 2125). A ticket that closed with no landing
+    subject (record or status only) has no diff here and never
+    needs a bullet on a branch; the tag run still demands it at the
+    release.
     """
     files: dict[str, set[str]] = {}
     log = run_git("log", "--format=%H%x09%s", f"{previous}..{head}")
@@ -224,15 +228,7 @@ def landing_files(previous: str, head: str) -> dict[str, set[str]]:
             continue
         sha, _, subject = line.partition("\t")
         for ticket in subject_tickets(subject):
-            changed = run_git(
-                "diff-tree",
-                "--no-commit-id",
-                "--name-only",
-                "-r",
-                "-m",
-                "--first-parent",
-                sha,
-            ).splitlines()
+            changed = run_git("diff", "--name-only", f"{sha}^1", sha).splitlines()
             files.setdefault(ticket, set()).update(changed)
     return files
 

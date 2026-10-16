@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
+.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
@@ -81,6 +81,16 @@ full-feature-check:
 
 png-artifact-smoke: build
 	tools/check-png-artifact target/release/biomcp
+
+# The marker set alone (ticket 2125): the packaged-crate cold
+# compile behind -m release_gate and any later check that joins it.
+# The release workflow's release-gate job runs this target before it
+# builds any archive; `make release-gate` still runs the same
+# selection after the full suite with the dev build's binary on
+# BIOMCP_BIN.
+release-gate-markers:
+	$(MAKE) sync-python-dev
+	tools/run-offline -- uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 
 release-gate: lint
 	$(MAKE) test
