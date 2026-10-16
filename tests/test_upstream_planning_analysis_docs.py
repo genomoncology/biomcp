@@ -1292,10 +1292,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "scripts/prepare-spec-artifacts.py" in runner
     assert "cargo test --locked --no-run" not in runner
     assert "uv sync --extra dev --no-install-project" not in runner
-    assert "tests/surface/test_parallel_isolation_contract.py" in runner
-    assert re.findall(r"tests/surface/\S+\.py", runner) == [
-        "tests/surface/test_parallel_isolation_contract.py"
-    ]
+    assert "tests/golden/spec" in runner
+    assert re.findall(r"tests/surface/\S+\.py", runner) == []
     assert 'verify) default_biomcp_bin="$ROOT/target/release/biomcp"' in runner
     assert '*) default_biomcp_bin="$ROOT/target/debug/biomcp"' in runner
     assert 'BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"' in runner

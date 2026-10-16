@@ -293,7 +293,15 @@ case "$mode" in
     prepare_spec_artifacts
     exit 0
     ;;
-  spec|spec-pr|spec-contracts)
+  spec|spec-pr)
+    paths=("${SPEC_ROUTINE_PATHS[@]}")
+    mustmatch_path_dir="$(mustmatch_dir)"
+    prepare_spec_artifacts
+    run_replay_server
+    ;;
+  spec-contracts)
+    # The deterministic subset contract lanes used to prove now matches the
+    # routine list: both run offline against the replay server.
     paths=("${SPEC_ROUTINE_PATHS[@]}")
     mustmatch_path_dir="$(mustmatch_dir)"
     prepare_spec_artifacts
