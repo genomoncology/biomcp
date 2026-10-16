@@ -205,11 +205,14 @@ impl Drop for LoopbackDenyProxy {
 }
 
 fn read_http_request(stream: &mut TcpStream) -> Result<String, String> {
+    // A loaded gate host can stall a spawned client well past two
+    // seconds between connect and request, so the fixture windows match
+    // the ten-second bound the rest of this file already uses.
     stream
-        .set_read_timeout(Some(Duration::from_secs(2)))
+        .set_read_timeout(Some(Duration::from_secs(10)))
         .map_err(|_| "set fixture read timeout".to_string())?;
     stream
-        .set_write_timeout(Some(Duration::from_secs(2)))
+        .set_write_timeout(Some(Duration::from_secs(10)))
         .map_err(|_| "set fixture write timeout".to_string())?;
 
     let mut request = Vec::new();
@@ -391,11 +394,12 @@ impl Drop for MyGeneFixture {
 }
 
 fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
+    // Same load bound as the credential fixture above.
     stream
-        .set_read_timeout(Some(Duration::from_secs(2)))
+        .set_read_timeout(Some(Duration::from_secs(10)))
         .map_err(|error| format!("set fixture read timeout: {error}"))?;
     stream
-        .set_write_timeout(Some(Duration::from_secs(2)))
+        .set_write_timeout(Some(Duration::from_secs(10)))
         .map_err(|error| format!("set fixture write timeout: {error}"))?;
 
     let mut request = Vec::new();
