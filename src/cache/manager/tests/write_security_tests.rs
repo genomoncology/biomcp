@@ -42,8 +42,13 @@ fn wait_until_exhausted(deadline: &crate::sources::VariantArticleDeadline) {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn put_deadline_transition_is_exactly_at_writer_commit() {
     let before_root = TempDirGuard::new("put-before-publication-deadline");
-    let before_deadline =
-        crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(50));
+    // The window only separates pre-commit cancellation from post-commit
+    // settlement; its length is not the pinned contract. A loaded gate
+    // host can outrun a tight window before the first checkpoint, so the
+    // windows ride the shared watchdog stretch.
+    let before_deadline = crate::sources::VariantArticleDeadline::from_now(
+        crate::test_support::watchdog_millis(1000),
+    );
     let wait_deadline = before_deadline.clone();
     let before_commit = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let observed_commit = Arc::clone(&before_commit);
@@ -89,8 +94,9 @@ async fn put_deadline_transition_is_exactly_at_writer_commit() {
     );
 
     let commit_root = TempDirGuard::new("put-at-publication-deadline");
-    let commit_deadline =
-        crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(50));
+    let commit_deadline = crate::sources::VariantArticleDeadline::from_now(
+        crate::test_support::watchdog_millis(1000),
+    );
     let wait_deadline = commit_deadline.clone();
     let commit_started = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let observed_commit = Arc::clone(&commit_started);

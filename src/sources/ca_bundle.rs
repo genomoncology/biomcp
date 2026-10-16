@@ -256,17 +256,20 @@ mod tests {
         ];
         // A real file whose NAME is not valid UTF-8 loads like any
         // other bundle: the path is handled as raw bytes end to end.
-        // The binding stays at function scope so the borrowed element
+        // macOS filesystems refuse such a name outright ("Illegal byte
+        // sequence"), so that host cannot exercise the raw-byte path
+        // with a real file; the case runs on every other Unix. The
+        // binding stays at function scope so the borrowed element
         // outlives the case list.
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "macos")))]
         let non_utf8 = {
             use std::os::unix::ffi::OsStringExt;
             dir.path()
                 .join(std::ffi::OsString::from_vec(b"ca-\xff.pem".to_vec()))
         };
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "macos")))]
         valid_bundle(&non_utf8);
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "macos")))]
         cases.push((Some(non_utf8.as_os_str()), None, "some"));
         for (explicit, fallback, expected) in cases.iter().copied() {
             let mut command =

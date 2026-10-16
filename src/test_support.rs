@@ -125,15 +125,24 @@ impl Drop for FixtureEnv {
 /// `BIOMCP_TEST_TIMEOUT_SCALE` (read once per process, default 1.0) so a
 /// slow or loaded gate host can widen every marked watchdog at once.
 pub(crate) fn watchdog(seconds: u64) -> Duration {
+    watchdog_scaled(seconds, timeout_scale())
+}
+
+/// A sub-second watchdog window under the same stretch, for the
+/// deadline-transition proofs whose semantic windows are milliseconds.
+pub(crate) fn watchdog_millis(millis: u64) -> Duration {
+    Duration::from_millis((millis as f64 * timeout_scale()).round() as u64)
+}
+
+fn timeout_scale() -> f64 {
     static SCALE: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
-    let factor = *SCALE.get_or_init(|| {
+    *SCALE.get_or_init(|| {
         std::env::var("BIOMCP_TEST_TIMEOUT_SCALE")
             .ok()
             .and_then(|raw| raw.parse::<f64>().ok())
             .filter(|value| value.is_finite() && *value > 0.0)
             .unwrap_or(1.0)
-    });
-    watchdog_scaled(seconds, factor)
+    })
 }
 
 fn watchdog_scaled(seconds: u64, factor: f64) -> Duration {
@@ -265,6 +274,7 @@ fn watchdog_defaults_to_one_and_stretches_by_the_factor() -> Result<(), std::env
     assert_eq!(watchdog_scaled(30, 1.0), Duration::from_secs(30));
     assert_eq!(watchdog_scaled(30, 10.0), Duration::from_secs(300));
     assert_eq!(watchdog_scaled(30, 0.5), Duration::from_millis(15_000));
+    assert_eq!(watchdog_scaled(1, 0.05), Duration::from_millis(50));
     match guard {
         Err(std::env::VarError::NotPresent) => {
             assert_eq!(watchdog(30), Duration::from_secs(30));
