@@ -1,0 +1,60 @@
+{
+  "primaryAccession": "Q9UIF7",
+  "uniProtkbId": "MUTYH_HUMAN",
+  "uniProtKBCrossReferences": [
+    {
+      "database": "PDB",
+      "id": "1X51",
+      "properties": [
+        {
+          "key": "Method",
+          "value": "NMR"
+        },
+        {
+          "key": "Resolution",
+          "value": "-"
+        },
+        {
+          "key": "Chains",
+          "value": "A=356-497"
+        }
+      ]
+    },
+    {
+      "database": "AlphaFoldDB",
+      "id": "Q9UIF7",
+      "properties": [
+        {
+          "key": "Description",
+          "value": "-"
+        }
+      ]
+    },
+    {
+      "database": "MANE-Select",
+      "id": "ENST00000456914.7",
+      "properties": [
+        {
+          "key": "ProteinId",
+          "value": "ENSP00000407590.2"
+        },
+        {
+          "key": "RefSeqNucleotideId",
+          "value": "NM_001048174.2"
+        },
+        {
+          "key": "RefSeqProteinId",
+          "value": "NP_001041639.1"
+        }
+      ],
+      "isoformId": "Q9UIF7-6"
+    }
+  ],
+  "sequence": {
+    "value": "MTPLVSRLSRLWAIMRKPRAAVGSGHRKQAASQEGRQKHAKNNSQAKPSACDGMIAECPGAPAGLARQPEEVVLQASVSSYHLFRDVAEVTAFRGSLLSWYDQEKRDLPWRRRAEDEMDLDRRAYAVWVSEVMLQQTQVATVINYYTGWMQKWPTLQDLASASLEEVNQLWAGLGYYSRGRRLQEGARKVVEELGGHMPRTAETLQQLLPGVGRYTAGAIASIAFGQATGVVDGNVARVLCRVRAIGADPSSTLVSQQLWGLAQQLVDPARPGDFNQAAMELGATVCTPQRPLCSQCPVESLCRARQRVEQEQLLASGSLSGSPDVEECAPNTGQCHLCLPPSEPWDQTLGVVNFPRKASRKPPREESSATCVLEQPGALGAQILLVQRPNSGLLAGLWEFPSVTWEPSEQLQRKALLQELQRWAGPLPATHLRHLGEVVHTFSHIKLTYQVYGLALEGQTPVTTVPPGARWLTQEEFHTAAVSTAMKKVFRVYQGQQPGTCMGSKRSQVSSPCSRKKPRMGQQVLDNFFRSHISTDAHSLNSAAQ",
+    "length": 546,
+    "molWeight": 60069,
+    "crc64": "6C79BDB34345DD10",
+    "md5": "7CD4C1D7C173E211147B8853EBB8FDA3"
+  }
+}

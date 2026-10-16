@@ -3582,6 +3582,30 @@
       }
     },
     {
+      "path": "uniprot/get_p15056_20261016.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "UniProt",
+        "request": "https://rest.uniprot.org/uniprotkb/P15056.json",
+        "captured_at": "2026-10-16T13:59:00Z",
+        "sha256": "35e1bd53904ece61442990685808aae26b5a22e5f90174724f46d75e0fb79f68",
+        "minimization_or_redaction": "Kept the accession, the entry id, the sequence, the MANE-Select cross-reference, one PDB cross-reference with its Chains property, and the AlphaFoldDB cross-reference (the fields the structure helper and its residue check read); dropped the remaining 130 PDB rows and all other annotations. Original full-response SHA-256 was f4d1e9e4534be377e91691c09016add1972ecb6f149195320fad2b40260cdc46.",
+        "provider_origin_statement": "Bytes were recorded from the public UniProt response (HTTP 200) before the stated minimization (ticket 2114)."
+      }
+    },
+    {
+      "path": "uniprot/get_q9uif7_20261016.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "UniProt",
+        "request": "https://rest.uniprot.org/uniprotkb/Q9UIF7.json",
+        "captured_at": "2026-10-16T13:59:00Z",
+        "sha256": "c92eb71172f469f5916f9571a63f3d8add59085b3f969b75990c9a65a39d8a95",
+        "minimization_or_redaction": "Kept the accession, the entry id, the sequence, the MANE-Select cross-reference, one PDB cross-reference with its Chains property, and the AlphaFoldDB cross-reference (the fields the structure helper and its residue check read); dropped the remaining 2 PDB rows and all other annotations. Original full-response SHA-256 was 4fd8419a712e99d74bacd61fc42733df18a6ee98cb6d28868483acb84f7522a9.",
+        "provider_origin_statement": "Bytes were recorded from the public UniProt response (HTTP 200) before the stated minimization (ticket 2114)."
+      }
+    },
+    {
       "path": "vaers/reactions_mmr_20260811.xml",
       "classification": "real_and_receipted",
       "receipt": {
@@ -3841,6 +3865,18 @@
         "sha256": "a3ba1a7760066a0eda1870adaf67a0617b261a5933cfdc30b7911e82b1728080",
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "myvariant/query_mutyh_g368d_20261016.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/query?q=dbnsfp.genename%3AMUTYH+AND+dbnsfp.hgvsp%3A%22p.G368D%22&size=5&from=0&fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.rcv.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic",
+        "captured_at": "2026-10-16T13:59:00Z",
+        "sha256": "d8b020a57abb8f7038211f82e62d5baf8c63ba01fea420340300009d9b435898",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful to the provider reply for BioMCP's production gene+protein query shape.",
+        "provider_origin_statement": "Bytes were recorded from the public provider response (HTTP 200) with no minimization (ticket 2114)."
       }
     }
   ],

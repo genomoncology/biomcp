@@ -120,7 +120,7 @@ pub async fn structure(id: &str) -> Result<VariantStructureResult, BioMcpError> 
     let accession = crate::entities::protein::resolve_accession(gene).await?;
     let uniprot = UniProtClient::new()?;
     let record = uniprot.get_record(&accession).await?;
-    let residue = residue_summary(&variant, &id_format, &hit);
+    let (residue, residue_check) = residue_summary(&variant, &id_format, &hit, &record);
     let position = residue.position;
     let hotspot_change = residue.requested_change.clone();
 
@@ -135,11 +135,22 @@ pub async fn structure(id: &str) -> Result<VariantStructureResult, BioMcpError> 
     let (domains_result, hotspots_result) = tokio::join!(domains_fut, hotspots_fut);
 
     let mut warnings = Vec::new();
-    if !residue.other_source_positions.is_empty() {
-        warnings.push("MyVariant.info returned additional transcript/isoform protein positions; mapped domain/structure context uses the requested HGVSp position.".to_string());
-    }
-    if residue.position_confidence == "unresolved" {
-        warnings.push("Could not select an exact protein residue from MyVariant.info/dbNSFP HGVSp aliases; domain and structure overlap flags may be absent.".to_string());
+    match residue_check {
+        ResidueCheck::Mismatch {
+            position,
+            reference,
+            actual,
+        } => warnings.push(reference_mismatch_warning(
+            &accession, position, reference, actual,
+        )),
+        ResidueCheck::Verified | ResidueCheck::Unchecked => {
+            if !residue.other_source_positions.is_empty() {
+                warnings.push("MyVariant.info returned additional transcript/isoform protein positions; mapped domain/structure context uses the requested HGVSp position.".to_string());
+            }
+            if residue.position_confidence == "unresolved" {
+                warnings.push("Could not select an exact protein residue from MyVariant.info/dbNSFP HGVSp aliases; domain and structure overlap flags may be absent.".to_string());
+            }
+        }
     }
 
     if let Err(err) = &domains_result {
@@ -317,11 +328,79 @@ fn overlapping_domains(
         .collect()
 }
 
+/// The 2036/2042 residue check (the canonical-residue comparison `get
+/// variant` runs on the gene's canonical protein) applied to the protein the
+/// structure helper actually chose: the record's sequence must hold the
+/// reference amino acid the request names at the selected position before
+/// any placement is claimed on that protein.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ResidueCheck {
+    /// The chosen protein's sequence holds the requested reference amino
+    /// acid at the selected position, so the placement stands.
+    Verified,
+    /// The sequence holds a different amino acid there, or no residue that
+    /// far: the placement is proven not to sit on the chosen protein, so no
+    /// exact-match position and no residue-specific claim may be reported.
+    Mismatch {
+        position: u32,
+        reference: char,
+        actual: Option<char>,
+    },
+    /// No selected position, no reference amino acid the request names, or
+    /// no sequence on the record to read: the check proves nothing either
+    /// way and the existing confidence labels stand.
+    Unchecked,
+}
+
+fn check_reference_residue(record: &UniProtRecord, position: u32, reference: char) -> ResidueCheck {
+    let Some(sequence) = record
+        .sequence
+        .as_ref()
+        .and_then(|sequence| sequence.value.as_deref())
+    else {
+        return ResidueCheck::Unchecked;
+    };
+    let actual = position
+        .checked_sub(1)
+        .and_then(|index| sequence.chars().nth(index as usize));
+    if actual == Some(reference) {
+        ResidueCheck::Verified
+    } else {
+        ResidueCheck::Mismatch {
+            position,
+            reference,
+            actual,
+        }
+    }
+}
+
+/// The warning for a placement the chosen protein's sequence disproves. It
+/// names the finding plainly — the requested reference amino acid, the
+/// position, and what the sequence holds — instead of the alias-matching
+/// note, which would claim a placement this response no longer makes.
+fn reference_mismatch_warning(
+    accession: &str,
+    position: u32,
+    reference: char,
+    actual: Option<char>,
+) -> String {
+    let sequence_fact = match actual {
+        Some(actual) => format!("which holds {actual} there"),
+        None => format!("which ends before position {position}"),
+    };
+    format!(
+        "The requested reference amino acid {reference} at position {position} does not match \
+         {accession}'s sequence ({sequence_fact}); the structural placement is unresolved, so \
+         residue-specific domain and structure claims are suppressed."
+    )
+}
+
 fn residue_summary(
     variant: &Variant,
     id_format: &VariantIdFormat,
     hit: &MyVariantHit,
-) -> VariantStructureResidue {
+    record: &UniProtRecord,
+) -> (VariantStructureResidue, ResidueCheck) {
     let requested_change = requested_change(variant, id_format);
     let requested_normalized = requested_change
         .as_deref()
@@ -349,32 +428,58 @@ fn residue_summary(
         .iter()
         .find_map(|alias| hgvsp_position(alias))
         .or_else(|| requested_normalized.as_deref().and_then(hgvsp_position));
-    let other_source_positions = positions
-        .into_iter()
-        .filter(|position| Some(*position) != selected_position)
-        .collect::<Vec<_>>();
     let (reference_aa, alternate_aa) = requested_normalized
         .as_deref()
         .and_then(change_aa)
         .unwrap_or((None, None));
-    let position_confidence = if selected_position.is_some() && !matched_hgvsp.is_empty() {
+    let mut position = selected_position;
+    let mut position_confidence = if position.is_some() && !matched_hgvsp.is_empty() {
         "requested_hgvsp_exact_match"
-    } else if selected_position.is_some() {
+    } else if position.is_some() {
         "requested_hgvsp_position_only"
     } else {
         "unresolved"
     };
-
-    VariantStructureResidue {
-        requested_change,
-        position: selected_position,
-        reference_aa,
-        alternate_aa,
-        source: "MyVariant.info/dbNSFP".to_string(),
-        matched_hgvsp,
-        other_source_positions,
-        position_confidence: position_confidence.to_string(),
+    let mut residue_check = ResidueCheck::Unchecked;
+    if let (Some(selected), Some(reference)) = (
+        selected_position,
+        one_letter_reference(reference_aa.as_deref()),
+    ) {
+        residue_check = check_reference_residue(record, selected, reference);
+        if matches!(residue_check, ResidueCheck::Mismatch { .. }) {
+            position = None;
+            position_confidence = "unresolved";
+        }
     }
+    // With the placement unresolved every alias position is an other-source
+    // position: none of them was selected, and naming them keeps the
+    // isoform numbering that produced the request visible.
+    let other_source_positions = positions
+        .into_iter()
+        .filter(|candidate| Some(*candidate) != position)
+        .collect::<Vec<_>>();
+
+    (
+        VariantStructureResidue {
+            requested_change,
+            position,
+            reference_aa,
+            alternate_aa,
+            source: "MyVariant.info/dbNSFP".to_string(),
+            matched_hgvsp,
+            other_source_positions,
+            position_confidence: position_confidence.to_string(),
+        },
+        residue_check,
+    )
+}
+
+/// The single reference amino-acid letter a normalized change names, when
+/// it names exactly one.
+fn one_letter_reference(reference_aa: Option<&str>) -> Option<char> {
+    let mut chars = reference_aa?.chars();
+    let letter = chars.next()?;
+    chars.next().is_none().then_some(letter)
 }
 
 fn requested_change(variant: &Variant, id_format: &VariantIdFormat) -> Option<String> {
@@ -418,97 +523,4 @@ fn change_aa(value: &str) -> Option<(Option<String>, Option<String>)> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::entities::section_outcome::SectionOutcomeState;
-
-    #[test]
-    fn hgvsp_position_extracts_three_letter_short_and_accession_prefixed_aliases() {
-        assert_eq!(hgvsp_position("p.Val600Glu"), Some(600));
-        assert_eq!(hgvsp_position("p.V600E"), Some(600));
-        assert_eq!(hgvsp_position("NP_004324.2:p.Val600Glu"), Some(600));
-    }
-
-    #[test]
-    fn normalize_hgvsp_change_matches_accession_prefixed_aliases() {
-        assert_eq!(
-            crate::entities::variant::normalize_protein_change("NP_004324.2:p.Val600Glu")
-                .as_deref(),
-            Some("V600E")
-        );
-    }
-
-    #[test]
-    fn domain_result_matrix_classifies_contact_and_applicability() {
-        let domain = VariantStructureDomain {
-            accession: "IPR000719".into(),
-            name: Some("Protein kinase domain".into()),
-            domain_type: Some("domain".into()),
-            start: 457,
-            end: 717,
-            source: "InterPro".into(),
-        };
-        let cases = [
-            (Ok(None), SectionOutcomeState::Inapplicable, 0, false),
-            (Ok(Some(Vec::new())), SectionOutcomeState::Empty, 0, true),
-            (Ok(Some(vec![domain])), SectionOutcomeState::Data, 1, true),
-            (
-                Err(BioMcpError::Api {
-                    api: "InterPro".into(),
-                    message: "fixture failure".into(),
-                }),
-                SectionOutcomeState::Unavailable,
-                0,
-                false,
-            ),
-        ];
-
-        for (result, expected_state, expected_rows, credited) in cases {
-            let (domains, outcome) = apply_domains_result(result);
-            assert_eq!(outcome.outcome(), expected_state);
-            assert_eq!(domains.len(), expected_rows);
-            assert_eq!(!outcome.sources().is_empty(), credited);
-        }
-    }
-
-    #[test]
-    fn cancerhotspots_result_matrix_classifies_contact_and_applicability() {
-        let recurrence = |position_count| CancerHotspotRecurrence {
-            source: "cancerhotspots.org".into(),
-            position_count,
-            same_aa_count: None,
-            matched_transcript: None,
-        };
-        let cases = [
-            (Ok(None), SectionOutcomeState::Inapplicable, false, false),
-            (
-                Ok(Some(recurrence(None))),
-                SectionOutcomeState::Empty,
-                true,
-                true,
-            ),
-            (
-                Ok(Some(recurrence(Some(12)))),
-                SectionOutcomeState::Data,
-                true,
-                true,
-            ),
-            (
-                Err(BioMcpError::Api {
-                    api: "cancerhotspots.org".into(),
-                    message: "fixture failure".into(),
-                }),
-                SectionOutcomeState::Unavailable,
-                false,
-                false,
-            ),
-        ];
-
-        for (result, expected_state, recurrence_present, credited) in cases {
-            let (result_recurrence, outcome) = apply_cancerhotspots_result(result);
-            assert_eq!(outcome.outcome(), expected_state);
-            assert_eq!(result_recurrence.is_some(), recurrence_present);
-            assert_eq!(!outcome.sources().is_empty(), credited);
-        }
-    }
-}
+mod tests;

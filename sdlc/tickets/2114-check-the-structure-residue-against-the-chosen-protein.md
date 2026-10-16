@@ -1,8 +1,10 @@
 # 2114 — Check the structure residue against the chosen protein
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 543e281, accept
 
 ## Outcome
 
