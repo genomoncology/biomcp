@@ -1126,7 +1126,11 @@ impl ContractHarness {
     }
 
     pub async fn spawn_http_server(&self, extra_env: &[EnvVar]) -> anyhow::Result<(Child, String)> {
-        self.spawn_http_server_with_args(&[], extra_env).await
+        let converted = extra_env
+            .iter()
+            .map(|(key, value)| ((*key).to_string(), (*value).to_string()))
+            .collect::<Vec<_>>();
+        self.spawn_http_server_with_args(&[], &converted).await
     }
 
     /// Spawns `serve-http` with arguments ahead of the subcommand and
@@ -1142,6 +1146,7 @@ impl ContractHarness {
 
         let mut command = self.server_command_with(extra_env);
         command
+            .args(args)
             .arg("serve-http")
             .arg("--host")
             .arg("127.0.0.1")
