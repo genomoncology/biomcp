@@ -16,6 +16,12 @@ Outcome: faster building and testing, following the plan in `sdlc/designs/2026-1
 
 Exit criteria: the tag passes its first rehearsal, and issue #290 is answered with the shipped setting.
 
+## 0.9.4
+
+Outcome: BioMCP's cache lives in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely.
+
+Exit criteria: the tag passes its first rehearsal; a long-used cache starts as fast as an empty one.
+
 ## 1.0
 
 Owned by the other team. Tracked in their records, not here.
