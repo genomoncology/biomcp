@@ -4685,6 +4685,12 @@ arrives, BioMCP returns the rows that already answered and names each silent
 or slow source as degraded instead of hanging. Deep pages are refused —
 <code>--offset</code> plus <code>--limit</code> beyond 1,250 returns an error on every sort order
 rather than walking hundreds of provider pages.
+Single-backend relevance searches on <code>--source europepmc</code> and
+<code>--source pubtator</code> rank whole 25-row provider pages before slicing, so
+<code>--offset</code> walks the same pages the provider's cursor paging returns:
+<code>--limit 5</code> and then <code>--limit 5 --offset 5</code> return the same ten rows in the
+same order as <code>--limit 10</code>, and a window that reaches past a 25-row boundary
+ranks the next whole page with it.
 <code>--type</code>, <code>--open-access</code>, and <code>--no-preprints</code> are backend-compatibility
 constraints rather than universal filters across every article source.
 <code>--type</code> on <code>--source all</code> uses Europe PMC + PubMed when <code>--open-access</code> and
