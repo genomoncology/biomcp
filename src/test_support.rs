@@ -10,7 +10,7 @@ pub(crate) struct TempDirGuard {
 /// Counts individual HTTP cache files a start-up tree walk touches (opens
 /// or stats). Production code never reads it: tests reset it, run one
 /// cache start-up, and read the count to assert start-up I/O no longer
-/// grows with the number of files in the cache (ticket 2133).
+/// grows with the number of files in the cache.
 pub(crate) static STARTUP_CACHE_FILE_VISITS: std::sync::atomic::AtomicU64 =
     std::sync::atomic::AtomicU64::new(0);
 

@@ -1,4 +1,4 @@
-//! Kept size totals (ticket 2133): start-up seeds its size tracker from a
+//! Kept size totals: start-up seeds its size tracker from a
 //! marker under the HTTP cache instead of statting every content file, the
 //! daily clean rewrites the marker with an exact total, and cache mode off
 //! reads nothing. Pure manager logic over a real temp cache dir.

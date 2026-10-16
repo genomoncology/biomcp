@@ -38,7 +38,7 @@ const POST_WRITE_FINALIZATION_ERROR: &str =
 pub(crate) const STALE_SERVE_AGE_HEADER: &str = "x-biomcp-cache-stale-age";
 
 /// Marker file under the HTTP cache recording the total stored content
-/// bytes the size tracker reads at start-up (ticket 2133). The value is
+/// bytes the size tracker reads at start-up. The value is
 /// exact whenever a maintenance pass recomputes it — the daily start-up
 /// clean and every eviction cycle — and reads cheaply on every other
 /// start-up instead of statting every content file. A missing or

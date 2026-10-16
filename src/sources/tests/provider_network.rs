@@ -892,9 +892,9 @@ mod cache_security {
     }
 }
 
-/// Ticket 2133 start-up cost proofs: a command's cache start-up must not
-/// walk the HTTP cache tree, so the number of cache files it touches does
-/// not grow with the cache, `BIOMCP_CACHE_MODE=off` touches none, and the
+/// Start-up cost proofs: a command's cache start-up must not walk the
+/// HTTP cache tree, so the number of cache files it touches does not
+/// grow with the cache, `BIOMCP_CACHE_MODE=off` touches none, and the
 /// one-time tree-secure walk runs only until its marker exists.
 mod startup_cost {
     use std::path::Path;
@@ -909,7 +909,7 @@ mod startup_cost {
 
     /// Seed the body-limit epoch marker an installed cache holds, so the
     /// settling start-up below keeps the seeded entries instead of
-    /// rebuilding the epoch and wiping them (ticket 2133).
+    /// rebuilding the epoch and wiping them.
     fn seed_epoch_marker(cache_root: &Path) {
         std::fs::write(
             cache_root.join(".body-limit-cache-v1"),
@@ -1059,7 +1059,7 @@ mod startup_cost {
         );
 
         // A file broadened after the marker is repaired when it is written
-        // through, not by every command's start-up (ticket 2133 decision).
+        // through, not by every command's start-up.
         let second = sentinel("second");
         build_once(root.path());
         assert_eq!(

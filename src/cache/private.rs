@@ -69,9 +69,9 @@ pub(crate) fn secure_managed_tree(
 }
 
 /// Marker file under the HTTP cache recording that the tree has been
-/// secured once (ticket 2133). A missing or malformed marker means the
-/// one-time recursive secure is due, exactly as the daily start-up clean
-/// marker works (ticket 2092); a present marker means ordinary start-up
+/// secured once. A missing or malformed marker means the one-time
+/// recursive secure is due, exactly as the daily start-up clean marker
+/// works; a present marker means ordinary start-up
 /// never walks the tree, because every write already secures the files
 /// it creates through `secure_written_content` and
 /// `prepare_write_paths`.
