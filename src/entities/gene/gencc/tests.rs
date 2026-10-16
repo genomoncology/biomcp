@@ -604,8 +604,8 @@ fn default_and_override_subprocesses_reuse_the_external_anchor_inode_after_root_
         // one absolute BIOMCP_GENCC_DIR on both.
         let (root, anchor_dir, data_env) = if default_root {
             if cfg!(target_os = "macos") {
-                let home = temp.path().join("Library");
-                let anchor = home.join("Application Support");
+                let home = temp.path().to_path_buf();
+                let anchor = home.join("Library/Application Support");
                 fs::create_dir_all(&anchor).unwrap();
                 secure_anchor(&anchor);
                 (anchor.join("biomcp").join("gencc"), anchor, ("HOME", home))
