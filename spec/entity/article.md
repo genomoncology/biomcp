@@ -1222,6 +1222,28 @@ bytes without conversion.
 ../../tools/biomcp-ci get article 22663018 asset 41408_2024_1068_MOESM1_ESM.docx | mustmatch like "scrubbed Europe PMC supplementary DOCX fixture bytes"
 ```
 
+## An Empty Supplement Reply Is a Failed Download
+
+Europe PMC's supplementary archive can store a genuinely zero-length member
+for a file the PMC OA package holds in full (observed on PMC6181777:
+NIHMS1501643-supplement-2.xlsx). A zero-byte body is never delivered: the
+download exits nonzero naming the empty response, writes no output file, and
+the empty route is marked in coverage instead of listed as an asset. The
+fixture article 22663024 reproduces the two-route shape and 22663025 an
+Europe-only empty route.
+
+```bash run id=empty-asset-reply-human exit=1
+output="$(../../tools/biomcp-ci get article 22663025 asset NIHMS1501644-supplement-1.xlsx --output empty-supplement.xlsx 2>&1)"
+test ! -e empty-supplement.xlsx
+mustmatch like "article_asset_not_retrievable
+(empty_response)" <<<"$output"
+```
+
+```bash run id=two-route-supplement-full-copy
+../../tools/biomcp-ci --json get article 22663024 assets | jq '(.assets | length == 1 and .[0].filename == "NIHMS1501643-supplement-2.xlsx" and .[0].provider.source == "PMC OA" and .[0].size_bytes > 0) and (.coverage | any(.filename == "NIHMS1501643-supplement-2.xlsx" and .outcome == "empty_response" and .provider.source == "Europe PMC" and (.asset_key | startswith("europe-pmc-")) and .handle != null))' | mustmatch 'true'
+../../tools/biomcp-ci get article 22663024 asset NIHMS1501643-supplement-2.xlsx | mustmatch like "scrubbed two-route supplement XLSX fixture bytes"
+```
+
 ## Non-PMC Figshare Assets Manifest
 
 When an article has no PMC OA package but Semantic Scholar points at a supported

@@ -465,6 +465,7 @@ pub enum ArticleAssetNamedOutcome {
     PmcProofOfWork,
     UnsupportedOrigin,
     SourceUnavailable,
+    EmptyResponse,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

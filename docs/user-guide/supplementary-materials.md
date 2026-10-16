@@ -125,10 +125,20 @@ biomcp --json get article --asset-view coverage <id> assets
 | `pmc_proof_of_work` | PMC answered with a challenge page instead of the file. |
 | `unsupported_origin` | The link pointed somewhere BioMCP will not fetch from. |
 | `source_unavailable` | The provider could not be reached, or returned unusable content. |
+| `empty_response` | The route answered, but its reply held no bytes for the file. |
 
 Entries with a `pmc_proof_of_work` outcome carry no `asset_key` and no
 `handle`. The file is named because the article references it, and BioMCP
 will not present a challenge page as the file's contents.
+
+A route that answers with a zero-byte body gets the `empty_response`
+outcome: the download fails with an `article_asset_not_retrievable` error
+naming the empty response, no output file is written, and the file is never
+listed in `assets`. When the same filename is held by several routes, the
+route that returned bytes stays listed under its own asset key and the
+empty route is kept in `coverage` with the asset key it would have carried,
+so a caller holding either key gets the copy that exists or a refusal that
+names why.
 
 An article whose supplementary materials are deposited only as an author
 manuscript is the common case for this outcome. When Europe PMC holds its
