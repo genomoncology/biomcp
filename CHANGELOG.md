@@ -37,6 +37,7 @@
 - `CHANGELOG.md` merges with git's ordinary rules again, undoing 2083's union driver: a union merge kept both sides of a bullet one branch had reworded, so the 2085 bullet landed twice, one copy misspelled, with no conflict to see, and a landing that appends a bullet to a busy section now resolves a small conflict that names the two new bullets. (2104)
 
 - Deadline-proof and surface tests bound their waits with a shared load-scaled watchdog and private cache roots, so routine suites stay green while other jobs share the build host. (2103)
+- Article HTML parsing and readability now run on scraper 0.27 and dom_smoothie 0.18, which drops html5ever 0.26 with its syn 1 build, the direct `getrandom` dependency, and the fxhash advisory exception, while the article fixtures and full-text spec pages still pass unchanged. (2078)
 ## 0.9.2 — 2026-10-11
 
 ### Fixes
