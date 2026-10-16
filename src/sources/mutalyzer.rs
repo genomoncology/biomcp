@@ -31,7 +31,7 @@ pub struct MutalyzerClient {
 impl MutalyzerClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("mutalyzer")?,
             base: crate::sources::env_base(MUTALYZER_BASE, MUTALYZER_BASE_ENV),
         })
     }

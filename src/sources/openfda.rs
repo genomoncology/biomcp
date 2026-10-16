@@ -20,10 +20,11 @@ pub struct OpenFdaClient {
 
 impl OpenFdaClient {
     pub fn new() -> Result<Self, BioMcpError> {
-        Self::with_client(crate::sources::shared_client()?)
+        Self::with_client(crate::sources::shared_client("openfda")?)
     }
 
     pub(crate) fn new_uncached() -> Result<Self, BioMcpError> {
+        crate::sources::disable::ensure_not_disabled("openfda")?;
         Self::with_client(crate::sources::build_uncached_http_client(
             crate::sources::SharedHttpClientKind::Default,
             None,

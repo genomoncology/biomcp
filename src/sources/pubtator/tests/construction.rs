@@ -7,7 +7,7 @@ use crate::sources::HttpMethod;
 
 fn client_with_api_key(api_key: Option<&str>) -> PubTatorClient {
     PubTatorClient {
-        client: crate::sources::shared_client().expect("shared client"),
+        client: crate::sources::shared_client("pubtator3").expect("shared client"),
         base: std::borrow::Cow::Borrowed("http://127.0.0.1"),
         api_key: api_key.map(str::to_string),
     }

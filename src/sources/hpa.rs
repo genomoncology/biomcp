@@ -70,7 +70,7 @@ pub struct HpaClient {
 impl HpaClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("human-protein-atlas")?,
             base: crate::sources::env_base(HPA_BASE, HPA_BASE_ENV),
         })
     }

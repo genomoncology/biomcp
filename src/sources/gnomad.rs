@@ -130,7 +130,7 @@ struct VariantPopulationResponse {
 impl GnomadClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("gnomad")?,
             base: crate::sources::env_base(GNOMAD_BASE, GNOMAD_BASE_ENV),
         })
     }

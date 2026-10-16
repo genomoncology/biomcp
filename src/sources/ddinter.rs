@@ -407,7 +407,7 @@ async fn sync_export(
     url: &str,
     _mode: DdinterSyncMode,
 ) -> Result<(), BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let client = crate::sources::shared_client("ddinter")?;
     let request = client
         .get(url)
         .with_extension(CacheMode::NoStore)

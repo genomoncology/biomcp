@@ -222,6 +222,10 @@ async fn download_document_with_policy(
     filename: &str,
     policy: ProviderUrlPolicy,
 ) -> Result<Vec<u8>, BioMcpError> {
+    // The document CDN is ClinicalTrials.gov's own distribution endpoint;
+    // this bespoke client passes the same gate the registry-backed
+    // clients pass, so a disabled clinicaltrials-gov never downloads.
+    crate::sources::disable::ensure_not_disabled("clinicaltrials-gov")?;
     let url = download_url(&base, nct_id, filename);
     policy.validate_url(&url)?;
     let client = crate::sources::ca_bundle::build_client(

@@ -24,7 +24,7 @@ pub struct WikiPathwaysClient {
 impl WikiPathwaysClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("wikipathways")?,
             base: crate::sources::env_base(WIKIPATHWAYS_BASE, WIKIPATHWAYS_BASE_ENV),
         })
     }

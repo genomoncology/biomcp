@@ -21,7 +21,7 @@ pub struct PharmGkbClient {
 impl PharmGkbClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("pharmgkb")?,
             base: crate::sources::env_base(PHARMGKB_BASE, PHARMGKB_BASE_ENV),
         })
     }

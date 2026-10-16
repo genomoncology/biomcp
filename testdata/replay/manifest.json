@@ -1,175 +1,199 @@
 {
- "schema_version": 1,
- "routes": {
-  "GET /cpic/pair_view?genesymbol=eq.BRAF&limit=15&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
-   "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=15&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
-   "status": 200,
-   "file": "responses/cpic/cpic-pair-view-a004e3956d1f.bin"
+  "routes": {
+    "GET /cpic/pair_view?genesymbol=eq.BRAF&limit=15&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
+      "file": "responses/cpic/cpic-pair-view-a004e3956d1f.bin",
+      "status": 200,
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=15&offset=0&order=cpiclevel.asc%2Cdrugname.asc"
+    },
+    "GET /cpic/pair_view?genesymbol=eq.BRAF&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
+      "file": "responses/cpic/cpic-pair-view-ea54bbef8d93.bin",
+      "status": 200,
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc"
+    },
+    "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&pageSize=1&query.cond=melanoma&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29": {
+      "file": "responses/ctgov/ctgov-studies-7e5e28576744.json",
+      "headers": {
+        "content-type": "application/json",
+        "etag": "\"0/0.34.1/mv9b5t6w\""
+      },
+      "status": 200,
+      "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29&countTotal=true&pageSize=1&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge"
+    },
+    "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&pageSize=3&query.cond=melanoma&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29": {
+      "file": "responses/ctgov/ctgov-studies-1ef25b10e04f.json",
+      "headers": {
+        "content-type": "application/json",
+        "etag": "\"0/0.34.1/mv9b5t6w\""
+      },
+      "status": 200,
+      "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29&countTotal=true&pageSize=3&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge"
+    },
+    "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&pageSize=1&query.cond=Phelan-McDermid+Syndrome": {
+      "file": "responses/ctgov/ctgov-studies-c5eab0b2a63e.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=1&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge"
+    },
+    "GET /dbsnp/refsnp/113488022": {
+      "file": "responses/dbsnp/dbsnp-refsnp-113488022-a20abb0708c2.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=dbSNP&id=113488022&rettype=json"
+    },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42875213+AND+SRC%3AMED": {
+      "file": "responses/europepmc/europepmc-search-a1b3c35e3557.bin",
+      "status": 200,
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID%3A42875213+AND+SRC%3AMED&format=json&cursorMark=*&pageSize=1"
+    },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=GENE_PROTEIN%3ABRAF+AND+melanoma+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+      "file": "responses/europepmc/europepmc-search-5b43af88f01c.bin",
+      "status": 200,
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=GENE_PROTEIN%3ABRAF+AND+melanoma+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25"
+    },
+    "GET /gwas/v2/associations?direction=asc&efo_trait=melanoma&page=0&size=50&sort=p_value": {
+      "file": "responses/gwas/gwas-v2-associations-01e578363684.bin",
+      "status": 200,
+      "upstream": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?page=0&size=50&sort=p_value&direction=asc&efo_trait=melanoma"
+    },
+    "GET /gwas/v2/associations?direction=asc&mapped_gene=BRAF&page=0&size=50&sort=p_value": {
+      "file": "responses/gwas/gwas-v2-associations-863182df44d8.bin",
+      "status": 200,
+      "upstream": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?page=0&size=50&sort=p_value&direction=asc&mapped_gene=BRAF"
+    },
+    "GET /kegg/find/pathway/BRAF": {
+      "file": "responses/kegg/kegg-find-pathway-braf-ed8e51ae50dc.bin",
+      "status": 200,
+      "upstream": "https://rest.kegg.jp/find/pathway/BRAF"
+    },
+    "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=6": {
+      "file": "responses/mychem/mychem-query-212dd06e4cf8.bin",
+      "status": 200,
+      "upstream": "https://mychem.info/v1/query?q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A*melanoma*&size=6&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name"
+    },
+    "GET /mydisease/disease/MONDO:0007947?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
+      "file": "responses/mydisease/mydisease-disease-mondo-0007947-bbfa1e3532db.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0007947"
+    },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=15": {
+      "file": "responses/mydisease/mydisease-query-ff316c61dfb5.bin",
+      "status": 200,
+      "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
+    },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=5": {
+      "file": "responses/mydisease/mydisease-query-5c659f7ed3cf.bin",
+      "status": 200,
+      "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
+    },
+    "GET /mygene/query?fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&from=0&q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&size=50&species=human": {
+      "file": "responses/mygene/mygene-query-893da30e4c6a.bin",
+      "status": 200,
+      "upstream": "https://mygene.info/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&species=human&fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&size=50&from=0"
+    },
+    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22BRAF%22&size=1&species=human": {
+      "file": "responses/mygene/mygene-query-a5d8935f5365.bin",
+      "status": 200,
+      "upstream": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1"
+    },
+    "GET /myvariant/query?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic&from=0&q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5": {
+      "file": "responses/myvariant/myvariant-query-05bd87d2d97a.bin",
+      "status": 200,
+      "upstream": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5&from=0&fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic"
+    },
+    "GET /myvariant/query?fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp%2A.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence&from=0&q=dbnsfp.genename%3ABRAF+AND+clinvar.rcv.conditions.name%3A%22melanoma%22&size=3": {
+      "file": "responses/myvariant/myvariant-query-74aeeddf51a7.bin",
+      "status": 200,
+      "upstream": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF+AND+clinvar.rcv.conditions.name%3A%22melanoma%22&size=3&from=0&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp*.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence"
+    },
+    "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRAF+AND+melanoma+NOT+retracted+publication%5Bpt%5D": {
+      "file": "responses/pubmed/pubmed-esearch-fcgi-43c7b53a5cd6.bin",
+      "status": 200,
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRAF+AND+melanoma+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100"
+    },
+    "GET /pubmed/esummary.fcgi?db=pubmed&id=42875213%2C42870784%2C42869554%2C42869017%2C42860695%2C42859986%2C42856236%2C42852354%2C42849920%2C42849799%2C42841061%2C42840607%2C42835050%2C42828389%2C42826365%2C42823486%2C42822592%2C42818226%2C42816143%2C42816108%2C42808945%2C42806361%2C42805360%2C42797500%2C42795795%2C42795023%2C42794996%2C42794517%2C42794461%2C42785774%2C42772593%2C42771837%2C42770269%2C42761815%2C42760578%2C42756379%2C42756300%2C42748471%2C42738290%2C42738249%2C42733341%2C42731732%2C42729668%2C42727358%2C42726853%2C42725334%2C42716723%2C42716382%2C42716012%2C42715459%2C42714248%2C42710135%2C42705003%2C42703371%2C42700516%2C42688875%2C42678759%2C42675868%2C42674934%2C42674721%2C42671758%2C42667537%2C42663979%2C42660910%2C42657315%2C42650005%2C42645086%2C42634895%2C42631649%2C42630564%2C42626950%2C42625684%2C42625217%2C42619042%2C42615072%2C42614357%2C42613908%2C42603991%2C42601381%2C42600747%2C42588746%2C42585631%2C42583475%2C42578969%2C42550831%2C42567454%2C42562950%2C42561142%2C42552625%2C42549405%2C42536437%2C42532763%2C42527077%2C42523965%2C42523496%2C42512373%2C42511909%2C42511802%2C42511588%2C42511497&retmode=json": {
+      "file": "responses/pubmed/pubmed-esummary-fcgi-9019b354c39b.bin",
+      "status": 200,
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42875213%2C42870784%2C42869554%2C42869017%2C42860695%2C42859986%2C42856236%2C42852354%2C42849920%2C42849799%2C42841061%2C42840607%2C42835050%2C42828389%2C42826365%2C42823486%2C42822592%2C42818226%2C42816143%2C42816108%2C42808945%2C42806361%2C42805360%2C42797500%2C42795795%2C42795023%2C42794996%2C42794517%2C42794461%2C42785774%2C42772593%2C42771837%2C42770269%2C42761815%2C42760578%2C42756379%2C42756300%2C42748471%2C42738290%2C42738249%2C42733341%2C42731732%2C42729668%2C42727358%2C42726853%2C42725334%2C42716723%2C42716382%2C42716012%2C42715459%2C42714248%2C42710135%2C42705003%2C42703371%2C42700516%2C42688875%2C42678759%2C42675868%2C42674934%2C42674721%2C42671758%2C42667537%2C42663979%2C42660910%2C42657315%2C42650005%2C42645086%2C42634895%2C42631649%2C42630564%2C42626950%2C42625684%2C42625217%2C42619042%2C42615072%2C42614357%2C42613908%2C42603991%2C42601381%2C42600747%2C42588746%2C42585631%2C42583475%2C42578969%2C42550831%2C42567454%2C42562950%2C42561142%2C42552625%2C42549405%2C42536437%2C42532763%2C42527077%2C42523965%2C42523496%2C42512373%2C42511909%2C42511802%2C42511588%2C42511497"
+    },
+    "GET /pubtator/entity/autocomplete/?query=BRAF": {
+      "file": "responses/pubtator/pubtator-entity-autocomplete-bdb9ec97d8e3.bin",
+      "status": 200,
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=BRAF"
+    },
+    "GET /pubtator/entity/autocomplete/?query=melanoma": {
+      "file": "responses/pubtator/pubtator-entity-autocomplete-79adfc758459.bin",
+      "status": 200,
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=melanoma"
+    },
+    "GET /pubtator/publications/export/biocjson?pmids=42875213": {
+      "file": "responses/pubtator/pubtator-publications-export-biocjson-d586620d07c5.bin",
+      "status": 400,
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=42875213"
+    },
+    "GET /pubtator/search/?page=1&size=25&text=%40GENE_BRAF+%40DISEASE_Melanoma": {
+      "file": "responses/pubtator/pubtator-search-5b41d96face0.bin",
+      "status": 200,
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40GENE_BRAF+%40DISEASE_Melanoma&page=1&size=25"
+    },
+    "GET /reactome/search/query?pageSize=3&query=BRAF&species=Homo+sapiens": {
+      "file": "responses/reactome/reactome-search-query-32ff0934f602.bin",
+      "status": 500,
+      "upstream": "https://reactome.org/ContentService/search/query?query=BRAF&species=Homo+sapiens&pageSize=3"
+    },
+    "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=1&query=BRAF+melanoma": {
+      "file": "responses/s2/s2-graph-v1-paper-search-12fb30916c77.bin",
+      "status": 429,
+      "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF+melanoma&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=1"
+    },
+    "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=3&query=BRAF+melanoma": {
+      "file": "responses/s2/s2-graph-v1-paper-search-8f4956e26876.bin",
+      "status": 429,
+      "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF+melanoma&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=3"
+    },
+    "GET /uniprot/uniprotkb/P15056.json": {
+      "file": "responses/uniprot/uniprot-uniprotkb-p15056-json-877bdc7b8fe3.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://rest.uniprot.org/uniprotkb/P15056.json"
+    },
+    "GET /wikipathways/findPathwaysByText.json": {
+      "file": "responses/wikipathways/wikipathways-findpathwaysbytext-json-ce9c5698da2d.bin",
+      "headers": {
+        "etag": "W/\"6ad0f588-23cec7\"",
+        "last-modified": "Thu, 15 Oct 2026 15:47:20 GMT"
+      },
+      "status": 200,
+      "upstream": "https://www.wikipathways.org/json/findPathwaysByText.json"
+    },
+    "POST /opentargets/graphql#43750647d0c40094": {
+      "file": "responses/opentargets/opentargets-graphql-43750647d0c40094-701220c8c35c.bin",
+      "status": 200,
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql"
+    },
+    "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#417154d125173f55": {
+      "file": "responses/s2/s2-graph-v1-paper-batch-88bd002daeb4.bin",
+      "status": 429,
+      "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract"
+    },
+    "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#4b3c9bf52bd3513b": {
+      "file": "responses/s2/s2-graph-v1-paper-batch-3f9def8611a3.bin",
+      "status": 429,
+      "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract"
+    },
+    "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#57e763ad0ff60785": {
+      "file": "responses/s2/s2-graph-v1-paper-batch-4f6e0d394f64.bin",
+      "status": 200,
+      "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract"
+    }
   },
-  "GET /cpic/pair_view?genesymbol=eq.BRAF&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
-   "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
-   "status": 200,
-   "file": "responses/cpic/cpic-pair-view-ea54bbef8d93.bin"
-  },
-  "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&pageSize=1&query.cond=melanoma&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29": {
-   "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29&countTotal=true&pageSize=1&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
-   "status": 200,
-   "file": "responses/ctgov/ctgov-studies-7e5e28576744.json",
-   "headers": {
-    "content-type": "application/json",
-    "etag": "\"0/0.34.1/mv9b5t6w\""
-   }
-  },
-  "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&pageSize=3&query.cond=melanoma&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29": {
-   "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29&countTotal=true&pageSize=3&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
-   "status": 200,
-   "file": "responses/ctgov/ctgov-studies-1ef25b10e04f.json",
-   "headers": {
-    "content-type": "application/json",
-    "etag": "\"0/0.34.1/mv9b5t6w\""
-   }
-  },
-  "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&pageSize=1&query.cond=Phelan-McDermid+Syndrome": {
-   "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=1&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
-   "status": 200,
-   "file": "responses/ctgov/ctgov-studies-c5eab0b2a63e.json",
-   "headers": {
-    "content-type": "application/json"
-   }
-  },
-  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42875213+AND+SRC%3AMED": {
-   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID%3A42875213+AND+SRC%3AMED&format=json&cursorMark=*&pageSize=1",
-   "status": 200,
-   "file": "responses/europepmc/europepmc-search-a1b3c35e3557.bin"
-  },
-  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=GENE_PROTEIN%3ABRAF+AND+melanoma+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
-   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=GENE_PROTEIN%3ABRAF+AND+melanoma+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
-   "status": 200,
-   "file": "responses/europepmc/europepmc-search-5b43af88f01c.bin"
-  },
-  "GET /gwas/v2/associations?direction=asc&efo_trait=melanoma&page=0&size=50&sort=p_value": {
-   "upstream": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?page=0&size=50&sort=p_value&direction=asc&efo_trait=melanoma",
-   "status": 200,
-   "file": "responses/gwas/gwas-v2-associations-01e578363684.bin"
-  },
-  "GET /gwas/v2/associations?direction=asc&mapped_gene=BRAF&page=0&size=50&sort=p_value": {
-   "upstream": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?page=0&size=50&sort=p_value&direction=asc&mapped_gene=BRAF",
-   "status": 200,
-   "file": "responses/gwas/gwas-v2-associations-863182df44d8.bin"
-  },
-  "GET /kegg/find/pathway/BRAF": {
-   "upstream": "https://rest.kegg.jp/find/pathway/BRAF",
-   "status": 200,
-   "file": "responses/kegg/kegg-find-pathway-braf-ed8e51ae50dc.bin"
-  },
-  "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=6": {
-   "upstream": "https://mychem.info/v1/query?q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A*melanoma*&size=6&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
-   "status": 200,
-   "file": "responses/mychem/mychem-query-212dd06e4cf8.bin"
-  },
-  "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=15": {
-   "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
-   "status": 200,
-   "file": "responses/mydisease/mydisease-query-ff316c61dfb5.bin"
-  },
-  "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=5": {
-   "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
-   "status": 200,
-   "file": "responses/mydisease/mydisease-query-5c659f7ed3cf.bin"
-  },
-  "GET /mygene/query?fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&from=0&q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&size=50&species=human": {
-   "upstream": "https://mygene.info/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&species=human&fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&size=50&from=0",
-   "status": 200,
-   "file": "responses/mygene/mygene-query-893da30e4c6a.bin"
-  },
-  "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22BRAF%22&size=1&species=human": {
-   "upstream": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1",
-   "status": 200,
-   "file": "responses/mygene/mygene-query-a5d8935f5365.bin"
-  },
-  "GET /myvariant/query?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic&from=0&q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5": {
-   "upstream": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5&from=0&fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic",
-   "status": 200,
-   "file": "responses/myvariant/myvariant-query-05bd87d2d97a.bin"
-  },
-  "GET /myvariant/query?fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp%2A.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence&from=0&q=dbnsfp.genename%3ABRAF+AND+clinvar.rcv.conditions.name%3A%22melanoma%22&size=3": {
-   "upstream": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF+AND+clinvar.rcv.conditions.name%3A%22melanoma%22&size=3&from=0&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp*.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence",
-   "status": 200,
-   "file": "responses/myvariant/myvariant-query-74aeeddf51a7.bin"
-  },
-  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRAF+AND+melanoma+NOT+retracted+publication%5Bpt%5D": {
-   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRAF+AND+melanoma+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
-   "status": 200,
-   "file": "responses/pubmed/pubmed-esearch-fcgi-43c7b53a5cd6.bin"
-  },
-  "GET /pubmed/esummary.fcgi?db=pubmed&id=42875213%2C42870784%2C42869554%2C42869017%2C42860695%2C42859986%2C42856236%2C42852354%2C42849920%2C42849799%2C42841061%2C42840607%2C42835050%2C42828389%2C42826365%2C42823486%2C42822592%2C42818226%2C42816143%2C42816108%2C42808945%2C42806361%2C42805360%2C42797500%2C42795795%2C42795023%2C42794996%2C42794517%2C42794461%2C42785774%2C42772593%2C42771837%2C42770269%2C42761815%2C42760578%2C42756379%2C42756300%2C42748471%2C42738290%2C42738249%2C42733341%2C42731732%2C42729668%2C42727358%2C42726853%2C42725334%2C42716723%2C42716382%2C42716012%2C42715459%2C42714248%2C42710135%2C42705003%2C42703371%2C42700516%2C42688875%2C42678759%2C42675868%2C42674934%2C42674721%2C42671758%2C42667537%2C42663979%2C42660910%2C42657315%2C42650005%2C42645086%2C42634895%2C42631649%2C42630564%2C42626950%2C42625684%2C42625217%2C42619042%2C42615072%2C42614357%2C42613908%2C42603991%2C42601381%2C42600747%2C42588746%2C42585631%2C42583475%2C42578969%2C42550831%2C42567454%2C42562950%2C42561142%2C42552625%2C42549405%2C42536437%2C42532763%2C42527077%2C42523965%2C42523496%2C42512373%2C42511909%2C42511802%2C42511588%2C42511497&retmode=json": {
-   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42875213%2C42870784%2C42869554%2C42869017%2C42860695%2C42859986%2C42856236%2C42852354%2C42849920%2C42849799%2C42841061%2C42840607%2C42835050%2C42828389%2C42826365%2C42823486%2C42822592%2C42818226%2C42816143%2C42816108%2C42808945%2C42806361%2C42805360%2C42797500%2C42795795%2C42795023%2C42794996%2C42794517%2C42794461%2C42785774%2C42772593%2C42771837%2C42770269%2C42761815%2C42760578%2C42756379%2C42756300%2C42748471%2C42738290%2C42738249%2C42733341%2C42731732%2C42729668%2C42727358%2C42726853%2C42725334%2C42716723%2C42716382%2C42716012%2C42715459%2C42714248%2C42710135%2C42705003%2C42703371%2C42700516%2C42688875%2C42678759%2C42675868%2C42674934%2C42674721%2C42671758%2C42667537%2C42663979%2C42660910%2C42657315%2C42650005%2C42645086%2C42634895%2C42631649%2C42630564%2C42626950%2C42625684%2C42625217%2C42619042%2C42615072%2C42614357%2C42613908%2C42603991%2C42601381%2C42600747%2C42588746%2C42585631%2C42583475%2C42578969%2C42550831%2C42567454%2C42562950%2C42561142%2C42552625%2C42549405%2C42536437%2C42532763%2C42527077%2C42523965%2C42523496%2C42512373%2C42511909%2C42511802%2C42511588%2C42511497",
-   "status": 200,
-   "file": "responses/pubmed/pubmed-esummary-fcgi-9019b354c39b.bin"
-  },
-  "GET /pubtator/entity/autocomplete/?query=BRAF": {
-   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=BRAF",
-   "status": 200,
-   "file": "responses/pubtator/pubtator-entity-autocomplete-bdb9ec97d8e3.bin"
-  },
-  "GET /pubtator/entity/autocomplete/?query=melanoma": {
-   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=melanoma",
-   "status": 200,
-   "file": "responses/pubtator/pubtator-entity-autocomplete-79adfc758459.bin"
-  },
-  "GET /pubtator/publications/export/biocjson?pmids=42875213": {
-   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=42875213",
-   "status": 400,
-   "file": "responses/pubtator/pubtator-publications-export-biocjson-d586620d07c5.bin"
-  },
-  "GET /pubtator/search/?page=1&size=25&text=%40GENE_BRAF+%40DISEASE_Melanoma": {
-   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40GENE_BRAF+%40DISEASE_Melanoma&page=1&size=25",
-   "status": 200,
-   "file": "responses/pubtator/pubtator-search-5b41d96face0.bin"
-  },
-  "GET /reactome/search/query?pageSize=3&query=BRAF&species=Homo+sapiens": {
-   "upstream": "https://reactome.org/ContentService/search/query?query=BRAF&species=Homo+sapiens&pageSize=3",
-   "status": 500,
-   "file": "responses/reactome/reactome-search-query-32ff0934f602.bin"
-  },
-  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=1&query=BRAF+melanoma": {
-   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF+melanoma&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=1",
-   "status": 429,
-   "file": "responses/s2/s2-graph-v1-paper-search-12fb30916c77.bin"
-  },
-  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=3&query=BRAF+melanoma": {
-   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF+melanoma&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=3",
-   "status": 429,
-   "file": "responses/s2/s2-graph-v1-paper-search-8f4956e26876.bin"
-  },
-  "GET /wikipathways/findPathwaysByText.json": {
-   "upstream": "https://www.wikipathways.org/json/findPathwaysByText.json",
-   "status": 200,
-   "file": "responses/wikipathways/wikipathways-findpathwaysbytext-json-ce9c5698da2d.bin",
-   "headers": {
-    "etag": "W/\"6ad0f588-23cec7\"",
-    "last-modified": "Thu, 15 Oct 2026 15:47:20 GMT"
-   }
-  },
-  "POST /opentargets/graphql#43750647d0c40094": {
-   "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
-   "status": 200,
-   "file": "responses/opentargets/opentargets-graphql-43750647d0c40094-701220c8c35c.bin"
-  },
-  "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#417154d125173f55": {
-   "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract",
-   "status": 429,
-   "file": "responses/s2/s2-graph-v1-paper-batch-88bd002daeb4.bin"
-  },
-  "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#4b3c9bf52bd3513b": {
-   "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract",
-   "status": 429,
-   "file": "responses/s2/s2-graph-v1-paper-batch-3f9def8611a3.bin"
-  },
-  "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#57e763ad0ff60785": {
-   "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract",
-   "status": 200,
-   "file": "responses/s2/s2-graph-v1-paper-batch-4f6e0d394f64.bin"
-  }
- }
+  "schema_version": 1
 }

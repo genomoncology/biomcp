@@ -34,7 +34,7 @@ impl OncoKBClient {
             .unwrap_or_else(|| Cow::Borrowed(ONCOKB_PROD_BASE));
 
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("oncokb")?,
             base,
             token,
         })

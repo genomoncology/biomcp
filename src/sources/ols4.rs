@@ -33,7 +33,7 @@ pub struct OlsClient {
 impl OlsClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("ols4")?,
             base: crate::sources::env_base(OLS4_BASE, OLS4_BASE_ENV),
         })
     }
@@ -49,7 +49,7 @@ impl OlsClient {
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            client: crate::sources::shared_client_with_deadline("ols4", deadline).await?,
             base: crate::sources::env_base(OLS4_BASE, OLS4_BASE_ENV),
         })
     }

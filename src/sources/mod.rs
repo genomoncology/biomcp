@@ -1597,7 +1597,12 @@ pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
         .build())
 }
 
-pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
+/// Obtains the shared HTTP client for one source. `source_id` is the
+/// source's registry id in `docs/reference/sources.json`; a disabled
+/// source is refused here, before any client exists, so it can never
+/// send a request.
+pub(crate) fn shared_client(source_id: &str) -> Result<ClientWithMiddleware, BioMcpError> {
+    disable::ensure_not_disabled(source_id)?;
     ensure_variant_article_time()?;
     if cache_is_bypassed() {
         return build_uncached_http_client(SharedHttpClientKind::Default, None);
@@ -1623,8 +1628,10 @@ pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
 }
 
 pub(crate) async fn shared_client_with_deadline(
+    source_id: &str,
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    disable::ensure_not_disabled(source_id)?;
     if let Some(client) = cached_http_client() {
         return Ok(client);
     }
@@ -1656,9 +1663,11 @@ pub(crate) async fn shared_client_with_deadline(
 }
 
 pub(crate) fn semantic_scholar_provider_client(
+    source_id: &str,
     policy: &provider_url_policy::ProviderUrlPolicy,
     authenticated: bool,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    disable::ensure_not_disabled(source_id)?;
     ensure_variant_article_time()?;
     let kind = if authenticated {
         SharedHttpClientKind::Default
@@ -1675,10 +1684,12 @@ pub(crate) fn semantic_scholar_provider_client(
 }
 
 pub(crate) async fn semantic_scholar_provider_client_with_deadline(
+    source_id: &str,
     policy: &provider_url_policy::ProviderUrlPolicy,
     authenticated: bool,
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    disable::ensure_not_disabled(source_id)?;
     let kind = if authenticated {
         SharedHttpClientKind::Default
     } else {
@@ -1696,7 +1707,29 @@ pub(crate) async fn semantic_scholar_provider_client_with_deadline(
     .await
 }
 
+/// Obtains a policy-scoped client for one source (`source_id` is its
+/// registry id); a disabled source is refused before any client exists.
 pub(crate) fn provider_url_client(
+    source_id: &str,
+    policy: &provider_url_policy::ProviderUrlPolicy,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    disable::ensure_not_disabled(source_id)?;
+    ensure_variant_article_time()?;
+    if is_no_cache_enabled() {
+        return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
+    }
+    let config = crate::cache::resolve_cache_config()?;
+    let client =
+        build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))?;
+    ensure_variant_article_time()?;
+    Ok(client)
+}
+
+/// The policy-scoped client for operator traffic that is not a source in
+/// `docs/reference/sources.json` (the self-update release check). Source
+/// clients use [`provider_url_client`], which enforces the disabled-source
+/// gate.
+pub(crate) fn operator_provider_url_client(
     policy: &provider_url_policy::ProviderUrlPolicy,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     ensure_variant_article_time()?;
@@ -1711,9 +1744,11 @@ pub(crate) fn provider_url_client(
 }
 
 pub(crate) async fn provider_url_client_with_deadline(
+    source_id: &str,
     policy: &provider_url_policy::ProviderUrlPolicy,
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    disable::ensure_not_disabled(source_id)?;
     if cache_is_bypassed() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }
@@ -1746,9 +1781,11 @@ pub(crate) fn is_semantic_scholar_shared_pool_rate_limit_error(
 /// Use this for requests with streaming bodies (e.g., multipart) that cannot be cloned and therefore
 /// cannot pass through the retry/cache middleware stack.
 pub(crate) fn streaming_http_client(
+    source_id: &str,
     base: &str,
     env_var: &str,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    disable::ensure_not_disabled(source_id)?;
     ordinary_middleware_client_for_base(base, env_var, |builder| {
         builder
             .timeout(Duration::from_secs(30))

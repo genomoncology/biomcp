@@ -94,7 +94,7 @@ pub struct CivicClient {
 impl CivicClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("civic")?,
             base: crate::sources::env_base(CIVIC_BASE, CIVIC_BASE_ENV),
         })
     }

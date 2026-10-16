@@ -22,7 +22,7 @@ pub struct MyGeneClient {
 impl MyGeneClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("mygene-info")?,
             base: crate::sources::env_base(MYGENE_BASE, MYGENE_BASE_ENV),
         })
     }

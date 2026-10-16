@@ -9,7 +9,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn client_with_api_key(api_key: Option<&str>) -> SemanticScholarClient {
     SemanticScholarClient {
-        client: crate::sources::shared_client().expect("shared client"),
+        client: crate::sources::shared_client("semantic-scholar").expect("shared client"),
         base: std::borrow::Cow::Borrowed("http://127.0.0.1"),
         api_key: api_key.map(str::to_string),
     }

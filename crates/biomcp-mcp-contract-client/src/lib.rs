@@ -1063,9 +1063,19 @@ fn handle_ols4_connection(mut stream: TcpStream) {
 
 impl ContractHarness {
     fn base_server_command(&self, extra_env: &[EnvVar]) -> Command {
+        self.server_command_with(
+            &extra_env
+                .iter()
+                .map(|(key, value)| ((*key).to_string(), (*value).to_string()))
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    fn server_command_with(&self, extra_env: &[(String, String)]) -> Command {
         let mut command = Command::new(&self.biomcp_bin);
         command.env_remove("RUST_MIN_STACK");
         command.env_remove("BIOMCP_TEST_PANIC_TOOL");
+        command.env_remove("BIOMCP_DISABLE_SOURCES");
         command.env("UMLS_API_KEY", "");
         for (key, value) in extra_env {
             command.env(key, value);
@@ -1096,13 +1106,46 @@ impl ContractHarness {
         Ok((().serve(transport).await?, pid))
     }
 
+    /// Spawns `serve` with arguments ahead of the subcommand (global
+    /// flags such as `--disable-sources`) and runtime-built environment
+    /// pairs, so a test can point the server at its own fixture origin.
+    pub async fn spawn_stdio_client_with_args(
+        &self,
+        args: &[&str],
+        extra_env: &[(String, String)],
+    ) -> anyhow::Result<(
+        RunningClient<impl rmcp::Service<rmcp::RoleClient>>,
+        Option<u32>,
+    )> {
+        let mut command = self.server_command_with(extra_env);
+        command.args(args).arg("serve");
+        let transport = TokioChildProcess::new(command)?;
+        let pid = transport.id();
+        Ok((().serve(transport).await?, pid))
+    }
+
     pub async fn spawn_http_server(&self, extra_env: &[EnvVar]) -> anyhow::Result<(Child, String)> {
+        let converted = extra_env
+            .iter()
+            .map(|(key, value)| ((*key).to_string(), (*value).to_string()))
+            .collect::<Vec<_>>();
+        self.spawn_http_server_with_args(&[], &converted).await
+    }
+
+    /// Spawns `serve-http` with arguments ahead of the subcommand and
+    /// runtime-built environment pairs; see `spawn_stdio_client_with_args`.
+    pub async fn spawn_http_server_with_args(
+        &self,
+        args: &[&str],
+        extra_env: &[(String, String)],
+    ) -> anyhow::Result<(Child, String)> {
         let listener = std::net::TcpListener::bind(("127.0.0.1", 0))?;
         let port = listener.local_addr()?.port();
         drop(listener);
 
-        let mut command = self.base_server_command(extra_env);
+        let mut command = self.server_command_with(extra_env);
         command
+            .args(args)
             .arg("serve-http")
             .arg("--host")
             .arg("127.0.0.1")

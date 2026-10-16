@@ -28,7 +28,7 @@ pub struct DisgenetClient {
 impl DisgenetClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("disgenet")?,
             base: crate::sources::env_base(DISGENET_BASE, DISGENET_BASE_ENV),
             api_key: std::env::var(DISGENET_API_KEY_ENV)
                 .ok()

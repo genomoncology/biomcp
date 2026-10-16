@@ -22,7 +22,7 @@ pub struct GwasClient {
 impl GwasClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("gwas-catalog")?,
             base: crate::sources::env_base(GWAS_BASE, GWAS_BASE_ENV),
         })
     }

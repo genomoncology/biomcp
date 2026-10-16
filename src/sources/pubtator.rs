@@ -56,7 +56,7 @@ pub struct PubTatorClient {
 impl PubTatorClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("pubtator3")?,
             base: crate::sources::env_base(PUBTATOR_BASE, PUBTATOR_BASE_ENV),
             api_key: crate::sources::ncbi_api_key(),
         })
@@ -66,7 +66,7 @@ impl PubTatorClient {
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            client: crate::sources::shared_client_with_deadline("pubtator3", deadline).await?,
             base: crate::sources::env_base(PUBTATOR_BASE, PUBTATOR_BASE_ENV),
             api_key: crate::sources::ncbi_api_key(),
         })

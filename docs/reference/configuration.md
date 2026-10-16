@@ -159,6 +159,9 @@ pipe-separated list of source ids and group names, matched
 case-insensitively with surrounding whitespace trimmed:
 `--disable-sources kegg,enrichr` and `BIOMCP_DISABLE_SOURCES=kegg|enrichr`
 behave identically, and the CLI and the MCP server read the same setting.
+`biomcp serve` and `biomcp serve-http` accept `--disable-sources` before the
+subcommand, so one server run keeps the list for every tool call exactly as a
+one-shot command does.
 An unknown id or group name is an error that lists the valid names. Valid
 ids come from [`sources.json`](source-licensing.md#how-to-read-this-page);
 the groups are `commercial-restricted`, `license-required`, and

@@ -1,8 +1,10 @@
 # 2124 — Make disable-sources stop every source on the CLI and the server
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 0c55160, accept
 
 ## Outcome
 

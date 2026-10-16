@@ -62,7 +62,7 @@ pub struct SeerClient {
 impl SeerClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("seer-explorer")?,
             base: crate::sources::env_base(SEER_BASE, SEER_BASE_ENV),
         })
     }

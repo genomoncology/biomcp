@@ -23,6 +23,7 @@ pub struct AlphaGenomeClient {
 
 impl AlphaGenomeClient {
     pub async fn new() -> Result<Self, BioMcpError> {
+        crate::sources::disable::ensure_not_disabled("alphagenome")?;
         let api_key = std::env::var(ALPHAGENOME_API_KEY_ENV)
             .ok()
             .map(|s| s.trim().to_string())

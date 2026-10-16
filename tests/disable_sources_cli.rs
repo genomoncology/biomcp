@@ -561,3 +561,265 @@ fn mcp_and_cli_read_the_same_env_setting() {
     let out = stdout(&output);
     assert!(!out.contains("Homo sapiens"), "{out}");
 }
+
+// The serve proofs stand every provider up on the golden suite's replay
+// server (`tools/replay-server`), so a request the server sees is logged
+// and a request it never sees cannot have left the host. The server
+// refuses to reach any live provider without --record, which keeps the
+// proof honest on a branch that has not fixed the gate yet.
+struct ReplayServer {
+    // Held so the scratch directory lives exactly as long as the server.
+    _scratch: tempfile::TempDir,
+    env: Vec<(String, String)>,
+    request_log: std::path::PathBuf,
+    child: std::process::Child,
+}
+
+impl ReplayServer {
+    fn start() -> ReplayServer {
+        let scratch = tempfile::tempdir().expect("scratch dir for the replay server");
+        let env_file = scratch.path().join("replay-env");
+        let request_log = scratch.path().join("request.log");
+        let repo_root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut child = std::process::Command::new("python3")
+            .arg(repo_root.join("tools/replay-server"))
+            .arg("--root")
+            .arg(&repo_root)
+            .arg("--env-file")
+            .arg(&env_file)
+            .arg("--request-log")
+            .arg(&request_log)
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .expect("start tools/replay-server");
+        let ready = {
+            use std::io::BufRead;
+            let stdout =
+                std::io::BufReader::new(child.stdout.take().expect("replay server stdout piped"));
+            let mut reader = stdout;
+            let mut line = String::new();
+            reader
+                .read_line(&mut line)
+                .expect("read the replay server readiness line");
+            line
+        };
+        let origin = ready
+            .strip_prefix("READY ")
+            .unwrap_or_else(|| panic!("replay server greeted unexpectedly: {ready:?}"))
+            .trim()
+            .to_string();
+        let mut env: Vec<(String, String)> = Vec::new();
+        for line in std::fs::read_to_string(&env_file)
+            .expect("replay server env file")
+            .lines()
+        {
+            let (name, value) = line
+                .strip_prefix("export ")
+                .unwrap_or(line)
+                .split_once('=')
+                .unwrap_or_else(|| panic!("unexpected env file line: {line:?}"));
+            env.push((name.to_string(), value.to_string()));
+        }
+        let cache = scratch.path().join("cache");
+        std::fs::create_dir_all(&cache).expect("scratch cache dir");
+        env.push(("BIOMCP_CACHE_MODE".to_string(), "off".to_string()));
+        env.push((
+            "BIOMCP_CACHE_DIR".to_string(),
+            cache.to_string_lossy().into_owned(),
+        ));
+        env.push(("BIOMCP_TEST_UNPACED_ORIGIN".to_string(), origin.clone()));
+        ReplayServer {
+            _scratch: scratch,
+            env,
+            request_log,
+            child,
+        }
+    }
+
+    fn line_count(&self) -> usize {
+        std::fs::read_to_string(&self.request_log)
+            .map(|text| text.lines().filter(|line| !line.is_empty()).count())
+            .unwrap_or(0)
+    }
+
+    fn civic_requests_since(&self, since: usize) -> Vec<String> {
+        std::fs::read_to_string(&self.request_log)
+            .unwrap_or_default()
+            .lines()
+            .filter(|line| !line.is_empty())
+            .skip(since)
+            .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+            .filter_map(|entry| {
+                entry
+                    .get("key")
+                    .and_then(|key| key.as_str())
+                    .map(str::to_string)
+            })
+            .filter(|key| key.contains(" /civic"))
+            .collect()
+    }
+}
+
+impl Drop for ReplayServer {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+        // The scratch TempDir removes itself when it drops right after.
+    }
+}
+
+fn serve_runtime() -> tokio::runtime::Runtime {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("tokio runtime for the serve proofs")
+}
+
+#[test]
+fn serve_flag_disables_civic_on_the_stdio_server() {
+    let replay = ReplayServer::start();
+    let harness =
+        biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
+    let env = replay.env.clone();
+    let rt = serve_runtime();
+    rt.block_on(async move {
+        let (client, pid) = harness
+            .spawn_stdio_client_with_args(&["--disable-sources", "civic"], &env)
+            .await
+            .expect("spawn biomcp --disable-sources civic serve");
+        let result = async {
+            let initialize = client
+                .peer_info()
+                .expect("rmcp client stores initialize result as peer info");
+            let instructions = initialize.instructions.as_deref().unwrap_or_default();
+            assert!(
+                instructions.contains(
+                    "operator disabled these sources: civic (disabled by --disable-sources=civic)"
+                ),
+                "the server description must list CIViC off with the flag's reason: {instructions}"
+            );
+            let before = replay.line_count();
+            let get = client
+                .peer()
+                .call_tool(
+                    rmcp::model::CallToolRequestParams::new("get").with_arguments(
+                        std::collections::BTreeMap::from([
+                            ("entity".to_string(), serde_json::json!("variant")),
+                            ("id".to_string(), serde_json::json!("BRAF V600E")),
+                            ("sections".to_string(), serde_json::json!(["civic"])),
+                            ("json".to_string(), serde_json::json!(true)),
+                        ])
+                        .into_iter()
+                        .collect(),
+                    ),
+                )
+                .await
+                .expect("call the typed get tool for a variant");
+            assert_eq!(
+                get.is_error,
+                Some(false),
+                "the tool call must succeed; reply: {}",
+                biomcp_mcp_contract_client::text_chunks(&get.content).join("\n")
+            );
+            let text = biomcp_mcp_contract_client::first_text(&get.content);
+            assert!(
+                text.to_ascii_lowercase().contains("civic"),
+                "the reply names the CIViC section: {text}"
+            );
+            let leaked = replay.civic_requests_since(before);
+            assert!(
+                leaked.is_empty(),
+                "the disabled CIViC source still reached the network: {leaked:?}"
+            );
+            anyhow::Ok(())
+        }
+        .await;
+        let _ = biomcp_mcp_contract_client::terminate_process(pid);
+        result.expect("serve proof assertions hold")
+    });
+}
+
+#[test]
+fn serve_http_flag_matches_the_env_variable_form() {
+    let replay = ReplayServer::start();
+    let harness =
+        biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
+    let env = replay.env.clone();
+    let rt = serve_runtime();
+    rt.block_on(async move {
+        let flag_instructions =
+            serve_http_civic_description(&harness, &replay, &env, &["--disable-sources", "civic"])
+                .await
+                .expect("serve-http accepts the parsed flag");
+        assert!(
+            flag_instructions.contains(
+                "operator disabled these sources: civic (disabled by --disable-sources=civic)"
+            ),
+            "serve-http must list CIViC off with the flag: {flag_instructions}"
+        );
+
+        let mut env_form = env.clone();
+        env_form.push(("BIOMCP_DISABLE_SOURCES".to_string(), "civic".to_string()));
+        let env_instructions = serve_http_civic_description(&harness, &replay, &env_form, &[])
+            .await
+            .expect("serve-http reads the environment variable");
+        assert!(
+            env_instructions.contains(
+                "operator disabled these sources: civic (disabled by BIOMCP_DISABLE_SOURCES=civic)"
+            ),
+            "serve-http must list CIViC off with the environment variable: {env_instructions}"
+        );
+    });
+}
+
+/// Starts one serve-http process with the given leading arguments and
+/// environment, reads its initialize instructions, and calls the typed
+/// get tool for one variant's CIViC section; the caller asserts on the
+/// returned instructions while this helper asserts no CIViC request
+/// reached the replay server during the tool call.
+async fn serve_http_civic_description(
+    harness: &biomcp_mcp_contract_client::ContractHarness,
+    replay: &ReplayServer,
+    env: &[(String, String)],
+    args: &[&str],
+) -> anyhow::Result<String> {
+    let (mut child, base_url) = harness.spawn_http_server_with_args(args, env).await?;
+    let result = async {
+        let client = harness.http_client(format!("{base_url}/mcp")).await?;
+        let initialize = client
+            .peer_info()
+            .expect("rmcp client stores initialize result as peer info");
+        let instructions = initialize.instructions.clone().unwrap_or_default();
+        let before = replay.line_count();
+        let get = client
+            .peer()
+            .call_tool(
+                rmcp::model::CallToolRequestParams::new("get").with_arguments(
+                    std::collections::BTreeMap::from([
+                        ("entity".to_string(), serde_json::json!("variant")),
+                        ("id".to_string(), serde_json::json!("BRAF V600E")),
+                        ("sections".to_string(), serde_json::json!(["civic"])),
+                        ("json".to_string(), serde_json::json!(true)),
+                    ])
+                    .into_iter()
+                    .collect(),
+                ),
+            )
+            .await?;
+        assert_eq!(
+            get.is_error,
+            Some(false),
+            "the tool call must succeed; reply: {}",
+            biomcp_mcp_contract_client::text_chunks(&get.content).join("\n")
+        );
+        let leaked = replay.civic_requests_since(before);
+        assert!(
+            leaked.is_empty(),
+            "the disabled CIViC source still reached the network: {leaked:?}"
+        );
+        Ok(instructions)
+    }
+    .await;
+    let _ = child.kill().await;
+    result
+}

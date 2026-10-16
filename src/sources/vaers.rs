@@ -215,6 +215,7 @@ impl VaersClient {
 fn vaers_http_client(base: &str) -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
     // CDC WONDER's edge denies the shared `biomcp-cli/<version>` user-agent for
     // VAERS XML POSTs while allowing common command-line clients.
+    crate::sources::disable::ensure_not_disabled("vaers")?;
     crate::sources::ordinary_middleware_client_for_base(base, VAERS_BASE_ENV, |builder| {
         builder
             .timeout(Duration::from_secs(30))

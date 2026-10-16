@@ -27,7 +27,7 @@ pub struct CpicClient {
 impl CpicClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("cpic")?,
             base: crate::sources::env_base(CPIC_BASE, CPIC_BASE_ENV),
         })
     }

@@ -38,7 +38,7 @@ pub struct NihReporterClient {
 impl NihReporterClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("nih-reporter")?,
             base: crate::sources::env_base(NIH_REPORTER_BASE, NIH_REPORTER_BASE_ENV),
         })
     }

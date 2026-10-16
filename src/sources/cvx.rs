@@ -683,7 +683,7 @@ async fn sync_export(
     mode: CvxSyncMode,
     parser: fn(&Path, &str) -> Result<(), BioMcpError>,
 ) -> Result<(), BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let client = crate::sources::shared_client("cdc-cvx")?;
     let path = root.join(file_name);
     let mut request = client.get(url).with_extension(
         if matches!(normalize_sync_mode(mode), CvxSyncMode::Force) {

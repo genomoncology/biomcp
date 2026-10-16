@@ -23,7 +23,7 @@ pub struct HpoClient {
 impl HpoClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("hpo-jax-api")?,
             base: crate::sources::env_base(HPO_BASE, HPO_BASE_ENV),
         })
     }

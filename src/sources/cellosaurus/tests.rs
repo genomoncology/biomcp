@@ -2,7 +2,7 @@ use super::*;
 
 fn client() -> CellosaurusClient {
     CellosaurusClient {
-        client: crate::sources::shared_client().expect("shared client"),
+        client: crate::sources::shared_client("cellosaurus").expect("shared client"),
         base: Cow::Borrowed("https://api.cellosaurus.org"),
     }
 }

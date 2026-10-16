@@ -376,7 +376,7 @@ fn update_client(
     #[cfg(not(test))]
     let policy = ProviderUrlPolicy::for_consumer(ProviderUrlConsumer::GithubRelease, None)?;
     policy.validate_url(&url)?;
-    Ok((crate::sources::provider_url_client(&policy)?, url))
+    Ok((crate::sources::operator_provider_url_client(&policy)?, url))
 }
 
 fn parse_sha256_from_checksum_file(text: &str) -> Option<String> {

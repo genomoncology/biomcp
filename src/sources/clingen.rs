@@ -40,7 +40,7 @@ pub struct ClinGenClient {
 impl ClinGenClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("clingen")?,
             base: crate::sources::env_base(CLINGEN_BASE, CLINGEN_BASE_ENV),
         })
     }

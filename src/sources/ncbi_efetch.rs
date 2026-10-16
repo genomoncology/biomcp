@@ -21,7 +21,7 @@ pub struct NcbiEfetchClient {
 impl NcbiEfetchClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("ncbi-e-utilities")?,
             base: crate::sources::env_base(NCBI_EFETCH_BASE, NCBI_EFETCH_BASE_ENV),
             api_key: crate::sources::ncbi_api_key(),
         })
@@ -250,7 +250,7 @@ pub(crate) mod clinvar {
     impl ClinvarClient {
         pub(crate) fn new() -> Result<Self, BioMcpError> {
             Ok(Self {
-                client: crate::sources::shared_client()?,
+                client: crate::sources::shared_client("clinvar")?,
                 base: crate::sources::env_base(CLINVAR_BASE, CLINVAR_BASE_ENV),
                 api_key: crate::sources::ncbi_api_key(),
             })

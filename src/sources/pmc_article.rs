@@ -73,7 +73,7 @@ impl PmcArticleClient {
         validate_selected_linked_origin(&base_url)?;
         let policy = ProviderUrlPolicy::pmc_linked_article_asset(Some(&base_url), numeric)?;
         Ok(Self {
-            client: crate::sources::provider_url_client(&policy)?,
+            client: crate::sources::provider_url_client("pmc-oa", &policy)?,
             base,
             numeric_pmcid: numeric.to_string(),
             policy,
@@ -255,7 +255,7 @@ fn classify_linked_status(status: StatusCode) -> Option<PmcLinkedFetch> {
 }
 
 pub(crate) async fn fetch_html(pmcid: &str, _requested_id: &str) -> PmcHtmlFetch {
-    let client = match crate::sources::shared_client() {
+    let client = match crate::sources::shared_client("pmc-oa") {
         Ok(client) => client,
         Err(err) => {
             return PmcHtmlFetch {

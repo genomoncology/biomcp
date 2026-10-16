@@ -31,7 +31,7 @@ pub struct LitSense2Client {
 impl LitSense2Client {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("litsense2")?,
             base: crate::sources::env_base(LITSENSE2_BASE, LITSENSE2_BASE_ENV),
         })
     }
@@ -40,7 +40,7 @@ impl LitSense2Client {
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            client: crate::sources::shared_client_with_deadline("litsense2", deadline).await?,
             base: crate::sources::env_base(LITSENSE2_BASE, LITSENSE2_BASE_ENV),
         })
     }

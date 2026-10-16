@@ -39,6 +39,7 @@ impl Default for CspecTimeouts {
 
 impl CspecClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
+        crate::sources::disable::ensure_not_disabled("clingen_cspec")?;
         let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::cspec()?;
         let (client, bundle) = crate::sources::provider_policy_client_builder(&policy)?;
         let client = crate::sources::ca_bundle::build(

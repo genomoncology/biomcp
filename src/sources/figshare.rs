@@ -130,7 +130,7 @@ impl FigshareClient {
             Some(&base_url),
         )?;
         Ok(Self {
-            client: crate::sources::provider_url_client(&provider_policy)?,
+            client: crate::sources::provider_url_client("figshare", &provider_policy)?,
             base,
             provider_policy,
         })

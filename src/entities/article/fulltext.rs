@@ -390,7 +390,7 @@ async fn try_resolve_pdf(raw_pdf_url: &str, _requested_id: &str) -> FulltextStep
         Ok(validated) => validated,
         Err(err) => return FulltextStepOutcome::Failed(err),
     };
-    let client = match crate::sources::provider_url_client(&policy) {
+    let client = match crate::sources::provider_url_client("semantic-scholar", &policy) {
         Ok(client) => client,
         Err(err) => return FulltextStepOutcome::Failed(err),
     };

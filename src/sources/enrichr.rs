@@ -22,8 +22,9 @@ impl EnrichrClient {
     pub fn new() -> Result<Self, BioMcpError> {
         let base = crate::sources::env_base(ENRICHR_BASE, ENRICHR_BASE_ENV);
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("enrichr")?,
             streaming_client: crate::sources::streaming_http_client(
+                "enrichr",
                 base.as_ref(),
                 ENRICHR_BASE_ENV,
             )?,

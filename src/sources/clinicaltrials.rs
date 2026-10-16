@@ -91,7 +91,7 @@ pub struct CtGovSearchParams {
 impl ClinicalTrialsClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("clinicaltrials-gov")?,
             base: crate::sources::env_base(CTGOV_BASE, CTGOV_BASE_ENV),
         })
     }

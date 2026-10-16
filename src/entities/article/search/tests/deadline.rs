@@ -427,7 +427,8 @@ async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
     let cache = TempDirGuard::new("article-search-deadline-epoch-lock");
     std::fs::create_dir_all(cache.path()).expect("cache root");
     let _env = deadline_env(&fixture, cache.path(), "1200");
-    crate::sources::shared_client().expect("shared client builds before the lock is held");
+    crate::sources::shared_client("mygene-info")
+        .expect("shared client builds before the lock is held");
     crate::sources::reset_shared_http_client_for_tests();
     let lock_path = cache.path().join(".body-limit-cache-v1.lock");
     let held = std::fs::OpenOptions::new()

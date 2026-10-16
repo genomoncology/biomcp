@@ -39,7 +39,7 @@ impl UniProtClient {
             // streaming client cost the residue check 0.35–1.2 s on every
             // gene+protein request. `--no-cache` still bypasses the cache through the
             // shared stack's own no-cache path.
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("uniprot")?,
             base,
         })
     }

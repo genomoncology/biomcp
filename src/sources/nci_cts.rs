@@ -472,7 +472,7 @@ impl NciCtsClient {
             })?;
 
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("nci-cts")?,
             base: crate::sources::env_base(NCI_CTS_BASE, NCI_CTS_BASE_ENV),
             api_key,
         })

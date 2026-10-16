@@ -54,7 +54,7 @@ pub struct MyChemClient {
 impl MyChemClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("mychem-info")?,
             base: crate::sources::env_base(MYCHEM_BASE, MYCHEM_BASE_ENV),
         })
     }

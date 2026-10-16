@@ -305,7 +305,7 @@ async fn sync_who_ivd_root_inner(root: &Path, mode: WhoIvdSyncMode) -> Result<()
 }
 
 async fn sync_export(root: &Path, mode: WhoIvdSyncMode) -> Result<(), BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let client = crate::sources::shared_client("who-ivd")?;
     let mut request = client
         .get(who_ivd_export_url())
         .with_extension(CacheMode::NoStore);

@@ -10,11 +10,15 @@ pub(crate) fn tool_catalog_json() -> anyhow::Result<String> {
 
 /// Runs the BioMCP MCP server over stdio.
 ///
+/// `disable_sources` is the parsed `--disable-sources` value; the flag and
+/// `BIOMCP_DISABLE_SOURCES` combine here exactly as they do for one-shot
+/// CLI commands.
+///
 /// # Errors
 ///
 /// Returns an error when stdio transport setup or MCP server startup fails.
-pub async fn run_stdio() -> anyhow::Result<()> {
-    crate::sources::disable::init(None)?;
+pub async fn run_stdio(disable_sources: Option<&str>) -> anyhow::Result<()> {
+    crate::sources::disable::init(disable_sources)?;
     shell::run_stdio().await
 }
 
@@ -35,8 +39,9 @@ pub async fn run_http(
     port: u16,
     allowed_hosts: Vec<String>,
     unsafe_allow_any_host: bool,
+    disable_sources: Option<&str>,
 ) -> anyhow::Result<()> {
-    crate::sources::disable::init(None)?;
+    crate::sources::disable::init(disable_sources)?;
     shell::run_http(host, port, allowed_hosts, unsafe_allow_any_host).await
 }
 

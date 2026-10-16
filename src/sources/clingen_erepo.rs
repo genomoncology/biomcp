@@ -21,7 +21,7 @@ pub(crate) struct ERepoClient {
 impl ERepoClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("clingen_erepo")?,
             base: crate::sources::env_base(EREPO_BASE, EREPO_BASE_ENV),
         })
     }

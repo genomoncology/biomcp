@@ -486,6 +486,11 @@ async fn fetch_with_deadline(
     deadline: crate::sources::VariantArticleDeadline,
     cache_override: Option<Arc<crate::cache::SizeAwareCacheManager>>,
 ) -> Result<FdaOrphanDesignations, BioMcpError> {
+    // This module builds its own raw client (redirects off, no retry
+    // middleware), so it passes the disabled-source gate here, before any
+    // request can leave: a disabled FDA Orphan lane answers with the
+    // disabled refusal instead of the unavailable fallback.
+    crate::sources::disable::ensure_not_disabled("fda-orphan-designations")?;
     let candidates = normalize_candidates(candidates);
     let base = crate::sources::env_base(BASE, BASE_ENV).into_owned();
     let cache = match (mode, cache_override) {

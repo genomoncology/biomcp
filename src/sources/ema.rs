@@ -747,7 +747,7 @@ fn validate_feed_payload(feed: EmaFeed, body: &[u8]) -> Result<(), BioMcpError> 
 }
 
 async fn sync_feed(root: &Path, plan: FeedSyncPlan) -> Result<(), BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let client = crate::sources::shared_client("ema")?;
     let url = format!(
         "{}/{}",
         ema_report_base().trim_end_matches('/'),
