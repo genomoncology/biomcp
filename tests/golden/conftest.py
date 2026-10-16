@@ -25,7 +25,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 @pytest.fixture(scope="session")
-def replay(request: pytest.FixtureRequest) -> Iterator["ReplayEnvironment"]:
+def replay(request: pytest.FixtureRequest) -> Iterator["object"]:
     """One replay server for the whole golden run.
 
     Set BIOMCP_GOLDEN_RECORD=1 for a run that records live replies for
