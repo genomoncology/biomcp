@@ -26,3 +26,10 @@ Depends on: 2071
   - One Internal changelog bullet.
 - Proof: `make spec` wall time on the build host at 200 s or less, against the 2069 baseline's 657 to 668 s ([decision](../decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md)); runner line count before and after; no block over 40 lines; `make stress` passes. A page that cannot reach the target without losing a reader-facing claim moves its JSON checks into golden cases or goes.
 - Defers: nothing.
+
+## Coordinator rulings and handoff record (2026-10-16)
+
+- (a) Ratified: the two one-line src touches (search.rs seam wiring, status.rs message naming the narrowed budget) and the three extra machinery-test deletions (routine fixture recovery, mychem empty fixture contract, parallel isolation) - mechanical consequences of the ruled shape.
+- (c) Accepted: spec-contracts mirrors spec's small set.
+- Handoff: 35 pages leave the routine list (kept on disk as conversion source), re-listing per page when its recordings exist - 2079's later batches own conversion: article-entities, article, article-text-fidelity, author, cell-line, clingen-cspot, clingen-cspec, clingen-erepo, diagnostic, disease, disease-survival-fixture, drug-interactions, drug-label-sections, drug, gene, pathway, pgx, phenotype, protein, section-outcomes, study, trial-documents, trial-intervention-aliases, trial, trial-numeric-filters, vaers, variant-article-identity, variant-articles-corpus, variant-gene-first-routing, variant-input-forms, variant, variant-protein-change-resolution, discover, mcp, skills. Two live-verify pages' over-40 blocks: the verify-lane conversion ticket.
+
