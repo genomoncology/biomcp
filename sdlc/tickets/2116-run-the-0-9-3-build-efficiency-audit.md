@@ -32,13 +32,13 @@ The ticket holds a measured audit of BioMCP's build and test cost after the 0.9.
 
 The audit, measured 2026-10-16 at main 9a58dbed8. All sections below belong to this amendment.
 
-One revision, one job on yellow through the job runner (`pm job run --machine yellow 2116 9a58dbed8`, job `1792165746217-1331137`, 67 minutes), plus one follow-up for the failed routine-suite attempt (`1792171112471-1494889`, 11 minutes). The job ran `tools/measure-0-9-3-baseline` sections with extra samples appended, and dumped the gate host's own job records. CI numbers come from `gh api` on the Beelink (`gh` is not authenticated on yellow; CI numbers do not depend on the host, the 2069 method). Job log: `/home/ian/workspace/job-runs/biomcp/2116/1792165746217-1331137/log` on yellow; the worktree's `.cache/measure/` holds the raw logs (make-test.log, census.jsonl, pytest-durations.log, release-time.txt).
+One revision, one job on the Linux gate host through the job runner (`pm job run --machine <gate host> 2116 9a58dbed8`, job `1792165746217-1331137`, 67 minutes), plus one follow-up for the failed routine-suite attempt (`1792171112471-1494889`, 11 minutes). The job ran `tools/measure-0-9-3-baseline` sections with extra samples appended, and dumped the gate host's own job records. CI numbers come from `gh api` on the coordination host (`gh` is not authenticated on the gate host; CI numbers do not depend on the host, the 2069 method). Job log: `job-runs/biomcp/2116/1792165746217-1331137/log` on the gate host; the worktree's `.cache/measure/` holds the raw logs (make-test.log, census.jsonl, pytest-durations.log, release-time.txt).
 
-Host conditions match 2069 (yellow, 4 cores, 14 GB, rustc 1.93.1, host cargo config with incremental off and line-tables-only dev debug), with one material difference: the host was not idle. The audit's whole window overlapped ticket 2114's `make test` (11:58–12:14) and ticket 2117's coverage proof (11:55–12:59); the follow-up overlapped 2114's second `make test` (13:23–13:40) and 2117's proof again (13:20–13:36). No idle window appeared all day; polling for one was the first 50 minutes of this ticket's work. Wall times below are contended upper bounds; user/CPU time and the CI runner numbers carry the comparisons. 2069 ran idle, so its walls are not directly comparable.
+Host conditions match 2069 (the Linux gate host, 4 cores, 14 GB, rustc 1.93.1, host cargo config with incremental off and line-tables-only dev debug), with one material difference: the host was not idle. The audit's whole window overlapped ticket 2114's `make test` (11:58–12:14) and ticket 2117's coverage proof (11:55–12:59); the follow-up overlapped 2114's second `make test` (13:23–13:40) and 2117's proof again (13:20–13:36). No idle window appeared all day; polling for one was the first 50 minutes of this ticket's work. Wall times below are contended upper bounds; user/CPU time and the CI runner numbers carry the comparisons. 2069 ran idle, so its walls are not directly comparable.
 
 ### 1. Machine time (two weeks, 2026-10-03 to 2026-10-16)
 
-Gate host (yellow, 55 biomcp job records in 14 days; no other-repository jobs ran):
+Gate host (55 biomcp job records in 14 days; no other-repository jobs ran):
 
 - Total 26,017 s ≈ 7.2 h. By class (rubric: `make test`/`test-rust`/`test-python`/`lint`/`spec`/nextest/pytest/clippy/stress = routine; `verify`/`release-gate`/release builds = release; `measure-0-9-3-baseline` and this ticket's runs = measurement; the rest = diagnostics):
   - routine 40 runs, 15,866 s = 4.41 h (six `make test` runs, 703–1,944 s each)
@@ -91,7 +91,7 @@ Setup against work, the five costliest CI jobs (mean min, main): release-panic q
 - Five groups: not reported. The block prints three line percentages (outside-in, unit, combined); nothing distinguishes reached-only-by-internal-tests, both, unobserved, or failed/missing collections. The failed-suite marking is 2117's; the missing five-group shape is finding 3.
 - Wrapper language: the Python lane is test code driving the Rust binary; there is no separate wrapper-language product code. N/A.
 
-### 6. Development benchmarks (yellow; wall s / user s / peak RSS KB / target bytes; raw samples)
+### 6. Development benchmarks (gate host; wall s / user s / peak RSS KB / target bytes; raw samples)
 
 2069's idle v0.9.2 numbers in brackets. Contention caveat above applies to every wall here.
 
@@ -123,4 +123,4 @@ Each finding names its measured cost now and the expected cost after a fix; the 
 
 ### Raw evidence pointers
 
-Job `1792165746217-1331137` (audit) and `1792171112471-1494889` (make-test retry) on yellow, with `.cache/measure/` intact in the job worktree: make-test.log, make-test-rerun.log, census.jsonl (4,263 tests with exec times), pytest-durations.log, release-time.txt, maketest-rerun-time.txt. CI raw tables: the two-week run list and the 20 sampled runs' job/step data collected 2026-10-16 from the Actions API (green-run means quoted above; run-level totals from all 1,360 runs).
+Job `1792165746217-1331137` (audit) and `1792171112471-1494889` (make-test retry) on the gate host, with `.cache/measure/` intact in the job worktree: make-test.log, make-test-rerun.log, census.jsonl (4,263 tests with exec times), pytest-durations.log, release-time.txt, maketest-rerun-time.txt. CI raw tables: the two-week run list and the 20 sampled runs' job/step data collected 2026-10-16 from the Actions API (green-run means quoted above; run-level totals from all 1,360 runs).
