@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 Depends on: 2076
 
+Reviews: revision cffbdfb, accept
+
 ## Outcome
 
 Routine builds compile no zstd C library, the shipped binary has no tokio test clock, the AlphaGenome client compiles no gRPC server, and BioMCP no longer depends on `fs2`, so Windows builds pull no `winapi 0.3`.
