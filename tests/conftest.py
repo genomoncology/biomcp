@@ -82,3 +82,16 @@ def study_fixture_env() -> Iterator[dict[str, str]]:
     with tempfile.TemporaryDirectory(prefix="biomcp-study-tests-") as root_name:
         root = Path(root_name)
         yield {"BIOMCP_STUDY_DIR": _provision_study_fixture(root)}
+
+
+def pytest_addoption(parser) -> None:
+    """Register the golden-suite flag at the tests/ root so every
+    invocation that collects tests/ sees it (CI collects tests/
+    wholesale; the nested tests/golden/conftest registers it only when
+    tests/golden is the invocation target)."""
+    group = parser.getgroup("golden")
+    group.addoption(
+        "--update",
+        action="store_true",
+        help="rewrite the golden output files instead of diffing against them",
+    )

@@ -15,15 +15,6 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 
-def pytest_addoption(parser: pytest.Parser) -> None:
-    group = parser.getgroup("golden")
-    group.addoption(
-        "--update",
-        action="store_true",
-        help="rewrite the golden output files instead of diffing against them",
-    )
-
-
 @pytest.fixture(scope="session")
 def replay(request: pytest.FixtureRequest) -> Iterator["object"]:
     """One replay server for the whole golden run.
