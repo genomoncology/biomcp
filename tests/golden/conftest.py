@@ -5,9 +5,14 @@ from __future__ import annotations
 import os
 from typing import Iterator
 
+import sys
+from pathlib import Path
+
 import pytest
 
-from replay_env import ReplayEnvironment, replay_environment
+_HERE = Path(__file__).resolve().parent
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -20,12 +25,14 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 @pytest.fixture(scope="session")
-def replay(request: pytest.FixtureRequest) -> Iterator[ReplayEnvironment]:
+def replay(request: pytest.FixtureRequest) -> Iterator["ReplayEnvironment"]:
     """One replay server for the whole golden run.
 
     Set BIOMCP_GOLDEN_RECORD=1 for a run that records live replies for
     unrecorded requests; without it every request must replay from disk.
     """
+    from replay_env import ReplayEnvironment, replay_environment
+
     record = os.environ.get("BIOMCP_GOLDEN_RECORD") == "1"
     with replay_environment(record=record) as environment:
         yield environment
