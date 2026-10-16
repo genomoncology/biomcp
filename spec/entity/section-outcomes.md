@@ -125,7 +125,12 @@ for fixture in \
   "$BIOMCP_DDINTER_AVAILABLE_DIR fixture-drug-drugbank-openfda-fail degraded DDInter,DrugBank" \
   "$BIOMCP_DDINTER_AVAILABLE_DIR fixture-drug-empty-openfda-fail unavailable none"; do
   read -r directory identity outcome source_key <<<"$fixture"
-  sources=$(case "$source_key" in none) printf '[]';; OpenFDA_label) printf '["OpenFDA label"]';; DDInter) printf '["DDInter"]';; *) printf '["DDInter","DrugBank"]';; esac)
+  case "$source_key" in
+    none) sources='[]' ;;
+    OpenFDA_label) sources='["OpenFDA label"]' ;;
+    DDInter) sources='["DDInter"]' ;;
+    *) sources='["DDInter","DrugBank"]' ;;
+  esac
   markdown=$(BIOMCP_DDINTER_DIR="$directory" ../../tools/biomcp-ci get drug "$identity" interactions)
   case "$markdown" in *SENSITIVE-UPSTREAM-DETAIL*|*ddinter-unavailable*) exit 1;; esac
   BIOMCP_DDINTER_DIR="$directory" ../../tools/biomcp-ci --json get drug "$identity" interactions \
