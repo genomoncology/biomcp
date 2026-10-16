@@ -7,6 +7,25 @@ pub(crate) struct TempDirGuard {
     inner: tempfile::TempDir,
 }
 
+/// Counts individual HTTP cache files a start-up tree walk touches (opens
+/// or stats). Production code never reads it: tests reset it, run one
+/// cache start-up, and read the count to assert start-up I/O no longer
+/// grows with the number of files in the cache (ticket 2133).
+pub(crate) static STARTUP_CACHE_FILE_VISITS: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
+
+pub(crate) fn record_startup_cache_file_visit() {
+    STARTUP_CACHE_FILE_VISITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+}
+
+pub(crate) fn reset_startup_cache_file_visits() {
+    STARTUP_CACHE_FILE_VISITS.store(0, std::sync::atomic::Ordering::Relaxed);
+}
+
+pub(crate) fn startup_cache_file_visits() -> u64 {
+    STARTUP_CACHE_FILE_VISITS.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 impl TempDirGuard {
     pub(crate) fn new(label: &str) -> Self {
         let inner = tempfile::Builder::new()

@@ -441,6 +441,8 @@ fn sum_tree_bytes(path: &Path) -> io::Result<u64> {
         if file_type.is_dir() {
             total = total.saturating_add(sum_tree_bytes(&entry_path)?);
         } else if file_type.is_file() {
+            #[cfg(test)]
+            crate::test_support::record_startup_cache_file_visit();
             total = total.saturating_add(metadata.len());
         }
     }

@@ -892,6 +892,180 @@ mod cache_security {
     }
 }
 
+/// Ticket 2133 start-up cost proofs: a command's cache start-up must not
+/// walk the HTTP cache tree, so the number of cache files it touches does
+/// not grow with the cache, `BIOMCP_CACHE_MODE=off` touches none, and the
+/// one-time tree-secure walk runs only until its marker exists.
+mod startup_cost {
+    use std::path::Path;
+
+    use super::super::*;
+    use super::EnvRestore;
+    use crate::test_support::{
+        TempDirGuard, reset_startup_cache_file_visits, startup_cache_file_visits,
+    };
+
+    const TREE_SECURE_MARKER_FILE: &str = ".tree-secured-v1";
+
+    fn seed_cache_entries(cache_root: &Path, count: usize) {
+        let cache_path = cache_root.join("http");
+        for index in 0..count {
+            cacache::write_sync(
+                &cache_path,
+                &format!("startup-walk-key-{index}"),
+                b"seed bytes",
+            )
+            .expect("seed cache entry");
+        }
+    }
+
+    fn build_once(cache_root: &Path) {
+        build_http_client_with_config(
+            SharedHttpClientKind::Default,
+            test_cache_config(cache_root),
+            None,
+        )
+        .expect("build cached client");
+    }
+
+    fn count_regular_files(root: &Path) -> usize {
+        let mut total = 0usize;
+        let mut pending = vec![root.to_path_buf()];
+        while let Some(path) = pending.pop() {
+            let entries = std::fs::read_dir(&path).expect("read dir for inventory");
+            for entry in entries {
+                let entry = entry.expect("inventory entry");
+                let path = entry.path();
+                if path.is_dir() {
+                    pending.push(path);
+                } else {
+                    total += 1;
+                }
+            }
+        }
+        total
+    }
+
+    #[test]
+    fn start_up_touches_no_more_cache_files_as_the_cache_grows() {
+        let small = TempDirGuard::new("startup-cost-small");
+        let large = TempDirGuard::new("startup-cost-large");
+        seed_cache_entries(small.path(), 200);
+        seed_cache_entries(large.path(), 3_000);
+
+        // The first start-up settles the one-time markers: the tree-secure
+        // walk, the day's clean, and the kept size totals. Steady state —
+        // what every later command pays — is the second start-up.
+        build_once(small.path());
+        build_once(large.path());
+
+        reset_startup_cache_file_visits();
+        build_once(small.path());
+        let small_visits = startup_cache_file_visits();
+
+        reset_startup_cache_file_visits();
+        build_once(large.path());
+        let large_visits = startup_cache_file_visits();
+
+        assert_eq!(
+            small_visits, large_visits,
+            "start-up cache file touches must not grow with the cache: \n  200-entry cache: {small_visits}\n  3000-entry cache: {large_visits}"
+        );
+        assert!(
+            large_visits < 100,
+            "steady-state start-up must touch a bounded handful of cache files, touched {large_visits}"
+        );
+    }
+
+    #[test]
+    #[serial_test::serial(source_env)]
+    fn cache_mode_off_touches_no_cache_file() {
+        let root = TempDirGuard::new("startup-cost-mode-off");
+        seed_cache_entries(root.path(), 50);
+        build_once(root.path());
+        cacache::write_sync(
+            &root.path().join("http"),
+            "post-settle-key",
+            b"post settle",
+        )
+        .expect("post-settle entry");
+        let cache_http = root.path().join("http");
+        let files_before = count_regular_files(&cache_http);
+
+        // Point the environment's cache at the fixture even though an
+        // off-mode command must never resolve it, so a regression that
+        // builds the cached client anyway walks this fixture, not a real
+        // cache directory.
+        let cache_dir = root.path().to_string_lossy().into_owned();
+        let _env = EnvRestore::set(&[("BIOMCP_CACHE_DIR", Some(cache_dir.as_str()))]);
+        let _mode = crate::sources::test_cache_mode::off();
+        reset_startup_cache_file_visits();
+
+        build_http_client(SharedHttpClientKind::Default).expect("off-mode client builds");
+
+        assert_eq!(
+            startup_cache_file_visits(),
+            0,
+            "cache mode off must not touch any cache file during start-up"
+        );
+        assert_eq!(
+            count_regular_files(&cache_http),
+            files_before,
+            "cache mode off must not create or remove cache files during start-up"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_tree_secure_marker_walks_only_until_it_exists() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = TempDirGuard::new("startup-cost-tree-marker");
+        let cache_http = root.path().join("http");
+        let sentinel = |name: &str| {
+            let path = cache_http.join("unrelated").join(name);
+            std::fs::create_dir_all(path.parent().expect("sentinel parent"))
+                .expect("sentinel tree");
+            std::fs::write(&path, b"cached response").expect("sentinel");
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644))
+                .expect("permissive sentinel");
+            path
+        };
+
+        let first = sentinel("first");
+        build_once(root.path());
+        assert_eq!(
+            std::fs::metadata(&first)
+                .expect("first sentinel metadata")
+                .permissions()
+                .mode()
+                & 0o777,
+            0o600,
+            "a cache without the marker is walked and repaired once"
+        );
+        assert_eq!(
+            std::fs::read(cache_http.join(TREE_SECURE_MARKER_FILE))
+                .expect("tree-secure marker"),
+            b"http-tree-secured-v1\n",
+            "the one-time walk records its marker"
+        );
+
+        // A file broadened after the marker is repaired when it is written
+        // through, not by every command's start-up (ticket 2133 decision).
+        let second = sentinel("second");
+        build_once(root.path());
+        assert_eq!(
+            std::fs::metadata(&second)
+                .expect("second sentinel metadata")
+                .permissions()
+                .mode()
+                & 0o777,
+            0o644,
+            "a present marker must keep start-up off the tree"
+        );
+    }
+}
+
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn ordinary_client_blocks_untrusted_local_destinations_before_contact() {

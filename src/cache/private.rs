@@ -422,6 +422,8 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
         return Ok(());
     }
     if metadata.is_file() {
+        #[cfg(test)]
+        crate::test_support::record_startup_cache_file_visit();
         if metadata.nlink() != 1 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -468,6 +470,8 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
         return Ok(());
     }
     if metadata.is_file() {
+        #[cfg(test)]
+        crate::test_support::record_startup_cache_file_visit();
         drop(open_managed_read(path)?);
     } else if metadata.is_dir() {
         if recurse {
