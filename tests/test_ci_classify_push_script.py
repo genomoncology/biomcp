@@ -119,6 +119,66 @@ def test_docs_only_push_classifies_true(scratch_repo: Path) -> None:
     assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=true"
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "sdlc/scripts/clean",
+        "sdlc/scripts/test",
+        "sdlc/project/health",
+        "sdlc/project/provenance.json",
+        "sdlc/pm.json",
+        "sdlc/skills/build-coordinator.md",
+        "sdlc/release-checklist.md",
+    ],
+)
+def test_sdlc_program_or_configuration_push_runs_full_ci(
+    scratch_repo: Path, path: str
+) -> None:
+    """A program, gate wrapper or configuration under sdlc/ counts as
+    a change, because sdlc/ holds more than records: the gate wrappers
+    in sdlc/scripts, the lifecycle programs and their state in
+    sdlc/project, pm's own configuration, the skills the checks read,
+    and the release checklist. A push touching any of them must run
+    the full jobs.
+    """
+    sha = _commit(scratch_repo, {path: "changed"}, "sdlc program change")
+    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false", path
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "sdlc/tickets/2115-count-sdlc-programs.md",
+        "sdlc/records/2026-10-16-build.md",
+        "sdlc/decisions/2026-10-16-decision.md",
+        "sdlc/designs/2026-10-16-design.md",
+        "sdlc/ideas/2026-10-16-idea.md",
+        "sdlc/issues/2026-10-16-issue.md",
+        "sdlc/planning/2026-10-16-plan.md",
+        "sdlc/plan.md",
+    ],
+)
+def test_sdlc_record_text_push_stays_docs_only(scratch_repo: Path, path: str) -> None:
+    """Only record and planning text under sdlc/ stays docs-only: the
+    readers of those files live in the repository-contracts job,
+    which runs on every push.
+    """
+    sha = _commit(scratch_repo, {path: "Status: OPEN.\n"}, "record text")
+    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=true", path
+
+
+def test_tickets_and_records_together_stay_docs_only(scratch_repo: Path) -> None:
+    """The pm landing shape: a push touching only ticket and record
+    text across both folders still classifies docs-only.
+    """
+    sha = _commit(
+        scratch_repo,
+        {"sdlc/tickets/x.md": "x", "sdlc/records/y.md": "y"},
+        "records only",
+    )
+    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=true"
+
+
 def test_changelog_only_push_runs_full_ci(scratch_repo: Path) -> None:
     """CHANGELOG.md is not docs-only: the changelog refresh test is
     marked needs_binary, so only the canonical lane runs it, and a
@@ -362,6 +422,30 @@ def test_second_route_counts_only_sdlc_paths(scratch_repo: Path, tmp_path: Path)
     )
     stdout = (scratch_repo / "script_stdout").read_text(encoding="utf-8")
     assert "outside sdlc/" in stdout
+
+
+def test_green_tip_route_refuses_sdlc_programs(
+    scratch_repo: Path, tmp_path: Path
+) -> None:
+    """The green-tip route skips only record and planning text: a
+    program or configuration change under sdlc/ over a green tip
+    still runs the full jobs, and the route refuses it before it
+    ever asks for the previous tip's run.
+    """
+    code_tip = _commit(scratch_repo, {"src/lib.rs": "fn a() {}"}, "code")
+    tip = _commit(scratch_repo, {"sdlc/scripts/test": "changed"}, "program change")
+    env, args_file = _green_tip_env(tmp_path, "completed|success")
+    assert (
+        _run_script(
+            scratch_repo, "origin/main", tip,
+            ref="refs/heads/ticket/2115-sdlc-programs",
+            push_before=code_tip, extra_env=env,
+        )
+        == "docs_only=false"
+    )
+    assert not args_file.exists(), "a program change must not ask for the previous run"
+    stdout = (scratch_repo / "script_stdout").read_text(encoding="utf-8")
+    assert "not sdlc record text" in stdout
 
 
 def test_force_push_before_not_ancestor_runs_full_ci(
