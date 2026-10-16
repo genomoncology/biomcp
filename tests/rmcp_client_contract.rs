@@ -1166,6 +1166,16 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
         env.push((name, fixture.base.clone()));
     }
     env.push(("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()));
+    // The loopback fixture answers instantly on a quiet host, but with a
+    // second suite job running the round-trips stretch past the product's
+    // 60 s article-search budget, so the converging searches fail on the
+    // deadline instead of on the raw/typed contract this test pins. Raise
+    // the budget through the deadline seam; the runner's slow-timeout
+    // watchdog still bounds a genuinely hung search.
+    env.push((
+        "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS",
+        "600000".to_string(),
+    ));
     let client = harness.spawn_stdio_client(&env).await?;
     const GENE: &str = r#"Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#;
     const DISEASE: &str = r#"Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#;
