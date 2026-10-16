@@ -494,6 +494,7 @@ if want_section coverage; then
     counts="summary unparsed"
     n_failed=""
     n_errors=""
+    n_timeout=""
     case "$kind" in
       nextest)
         summary="$(grep -E 'Summary \[' "$logfile" | tail -1 || true)"
