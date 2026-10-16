@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 3b9ee6d, accept
+
 ## Outcome
 
 The three stale-cache tests in `src/cli/stale_json_note_tests.rs` pass on a host whose temporary filesystem has less than 10% free space, because their fixture sets its own disk floor instead of inheriting the production default.
