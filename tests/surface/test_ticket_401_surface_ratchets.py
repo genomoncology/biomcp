@@ -125,7 +125,7 @@ def test_ticket_401_request_plan_ratchets_execute_named_contracts_not_list_only(
 def test_ticket_401_routine_modes_are_markdown_plus_golden_canary_only() -> None:
     runner = _read_repo("scripts/run-specs.sh")
     match = re.search(
-        r"(?ms)^\s*spec\|spec-pr(?:\|spec-contracts)?\)\n(?P<body>.*?)\n\s*;;", runner
+        r"(?ms)^  spec\|spec-pr\)\n(?P<body>.*?)\n    ;;", runner
     )
     assert match is not None, "missing run-specs routine modes"
     body = match.group("body")
