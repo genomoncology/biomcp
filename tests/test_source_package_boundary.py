@@ -20,7 +20,9 @@ OFFLINE = ROOT / "tools/run-offline"
 # Raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar. Raised
-# again by one path: the Python lane cache isolation test.
+# again by one path: the Python lane cache isolation test. Raised by the
+# replay server and the golden suite's first batch, recomputed from the tree
+# after the landing rebase onto current main.
 MAX_PACKAGE_FILES = 1_429  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
