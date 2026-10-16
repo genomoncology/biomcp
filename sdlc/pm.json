@@ -213,6 +213,11 @@
       "state": "active"
     },
     {
+      "name": "0.9.4",
+      "targetRef": "main",
+      "state": "settled"
+    },
+    {
       "name": "1.0",
       "state": "settled"
     }
