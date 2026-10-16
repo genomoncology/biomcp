@@ -1,6 +1,6 @@
 # 2113 — Send CIViC the one-letter protein change
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
