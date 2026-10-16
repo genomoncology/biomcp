@@ -48,7 +48,7 @@ pub struct CBioPortalClient {
 impl CBioPortalClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("cbioportal")?,
             base: crate::sources::env_base(CBIOPORTAL_BASE, CBIOPORTAL_BASE_ENV),
         })
     }

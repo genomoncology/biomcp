@@ -17,7 +17,7 @@ pub struct KeggClient {
 impl KeggClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("kegg")?,
             base: crate::sources::env_base(KEGG_BASE, KEGG_BASE_ENV),
         })
     }

@@ -50,7 +50,7 @@ pub struct DgidbClient {
 impl DgidbClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("dgidb")?,
             base: crate::sources::env_base(DGIDB_BASE, DGIDB_BASE_ENV),
         })
     }

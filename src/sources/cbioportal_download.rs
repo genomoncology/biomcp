@@ -279,6 +279,9 @@ fn datahub_client(
     connect_timeout: Duration,
     total_timeout: Option<Duration>,
 ) -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
+    // The DataHub archive service is cBioPortal's own distribution
+    // endpoint, so the cbioportal registry id gates it.
+    crate::sources::disable::ensure_not_disabled("cbioportal")?;
     crate::sources::ordinary_middleware_client_for_base(base, DATAHUB_BASE_ENV, |builder| {
         let builder = builder
             .connect_timeout(connect_timeout)

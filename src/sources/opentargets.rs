@@ -163,7 +163,7 @@ pub struct OpenTargetsClient {
 impl OpenTargetsClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("opentargets")?,
             base: crate::sources::env_base(OPENTARGETS_BASE, OPENTARGETS_BASE_ENV),
         })
     }

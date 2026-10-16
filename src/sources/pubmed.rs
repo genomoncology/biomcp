@@ -139,7 +139,7 @@ fn format_pubmed_date(value: &str) -> String {
 impl PubMedClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("pubmed")?,
             base: crate::sources::env_base(PUBMED_EUTILS_BASE, PUBMED_EUTILS_BASE_ENV),
             api_key: crate::sources::ncbi_api_key(),
         })
@@ -149,7 +149,7 @@ impl PubMedClient {
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            client: crate::sources::shared_client_with_deadline("pubmed", deadline).await?,
             base: crate::sources::env_base(PUBMED_EUTILS_BASE, PUBMED_EUTILS_BASE_ENV),
             api_key: crate::sources::ncbi_api_key(),
         })

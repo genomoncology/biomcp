@@ -55,7 +55,7 @@ pub(crate) struct CellosaurusRelease {
 impl CellosaurusClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("cellosaurus")?,
             base: crate::sources::env_base(CELLOSAURUS_BASE, CELLOSAURUS_BASE_ENV),
         })
     }

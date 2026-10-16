@@ -20,7 +20,7 @@ pub struct ChemblClient {
 impl ChemblClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("chembl")?,
             base: crate::sources::env_base(CHEMBL_BASE, CHEMBL_BASE_ENV),
         })
     }

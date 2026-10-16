@@ -124,7 +124,7 @@ fn request_count(requests: &Arc<Mutex<Vec<String>>>) -> usize {
 #[serial_test::serial(source_env)]
 fn gwas_requests_carry_the_day_cache_mode_on_the_middleware_builder() {
     let client = GwasClient {
-        client: crate::sources::shared_client().expect("shared client"),
+        client: crate::sources::shared_client("gwas-catalog").expect("shared client"),
         base: std::borrow::Cow::Borrowed("http://gwas.test"),
     };
 

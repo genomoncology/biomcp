@@ -20,7 +20,7 @@ pub struct StringClient {
 impl StringClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("string")?,
             base: crate::sources::env_base(STRING_BASE, STRING_BASE_ENV),
         })
     }

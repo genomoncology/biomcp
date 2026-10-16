@@ -92,6 +92,9 @@ impl Drop for CancelOnDrop { fn drop(&mut self) { self.0.store(true, Ordering::R
 
 impl GenCcClient {
     pub(crate) fn new() -> Result<Self, ()> {
+        if crate::sources::disable::is_disabled("gencc") {
+            return Err(());
+        }
         let endpoint = endpoint();
         let expected = reqwest::Url::parse(&endpoint).map_err(|_| ())?;
         if !valid_endpoint(

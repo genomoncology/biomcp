@@ -318,7 +318,7 @@ async fn download_payload(
     mode: GtrSyncMode,
     stale: bool,
 ) -> Result<Vec<u8>, BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let client = crate::sources::shared_client("gtr")?;
     let mut request = client.get(url).with_extension(
         if matches!(normalize_sync_mode(mode), GtrSyncMode::Force) {
             CacheMode::Reload

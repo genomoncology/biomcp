@@ -24,6 +24,7 @@ pub struct GProfilerClient {
 
 impl GProfilerClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        crate::sources::disable::ensure_not_disabled("gprofiler")?;
         let base = crate::sources::env_base(GPROFILER_BASE, GPROFILER_BASE_ENV);
         Ok(Self {
             client: gprofiler_http_client(GPROFILER_TIMEOUT, base.as_ref())?,

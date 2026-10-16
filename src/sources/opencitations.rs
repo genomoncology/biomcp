@@ -96,7 +96,7 @@ pub(crate) struct OpenCitationsClient {
 impl OpenCitationsClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: shared_client()?,
+            client: shared_client("opencitations")?,
             base: env_base(OPENCITATIONS_BASE, OPENCITATIONS_BASE_ENV),
         })
     }

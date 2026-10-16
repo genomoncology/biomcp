@@ -282,6 +282,24 @@ pub(crate) fn is_disabled(id: &str) -> bool {
     state().entries.contains_key(id)
 }
 
+/// The one gate every source client passes before it can obtain an HTTP
+/// client: a disabled source never constructs one, so no request it would
+/// send can reach the network. `id` is the source's registry id in
+/// `docs/reference/sources.json`; the refusal it returns is the
+/// unavailable-section shape, so a disabled source answers like any other
+/// unavailable source with the recorded reason.
+pub(crate) fn ensure_not_disabled(id: &str) -> Result<(), BioMcpError> {
+    if is_disabled(id) {
+        debug_assert!(
+            Registry::get().find_id(id).is_some(),
+            "source client ids must exist in docs/reference/sources.json: {id}"
+        );
+        let source_name = Registry::get().display_name(id).unwrap_or(id);
+        return Err(source_disabled_error(source_name, id));
+    }
+    Ok(())
+}
+
 /// The recorded reason one source is off, so error paths can name the
 /// setting that disabled it.
 pub(crate) fn reason(id: &str) -> Option<&'static str> {

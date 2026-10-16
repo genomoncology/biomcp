@@ -56,7 +56,7 @@ pub struct CancerHotspotsClient {
 impl CancerHotspotsClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("cancerhotspots")?,
             base: crate::sources::env_base(CANCERHOTSPOTS_BASE, CANCERHOTSPOTS_BASE_ENV),
         })
     }

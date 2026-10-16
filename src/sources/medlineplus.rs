@@ -23,7 +23,7 @@ pub struct MedlinePlusClient {
 impl MedlinePlusClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("medlineplus")?,
             base: crate::sources::env_base(MEDLINEPLUS_BASE, MEDLINEPLUS_BASE_ENV),
         })
     }

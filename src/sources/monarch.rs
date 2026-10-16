@@ -26,7 +26,7 @@ pub struct MonarchClient {
 impl MonarchClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("monarch-initiative")?,
             base: crate::sources::env_base(MONARCH_BASE, MONARCH_BASE_ENV),
         })
     }

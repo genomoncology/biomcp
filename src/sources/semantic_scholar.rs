@@ -98,7 +98,7 @@ impl SemanticScholarClient {
         })?;
         let policy = ProviderUrlPolicy::semantic_scholar_api(&base_url)?;
         let api_key = effective_api_key(&policy, &base_url, crate::sources::s2_api_key());
-        let client = crate::sources::semantic_scholar_provider_client(&policy, api_key.is_some())?;
+        let client = crate::sources::semantic_scholar_provider_client("semantic-scholar", &policy, api_key.is_some())?;
         Ok(Self {
             client,
             base,
@@ -155,6 +155,7 @@ impl SemanticScholarClient {
         let policy = ProviderUrlPolicy::semantic_scholar_api(&base_url)?;
         let api_key = effective_api_key(&policy, &base_url, crate::sources::s2_api_key());
         let client = crate::sources::semantic_scholar_provider_client_with_deadline(
+            "semantic-scholar",
             &policy,
             api_key.is_some(),
             deadline,

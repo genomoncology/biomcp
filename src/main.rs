@@ -119,6 +119,11 @@ async fn async_main() -> std::process::ExitCode {
     init_tracing();
 
     let cli = biomcp_cli::cli::parse_cli_from_env();
+    // The serve commands never reach `run_outcome`, where one-shot
+    // commands resolve the flag, so they carry it into the MCP
+    // entrypoints themselves: the flag and the environment variable
+    // combine on the server exactly as they do on the CLI.
+    let serve_disable_sources = cli.disable_sources.as_deref();
     if cli.json
         && matches!(
             &cli.command,
@@ -135,19 +140,28 @@ async fn async_main() -> std::process::ExitCode {
     }
     match cli.command {
         biomcp_cli::cli::Commands::Mcp(biomcp_cli::cli::McpArgs { command: None })
-        | biomcp_cli::cli::Commands::Serve => match biomcp_cli::mcp::run_stdio().await {
-            Ok(()) => std::process::ExitCode::SUCCESS,
-            Err(err) => {
-                eprintln!("Error: {}", human_error(&err));
-                std::process::ExitCode::from(1)
+        | biomcp_cli::cli::Commands::Serve => {
+            match biomcp_cli::mcp::run_stdio(serve_disable_sources).await {
+                Ok(()) => std::process::ExitCode::SUCCESS,
+                Err(err) => {
+                    eprintln!("Error: {}", human_error(&err));
+                    std::process::ExitCode::from(1)
+                }
             }
-        },
+        }
         biomcp_cli::cli::Commands::ServeHttp(args) => {
             let host = args.host;
             let port = args.port;
             let allowed_hosts = args.allowed_hosts;
             let unsafe_allow_any_host = args.unsafe_allow_any_host;
-            match biomcp_cli::mcp::run_http(&host, port, allowed_hosts, unsafe_allow_any_host).await
+            match biomcp_cli::mcp::run_http(
+                &host,
+                port,
+                allowed_hosts,
+                unsafe_allow_any_host,
+                serve_disable_sources,
+            )
+            .await
             {
                 Ok(()) => std::process::ExitCode::SUCCESS,
                 Err(err) => {

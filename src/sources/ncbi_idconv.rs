@@ -22,7 +22,7 @@ pub struct NcbiIdConverterClient {
 impl NcbiIdConverterClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("ncbi-id-converter")?,
             base: crate::sources::env_base(NCBI_IDCONV_BASE, NCBI_IDCONV_BASE_ENV),
             api_key: crate::sources::ncbi_api_key(),
         })

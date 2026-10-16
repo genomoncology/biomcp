@@ -223,7 +223,7 @@ impl PharmacoDbClient {
             ));
         }
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("pharmacodb")?,
             base: crate::sources::env_base(PHARMACODB_BASE, PHARMACODB_BASE_ENV),
         })
     }

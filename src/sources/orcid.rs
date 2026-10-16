@@ -116,6 +116,7 @@ pub(crate) struct OrcidClient {
 /// limiter, and the streamed body limit — but not the shared retry
 /// middleware, because this module's attempt loop owns every physical GET.
 fn orcid_http_client(base: &str) -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
+    crate::sources::disable::ensure_not_disabled("orcid")?;
     let url: reqwest::Url = base.parse().map_err(|_| BioMcpError::Api {
         api: "orcid".into(),
         message: "ORCID base URL is invalid".into(),

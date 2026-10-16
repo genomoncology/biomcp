@@ -371,7 +371,7 @@ fn field_presence_expression(flag: &str, value: &str) -> Result<&'static str, Bi
 impl MyVariantClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("myvariant-info")?,
             base: crate::sources::env_base(MYVARIANT_BASE, MYVARIANT_BASE_ENV),
         })
     }
@@ -380,7 +380,7 @@ impl MyVariantClient {
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            client: crate::sources::shared_client_with_deadline("myvariant-info", deadline).await?,
             base: crate::sources::env_base(MYVARIANT_BASE, MYVARIANT_BASE_ENV),
         })
     }

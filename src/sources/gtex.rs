@@ -28,7 +28,7 @@ pub struct GtexClient {
 impl GtexClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("gtex")?,
             base: crate::sources::env_base(GTEX_BASE, GTEX_BASE_ENV),
         })
     }

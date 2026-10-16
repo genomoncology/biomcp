@@ -31,7 +31,7 @@ impl UmlsClient {
         };
 
         Ok(Some(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("umls")?,
             base: crate::sources::env_base(UMLS_BASE, UMLS_BASE_ENV),
             api_key,
         }))

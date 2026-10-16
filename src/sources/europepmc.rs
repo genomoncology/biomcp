@@ -57,7 +57,7 @@ pub struct EuropePmcClient {
 impl EuropePmcClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("europe-pmc")?,
             base: crate::sources::env_base(EUROPE_PMC_BASE, EUROPE_PMC_BASE_ENV),
         })
     }
@@ -66,7 +66,7 @@ impl EuropePmcClient {
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            client: crate::sources::shared_client_with_deadline("europe-pmc", deadline).await?,
             base: crate::sources::env_base(EUROPE_PMC_BASE, EUROPE_PMC_BASE_ENV),
         })
     }

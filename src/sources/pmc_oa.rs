@@ -66,7 +66,7 @@ impl PmcOaClient {
         let provider_policy =
             ProviderUrlPolicy::for_consumer(ProviderUrlConsumer::PmcOaArchive, Some(&base_url))?;
         Ok(Self {
-            client: crate::sources::provider_url_client(&provider_policy)?,
+            client: crate::sources::provider_url_client("pmc-oa", &provider_policy)?,
             base,
             api_key: crate::sources::ncbi_api_key(),
             provider_policy,

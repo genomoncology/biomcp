@@ -19,7 +19,7 @@ pub struct InterProClient {
 impl InterProClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("interpro")?,
             base: crate::sources::env_base(INTERPRO_BASE, INTERPRO_BASE_ENV),
         })
     }

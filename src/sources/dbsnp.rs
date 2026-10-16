@@ -151,7 +151,7 @@ fn placement_coordinate(
 impl DbSnpClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("dbsnp")?,
             base: crate::sources::env_base(DBSNP_BASE, DBSNP_BASE_ENV),
         })
     }

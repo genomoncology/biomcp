@@ -31,7 +31,7 @@ pub struct VariantValidatorClient {
 impl VariantValidatorClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("variantvalidator")?,
             base: crate::sources::env_base(VARIANTVALIDATOR_BASE, VARIANTVALIDATOR_BASE_ENV),
         })
     }

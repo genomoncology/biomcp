@@ -21,7 +21,7 @@ pub struct ReactomeClient {
 impl ReactomeClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("reactome")?,
             base: crate::sources::env_base(REACTOME_BASE, REACTOME_BASE_ENV),
         })
     }

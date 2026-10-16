@@ -1181,7 +1181,7 @@ async fn sync_export(
     mode: WhoPqSyncMode,
     parser: fn(&str, &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
 ) -> Result<(), BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let client = crate::sources::shared_client("who-prequalification")?;
     let mut request = client.get(export_url).with_extension(CacheMode::NoStore);
     if matches!(mode, WhoPqSyncMode::Force) {
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");

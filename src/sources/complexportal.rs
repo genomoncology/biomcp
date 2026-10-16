@@ -23,7 +23,7 @@ pub struct ComplexPortalClient {
 impl ComplexPortalClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client: crate::sources::shared_client("complexportal")?,
             base: crate::sources::env_base(COMPLEXPORTAL_BASE, COMPLEXPORTAL_BASE_ENV),
         })
     }
