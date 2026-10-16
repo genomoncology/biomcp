@@ -46,8 +46,10 @@ def test_manifest_matches_directory_bundle_contract() -> None:
     assert manifest["manifest_version"] == "0.3"
     assert manifest["name"] == "biomcp"
     assert manifest["display_name"] == "BioMCP"
-    assert cargo["package"]["version"] == "0.9.2"
-    assert pyproject["project"]["version"] == "0.9.2"
+    # The directory bundle publishes the released version; the package
+    # metadata carries the development candidate between releases (2132).
+    assert cargo["package"]["version"] == "0.9.3-dev"
+    assert pyproject["project"]["version"] == "0.9.3.dev0"
     assert manifest["version"] == "0.9.2"
     assert manifest["privacy_policies"] == ["https://biomcp.org/policies/"]
     assert "tools_generated" not in manifest

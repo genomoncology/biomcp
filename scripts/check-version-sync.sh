@@ -115,10 +115,13 @@ if [[ "$cargo_version" =~ ^${stable_pattern}$ ]]; then
     candidate_kind="release"
     stable_base="$cargo_version"
     check_equal "Cargo.toml" "$cargo_version" "pyproject.toml" "$python_version"
-elif [[ "$cargo_version" =~ ^(${stable_pattern})-dev\.([1-9][0-9]*)$ ]]; then
+elif [[ "$cargo_version" =~ ^(${stable_pattern})-dev(\.([1-9][0-9]*))?$ ]]; then
     candidate_kind="development"
     stable_base="${BASH_REMATCH[1]}"
-    expected_python_version="${stable_base}.dev${BASH_REMATCH[5]}"
+    # 2132: main carries the plain -dev suffix between releases
+    # (0.9.3-dev, Python 0.9.3.dev0); an ordinal suffix (0.9.3-dev.2,
+    # Python 0.9.3.dev2) stays canonical for a numbered candidate.
+    expected_python_version="${stable_base}.dev${BASH_REMATCH[6]:-0}"
     check_equal "Cargo.toml mapping" "$expected_python_version" "pyproject.toml" "$python_version"
 else
     echo "Cargo.toml has a non-canonical release or development version: $cargo_version" >&2
