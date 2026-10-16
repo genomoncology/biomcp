@@ -89,7 +89,6 @@ def test_search_all_consults_the_recorded_provider_matrix(
         "mydisease",
         "mygene",
         "myvariant",
-        "opentargets",
         "pubmed",
         "pubtator",
         "reactome",
