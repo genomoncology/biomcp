@@ -1069,7 +1069,8 @@ fn finish_resolution(
         }
         observation.row.discovery_routes.sort();
         observation.row.discovery_routes.dedup();
-        match pending.entry(observation.canonical_identity) {
+        let identity = observation.canonical_identity.clone();
+        match pending.entry(identity) {
             std::collections::btree_map::Entry::Vacant(entry) => {
                 entry.insert(observation);
             }
