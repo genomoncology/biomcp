@@ -156,11 +156,17 @@ biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140453136A>T'
 }
 ```
 
-```bash
-biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140453136A>T' 2>/dev/null \
-  | jq -r '.error.message' \
-  | grep -F 'attempted GRCh38' \
-  | mustmatch 'attempted GRCh38'
+```bash run id=declared-assembly-miss-message
+message="$(biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140453136A>T' 2>/dev/null \
+  | jq -r '.error.message')"
+printf '%s\n' "$message" | grep -Fq 'attempted GRCh38'
+printf '%s\n' "$message" | grep -Fq 'upstream HTTP 404'
+printf '%s\n' "$message" | grep -Fqv 'GRCh37'
+printf 'the miss names the declared build and never the other one\n'
+```
+
+```text expect=declared-assembly-miss-message
+the miss names the declared build and never the other one
 ```
 
 ```bash
