@@ -10,8 +10,6 @@ command consults and the query shapes the pages asserted by hand.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from replay_env import ReplayEnvironment
