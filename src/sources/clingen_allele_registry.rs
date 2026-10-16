@@ -66,7 +66,12 @@ impl ClinGenAlleleRegistryClient {
         })?;
         let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::clingen_car(&parsed)?;
         Ok(Self {
-            client: crate::sources::provider_url_client_with_deadline("clingen_car", &policy, deadline).await?,
+            client: crate::sources::provider_url_client_with_deadline(
+                "clingen_car",
+                &policy,
+                deadline,
+            )
+            .await?,
             base,
         })
     }

@@ -31,7 +31,12 @@ impl ClinGenLdhClient {
             .ok()
             .and_then(|value| Url::parse(&value).ok());
         Ok(Self {
-            client: crate::sources::provider_url_client_with_deadline("clingen_ldh", &policy, deadline).await?,
+            client: crate::sources::provider_url_client_with_deadline(
+                "clingen_ldh",
+                &policy,
+                deadline,
+            )
+            .await?,
             fixture_origin,
         })
     }

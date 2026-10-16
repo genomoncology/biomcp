@@ -594,9 +594,8 @@ impl ReplayServer {
             .expect("start tools/replay-server");
         let ready = {
             use std::io::BufRead;
-            let stdout = std::io::BufReader::new(
-                child.stdout.take().expect("replay server stdout piped"),
-            );
+            let stdout =
+                std::io::BufReader::new(child.stdout.take().expect("replay server stdout piped"));
             let mut reader = stdout;
             let mut line = String::new();
             reader
@@ -628,10 +627,7 @@ impl ReplayServer {
             "BIOMCP_CACHE_DIR".to_string(),
             cache.to_string_lossy().into_owned(),
         ));
-        env.push((
-            "BIOMCP_TEST_UNPACED_ORIGIN".to_string(),
-            origin.clone(),
-        ));
+        env.push(("BIOMCP_TEST_UNPACED_ORIGIN".to_string(), origin.clone()));
         ReplayServer {
             _scratch: scratch,
             env,
@@ -682,9 +678,8 @@ fn serve_runtime() -> tokio::runtime::Runtime {
 #[test]
 fn serve_flag_disables_civic_on_the_stdio_server() {
     let replay = ReplayServer::start();
-    let harness = biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!(
-        "CARGO_MANIFEST_DIR"
-    ));
+    let harness =
+        biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
     let env = replay.env.clone();
     let rt = serve_runtime();
     rt.block_on(async move {
@@ -706,16 +701,18 @@ fn serve_flag_disables_civic_on_the_stdio_server() {
             let before = replay.line_count();
             let get = client
                 .peer()
-                .call_tool(rmcp::model::CallToolRequestParams::new("get").with_arguments(
-                    std::collections::BTreeMap::from([
-                        ("entity".to_string(), serde_json::json!("variant")),
-                        ("id".to_string(), serde_json::json!("BRAF V600E")),
-                        ("sections".to_string(), serde_json::json!(["civic"])),
-                        ("json".to_string(), serde_json::json!(true)),
-                    ])
-                    .into_iter()
-                    .collect(),
-                ))
+                .call_tool(
+                    rmcp::model::CallToolRequestParams::new("get").with_arguments(
+                        std::collections::BTreeMap::from([
+                            ("entity".to_string(), serde_json::json!("variant")),
+                            ("id".to_string(), serde_json::json!("BRAF V600E")),
+                            ("sections".to_string(), serde_json::json!(["civic"])),
+                            ("json".to_string(), serde_json::json!(true)),
+                        ])
+                        .into_iter()
+                        .collect(),
+                    ),
+                )
                 .await
                 .expect("call the typed get tool for a variant");
             assert_eq!(
@@ -745,9 +742,8 @@ fn serve_flag_disables_civic_on_the_stdio_server() {
 #[test]
 fn serve_http_flag_matches_the_env_variable_form() {
     let replay = ReplayServer::start();
-    let harness = biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!(
-        "CARGO_MANIFEST_DIR"
-    ));
+    let harness =
+        biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
     let env = replay.env.clone();
     let rt = serve_runtime();
     rt.block_on(async move {
@@ -763,14 +759,10 @@ fn serve_http_flag_matches_the_env_variable_form() {
         );
 
         let mut env_form = env.clone();
-        env_form.push((
-            "BIOMCP_DISABLE_SOURCES".to_string(),
-            "civic".to_string(),
-        ));
-        let env_instructions =
-            serve_http_civic_description(&harness, &replay, &env_form, &[])
-                .await
-                .expect("serve-http reads the environment variable");
+        env_form.push(("BIOMCP_DISABLE_SOURCES".to_string(), "civic".to_string()));
+        let env_instructions = serve_http_civic_description(&harness, &replay, &env_form, &[])
+            .await
+            .expect("serve-http reads the environment variable");
         assert!(
             env_instructions.contains(
                 "operator disabled these sources: civic (disabled by BIOMCP_DISABLE_SOURCES=civic)"
@@ -797,23 +789,22 @@ async fn serve_http_civic_description(
         let initialize = client
             .peer_info()
             .expect("rmcp client stores initialize result as peer info");
-        let instructions = initialize
-            .instructions
-            .clone()
-            .unwrap_or_default();
+        let instructions = initialize.instructions.clone().unwrap_or_default();
         let before = replay.line_count();
         let get = client
             .peer()
-            .call_tool(rmcp::model::CallToolRequestParams::new("get").with_arguments(
-                std::collections::BTreeMap::from([
-                    ("entity".to_string(), serde_json::json!("variant")),
-                    ("id".to_string(), serde_json::json!("BRAF V600E")),
-                    ("sections".to_string(), serde_json::json!(["civic"])),
-                    ("json".to_string(), serde_json::json!(true)),
-                ])
-                .into_iter()
-                .collect(),
-            ))
+            .call_tool(
+                rmcp::model::CallToolRequestParams::new("get").with_arguments(
+                    std::collections::BTreeMap::from([
+                        ("entity".to_string(), serde_json::json!("variant")),
+                        ("id".to_string(), serde_json::json!("BRAF V600E")),
+                        ("sections".to_string(), serde_json::json!(["civic"])),
+                        ("json".to_string(), serde_json::json!(true)),
+                    ])
+                    .into_iter()
+                    .collect(),
+                ),
+            )
             .await?;
         assert_eq!(
             get.is_error,
