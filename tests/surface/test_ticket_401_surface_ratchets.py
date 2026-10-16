@@ -47,8 +47,6 @@ def _run_quality_ratchet_on_spec(tmp_path: Path, markdown: str) -> dict[str, obj
             str(REPO_ROOT / "src" / "sources" / "mod.rs"),
             "--health-file",
             str(REPO_ROOT / "src" / "cli" / "health" / "catalog.rs"),
-            "--cli-line-cap-allowlist",
-            str(REPO_ROOT / "tools" / "cli-line-cap-allowlist.json"),
             "--audit",
             "spec_lint",
         ],

@@ -132,6 +132,12 @@ default = ["alphagenome", "charts-png"]
 alphagenome = ["dep:tonic", "dep:prost", "dep:zstd"]
 charts-png = ["kuva/png"]
 
+[lints.clippy]
+# 2076: clippy replaces the deleted size, line-cap and wait ratchet
+# scripts; thresholds and the banned sleep list live in clippy.toml.
+too_many_lines = "warn"
+disallowed_methods = "warn"
+
 [dev-dependencies]
 biomcp-mcp-contract-client = { path = "crates/biomcp-mcp-contract-client" }
 rcgen = { version = "0.13", default-features = false, features = ["pem", "ring"] }

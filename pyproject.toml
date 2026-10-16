@@ -42,6 +42,28 @@ extend-exclude = [
   "architecture/experiments/**",
 ]
 
+[tool.ruff.lint]
+# Ruff's defaults (E4, E7, E9, F) plus the banned sleep API (2076): a
+# new time.sleep in a test fails the gate; tests wait on signals.
+select = ["E4", "E7", "E9", "F", "TID251"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"time.sleep".msg = "tests wait on signals, not clocks"
+
+[tool.ruff.lint.per-file-ignores]
+# 2076: these files sleep today; 2081 removes the sleeps and these lines.
+"tests/support.py" = ["TID251"]
+"tests/test_author_surface_docs.py" = ["TID251"]
+"tests/test_disease_survival_fixture_lifecycle.py" = ["TID251"]
+"tests/test_mcp_2026_protocol.py" = ["TID251"]
+"tests/test_mcp_http_surface.py" = ["TID251"]
+"tests/test_mychem_empty_spec_fixture_contract.py" = ["TID251"]
+"tests/test_release_smoke_script.py" = ["TID251"]
+"spec/fixtures/fixture-supervisor.py" = ["TID251"]
+# Not a test: the docs-publication verifier takes its clock by injection,
+# and time.sleep is only its default argument.
+"scripts/verify-docs-publication.py" = ["TID251"]
+
 [tool.maturin]
 bindings = "bin"
 manifest-path = "Cargo.toml"

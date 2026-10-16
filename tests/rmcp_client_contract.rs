@@ -1,3 +1,6 @@
+// sleep reason: existing test sleeps stay until 2081 replaces them with signals
+#![allow(clippy::disallowed_methods)]
+
 use biomcp_mcp_contract_client::{
     ContractHarness, article_fulltext_fixture_env, assert_chart_calls,
     assert_explore_core_contract, assert_initialize_and_tools, assert_invalid_resource_error,

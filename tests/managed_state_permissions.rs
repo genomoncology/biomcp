@@ -1,3 +1,6 @@
+// sleep reason: existing test sleeps stay until 2081 replaces them with signals
+#![allow(clippy::disallowed_methods)]
+
 #[cfg(any(unix, windows))]
 use std::fs;
 #[cfg(unix)]

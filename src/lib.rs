@@ -3,6 +3,8 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::todo)]
 #![deny(clippy::unimplemented)]
+// sleep reason: existing test sleeps stay allowed until 2081 removes them
+#![cfg_attr(test, allow(clippy::disallowed_methods))]
 
 pub mod build_identity;
 pub mod cli;

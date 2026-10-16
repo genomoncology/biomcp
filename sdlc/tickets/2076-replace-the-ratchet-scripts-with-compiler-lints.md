@@ -1,12 +1,14 @@
 # 2076 — Replace the ratchet scripts with compiler lints
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Depends on: 2071
 Depends on: 2074
 Depends on: 2075
+
+Reviews: revision fd3693b, accept
 
 ## Outcome
 

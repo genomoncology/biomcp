@@ -470,6 +470,8 @@ async fn lock_refresh_until(store: &Store, deadline: tokio::time::Instant) -> Re
             // watchdog: bounded drain deadline
             return Ok(false);
         }
+        // sleep reason: deadline-checked drain retry poll for the store
+        #[allow(clippy::disallowed_methods)]
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
 }

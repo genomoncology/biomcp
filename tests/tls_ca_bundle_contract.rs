@@ -1,6 +1,9 @@
 //! Proves ordinary provider clients reach a private-CA endpoint only when the
 //! operator CA bundle names that certificate authority.
 
+// sleep reason: existing test sleeps stay until 2081 replaces them with signals
+#![allow(clippy::disallowed_methods)]
+
 use std::path::{Path, PathBuf};
 use std::process::{Output, Stdio};
 use std::sync::Arc;

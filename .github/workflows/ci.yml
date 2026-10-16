@@ -430,8 +430,6 @@ jobs:
         run: uv sync --extra dev --no-install-project
       - name: Python contract tests (docs and records)
         run: uv run --no-sync pytest tests/ -q -m "not needs_binary"
-      - name: Wait ratchet (reads sdlc tickets, so sdlc-only pushes run it here)
-        run: uv run --no-sync python tools/check-test-wait-ratchet.py
       - name: Documentation build
         run: uv run --no-sync env NO_MKDOCS_2_WARNING=1 mkdocs build --strict
       - run: cmp --silent install.sh docs/install.sh

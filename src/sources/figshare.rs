@@ -325,6 +325,8 @@ impl FigshareClient {
             })? {
                 DownloadResponse::Retry => {
                     accepted_retries += 1;
+                    // sleep reason: figshare 202-accepted retry backoff
+                    #[allow(clippy::disallowed_methods)]
                     tokio::time::sleep(Duration::from_millis(
                         FIGSHARE_DOWNLOAD_ACCEPTED_BACKOFF_MS,
                     ))

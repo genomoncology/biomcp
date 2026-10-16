@@ -20,8 +20,10 @@ OFFLINE = ROOT / "tools/run-offline"
 # Raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar. Raised
-# again by one path: the Python lane cache isolation test.
-MAX_PACKAGE_FILES = 1_423  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+# again by one path: the Python lane cache isolation test. Lowered by seven
+# net paths in 2076: the deleted ratchet scripts, inventories and the
+# absorbed line-cap test, less the added clippy.toml.
+MAX_PACKAGE_FILES = 1_416  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 

@@ -1,28 +1,11 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import re
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BOOTSTRAP_ENTITY_SET = {"gene", "variant", "article"}
-ABSORBED_CLI_RESIDUAL_PATHS = {
-    "src/cli/drug/tests.rs",
-    "src/cli/trial/tests.rs",
-    "src/cli/cache.rs",
-    "src/cli/article/session.rs",
-    "src/cli/article/dispatch.rs",
-    "src/cli/variant/dispatch.rs",
-}
 ENV_VAR_RE = re.compile(r"`([A-Z][A-Z0-9_]*(?:API_KEY|TOKEN))`")
-COMPLETED_STATE_RE = re.compile(
-    r"\b(absorbed|complete|completed|former|historical|no longer|under the cap)\b",
-    re.IGNORECASE,
-)
-CURRENT_RESIDUAL_RE = re.compile(
-    r"\b(residual|remaining|over-cap|allowlist|follow-up|future work|split axis)\b",
-    re.IGNORECASE,
-)
 
 
 def _read(relative_path: str) -> str:
@@ -40,10 +23,6 @@ def _section(text: str, heading: str) -> str:
 
 def _entity_spec_names() -> set[str]:
     return {path.stem for path in (REPO_ROOT / "spec" / "entity").glob("*.md")}
-
-
-def _paragraphs(text: str) -> list[str]:
-    return [block.strip() for block in re.split(r"\n\s*\n", text) if block.strip()]
 
 
 def _optional_runtime_key_bullets(staging_demo: str) -> set[str]:
@@ -66,39 +45,6 @@ def _optional_runtime_key_bullets(staging_demo: str) -> set[str]:
             break
 
     return set(ENV_VAR_RE.findall("\n".join(bullet_lines)))
-
-
-def test_cli_decomposition_doc_does_not_claim_absorbed_allowlist_work_is_pending():
-    allowlist = json.loads(_read("tools/cli-line-cap-allowlist.json"))
-    assert allowlist["entries"] == []
-
-    cli_decomposition = _read("architecture/technical/cli-decomposition-2026.md")
-    current_residual_path_claims = set()
-    current_ticket_334_claims = []
-    for paragraph in _paragraphs(cli_decomposition):
-        describes_current_residual_work = CURRENT_RESIDUAL_RE.search(
-            paragraph
-        ) and not COMPLETED_STATE_RE.search(paragraph)
-        if not describes_current_residual_work:
-            continue
-
-        for path in sorted(ABSORBED_CLI_RESIDUAL_PATHS):
-            if path in paragraph:
-                current_residual_path_claims.add(path)
-        if "Ticket 334" in paragraph:
-            current_ticket_334_claims.append(re.sub(r"\s+", " ", paragraph))
-
-    assert not current_residual_path_claims, (
-        "architecture/technical/cli-decomposition-2026.md must not keep the "
-        "absorbed ticket-347 CLI files in a current residual-over-cap plan when "
-        "the allowlist is empty; current residual path claims: "
-        f"{sorted(current_residual_path_claims)}"
-    )
-    assert not current_ticket_334_claims, (
-        "architecture/technical/cli-decomposition-2026.md must describe ticket-334 "
-        "line-cap work as absorbed/completed or historical when the allowlist is "
-        f"empty; current ticket-334 claims: {current_ticket_334_claims}"
-    )
 
 
 def test_functional_docs_describe_current_spec_v2_entity_corpus() -> None:
