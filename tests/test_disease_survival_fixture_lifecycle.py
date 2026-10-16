@@ -351,21 +351,43 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
         },
         start_new_session=True,
     )
-    kill_deadline = time.monotonic() + 3
-    while timed_run.poll() is None:
-        if time.monotonic() >= kill_deadline:  # watchdog: bounded kill-window check
-            os.kill(timed_run.pid, signal.SIGKILL)
-            break
-        time.sleep(0.05)  # watchdog: bounded kill-window poll
     record_path = workspace / ".cache" / "spec-disease-survival-ownership"
     try:
-        # The runner can be killed before its ready marker under lane
-        # saturation. The ownership record is the observation needed for the
-        # post-kill cleanup assertions and may take longer to appear.
-        wait_until(lambda: record_path.exists(), watchdog_secs=60)
+        # The kill arms the reap that removes the fixture root, so the
+        # fixture must be observed before the kill is armed. Under lane
+        # saturation the setup outlasts any fixed kill window, so killing
+        # on a blind clock deadline can cut the runner down mid-setup; and
+        # a base-url read after the kill races the reap, which removes the
+        # root the record points at. The record and base-url are stable
+        # while the held runner still owns the fixture.
+        wait_until(
+            lambda: record_path.exists() or timed_run.poll() is not None,
+            watchdog_secs=60,
+        )
+        assert record_path.exists(), (
+            "runner exited before exporting the disease-survival fixture"
+        )
         record = _read_record(record_path)
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
-        healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
+        base_url_file = fixture_root / "base-url"
+
+        def _read_base_url() -> str:
+            # Reading inside the wait observes the file, so one that is
+            # missing or empty fails the wait instead of raising afterward.
+            try:
+                return base_url_file.read_text().strip()
+            except OSError:
+                return ""
+
+        wait_until(lambda: _read_base_url() != "", watchdog_secs=60)
+        healthz_url = _read_base_url() + "/healthz"
+
+        kill_deadline = time.monotonic() + 3
+        while timed_run.poll() is None:
+            if time.monotonic() >= kill_deadline:  # watchdog: bounded kill-window check
+                os.kill(timed_run.pid, signal.SIGKILL)
+                break
+            time.sleep(0.05)  # watchdog: bounded kill-window poll
 
         assert timed_run.wait(timeout=60) == -signal.SIGKILL
         wait_until(lambda: _healthz_is_unavailable(healthz_url), watchdog_secs=60)

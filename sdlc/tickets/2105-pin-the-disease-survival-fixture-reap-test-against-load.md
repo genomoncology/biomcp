@@ -5,9 +5,11 @@ priority: 3
 
 # 2105: Pin the disease-survival fixture reap test against load
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision d8d329a, accept
 
 ## Evidence
 
