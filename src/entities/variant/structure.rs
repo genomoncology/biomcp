@@ -352,11 +352,7 @@ enum ResidueCheck {
     Unchecked,
 }
 
-fn check_reference_residue(
-    record: &UniProtRecord,
-    position: u32,
-    reference: char,
-) -> ResidueCheck {
+fn check_reference_residue(record: &UniProtRecord, position: u32, reference: char) -> ResidueCheck {
     let Some(sequence) = record
         .sequence
         .as_ref()
@@ -445,9 +441,10 @@ fn residue_summary(
         "unresolved"
     };
     let mut residue_check = ResidueCheck::Unchecked;
-    if let (Some(selected), Some(reference)) =
-        (selected_position, one_letter_reference(reference_aa.as_deref()))
-    {
+    if let (Some(selected), Some(reference)) = (
+        selected_position,
+        one_letter_reference(reference_aa.as_deref()),
+    ) {
         residue_check = check_reference_residue(record, selected, reference);
         if matches!(residue_check, ResidueCheck::Mismatch { .. }) {
             position = None;

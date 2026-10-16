@@ -15,8 +15,7 @@ fn hgvsp_position_extracts_three_letter_short_and_accession_prefixed_aliases() {
 #[test]
 fn normalize_hgvsp_change_matches_accession_prefixed_aliases() {
     assert_eq!(
-        crate::entities::variant::normalize_protein_change("NP_004324.2:p.Val600Glu")
-            .as_deref(),
+        crate::entities::variant::normalize_protein_change("NP_004324.2:p.Val600Glu").as_deref(),
         Some("V600E")
     );
 }
@@ -304,7 +303,11 @@ fn structure_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<u
     let target = request.split_whitespace().nth(1).unwrap_or_default();
     if target.starts_with("/v1/query?") {
         if target.contains("dbnsfp.genename%3AMUTYH") && target.contains("p.G368D") {
-            return ("200 OK", "application/json", MYVARIANT_MUTYH_G368D_QUERY_REPLY.to_vec());
+            return (
+                "200 OK",
+                "application/json",
+                MYVARIANT_MUTYH_G368D_QUERY_REPLY.to_vec(),
+            );
         }
         if target.contains("dbnsfp.genename%3ABRAF") && target.contains("p.V600E") {
             return (
@@ -317,10 +320,18 @@ fn structure_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<u
     // The MyGene gene-to-accession resolver.
     if target.starts_with("/query?") {
         if target.contains("symbol%3A%22MUTYH%22") {
-            return ("200 OK", "application/json", MYGENE_MUTYH_REPLY.as_bytes().to_vec());
+            return (
+                "200 OK",
+                "application/json",
+                MYGENE_MUTYH_REPLY.as_bytes().to_vec(),
+            );
         }
         if target.contains("symbol%3A%22BRAF%22") {
-            return ("200 OK", "application/json", MYGENE_BRAF_REPLY.as_bytes().to_vec());
+            return (
+                "200 OK",
+                "application/json",
+                MYGENE_BRAF_REPLY.as_bytes().to_vec(),
+            );
         }
     }
     if target.starts_with("/uniprotkb/Q9UIF7.json") {
@@ -391,10 +402,13 @@ async fn structure_recorded_reply_server()
                     }
                 }
                 let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock requests")
-                    .push(request.split_whitespace().nth(1).unwrap_or_default().to_string());
+                captured.lock().expect("lock requests").push(
+                    request
+                        .split_whitespace()
+                        .nth(1)
+                        .unwrap_or_default()
+                        .to_string(),
+                );
                 let (status, content_type, body) = structure_recorded_reply(&request);
                 let response = format!(
                     "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -461,7 +475,10 @@ async fn mutyh_g368d_on_q9uif7_never_reports_position_368_as_a_placement() {
     // Residue-specific rows are suppressed; protein-level rows stay.
     assert!(result.domains.is_empty(), "{:?}", result.domains);
     assert_eq!(
-        result.lookup_outcomes.get("domains").map(|outcome| outcome.outcome()),
+        result
+            .lookup_outcomes
+            .get("domains")
+            .map(|outcome| outcome.outcome()),
         Some(SectionOutcomeState::Inapplicable)
     );
     assert!(
@@ -520,7 +537,10 @@ async fn braf_v600e_on_p15056_keeps_the_verified_position_600() {
     assert_eq!(result.protein.accession, "P15056");
     assert_eq!(result.protein.length, Some(766));
     assert_eq!(result.residue.position, Some(600));
-    assert_eq!(result.residue.position_confidence, "requested_hgvsp_exact_match");
+    assert_eq!(
+        result.residue.position_confidence,
+        "requested_hgvsp_exact_match"
+    );
     assert_eq!(result.residue.reference_aa.as_deref(), Some("V"));
     assert_eq!(result.residue.alternate_aa.as_deref(), Some("E"));
     assert_eq!(
@@ -548,7 +568,10 @@ async fn braf_v600e_on_p15056_keeps_the_verified_position_600() {
     );
     assert!(result.structures.alphafold.is_some());
     assert_eq!(
-        result.cancerhotspots.as_ref().map(|row| row.source.as_str()),
+        result
+            .cancerhotspots
+            .as_ref()
+            .map(|row| row.source.as_str()),
         Some("cancerhotspots.org")
     );
     assert_eq!(

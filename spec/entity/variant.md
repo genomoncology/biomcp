@@ -776,6 +776,106 @@ Cancerhotspots'
   | mustmatch like 'variant structure <variant>'
 ```
 
+## Structure Residue Verification
+
+The structure helper verifies its residue placement against the protein it
+actually joins. dbNSFP merges every isoform's protein name into one alias
+list, so an alias can spell the request at a position the chosen UniProt
+sequence numbers differently: the recorded MUTYH G368D reply spells
+`p.Gly368Asp` at 368, while Q9UIF7's own sequence holds S at 368 and G at
+393. The helper reads the chosen protein's sequence before claiming a
+position. A mismatching reference amino acid leaves the placement
+unresolved: no position is reported, no residue-specific domain or PDB
+coverage claim is made, and one warning names the finding while the
+protein-level rows stay. A verified placement keeps its exact-match
+position, so BRAF V600E on P15056 is unchanged. These rows replay the
+recorded MyVariant.info and UniProt replies through a local server, the
+same captures the Rust recorded-reply tests serve.
+
+```bash
+python3 - <<'PY' | mustmatch like 'MUTYH G368D on Q9UIF7: unresolved | position=None | domains=0 | pdb-coverage-claims=0 | warnings=1
+BRAF V600E on P15056: requested_hgvsp_exact_match | position=600 | domains=1 | pdb-coverage-claims=1 | warnings=1'
+import json
+import os
+import subprocess
+import tempfile
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+binary = os.environ["BIOMCP_BIN"]
+root = Path("../..")
+myvariant_mutyh = (root / "testdata/sources/myvariant/query_mutyh_g368d_20261016.json").read_bytes()
+myvariant_braf = (root / "testdata/sources/myvariant/query_braf_v600e_20261009.json").read_bytes()
+uniprot_q9uif7 = (root / "testdata/sources/uniprot/get_q9uif7_20261016.json").read_bytes()
+uniprot_p15056 = (root / "testdata/sources/uniprot/get_p15056_20261016.json").read_bytes()
+cancerhotspots_braf = (root / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes()
+mygene_mutyh = b'{"total":1,"hits":[{"symbol":"MUTYH","uniprot":{"Swiss-Prot":"Q9UIF7"}}]}'
+mygene_braf = b'{"total":1,"hits":[{"symbol":"BRAF","uniprot":{"Swiss-Prot":"P15056"}}]}'
+interpro_braf = b'{"results":[{"metadata":{"accession":"IPR000719","name":"Protein kinase domain","type":"domain"},"proteins":[{"entry_protein_locations":[{"fragments":[{"start":457,"end":717}]}]}]}]}'
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path = self.path
+        if path.startswith("/v1/query"):
+            body = myvariant_mutyh if "MUTYH" in path else myvariant_braf
+        elif path.startswith("/query"):
+            body = mygene_mutyh if "MUTYH" in path else mygene_braf
+        elif path.startswith("/uniprotkb/Q9UIF7.json"):
+            body = uniprot_q9uif7
+        elif path.startswith("/uniprotkb/P15056.json"):
+            body = uniprot_p15056
+        elif path.startswith("/entry/interpro/protein/uniprot/P15056/"):
+            body = interpro_braf
+        elif path == "/api/hotspots/single/byGene/MUTYH":
+            body = b"[]"
+        elif path == "/api/hotspots/single/byGene/BRAF":
+            body = cancerhotspots_braf
+        else:
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        return
+
+server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+base = f"http://127.0.0.1:{server.server_port}"
+env = os.environ.copy()
+env.update({
+    "BIOMCP_MYVARIANT_BASE": f"{base}/v1",
+    "BIOMCP_MYGENE_BASE": base,
+    "BIOMCP_UNIPROT_BASE": base,
+    "BIOMCP_INTERPRO_BASE": base,
+    "BIOMCP_CANCERHOTSPOTS_BASE": base,
+    "BIOMCP_CACHE_DIR": tempfile.mkdtemp(),
+})
+
+def summarize(label, accession, variant):
+    payload = json.loads(subprocess.check_output(
+        [binary, "--json", "--no-cache", "variant", "structure", variant],
+        text=True, env=env))
+    assert payload["protein"]["accession"] == accession, payload["protein"]
+    residue = payload["residue"]
+    claims = sum(
+        1 for row in payload["structures"]["pdb"]
+        if row.get("residue_covered") is not None)
+    print(f"{label}: {residue['position_confidence']} | "
+          f"position={residue['position']} | domains={len(payload['domains'])} | "
+          f"pdb-coverage-claims={claims} | warnings={len(payload['warnings'])}")
+
+summarize("MUTYH G368D on Q9UIF7", "Q9UIF7", "MUTYH G368D")
+summarize("BRAF V600E on P15056", "P15056", "BRAF V600E")
+server.shutdown()
+PY
+```
+
 ## Variant Structure Blog Walkthrough
 
 The public blog should teach the shipped variant-structure workflow as a real
