@@ -407,6 +407,30 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "civic/graphql_braf_v600e_20261016.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CIViC",
+        "request": "https://civicdb.org/api/graphql",
+        "captured_at": "2026-10-16T13:53:09Z",
+        "sha256": "22e53d68f1d8e38c63688a3cabe3a29f2f1e1f56ff5dcfec658b352b60b27f9e",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public CIViC GraphQL response for the exact query BioMCP sends (molecularProfileName 'BRAF V600E', status ACCEPTED, first 10) before permitted minimization; none was applied."
+      }
+    },
+    {
+      "path": "civic/graphql_egfr_c797s_20261016.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CIViC",
+        "request": "https://civicdb.org/api/graphql",
+        "captured_at": "2026-10-16T13:53:09Z",
+        "sha256": "569db079737b64bb0dae08b5a663ba1446e56940aefc6c1de35ac2fa80e11085",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public CIViC GraphQL response for the exact query BioMCP sends (molecularProfileName 'EGFR C797S', status ACCEPTED, first 10) before permitted minimization; none was applied."
+      }
+    },
+    {
       "path": "clingen/README.md",
       "classification": "authored",
       "authored_reason": "Repository-authored fixture provenance and derivation inventory."
