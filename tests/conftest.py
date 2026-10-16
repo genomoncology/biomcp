@@ -55,6 +55,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=20.0,
         help="Deprecated compatibility option; MCP client contracts now run in Rust.",
     )
+    golden = parser.getgroup("golden")
+    golden.addoption(
+        "--update",
+        action="store_true",
+        help="rewrite the golden output files instead of diffing against them",
+    )
 
 
 def _provision_study_fixture(root: Path) -> str:
@@ -82,3 +88,4 @@ def study_fixture_env() -> Iterator[dict[str, str]]:
     with tempfile.TemporaryDirectory(prefix="biomcp-study-tests-") as root_name:
         root = Path(root_name)
         yield {"BIOMCP_STUDY_DIR": _provision_study_fixture(root)}
+

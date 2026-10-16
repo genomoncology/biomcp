@@ -38,6 +38,7 @@
 
 - Deadline-proof and surface tests bound their waits with a shared load-scaled watchdog and private cache roots, so routine suites stay green while other jobs share the build host. (2103)
 - Article HTML parsing and readability now run on scraper 0.27 and dom_smoothie 0.18, which drops html5ever 0.26 with its syn 1 build, the direct `getrandom` dependency, and the fxhash advisory exception, and the article fixtures and full-text spec pages keep passing. (2078)
+- The first golden output suite lands with the replay server that feeds it: every BioMCP provider base override points at `tools/replay-server`, which serves recorded replies from `testdata/replay`, fails loudly on any unrecorded request, records a live reply once in `--record` mode, and derives its routes from `src/sources`, while `tests/golden` runs `get gene`, `get variant`, and `search all` (counts-only and full) in JSON and Markdown against committed golden files that `--update` rewrites. (2079)
 ## 0.9.2 — 2026-10-11
 
 ### Fixes
@@ -1094,3 +1095,4 @@ OpenFDA FAERS, PharmGKB/CPIC, GWAS Catalog, Monarch (phenotypes), AlphaGenome (g
 ## 0.7.3
 
 Legacy Python BioMCP. See branch `python-0.7.3` for source code.
+

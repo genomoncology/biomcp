@@ -1,0 +1,484 @@
+#!/usr/bin/env python3
+"""One replay server over recorded provider replies.
+
+Every BioMCP provider base override points here in the golden suite, the
+server answers from recorded replies under `testdata/replay`, and a request
+no recording covers fails loudly instead of reaching a live provider. With
+`--record`, a miss becomes one live upstream call whose reply is stored under
+`testdata/replay` and appended to the manifest. `testdata/sources` is never
+written: the product tickets' recorded replies and `capture-receipts.json`
+stay theirs.
+
+Provider routes are derived from the base constants in `src/sources` at
+startup, so the Rust source stays the one list of providers. The few
+providers whose default endpoint is not a `*_BASE` const plus a `*_BASE_ENV`
+const are named in `EXPLICIT_PROVIDER_ROUTES`.
+
+The request log is one JSON object per line carrying the request key and the
+result (`hit`, `miss`, `recorded`, `record-error`, or `probe`), so a caller
+can assert that its commands replayed from disk.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+import threading
+import urllib.error
+import urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qsl, urlencode
+
+MANIFEST_SCHEMA_VERSION = 1
+ENV_SUFFIXES = ("_BASE_URL", "_FIXTURE_ORIGIN", "_BASE", "_URL")
+BODY_KEY_METHODS = frozenset({"POST", "PUT", "PATCH"})
+RECORDED_HEADER_NAMES = (
+    "content-type",
+    "content-encoding",
+    "etag",
+    "last-modified",
+)
+FORWARDED_HEADER_NAMES = (
+    "accept",
+    "content-type",
+    "if-modified-since",
+    "if-none-match",
+    "user-agent",
+)
+UPSTREAM_TIMEOUT_SECONDS = 90
+CONTENT_TYPE_EXTENSIONS = (
+    ("json", ".json"),
+    ("csv", ".csv"),
+    ("xml", ".xml"),
+    ("html", ".html"),
+    ("plain", ".txt"),
+)
+
+# Providers whose default endpoint is not declared as a `*_BASE` const plus a
+# `*_BASE_ENV` const in src. Keep this exactly as small as the source allows;
+# the golden contract test fails when a provider literal appears that neither
+# the const pairs nor these tables cover.
+EXPLICIT_PROVIDER_ROUTES = {
+    "BIOMCP_ALPHAGENOME_BASE": "https://gdmscience.googleapis.com:443",
+    "BIOMCP_GENCC_BASE": (
+        "https://thegencc.org/download/action/submissions-export-csv?format=new"
+    ),
+    "BIOMCP_ONCOKB_BASE": "https://www.oncokb.org/api/v1",
+    "BIOMCP_ORCID_BASE": "https://pub.orcid.org/v3.0",
+}
+
+# Overrides the clients accept as a bare origin only, substituting it into
+# provider URLs whose paths keep their real first segment (ldh, cspec,
+# large-docs). Each maps (path prefix, live upstream); the prefix is matched
+# but kept in the upstream path.
+ORIGIN_SUBSTITUTION_ROUTES = {
+    "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": ("ldh", "https://ldh.genome.network"),
+    "BIOMCP_CSPEC_FIXTURE_ORIGIN": ("cspec", "https://cspec.clinicalgenome.org"),
+    "BIOMCP_CTGOV_CDN_BASE": ("large-docs", "https://cdn.clinicaltrials.gov"),
+}
+
+# Overrides that are not provider endpoints. The health probe hook belongs to
+# the health command's own fixture contract; nothing here routes it.
+EXCLUDED_OVERRIDES = frozenset({"BIOMCP_HEALTH_PROBE_BASE"})
+
+CONST_STRING_RE = re.compile(r'const\s+([A-Z0-9_]+)\s*:\s*&\s*str\s*=\s*"([^"\n]+)"')
+
+
+def provider_routes(sources_dir: Path) -> dict[str, str]:
+    """Map every base-style override variable to its default live endpoint."""
+    routes: dict[str, str] = {}
+    for path in sorted(sources_dir.rglob("*.rs")):
+        consts: dict[str, str] = {}
+        for name, value in CONST_STRING_RE.findall(path.read_text(encoding="utf-8")):
+            consts[name] = value
+        for name, value in consts.items():
+            if not name.endswith("_ENV"):
+                continue
+            stem = name[: -len("_ENV")]
+            candidates = (
+                stem,
+                stem.replace("_BASE", "_PROD_BASE", 1),
+                stem.replace("_BASE", "_ENDPOINT", 1),
+            )
+            for candidate in candidates:
+                default = consts.get(candidate)
+                if default is not None and default.startswith(("http://", "https://")):
+                    routes[value] = default
+                    break
+    routes.update(EXPLICIT_PROVIDER_ROUTES)
+    for name in EXCLUDED_OVERRIDES:
+        routes.pop(name, None)
+    for name in ORIGIN_SUBSTITUTION_ROUTES:
+        routes.pop(name, None)
+    return routes
+
+
+def prefix_for(override_name: str) -> str:
+    body = override_name.removeprefix("BIOMCP_")
+    for suffix in ENV_SUFFIXES:
+        if body.endswith(suffix):
+            body = body[: -len(suffix)]
+            break
+    return body.lower().replace("_", "-")
+
+
+def request_key(method: str, path: str, query: str, body: bytes) -> str:
+    canonical = urlencode(sorted(parse_qsl(query, keep_blank_values=True)))
+    key = f"{method} {path}"
+    if canonical:
+        key = f"{key}?{canonical}"
+    if method in BODY_KEY_METHODS and body:
+        key = f"{key}#{hashlib.sha256(body).hexdigest()[:16]}"
+    return key
+
+
+def body_extension(content_type: str) -> str:
+    lowered = content_type.split(";", 1)[0].strip().lower()
+    for marker, extension in CONTENT_TYPE_EXTENSIONS:
+        if marker in lowered:
+            return extension
+    return ".bin"
+
+
+def body_file_name(prefix: str, key: str, content_type: str) -> str:
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+    path = key.split("?", 1)[0].split(" ", 1)[-1]
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", path).strip("-").lower()[:40] or "root"
+    return f"responses/{prefix}/{slug}-{digest}{body_extension(content_type)}"
+
+
+class ReplayStore:
+    """The recorded routes, their reply files, and the manifest naming them."""
+
+    def __init__(self, replay_dir: Path) -> None:
+        self.replay_dir = replay_dir
+        self.manifest_path = replay_dir / "manifest.json"
+        self.lock = threading.Lock()
+        self.routes: dict[str, dict[str, object]] = {}
+        self._load()
+
+    def _load(self) -> None:
+        if not self.manifest_path.is_file():
+            return
+        payload = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        if payload.get("schema_version") != MANIFEST_SCHEMA_VERSION:
+            raise SystemExit(
+                f"replay manifest {self.manifest_path} has an unsupported schema"
+            )
+        self.routes = payload["routes"]
+
+    def save(self) -> None:
+        payload = {
+            "schema_version": MANIFEST_SCHEMA_VERSION,
+            "routes": dict(sorted(self.routes.items())),
+        }
+        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = self.manifest_path.with_suffix(".json.tmp")
+        temporary.write_text(
+            json.dumps(payload, indent=1, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(self.manifest_path)
+
+    def body_path(self, key: str) -> Path:
+        return self.replay_dir / str(self.routes[key]["file"])
+
+    def add(self, key: str, entry: dict[str, object], body: bytes) -> None:
+        path = self.replay_dir / str(entry["file"])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(body)
+        self.routes[key] = entry
+        self.save()
+
+
+class ReplayServer:
+    def __init__(
+        self,
+        routes: dict[str, str],
+        substitution_routes: dict[str, tuple[str, str]],
+        store: ReplayStore,
+        log_write,
+        record: bool,
+    ) -> None:
+        self.by_prefix = {
+            prefix_for(name): (upstream, False) for name, upstream in routes.items()
+        }
+        for name, (prefix, upstream) in substitution_routes.items():
+            self.by_prefix[prefix] = (upstream, True)
+        prefixes = [prefix_for(name) for name in routes] + [
+            prefix for prefix, _ in substitution_routes.values()
+        ]
+        if len(set(prefixes)) != len(prefixes):
+            raise SystemExit("provider override prefixes collide; rename one")
+        self.store = store
+        self.log_write = log_write
+        self.record = record
+
+    def log(self, method: str, path: str, query: str, body: bytes, result: str, status: int, note: str | None = None) -> None:
+        if self.log_write is None:
+            return
+        entry: dict[str, object] = {
+            "key": request_key(method, path, query, body),
+            "result": result,
+            "status": status,
+        }
+        if note:
+            entry["note"] = note
+        self.log_write(json.dumps(entry, sort_keys=True))
+
+    def provider_for(self, path: str) -> tuple[str, str, str] | None:
+        segments = path.lstrip("/").split("/", 1)
+        route = self.by_prefix.get(segments[0])
+        if route is None:
+            return None
+        upstream, keep_prefix = route
+        suffix = path if keep_prefix else (
+            f"/{segments[1]}" if len(segments) > 1 else ""
+        )
+        return segments[0], upstream, suffix
+
+    def upstream_url(self, upstream: str, suffix: str, query: str) -> str:
+        base, separator, base_query = upstream.partition("?")
+        if separator and base_query and (suffix or query):
+            raise RuntimeError(
+                f"cannot join request suffix {suffix!r} onto endpoint {upstream!r}"
+            )
+        url = f"{base}{suffix}"
+        if query:
+            return f"{url}?{query}"
+        if base_query:
+            return f"{url}?{base_query}"
+        return url
+
+    def record_reply(
+        self,
+        key: str,
+        prefix: str,
+        upstream: str,
+        suffix: str,
+        query: str,
+        method: str,
+        headers,
+        body: bytes,
+    ) -> tuple[int, dict[str, str], bytes]:
+        url = self.upstream_url(upstream, suffix, query)
+        forwarded = {
+            name: value
+            for name, value in headers.items()
+            if name.lower() in FORWARDED_HEADER_NAMES
+        }
+        forwarded["Accept-Encoding"] = "identity"
+        request = urllib.request.Request(
+            url,
+            data=body if method in BODY_KEY_METHODS else None,
+            headers=forwarded,
+            method=method,
+        )
+        try:
+            with urllib.request.urlopen(
+                request, timeout=UPSTREAM_TIMEOUT_SECONDS
+            ) as response:
+                status = response.status
+                response_headers = dict(response.headers.items())
+                response_body = response.read()
+        except urllib.error.HTTPError as error:
+            status = error.code
+            response_headers = dict(error.headers.items())
+            response_body = error.read()
+        recorded = {
+            name: response_headers[name]
+            for name in RECORDED_HEADER_NAMES
+            if response_headers.get(name) is not None
+        }
+        entry: dict[str, object] = {
+            "upstream": url,
+            "status": status,
+            "file": body_file_name(
+                prefix, key, recorded.get("content-type", "application/octet-stream")
+            ),
+        }
+        if recorded:
+            entry["headers"] = recorded
+        self.store.add(key, entry, response_body)
+        return status, recorded, response_body
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "biomcp-replay/1"
+    protocol_version = "HTTP/1.1"
+    timeout = 60
+
+    @property
+    def replay(self) -> ReplayServer:
+        return self.server.replay  # type: ignore[attr-defined]
+
+    def handle_one(self, method: str) -> None:
+        path, _, query = self.path.partition("?")
+        length = int(self.headers.get("Content-Length", "0") or 0)
+        body = self.rfile.read(length) if length else b""
+        head_only = method == "HEAD"
+        if path == "/healthz":
+            self.replay.log(method, path, query, body, "probe", 200)
+            self.send_json(200, {"status": "ok"}, head_only)
+            return
+        key = request_key(method, path, query, body)
+        provider = self.replay.provider_for(path)
+        if provider is None:
+            self.replay.log(
+                method, path, query, body, "miss", 404,
+                note="no provider prefix matches the request",
+            )
+            self.send_json(
+                404,
+                {"replayError": "no provider prefix matches the request", "key": key},
+                head_only,
+            )
+            return
+        prefix, upstream, suffix = provider
+        entry = self.replay.store.routes.get(key)
+        if entry is None and self.replay.record:
+            with self.replay.store.lock:
+                entry = self.replay.store.routes.get(key)
+                if entry is None:
+                    try:
+                        status, headers, response_body = self.replay.record_reply(
+                            key, prefix, upstream, suffix, query, method,
+                            self.headers, body,
+                        )
+                    except (OSError, RuntimeError) as error:
+                        self.replay.log(
+                            method, path, query, body, "record-error", 502,
+                            note=str(error),
+                        )
+                        self.send_json(
+                            502,
+                            {"replayError": f"recording failed: {error}", "key": key},
+                            head_only,
+                        )
+                        return
+                    self.replay.log(method, path, query, body, "recorded", status)
+                    self.send_bytes(status, headers, response_body, head_only)
+                    return
+        if entry is None:
+            self.replay.log(method, path, query, body, "miss", 404)
+            self.send_json(
+                404, {"replayError": "no recorded reply for this request", "key": key},
+                head_only,
+            )
+            return
+        status = int(entry["status"])  # type: ignore[arg-type]
+        headers = dict(entry.get("headers") or {})  # type: ignore[arg-type]
+        response_body = self.replay.store.body_path(key).read_bytes()
+        self.replay.log(method, path, query, body, "hit", status)
+        self.send_bytes(status, headers, response_body, head_only)
+
+    def send_json(self, status: int, payload: dict[str, str], head_only: bool) -> None:
+        self.send_bytes(
+            status, {"content-type": "application/json"},
+            json.dumps(payload).encode("utf-8"), head_only,
+        )
+
+    def send_bytes(
+        self,
+        status: int,
+        headers: dict[str, str],
+        body: bytes,
+        head_only: bool,
+    ) -> None:
+        self.send_response(status)
+        for name, value in headers.items():
+            self.send_header(name, value)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(body)
+
+    def do_GET(self) -> None:
+        self.handle_one("GET")
+
+    def do_POST(self) -> None:
+        self.handle_one("POST")
+
+    def do_PUT(self) -> None:
+        self.handle_one("PUT")
+
+    def do_PATCH(self) -> None:
+        self.handle_one("PATCH")
+
+    def do_HEAD(self) -> None:
+        self.handle_one("HEAD")
+
+    def log_message(self, _format: str, *_args: object) -> None:
+        return
+
+
+def write_env_file(
+    path: Path,
+    origin: str,
+    routes: dict[str, str],
+    substitution_routes: dict[str, tuple[str, str]],
+) -> None:
+    lines = [f"export {name}={origin}/{prefix_for(name)}\n" for name in sorted(routes)]
+    # Origin-substitution clients accept a bare origin only, with no path.
+    lines.extend(f"export {name}={origin}\n" for name in sorted(substitution_routes))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(lines), encoding="utf-8")
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    default_root = Path(__file__).resolve().parent.parent
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--root", type=Path, default=default_root)
+    parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--env-file", type=Path)
+    parser.add_argument("--request-log", type=Path)
+    parser.add_argument(
+        "--record",
+        action="store_true",
+        help="fetch a live upstream reply for an unrecorded request and store it",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    routes = provider_routes(args.root / "src")
+    if not routes:
+        raise SystemExit("no provider overrides found under src")
+    store = ReplayStore(args.root / "testdata" / "replay")
+    log_handle = None
+    if args.request_log is not None:
+        args.request_log.parent.mkdir(parents=True, exist_ok=True)
+        log_handle = args.request_log.open("a", encoding="utf-8")
+
+    def log_write(line: str) -> None:
+        if log_handle is not None:
+            log_handle.write(line + "\n")
+            log_handle.flush()
+
+    server = ReplayServer(routes, ORIGIN_SUBSTITUTION_ROUTES, store, log_write, args.record)
+    httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    httpd.replay = server  # type: ignore[attr-defined]
+    origin = f"http://127.0.0.1:{httpd.server_port}"
+    if args.env_file is not None:
+        write_env_file(args.env_file, origin, routes, ORIGIN_SUBSTITUTION_ROUTES)
+    # A one-line readiness signal instead of a poll: callers block on this
+    # line, and a server that dies before serving closes the pipe.
+    print(f"READY {origin}", flush=True)
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        httpd.server_close()
+        if log_handle is not None:
+            log_handle.close()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

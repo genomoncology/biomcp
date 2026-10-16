@@ -1,0 +1,344 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "dbSNP",
+        "url": "https://www.ncbi.nlm.nih.gov/snp/rs113488022"
+      },
+      {
+        "label": "COSMIC",
+        "url": "https://cancer.sanger.ac.uk/cosmic/mutation/overview?id=COSM476"
+      }
+    ],
+    "next_commands": [
+      "biomcp get gene BRAF",
+      "biomcp search drug --target BRAF",
+      "biomcp variant trials \"chr7:g.140453136A>T\"",
+      "biomcp variant articles \"chr7:g.140453136A>T\""
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "MyVariant.info",
+          "ClinVar"
+        ]
+      },
+      {
+        "key": "expanded_predictions",
+        "label": "Expanded Predictions",
+        "outcome": "data",
+        "sources": [
+          "MyVariant.info"
+        ]
+      },
+      {
+        "key": "cosmic",
+        "label": "COSMIC",
+        "outcome": "data",
+        "sources": [
+          "COSMIC"
+        ]
+      }
+    ],
+    "workflow": "variant-pathogenicity",
+    "workflow_playbook": "biomcp skill variant-pathogenicity",
+    "workflow_rationale": "Start with ClinVar, prediction, and population context, then widen to cancer evidence, trials, and literature."
+  },
+  "cadd_score": 32.0,
+  "civic": {
+    "cached_evidence": [
+      {
+        "disease": "Thyroid Cancer",
+        "evidence_level": "B",
+        "evidence_type": "DIAGNOSTIC",
+        "id": 79,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID79",
+        "significance": "POSITIVE",
+        "status": "-"
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "B",
+        "evidence_type": "PREDICTIVE",
+        "id": 95,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID95",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Dabrafenib",
+          "Trametinib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "B",
+        "evidence_type": "PROGNOSTIC",
+        "id": 104,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID104",
+        "significance": "POOR_OUTCOME",
+        "status": "-"
+      },
+      {
+        "disease": "Papillary Thyroid Carcinoma",
+        "evidence_level": "B",
+        "evidence_type": "PROGNOSTIC",
+        "id": 106,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID106",
+        "significance": "POOR_OUTCOME",
+        "status": "-"
+      },
+      {
+        "disease": "Papillary Thyroid Carcinoma",
+        "evidence_level": "B",
+        "evidence_type": "PROGNOSTIC",
+        "id": 107,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID107",
+        "significance": "POOR_OUTCOME",
+        "status": "-"
+      },
+      {
+        "disease": "Papillary Thyroid Carcinoma",
+        "evidence_level": "B",
+        "evidence_type": "PROGNOSTIC",
+        "id": 105,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID105",
+        "significance": "POOR_OUTCOME",
+        "status": "-"
+      },
+      {
+        "disease": "Multiple Myeloma",
+        "evidence_level": "B",
+        "evidence_type": "PROGNOSTIC",
+        "id": 463,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID463",
+        "significance": "POOR_OUTCOME",
+        "status": "-"
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2123,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2123",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Sorafenib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2128,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2128",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Dabrafenib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 86,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID86",
+        "significance": "RESISTANCE",
+        "status": "-",
+        "therapies": [
+          "Trametinib",
+          "Mirdametinib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2124,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2124",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Mirdametinib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2125,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2125",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Mirdametinib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2127,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2127",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Dabrafenib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2133,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2133",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Dabrafenib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2129,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2129",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Selumetinib"
+        ]
+      },
+      {
+        "disease": "Colorectal Cancer",
+        "evidence_level": "B",
+        "evidence_type": "PREDICTIVE",
+        "id": 1405,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID1405",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Vemurafenib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2131,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2131",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Trametinib"
+        ]
+      },
+      {
+        "disease": "Melanoma",
+        "evidence_level": "D",
+        "evidence_type": "PREDICTIVE",
+        "id": 2132,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID2132",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Dabrafenib"
+        ]
+      },
+      {
+        "disease": "Colorectal Cancer",
+        "evidence_level": "B",
+        "evidence_type": "PROGNOSTIC",
+        "id": 103,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID103",
+        "significance": "POOR_OUTCOME",
+        "status": "-"
+      },
+      {
+        "disease": "Gastrointestinal Neuroendocrine Tumor",
+        "evidence_level": "C",
+        "evidence_type": "PREDICTIVE",
+        "id": 1430,
+        "molecular_profile": "BRAF V600E",
+        "name": "EID1430",
+        "significance": "SENSITIVITYRESPONSE",
+        "status": "-",
+        "therapies": [
+          "Dabrafenib",
+          "Trametinib",
+          "Vemurafenib"
+        ]
+      }
+    ]
+  },
+  "consequence": "missense_variant",
+  "cosmic_id": "COSM476",
+  "gene": "BRAF",
+  "genome_build": "GRCh37",
+  "genome_build_provenance": "MyVariant.info provider default",
+  "hgvs_c": "c.1799T>A",
+  "hgvs_p": "p.Val600Glu",
+  "id": "chr7:g.140453136A>T",
+  "legacy_name": "BRAF V600E",
+  "polyphen_pred": "Probably damaging",
+  "rsid": "rs113488022",
+  "section_outcomes": {
+    "cancerhotspots": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "cbioportal": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "civic": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "clinvar": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "gwas": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "population": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "predict": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "significance": "Pathogenic",
+  "significance_evaluated": "2023-10-22",
+  "significance_note": "Most severe RCV classification in MyVariant.info's cached ClinVar copy; run `biomcp get variant \"chr7:g.140453136A>T\" clinvar` for the current NCBI ClinVar record-level classification.",
+  "significance_source": "MyVariant.info",
+  "transcript": "NM_004333.6"
+}

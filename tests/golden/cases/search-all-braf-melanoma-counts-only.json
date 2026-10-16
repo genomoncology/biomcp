@@ -1,0 +1,81 @@
+{
+  "query": "gene=BRAF disease=melanoma",
+  "searches_dispatched": 9,
+  "searches_with_results": 6,
+  "sections": [
+    {
+      "count_exact": true,
+      "entity": "gene",
+      "label": "Genes",
+      "returned": 1,
+      "total": 1,
+      "total_lower_bound": null
+    },
+    {
+      "count_exact": true,
+      "entity": "variant",
+      "label": "Variants",
+      "returned": 3,
+      "total": 42,
+      "total_lower_bound": null
+    },
+    {
+      "count_exact": true,
+      "entity": "disease",
+      "label": "Diseases",
+      "returned": 1,
+      "total": 90,
+      "total_lower_bound": null
+    },
+    {
+      "count_exact": true,
+      "entity": "drug",
+      "label": "Drugs",
+      "returned": 2,
+      "total": 2,
+      "total_lower_bound": null
+    },
+    {
+      "count_exact": true,
+      "entity": "trial",
+      "label": "Trials",
+      "returned": 1,
+      "total": 26,
+      "total_lower_bound": null
+    },
+    {
+      "count_exact": false,
+      "entity": "article",
+      "label": "Articles",
+      "returned": 1,
+      "total": null,
+      "total_lower_bound": 1
+    },
+    {
+      "count_exact": false,
+      "entity": "pathway",
+      "error": "API request to Reactome failed. Retry the remote source.",
+      "label": "Pathways",
+      "returned": 0,
+      "total": null,
+      "total_lower_bound": null
+    },
+    {
+      "count_exact": false,
+      "entity": "pgx",
+      "label": "PGx",
+      "returned": 0,
+      "total": null,
+      "total_lower_bound": 0
+    },
+    {
+      "count_exact": true,
+      "entity": "gwas",
+      "label": "GWAS",
+      "returned": 0,
+      "total": 0,
+      "total_lower_bound": null
+    }
+  ],
+  "wall_time_ms": <WALL_TIME_MS>
+}
