@@ -61,7 +61,7 @@ def test_benchmark_env_points_every_provider_base_at_the_replay_server() -> None
     does not read them.
     """
     runner = _load_runner()
-    env = runner._benchmark_env("http://127.0.0.1:9999")
+    env = runner._benchmark_env("http://127.0.0.1:9999", "/tmp/footprint-cache")
 
     bases = {key: value for key, value in env.items() if key.endswith("_BASE")}
     assert "BIOMCP_S2_BASE" in bases
