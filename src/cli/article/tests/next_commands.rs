@@ -20,6 +20,7 @@ fn article_search_json_keeps_exact_variant_follow_up_on_empty_page() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results: Vec::new(),
             pagination: PaginationMeta::offset(0, 1, 0, Some(0)),
             next_commands,

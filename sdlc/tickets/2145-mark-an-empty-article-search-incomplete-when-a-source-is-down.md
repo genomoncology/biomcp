@@ -6,9 +6,11 @@ deps: []
 
 # 2145: Mark an empty article search incomplete when a source is down
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 1869426, accept
 
 ## Outcome
 

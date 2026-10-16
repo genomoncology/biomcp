@@ -159,6 +159,7 @@ fn article_search_json_fails_open_when_exact_entity_lookup_returns_none() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results,
             pagination,
             next_commands: vec!["biomcp get article 22663011".into()],
@@ -320,6 +321,7 @@ fn degraded_article_sources_share_safe_direct_retries_across_zero_row_surfaces()
         None,
         None,
         super::super::dispatch::ArticleSearchJsonPage {
+            complete: true,
             results: Vec::new(),
             pagination: crate::cli::PaginationMeta::offset(7, 5, 0, Some(7)),
             next_commands: retries.clone(),

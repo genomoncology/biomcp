@@ -307,6 +307,14 @@ non-secret local label when a caller may repeat keyword searches for one task;
 JSON responses can then add loop-breaker `_meta.suggestions[]` if consecutive
 same-session keywords overlap heavily.
 
+JSON article search reports `complete`: every source the plan asked answering
+keeps `complete: true`, so a healthy empty search stays an ok result with exit
+0, while a degraded, unavailable, or timed-out source sets `complete: false`.
+A zero-row result with a down source exits 1 with a structured
+`source_unavailable` error naming the sources, and rows that arrived beside a
+down source keep exit 0 with `complete: false`, the same rule `variant
+articles` applies.
+
 ### Trial
 
 ```bash
