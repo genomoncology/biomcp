@@ -51,7 +51,8 @@ if [[ $status -eq 0 ]]; then
 fi
 
 combined="$(cat "$stdout_file" "$stderr_file")"
-lower_combined="${combined,,}"
+# tr, not ${combined,,}: the gate host's bundled Bash is 3.2.
+lower_combined="$(printf '%s' "$combined" | tr '[:upper:]' '[:lower:]')"
 
 is_hard_failure() {
   [[ "$lower_combined" == *"thread '"*"panicked"* ]] || \
