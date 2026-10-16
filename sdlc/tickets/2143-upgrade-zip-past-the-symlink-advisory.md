@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 3986d90, accept
+
 ## Outcome
 
 `cargo deny check advisories` passes again, so `make lint` and ci.yml are green on main.
