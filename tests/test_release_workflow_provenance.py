@@ -18,8 +18,8 @@ EXPECTED_NEEDS = {
     "version-check": [],
     "release-gate": ["version-check"],
     "create-draft": ["version-check"],
-    # Ticket 2125: no archive is built before the release-gate marker
-    # set passes, so build and pypi-build wait on the marker job.
+    # No archive is built before the release-gate marker set
+    # passes, so build and pypi-build wait on the marker job.
     "build": ["version-check", "create-draft", "release-gate"],
     "pypi-build": ["version-check", "release-gate"],
     "wheel-smoke": ["pypi-build"],
@@ -130,9 +130,9 @@ def _assert_release_contract(workflow: str) -> None:
     for escape in ("|| true", "|| :", "; exit 0", "if: false", "if: ${{ false }}"):
         assert escape not in version, escape
 
-    # Ticket 2125: the release-gate marker set runs through the same
-    # Makefile target `make release-gate` runs, so the packaged-crate
-    # cold compile cannot sit behind a marker the release skips.
+    # The release-gate marker set runs through the same Makefile
+    # target `make release-gate` runs, so the packaged-crate cold
+    # compile cannot sit behind a marker the release skips.
     gate = _job_block(workflow, "release-gate")
     assert "make release-gate-markers" in gate
     assert "cargo fetch --locked" in gate
@@ -334,14 +334,14 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("version-check", "Require the changelog to cover merged tickets"): "8dcf47fdb31ff44771a511058fa05d8e17d1a551744dcc1e8631fa7f8979118e",
     # The release waits on a finished green ci.yml run for the exact
     # tagged commit. Re-pinned 2026-10-13: gh has no --conclusion
-    # flag, so jq counts the successful conclusions. Re-pinned for
-    # ticket 2125: only a push run on main counts — the branch and
-    # the event ride with the gh flags and the jq filter, and the
-    # count is piped through jq so the filter runs in this script.
+    # flag, so jq counts the successful conclusions. Re-pinned:
+    # only a push run on main counts — the branch and the event
+    # ride with the gh flags and the jq filter, and the count is
+    # piped through jq so the filter runs in this script.
     ("version-check", "Require green CI on the tagged commit"): "8af9d987bd8989ca1e5d1af8ee8120d374fb8faca5033985d1cdc25f9bf0c59b",
-    # Ticket 2125: the marker-set job's run steps are pinned like the
-    # pipeline jobs' — the fetch feeds the offline compile and the
-    # make target is the marker selection itself.
+    # The marker-set job's run steps are pinned like the pipeline
+    # jobs' — the fetch feeds the offline compile and the make
+    # target is the marker selection itself.
     ("release-gate", "Fetch the cargo registry for the offline marker set"): "bd8a3eea8fbfa7f0592cc9160f727c40bf2cac4f30ca475277ea9ce01a8b7403",
     ("release-gate", "Run the release-gate marker set"): "477790ec0a17570da21b61265e5ac11c81b6b047fe889e57570aa4f334f266bb",
 }
@@ -437,8 +437,8 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "Create the draft release",
     ],
     "release-gate": [
-        # Ticket 2125: the marker set runs before any archive is
-        # built; build and pypi-build wait on this job.
+        # The marker set runs before any archive is built; build and
+        # pypi-build wait on this job.
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
@@ -2287,8 +2287,8 @@ def test_the_ci_gate_flags_parse_on_the_real_gh_cli() -> None:
     match = re.search(r'gh (run list [^\n]*?)\)"', one_line)
     assert match is not None, "the CI gate must run gh run list"
     command = match.group(1)
-    # Ticket 2125: the branch and event filters are part of the
-    # query the runner must accept, not text only jq sees.
+    # The branch and event filters are part of the query the runner
+    # must accept, not text only jq sees.
     assert "--branch main" in command and "--event push" in command
     assert "--json conclusion,event,headBranch" in command
     commit = subprocess.run(

@@ -574,10 +574,10 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
         assert closing_group.search(bullet), (
             f"a dev-cycle bullet must close with its ticket number: {bullet}"
         )
-    # Ticket 2125: the 0.9.3 review found the 2079 bullet twice in
-    # this section, with a stray blank line, and 2083's shape test
-    # passed both. A repeated bullet (a union merge or a copy-paste
-    # landing) and a blank line inside a list both fail here.
+    # A repeated bullet (a union merge or a copy-paste landing) and
+    # a blank line inside a list both fail here; the dev-cycle
+    # section once carried one bullet twice with a stray blank line
+    # and the shape test of the day passed both.
     repeated = [bullet for bullet in set(bullets) if bullets.count(bullet) > 1]
     assert not repeated, (
         f"a dev-cycle bullet appears more than once: {repeated}"

@@ -47,10 +47,9 @@ def _fake_git(
                 body += f"    if [ \"$*\" = \"show {shlex.quote(ref_path)}\" ]; then printf %s {safe}; exit 0; fi\n"
             body += '    printf ""; exit 0 ;;\n'
         elif subcommand == "diff-files":
-            # The landing diff `git diff --name-only <sha>^1 <sha>`
-            # (ticket 2125): keyed on the sha, the call's last
-            # argument, with the plain diff lines answering every
-            # other `git diff` call.
+            # The landing diff `git diff --name-only <sha>^1 <sha>`:
+            # keyed on the sha, the call's last argument, with the
+            # plain diff lines answering every other `git diff` call.
             body += "  diff)\n"
             body += "    for last; do :; done\n"
             for sha, files in lines.items():
@@ -817,8 +816,8 @@ def test_branch_mode_demands_a_bullet_for_a_landed_src_landing(
     )
     assert result.returncode == 1
     assert "1299" in result.stderr
-    # Ticket 2125: a landing is charged with the diff against its
-    # first parent, exactly this call.
+    # A landing is charged with the diff against its first parent,
+    # exactly this call.
     calls = (tmp_path / "calls").read_text(encoding="utf-8")
     assert "diff --name-only sha1^1 sha1" in calls
 
