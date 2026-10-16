@@ -73,16 +73,18 @@ pub(crate) fn inspect_filesystem_space(path: &Path) -> Result<FilesystemSpace, B
 }
 
 /// Available is the space an unprivileged caller may use, as fs2 read it.
+/// The products run through u128 because the field widths differ per
+/// Unix platform (u64 on Linux, u32 on macOS) and cannot widen in place.
 #[cfg(unix)]
 fn available_space(path: &Path) -> io::Result<u64> {
     let stats = statvfs(path)?;
-    Ok(u64::from(stats.f_bavail) * u64::from(stats.f_frsize))
+    Ok((stats.f_bavail as u128 * stats.f_frsize as u128) as u64)
 }
 
 #[cfg(unix)]
 fn total_space(path: &Path) -> io::Result<u64> {
     let stats = statvfs(path)?;
-    Ok(u64::from(stats.f_blocks) * u64::from(stats.f_frsize))
+    Ok((stats.f_blocks as u128 * stats.f_frsize as u128) as u64)
 }
 
 #[cfg(unix)]
