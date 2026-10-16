@@ -306,6 +306,11 @@ const BRAF_V600E_CIVIC_GRAPHQL_REPLY: &[u8] = include_bytes!(concat!(
     "/testdata/sources/civic/graphql_braf_v600e_20261016.json"
 ));
 
+/// The answer CIViC gives a profile name it does not know: a healthy empty
+/// page, the reply the three-letter spelling received before the one-letter
+/// conversion.
+const UNKNOWN_PROFILE_CIVIC_REPLY: &str = r#"{"data":{"evidenceItems":{"totalCount":0,"nodes":[]},"assertions":{"totalCount":0,"nodes":[]}}}"#;
+
 const BRAF_V600E_GNOMAD_REPLY: &str = r#"{"data":{"variant":{"variant_id":"7-140753336-A-T","exome":{"ac":2,"an":2000,"homozygote_count":0,"hemizygote_count":0,"filters":[],"faf95":null,"populations":[]},"genome":null}}}"#;
 
 const HEADLINE_COORDINATE: &str = "chr7:g.140453136A>T";
@@ -385,11 +390,23 @@ fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<
         return ("200 OK", "application/json", DBSNP_113488022_REPLY.to_vec());
     }
     if request.starts_with("POST /graphql") {
-        return (
-            "200 OK",
-            "application/json",
-            BRAF_V600E_CIVIC_GRAPHQL_REPLY.to_vec(),
-        );
+        // The recorded answer belongs to the one-letter profile name; any
+        // other spelling gets the healthy empty page CIViC returns for a
+        // name it does not know.
+        let profile = request
+            .split_once("\r\n\r\n")
+            .and_then(|(_, body)| serde_json::from_str::<serde_json::Value>(body).ok())
+            .and_then(|value| {
+                value["variables"]["molecularProfileName"]
+                    .as_str()
+                    .map(str::to_string)
+            });
+        let body = if profile.as_deref() == Some("BRAF V600E") {
+            BRAF_V600E_CIVIC_GRAPHQL_REPLY.to_vec()
+        } else {
+            UNKNOWN_PROFILE_CIVIC_REPLY.as_bytes().to_vec()
+        };
+        return ("200 OK", "application/json", body);
     }
     if request.starts_with("POST /") && request.contains("7-140753336-A-T") {
         return (
