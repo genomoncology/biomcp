@@ -718,7 +718,12 @@ fn serve_flag_disables_civic_on_the_stdio_server() {
                 ))
                 .await
                 .expect("call the typed get tool for a variant");
-            assert_eq!(get.is_error, Some(false), "the tool call must succeed");
+            assert_eq!(
+                get.is_error,
+                Some(false),
+                "the tool call must succeed; reply: {}",
+                biomcp_mcp_contract_client::text_chunks(&get.content).join("\n")
+            );
             let text = biomcp_mcp_contract_client::first_text(&get.content);
             assert!(
                 text.to_ascii_lowercase().contains("civic"),
@@ -810,7 +815,12 @@ async fn serve_http_civic_description(
                 .collect(),
             ))
             .await?;
-        assert_eq!(get.is_error, Some(false));
+        assert_eq!(
+            get.is_error,
+            Some(false),
+            "the tool call must succeed; reply: {}",
+            biomcp_mcp_contract_client::text_chunks(&get.content).join("\n")
+        );
         let leaked = replay.civic_requests_since(before);
         assert!(
             leaked.is_empty(),
