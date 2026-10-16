@@ -6,9 +6,11 @@ deps: []
 
 # 2102: Bound the article deadline contract test under load
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 2a84466, accept
 
 ## Evidence
 
