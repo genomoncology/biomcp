@@ -1307,7 +1307,7 @@ impl reqwest_retry::RetryableStrategy for NoTrustFailureStrategy {
 }
 
 fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware, BioMcpError> {
-    if is_no_cache_enabled() {
+    if cache_is_bypassed() {
         return build_uncached_http_client(kind, None);
     }
     let config = crate::cache::resolve_cache_config()?;
@@ -1387,7 +1387,7 @@ where
     )?;
     let startup_repair = crate::cache::lock_cache_shared(&cache_root)?;
     let cache_path = cache_root.join("http");
-    crate::cache::secure_managed_tree(&cache_path, true, Some(&content_root))?;
+    crate::cache::ensure_http_tree_secured(&cache_path, &content_root)?;
     drop(startup_repair);
 
     let manager = make_manager(cache_path, config)?;
@@ -1491,7 +1491,7 @@ async fn build_http_client_with_config_deadline(
         return Err(variant_article_deadline_error());
     }
     let startup_repair = crate::cache::lock_cache_shared_until(&cache_root, deadline).await?;
-    crate::cache::secure_managed_tree_until(&cache_path, true, Some(&content_root), deadline)?;
+    crate::cache::ensure_http_tree_secured_until(&cache_path, &content_root, deadline)?;
     drop(startup_repair);
     let manager =
         crate::cache::SizeAwareCacheManager::new_with_deadline(cache_path, config, deadline)
@@ -1599,7 +1599,7 @@ pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
 
 pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
     ensure_variant_article_time()?;
-    if is_no_cache_enabled() {
+    if cache_is_bypassed() {
         return build_uncached_http_client(SharedHttpClientKind::Default, None);
     }
     if let Some(client) = cached_http_client() {
@@ -1628,7 +1628,7 @@ pub(crate) async fn shared_client_with_deadline(
     if let Some(client) = cached_http_client() {
         return Ok(client);
     }
-    if is_no_cache_enabled() {
+    if cache_is_bypassed() {
         let client = build_uncached_http_client(SharedHttpClientKind::Default, None)?;
         return (!deadline.is_exhausted())
             .then_some(client)
@@ -1665,7 +1665,7 @@ pub(crate) fn semantic_scholar_provider_client(
     } else {
         SharedHttpClientKind::SemanticScholarSharedPool
     };
-    if is_no_cache_enabled() {
+    if cache_is_bypassed() {
         return build_uncached_http_client(kind, Some(policy));
     }
     let config = crate::cache::resolve_cache_config()?;
@@ -1684,7 +1684,7 @@ pub(crate) async fn semantic_scholar_provider_client_with_deadline(
     } else {
         SharedHttpClientKind::SemanticScholarSharedPool
     };
-    if is_no_cache_enabled() {
+    if cache_is_bypassed() {
         return build_uncached_http_client(kind, Some(policy));
     }
     build_http_client_with_config_deadline(
@@ -1700,7 +1700,7 @@ pub(crate) fn provider_url_client(
     policy: &provider_url_policy::ProviderUrlPolicy,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     ensure_variant_article_time()?;
-    if is_no_cache_enabled() {
+    if cache_is_bypassed() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }
     let config = crate::cache::resolve_cache_config()?;
@@ -1714,7 +1714,7 @@ pub(crate) async fn provider_url_client_with_deadline(
     policy: &provider_url_policy::ProviderUrlPolicy,
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
-    if is_no_cache_enabled() {
+    if cache_is_bypassed() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }
     build_http_client_with_config_deadline(

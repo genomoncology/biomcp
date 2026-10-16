@@ -907,7 +907,19 @@ mod startup_cost {
 
     const TREE_SECURE_MARKER_FILE: &str = ".tree-secured-v1";
 
+    /// Seed the body-limit epoch marker an installed cache holds, so the
+    /// settling start-up below keeps the seeded entries instead of
+    /// rebuilding the epoch and wiping them (ticket 2133).
+    fn seed_epoch_marker(cache_root: &Path) {
+        std::fs::write(
+            cache_root.join(".body-limit-cache-v1"),
+            b"bounded-response-body-v1\n",
+        )
+        .expect("seed cache epoch marker");
+    }
+
     fn seed_cache_entries(cache_root: &Path, count: usize) {
+        seed_epoch_marker(cache_root);
         let cache_path = cache_root.join("http");
         for index in 0..count {
             cacache::write_sync(
@@ -983,12 +995,8 @@ mod startup_cost {
         let root = TempDirGuard::new("startup-cost-mode-off");
         seed_cache_entries(root.path(), 50);
         build_once(root.path());
-        cacache::write_sync(
-            &root.path().join("http"),
-            "post-settle-key",
-            b"post settle",
-        )
-        .expect("post-settle entry");
+        cacache::write_sync(&root.path().join("http"), "post-settle-key", b"post settle")
+            .expect("post-settle entry");
         let cache_http = root.path().join("http");
         let files_before = count_regular_files(&cache_http);
 
@@ -1033,6 +1041,7 @@ mod startup_cost {
         };
 
         let first = sentinel("first");
+        seed_epoch_marker(root.path());
         build_once(root.path());
         assert_eq!(
             std::fs::metadata(&first)
@@ -1044,8 +1053,7 @@ mod startup_cost {
             "a cache without the marker is walked and repaired once"
         );
         assert_eq!(
-            std::fs::read(cache_http.join(TREE_SECURE_MARKER_FILE))
-                .expect("tree-secure marker"),
+            std::fs::read(cache_http.join(TREE_SECURE_MARKER_FILE)).expect("tree-secure marker"),
             b"http-tree-secured-v1\n",
             "the one-time walk records its marker"
         );
