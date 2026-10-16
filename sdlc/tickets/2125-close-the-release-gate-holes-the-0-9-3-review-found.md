@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 74a5805, accept
+
 ## Outcome
 
 A release tag needs a green `main` push run of ci.yml on its commit, the changelog coverage check charges each landing only with its own files, the packaged-crate cold compile runs before every release, and no duplicate changelog bullet can land.
