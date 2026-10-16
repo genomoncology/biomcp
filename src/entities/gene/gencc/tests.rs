@@ -597,10 +597,32 @@ fn default_and_override_subprocesses_reuse_the_external_anchor_inode_after_root_
     for default_root in [false, true] {
         let temp = tempfile::tempdir().unwrap();
         secure_anchor(temp.path());
-        let root = if default_root {
-            temp.path().join("biomcp/gencc")
+        // dirs::data_dir() reads XDG_DATA_HOME on Linux and builds
+        // $HOME/Library/Application Support on macOS, so the default-root
+        // leg redirects the platform's own variable into the tempdir and
+        // expects the platform's own root layout there; overriding stays
+        // one absolute BIOMCP_GENCC_DIR on both.
+        let (root, anchor_dir, data_env) = if default_root {
+            if cfg!(target_os = "macos") {
+                let home = temp.path().join("Library");
+                let anchor = home.join("Application Support");
+                fs::create_dir_all(&anchor).unwrap();
+                secure_anchor(&anchor);
+                (anchor.join("biomcp").join("gencc"), anchor, ("HOME", home))
+            } else {
+                (
+                    temp.path().join("biomcp").join("gencc"),
+                    temp.path().to_path_buf(),
+                    ("XDG_DATA_HOME", temp.path().to_path_buf()),
+                )
+            }
         } else {
-            temp.path().join("gencc")
+            let root = temp.path().join("gencc");
+            (
+                root.clone(),
+                temp.path().to_path_buf(),
+                ("BIOMCP_GENCC_DIR", root),
+            )
         };
         let run = || {
             let mut command = Command::new(std::env::current_exe().unwrap());
@@ -611,18 +633,14 @@ fn default_and_override_subprocesses_reuse_the_external_anchor_inode_after_root_
                     "sources::gencc::tests::gencc_subprocess_client",
                 ])
                 .env("BIOMCP_GENCC_CHILD_OPEN", "1")
-                .env("XDG_DATA_HOME", temp.path())
+                .env_remove("BIOMCP_GENCC_DIR")
+                .env(data_env.0, &data_env.1)
                 .stdout(Stdio::null())
                 .stderr(Stdio::null());
-            if default_root {
-                command.env_remove("BIOMCP_GENCC_DIR");
-            } else {
-                command.env("BIOMCP_GENCC_DIR", &root);
-            }
             assert!(command.status().unwrap().success());
         };
         run();
-        let anchor = fs::read_dir(temp.path())
+        let anchor = fs::read_dir(&anchor_dir)
             .unwrap()
             .map(|entry| entry.unwrap().path())
             .find(|path| {
