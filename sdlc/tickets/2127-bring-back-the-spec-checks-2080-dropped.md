@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 36302bc, accept
+
 ## Outcome
 
 Every claim the 35 spec pages 2080 removed from the routine list used to check runs again before release, either as a routine spec page on the replay server or as a named surviving test, and the release gate runs them.
