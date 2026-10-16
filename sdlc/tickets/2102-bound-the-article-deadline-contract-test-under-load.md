@@ -23,3 +23,8 @@ Milestone: 0.9.3
 ## Acceptance
 
 1. The test passes in a full suite while another Yellow job runs concurrently, twice.
+
+## Severity update 2026-10-15 (from 2073's lane)
+
+- `raw_and_typed_article_query_validation_converges_before_provider_work` now fails single-job on unmodified main `526902d36` (60.198s > 60s), not only under two-job contention. The acceptance bar (passes with two jobs running, twice) should also require a single-job quiet-host pass.
+
