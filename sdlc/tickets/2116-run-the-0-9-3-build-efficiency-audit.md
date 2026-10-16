@@ -38,7 +38,7 @@ Host conditions match 2069 (yellow, 4 cores, 14 GB, rustc 1.93.1, host cargo con
 
 ### 1. Machine time (two weeks, 2026-10-03 to 2026-10-16)
 
-Gate host (yellow, 55 biomcp job records in 14 days; no biodata jobs ran):
+Gate host (yellow, 55 biomcp job records in 14 days; no other-repository jobs ran):
 
 - Total 26,017 s ≈ 7.2 h. By class (rubric: `make test`/`test-rust`/`test-python`/`lint`/`spec`/nextest/pytest/clippy/stress = routine; `verify`/`release-gate`/release builds = release; `measure-0-9-3-baseline` and this ticket's runs = measurement; the rest = diagnostics):
   - routine 40 runs, 15,866 s = 4.41 h (six `make test` runs, 703–1,944 s each)
