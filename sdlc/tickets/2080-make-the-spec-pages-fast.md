@@ -8,6 +8,8 @@ Depends on: 2071
 
 Reviews: revision 4ebe5a2, accept
 
+Reviews: revision 235e185, accept
+
 ## Outcome
 
 `make spec` takes 200 s or less on the build host, with no retry back-off sleeps, no block over 40 lines, and no fixture scripts.
