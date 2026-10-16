@@ -155,7 +155,7 @@ run_replay_server() {
   # that line observes readiness without a timed startup poll, and a server
   # that dies before serving closes the pipe; the read is bounded so a dead
   # server fails the lane loudly instead of hanging it.
-  local greeting marker origin
+  local greeting origin
   exec {REPLAY_GREETING_FD}< <(
     python3 tools/replay-server \
       --root "$ROOT" \
