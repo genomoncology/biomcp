@@ -19,14 +19,9 @@ ZERO_COUPLING_CHECKER = ROOT / "tools/check-zero-coupling.py"
 OFFLINE = ROOT / "tools/run-offline"
 # Raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
-<<<<<<< HEAD
-# extractor, its tests, and the article CLI citation test sidecar.
-MAX_PACKAGE_FILES = 1_423  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
-=======
 # extractor, its tests, and the article CLI citation test sidecar. Raised
 # again by one path: the Python lane cache isolation test.
 MAX_PACKAGE_FILES = 1_423  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
->>>>>>> 06f887b59 (Raise the package file pin for the cache isolation test)
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
