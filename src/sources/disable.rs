@@ -241,13 +241,18 @@ static STATE: OnceLock<State> = OnceLock::new();
 /// Resolves the disabled-source state for this process: the environment
 /// variable and the `BIOMCP_DISABLE_KEGG` alias, plus the one-shot CLI
 /// flag. Entry points that can fail validate the spec here, so an
-/// unknown name stops the process before any source is queried.
+/// unknown name stops the process before any source is queried. A serve
+/// entrypoint resolves the parsed flag once and the in-process CLI
+/// worker re-enters without one; that re-entry keeps the server's
+/// resolution instead of failing, so every tool call enforces the flag
+/// the operator passed to `serve`.
 pub(crate) fn init(flag: Option<&str>) -> Result<(), BioMcpError> {
-    let mut entries = resolve_from_env()?.entries;
-    if let Some(raw) = flag {
-        merge(&mut entries, parse_disable_spec(raw, "--disable-sources")?);
-    }
     if let Some(state) = STATE.get() {
+        let Some(raw) = flag else {
+            return Ok(());
+        };
+        let mut entries = resolve_from_env()?.entries;
+        merge(&mut entries, parse_disable_spec(raw, "--disable-sources")?);
         if state.entries == entries {
             return Ok(());
         }
@@ -255,6 +260,10 @@ pub(crate) fn init(flag: Option<&str>) -> Result<(), BioMcpError> {
             "Disabled sources were already resolved for this process by {DISABLE_SOURCES_ENV} \
 or {DISABLE_KEGG_ENV}; pass --disable-sources only to a one-shot CLI invocation"
         )));
+    }
+    let mut entries = resolve_from_env()?.entries;
+    if let Some(raw) = flag {
+        merge(&mut entries, parse_disable_spec(raw, "--disable-sources")?);
     }
     let _ = STATE.set(State { entries });
     Ok(())
