@@ -541,10 +541,7 @@ impl RefusalFixtureServer {
                 // TCP segments, so read until the headers end before routing.
                 let mut request = vec![0_u8; 32 * 1024];
                 let mut len = 0_usize;
-                loop {
-                    let Ok(read) = stream.read(&mut request[len..]) else {
-                        break;
-                    };
+                while let Ok(read) = stream.read(&mut request[len..]) {
                     len += read;
                     if read == 0
                         || len == request.len()

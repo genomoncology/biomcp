@@ -240,7 +240,7 @@ mod tests {
         std::fs::write(&malformed, b"not a certificate").expect("write malformed bundle");
         std::fs::write(&empty, b"").expect("write empty bundle");
         std::fs::create_dir(&directory).expect("create directory");
-        let mut cases = vec![
+        let base_cases = [
             (Some(valid.as_os_str()), None, "some"),
             (
                 Some(std::ffi::OsStr::new("   ")),
@@ -258,19 +258,20 @@ mod tests {
         // other bundle: the path is handled as raw bytes end to end.
         // macOS filesystems refuse such a name outright ("Illegal byte
         // sequence"), so that host cannot exercise the raw-byte path
-        // with a real file; the case runs on every other Unix. The
-        // binding stays at function scope so the borrowed element
-        // outlives the case list.
+        // with a real file; the case runs on every other Unix.
         #[cfg(all(unix, not(target_os = "macos")))]
-        let non_utf8 = {
+        let mut cases: Vec<_> = base_cases.into();
+        #[cfg(any(not(unix), target_os = "macos"))]
+        let cases = base_cases;
+        #[cfg(all(unix, not(target_os = "macos")))]
+        {
             use std::os::unix::ffi::OsStringExt;
-            dir.path()
-                .join(std::ffi::OsString::from_vec(b"ca-\xff.pem".to_vec()))
-        };
-        #[cfg(all(unix, not(target_os = "macos")))]
-        valid_bundle(&non_utf8);
-        #[cfg(all(unix, not(target_os = "macos")))]
-        cases.push((Some(non_utf8.as_os_str()), None, "some"));
+            let non_utf8 = dir
+                .path()
+                .join(std::ffi::OsString::from_vec(b"ca-\xff.pem".to_vec()));
+            valid_bundle(&non_utf8);
+            cases.push((Some(non_utf8.as_os_str()), None, "some"));
+        }
         for (explicit, fallback, expected) in cases.iter().copied() {
             let mut command =
                 std::process::Command::new(std::env::current_exe().expect("test executable"));
