@@ -13,6 +13,15 @@ cd "$ROOT"
 SPEC_ROUTINE_PATHS=(
   spec/surface/cli-contract-ratchet.md
   spec/surface/build-profile.md
+  spec/surface/skills.md
+  spec/entity/trial-numeric-filters.md
+  spec/surface/trial-retirement.md
+  # Replays its own frozen capture through spec/fixtures/run-clingen-erepo-
+  # fixture.sh, not the replay server (2127 ruling).
+  spec/entity/clingen-erepo.md
+  # Replays its own frozen corpus through spec/fixtures/run-variant-articles-
+  # corpus-canary.sh, not the replay server (2127 ruling).
+  spec/entity/variant-articles-corpus.md
   tests/golden/spec
 )
 
@@ -172,6 +181,9 @@ run_replay_server() {
   origin="${greeting#READY }"
   # shellcheck source=/dev/null
   . "$env_file"
+  # Pages count their own provider traffic through the shared request log, so
+  # the path every page greps is one exported variable.
+  export BIOMCP_REPLAY_REQUEST_LOG="$request_log"
   # Every provider shares the replay origin, so one unpaced-origin signal
   # removes provider pacing, and recorded failures answer instantly, so the
   # retry back-off sleeps are turned off for the whole lane. The lane's

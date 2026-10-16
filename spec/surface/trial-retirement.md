@@ -53,21 +53,23 @@ matched_condition_label'
 
 ## CTGov condition search sends the supplied condition literally
 
-A CTGov condition search still returns fixture data, but it does not fan out a
-Phelan-McDermid condition into a curated deletion-syndrome request. Drug alias
-expansion remains separately covered by the trial search examples.
+A CTGov condition search still returns recorded fixture data, but it does not
+fan out a Phelan-McDermid condition into a curated deletion-syndrome request.
+Drug alias expansion remains separately covered by the trial search examples.
 
 ```bash
-../../spec/fixtures/ctgov-request-log run ../../tools/biomcp-ci --json search trial -c "Phelan-McDermid Syndrome" --limit 1 \
+../../tools/biomcp-ci --json search trial -c "Phelan-McDermid Syndrome" --limit 1 \
   | jq -r '.count, (.results[0].nct_id | startswith("NCT"))' \
   | mustmatch like '1
 true'
 ```
 
 ```bash
-../../spec/fixtures/ctgov-request-log show | mustmatch like 'query.cond=Phelan-McDermid+Syndrome'
+grep -F 'query.cond=Phelan-McDermid' "$BIOMCP_REPLAY_REQUEST_LOG" \
+  | mustmatch like 'query.cond=Phelan-McDermid+Syndrome'
 ```
 
 ```bash
-../../spec/fixtures/ctgov-request-log show | mustmatch not like '22q13+deletion+syndrome'
+grep -F 'query.cond=Phelan-McDermid' "$BIOMCP_REPLAY_REQUEST_LOG" \
+  | mustmatch not like '22q13+deletion+syndrome'
 ```
