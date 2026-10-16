@@ -621,10 +621,11 @@ cat .cache/spec-artifacts.env"
       fi
     fi
     # report discovers profraws and objects under target/llvm-cov-target on
-    # its own; the show-env exports (CARGO_TARGET_DIR, CARGO_LLVM_COV) break
-    # that discovery by pointing it back at the plain target directory, so
-    # all three are unset for the report only.
-    runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
+    # its own, but only while no show-env export pins its search: the eval'd
+    # CARGO_LLVM_COV_TARGET_DIR (printed before CARGO_TARGET_DIR was set, so
+    # it names the plain target directory, which holds no profraws at its
+    # top level) pins it, so all four are unset for the report only.
+    runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV -u CARGO_LLVM_COV_TARGET_DIR cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
     if ((!DRY_RUN)); then
       incomplete=""
       for feed in $feeds; do
