@@ -4680,6 +4680,13 @@ three surviving primary sources. Rows count against their primary source after
 deduplication. Use <code>--max-per-source &lt;N&gt;</code> to override that cap, use
 <code>--max-per-source 0</code> for the default cap explicitly, and set it equal to
 <code>--limit</code> to disable capping.</p>
+<p><code>search article</code> JSON reports <code>complete</code> and applies the same zero-row rule
+as <code>variant articles</code>: an empty search where every source answered stays an
+ok result with <code>complete: true</code> and exit 0; a zero-row search while a source
+was unavailable or timed out reports <code>complete: false</code>, an error
+<code>source_unavailable</code>, and exits 1; rows that did arrive beside a down source
+keep exit 0 with <code>complete: false</code>. Inspect <code>complete</code> and <code>_meta.source_status</code>
+rather than treating an empty page as a complete miss.</p>
 <h2 id="find-papers-for-one-exact-variant">Find papers for one exact variant<a class="headerlink" href="#find-papers-for-one-exact-variant" title="Permanent link">&para;</a></h2>
 <p>When the question starts with a specific allele, use the variant pivot rather
 than manually trying one spelling at a time:</p>

@@ -5507,6 +5507,13 @@ later label, and shell or JSON quoting alone does not add runtime quote bytes.</
 non-secret local label when a caller may repeat keyword searches for one task;
 JSON responses can then add loop-breaker <code>_meta.suggestions[]</code> if consecutive
 same-session keywords overlap heavily.</p>
+<p>JSON article search reports <code>complete</code>: every source the plan asked answering
+keeps <code>complete: true</code>, so a healthy empty search stays an ok result with exit
+0, while a degraded, unavailable, or timed-out source sets <code>complete: false</code>.
+A zero-row result with a down source exits 1 with a structured
+<code>source_unavailable</code> error naming the sources, and rows that arrived beside a
+down source keep exit 0 with <code>complete: false</code>, the same rule <code>variant
+articles</code> applies.</p>
 <h3 id="trial">Trial<a class="headerlink" href="#trial" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--source<span class="w"> </span>ctgov<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Rett Syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>

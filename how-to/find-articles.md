@@ -90,6 +90,14 @@ deduplication. Use `--max-per-source <N>` to override that cap, use
 `--max-per-source 0` for the default cap explicitly, and set it equal to
 `--limit` to disable capping.
 
+`search article` JSON reports `complete` and applies the same zero-row rule
+as `variant articles`: an empty search where every source answered stays an
+ok result with `complete: true` and exit 0; a zero-row search while a source
+was unavailable or timed out reports `complete: false`, an error
+`source_unavailable`, and exits 1; rows that did arrive beside a down source
+keep exit 0 with `complete: false`. Inspect `complete` and `_meta.source_status`
+rather than treating an empty page as a complete miss.
+
 ## Find papers for one exact variant
 
 When the question starts with a specific allele, use the variant pivot rather
