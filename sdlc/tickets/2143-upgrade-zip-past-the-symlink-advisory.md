@@ -6,9 +6,11 @@ deps: []
 
 # 2143: Upgrade zip past the symlink advisory
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 3986d90, accept
 
 ## Outcome
 

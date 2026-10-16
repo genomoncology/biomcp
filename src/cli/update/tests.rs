@@ -35,8 +35,8 @@ fn build_targz(entries: &[(&str, &[u8])]) -> Vec<u8> {
 fn build_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     // Deflate only, matching the manifest's zip feature set: the
     // self-update archives the extractor reads never need another codec.
-    let options =
-        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
     let mut out = std::io::Cursor::new(Vec::new());
     {
         let mut archive = zip::ZipWriter::new(&mut out);
