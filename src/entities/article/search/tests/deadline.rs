@@ -437,7 +437,7 @@ async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
         .write(true)
         .open(&lock_path)
         .expect("epoch lock file");
-    fs2::FileExt::lock_exclusive(&held).expect("hold epoch lock");
+    held.lock().expect("hold epoch lock");
 
     let budget = std::time::Duration::from_millis(1200);
     let started = std::time::Instant::now();
@@ -464,7 +464,7 @@ async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
         ),
         other => panic!("expected a deadline error, got {other:?}"),
     }
-    fs2::FileExt::unlock(&held).expect("release epoch lock");
+    held.unlock().expect("release epoch lock");
 }
 
 #[test]

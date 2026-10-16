@@ -32,6 +32,23 @@ fn build_targz(entries: &[(&str, &[u8])]) -> Vec<u8> {
     gz.finish().expect("test archive should finalize")
 }
 
+fn build_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
+    // Deflate only, matching the manifest's zip feature set: the
+    // self-update archives the extractor reads never need another codec.
+    let options =
+        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let mut out = std::io::Cursor::new(Vec::new());
+    {
+        let mut archive = zip::ZipWriter::new(&mut out);
+        for (name, bytes) in entries {
+            archive.start_file(*name, options).unwrap();
+            archive.write_all(bytes).unwrap();
+        }
+        archive.finish().unwrap();
+    }
+    out.into_inner()
+}
+
 fn serve_body(body: Vec<u8>, chunked: bool) -> (String, thread::JoinHandle<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
@@ -245,6 +262,19 @@ fn extract_binary_from_targz_reports_missing_binary_as_not_found() {
             && id == "biomcp"
             && suggestion == "Release archive did not contain expected biomcp binary"
     ));
+}
+
+#[test]
+fn extract_binary_from_zip_returns_matching_binary_bytes() {
+    let expected = b"#!/bin/sh\necho biomcp\n";
+    let archive = build_zip(&[
+        ("release/README.txt", b"notes"),
+        ("release/bin/biomcp", expected.as_slice()),
+    ]);
+
+    let extracted = extract_binary_from_zip(&archive, "biomcp").expect("binary should extract");
+
+    assert_eq!(extracted, expected);
 }
 
 // ---- 331 fail-closed checksum policy assertions ----

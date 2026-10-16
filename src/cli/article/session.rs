@@ -4,9 +4,8 @@ use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use fs2::FileExt;
-
 use crate::error::BioMcpError;
+use crate::utils::fs_lock;
 
 use super::dispatch::ArticleSuggestion;
 
@@ -128,7 +127,7 @@ pub(crate) fn maintain_sessions(
             .truncate(false),
         &lock_path(cache_root),
     )?;
-    lock.lock_exclusive()?;
+    lock.lock()?;
     let mut store = read_store(&path).map_err(store_error)?;
     let before = store.sessions.len();
     prune_sessions(&mut store, now_epoch_secs, MAX_ACTIVE_SESSIONS);
@@ -197,7 +196,7 @@ fn record_success_and_suggestions_inner(
             .truncate(false),
         &lock_path(cache_root),
     )?;
-    lock.try_lock_exclusive()?;
+    fs_lock::try_lock_exclusive(&lock)?;
 
     let now = search.now_epoch_secs;
     let mut store = read_store(&store_path(cache_root))?;

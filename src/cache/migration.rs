@@ -4,10 +4,9 @@ use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use fs2::FileExt;
-
 use super::maintenance::{BODY_LIMIT_CACHE_MARKER, epoch_state};
 use super::private::open_private;
+use crate::utils::fs_lock;
 
 const BODY_LIMIT_CACHE_EPOCH: &str = ".body-limit-cache-v1";
 const BODY_LIMIT_CACHE_LOCK: &str = ".body-limit-cache-v1.lock";
@@ -135,9 +134,9 @@ where
 {
     fs::create_dir_all(cache_root)?;
     let lock = open_epoch_lock(cache_root)?;
-    lock.lock_exclusive()?;
+    lock.lock()?;
     if epoch_state(cache_root, legacy_cache_was_renamed)? == EpochState::Current {
-        return FileExt::unlock(&lock);
+        return lock.unlock();
     }
     ensure_body_limited_cache_epoch_locked(
         cache_root,
@@ -162,7 +161,7 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
     })
     .await?;
     loop {
-        match lock.try_lock_exclusive() {
+        match fs_lock::try_lock_exclusive(&lock) {
             Ok(()) => break,
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
                 // sleep reason: deadline-bounded retry poll for the epoch lock
@@ -189,7 +188,7 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
     })
     .await?;
     if state == EpochState::Current {
-        return FileExt::unlock(&lock);
+        return lock.unlock();
     }
     let maintenance = super::lock_cache_maintenance_until(cache_root, deadline).await?;
     deadline.ensure_time_io()?;
@@ -318,7 +317,7 @@ where
     let legacy = cache_root.join("http-cacache");
     if state == EpochState::RemoveLegacy {
         remove_cache_directory_until(&legacy, deadline, &mut after_mutation).await?;
-        return FileExt::unlock(&lock);
+        return lock.unlock();
     }
     let cache = cache_root.join("http");
     remove_cache_directory_until(&cache, deadline, &mut after_mutation).await?;
@@ -371,7 +370,7 @@ where
     // bounded validation and unlock even if the invocation clock expires;
     // returning a timeout with a published marker would be a false outcome.
     if tokio::fs::symlink_metadata(&marker).await?.is_file() {
-        FileExt::unlock(&lock)
+        lock.unlock()
     } else {
         Err(io::Error::other(
             "cache epoch marker disappeared after publication",
@@ -461,7 +460,7 @@ where
         }
         Ok(())
     })();
-    let unlock_result = FileExt::unlock(&lock);
+    let unlock_result = lock.unlock();
     result.and(unlock_result)
 }
 
@@ -694,7 +693,7 @@ mod tests {
         let root = TempDirGuard::new("body-limit-epoch-deadline");
         fs::create_dir_all(root.path()).expect("cache root");
         let held = open_epoch_lock(root.path()).expect("epoch lock");
-        held.lock_exclusive().expect("hold epoch lock");
+        held.lock().expect("hold epoch lock");
         let deadline =
             crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
 
@@ -704,7 +703,7 @@ mod tests {
 
         assert_eq!(error.kind(), io::ErrorKind::TimedOut);
         assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
-        FileExt::unlock(&held).expect("release epoch lock");
+        held.unlock().expect("release epoch lock");
     }
 
     #[tokio::test(start_paused = true)]
@@ -753,7 +752,7 @@ mod tests {
         let deadline =
             crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
         let epoch_lock = open_epoch_lock(root.path()).unwrap();
-        epoch_lock.try_lock_exclusive().unwrap();
+        fs_lock::try_lock_exclusive(&epoch_lock).unwrap();
         let maintenance = super::super::lock_cache_maintenance_until(root.path(), &deadline)
             .await
             .unwrap();

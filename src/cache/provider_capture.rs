@@ -9,7 +9,6 @@ use std::{
     os::unix::fs::MetadataExt,
 };
 mod unsupported;
-use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -647,8 +646,7 @@ impl CaptureTree {
                 .map_err(|_| ProviderCaptureError::Corrupt)?,
         )
         .open_file(".lock", libc::O_RDWR | libc::O_CREAT, 0o600)?;
-        lock.lock_exclusive()
-            .map_err(|_| ProviderCaptureError::Corrupt)?;
+        lock.lock().map_err(|_| ProviderCaptureError::Corrupt)?;
         let result = action();
         let _ = lock.unlock();
         result

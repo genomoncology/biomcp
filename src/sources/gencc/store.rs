@@ -1,7 +1,7 @@
 //! Private immutable generations and mutable GenCC lifecycle state.
 use super::model::GenCcDataset;
+use crate::utils::fs_lock;
 use chrono::DateTime;
-use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -145,8 +145,8 @@ impl Store {
             validate_existing_directory(&generations)?;
             set_private_dir(&generations)?;
             lock_shared_until(&store_lock, deadline)?;
-            FileExt::unlock(&anchor).map_err(|_| StoreError::Unavailable)?;
-            FileExt::unlock(&store_lock).map_err(|_| StoreError::Unavailable)?;
+            anchor.unlock().map_err(|_| StoreError::Unavailable)?;
+            store_lock.unlock().map_err(|_| StoreError::Unavailable)?;
             Ok(Self { root_dir: File::open(&root).map_err(|_| StoreError::Unavailable)?, generations_dir: File::open(&generations).map_err(|_| StoreError::Unavailable)?, root, refresh_lock, store_lock, deadline })
         }
     }
@@ -169,19 +169,19 @@ impl Store {
         let store_lock = open_private_at(&root_dir, ".store.lock")?;
         let generations_dir = open_or_create_private_directory_at(&root_dir, "generations".as_ref())?;
         lock_shared_until(&store_lock, deadline)?;
-        FileExt::unlock(&anchor).map_err(|_| StoreError::Unavailable)?;
-        FileExt::unlock(&store_lock).map_err(|_| StoreError::Unavailable)?;
+        anchor.unlock().map_err(|_| StoreError::Unavailable)?;
+        store_lock.unlock().map_err(|_| StoreError::Unavailable)?;
         Ok(Self { root, root_dir, generations_dir, refresh_lock, store_lock, deadline })
     }
     pub(crate) fn try_lock_refresh(&self) -> Result<bool, StoreError> {
-        match FileExt::try_lock_exclusive(&self.refresh_lock) {
+        match fs_lock::try_lock_exclusive(&self.refresh_lock) {
             Ok(()) => Ok(true),
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => Ok(false),
             Err(_) => Err(StoreError::Unavailable),
         }
     }
     pub(crate) fn unlock_refresh(&self) {
-        let _ = FileExt::unlock(&self.refresh_lock);
+        let _ = self.refresh_lock.unlock();
     }
     #[rustfmt::skip]
     pub(crate) fn create_raw_temp(&self) -> Result<RawCsvTemp, StoreError> {
@@ -243,13 +243,13 @@ impl Store {
         if generations_changed && let Err(error) = sync_file_injected(&self.generations_dir, "abandoned-generations-directory", StoreError::Unavailable) {
             tracing::warn!(%error, "GenCC cleanup could not sync generation deletion");
         }
-        let _ = FileExt::unlock(&self.store_lock);
+        let _ = self.store_lock.unlock();
     }
     pub(crate) fn load(&self) -> Result<Option<Snapshot>, StoreError> {
         self.revalidate_root()?;
         lock_shared_until(&self.store_lock, self.deadline)?;
         let result = self.load_authoritative_locked();
-        let _ = FileExt::unlock(&self.store_lock);
+        let _ = self.store_lock.unlock();
         if result.is_ok() {
             return result;
         }
@@ -258,7 +258,7 @@ impl Store {
             Ok(snapshot) => Ok(snapshot),
             Err(_) => self.recover_locked(),
         };
-        let _ = FileExt::unlock(&self.store_lock);
+        let _ = self.store_lock.unlock();
         result
     }
     pub(crate) fn load_state(&self) -> Result<State, StoreError> {
@@ -277,7 +277,7 @@ impl Store {
         } else {
             Ok(State::default())
         };
-        let _ = FileExt::unlock(&self.store_lock);
+        let _ = self.store_lock.unlock();
         result
     }
     fn load_authoritative_locked(&self) -> Result<Option<Snapshot>, StoreError> {
@@ -505,7 +505,7 @@ impl Store {
             }
             Ok(snapshot)
         })();
-        let _ = FileExt::unlock(&self.store_lock);
+        let _ = self.store_lock.unlock();
         result
     }
     pub(crate) fn record_304(&self, mut state: State, now: &str) -> Result<State, StoreError> {
@@ -525,7 +525,7 @@ impl Store {
         self.revalidate_root()?;
         lock_exclusive_until(&self.store_lock, self.deadline)?;
         let result = self.replace_state_locked(state);
-        let _ = FileExt::unlock(&self.store_lock);
+        let _ = self.store_lock.unlock();
         result
     }
     #[rustfmt::skip]
@@ -625,7 +625,7 @@ fn remove_generation_if_unleased(parent: &File, _generations: &Path, name: &str)
     };
     #[cfg(unix)]
     if let Some(lease) = leased.as_ref() {
-        match FileExt::try_lock_exclusive(lease) { Ok(()) => {}, Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => return Ok(false), Err(_) => return Ok(false) }
+        match fs_lock::try_lock_exclusive(lease) { Ok(()) => {}, Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => return Ok(false), Err(_) => return Ok(false) }
     }
     #[cfg(unix)]
     match validate_directory_owner_mode(&directory_handle, true) {
@@ -981,9 +981,9 @@ fn lock_until(
 ) -> Result<(), StoreError> {
     loop {
         let result = if exclusive {
-            FileExt::try_lock_exclusive(file)
+            fs_lock::try_lock_exclusive(file)
         } else {
-            FileExt::try_lock_shared(file)
+            fs_lock::try_lock_shared(file)
         };
         match result {
             Ok(()) => return Ok(()),
