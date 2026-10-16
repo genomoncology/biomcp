@@ -67,6 +67,27 @@ def test_prerelease_tag_fails_with_clear_message(tmp_path: Path) -> None:
     assert "pre-release tags are not supported" in result.stderr
 
 
+def test_dev_tag_is_refused_before_any_publisher_starts(tmp_path: Path) -> None:
+    # 2132: a tag whose version carries -dev names a development
+    # build, never a release; the version-check job must stop the
+    # workflow before any artifact is built.
+    result = _run(tmp_path, tag="v0.9.3-dev", cargo="0.9.3-dev", python="0.9.3.dev0")
+    assert result.returncode == 1
+    assert "must start with v and contain a stable semantic version" in result.stderr
+    assert "v0.9.3-dev" in result.stderr
+    assert not (tmp_path / "invoked").exists()
+
+
+def test_stable_tag_over_committed_dev_versions_is_refused(tmp_path: Path) -> None:
+    # The release commit must drop the dev suffix before the tag is
+    # pushed; a stable tag over a tree that still carries -dev fails
+    # on tag equality before the sync script runs.
+    result = _run(tmp_path, tag="v0.9.3", cargo="0.9.3-dev", python="0.9.3.dev0")
+    assert result.returncode == 1
+    assert "tag=0.9.3, Cargo.toml=0.9.3-dev" in result.stderr
+    assert not (tmp_path / "invoked").exists()
+
+
 def test_sync_failure_fails_the_release_check(tmp_path: Path) -> None:
     result = _run(tmp_path, tag="v0.9.1", sync_exit=7)
     assert result.returncode == 1

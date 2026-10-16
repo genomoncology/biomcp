@@ -48,7 +48,10 @@ def _copy_version_sync_fixture(tmp_path: Path) -> Path:
     subprocess.run(
         ["git", "commit", "-qm", "published release"], cwd=fixture_root, check=True
     )
-    subprocess.run(["git", "tag", "v0.9.0"], cwd=fixture_root, check=True)
+    # The development candidate's registry, citation, and plugin
+    # metadata stay on the latest published release, so the fixture's
+    # reachable tag must name that release for the dev branch to pass.
+    subprocess.run(["git", "tag", "v0.9.2"], cwd=fixture_root, check=True)
     return fixture_root
 
 
@@ -149,14 +152,28 @@ def _replace_citation_version(path: Path, new_version: str) -> None:
     path.write_text(updated, encoding="utf-8")
 
 
+def _set_package_versions(repo_root: Path, cargo: str, python: str) -> None:
+    """Rewrite the four package-metadata versions and commit them."""
+    _replace_first_version(repo_root / "Cargo.toml", cargo)
+    _replace_first_version(repo_root / "pyproject.toml", python)
+    _replace_lock_root_version(repo_root / "Cargo.lock", cargo)
+    _replace_lock_root_version(repo_root / "uv.lock", python)
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(
+        ["git", "commit", "-qm", "set candidate versions"], cwd=repo_root, check=True
+    )
+
+
 def test_version_sync_script_passes_for_development_candidate(tmp_path: Path) -> None:
     repo_root = _copy_version_sync_fixture(tmp_path)
     rust_version = _read_version(repo_root / "Cargo.toml")
     python_version = _read_version(repo_root / "pyproject.toml")
-    # The 0.9.2 release moved every field to 0.9.2 (the fixture copies
-    # the committed tree); the sync script must confirm them together.
-    assert rust_version == "0.9.2"
-    assert python_version == "0.9.2"
+    # Between releases main carries the next version with a -dev
+    # suffix (2132) while the fixture's registry, citation, and
+    # plugin metadata stay on the published 0.9.2 release; the sync
+    # script must confirm both halves together.
+    assert rust_version == "0.9.3-dev"
+    assert python_version == "0.9.3.dev0"
     assert _read_manifest_version(repo_root / "manifest.json") == "0.9.2"
     assert _read_server_versions(repo_root / "server.json") == ("0.9.2", "0.9.2")
     assert _read_citation_version(repo_root / "CITATION.cff") == "0.9.2"
@@ -164,8 +181,41 @@ def test_version_sync_script_passes_for_development_candidate(tmp_path: Path) ->
     result = _run_version_sync_script(repo_root)
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "Versions in sync: 0.9.2 (Python 0.9.2; release candidate)"
+    assert (
+        result.stdout.strip()
+        == "Versions in sync: 0.9.3-dev (Python 0.9.3.dev0; development candidate)"
+    )
     assert result.stderr == ""
+
+
+def test_version_sync_script_accepts_numbered_development_candidate(
+    tmp_path: Path,
+) -> None:
+    repo_root = _copy_version_sync_fixture(tmp_path)
+    _set_package_versions(repo_root, "0.9.4-dev.2", "0.9.4.dev2")
+
+    result = _run_version_sync_script(repo_root)
+
+    assert result.returncode == 0, result.stderr
+    assert (
+        result.stdout.strip()
+        == "Versions in sync: 0.9.4-dev.2 (Python 0.9.4.dev2; development candidate)"
+    )
+
+
+def test_version_sync_script_rejects_non_canonical_development_version(
+    tmp_path: Path,
+) -> None:
+    repo_root = _copy_version_sync_fixture(tmp_path)
+    _set_package_versions(repo_root, "0.9.4-beta", "0.9.4b0")
+
+    result = _run_version_sync_script(repo_root)
+
+    assert result.returncode == 1
+    assert (
+        "Cargo.toml has a non-canonical release or development version: 0.9.4-beta"
+        in result.stderr
+    )
 
 
 def test_registry_check_passes_for_current_metadata(tmp_path: Path) -> None:
@@ -219,7 +269,7 @@ def test_version_sync_script_reports_pyproject_mismatch(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: Cargo.toml mapping=0.9.3.dev0, "
         f"pyproject.toml={mismatched_version}"
     ) in result.stderr
 
@@ -251,7 +301,7 @@ def test_version_sync_script_reports_manifest_mismatch(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"manifest.json={mismatched_version}"
     ) in result.stderr
 
@@ -267,7 +317,7 @@ def test_version_sync_script_reports_citation_mismatch(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"CITATION.cff={mismatched_version}"
     ) in result.stderr
 
@@ -283,7 +333,7 @@ def test_version_sync_script_reports_server_json_mismatch(tmp_path: Path) -> Non
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"server.json={mismatched_version}"
     ) in result.stderr
 
@@ -299,7 +349,7 @@ def test_version_sync_script_reports_server_package_mismatch(tmp_path: Path) -> 
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"server.json biomcp-cli={mismatched_version}"
     ) in result.stderr
 
@@ -329,7 +379,7 @@ def test_version_sync_script_reports_all_mismatches_in_one_run(tmp_path: Path) -
 
     assert result.returncode == 1
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: Cargo.toml mapping=0.9.3.dev0, "
         f"pyproject.toml={pyproject_mismatch}"
     ) in result.stderr
     assert (
@@ -337,19 +387,19 @@ def test_version_sync_script_reports_all_mismatches_in_one_run(tmp_path: Path) -
         f"Cargo.lock={lock_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"manifest.json={manifest_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"CITATION.cff={citation_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"server.json={server_mismatch}"
     ) in result.stderr
     assert (
-        "Version mismatch: Cargo.toml=0.9.2, "
+        "Version mismatch: latest stable tag=0.9.2, "
         f"server.json biomcp-cli={server_package_mismatch}"
     ) in result.stderr
 
@@ -358,8 +408,10 @@ def test_manifest_and_citation_versions_match_repo_metadata() -> None:
     cargo = tomllib.loads((REPO_ROOT / "Cargo.toml").read_text(encoding="utf-8"))
     pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-    assert cargo["package"]["version"] == "0.9.2"
-    assert pyproject["project"]["version"] == "0.9.2"
+    # The package metadata carries the development candidate while the
+    # registry, citation, and plugin metadata stay on the published release.
+    assert cargo["package"]["version"] == "0.9.3-dev"
+    assert pyproject["project"]["version"] == "0.9.3.dev0"
     assert _read_manifest_version(REPO_ROOT / "manifest.json") == "0.9.2"
     assert _read_server_versions(REPO_ROOT / "server.json") == ("0.9.2", "0.9.2")
     assert _read_citation_version(REPO_ROOT / "CITATION.cff") == "0.9.2"
@@ -371,7 +423,7 @@ def test_uv_lock_matches_release_version_and_excludes_mustmatch_package() -> Non
     root_match = UV_LOCK_ROOT_VERSION_PATTERN.search(uv_lock)
 
     assert root_match is not None, "missing biomcp-cli package entry in uv.lock"
-    assert root_match.group(2) == "0.9.2"
+    assert root_match.group(2) == "0.9.3.dev0"
     assert 'name = "mustmatch"' not in uv_lock
     assert "mustmatch" + "==0.0.4" not in uv_lock
     assert 'specifier = "==0.0.4"' not in uv_lock

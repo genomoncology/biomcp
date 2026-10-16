@@ -1,8 +1,10 @@
 # 2132 — Move main to the next dev version after each release
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision caeac3e, accept
 
 ## Outcome
 

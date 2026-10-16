@@ -65,10 +65,12 @@ def test_citation_cff_release_metadata_matches_repo_metadata() -> None:
 
     assert changelog_match is not None, "missing release header in CHANGELOG.md"
 
+    # The citation names the published release; the package metadata
+    # carries the development candidate for the next one (2132).
     assert citation_version == "0.9.2"
     assert citation_date == "2026-10-11"
-    assert cargo["package"]["version"] == "0.9.2"
-    assert pyproject["project"]["version"] == "0.9.2"
+    assert cargo["package"]["version"] == "0.9.3-dev"
+    assert pyproject["project"]["version"] == "0.9.3.dev0"
     assert citation_version == changelog_match.group("version")
     assert citation_date == changelog_match.group("date")
 

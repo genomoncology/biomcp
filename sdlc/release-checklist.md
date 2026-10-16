@@ -12,7 +12,7 @@ Ian cuts every release. Users install releases, not main. The release bar is the
 - [ ] Every claimed fix fails its test when the fix is reverted.
 - [ ] Every new or changed data source has its terms stated plainly in `docs/reference/sources.json` and `docs/reference/source-licensing.md`, including sources used only for identifiers.
 - [ ] The changelog section `## X.Y.Z — YYYY-MM-DD` describes each change for users, names every GitHub issue the release fixes, and cites every ticket merged since the last release. `scripts/check-changelog-coverage.py --tag vX.Y.Z` passes on a scratch tag.
-- [ ] Every public version file says X.Y.Z. `scripts/check-version-sync.sh` and `scripts/check-release-versions.py --tag vX.Y.Z` pass on a scratch tag.
+- [ ] Every public version file says X.Y.Z — the release commit drops the `-dev` suffix Cargo and Python carry between releases, and `check-release-versions.py` refuses the tag if any committed version still carries it. `scripts/check-version-sync.sh` and `scripts/check-release-versions.py --tag vX.Y.Z` pass on a scratch tag.
 - [ ] Every change landed through a `tickets/*` branch whose CI run finished green, merged with `git merge --no-ff`.
 - [ ] The candidate commit's main CI run finished with every job green. Tag pushes start no CI, so this run is the bar.
 - [ ] The live docs serve the candidate commit or a descendant.
@@ -45,7 +45,7 @@ Ian cuts every release. Users install releases, not main. The release bar is the
 
 - [ ] Post a short reply on each fixed issue with the evidence, and close it.
 - [ ] Write the release record in `sdlc/records/` with the tag, the commit, the release run ID and the verification evidence.
-- [ ] Bump main to the next development version (for example `X.Y.(Z+1)-dev.1` in Cargo and `X.Y.(Z+1).dev1` in Python) through a ticket branch.
+- [ ] Bump main to the next development version (for example `X.Y.(Z+1)-dev` in Cargo and `X.Y.(Z+1).dev0` in Python) through a ticket branch, so a build from main reports the coming version as a dev build instead of the released number.
 - [ ] Add an empty `## Unreleased` section to the changelog.
 - [ ] Review the committed `server.json` and submit to the MCP Registry and other directories separately. Record each acceptance.
 - [ ] Record any lesson from the release in this checklist or the runbook.

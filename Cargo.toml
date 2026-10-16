@@ -1,6 +1,9 @@
 [package]
 name = "biomcp-cli"
-version = "0.9.2"
+# Main carries the next development version between releases (2132):
+# 0.9.3-dev until the 0.9.3 release commit drops the suffix. A build
+# from main then reports 0.9.3-dev+g<sha>, never the released number.
+version = "0.9.3-dev"
 edition = "2024"
 # The minimum Rust the code needs (ticket 2125): the std file locks
 # 2072 introduced are 1.89 or later; release lanes pin 1.93.1.
