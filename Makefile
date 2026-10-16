@@ -68,7 +68,7 @@ test:
 # build job's artifact; a local caller reaches them through
 # `make test`, which prepares the dev build first.
 test-rust: prepare-routine-test-tmp
-	tools/run-offline -- cargo nextest run $(NEXTEST_JOBS_ARG) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
+	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml"
 
 test-python: prepare-routine-test-tmp
 	$(MAKE) sync-python-dev

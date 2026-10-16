@@ -1210,7 +1210,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     # so `make test` stays the developer's one command.
     assert re.search(
         r"^test-rust: prepare-routine-test-tmp\n"
-        r'\ttools/run-offline -- cargo nextest run \$\(NEXTEST_JOBS_ARG\) --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"$',
+        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" \$\(NEXTEST_JOBS_ARG\) --config-file "\$\(CURDIR\)/\.config/nextest\.toml"$',
         makefile,
         flags=re.MULTILINE,
     )

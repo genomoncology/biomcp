@@ -29,7 +29,7 @@ def test_live_mcp_full_contracts_are_excluded_from_routine_test() -> None:
     # The lane takes its job count through NEXTEST_JOBS when `make
     # test` splits the machine between its two halves.
     routine = _make_target("test-rust")
-    assert "cargo nextest run $(NEXTEST_JOBS_ARG) --archive-file" in routine
+    assert "cargo nextest run --archive-file" in routine
     assert "--run-ignored" not in routine
 
     for test_name in LIVE_FULL_CONTRACT_TESTS:
