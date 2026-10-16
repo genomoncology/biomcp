@@ -1,6 +1,6 @@
 # 2078 — Move article HTML to one current HTML stack
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
