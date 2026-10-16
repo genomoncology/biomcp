@@ -30,4 +30,5 @@ Bound or shed the load sensitivity of each: raise the deadline for contract purp
 ## Added 2026-10-15 (coordinator)
 
 - New instance from 2071's lane: `tests/test_output_footprint_benchmark.py::test_offline_corpus_is_deterministic_and_reports_real_token_counts` - `article_search_compact` hit its 60s deadline only under lane-build contention on Yellow (load 8+); passes in CI at the same tip. Same class, this ticket's home.
+- Also from 2100's lane: `human_mcp_command_dispatches_to_provider_once` and the full-suite timeout of `raw_mcp_rejects_a_command_the_surface_refuses` - load-only failures, pass isolated with the export. Same class, this ticket's home.
 
