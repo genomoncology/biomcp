@@ -260,15 +260,17 @@ mod tests {
         // sequence"), so that host cannot exercise the raw-byte path
         // with a real file; the case runs on every other Unix.
         #[cfg(all(unix, not(target_os = "macos")))]
+        let non_utf8 = {
+            use std::os::unix::ffi::OsStringExt;
+            dir.path()
+                .join(std::ffi::OsString::from_vec(b"ca-\xff.pem".to_vec()))
+        };
+        #[cfg(all(unix, not(target_os = "macos")))]
         let mut cases: Vec<_> = base_cases.into();
         #[cfg(any(not(unix), target_os = "macos"))]
         let cases = base_cases;
         #[cfg(all(unix, not(target_os = "macos")))]
         {
-            use std::os::unix::ffi::OsStringExt;
-            let non_utf8 = dir
-                .path()
-                .join(std::ffi::OsString::from_vec(b"ca-\xff.pem".to_vec()));
             valid_bundle(&non_utf8);
             cases.push((Some(non_utf8.as_os_str()), None, "some"));
         }
