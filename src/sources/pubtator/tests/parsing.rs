@@ -180,6 +180,45 @@ fn parses_autocomplete_response_fixture() {
 }
 
 #[test]
+parses_rsid_autocomplete_capture_and_extracts_the_db_id_rsid() {
+    let resp: Vec<PubTatorAutocompleteResult> = decode_json(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
+        StatusCode::OK,
+        Some(&json_ct()),
+        fixture!("autocomplete_rsid_rs113488022.json"),
+        true,
+    )
+    .unwrap();
+
+    assert_eq!(resp.len(), 1);
+    assert_eq!(resp[0].id.as_deref(), Some("@VARIANT_p.V600E_BRAF_human"));
+    assert_eq!(resp[0].biotype.as_deref(), Some("variant"));
+    assert_eq!(resp[0].db_id.as_deref(), Some("rs113488022##"));
+    assert_eq!(resp[0].db_id_rsid(), Some("rs113488022"));
+    assert_eq!(resp[0].name.as_deref(), Some("p.M600E"));
+}
+
+#[test]
+db_id_rsid_reads_only_the_segment_before_the_marker() {
+    let row = |db_id: Option<&str>| PubTatorAutocompleteResult {
+        id: Some("@VARIANT_fixture".into()),
+        biotype: Some("variant".into()),
+        db_id: db_id.map(str::to_string),
+        db: None,
+        name: Some("p.M600E".into()),
+    };
+
+    assert_eq!(
+        row(Some(" rs121913530## ")).db_id_rsid(),
+        Some("rs121913530")
+    );
+    assert_eq!(row(Some("rs121913530")).db_id_rsid(), Some("rs121913530"));
+    assert_eq!(row(Some("673")).db_id_rsid(), None);
+    assert_eq!(row(Some("##rs121913530")).db_id_rsid(), None);
+    assert_eq!(row(None).db_id_rsid(), None);
+}
+
+#[test]
 fn parses_search_response_fixture_and_stringifies_numeric_pmid() {
     let resp: PubTatorSearchResponse = decode_json(
         crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),

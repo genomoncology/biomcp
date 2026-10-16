@@ -434,6 +434,16 @@ pub struct PubTatorAutocompleteResult {
     pub name: Option<String>,
 }
 
+impl PubTatorAutocompleteResult {
+    /// The normalized dbSNP identifier a variant row carries in `db_id` before
+    /// `##` (for example `rs113488022##`); the display name holds the
+    /// protein-change label instead, so the rsID lives only here.
+    pub(crate) fn db_id_rsid(&self) -> Option<&str> {
+        let candidate = self.db_id.as_deref()?.trim().split("##").next()?.trim();
+        crate::entities::variant::is_rsid(candidate).then_some(candidate)
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PubTatorSearchResponse {
     #[serde(default)]

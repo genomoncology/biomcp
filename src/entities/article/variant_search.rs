@@ -1338,6 +1338,19 @@ fn terminal_reconciled_statuses(
         .collect()
 }
 
+/// The structured error for a zero-row outage names the failing sources
+/// instead of claiming every route was unavailable.
+fn variant_article_outage_message(statuses: &[VariantArticleSourceStatus]) -> String {
+    let mut failing = unavailable_variant_article_sources(statuses);
+    if failing.is_empty() {
+        failing.push("resolution/myvariant".into());
+    }
+    format!(
+        "variant article sources were unavailable: {}",
+        failing.join(", ")
+    )
+}
+
 fn source_statuses_incomplete(statuses: &[VariantArticleSourceStatus]) -> bool {
     statuses.iter().any(|status| {
         !matches!(
@@ -1345,6 +1358,25 @@ fn source_statuses_incomplete(statuses: &[VariantArticleSourceStatus]) -> bool {
             VariantArticleSourceStatusKind::Ok | VariantArticleSourceStatusKind::Skipped
         )
     })
+}
+
+/// The provider sources that reported themselves unavailable or timed out, as
+/// `route/source` pairs. A zero-row page is an outage only when this is
+/// non-empty; ambiguous resolution, indeterminate provider validation, and
+/// unfinished identity or equivalence checks stay their own non-outage status
+/// with `complete: false` and no error.
+fn unavailable_variant_article_sources(statuses: &[VariantArticleSourceStatus]) -> Vec<String> {
+    statuses
+        .iter()
+        .filter(|status| {
+            matches!(
+                status.status,
+                VariantArticleSourceStatusKind::Unavailable
+                    | VariantArticleSourceStatusKind::TimedOut
+            )
+        })
+        .map(|status| format!("{}/{}", status.route, status.source))
+        .collect()
 }
 
 fn candidate_with_provenance(
@@ -2980,7 +3012,7 @@ async fn search_variant_articles_identity(
                     message: if execution.deadline.is_exhausted() {
                         "the variant article invocation deadline expired before a usable result was available".into()
                     } else {
-                        "all required variant article routes were unavailable".into()
+                        variant_article_outage_message(&source_status)
                     },
                 }),
                 debug_plan,
@@ -3470,7 +3502,9 @@ async fn search_variant_articles_identity(
             }
         })
         .collect::<Vec<_>>();
-    let hard_error = rows.is_empty() && !complete;
+    let failed_sources = unavailable_variant_article_sources(&statuses);
+    let hard_error =
+        rows.is_empty() && (!failed_sources.is_empty() || execution.deadline.is_exhausted());
     statuses.sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
     let retrieval_path = if !resolved {
         VARIANT_FALLBACK_RETRIEVAL_PATH
@@ -3540,7 +3574,7 @@ async fn search_variant_articles_identity(
                 message: if execution.deadline.is_exhausted() {
                     "the variant article invocation deadline expired before a usable result was available".into()
                 } else {
-                    "all required variant article routes were unavailable".into()
+                    variant_article_outage_message(&statuses)
                 },
             }),
             debug_plan,

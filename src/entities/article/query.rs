@@ -355,7 +355,23 @@ fn matches_entity_biotype(value: Option<&str>, expected: EntityBiotype) -> bool 
 
 fn autocomplete_source_identity(
     row: &PubTatorAutocompleteResult,
+    requested_rsid: Option<&str>,
 ) -> crate::entities::variant::SourceVariantIdentity {
+    // When the normalized db_id carries the requested rsID, the match rests on
+    // that identifier alone. The entity's display name (PubTator labels the
+    // BRAF V600E entity "p.M600E") must not reshape or veto what was asked for.
+    if let Some(rsid) = row.db_id_rsid().filter(|rsid| {
+        requested_rsid.is_some_and(|requested| rsid.eq_ignore_ascii_case(requested))
+    }) {
+        return crate::entities::variant::SourceVariantIdentity {
+            genomic_id: String::new(),
+            genome_build: "unknown".into(),
+            genes: Vec::new(),
+            protein_changes: Vec::new(),
+            coding_changes: Vec::new(),
+            rsids: vec![rsid.to_string()],
+        };
+    }
     let values = [row.name.as_deref(), row.id.as_deref()]
         .into_iter()
         .flatten()
@@ -392,11 +408,17 @@ fn autocomplete_source_identity(
         })
         .map(|token| (*token).to_string())
         .collect::<Vec<_>>();
-    let rsids = tokens
+    let mut rsids = tokens
         .iter()
         .filter(|token| crate::entities::variant::is_rsid(token))
         .map(|token| (*token).to_string())
         .collect::<Vec<_>>();
+    if let Some(rsid) = row
+        .db_id_rsid()
+        .filter(|rsid| !rsids.iter().any(|value| value.eq_ignore_ascii_case(rsid)))
+    {
+        rsids.push(rsid.to_string());
+    }
     let genomic_id = tokens
         .iter()
         .find(|token| token.contains(":g."))
@@ -428,7 +450,7 @@ fn variant_candidate_matches(
         && matches!(
             crate::entities::variant::compare_variant_identity(
                 &requested,
-                &autocomplete_source_identity(row),
+                &autocomplete_source_identity(row, requested.rsid.as_deref()),
             ),
             crate::entities::variant::VariantIdentityComparison::Compatible { .. }
         )
@@ -463,7 +485,7 @@ pub(crate) async fn resolve_variant_entity_tokens(
             let crate::entities::variant::VariantIdentityComparison::Compatible { matched_alias } =
                 crate::entities::variant::compare_variant_identity(
                     requested,
-                    &autocomplete_source_identity(&row),
+                    &autocomplete_source_identity(&row, requested.rsid.as_deref()),
                 )
             else {
                 return None;
