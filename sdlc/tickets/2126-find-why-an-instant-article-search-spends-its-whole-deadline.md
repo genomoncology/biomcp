@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 3351a70, accept
+
 ## Outcome
 
 The article-query contract test that 2102 bounded at 600 s answers in a few seconds under the product's own 60 s deadline, because the cause of the wait is found and fixed, and its budget returns to the product deadline.
