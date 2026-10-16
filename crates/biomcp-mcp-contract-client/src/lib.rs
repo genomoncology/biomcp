@@ -1063,19 +1063,18 @@ fn handle_ols4_connection(mut stream: TcpStream) {
 
 impl ContractHarness {
     fn base_server_command(&self, extra_env: &[EnvVar]) -> Command {
-        let mut command = self.server_command_with(
+        self.server_command_with(
             &extra_env
                 .iter()
                 .map(|(key, value)| ((*key).to_string(), (*value).to_string()))
                 .collect::<Vec<_>>(),
-        );
-        command.env_remove("BIOMCP_TEST_PANIC_TOOL");
-        command
+        )
     }
 
     fn server_command_with(&self, extra_env: &[(String, String)]) -> Command {
         let mut command = Command::new(&self.biomcp_bin);
         command.env_remove("RUST_MIN_STACK");
+        command.env_remove("BIOMCP_TEST_PANIC_TOOL");
         command.env_remove("BIOMCP_DISABLE_SOURCES");
         command.env("UMLS_API_KEY", "");
         for (key, value) in extra_env {
