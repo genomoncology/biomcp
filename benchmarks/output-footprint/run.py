@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -163,13 +164,27 @@ class ReplayHandler(BaseHTTPRequestHandler):
         return
 
 
-def _benchmark_env(base_url: str) -> dict[str, str]:
+def _benchmark_env(base_url: str, cache_dir: str) -> dict[str, str]:
     env = {
         key: value for key, value in os.environ.items() if not key.startswith("BIOMCP_")
     }
     env.update(
         {
             "BIOMCP_CACHE_MODE": "off",
+            # A private empty cache root: shared-client construction runs
+            # startup maintenance under a lock on the cache root, so a
+            # subprocess that inherits the default user cache waits on every
+            # other biomcp process on the host and a loaded host can outrun
+            # any deadline. The corpus measures output bytes; both collect
+            # passes share this root, so nothing about the host leaks in.
+            "BIOMCP_CACHE_DIR": cache_dir,
+            # The corpus measures output bytes, not provider latency: a loaded
+            # host must not let the 60 s invocation deadline fire mid-corpus
+            # and degrade different sources in the two collect passes. The
+            # release binary reads this hook unconditionally, so one pinned
+            # contract deadline covers every run of the fixed corpus while
+            # staying under each case's subprocess timeout.
+            "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS": "240000",
             "BIOMCP_MYGENE_BASE": f"{base_url}/mygene",
             "BIOMCP_MYVARIANT_BASE": f"{base_url}/myvariant",
             "BIOMCP_PUBMED_BASE": f"{base_url}/pubmed",
@@ -256,13 +271,15 @@ def collect(binary: Path) -> dict[str, Any]:
     server = ThreadingHTTPServer(("127.0.0.1", 0), ReplayHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    cache_dir = tempfile.TemporaryDirectory(prefix="biomcp-output-footprint-")
     try:
         base_url = f"http://127.0.0.1:{server.server_port}"
         commands = [
-            _run_case(binary, case, _benchmark_env(base_url), encoding)
+            _run_case(binary, case, _benchmark_env(base_url, cache_dir.name), encoding)
             for case in CASES
         ]
     finally:
+        cache_dir.cleanup()
         server.shutdown()
         server.server_close()
         thread.join()

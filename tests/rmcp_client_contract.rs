@@ -1127,10 +1127,18 @@ async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
     let harness = harness();
     let (_thread, ols_url, requests) = start_counting_ols4_stub()?;
     let (_medline_thread, medline_url) = start_ols4_stub()?;
+    // A fresh empty cache root keeps the spawned server's shared-client
+    // construction fast and load-insensitive: startup maintenance on the
+    // default user cache grows with that cache, not with this contract.
+    let cache = tempfile::tempdir()?;
     let client = harness
         .spawn_stdio_client(&[
             ("BIOMCP_OLS4_BASE", ols_url),
             ("BIOMCP_MEDLINEPLUS_BASE", medline_url),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
         ])
         .await?;
 
@@ -1412,10 +1420,19 @@ async fn raw_and_typed_mcp_reject_unknown_adverse_event_sections_before_provider
 async fn raw_mcp_rejects_contradictory_variant_filters_and_non_trial_batch_source()
 -> anyhow::Result<()> {
     let harness = harness();
+    // A fresh empty cache root keeps the spawned server's shared-client
+    // construction off the default user cache: both commands refuse before
+    // provider work, and their wall time must not grow with a workstation
+    // cache under load.
+    let cache = tempfile::tempdir()?;
     let client = harness
         .spawn_stdio_client(&[
             ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
             ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
         ])
         .await?;
 

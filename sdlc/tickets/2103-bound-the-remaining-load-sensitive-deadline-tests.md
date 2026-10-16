@@ -6,9 +6,13 @@ deps: [2102]
 
 # 2103: Bound the remaining load-sensitive deadline tests
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 1b1f848, accept
+
+Reviews: revision 1b1f848, accept
 
 ## Evidence
 
@@ -35,3 +39,7 @@ Bound or shed the load sensitivity of each: raise the deadline for contract purp
 - Also from 2105's lane: `test_disease_survival_setup_reaps_ppid_one_marker_orphan` (same module, PPID-transition wait, tripped once under two concurrent module runs) - same family, this home unless 2080 claims it first.
 - Also from 2102's lane: `entities::drug::get::tests::drug_card_sources_run_at_once_and_keep_the_undelayed_output` (2090's parallelism assertion; four 1s-held replies answered in 2.89s at load 4-6) - load-fragile timing assertion, this home.
 
+
+## Added 2026-10-15 (developer, coordinator-directed): the shared mechanism
+
+Working the fixes found one mechanism behind this whole family of "fails under two gate jobs, passes in CI" tests: every spawned `biomcp` process that does not pin `BIOMCP_CACHE_DIR` inherits the default user cache root, and shared-client construction runs startup maintenance (secure, migrate, epoch, lock, startup clean) under a lock on that root. On a gate host with another job running, the subprocess waits on every other biomcp process's maintenance and on a cache that grows with workstation use, so its wall time balloons until whichever deadline fires first; CI hosts start with an empty user cache, which is why the same tests stay green there. Observed directly: the output-footprint corpus outran a 240 s pinned article-search deadline under a concurrent job while inheriting the default root, and passed in 8.4 s once `collect` gave both passes one private empty root. The fixes in this ticket therefore give every spawned binary a fresh empty cache root (the two rmcp contract spawns, every author-surface CLI and serve child, the corpus runner) and keep the deadline proofs bounded and load-scaled rather than removing them. This explains the load sensitivity of every test named above; the ClinVar watchdogs were the same class in-process (client construction inside the measured window).
