@@ -553,8 +553,9 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
     """The undated dev-cycle section sits ahead of the last released
     heading and keeps a shape every branch only appends to: the three
     named subsections stay in place even when empty, every bullet
-    closes with its ticket number, and every cited ticket is filed
-    for this milestone, so a branch's changelog change is its own
+    closes with its ticket number, every cited ticket is filed
+    for this milestone, no bullet appears twice, and no blank line
+    splits a list, so a branch's changelog change is its own
     bullet alone and a landing merge touches no other line."""
     changelog = _read("CHANGELOG.md")
     assert DEV_CYCLE_HEADING in changelog
@@ -568,9 +569,30 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
     closing_group = re.compile(
         r"\(\s*[0-9]+(?:\s*(?:,|and)\s*[0-9]+)*\s*\)\s*[.,;]?\s*$"
     )
-    for bullet in re.findall(r"^- .+$", block, re.MULTILINE):
+    bullets = re.findall(r"^- .+$", block, re.MULTILINE)
+    for bullet in bullets:
         assert closing_group.search(bullet), (
             f"a dev-cycle bullet must close with its ticket number: {bullet}"
+        )
+    # A repeated bullet (a union merge or a copy-paste landing) and
+    # a blank line inside a list both fail here; the dev-cycle
+    # section once carried one bullet twice with a stray blank line
+    # and the shape test of the day passed both.
+    repeated = [bullet for bullet in set(bullets) if bullets.count(bullet) > 1]
+    assert not repeated, (
+        f"a dev-cycle bullet appears more than once: {repeated}"
+    )
+    lines = block.splitlines()
+    for index, line in enumerate(lines):
+        if line != "":
+            continue
+        before = next((prior for prior in reversed(lines[:index]) if prior.strip()), "")
+        after = next((later for later in lines[index + 1 :] if later.strip()), "")
+        assert not (
+            before.startswith("- ") and (after.startswith("- ") or after.startswith("  "))
+        ), (
+            f"a blank line splits the dev-cycle bullet list between: "
+            f"{before[:60]} and {after[:60]}"
         )
     problems = _coverage_gate().milestone_problems(
         block, DEV_CYCLE_VERSION, _ticket_file_content

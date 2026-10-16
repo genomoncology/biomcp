@@ -1,8 +1,10 @@
 # 2125 — Close the release-gate holes the 0.9.3 review found
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 74a5805, accept
 
 ## Outcome
 
@@ -25,6 +27,6 @@ Found by the 0.9.3 adversarial review on 2026-10-16.
   - The release workflow runs the release-gate marker set before it builds archives.
   - The changelog shape test fails on a repeated bullet or a blank line inside a list; this ticket deletes the duplicate 2079 bullet.
   - `Cargo.toml` sets `rust-version` to the pinned toolchain's minimum the code needs.
-- Changes: claims `.github/workflows/release.yml` `scripts/check-changelog-coverage.py` `tests/test_changelog_coverage_check.py` `tests/test_release_workflow_provenance.py` `tests/test_docs_changelog_refresh.py` `Makefile` `Cargo.toml` `CHANGELOG.md` `docs/reference/release-process.md`.
+- Changes: claims `.github/workflows/release.yml` `.github/workflows/ci.yml` `scripts/check-changelog-coverage.py` `tests/test_changelog_coverage_check.py` `tests/test_release_workflow_provenance.py` `tests/test_ci_workflow_contract.py` `tests/test_upstream_planning_analysis_docs.py` `tests/test_docs_changelog_refresh.py` `Makefile` `Cargo.toml` `CHANGELOG.md` `docs/reference/release-process.md`. The ci.yml claim and its contract test keep the branch lane's green-CI query the release's exact command once the release counts only push runs on main; the planning-docs claim carries the `.PHONY` pin the new `release-gate-markers` target moves, which the branch's own CI caught.
 - Proof, each failing on current main: the release check refuses a commit whose only green run is a branch run; the coverage check charges a stale-branch landing only with its own files; the shape test refuses a duplicated bullet. A release rehearsal in the release-rehearsal repository shows the release-gate step running.
 - Order: before release.
