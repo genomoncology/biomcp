@@ -24,7 +24,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # replay server and the golden suite's first batch, recomputed from the tree
 # after the landing rebase onto current main, and lowered by the spec lane's
 # fixture scripts and lifecycle tests that the replay server replaced.
-MAX_PACKAGE_FILES = 1_429  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+MAX_PACKAGE_FILES = 1_404  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
