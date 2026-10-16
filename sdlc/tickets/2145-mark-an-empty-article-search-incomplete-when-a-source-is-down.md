@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 1869426, accept
+
 ## Outcome
 
 `search article` follows the documented rule that `variant articles` already follows: a zero-row result while a source was unavailable reports `complete: false`, error `source_unavailable`, and exits 1; an empty search where every source answered stays an ok result with exit 0.
