@@ -92,6 +92,12 @@ while [[ ! -s "$tmp/port" ]]; do sleep 0.05; done
 fixture_port="$(<"$tmp/port")"
 export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$fixture_port"
 export BIOMCP_CLINGEN_CAR_BASE="http://127.0.0.1:$fixture_port"
+# The lane's shared unpaced signal names the replay server, and a provider
+# policy only accepts a plain-HTTP fixture base whose origin is the unsafe
+# test origin. This runner owns the only origin its children may call, so it
+# re-points the signal at its own fixture origin like the corpus and identity
+# runners do.
+export BIOMCP_TEST_UNPACED_ORIGIN="http://127.0.0.1:$fixture_port"
 export BIOMCP_CACHE_MODE=off
 
 markdown="$($binary variant erepo CA015543)"

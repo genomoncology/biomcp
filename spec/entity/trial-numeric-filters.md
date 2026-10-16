@@ -3,21 +3,22 @@
 ## Zero distance is rejected before ClinicalTrials.gov work
 
 A zero-mile radius is invalid input, not a ClinicalTrials.gov failure. The CLI
-must return the local JSON error, exit `2`, and make no request to the provider
-fixture.
+must return the local JSON error, exit `2`, and make no request to the replay
+server's ClinicalTrials.gov route.
 
 <!-- mustmatch-lint: skip -->
 
 ```bash run id=zero-trial-distance exit=2
 output="$(mktemp)"
 trap 'rm -f "$output"' EXIT
-: >"$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"
+log="$BIOMCP_REPLAY_REQUEST_LOG"
+before_ctgov_requests="$(grep -Fc ' /ctgov/' "$log" || true)"
 set +e
 ../../tools/biomcp-ci --json search trial -c melanoma --lat=1 --lon=2 --distance=0 >"$output"
 status=$?
 set -e
 test "$status" -eq 2
-test ! -s "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"
+test "$(( $(grep -Fc ' /ctgov/' "$log" || true) - before_ctgov_requests ))" -eq 0
 cat "$output"
 exit "$status"
 ```
