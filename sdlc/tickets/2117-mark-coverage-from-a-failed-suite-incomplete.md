@@ -1,8 +1,10 @@
 # 2117 — Mark coverage from a failed suite incomplete
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 2390cdf, accept
 
 ## Outcome
 
