@@ -21,7 +21,7 @@ Found 2026-10-16 by an outside QA audit of the v0.9.2 release binary on recorded
 - Starts from: the lines above and the 2036/2042 residue check in `get.rs`.
 - Decisions:
   - Fetch the chosen protein's sequence and check the reference amino acid at the chosen position. A mismatch never yields an exact-match position.
-  - On a mismatch, use another alias position only when that position holds the reference amino acid on the same protein; otherwise mark the placement unresolved and suppress residue-specific domain and structure rows, keeping the protein-level rows.
+  - On a mismatch, mark the placement unresolved and suppress residue-specific domain and structure rows, keeping the protein-level rows. Do not pick another alias position because its letter happens to match; a different position needs a recorded transcript-to-isoform link to the chosen protein, which this ticket does not build.
   - Reuse the 2036/2042 check rather than adding a second one.
 - Changes: claims `src/entities/variant/structure.rs` `src/entities/variant/structure/**` `testdata/sources/uniprot/**` `testdata/sources/myvariant/**` `testdata/sources/capture-receipts.json` `spec/entity/variant.md` `CHANGELOG.md`.
 - Proof: recorded-reply tests, each failing on current main: MUTYH G368D on Q9UIF7 never reports position 368 as an exact match; BRAF V600E on P15056 keeps position 600. Routine suite.
