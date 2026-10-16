@@ -78,9 +78,9 @@ verify_checksum() {
     fi
 
     if [[ "$line" =~ ^([[:xdigit:]]{64})$ ]]; then
-      expected="${BASH_REMATCH[1],,}"
+      expected="$(printf '%s' "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')"
     elif [[ "$line" =~ ^([[:xdigit:]]{64})[[:space:]]+\*?([^[:space:]]+)$ ]] && [[ "${BASH_REMATCH[2]}" == "$asset_name" ]]; then
-      expected="${BASH_REMATCH[1],,}"
+      expected="$(printf '%s' "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')"
     else
       echo "Checksum file is invalid for ${asset_name}." >&2
       return 1

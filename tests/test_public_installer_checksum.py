@@ -3,9 +3,11 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
 import shutil
 import stat
 import subprocess
+import sys
 import tarfile
 from pathlib import Path
 
@@ -14,7 +16,22 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = REPO_ROOT / "install.sh"
 DOCS_INSTALLER = REPO_ROOT / "docs/install.sh"
-ASSET = "biomcp-linux-x86_64.tar.gz"
+
+
+def _platform_asset() -> str:
+    # The fixture serves the archive install.sh will actually request on
+    # the host running the suite, so the proof exercises the real
+    # platform path everywhere the gates run.
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    machine = {"amd64": "x86_64", "aarch64": "arm64"}.get(machine, machine)
+    os_id = {"darwin": "darwin", "linux": "linux"}.get(system, "linux")
+    if os_id == "linux" and machine not in ("x86_64", "arm64"):
+        machine = "x86_64"
+    return f"biomcp-{os_id}-{machine}.tar.gz"
+
+
+ASSET = _platform_asset()
 
 
 def test_root_installer_is_the_canonical_deployed_copy() -> None:
@@ -80,7 +97,7 @@ def _tools(tmp_path: Path, downloader: str, sha_tool: str) -> Path:
     tools = tmp_path / "tools"
     tools.mkdir()
     _fake_downloader(tools, downloader)
-    for name in ("bash", "uname", "mktemp", "rm", "basename", "tar", "gzip", "mkdir", "chmod", "mv", "head", "cp", "sync"):
+    for name in ("bash", "uname", "mktemp", "rm", "basename", "tar", "gzip", "mkdir", "chmod", "mv", "head", "cp", "sync", "tr"):
         target = shutil.which(name)
         assert target, name
         (tools / name).symlink_to(target)
@@ -97,9 +114,16 @@ def _tools(tmp_path: Path, downloader: str, sha_tool: str) -> Path:
         (tools / "awk").symlink_to(target)
         _write_executable(
             tools / "openssl",
-            "#!/bin/sh\n[ \"$1 $2\" = 'dgst -sha256' ] || exit 1\n"
-            "digest=$(/usr/bin/sha256sum \"$3\" | /usr/bin/awk '{print $1}')\n"
-            "printf 'SHA2-256 (%s) = %s\\n' \"$3\" \"$digest\"\n",
+            # The fake answers with the running interpreter (its absolute
+            # path is the shebang, because the tools-only PATH has no
+            # python3) so no absolute tool path is baked in; install.sh
+            # still pipes this through awk itself.
+            f"#!{sys.executable}\n"
+            "import hashlib, sys\n"
+            "if sys.argv[1:3] != ['dgst', '-sha256']:\n"
+            "    raise SystemExit(1)\n"
+            "digest = hashlib.sha256(open(sys.argv[3], 'rb').read()).hexdigest()\n"
+            "print(f'SHA2-256 ({sys.argv[3]}) = {digest}')\n",
         )
     return tools
 
@@ -136,7 +160,7 @@ def _run_installer(
 
 @pytest.mark.parametrize(
     "sidecar",
-    ["{digest}\n", "{digest}  biomcp-linux-x86_64.tar.gz\n", "{digest} *biomcp-linux-x86_64.tar.gz\n"],
+    ["{digest}\n", f"{{digest}}  {ASSET}\n", f"{{digest}} *{ASSET}\n"],
 )
 def test_installer_accepts_one_valid_checksum_record(tmp_path: Path, sidecar: str) -> None:
     result = _run_installer(tmp_path, sidecar)
@@ -163,9 +187,9 @@ def test_installer_accepts_one_valid_checksum_record(tmp_path: Path, sidecar: st
         None,
         "",
         "not-a-checksum\n",
-        "{digest} biomcp-linux-x86_64.tar.gz extra\n",
+        f"{{digest}} {ASSET} extra\n",
         "{digest} wrong-name.tar.gz\n",
-        "{digest} ./biomcp-linux-x86_64.tar.gz\n",
+        f"{{digest}} ./{ASSET}\n",
         "# checksum\n{digest}\n",
         "{digest}\n{digest}\n",
     ],
