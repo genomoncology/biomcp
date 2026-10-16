@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 0c55160, accept
+
 ## Outcome
 
 Any source id `--disable-sources` or `BIOMCP_DISABLE_SOURCES` accepts is never called by any command, on the CLI or the MCP server, and the flag works the same on `biomcp serve` and `serve-http` as the environment variable does.
