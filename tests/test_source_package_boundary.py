@@ -20,7 +20,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # Raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar.
-MAX_PACKAGE_FILES = 1_435  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+MAX_PACKAGE_FILES = 1_428  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
