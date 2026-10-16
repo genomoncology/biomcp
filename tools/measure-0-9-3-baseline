@@ -489,7 +489,7 @@ if want_section coverage; then
   # test counts, and fills cov_suite_reason for a failed or unproven run.
   record_cov_suite() {
     local label="$1" kind="$2" exitfile="$3" logfile="$4"
-    local status summary counts reason n_run n_passed n_failed n_errors n_skipped pages failed_pages
+    local status summary counts reason n_run n_passed n_failed n_errors n_timeout n_skipped pages failed_pages
     status="$(<"$exitfile")"
     counts="summary unparsed"
     n_failed=""
@@ -501,8 +501,9 @@ if want_section coverage; then
           n_run="$(cov_clause 'tests? run:' "$summary")"
           n_passed="$(cov_clause passed "$summary")"
           n_failed="$(cov_clause failed "$summary")"
+          n_timeout="$(cov_clause 'timed out' "$summary")"
           n_skipped="$(cov_clause skipped "$summary")"
-          counts="${n_run:-0} run: ${n_passed:-0} passed, ${n_failed:-0} failed, ${n_skipped:-0} skipped"
+          counts="${n_run:-0} run: ${n_passed:-0} passed, ${n_failed:-0} failed, ${n_timeout:-0} timed out, ${n_skipped:-0} skipped"
         fi
         ;;
       pytest)
@@ -536,6 +537,8 @@ if want_section coverage; then
       fi
     elif [[ -n "$n_errors" && "$n_errors" != "0" ]]; then
       reason="${n_errors} errors"
+    elif [[ -n "$n_timeout" && "$n_timeout" != "0" ]]; then
+      reason="${n_timeout} timed out"
     elif [[ "$status" != "0" ]]; then
       reason="exit ${status}"
     fi
