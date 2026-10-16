@@ -1,0 +1,59 @@
+{
+  "primaryAccession": "P15056",
+  "uniProtkbId": "BRAF_HUMAN",
+  "uniProtKBCrossReferences": [
+    {
+      "database": "PDB",
+      "id": "1UWH",
+      "properties": [
+        {
+          "key": "Method",
+          "value": "X-ray"
+        },
+        {
+          "key": "Resolution",
+          "value": "2.95 A"
+        },
+        {
+          "key": "Chains",
+          "value": "A/B=448-723"
+        }
+      ]
+    },
+    {
+      "database": "AlphaFoldDB",
+      "id": "P15056",
+      "properties": [
+        {
+          "key": "Description",
+          "value": "-"
+        }
+      ]
+    },
+    {
+      "database": "MANE-Select",
+      "id": "ENST00000646891.2",
+      "properties": [
+        {
+          "key": "ProteinId",
+          "value": "ENSP00000493543.1"
+        },
+        {
+          "key": "RefSeqNucleotideId",
+          "value": "NM_004333.6"
+        },
+        {
+          "key": "RefSeqProteinId",
+          "value": "NP_004324.2"
+        }
+      ]
+    }
+  ],
+  "sequence": {
+    "value": "MAALSGGGGGGAEPGQALFNGDMEPEAGAGAGAAASSAADPAIPEEVWNIKQMIKLTQEHIEALLDKFGGEHNPPSIYLEAYEEYTSKLDALQQREQQLLESLGNGTDFSVSSSASMDTVTSSSSSSLSVLPSSLSVFQNPTDVARSNPKSPQKPIVRVFLPNKQRTVVPARCGVTVRDSLKKALMMRGLIPECCAVYRIQDGEKKPIGWDTDISWLTGEELHVEVLENVPLTTHNFVRKTFFTLAFCDFCRKLLFQGFRCQTCGYKFHQRCSTEVPLMCVNYDQLDLLFVSKFFEHHPIPQEEASLAETALTSGSSPSAPASDSIGPQILTSPSPSKSIPIPQPFRPADEDHRNQFGQRDRSSSAPNVHINTIEPVNIDDLIRDQGFRGDGGSTTGLSATPPASLPGSLTNVKALQKSPGPQRERKSSSSSEDRNRMKTLGRRDSSDDWEIPDGQITVGQRIGSGSFGTVYKGKWHGDVAVKMLNVTAPTPQQLQAFKNEVGVLRKTRHVNILLFMGYSTKPQLAIVTQWCEGSSLYHHLHIIETKFEMIKLIDIARQTAQGMDYLHAKSIIHRDLKSNNIFLHEDLTVKIGDFGLATVKSRWSGSHQFEQLSGSILWMAPEVIRMQDKNPYSFQSDVYAFGIVLYELMTGQLPYSNINNRDQIIFMVGRGYLSPDLSKVRSNCPKAMKRLMAECLKKKRDERPLFPQILASIELLARSLPKIHRSASEPSLNRAGFQTEDFSLYACASPKTPIQAGGYGAFPVH",
+    "length": 766,
+    "molWeight": 84437,
+    "crc64": "0798C2AAB487E813",
+    "md5": "74C9B69323BD112084C1B5B385E7E6C5"
+  }
+}
