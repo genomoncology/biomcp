@@ -59,7 +59,9 @@ def test_the_python_lane_pins_worker_parallelism() -> None:
     assert "-n 4" in pytest_line, (
         "pytest-xdist must not auto-serialize on the pinned set"
     )
-    assert "test_disease_survival_fixture_lifecycle" in pytest_line
+    # The fixture-server case is the replay server behind the golden suite
+    # (the disease-survival fixture lifecycle test is gone with its fixture).
+    assert "tests/golden" in pytest_line
 
 
 def test_the_rust_lane_names_the_flaky_set() -> None:

@@ -110,7 +110,7 @@ where
     F: Future<Output = Result<T, BioMcpError>>,
 {
     match timeout(
-        super::deadline::federated_article_source_timeout(),
+        deadline::federated_article_source_timeout(),
         future,
     )
     .await
