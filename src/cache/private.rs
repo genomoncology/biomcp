@@ -68,6 +68,65 @@ pub(crate) fn secure_managed_tree(
     secure_entry(root, recurse, managed_content_root)
 }
 
+/// Marker file under the HTTP cache recording that the tree has been
+/// secured once. A missing or malformed marker means the one-time
+/// recursive secure is due, exactly as the daily start-up clean marker
+/// works; a present marker means ordinary start-up
+/// never walks the tree, because every write already secures the files
+/// it creates through `secure_written_content` and
+/// `prepare_write_paths`.
+const TREE_SECURE_MARKER_FILE: &str = ".tree-secured-v1";
+const TREE_SECURE_MARKER: &[u8] = b"http-tree-secured-v1\n";
+
+/// Secure the HTTP cache tree for start-up without walking it on every
+/// command: the root is always validated and repaired, and the full
+/// recursive walk runs only while the marker is missing — a fresh cache
+/// root, a migrated one, or a pre-marker cache — after which the marker
+/// suppresses it forever. Files broadened after the marker are repaired
+/// when they are written through, not by start-up.
+pub(crate) fn ensure_http_tree_secured(cache_path: &Path, content_root: &Path) -> io::Result<()> {
+    secure_managed_tree(cache_path, false, Some(content_root))?;
+    if tree_secure_marker_valid(cache_path)? {
+        return Ok(());
+    }
+    secure_managed_tree(cache_path, true, Some(content_root))?;
+    write_tree_secure_marker(cache_path)
+}
+
+pub(crate) fn ensure_http_tree_secured_until(
+    cache_path: &Path,
+    content_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<()> {
+    deadline.ensure_time_io()?;
+    ensure_http_tree_secured(cache_path, content_root)?;
+    deadline.ensure_time_io()
+}
+
+/// Whether the tree-secure marker exists with the expected tag. A
+/// malformed or unreadable marker reads as invalid, so a torn write
+/// costs one repair walk rather than failing start-up.
+fn tree_secure_marker_valid(cache_path: &Path) -> io::Result<bool> {
+    use std::io::Read;
+    let marker = cache_path.join(TREE_SECURE_MARKER_FILE);
+    let Ok(mut file) = open_managed_read(&marker) else {
+        return Ok(false);
+    };
+    let mut contents = Vec::with_capacity(TREE_SECURE_MARKER.len());
+    file.read_to_end(&mut contents)?;
+    Ok(contents == TREE_SECURE_MARKER)
+}
+
+fn write_tree_secure_marker(cache_path: &Path) -> io::Result<()> {
+    use std::io::Write;
+    secure_managed_dir(cache_path)?;
+    let marker = cache_path.join(TREE_SECURE_MARKER_FILE);
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    let mut file = open_private(&mut options, &marker)?;
+    file.write_all(TREE_SECURE_MARKER)
+}
+
 pub(crate) fn secure_managed_tree_until(
     root: &Path,
     recurse: bool,
@@ -422,6 +481,8 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
         return Ok(());
     }
     if metadata.is_file() {
+        #[cfg(test)]
+        crate::test_support::record_startup_cache_file_visit();
         if metadata.nlink() != 1 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -468,6 +529,8 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
         return Ok(());
     }
     if metadata.is_file() {
+        #[cfg(test)]
+        crate::test_support::record_startup_cache_file_visit();
         drop(open_managed_read(path)?);
     } else if metadata.is_dir() {
         if recurse {

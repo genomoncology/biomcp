@@ -37,6 +37,15 @@ const POST_WRITE_FINALIZATION_ERROR: &str =
 /// freshly revalidated response can never carry it.
 pub(crate) const STALE_SERVE_AGE_HEADER: &str = "x-biomcp-cache-stale-age";
 
+/// Marker file under the HTTP cache recording the total stored content
+/// bytes the size tracker reads at start-up. The value is
+/// exact whenever a maintenance pass recomputes it — the daily start-up
+/// clean and every eviction cycle — and reads cheaply on every other
+/// start-up instead of statting every content file. A missing or
+/// malformed marker costs one full walk, the same shape as the daily
+/// clean marker.
+const CONTENT_TOTALS_MARKER_FILE: &str = ".content-bytes-v1";
+
 /// Marker file under the HTTP cache directory recording when the automatic
 /// start-up clean last ran. It holds the clean time in milliseconds since
 /// the Unix epoch; a missing or malformed marker means the clean is due.
@@ -407,7 +416,48 @@ fn default_services() -> ManagerServices {
 }
 
 fn estimate_cache_bytes_fast(path: &Path) -> io::Result<u64> {
-    let content_root = super::content_root(path);
+    // Cache mode off skips every cache start-up step: no walk and no
+    // totals read; the manager is not constructed for a real off-mode
+    // client, and a directly constructed one seeds zero.
+    if crate::sources::cache_is_bypassed() {
+        return Ok(0);
+    }
+    if let Some(total) = read_content_totals_marker(path) {
+        return Ok(total);
+    }
+    let total = sum_content_tree_bytes(path)?;
+    if let Err(err) = write_content_totals_marker(path, total) {
+        warn!(
+            cache_path = %path.display(),
+            "writing cache size totals marker failed: {err}"
+        );
+    }
+    Ok(total)
+}
+
+/// The kept total from the totals marker, or `None` when it is missing,
+/// unreadable, or malformed (the next maintenance pass rewrites it).
+fn read_content_totals_marker(cache_path: &Path) -> Option<u64> {
+    use std::io::Read;
+    let mut file =
+        super::private::open_managed_read(&cache_path.join(CONTENT_TOTALS_MARKER_FILE)).ok()?;
+    let mut text = String::new();
+    file.read_to_string(&mut text).ok()?;
+    text.trim().parse().ok()
+}
+
+fn write_content_totals_marker(cache_path: &Path, total_bytes: u64) -> io::Result<()> {
+    use std::io::Write;
+    super::private::secure_managed_dir(cache_path)?;
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    let mut file =
+        super::private::open_private(&mut options, &cache_path.join(CONTENT_TOTALS_MARKER_FILE))?;
+    file.write_all(total_bytes.to_string().as_bytes())
+}
+
+fn sum_content_tree_bytes(cache_path: &Path) -> io::Result<u64> {
+    let content_root = super::content_root(cache_path);
     match fs::symlink_metadata(&content_root) {
         Ok(metadata) if metadata.is_dir() => sum_tree_bytes(&content_root),
         Ok(metadata) if metadata.file_type().is_symlink() => Ok(0),
@@ -441,6 +491,8 @@ fn sum_tree_bytes(path: &Path) -> io::Result<u64> {
         if file_type.is_dir() {
             total = total.saturating_add(sum_tree_bytes(&entry_path)?);
         } else if file_type.is_file() {
+            #[cfg(test)]
+            crate::test_support::record_startup_cache_file_visit();
             total = total.saturating_add(metadata.len());
         }
     }
@@ -489,7 +541,31 @@ fn run_startup_clean_at(
         now_ms,
     )?;
     write_startup_clean_marker(&marker, now_ms)?;
+    refresh_content_totals_marker(cache_path);
     Ok(())
+}
+
+/// Rewrite the totals marker with an exact total taken from a fresh
+/// snapshot, so the kept total the next start-up reads is exact again
+/// after a maintenance pass. Best effort: a failure warns and leaves the
+/// previous marker, which the next maintenance pass replaces.
+fn refresh_content_totals_marker(cache_path: &Path) {
+    let usage = match snapshot_cache(cache_path) {
+        Ok(snapshot) => summarize_cache_usage(&snapshot),
+        Err(err) => {
+            warn!(
+                cache_path = %cache_path.display(),
+                "cache size totals refresh failed after maintenance: {err}"
+            );
+            return;
+        }
+    };
+    if let Err(err) = write_content_totals_marker(cache_path, usage.referenced_blob_bytes) {
+        warn!(
+            cache_path = %cache_path.display(),
+            "writing cache size totals marker failed after maintenance: {err}"
+        );
+    }
 }
 
 /// Whether the start-up clean is due: the marker is missing, unreadable, or
@@ -606,6 +682,7 @@ where
 
     if !evaluation.over_max_size && !evaluation.below_min_disk_free {
         approx_bytes.store(evaluation.usage.referenced_blob_bytes, Ordering::Relaxed);
+        persist_content_totals(cache_path, evaluation.usage.referenced_blob_bytes);
         return Ok(());
     }
 
@@ -632,6 +709,7 @@ where
         snapshotter(cache_path).map_err(|err| BioMcpError::Io(io::Error::other(err)))?;
     let usage_after = summarize_cache_usage(&snapshot_after);
     approx_bytes.store(usage_after.referenced_blob_bytes, Ordering::Relaxed);
+    persist_content_totals(cache_path, usage_after.referenced_blob_bytes);
 
     let space_after = inspect_space(&config.cache_root)?;
     if config
@@ -648,6 +726,18 @@ where
     }
 
     Ok(())
+}
+
+/// Record the eviction cycle's post-cycle exact total in the totals
+/// marker, best effort: the marker keeps the next start-up's size seed
+/// exact without another walk.
+fn persist_content_totals(cache_path: &Path, total_bytes: u64) {
+    if let Err(err) = write_content_totals_marker(cache_path, total_bytes) {
+        warn!(
+            cache_path = %cache_path.display(),
+            "writing cache size totals marker failed after eviction: {err}"
+        );
+    }
 }
 
 #[cfg(test)]
@@ -682,6 +772,8 @@ mod tests {
     mod stale_marker_tests;
     #[path = "startup_clean_tests.rs"]
     mod startup_clean_tests;
+    #[path = "startup_totals_tests.rs"]
+    mod startup_totals_tests;
     #[path = "write_security_tests.rs"]
     mod write_security_tests;
     #[path = "write_security_windows_tests.rs"]
@@ -819,6 +911,12 @@ mod tests {
         assert_eq!(
             approx_bytes.load(Ordering::Relaxed),
             b"live-bytes".len() as u64
+        );
+        assert_eq!(
+            std::fs::read_to_string(cache_path.join(super::CONTENT_TOTALS_MARKER_FILE))
+                .expect("totals marker after resync"),
+            b"live-bytes".len().to_string(),
+            "a resync without cleaning still persists the exact total"
         );
     }
 
@@ -1067,18 +1165,15 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn new_manager_seeds_approximate_bytes_from_fast_estimate() {
         let root = TempDirGuard::new("seed-estimate");
-        let content_root = root
-            .path()
-            .join("http")
-            .join("content-v2")
-            .join("sha256")
-            .join("aa")
-            .join("bb");
-        fs::create_dir_all(&content_root).expect("content tree");
-        fs::write(content_root.join("blob-a"), b"abc").expect("blob a");
-        fs::write(content_root.join("blob-b"), b"defgh").expect("blob b");
+        let cache_path = root.path().join("http");
+        // Referenced entries, not loose blobs: the day's clean runs inside
+        // construction, so orphans would leave the kept total at zero and
+        // expired entries would not survive it.
+        let now = super::current_time_ms();
+        write_entry(&cache_path, "seed-a", b"abc", now);
+        write_entry(&cache_path, "seed-b", b"defgh", now);
         let manager = SizeAwareCacheManager::new(
-            root.path().join("http"),
+            cache_path,
             test_config(root.path(), 100, DiskFreeThreshold::Percent(10)),
         )
         .expect("new cache manager");

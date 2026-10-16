@@ -90,8 +90,8 @@ pub(crate) use planner::{
     plan_composite_cleanup, plan_orphan_gc, plan_size_lru, snapshot_cache,
 };
 pub(crate) use private::{
-    open_managed_read, open_private, prepare_write_paths, secure_managed_tree,
-    secure_managed_tree_until, secure_written_content,
+    ensure_http_tree_secured, ensure_http_tree_secured_until, open_managed_read, open_private,
+    prepare_write_paths, secure_managed_tree, secure_managed_tree_until, secure_written_content,
 };
 #[allow(unused_imports)]
 pub(crate) use provider_capture::{

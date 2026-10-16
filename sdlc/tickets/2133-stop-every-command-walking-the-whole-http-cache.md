@@ -1,8 +1,10 @@
 # 2133 — Stop every command walking the whole HTTP cache
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision a3c232c, accept
 
 ## Outcome
 

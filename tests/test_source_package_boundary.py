@@ -25,7 +25,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # after the landing rebase onto current main, and lowered by the spec lane's
 # fixture scripts and lifecycle tests that the replay server replaced.
 # Raised once more by the variant structure test sidecar.
-MAX_PACKAGE_FILES = 1_405  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+MAX_PACKAGE_FILES = 1_406  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 

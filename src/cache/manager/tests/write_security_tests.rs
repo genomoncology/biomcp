@@ -188,15 +188,34 @@ fn assert_write_path_modes(cache_path: &Path, key: &str, integrity: &ssri::Integ
 }
 
 #[test]
-fn estimate_cache_bytes_fast_handles_missing_and_populated_content_trees() {
+fn estimate_cache_bytes_fast_totals_once_then_reads_the_kept_marker() {
     let root = TempDirGuard::new("estimate-fast");
     let cache_path = root.path().join("http");
-    assert_eq!(estimate_cache_bytes_fast(&cache_path).unwrap(), 0);
     let content = cache_path.join("content-v2/sha256/aa/bb");
     fs::create_dir_all(&content).unwrap();
     fs::write(content.join("blob-a"), b"abc").unwrap();
     fs::write(content.join("blob-b"), b"defgh").unwrap();
+
+    // Without a marker the estimate walks the content tree once and
+    // records the total it found.
     assert_eq!(estimate_cache_bytes_fast(&cache_path).unwrap(), 8);
+    assert_eq!(
+        fs::read_to_string(cache_path.join(super::super::CONTENT_TOTALS_MARKER_FILE)).unwrap(),
+        "8"
+    );
+
+    // With the marker the kept total answers without a walk; files
+    // added after the walk wait for the next maintenance pass to
+    // re-total the tree.
+    fs::write(content.join("blob-c"), b"xy").unwrap();
+    assert_eq!(estimate_cache_bytes_fast(&cache_path).unwrap(), 8);
+}
+
+#[test]
+fn estimate_cache_bytes_fast_reads_a_missing_cache_as_zero() {
+    let root = TempDirGuard::new("estimate-empty");
+    let cache_path = root.path().join("http");
+    assert_eq!(estimate_cache_bytes_fast(&cache_path).unwrap(), 0);
 }
 
 fn faulting_manager(
