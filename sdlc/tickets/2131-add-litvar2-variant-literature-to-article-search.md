@@ -1,0 +1,24 @@
+# 2131 — Add LitVar2 variant literature to article search
+
+Status: OPEN.
+
+Milestone: 0.9.3
+
+## Outcome
+
+`search article` with a variant (gene plus protein change, or rsID) also asks NCBI LitVar2 for the papers it links to that variant, and merges them with the existing sources, so variant papers PubTator and Europe PMC miss appear.
+
+## Evidence
+
+- A literature-coverage test on 2026-10-16 found 27 CDKN2A papers through LitVar2 that BioMCP did not return. Main has no LitVar2 client or registry entry.
+- LitVar2 is NCBI's free public variant-to-literature API, with no key. On 2026-10-16 its autocomplete answered `CDKN2A A57V` with rsID `rs372266620`, 39 papers, and `rs113488022` with BRAF p.V600E, 32,227 papers.
+- The same test found no extra free copies through Unpaywall or OpenAlex, so this ticket adds LitVar2 only.
+
+- Starts from: `src/sources/` (PubTator client as the model), `docs/reference/sources.json`, the article search fan-out in `src/entities/article/`.
+- Decisions:
+  - Resolve the variant through LitVar2 autocomplete, keep only an entry whose gene and change, or rsID, match the request exactly through the existing variant identity comparison, then fetch its publication list.
+  - Merge LitVar2 PMIDs into the existing article results with source attribution, under the article search's existing deadline and per-source limits; a LitVar2 failure degrades that source only.
+  - Register LitVar2 in the source registry with its terms stated, so `--disable-sources` and health cover it.
+- Changes: claims `src/sources/litvar.rs` `src/sources/litvar/**` `src/sources/mod.rs` `src/entities/article/**` (search fan-out only) `docs/reference/sources.json` `docs/sources/**` `docs/reference/data-sources.md` `testdata/sources/litvar/**` `testdata/sources/capture-receipts.json` `CHANGELOG.md`.
+- Proof: recorded LitVar2 replies for `CDKN2A A57V` and `rs113488022`; a test shows LitVar2 papers merged into the results with attribution; a test shows a non-matching autocomplete entry is dropped; a LitVar2 error degrades only its source. One live run recorded in the review.
+- Order: after 2130 and 2124 (which makes every registered source honor `--disable-sources`).
