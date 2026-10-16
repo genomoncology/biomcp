@@ -1165,18 +1165,14 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn new_manager_seeds_approximate_bytes_from_fast_estimate() {
         let root = TempDirGuard::new("seed-estimate");
-        let content_root = root
-            .path()
-            .join("http")
-            .join("content-v2")
-            .join("sha256")
-            .join("aa")
-            .join("bb");
-        fs::create_dir_all(&content_root).expect("content tree");
-        fs::write(content_root.join("blob-a"), b"abc").expect("blob a");
-        fs::write(content_root.join("blob-b"), b"defgh").expect("blob b");
+        let cache_path = root.path().join("http");
+        // Referenced entries, not loose blobs: the day's clean runs inside
+        // construction and orphans would not survive it, so the kept total
+        // the estimate reads is the referenced total the clean leaves.
+        write_entry(&cache_path, "seed-a", b"abc", 1_000);
+        write_entry(&cache_path, "seed-b", b"defgh", 1_000);
         let manager = SizeAwareCacheManager::new(
-            root.path().join("http"),
+            cache_path,
             test_config(root.path(), 100, DiskFreeThreshold::Percent(10)),
         )
         .expect("new cache manager");
