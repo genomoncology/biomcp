@@ -292,6 +292,75 @@ fn pubtator_variant_candidate_requires_source_proof_for_gene_and_protein() {
     assert!(!variant_candidate_matches(&row("BRAF mutation"), &intent));
 }
 
+fn rsid_entity_row() -> PubTatorAutocompleteResult {
+    PubTatorAutocompleteResult {
+        id: Some("@VARIANT_p.V600E_BRAF_human".into()),
+        biotype: Some("variant".into()),
+        db_id: Some("rs113488022##".into()),
+        db: Some("litvar".into()),
+        name: Some("p.M600E".into()),
+    }
+}
+
+#[test]
+fn rsid_request_matches_the_pubtator_entity_from_its_db_id() {
+    let intent = ArticleVariantIntent {
+        original: "rs113488022".into(),
+        gene: None,
+        change: None,
+        entity_id: None,
+    };
+
+    assert!(
+        variant_candidate_matches(&rsid_entity_row(), &intent),
+        "an rsID request must keep the entity whose db_id carries that rsID"
+    );
+}
+
+#[test]
+fn rsid_match_keeps_the_entity_display_name_out_of_the_comparison() {
+    let requested = crate::entities::variant::RequestedVariantIdentity {
+        rsid: Some("rs113488022".into()),
+        protein_change: Some("p.V600E".into()),
+        ..Default::default()
+    };
+
+    assert_eq!(
+        autocomplete_row_matches(&rsid_entity_row(), &requested).as_deref(),
+        Some("rs113488022"),
+        "PubTator's p.M600E label must not reshape or veto what was asked for"
+    );
+
+    let other_rsid = crate::entities::variant::RequestedVariantIdentity {
+        rsid: Some("rs121913530".into()),
+        ..Default::default()
+    };
+    assert_eq!(
+        autocomplete_row_matches(&rsid_entity_row(), &other_rsid),
+        None,
+        "an entity whose db_id carries a different rsID is not the request"
+    );
+}
+
+#[test]
+fn gene_plus_change_matching_survives_a_db_id_rsid() {
+    let intent = ArticleVariantIntent {
+        original: "BRAF p.V600E".into(),
+        gene: Some("BRAF".into()),
+        change: Some("V600E".into()),
+        entity_id: None,
+    };
+    let row = PubTatorAutocompleteResult {
+        id: Some("@VARIANT_p.V600E_BRAF_human".into()),
+        biotype: Some("variant".into()),
+        db_id: Some("rs113488022##".into()),
+        db: None,
+        name: Some("BRAF p.V600E".into()),
+    };
+
+    assert!(variant_candidate_matches(&row, &intent));
+}
+
 #[test]
 fn build_pubmed_esearch_params_rejects_open_access() {
     let mut filters = empty_filters();

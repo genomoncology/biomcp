@@ -3282,6 +3282,18 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "pubtator/autocomplete_rsid_rs113488022.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=rs113488022",
+        "captured_at": "2026-10-16T22:05:07Z",
+        "sha256": "f28167b34b3593a0bfa578143da24953b7138ad35482b6568afd6aaa538364ea",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2130)."
+      }
+    },
+    {
       "path": "pubtator/export_20516115.json",
       "classification": "real_and_receipted",
       "receipt": {

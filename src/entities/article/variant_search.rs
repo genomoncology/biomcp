@@ -1338,6 +1338,19 @@ fn terminal_reconciled_statuses(
         .collect()
 }
 
+/// The structured error for a zero-row outage names the failing sources
+/// instead of claiming every route was unavailable.
+fn variant_article_outage_message(statuses: &[VariantArticleSourceStatus]) -> String {
+    let mut failing = unavailable_variant_article_sources(statuses);
+    if failing.is_empty() {
+        failing.push("resolution/myvariant".into());
+    }
+    format!(
+        "variant article sources were unavailable: {}",
+        failing.join(", ")
+    )
+}
+
 fn source_statuses_incomplete(statuses: &[VariantArticleSourceStatus]) -> bool {
     statuses.iter().any(|status| {
         !matches!(
@@ -1345,6 +1358,25 @@ fn source_statuses_incomplete(statuses: &[VariantArticleSourceStatus]) -> bool {
             VariantArticleSourceStatusKind::Ok | VariantArticleSourceStatusKind::Skipped
         )
     })
+}
+
+/// The provider sources that reported themselves unavailable or timed out, as
+/// `route/source` pairs. A zero-row page is an outage only when this is
+/// non-empty; ambiguous resolution, indeterminate provider validation, and
+/// unfinished identity or equivalence checks stay their own non-outage status
+/// with `complete: false` and no error.
+fn unavailable_variant_article_sources(statuses: &[VariantArticleSourceStatus]) -> Vec<String> {
+    statuses
+        .iter()
+        .filter(|status| {
+            matches!(
+                status.status,
+                VariantArticleSourceStatusKind::Unavailable
+                    | VariantArticleSourceStatusKind::TimedOut
+            )
+        })
+        .map(|status| format!("{}/{}", status.route, status.source))
+        .collect()
 }
 
 fn candidate_with_provenance(
@@ -2952,6 +2984,7 @@ async fn search_variant_articles_identity(
             plan.deadline = execution.deadline_plan();
             plan
         });
+        let outage_message = variant_article_outage_message(&source_status);
         return Ok(VariantArticleOutcome {
             response: VariantArticleResponse {
                 requested_variant: context.requested,
@@ -2980,7 +3013,7 @@ async fn search_variant_articles_identity(
                     message: if execution.deadline.is_exhausted() {
                         "the variant article invocation deadline expired before a usable result was available".into()
                     } else {
-                        "all required variant article routes were unavailable".into()
+                        outage_message
                     },
                 }),
                 debug_plan,
@@ -3470,7 +3503,9 @@ async fn search_variant_articles_identity(
             }
         })
         .collect::<Vec<_>>();
-    let hard_error = rows.is_empty() && !complete;
+    let failed_sources = unavailable_variant_article_sources(&statuses);
+    let hard_error =
+        rows.is_empty() && (!failed_sources.is_empty() || execution.deadline.is_exhausted());
     statuses.sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
     let retrieval_path = if !resolved {
         VARIANT_FALLBACK_RETRIEVAL_PATH
@@ -3512,6 +3547,7 @@ async fn search_variant_articles_identity(
         }
         plan
     });
+    let outage_message = variant_article_outage_message(&statuses);
     Ok(VariantArticleOutcome {
         response: VariantArticleResponse {
             requested_variant: context.requested,
@@ -3540,7 +3576,7 @@ async fn search_variant_articles_identity(
                 message: if execution.deadline.is_exhausted() {
                     "the variant article invocation deadline expired before a usable result was available".into()
                 } else {
-                    "all required variant article routes were unavailable".into()
+                    outage_message
                 },
             }),
             debug_plan,
@@ -4883,6 +4919,182 @@ mod tests {
         assert_eq!(citations[0].row.pmid, "12345");
         assert_eq!(execution.terminal_event_count(), 4);
         assert_eq!(requests.lock().expect("request log").len(), 4);
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn rsid_search_keeps_the_pubtator_entity_and_searches_by_its_id() {
+        // The recorded rs113488022 autocomplete reply carries the rsID in db_id
+        // while the display name holds the p.M600E label, so an rsID request
+        // must keep that entity and search by its id instead of dropping it.
+        const AUTOCOMPLETE: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/autocomplete_rsid_rs113488022.json");
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    AUTOCOMPLETE,
+                ));
+            }
+            if first_line.starts_with("GET /search/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"{"results":[{"_id":"1","pmid":"40000001","title":"BRAF V600E annotated paper","journal":"Fixture Journal","date":"2026-01-02"}],"count":1,"total_pages":1,"current":1,"page_size":25}"#
+                        .as_slice(),
+                ));
+            }
+            TestHttpReply::Bytes(test_http_response(
+                "404 Not Found",
+                "application/json",
+                b"{}",
+            ))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("rsid-entity-search");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+
+        let requested = RequestedVariantIdentity::from_variant_input("rs113488022")
+            .expect("requested identity");
+        let mut context = resolved_context();
+        context.requested = requested;
+        context.source_id = None;
+        context.source_identity = None;
+        context.source_hit = None;
+        context.resolution.status = VariantResolutionStatus::Ambiguous;
+        context.resolution.provider_validation.status =
+            VariantProviderValidationStatus::Indeterminate;
+        context.resolution.provider_validation.matched_alias = None;
+        let execution = VariantArticleExecutionContext::single();
+        let (rows, incomplete, succeeded, _stopped) =
+            annotation_candidates("rs113488022", &context, &execution)
+                .await
+                .expect("annotation candidates");
+
+        assert!(succeeded, "the annotation route ran its kept entity");
+        assert!(!incomplete);
+        assert_eq!(rows.len(), 1, "the kept entity returns its annotated paper");
+        assert_eq!(rows[0].row.pmid, "40000001");
+        assert_eq!(
+            rows[0].variant_provenance[0].query_aliases,
+            vec!["rs113488022".to_string()]
+        );
+        let logged = requests.lock().expect("request log").clone();
+        assert!(
+            logged
+                .iter()
+                .any(|line| line.starts_with("GET /entity/autocomplete/?query=rs113488022")),
+            "autocomplete queried the rsID: {logged:?}"
+        );
+        assert!(
+            logged.iter().any(|line| line.starts_with("GET /search/")
+                && line.contains("VARIANT_p.V600E_BRAF_human")),
+            "the search ran by the kept entity id: {logged:?}"
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn empty_search_where_every_source_answered_stays_an_ok_result() {
+        // The rs372266620 report: MyVariant answers with an indeterminate hit,
+        // every discovery route answers with zero rows, and the old terminal
+        // rule still raised source_unavailable with exit 1. An empty search
+        // with every source answered is an ok result; the indeterminate
+        // provider validation keeps complete false without an error.
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            let body: &[u8] = if first_line.starts_with("GET /query") {
+                br#"{"total":1,"hits":[{"_id":"fixture-rs372266620","dbnsfp":{"genename":["SAMHD1"]}}]}"#
+            } else if first_line.starts_with("GET /search/") {
+                br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
+            } else if first_line.starts_with("GET /search?") {
+                br#"{"version":"6.9","hitCount":0,"resultList":{"result":[]}}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                br#"{"esearchresult":{"count":"0","idlist":[]}}"#
+            } else if first_line.starts_with("GET /graph/v1/paper/search") {
+                br#"{"total":0,"data":[]}"#
+            } else if first_line.starts_with("GET /entity/autocomplete/") {
+                b"[]"
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                body,
+            ))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("rsid-empty-ok-search");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "rs372266620",
+            VariantArticleStrategy::Union,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(30),
+        )
+        .await
+        .expect("empty search outcome");
+
+        assert!(
+            !outcome.hard_error,
+            "an empty search where every source answered exits zero"
+        );
+        assert!(
+            outcome.response.error.is_none(),
+            "no false outage error: {:?}",
+            outcome.response.error
+        );
+        assert!(outcome.response.results.is_empty());
+        assert_eq!(
+            outcome.response.resolution.status,
+            VariantResolutionStatus::Ambiguous
+        );
+        assert_eq!(
+            outcome.response.resolution.provider_validation.status,
+            VariantProviderValidationStatus::Indeterminate
+        );
+        assert!(
+            !outcome.response.complete,
+            "the indeterminate provider validation keeps the page incomplete"
+        );
+        assert!(
+            outcome.response.source_status.iter().all(|status| matches!(
+                status.status,
+                VariantArticleSourceStatusKind::Ok | VariantArticleSourceStatusKind::Skipped
+            )),
+            "every route answered: {:?}",
+            outcome.response.source_status
+        );
     }
 
     #[test]
