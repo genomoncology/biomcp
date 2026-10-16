@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 543e281, accept
+
 ## Outcome
 
 `biomcp variant structure` never reports a residue on a protein whose sequence holds a different reference amino acid there. `variant structure 'MUTYH G368D'` either places the change on a verified position of the protein it names or says the structural placement is unresolved and gives no residue-specific domain, PDB or AlphaFold claims. `variant structure 'BRAF V600E'` is unchanged.
