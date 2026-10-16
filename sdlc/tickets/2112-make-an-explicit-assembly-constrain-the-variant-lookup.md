@@ -1,8 +1,12 @@
 # 2112 — Make an explicit assembly constrain the variant lookup
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 6cb464c, accept
+
+Reviews: revision 6cb464c, accept
 
 ## Outcome
 

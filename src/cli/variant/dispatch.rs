@@ -323,20 +323,16 @@ async fn render_variant_card_outcome(
         )
         .into());
     }
-    let assembly = if crate::entities::variant::normalize_genomic_coordinate(&args.id)?
-        .is_some_and(|coordinate| coordinate.requires_comparison)
-    {
-        Some(crate::entities::variant::resolved_default_assembly(
-            args.assembly,
-        )?)
-    } else {
-        args.assembly
-    };
+    // An explicit --assembly declares the build and the entity constrains
+    // the lookup to it; the entity resolves the BIOMCP_DEFAULT_ASSEMBLY
+    // preference itself when a bare coordinate needs the dual-build search.
     if let Some(guidance) = crate::entities::variant::variant_guidance(&args.id) {
         return variant_guidance_outcome(&guidance, json_output || guidance_as_json);
     }
 
-    match crate::entities::variant::get_with_workflow_signals(&args.id, &sections, assembly).await {
+    match crate::entities::variant::get_with_workflow_signals(&args.id, &sections, args.assembly)
+        .await
+    {
         Ok((variant, signals)) => Ok(CommandOutcome::stdout(render_loaded_card(
             &variant,
             signals.has_clinvar_signal,

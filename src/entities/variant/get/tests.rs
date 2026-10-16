@@ -6,9 +6,9 @@ use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-struct PopulationFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+struct FixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
 
-impl PopulationFixtureEnv {
+impl FixtureEnv {
     fn set(&mut self, name: &'static str, value: &str) {
         self.0.push((name, std::env::var_os(name)));
         // SAFETY: this test holds the serial-test process-wide environment lock.
@@ -16,7 +16,7 @@ impl PopulationFixtureEnv {
     }
 }
 
-impl Drop for PopulationFixtureEnv {
+impl Drop for FixtureEnv {
     fn drop(&mut self) {
         for (name, prior) in self.0.drain(..).rev() {
             // SAFETY: this test holds the serial-test process-wide environment lock.
@@ -166,7 +166,7 @@ async fn transcript_alias_fixture_server(
 #[serial_test::serial(source_env)]
 async fn transcript_hgvs_alias_resolves_intronic_deletion_when_normalizers_refuse() {
     let (base, requests, server) = transcript_alias_fixture_server(true).await;
-    let mut env = PopulationFixtureEnv(Vec::new());
+    let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MUTALYZER_BASE_URL", &format!("{base}/api"));
     env.set("BIOMCP_VARIANTVALIDATOR_BASE_URL", &base);
@@ -192,7 +192,7 @@ async fn transcript_hgvs_alias_resolves_intronic_deletion_when_normalizers_refus
 #[serial_test::serial(source_env)]
 async fn transcript_hgvs_alias_refuses_hits_without_the_exact_coding_alias() {
     let (base, requests, server) = transcript_alias_fixture_server(false).await;
-    let mut env = PopulationFixtureEnv(Vec::new());
+    let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MUTALYZER_BASE_URL", &format!("{base}/api"));
     env.set("BIOMCP_VARIANTVALIDATOR_BASE_URL", &base);
@@ -394,6 +394,214 @@ fn known_build_not_found_names_the_build_and_upstream_status() {
     assert!(message.contains("GRCh38"));
     assert!(message.contains("upstream HTTP 404"));
     assert!(!message.contains("Retry the remote source"));
+}
+
+/// The recorded BRAF V600E answers this proof replays: MyVariant holds the
+/// GRCh37 spelling `chr7:g.140453136A>T` only under `assembly=hg19` and the
+/// GRCh38 spelling `chr7:g.140753336A>T` only under `assembly=hg38`; every
+/// other build query on either coordinate answers the provider's recorded
+/// 404, so a declared build that misses has no other-build record to fall
+/// back to.
+const BRAF_V600E_GRCH37_REPLY: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/myvariant/get_braf_v600e_grch37_20261007.json"
+));
+const BRAF_V600E_GRCH38_REPLY: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/testdata/sources/myvariant/get_braf_v600e_grch38_20260806.json"
+));
+const MYVARIANT_RECORDED_404: &[u8] = br#"{"code":404,"success":false,"error":"Not Found."}"#;
+
+/// Replay the two recorded builds and log every request line, so a test can
+/// prove the lookup queried exactly the builds it was allowed to.
+async fn assembly_contract_fixture_server()
+-> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind assembly contract fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured.lock().expect("lock requests").push(
+                    request
+                        .split_whitespace()
+                        .nth(1)
+                        .unwrap_or_default()
+                        .to_string(),
+                );
+                let (status, body) = if request.starts_with("GET /v1/variant/chr7:g.140453136A%3ET")
+                {
+                    if request.contains("assembly=hg19") {
+                        ("200 OK", BRAF_V600E_GRCH37_REPLY.to_vec())
+                    } else {
+                        ("404 Not Found", MYVARIANT_RECORDED_404.to_vec())
+                    }
+                } else if request.starts_with("GET /v1/variant/chr7:g.140753336A%3ET") {
+                    if request.contains("assembly=hg38") {
+                        ("200 OK", BRAF_V600E_GRCH38_REPLY.to_vec())
+                    } else {
+                        ("404 Not Found", MYVARIANT_RECORDED_404.to_vec())
+                    }
+                } else {
+                    (
+                        "404 Not Found",
+                        format!(
+                            "{{\"error\":\"fixture path not found: {}\"}}",
+                            request.split_whitespace().nth(1).unwrap_or_default()
+                        )
+                        .into_bytes(),
+                    )
+                };
+                let head = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream
+                    .write_all(head.as_bytes())
+                    .await
+                    .expect("write fixture response head");
+                stream
+                    .write_all(&body)
+                    .await
+                    .expect("write fixture response body");
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+fn variant_lookup_requests(requests: &[String]) -> Vec<String> {
+    requests
+        .iter()
+        .filter(|request| request.starts_with("/v1/variant/"))
+        .cloned()
+        .collect()
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn declared_assembly_hg38_on_a_grch37_only_coordinate_refuses_as_not_found() {
+    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let mut env = FixtureEnv(Vec::new());
+    env.set("BIOMCP_CACHE_MODE", "off");
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+
+    let error = get_with_workflow_signals("chr7:g.140453136A>T", &[], Some(GenomeBuild::Grch38))
+        .await
+        .expect_err("a declared build never answers from the other build");
+    server.abort();
+
+    let message = error.to_string();
+    assert!(message.contains("attempted GRCh38"), "{message}");
+    assert!(message.contains("upstream HTTP 404"), "{message}");
+
+    let requests = requests.lock().expect("lock requests").clone();
+    let lookups = variant_lookup_requests(&requests);
+    assert_eq!(lookups.len(), 1, "the constrained lookup queries one build");
+    assert!(
+        lookups
+            .first()
+            .is_some_and(|request| request.contains("assembly=hg38")),
+        "the one query names the declared build: {requests:?}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn declared_assembly_hg19_on_the_grch37_only_coordinate_finds_braf() {
+    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let mut env = FixtureEnv(Vec::new());
+    env.set("BIOMCP_CACHE_MODE", "off");
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+
+    let (variant, _) =
+        get_with_workflow_signals("chr7:g.140453136A>T", &[], Some(GenomeBuild::Grch37))
+            .await
+            .expect("the declared build that holds the record resolves it");
+    server.abort();
+
+    assert_eq!(variant.gene, "BRAF");
+    assert_eq!(variant.rsid.as_deref(), Some("rs113488022"));
+    assert_eq!(variant.genome_build, Some(GenomeBuild::Grch37));
+    assert!(variant.build_candidates.is_empty());
+
+    let requests = requests.lock().expect("lock requests").clone();
+    let lookups = variant_lookup_requests(&requests);
+    assert_eq!(lookups.len(), 1, "the constrained lookup queries one build");
+    assert!(
+        lookups
+            .first()
+            .is_some_and(|request| request.contains("assembly=hg19")),
+        "the one query names the declared build: {requests:?}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn declared_assembly_agreeing_with_the_prefix_resolves_the_one_build_hit() {
+    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let mut env = FixtureEnv(Vec::new());
+    env.set("BIOMCP_CACHE_MODE", "off");
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+
+    let (variant, _) =
+        get_with_workflow_signals("GRCh38:chr7:g.140753336A>T", &[], Some(GenomeBuild::Grch38))
+            .await
+            .expect("a flag that agrees with the prefix resolves as the prefix alone");
+    server.abort();
+
+    assert_eq!(variant.gene, "BRAF");
+    assert_eq!(variant.rsid.as_deref(), Some("rs113488022"));
+    assert_eq!(variant.genome_build, Some(GenomeBuild::Grch38));
+
+    let requests = requests.lock().expect("lock requests").clone();
+    let lookups = variant_lookup_requests(&requests);
+    assert_eq!(
+        lookups.len(),
+        1,
+        "the agreeing declaration still queries one build"
+    );
+    assert!(
+        lookups
+            .first()
+            .is_some_and(|request| request.contains("assembly=hg38")),
+        "the one query names the declared build: {requests:?}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn declared_assembly_conflicting_with_the_prefix_refuses_naming_both_builds() {
+    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let mut env = FixtureEnv(Vec::new());
+    env.set("BIOMCP_CACHE_MODE", "off");
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+
+    let error =
+        get_with_workflow_signals("GRCh38:chr7:g.140753336A>T", &[], Some(GenomeBuild::Grch37))
+            .await
+            .expect_err("a flag that contradicts the prefix refuses");
+    server.abort();
+
+    let message = error.to_string();
+    assert!(message.contains("GRCh38"), "{message}");
+    assert!(message.contains("GRCh37"), "{message}");
+    assert!(message.contains("conflicts"), "{message}");
+
+    assert!(
+        requests.lock().expect("lock requests").is_empty(),
+        "the refusal happens before any provider call"
+    );
 }
 
 #[test]
@@ -624,7 +832,7 @@ async fn population_request_requires_a_grch38_genomic_coordinate() {
     );
 
     let (base, requests, server) = population_fixture_server().await;
-    let mut env = PopulationFixtureEnv(Vec::new());
+    let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &base);
     env.set("BIOMCP_GNOMAD_BASE", &base);
     env.set("BIOMCP_DBSNP_BASE", &base);
@@ -1166,7 +1374,7 @@ async fn protein_change_uniprot_fixture_server()
 #[serial_test::serial(source_env)]
 async fn protein_change_get_checks_the_canonical_protein_before_answering() {
     let (base, requests, server) = protein_change_uniprot_fixture_server().await;
-    let mut env = PopulationFixtureEnv(Vec::new());
+    let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MYGENE_BASE", &base);
     env.set("BIOMCP_UNIPROT_BASE", &base);
@@ -1201,7 +1409,7 @@ async fn protein_change_get_checks_the_canonical_protein_before_answering() {
 #[serial_test::serial(source_env)]
 async fn protein_change_get_notes_unchecked_numbering_when_uniprot_is_unreachable() {
     let (base, requests, server) = protein_change_uniprot_fixture_server().await;
-    let mut env = PopulationFixtureEnv(Vec::new());
+    let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MYGENE_BASE", &base);
     env.set("BIOMCP_UNIPROT_BASE", "http://127.0.0.1:9");
