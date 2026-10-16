@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Reviews: revision e65830a, accept
 
+Reviews: revision 9fa3573, accept
+
 ## Outcome
 
 Retained routine tests protect behavior, edge cases, external contracts, fixed defects or refusals; redundant construction/restatement tests and unused test-only code are removed in reviewed small batches.
