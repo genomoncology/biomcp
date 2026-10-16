@@ -319,24 +319,27 @@ fn rsid_request_matches_the_pubtator_entity_from_its_db_id() {
 
 #[test]
 fn rsid_match_keeps_the_entity_display_name_out_of_the_comparison() {
-    let identity = autocomplete_source_identity(&rsid_entity_row(), Some("rs113488022"));
-
-    assert_eq!(identity.rsids, vec!["rs113488022".to_string()]);
-    assert!(
-        identity.protein_changes.is_empty(),
-        "PubTator's p.M600E label must not reshape what was asked for"
-    );
-    assert!(identity.genes.is_empty());
-
     let requested = crate::entities::variant::RequestedVariantIdentity {
         rsid: Some("rs113488022".into()),
         protein_change: Some("p.V600E".into()),
         ..Default::default()
     };
-    assert!(matches!(
-        crate::entities::variant::compare_variant_identity(&requested, &identity),
-        crate::entities::variant::VariantIdentityComparison::Compatible { .. }
-    ));
+
+    assert_eq!(
+        autocomplete_row_matches(&rsid_entity_row(), &requested).as_deref(),
+        Some("rs113488022"),
+        "PubTator's p.M600E label must not reshape or veto what was asked for"
+    );
+
+    let other_rsid = crate::entities::variant::RequestedVariantIdentity {
+        rsid: Some("rs121913530".into()),
+        ..Default::default()
+    };
+    assert_eq!(
+        autocomplete_row_matches(&rsid_entity_row(), &other_rsid),
+        None,
+        "an entity whose db_id carries a different rsID is not the request"
+    );
 }
 
 #[test]
