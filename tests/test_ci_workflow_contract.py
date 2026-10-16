@@ -43,15 +43,9 @@ RUST_JOBS = [
 # parallel once the build job uploads its artifact.
 LANE_JOBS = ["lint", "rust-tests", "python-lane", "spec-lane"]
 CACHE_PIN = "Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6"
-# The installed gate tools come back from one cache under the
+# The installed gate tools come back from caches under the
 # lane-setup action, keyed on the pins the workflow env holds.
 GATE_TOOLS_CACHE_PIN = "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
-GATE_TOOLS_CACHE_PATHS = {
-    "~/.cache/gate-tools",
-    "~/.local/bin",
-    "~/.local/share/uv/tools",
-    ".cache/tools/bin",
-}
 
 
 def _job(jid: str) -> dict:
@@ -322,39 +316,48 @@ def _action_step(name: str) -> dict:
 
 
 def test_the_lane_setup_action_caches_the_gate_tools_keyed_on_their_pins() -> None:
-    """Ticket 2094: one cache under the lane-setup action restores the
-    installed gate tools — the staged nextest and cargo-deny binaries,
-    the uv-managed mustmatch and ruff environments, the lint-tool
-    archive binaries and the offline sandbox's apt archives — keyed on
-    the workflow's pinned versions plus the lint bootstrap script and
-    the runner image, so a lane's setup stays under a minute and a pin
-    bump invalidates the cache on its own."""
-    key = _action_step("Compose the gate-tools cache key")
-    run = key["run"]
-    for pin in (
-        "CARGO_NEXTEST_VERSION",
-        "CARGO_DENY_VERSION",
-        "MUSTMATCH_VERSION",
-        "RUFF_VERSION",
-        "PYTHON_VERSION",
-    ):
-        assert pin in run, f"the gate-tools key must track the {pin} pin"
-    assert "hashFiles('tools/bootstrap-lint-tools')" in run, (
-        "the lint binaries' versions live in tools/bootstrap-lint-tools; "
-        "the key must change when they do"
-    )
-    assert "${ImageOS}" in run, (
-        "the apt archives are per runner image; the key must change with it"
-    )
-    restore = _action_step("Restore the installed gate tools")
-    assert restore["uses"] == GATE_TOOLS_CACHE_PIN, "the cache must be pinned"
-    assert set(restore["with"]["path"].split()) == GATE_TOOLS_CACHE_PATHS
-    assert restore["with"]["key"] == (
-        "gate-tools-v1-${{ steps.gate-tools-key.outputs.key }}"
-    )
-    assert restore["with"]["restore-keys"].strip() == "gate-tools-v1-", (
-        "a pin bump must reuse the previous archive while the installers "
-        "fill the gap"
+    """Ticket 2094: the gate tools a lane installs come back from
+    caches keyed on the workflow's pinned versions, the lint bootstrap
+    script's own pins and the runner image, so a lane's setup stays
+    under a minute and a pin bump empties the cache on its own. Each
+    cache is saved only by lanes that write identical content for it:
+    parallel jobs save a missed key first-wins, so one shared cache
+    would pin the lightest saver's content forever — the branch's own
+    warm rerun measured exactly that, with lint recompiling
+    cargo-deny against an entry a lighter lane had won."""
+    keys = _action_step("Compose the gate-tools cache keys")["run"]
+    assert "nextest=gate-nextest-v1-${CARGO_NEXTEST_VERSION}" in keys
+    assert (
+        "lint=gate-lint-v1-${CARGO_DENY_VERSION}-"
+        "${{ hashFiles('tools/bootstrap-lint-tools') }}" in keys
+    ), "the lint binaries' versions live in tools/bootstrap-lint-tools"
+    assert (
+        "apt=gate-apt-v1-${ImageOS}-bubblewrap-apparmor-apparmor-profiles-ripgrep"
+        in keys
+    ), "the apt archives are per runner image and package list"
+    nextest = _action_step("Restore the staged nextest binary")
+    assert nextest["uses"] == GATE_TOOLS_CACHE_PIN, "the cache must be pinned"
+    assert nextest["with"] == {
+        "path": "~/.cache/gate-tools/nextest",
+        "key": "${{ steps.gate-keys.outputs.nextest }}",
+    }
+    lint = _action_step("Restore the installed lint gate tools")
+    assert lint["uses"] == GATE_TOOLS_CACHE_PIN
+    assert lint["with"]["path"].split() == [
+        "~/.cache/gate-tools/cargo-deny",
+        ".cache/tools/bin",
+    ]
+    assert lint["with"]["key"] == "${{ steps.gate-keys.outputs.lint }}"
+    apt = _action_step("Restore the offline sandbox packages")
+    assert apt["uses"] == GATE_TOOLS_CACHE_PIN
+    assert apt["with"] == {
+        "path": "~/.cache/gate-tools/apt-archives",
+        "key": "${{ steps.gate-keys.outputs.apt }}",
+    }
+    uv = _action_step("Install pinned uv")
+    assert uv["with"]["enable-cache"] is True, (
+        "uv's own environment cache backs the lanes' uv sync and the "
+        "mustmatch and ruff tool installs"
     )
 
 

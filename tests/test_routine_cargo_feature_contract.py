@@ -37,8 +37,12 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
         makefile, "prepare-test"
     )
     # The lane split cut `make test` in two so the CI lanes can
-    # run the Rust half alone; the archive run is the rust lane's recipe.
-    assert "nextest run --archive-file" in _target(makefile, "test-rust")
+    # run the Rust half alone; the archive run is the rust lane's
+    # recipe, with `make test` passing its CPU-split job count through
+    # NEXTEST_JOBS so the two concurrent halves share the machine.
+    assert "nextest run $(NEXTEST_JOBS_ARG) --archive-file" in _target(
+        makefile, "test-rust"
+    )
     assert "--cargo-feature-arg" in runner
     assert '"${routine_cargo_features[@]}"' in runner
     assert "args.cargo_feature_arg" in preparer

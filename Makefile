@@ -51,17 +51,24 @@ prepare-test: prepare-routine-test-tmp
 # the gate fails when either half fails; the branch's CI run is the
 # ticket's one full check, so this target is a developer convenience,
 # not a second gate of record. A `make -n test` still prints both
-# halves' commands, which spec/surface/build-profile.md probes.
+# halves' commands, which spec/surface/build-profile.md probes. The
+# halves split the machine's CPUs when `make test` drives both (a CI
+# lane's job runs its half alone with the whole machine), so the
+# concurrent halves never oversubscribe a small build host and its
+# deadline-sensitive tests keep their budgets.
+HALF_CPUS = $(shell echo $$(( ($$(nproc) + 1) / 2 )))
+NEXTEST_JOBS_ARG = $(if $(NEXTEST_JOBS),-j $(NEXTEST_JOBS),)
+
 test:
 	$(MAKE) prepare-test
-	$(MAKE) --output-sync=target -j2 test-rust test-python
+	$(MAKE) --output-sync=target -j2 NEXTEST_JOBS=$(HALF_CPUS) PYTEST_WORKERS=$(HALF_CPUS) test-rust test-python
 
 # The two halves of `make test` (ticket 2075) so the CI lanes run
 # the Rust tests and the Python contracts in parallel against the
 # build job's artifact; a local caller reaches them through
 # `make test`, which prepares the dev build first.
 test-rust: prepare-routine-test-tmp
-	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
+	tools/run-offline -- cargo nextest run $(NEXTEST_JOBS_ARG) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
 
 test-python: prepare-routine-test-tmp
 	$(MAKE) sync-python-dev
