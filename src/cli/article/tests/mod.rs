@@ -8,3 +8,4 @@ mod filters;
 mod help;
 mod json;
 mod next_commands;
+mod outage;
