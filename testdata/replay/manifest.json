@@ -29,6 +29,14 @@
     "etag": "\"0/0.34.1/mv9b5t6w\""
    }
   },
+  "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&pageSize=1&query.cond=Phelan-McDermid+Syndrome": {
+   "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=1&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+   "status": 200,
+   "file": "responses/ctgov/ctgov-studies-c5eab0b2a63e.json",
+   "headers": {
+    "content-type": "application/json"
+   }
+  },
   "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42875213+AND+SRC%3AMED": {
    "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID%3A42875213+AND+SRC%3AMED&format=json&cursorMark=*&pageSize=1",
    "status": 200,
