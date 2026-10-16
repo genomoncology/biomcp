@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 1b1f848, accept
+
 ## Evidence
 
 Filed 2026-10-15 from lanes 2066 and 2067 under the PM's two-jobs doctrine (a timing test that fails only with concurrent jobs is a test defect). Each fails under two concurrent Yellow jobs and passes otherwise; ticket 2102 already covers the rmcp contract deadline test, these are the rest observed the same day:
