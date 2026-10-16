@@ -167,7 +167,10 @@ fn supplementary_zip_keeps_zero_byte_members_for_upstream_classification() {
     let bytes = zip_bytes(&[("NIHMS1501643-supplement-2.xlsx", b"")], &[]);
     let package = parse_supplementary_zip(&bytes).unwrap();
     assert_eq!(package.entries.len(), 1);
-    assert_eq!(package.entries[0].filename, "NIHMS1501643-supplement-2.xlsx");
+    assert_eq!(
+        package.entries[0].filename,
+        "NIHMS1501643-supplement-2.xlsx"
+    );
     assert!(package.entries[0].bytes.is_empty());
 }
 

@@ -296,8 +296,10 @@ fn two_route_supplement_prefers_bytes_and_marks_the_empty_alternative() {
     let fixture = ArticleFixture::start();
     let filename = "NIHMS1501643-supplement-2.xlsx";
 
-    let manifest =
-        successful_output(&fixture, &["--json", "get", "article", "22663024", "assets"]);
+    let manifest = successful_output(
+        &fixture,
+        &["--json", "get", "article", "22663024", "assets"],
+    );
     let doc: serde_json::Value =
         serde_json::from_slice(&manifest.stdout).expect("asset manifest should be JSON");
     let assets = doc["assets"].as_array().expect("assets should be a list");
@@ -364,9 +366,7 @@ fn two_route_supplement_prefers_bytes_and_marks_the_empty_alternative() {
             "asset",
             &empty_key,
             "--output",
-            refused
-                .to_str()
-                .expect("destination path should be UTF-8"),
+            refused.to_str().expect("destination path should be UTF-8"),
         ])
         .output()
         .expect("empty-route asset command should run");

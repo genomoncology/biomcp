@@ -1254,7 +1254,9 @@ fn assign_asset_keys(
     }
     for coverage in pending.values() {
         if coverage.zero_byte_download {
-            *counts.entry(coverage.row.filename.clone()).or_insert(0usize) += 1;
+            *counts
+                .entry(coverage.row.filename.clone())
+                .or_insert(0usize) += 1;
         }
     }
     for asset in assets {
@@ -2967,7 +2969,10 @@ mod tests {
             sha256_hex(europe_identity.as_bytes())
         );
         let europe_row = pending.values().next().expect("marked alternative");
-        assert_eq!(europe_row.row.asset_key.as_deref(), Some(europe_key.as_str()));
+        assert_eq!(
+            europe_row.row.asset_key.as_deref(),
+            Some(europe_key.as_str())
+        );
         assert_eq!(
             europe_row.row.handle.as_deref(),
             Some(format!("biomcp get article 30209399 asset {europe_key}").as_str())
