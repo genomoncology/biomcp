@@ -180,7 +180,7 @@ fn parses_autocomplete_response_fixture() {
 }
 
 #[test]
-parses_rsid_autocomplete_capture_and_extracts_the_db_id_rsid() {
+fn parses_rsid_autocomplete_capture_and_extracts_the_db_id_rsid() {
     let resp: Vec<PubTatorAutocompleteResult> = decode_json(
         crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
         StatusCode::OK,
@@ -199,7 +199,7 @@ parses_rsid_autocomplete_capture_and_extracts_the_db_id_rsid() {
 }
 
 #[test]
-db_id_rsid_reads_only_the_segment_before_the_marker() {
+fn db_id_rsid_reads_only_the_segment_before_the_marker() {
     let row = |db_id: Option<&str>| PubTatorAutocompleteResult {
         id: Some("@VARIANT_fixture".into()),
         biotype: Some("variant".into()),

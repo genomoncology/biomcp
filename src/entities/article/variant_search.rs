@@ -2984,6 +2984,7 @@ async fn search_variant_articles_identity(
             plan.deadline = execution.deadline_plan();
             plan
         });
+        let outage_message = variant_article_outage_message(&source_status);
         return Ok(VariantArticleOutcome {
             response: VariantArticleResponse {
                 requested_variant: context.requested,
@@ -3012,7 +3013,7 @@ async fn search_variant_articles_identity(
                     message: if execution.deadline.is_exhausted() {
                         "the variant article invocation deadline expired before a usable result was available".into()
                     } else {
-                        variant_article_outage_message(&source_status)
+                        outage_message
                     },
                 }),
                 debug_plan,
@@ -3546,6 +3547,7 @@ async fn search_variant_articles_identity(
         }
         plan
     });
+    let outage_message = variant_article_outage_message(&statuses);
     Ok(VariantArticleOutcome {
         response: VariantArticleResponse {
             requested_variant: context.requested,
@@ -3574,7 +3576,7 @@ async fn search_variant_articles_identity(
                 message: if execution.deadline.is_exhausted() {
                     "the variant article invocation deadline expired before a usable result was available".into()
                 } else {
-                    variant_article_outage_message(&statuses)
+                    outage_message
                 },
             }),
             debug_plan,
