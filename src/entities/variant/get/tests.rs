@@ -859,7 +859,7 @@ fn civic_molecular_profile_name_sends_the_one_letter_change() {
 #[serial_test::serial(source_env)]
 async fn civic_reports_the_accepted_evidence_the_one_letter_name_finds() {
     let (base, requests, server) = civic_recorded_reply_server().await;
-    let mut env = PopulationFixtureEnv(Vec::new());
+    let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_CIVIC_BASE", &base);
     env.set("BIOMCP_CACHE_MODE", "off");
 
