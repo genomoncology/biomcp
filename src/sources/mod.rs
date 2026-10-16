@@ -86,6 +86,8 @@ impl VariantArticleDeadline {
             .map_err(|_| VariantArticleDeadlineElapsed)
     }
 
+    // sleep reason: this deadline guard parks on its own sleep_until timer
+    #[allow(clippy::disallowed_methods)]
     pub(crate) async fn run_with_safe_return<F: Future>(
         &self,
         future: F,
@@ -1075,11 +1077,15 @@ impl Middleware for RetryAfterTooManyRequestsMiddleware {
             };
             if let Some(duration) = duration {
                 if let Some(deadline) = extensions.get::<VariantArticleDeadline>().cloned() {
+                    // sleep reason: retry-after backoff under the article deadline
+                    #[allow(clippy::disallowed_methods)]
                     deadline
                         .run(tokio::time::sleep(duration))
                         .await
                         .map_err(reqwest_middleware::Error::middleware)?;
                 } else {
+                    // sleep reason: retry-after backoff with no deadline active
+                    #[allow(clippy::disallowed_methods)]
                     tokio::time::sleep(duration).await;
                 }
             }
@@ -1769,6 +1775,8 @@ where
         if attempt + 1 < total_attempts
             && let Some(duration) = next_retry_sleep(&mut retry_sleep_state, retry_after_floor)
         {
+            // sleep reason: retry budget backoff for provider sends
+            #[allow(clippy::disallowed_methods)]
             tokio::time::sleep(duration).await;
         }
     }

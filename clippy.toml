@@ -1,0 +1,22 @@
+# 2076: clippy replaces the deleted size and wait ratchet scripts
+# (tools/check-quality-ratchet.py's size and line-cap audits,
+# tools/check-test-wait-ratchet.py). The threshold is the longest
+# function body on main when this lint landed:
+# search_variant_articles_identity in src/entities/article/variant_search.rs.
+too-many-lines-threshold = 647
+
+# 2076: a new clock sleep in production code needs a reviewed
+# `#[allow(clippy::disallowed_methods)]` with an adjacent
+# `// sleep reason: ...` at its call. Existing test sleeps stay allowed
+# until 2081 replaces them with signals.
+[[disallowed-methods]]
+path = "std::thread::sleep"
+reason = "a parked thread hides a missing signal; name the bounded wait in an adjacent allow"
+
+[[disallowed-methods]]
+path = "tokio::time::sleep"
+reason = "a clock sleep hides a missing signal; name the bounded wait in an adjacent allow"
+
+[[disallowed-methods]]
+path = "tokio::time::sleep_until"
+reason = "parking on the clock hides a missing signal; name the bounded wait in an adjacent allow"

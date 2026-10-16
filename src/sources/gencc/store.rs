@@ -464,6 +464,8 @@ impl Store {
             #[cfg(debug_assertions)]
             if let Ok(marker) = std::env::var("BIOMCP_GENCC_TEST_BLOCK_PUBLICATION") {
                 fs::write(marker, b"entered").map_err(|_| StoreError::Unavailable)?;
+                // sleep reason: test publication-block hook, debug builds only
+                #[allow(clippy::disallowed_methods)]
                 while !cancelled.load(std::sync::atomic::Ordering::Acquire) {
                     std::thread::sleep(std::time::Duration::from_millis(1));
                 }
@@ -991,6 +993,8 @@ fn lock_until(
         if now >= deadline {
             return Err(StoreError::Deadline);
         }
+        // sleep reason: deadline-bounded retry wait for the store lock
+        #[allow(clippy::disallowed_methods)]
         std::thread::sleep(
             deadline
                 .saturating_duration_since(now)

@@ -241,6 +241,8 @@ impl RateLimiter {
             match wait_until {
                 Some(target) if target > now => {
                     drop(map);
+                    // sleep reason: the rate limiter holds its per-source interval
+                    #[allow(clippy::disallowed_methods)]
                     sleep_until(target).await;
                 }
                 _ => {

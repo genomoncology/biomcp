@@ -86,6 +86,8 @@ impl VaersClient {
 
     async fn pause_between_live_requests(&self) {
         if self.uses_live_rate_limit_delay() {
+            // sleep reason: CDC WONDER live-request gap
+            #[allow(clippy::disallowed_methods)]
             tokio::time::sleep(LIVE_REQUEST_GAP).await;
         }
     }

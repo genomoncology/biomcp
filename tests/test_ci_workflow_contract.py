@@ -362,10 +362,6 @@ def test_repository_contracts_always_runs_and_tests_the_docs() -> None:
     assert any("mkdocs build --strict" in r for r in runs), (
         "docs-only pushes must still build the documentation"
     )
-    assert any("check-test-wait-ratchet.py" in r for r in runs), (
-        "the wait ratchet reads sdlc tickets, which docs-only pushes "
-        "change; it must run in this always-on job"
-    )
 
 
 def test_the_release_checks_lane_runs_on_every_push() -> None:

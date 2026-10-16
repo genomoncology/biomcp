@@ -237,6 +237,8 @@ fn lock_maintenance_with_deadline(
             true => return Ok(exclusive_guard(file)),
             false => {
                 deadline.ensure_time_io()?;
+                // sleep reason: deadline-bounded maintenance-lock retry poll
+                #[allow(clippy::disallowed_methods)]
                 std::thread::sleep(
                     deadline
                         .remaining()
@@ -270,6 +272,8 @@ pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationG
                     if let Err(error) = deadline.ensure_time_io() {
                         break Err(error);
                     }
+                    // sleep reason: deadline-bounded shared-lock retry poll
+                    #[allow(clippy::disallowed_methods)]
                     std::thread::sleep(
                         deadline
                             .remaining()
@@ -411,6 +415,8 @@ async fn lock_file_until(
 }
 
 async fn wait(deadline: &crate::sources::VariantArticleDeadline) -> io::Result<()> {
+    // sleep reason: deadline-bounded lock wait step
+    #[allow(clippy::disallowed_methods)]
     deadline
         .run(tokio::time::sleep(std::time::Duration::from_millis(10)))
         .await

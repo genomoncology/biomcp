@@ -10,7 +10,6 @@ CATALOG_FILE="${QUALITY_RATCHET_CATALOG_FILE:-$ROOT_DIR/src/mcp/catalog.rs}"
 SOURCES_DIR="${QUALITY_RATCHET_SOURCES_DIR:-$ROOT_DIR/src/sources}"
 SOURCES_MOD="${QUALITY_RATCHET_SOURCES_MOD:-$ROOT_DIR/src/sources/mod.rs}"
 HEALTH_FILE="${QUALITY_RATCHET_HEALTH_FILE:-$ROOT_DIR/src/cli/health/catalog.rs}"
-CLI_LINE_CAP_ALLOWLIST="${QUALITY_RATCHET_CLI_LINE_CAP_ALLOWLIST:-$ROOT_DIR/tools/cli-line-cap-allowlist.json}"
 
 audit_args=()
 if [[ -n "${QUALITY_RATCHET_AUDITS:-}" ]]; then
@@ -36,7 +35,6 @@ uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --sources-dir "$SOURCES_DIR" \
   --sources-mod "$SOURCES_MOD" \
   --health-file "$HEALTH_FILE" \
-  --cli-line-cap-allowlist "$CLI_LINE_CAP_ALLOWLIST" \
   "${audit_args[@]}" || status=$?
 
 # The ratchet reports per-audit findings only in its JSON artifacts, so

@@ -240,6 +240,8 @@ impl OrcidClient {
                 let base = retry_after
                     .map(Duration::from_secs)
                     .unwrap_or(Duration::from_secs(1));
+                // sleep reason: ORCID retry-after backoff, capped
+                #[allow(clippy::disallowed_methods)]
                 tokio::time::sleep(base.min(ORCID_RETRY_SLEEP_CAP)).await;
             }
             if !self.pace_attempt(deadline).await {
@@ -279,6 +281,8 @@ impl OrcidClient {
                     }
                 }
             };
+            // sleep reason: ORCID pacing wait bounded by the request deadline
+            #[allow(clippy::disallowed_methods)]
             if tokio::time::timeout_at(deadline, tokio::time::sleep(wait))
                 .await
                 .is_err()

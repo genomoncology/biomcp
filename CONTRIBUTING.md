@@ -97,13 +97,10 @@ the build machine runs.
 
 ### Rust maintenance ratchets
 
-Canonical lint pins every tracked Rust source file above 1,000 physical lines
-in `tools/rust-source-size-inventory.json`. Files below the threshold may grow
-only to 1,000 lines, and new files may not begin above it. When a large file
-shrinks, run `tools/update-rust-source-size-inventory` to lower its baseline.
-The command refuses growth unless one path is named with `--authorize` plus a
-ticket, an exact reason, and a removal condition. Prefer a local extraction to
-raising a baseline.
+Clippy limits every function body to the longest function the repository
+had when the cap landed (`too-many-lines-threshold` in `clippy.toml`);
+`cargo clippy -- -D warnings` fails any function that grows past it, so
+prefer a local extraction to growing a function longer.
 
 Every `allow(dead_code)` is also checked against
 `tools/dead-code-exceptions.json`. Keep the adjacent `dead-code reason:` comment

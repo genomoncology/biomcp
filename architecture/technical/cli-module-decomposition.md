@@ -118,12 +118,10 @@ For any decomposition slice, proof should include:
 
 ## Ratchet rules
 
-`make lint` runs `tools/check-quality-ratchet.py`, which performs a global scan
-of tracked Rust files under `src/cli/` and enforces the 700-line cap. Files over
-the cap must either be decomposed or appear in `tools/cli-line-cap-allowlist.json`
-with a dated follow-up ticket reference and their current line count. The
-allowlist is a ratchet: entries become failures once the file is under the cap,
-and allowlisted files may not grow beyond the recorded count.
+`cargo clippy -- -D warnings` caps every function body at the repository-wide
+`too-many-lines-threshold` in `clippy.toml`. A function that grows past the
+cap fails the gate; decompose it instead of raising the threshold. The former
+700-line `src/cli/` file cap and its allowlist are gone.
 
 Every decomposed CLI area must also add an executable structure ratchet in a dedicated
 integration test, normally named:

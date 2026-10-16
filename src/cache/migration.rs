@@ -165,6 +165,8 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
         match lock.try_lock_exclusive() {
             Ok(()) => break,
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                // sleep reason: deadline-bounded retry poll for the epoch lock
+                #[allow(clippy::disallowed_methods)]
                 deadline
                     .run(tokio::time::sleep(std::time::Duration::from_millis(10)))
                     .await

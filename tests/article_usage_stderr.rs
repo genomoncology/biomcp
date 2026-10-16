@@ -1,3 +1,6 @@
+// sleep reason: existing test sleeps stay until 2081 replaces them with signals
+#![allow(clippy::disallowed_methods)]
+
 use std::net::TcpListener;
 use std::path::Path;
 use std::process::{Command, Output};

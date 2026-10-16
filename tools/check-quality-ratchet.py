@@ -18,13 +18,9 @@ CAPTURED_PRINTF_MUSTMATCH_RE = re.compile(
     r"\bprintf\b(?=[^|]*\"\$[A-Za-z_][A-Za-z0-9_]*\")[^|]*\|\s*mustmatch\b"
 )
 MUSTMATCH_LINT_SKIP = "<!-- mustmatch-lint: skip -->"
-CLI_LINE_CAP = 700
-RUST_SOURCE_LINE_THRESHOLD = 1000
-RUST_SOURCE_SIZE_INVENTORY = "tools/rust-source-size-inventory.json"
 DEAD_CODE_EXCEPTION_INVENTORY = "tools/dead-code-exceptions.json"
 SECTION_OUTCOME_POLICY_LINE_CAP = 700
 SECTION_OUTCOME_POLICY_MODULES = ["src/entities/section_outcome.rs"]
-CLI_LINE_CAP_TICKET_RE = re.compile(r"^\d+(?:[-_][a-z0-9][a-z0-9-]*)?$")
 EXPERIMENT_RESULTS_GLOB = "architecture/experiments/**/results/**"
 CLI_SURFACE_CONTRACT_CHECKS = [
     "public_flags_and_value_aliases_documented",
@@ -80,8 +76,6 @@ AUDIT_NAMES = [
     "mcp_allowlist",
     "source_registry",
     "dead_code_allowances",
-    "rust_source_size",
-    "cli_line_cap",
     "section_outcome_policy_line_cap",
     "experiment_results",
     "renderer_next_command_source",
@@ -131,8 +125,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sources-dir", type=Path, required=True)
     parser.add_argument("--sources-mod", type=Path, required=True)
     parser.add_argument("--health-file", type=Path, required=True)
-    parser.add_argument("--cli-line-cap-allowlist", type=Path)
-    parser.add_argument("--rust-source-size-inventory", type=Path)
     parser.add_argument("--dead-code-exception-inventory", type=Path)
     parser.add_argument(
         "--audit",
@@ -179,26 +171,6 @@ def run_json_command(
     return payload
 
 
-def tracked_cli_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
-    proc = subprocess.run(
-        [
-            "git",
-            "-C",
-            str(root_dir),
-            "ls-files",
-            "--",
-            "src/cli/*.rs",
-            "src/cli/**/*.rs",
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        return [], [proc.stderr.strip() or "git ls-files failed"]
-    return sorted({line for line in proc.stdout.splitlines() if line}), []
-
-
 def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     proc = subprocess.run(
         ["git", "-C", str(root_dir), "ls-files", "--", "*.rs"],
@@ -209,11 +181,6 @@ def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     if proc.returncode != 0:
         return [], [proc.stderr.strip() or "git ls-files failed"]
     return sorted({line for line in proc.stdout.splitlines() if line}), []
-
-
-def tracked_src_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
-    files, errors = tracked_rust_files(root_dir)
-    return [path for path in files if path.startswith("src/")], errors
 
 
 class RustSourceSnapshot:
@@ -354,123 +321,6 @@ def _allows_dead_code(attribute: str) -> bool:
         ):
             return True
     return False
-
-
-def check_rust_source_size(root_dir: Path, inventory_path: Path) -> dict[str, object]:
-    try:
-        inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        return {"status": "error", "findings": [], "errors": [str(error)]}
-    if (
-        inventory.get("schema") != "biomcp-rust-source-size-v1"
-        or inventory.get("threshold") != RUST_SOURCE_LINE_THRESHOLD
-        or not isinstance(inventory.get("entries"), list)
-    ):
-        return {
-            "status": "error",
-            "findings": [],
-            "errors": ["invalid Rust source-size inventory"],
-        }
-
-    entries: dict[str, dict[str, object]] = {}
-    errors: list[str] = []
-    for entry in inventory["entries"]:
-        if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
-            errors.append("every source-size entry needs a path")
-            continue
-        path = entry["path"]
-        if path in entries:
-            errors.append(f"duplicate source-size entry: {path}")
-        if not path.startswith("src/") or not path.endswith(".rs"):
-            errors.append(f"invalid source-size path: {path}")
-        baseline = entry.get("baseline_lines")
-        floor = entry.get("floor_lines")
-        if not isinstance(baseline, int) or baseline <= RUST_SOURCE_LINE_THRESHOLD:
-            errors.append(f"invalid source-size baseline: {path}")
-        if not isinstance(floor, int) or floor > baseline:
-            errors.append(f"invalid source-size floor: {path}")
-        authorization = entry.get("authorized_increase")
-        if baseline != floor:
-            required = {"ticket", "delta", "reason", "removal_condition"}
-            if not isinstance(authorization, dict) or not required.issubset(
-                authorization
-            ):
-                errors.append(f"raised baseline lacks exact authorization: {path}")
-            elif authorization.get("delta") != baseline - floor:
-                errors.append(f"authorized source-size delta is not exact: {path}")
-        elif authorization is not None:
-            errors.append(f"unchanged baseline must not carry authorization: {path}")
-        entries[path] = entry
-
-    tracked, git_errors = tracked_src_rust_files(root_dir)
-    errors.extend(git_errors)
-    findings: list[dict[str, object]] = []
-    seen: set[str] = set()
-    canonical_src = (root_dir / "src").resolve()
-    for relative_path in tracked:
-        path = root_dir / relative_path
-        try:
-            if (
-                path.is_symlink()
-                or not path.is_file()
-                or not path.resolve().is_relative_to(canonical_src)
-            ):
-                findings.append(
-                    {
-                        "path": relative_path,
-                        "message": "tracked Rust source must be a regular file below src",
-                    }
-                )
-                continue
-            lines = len(path.read_text(encoding="utf-8").splitlines())
-        except (OSError, UnicodeError) as error:
-            findings.append(
-                {"path": relative_path, "message": f"cannot read Rust source: {error}"}
-            )
-            continue
-        entry = entries.get(relative_path)
-        if lines > RUST_SOURCE_LINE_THRESHOLD:
-            if entry is None:
-                findings.append(
-                    {
-                        "path": relative_path,
-                        "lines": lines,
-                        "message": "Rust source exceeds 1000 lines without a pinned baseline",
-                    }
-                )
-            elif lines != entry.get("baseline_lines"):
-                findings.append(
-                    {
-                        "path": relative_path,
-                        "lines": lines,
-                        "baseline_lines": entry.get("baseline_lines"),
-                        "message": "Rust source line count differs from its exact baseline",
-                    }
-                )
-            seen.add(relative_path)
-        elif entry is not None:
-            findings.append(
-                {
-                    "path": relative_path,
-                    "lines": lines,
-                    "message": "lowered source no longer needs an over-threshold entry; regenerate the inventory",
-                }
-            )
-            seen.add(relative_path)
-    for stale in sorted(set(entries) - seen):
-        if stale not in tracked:
-            findings.append(
-                {"path": stale, "message": "source-size inventory entry is stale"}
-            )
-
-    return {
-        "status": "error" if errors else ("fail" if findings else "pass"),
-        "threshold": RUST_SOURCE_LINE_THRESHOLD,
-        "files_checked": len(tracked),
-        "finding_count": len(findings),
-        "findings": findings,
-        "errors": errors,
-    }
 
 
 def _dead_code_allowance_rows(snapshot: RustSourceSnapshot) -> list[dict[str, object]]:
@@ -771,167 +621,6 @@ def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
         "checked_surfaces": sorted(set(checked_surfaces)),
         "finding_count": len(findings),
         "findings": findings,
-        "errors": [],
-    }
-
-
-def load_cli_line_cap_allowlist(
-    allowlist_path: Path,
-) -> tuple[dict[str, dict[str, object]], list[str]]:
-    try:
-        payload = json.loads(allowlist_path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        return {}, [f"failed to read allowlist {allowlist_path}: {exc}"]
-    except json.JSONDecodeError as exc:
-        return {}, [f"invalid allowlist JSON {allowlist_path}: {exc}"]
-
-    if not isinstance(payload, dict):
-        return {}, ["allowlist root must be a JSON object"]
-    if payload.get("cap") != CLI_LINE_CAP:
-        return {}, [f"allowlist cap must be {CLI_LINE_CAP}"]
-
-    entries = payload.get("entries")
-    if not isinstance(entries, list):
-        return {}, ["allowlist entries must be a list"]
-
-    allowlist: dict[str, dict[str, object]] = {}
-    errors: list[str] = []
-    for index, entry in enumerate(entries):
-        prefix = f"allowlist entries[{index}]"
-        if not isinstance(entry, dict):
-            errors.append(f"{prefix} must be an object")
-            continue
-
-        path = entry.get("path")
-        lines = entry.get("lines")
-        date = entry.get("date")
-        follow_up_ticket = entry.get("follow_up_ticket")
-        if (
-            not isinstance(path, str)
-            or not path.startswith("src/cli/")
-            or not path.endswith(".rs")
-        ):
-            errors.append(f"{prefix}.path must be a src/cli/*.rs path")
-            continue
-        if path in allowlist:
-            errors.append(f"duplicate allowlist path: {path}")
-            continue
-        if not isinstance(lines, int) or lines <= CLI_LINE_CAP:
-            errors.append(
-                f"{prefix}.lines must be an integer greater than {CLI_LINE_CAP}"
-            )
-        if not isinstance(date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
-            errors.append(f"{prefix}.date must be YYYY-MM-DD")
-        if not isinstance(
-            follow_up_ticket, str
-        ) or not CLI_LINE_CAP_TICKET_RE.fullmatch(follow_up_ticket):
-            errors.append(
-                f"{prefix}.follow_up_ticket must be a ticket number or ticket slug"
-            )
-        allowlist[path] = entry
-
-    return allowlist, errors
-
-
-def check_cli_line_cap(root_dir: Path, allowlist_path: Path) -> dict[str, object]:
-    allowlist, errors = load_cli_line_cap_allowlist(allowlist_path)
-    tracked_files, git_errors = tracked_cli_rust_files(root_dir)
-    errors.extend(git_errors)
-    if errors:
-        return {
-            "status": "error",
-            "cap": CLI_LINE_CAP,
-            "allowlist": str(allowlist_path),
-            "errors": errors,
-        }
-
-    missing_allowlist_entries: list[dict[str, object]] = []
-    grown_allowlist_entries: list[dict[str, object]] = []
-    over_cap_files: list[dict[str, object]] = []
-    stale_allowlist_entries: list[dict[str, object]] = []
-
-    tracked_set = set(tracked_files)
-    for relative_path in tracked_files:
-        path = root_dir / relative_path
-        line_count = len(path.read_text(encoding="utf-8").splitlines())
-        if line_count <= CLI_LINE_CAP:
-            continue
-
-        finding = {"path": relative_path, "lines": line_count}
-        over_cap_files.append(finding)
-        entry = allowlist.get(relative_path)
-        if entry is None:
-            missing_allowlist_entries.append(
-                {
-                    **finding,
-                    "message": (
-                        f"tracked src/cli Rust file exceeds {CLI_LINE_CAP} lines "
-                        "without an allowlist entry"
-                    ),
-                }
-            )
-            continue
-
-        allowed_lines = entry["lines"]
-        if isinstance(allowed_lines, int) and line_count > allowed_lines:
-            grown_allowlist_entries.append(
-                {
-                    **finding,
-                    "allowed_lines": allowed_lines,
-                    "follow_up_ticket": entry.get("follow_up_ticket"),
-                    "message": (
-                        "allowlisted file grew beyond its recorded line count; "
-                        "decompose it instead of expanding the allowlist"
-                    ),
-                }
-            )
-
-    for relative_path, entry in allowlist.items():
-        if relative_path not in tracked_set:
-            stale_allowlist_entries.append(
-                {
-                    "path": relative_path,
-                    "lines": entry.get("lines"),
-                    "follow_up_ticket": entry.get("follow_up_ticket"),
-                    "message": (
-                        "allowlist entry no longer points to a tracked "
-                        "src/cli Rust file"
-                    ),
-                }
-            )
-            continue
-
-        line_count = len(
-            (root_dir / relative_path).read_text(encoding="utf-8").splitlines()
-        )
-        if line_count <= CLI_LINE_CAP:
-            stale_allowlist_entries.append(
-                {
-                    "path": relative_path,
-                    "lines": line_count,
-                    "follow_up_ticket": entry.get("follow_up_ticket"),
-                    "message": "allowlist entry is no longer needed; remove it",
-                }
-            )
-
-    status = (
-        "fail"
-        if missing_allowlist_entries
-        or grown_allowlist_entries
-        or stale_allowlist_entries
-        else "pass"
-    )
-    return {
-        "status": status,
-        "cap": CLI_LINE_CAP,
-        "allowlist": str(allowlist_path),
-        "files_checked": len(tracked_files),
-        "over_cap_count": len(over_cap_files),
-        "allowlist_count": len(allowlist),
-        "over_cap_files": over_cap_files,
-        "missing_allowlist_entries": missing_allowlist_entries,
-        "grown_allowlist_entries": grown_allowlist_entries,
-        "stale_allowlist_entries": stale_allowlist_entries,
         "errors": [],
     }
 
@@ -2780,12 +2469,6 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     selected_audits = list(dict.fromkeys(args.audit or AUDIT_NAMES))
     payloads: dict[str, dict[str, object]] = {}
-    cli_line_cap_allowlist = args.cli_line_cap_allowlist or (
-        args.root_dir / "tools" / "cli-line-cap-allowlist.json"
-    )
-    rust_source_size_inventory = args.rust_source_size_inventory or (
-        args.root_dir / RUST_SOURCE_SIZE_INVENTORY
-    )
     dead_code_exception_inventory = args.dead_code_exception_inventory or (
         args.root_dir / DEAD_CODE_EXCEPTION_INVENTORY
     )
@@ -2851,14 +2534,6 @@ def main() -> int:
             lambda: check_dead_code_allowances(
                 args.root_dir, rust_snapshot, dead_code_exception_inventory
             ),
-        ),
-        "rust_source_size": (
-            "quality-ratchet-rust-source-size.json",
-            lambda: check_rust_source_size(args.root_dir, rust_source_size_inventory),
-        ),
-        "cli_line_cap": (
-            "quality-ratchet-cli-line-cap.json",
-            lambda: check_cli_line_cap(args.root_dir, cli_line_cap_allowlist),
         ),
         "experiment_results": (
             "quality-ratchet-experiment-results.json",
