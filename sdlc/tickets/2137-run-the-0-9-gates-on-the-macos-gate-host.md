@@ -27,6 +27,8 @@ The macOS gate host runs every 0.9 build, test, lint, gate and release check on 
 - Gate-host toolchain (the 2143 drift finding): the macOS gate host keeps its user toolchain, the zerobrew-managed stable Rust (clippy 1.95.0 today), and installs no rustup or CI-pinned 1.93.1 beside it. The repository stays clippy-clean under both the CI pin and the host's newer stable (the redaction and DOI fixes in this branch), so the gate host surfaces new lints before the pin moves and CI keeps proving the pin. Duplicating the pinned toolchain on the host would redo CI's job and hide the drift.
 - Node v22.22.3 is already installed on the macOS gate host (`/opt/zerobrew/opt/node@22/bin` on PATH), and main's 0.9 tree carries no `website/prepare`, so no gate reads Node: nothing was installed.
 
+- Gate-host Python: the repository pins `uv` to the 3.12 line through `.python-version`, matching the `PYTHON_VERSION` CI already pins, so the gate host's `uv sync` builds the lane venv on the interpreter the release scripts support instead of the host's newest Python; the host's 3.14 exposed the `release/inspect.py` stdlib shadow through argparse's colorize import chain.
+
 ## Findings
 
 - Single Rust tests on the gate host run through make, or with `TMPDIR` pointed at the worktree: macOS `TMPDIR` (`/var/folders/...`) holds the `/var` symlink, which the GenCC store's `O_NOFOLLOW` secure chain rejects, while make exports the symlink-free `.cache/routine-test-tmp` for the test goals.
