@@ -1,9 +1,10 @@
 # 2076: clippy replaces the deleted size and wait ratchet scripts
 # (tools/check-quality-ratchet.py's size and line-cap audits,
 # tools/check-test-wait-ratchet.py). The threshold is the longest
-# function body on main when this lint landed:
+# function on main when this lint landed, measured the way clippy
+# counts (the lines between the braces):
 # search_variant_articles_identity in src/entities/article/variant_search.rs.
-too-many-lines-threshold = 647
+too-many-lines-threshold = 645
 
 # 2076: a new clock sleep in production code needs a reviewed
 # `#[allow(clippy::disallowed_methods)]` with an adjacent
