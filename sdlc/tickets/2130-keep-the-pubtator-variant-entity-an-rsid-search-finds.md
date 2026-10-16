@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision d8f47f9, accept
+
 ## Outcome
 
 An article search by rsID keeps the PubTator variant entity whose `db_id` carries that rsID and searches by it, so `search article` for `rs113488022` returns PubTator's annotated papers as well as the text matches.
