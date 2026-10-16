@@ -24,9 +24,15 @@ OFFLINE = ROOT / "tools/run-offline"
 # replay server and the golden suite's first batch, recomputed from the tree
 # after the landing rebase onto current main, and lowered by the spec lane's
 # fixture scripts and lifecycle tests that the replay server replaced.
+<<<<<<< HEAD
 # Raised once more by the variant structure test sidecar, and again by one
 # path for the article CLI outage-rule test sidecar.
 MAX_PACKAGE_FILES = 1_408  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+=======
+# Raised once more by the variant structure test sidecar, and once by
+# the pinned python version file.
+MAX_PACKAGE_FILES = 1_406  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+>>>>>>> 385fb2c8b (Raise the source package file pin for the pinned python version)
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
