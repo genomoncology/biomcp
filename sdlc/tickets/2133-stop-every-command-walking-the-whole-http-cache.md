@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision a3c232c, accept
+
 ## Outcome
 
 A command's start-up cost does not grow with the number of files in the HTTP cache. With a large cache, `biomcp get gene BRAF` and `search article` start as fast as with an empty one, and `BIOMCP_CACHE_MODE=off` touches no cache file.
