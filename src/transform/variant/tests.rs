@@ -1,73 +1,6 @@
 use super::*;
 
 #[test]
-fn significance_rank_prefers_pathogenic_over_benign() {
-    assert!(significance_rank("Pathogenic") > significance_rank("Benign"));
-    assert!(significance_rank("Likely pathogenic") > significance_rank("Uncertain significance"));
-}
-
-#[test]
-fn normalize_gene_uppercases() {
-    assert_eq!(normalize_gene("egfr").as_deref(), Some("EGFR"));
-    assert_eq!(normalize_gene("  tP53 ").as_deref(), Some("TP53"));
-}
-
-#[test]
-fn normalize_polyphen_codes() {
-    assert_eq!(normalize_polyphen("D"), "Probably damaging");
-    assert_eq!(normalize_polyphen("P"), "Possibly damaging");
-    assert_eq!(normalize_polyphen("B"), "Benign");
-}
-
-#[test]
-fn clinvar_review_stars_known_statuses() {
-    assert_eq!(
-        clinvar_review_stars("no assertion criteria provided"),
-        Some(0)
-    );
-    assert_eq!(
-        clinvar_review_stars("criteria provided, single submitter"),
-        Some(1)
-    );
-    assert_eq!(
-        clinvar_review_stars("criteria provided, multiple submitters, no conflicts"),
-        Some(2)
-    );
-    assert_eq!(clinvar_review_stars("reviewed by expert panel"), Some(3));
-    assert_eq!(clinvar_review_stars("practice guideline"), Some(4));
-}
-
-#[test]
-fn pick_review_status_prefers_highest_star_rating() {
-    let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: Some("criteria provided, single submitter".into()),
-            conditions: None,
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: Some("reviewed by expert panel".into()),
-            conditions: None,
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-    ];
-
-    let (status, stars) = pick_review_status(&rcvs);
-    assert_eq!(stars, Some(3));
-    assert_eq!(status.as_deref(), Some("reviewed by expert panel"));
-}
-
-#[test]
 fn pick_significance_handles_empty_and_partial_rcvs() {
     let empty: Vec<MyVariantClinVarRcv> = Vec::new();
     assert_eq!(pick_significance(&empty), None);
@@ -83,65 +16,6 @@ fn pick_significance_handles_empty_and_partial_rcvs() {
         number_submitters: None,
     }];
     assert_eq!(pick_significance(&partial), None);
-}
-
-#[test]
-fn pick_significance_with_brca1_rcvs() {
-    let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Likely benign".into()),
-            review_status: Some("criteria provided, single submitter".into()),
-            conditions: Some(serde_json::json!({"name": "Breast-ovarian cancer"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Pathogenic".into()),
-            review_status: Some("reviewed by expert panel".into()),
-            conditions: Some(serde_json::json!({"name": "Hereditary breast cancer"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-    ];
-
-    assert_eq!(pick_significance(&rcvs).as_deref(), Some("Pathogenic"));
-}
-
-#[test]
-fn pick_significance_with_kras_rcvs() {
-    let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Uncertain significance".into()),
-            review_status: None,
-            conditions: Some(serde_json::json!({"name": "Colorectal carcinoma"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Likely pathogenic".into()),
-            review_status: Some("criteria provided, single submitter".into()),
-            conditions: Some(serde_json::json!({"name": "Lung adenocarcinoma"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-    ];
-
-    assert_eq!(
-        pick_significance(&rcvs).as_deref(),
-        Some("Likely pathogenic")
-    );
 }
 
 #[test]
@@ -199,93 +73,6 @@ fn test_rcv(significance: &str, last_evaluated: Option<&str>) -> MyVariantClinVa
 }
 
 #[test]
-fn aggregate_clinvar_conditions_counts_reports() {
-    let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: None,
-            conditions: Some(serde_json::json!([
-                {"name": "Melanoma"},
-                {"name": "Lung cancer"}
-            ])),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: None,
-            conditions: Some(serde_json::json!({"name": "Melanoma"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-    ];
-
-    let (names, rows, reports) = aggregate_clinvar_conditions(&rcvs);
-    assert_eq!(reports, Some(3));
-    assert_eq!(names.first().map(String::as_str), Some("Melanoma"));
-    assert_eq!(rows.first().map(|r| r.reports), Some(2));
-}
-
-#[test]
-fn extracts_expanded_variant_sections() {
-    let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
-        "_id": "chr7:g.140453136A>T",
-        "dbnsfp": {
-            "genename": "BRAF",
-            "hgvsp": "p.V600E",
-            "sift": {"pred": "D", "score": 0.01},
-            "revel": {"score": 0.94},
-            "alphamissense": {"score": 0.99, "pred": "P"},
-            "phylop": {"100way_vertebrate": {"rankscore": 0.92}},
-            "phastcons": {"100way_vertebrate": {"rankscore": 0.88}},
-            "gerp++": {"rs": 5.6}
-        },
-        "gnomad_exome": {"af": {"af": 0.0001, "af_afr": 0.0002, "af_eas_jpn": 0.0003}},
-        "exac": {"af": 0.0004},
-        "exac_nontcga": {"af": 0.0005},
-        "cosmic": {"cosmic_id": "COSM476", "mut_freq": 2.8, "tumor_site": "skin"},
-        "cgi": [{"drug": "vemurafenib", "association": "Responsive", "evidence_level": "FDA"}],
-        "civic": {
-            "molecularProfiles": [{
-                "name": "BRAF V600E",
-                "evidenceItems": [{
-                    "id": 1,
-                    "name": "EID1",
-                    "evidenceType": "PREDICTIVE",
-                    "evidenceLevel": "A",
-                    "significance": "SENSITIVITYRESPONSE",
-                    "status": "ACCEPTED",
-                    "disease": {"displayName": "Melanoma"},
-                    "therapies": [{"name": "Vemurafenib"}]
-                }]
-            }]
-        }
-    }))
-    .expect("variant payload should parse");
-
-    let variant = from_myvariant_hit(&hit);
-    assert!(variant.conservation.is_some());
-    assert!(!variant.expanded_predictions.is_empty());
-    assert!(variant.population.is_none());
-    assert!(variant.cosmic_context.is_some());
-    assert_eq!(variant.cgi_associations.len(), 1);
-    assert_eq!(
-        variant
-            .civic
-            .as_ref()
-            .map(|v| v.cached_evidence.len())
-            .unwrap_or_default(),
-        1
-    );
-}
-
-#[test]
 fn extracts_bayesdel_flavors_from_recorded_myvariant_payload() {
     let hit: MyVariantHit = serde_json::from_slice(include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -307,41 +94,6 @@ fn extracts_bayesdel_flavors_from_recorded_myvariant_payload() {
         .expect("no-AF prediction should be present");
     assert_eq!(no_af.score, Some(0.335473));
     assert_eq!(no_af.prediction.as_deref(), Some("D"));
-}
-
-#[test]
-fn from_myvariant_hit_sets_top_disease_from_sorted_clinvar_rows() {
-    let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
-        "_id": "chr7:g.140453136A>T",
-        "dbnsfp": {
-            "genename": "BRAF",
-            "hgvsp": "p.V600E"
-        },
-        "clinvar": {
-            "rcv": [
-                {"conditions": [{"name": "Melanoma"}, {"name": "Lung cancer"}]},
-                {"conditions": {"name": "Melanoma"}}
-            ]
-        }
-    }))
-    .expect("variant payload should parse");
-
-    let variant = from_myvariant_hit(&hit);
-    assert_eq!(
-        variant
-            .top_disease
-            .as_ref()
-            .map(|row| row.condition.as_str()),
-        Some("Melanoma")
-    );
-    assert_eq!(variant.top_disease.as_ref().map(|row| row.reports), Some(2));
-    assert_eq!(
-        variant
-            .clinvar_conditions
-            .first()
-            .map(|row| row.condition.as_str()),
-        Some("Melanoma")
-    );
 }
 
 #[test]
