@@ -12,6 +12,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex, OnceLock, Weak};
+use uuid::Uuid;
 const STATE_SCHEMA: u32 = 1;
 static GENERATION_LEASES: OnceLock<Mutex<HashMap<PathBuf, Weak<File>>>> = OnceLock::new();
 #[cfg(test)]
@@ -185,7 +186,7 @@ impl Store {
     #[rustfmt::skip]
     pub(crate) fn create_raw_temp(&self) -> Result<RawCsvTemp, StoreError> {
         self.revalidate_root()?;
-        let name = format!(".raw-{}.tmp", unique_suffix()?);
+        let name = format!(".raw-{}.tmp", unique_suffix());
         let path = self.root.join(&name);
         #[cfg(unix)]
         let file = create_file_at(&self.root_dir, &name)?;
@@ -390,7 +391,7 @@ impl Store {
         self.revalidate_generations()?;
         let index = serde_json::to_vec(dataset).map_err(|_| StoreError::Invalid)?;
         let index_hash = hex_sha256(&index);
-        let suffix = unique_suffix()?;
+        let suffix = unique_suffix();
         let generation = format!("{}-{suffix}", &index_hash[..24]);
         let temporary_name = format!(".tmp-{generation}");
         let temporary = self.root.join("generations").join(&temporary_name);
@@ -530,7 +531,7 @@ impl Store {
     #[rustfmt::skip]
     fn replace_state_locked(&self, state: &State) -> Result<(), StoreError> {
         let bytes = serde_json::to_vec(state).map_err(|_| StoreError::Invalid)?;
-        let temporary_name = format!(".state-{}.tmp", unique_suffix()?);
+        let temporary_name = format!(".state-{}.tmp", unique_suffix());
         let temporary = self.root.join(&temporary_name);
         let mut owned_temporary = OwnedTemporary::new(temporary.clone(), &self.root_dir, temporary_name.clone(), false)?;
         #[cfg(unix)]
@@ -638,7 +639,7 @@ fn remove_generation_if_unleased(parent: &File, _generations: &Path, name: &str)
     injected("before-cleanup-generation-delete", StoreError::Unavailable)?;
     #[cfg(unix)]
     {
-        let quarantine = format!(".delete-{}", unique_suffix()?);
+        let quarantine = format!(".delete-{}", unique_suffix());
         rename_at(parent, name, &quarantine)?;
         parent.sync_all().map_err(|_| StoreError::Unavailable)?;
         remove_owned_dir_at(parent, &quarantine)?;
@@ -1066,10 +1067,8 @@ fn sync_dir(path: &Path) -> Result<(), StoreError> {
 fn hex_sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
-fn unique_suffix() -> Result<String, StoreError> {
-    let mut bytes = [0_u8; 16];
-    getrandom::fill(&mut bytes).map_err(|_| StoreError::Unavailable)?;
-    Ok(hex_sha256(&bytes)[..32].to_string())
+fn unique_suffix() -> String {
+    Uuid::new_v4().simple().to_string()
 }
 fn safe_generation_id(value: &str) -> bool {
     !value.is_empty()

@@ -70,7 +70,9 @@ base64 = "0.22"
 # Hashing (download cache keys)
 md5 = "0.7"
 sha1 = "0.10"
-getrandom = "0.3"
+
+# Random ids (GenCC generation temp names)
+uuid = { version = "1", features = ["v4"] }
 
 # Parsing
 bytesize = "1"
@@ -78,7 +80,8 @@ humantime = "2"
 regex = "1"
 csv = "1"
 roxmltree = "0.20"
-scraper = "0.18"
+# default-features = false drops the scraper CLI's getopts binary.
+scraper = { version = "0.27", default-features = false, features = ["errors"] }
 ssri = "9"
 toml = "0.8"
 fs2 = "0.4"
@@ -120,7 +123,7 @@ async-trait = "0.1"
 
 # Command parsing for MCP shell
 shlex = "1"
-readability-rust = "0.1.0"
+dom_smoothie = "0.18"
 htmd = "0.5.4"
 unpdf = "0.4.5"
 

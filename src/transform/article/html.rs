@@ -2,7 +2,7 @@
 
 use std::sync::OnceLock;
 
-use readability_rust::Readability;
+use dom_smoothie::Readability;
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
 
@@ -345,14 +345,16 @@ fn byline_names(root: ElementRef<'_>) -> Vec<String> {
 
 fn extract_readable_html(html: &str, base_url: &str) -> Result<String, BioMcpError> {
     let mut parser =
-        Readability::new_with_base_uri(html, base_url, None).map_err(|err| BioMcpError::Api {
+        Readability::new(html, Some(base_url), None).map_err(|err| BioMcpError::Api {
             api: "article".to_string(),
             message: format!("HTML readability initialization failed: {err}"),
         })?;
 
+    // A readability refusal falls back to the raw page HTML downstream, so a
+    // parse error here reads as empty content.
     Ok(parser
         .parse()
-        .and_then(|article| article.content)
+        .map(|article| article.content.to_string())
         .unwrap_or_default())
 }
 

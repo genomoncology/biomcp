@@ -7,6 +7,12 @@ Milestone: 0.9.3
 Depends on: 2072
 Depends on: 2088
 
+Reviews: revision 4befb65, accept
+
+Reviews: revision b88f90e, accept
+
+Reviews: revision b88f90e, accept
+
 ## Outcome
 
 Article HTML parsing and readability run on scraper 0.27 and dom_smoothie, so html5ever 0.26, syn 1, the direct `getrandom` and the `fxhash` advisory exception are gone.
