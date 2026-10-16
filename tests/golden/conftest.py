@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import os
-from typing import Iterator
+from typing import TYPE_CHECKING, Iterator
 
 import sys
 from pathlib import Path
 
 import pytest
+
+if TYPE_CHECKING:
+    from replay_env import ReplayEnvironment
 
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
