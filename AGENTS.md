@@ -51,6 +51,11 @@ pm job run <ticket> <revision> -- cargo nextest run --no-default-features -E 'te
 
 Run affected tests during development. Run one Rust build at a time on a build host.
 
+While working, run only the tests for what changed, then push: the branch's CI
+run is the ticket's one full check, so no local gate is required before every
+push. Run `make full-feature-check` before landing when a change touches code
+only the all-features build compiles.
+
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
 `make spec` is the routine mustmatch contract gate. Routine gates use

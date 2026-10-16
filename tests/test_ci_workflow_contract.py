@@ -43,6 +43,15 @@ RUST_JOBS = [
 # parallel once the build job uploads its artifact.
 LANE_JOBS = ["lint", "rust-tests", "python-lane", "spec-lane"]
 CACHE_PIN = "Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6"
+# The installed gate tools come back from one cache under the
+# lane-setup action, keyed on the pins the workflow env holds.
+GATE_TOOLS_CACHE_PIN = "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
+GATE_TOOLS_CACHE_PATHS = {
+    "~/.cache/gate-tools",
+    "~/.local/bin",
+    "~/.local/share/uv/tools",
+    ".cache/tools/bin",
+}
 
 
 def _job(jid: str) -> dict:
@@ -303,6 +312,92 @@ def test_the_cache_follows_checkout_and_toolchain_and_is_pinned() -> None:
         assert setup > _step_index(jid, "actions/checkout"), (
             f"{jid}: the lane setup must run after checkout"
         )
+
+
+def _action_step(name: str) -> dict:
+    for step in ACTION_DOC["runs"]["steps"]:
+        if step.get("name") == name:
+            return step
+    raise AssertionError(f"lane-setup step not found: {name}")
+
+
+def test_the_lane_setup_action_caches_the_gate_tools_keyed_on_their_pins() -> None:
+    """Ticket 2094: one cache under the lane-setup action restores the
+    installed gate tools — the staged nextest and cargo-deny binaries,
+    the uv-managed mustmatch and ruff environments, the lint-tool
+    archive binaries and the offline sandbox's apt archives — keyed on
+    the workflow's pinned versions plus the lint bootstrap script and
+    the runner image, so a lane's setup stays under a minute and a pin
+    bump invalidates the cache on its own."""
+    key = _action_step("Compose the gate-tools cache key")
+    run = key["run"]
+    for pin in (
+        "CARGO_NEXTEST_VERSION",
+        "CARGO_DENY_VERSION",
+        "MUSTMATCH_VERSION",
+        "RUFF_VERSION",
+        "PYTHON_VERSION",
+    ):
+        assert pin in run, f"the gate-tools key must track the {pin} pin"
+    assert "hashFiles('tools/bootstrap-lint-tools')" in run, (
+        "the lint binaries' versions live in tools/bootstrap-lint-tools; "
+        "the key must change when they do"
+    )
+    assert "${ImageOS}" in run, (
+        "the apt archives are per runner image; the key must change with it"
+    )
+    restore = _action_step("Restore the installed gate tools")
+    assert restore["uses"] == GATE_TOOLS_CACHE_PIN, "the cache must be pinned"
+    assert set(restore["with"]["path"].split()) == GATE_TOOLS_CACHE_PATHS
+    assert restore["with"]["key"] == (
+        "gate-tools-v1-${{ steps.gate-tools-key.outputs.key }}"
+    )
+    assert restore["with"]["restore-keys"].strip() == "gate-tools-v1-", (
+        "a pin bump must reuse the previous archive while the installers "
+        "fill the gap"
+    )
+
+
+def test_the_gate_tool_installs_reuse_the_cache_and_keep_the_checksummed_cold_path() -> None:
+    """Ticket 2094: every cached tool checks the cache's staged copy
+    against the pinned version and installs the old way when the cache
+    is cold, so the checksummed installs stay the source of truth and
+    the cache only shortens the warm path."""
+    nextest = _action_step("Install pinned nextest")["run"]
+    assert "scripts/install-nextest.sh" in nextest
+    assert 'grep -Fxq "cargo-nextest $CARGO_NEXTEST_VERSION"' in nextest
+    assert '"$HOME/.cache/gate-tools/nextest/cargo-nextest"' in nextest
+    deny = _action_step("Install pinned lint tools")["run"]
+    assert (
+        'cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked' in deny
+    )
+    assert 'grep -Fxq "cargo-deny $CARGO_DENY_VERSION"' in deny
+    assert '"$HOME/.cache/gate-tools/cargo-deny/cargo-deny"' in deny
+    mustmatch = _action_step("Install pinned mustmatch")["run"]
+    assert 'uv tool install "mustmatch==$MUSTMATCH_VERSION"' in mustmatch
+    assert 'grep -Fxq "mustmatch $MUSTMATCH_VERSION"' in mustmatch
+    assert 'uv tool install "ruff==$RUFF_VERSION"' in deny
+    assert 'grep -Fxq "ruff $RUFF_VERSION"' in deny
+
+
+def test_the_offline_sandbox_install_suspends_the_runner_service_restarts() -> None:
+    """Ticket 2094: the base image ships an older apparmor than the
+    archive holds, so the upgrade made needrestart restart php8.3-fpm,
+    which timed out 90 seconds into every offline lane's setup. Both
+    apt commands suspend needrestart and the package archives ride the
+    gate-tools cache; a runner image change that drops the suspend
+    fails this contract loudly instead of silently costing every lane
+    the setup win."""
+    run = _action_step("Install the offline sandbox")["run"]
+    assert run.count("NEEDRESTART_SUSPEND=1") == 2, (
+        "both apt commands must suspend needrestart"
+    )
+    assert 'archives="$HOME/.cache/gate-tools/apt-archives"' in run
+    assert '-o Dir::Cache::archives="$archives"' in run
+    assert "tools/run-offline -- true" in run, (
+        "the sandbox self-check must stay: the cache must never replace "
+        "the proof the namespace works"
+    )
 
 
 def test_the_build_job_uploads_one_dev_build_the_lanes_download() -> None:

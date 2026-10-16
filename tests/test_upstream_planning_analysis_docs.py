@@ -1184,14 +1184,21 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "XDG_CONFIG_HOME" not in makefile
     assert "BIOMCP_CACHE_DIR" not in makefile
     assert "RUST_LOG=error" not in makefile
-    assert re.search(
-        r"^test:\n"
-        r"\t\$\(MAKE\) prepare-test\n"
-        r"\t\$\(MAKE\) test-rust\n"
-        r"\t\$\(MAKE\) test-python$",
-        makefile,
-        flags=re.MULTILINE,
+    # `make test` runs the two halves at the same time,
+    # each writing its own log under .cache, and fails when either
+    # half fails; the branch's CI run is the ticket's one full check,
+    # and the lanes already run the halves as parallel jobs.
+    test_target = re.search(
+        r"(?ms)^test:.*?(?=^[A-Za-z][^\n]*:|\Z)", makefile
     )
+    assert test_target is not None, "missing Make target test"
+    test_body = test_target.group(0)
+    assert "$(MAKE) prepare-test" in test_body
+    assert '$(MAKE) test-rust >"$$rust_log" 2>&1 & rust_pid=$$!;' in test_body
+    assert '$(MAKE) test-python >"$$python_log" 2>&1 & python_pid=$$!;' in test_body
+    assert 'wait "$$rust_pid" ||' in test_body
+    assert 'wait "$$python_pid" ||' in test_body
+    assert "exit $$status" in test_body
     # The two lane halves CI runs in parallel are real targets,
     # so `make test` stays the developer's one command.
     assert re.search(

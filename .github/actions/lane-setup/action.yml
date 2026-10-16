@@ -3,8 +3,10 @@ description: >-
   The setup every CI lane shares: the pinned Rust toolchain and build
   cache, Python with uv, the bubblewrap offline sandbox, and the
   pinned gate binaries (nextest, mustmatch, cargo-deny, ruff and the
-  lint tools). A lane enables only the groups it uses, so no lane
-  installs another lane's tools (ticket 2075).
+  lint tools). The installed gate tools come back from one cache keyed
+  on their pins, so a lane's setup stays under a minute (ticket 2094).
+  A lane enables only the groups it uses, so no lane installs another
+  lane's tools (ticket 2075).
 inputs:
   rust:
     description: Install the pinned Rust toolchain.
@@ -38,6 +40,31 @@ inputs:
 runs:
   using: composite
   steps:
+    # Ticket 2094: every gate tool a lane installs is cached in its
+    # installed form, keyed on the pins the workflow's env block holds
+    # (plus the lint bootstrap script's own pinned versions and the
+    # runner image, which the apt archives depend on). A pin bump
+    # changes the key on its own; the restore-keys prefix lets the
+    # following run reuse the previous archive while the installers
+    # fill the gap. tests/test_ci_workflow_contract.py pins this key,
+    # so an edit that drops a pin fails a lane loudly.
+    - name: Compose the gate-tools cache key
+      id: gate-tools-key
+      shell: bash
+      run: >-
+        echo "key=nextest-${CARGO_NEXTEST_VERSION}-deny-${CARGO_DENY_VERSION}-mustmatch-${MUSTMATCH_VERSION}-ruff-${RUFF_VERSION}-python-${PYTHON_VERSION}-lint-${{
+        hashFiles('tools/bootstrap-lint-tools') }}-${ImageOS}" >> "$GITHUB_OUTPUT"
+    - name: Restore the installed gate tools
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: |
+          ~/.cache/gate-tools
+          ~/.local/bin
+          ~/.local/share/uv/tools
+          .cache/tools/bin
+        key: gate-tools-v1-${{ steps.gate-tools-key.outputs.key }}
+        restore-keys: |
+          gate-tools-v1-
     - name: Install pinned Rust
       if: ${{ inputs.rust == 'true' }}
       uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
@@ -76,12 +103,22 @@ runs:
     # The AppArmor profile loads before any lane enters the offline
     # namespace (2026-09-29 review) and before the lint tools'
     # cargo install, which runs in this same action.
+    # Ticket 2094: the base image ships an older apparmor than the
+    # archive holds, so the upgrade made needrestart restart
+    # php8.3-fpm, which timed out 90 seconds into every offline lane's
+    # setup. NEEDRESTART_SUSPEND skips that service scan; the package
+    # archives ride the gate-tools cache, so a warm lane downloads
+    # nothing. tests/test_ci_workflow_contract.py pins the suspend,
+    # so a runner image change that needs it back fails loudly.
     - name: Install the offline sandbox
       if: ${{ inputs.offline == 'true' }}
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
+        archives="$HOME/.cache/gate-tools/apt-archives"
+        mkdir -p "$archives"
+        sudo NEEDRESTART_SUSPEND=1 apt-get update
+        sudo NEEDRESTART_SUSPEND=1 apt-get install -y --no-install-recommends \
+          -o Dir::Cache::archives="$archives" \
           bubblewrap \
           apparmor \
           apparmor-profiles \
@@ -92,22 +129,51 @@ runs:
         sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
         test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
         tools/run-offline -- true
+    # Ticket 2094: a warm cache carries the checksummed install's own
+    # output, so the binary is staged under the gate-tools cache and
+    # copied into ~/.cargo/bin, where cargo looks for subcommands
+    # whatever PATH says; the cold path still runs the checksummed
+    # script and stages the result for the save.
     - name: Install pinned nextest
       if: ${{ inputs.nextest == 'true' }}
       shell: bash
-      run: scripts/install-nextest.sh
+      run: |
+        staged="$HOME/.cache/gate-tools/nextest/cargo-nextest"
+        if [ -x "$staged" ] && "$staged" --version | grep -Fxq "cargo-nextest $CARGO_NEXTEST_VERSION"; then
+          mkdir -p "$HOME/.cargo/bin"
+          install -m 0755 "$staged" "$HOME/.cargo/bin/cargo-nextest"
+        else
+          scripts/install-nextest.sh
+          mkdir -p "$(dirname "$staged")"
+          install -m 0755 "$HOME/.cargo/bin/cargo-nextest" "$staged"
+        fi
     - name: Install pinned mustmatch
       if: ${{ inputs.mustmatch == 'true' }}
       shell: bash
       run: |
-        uv tool install "mustmatch==$MUSTMATCH_VERSION"
+        if [ ! -x "$HOME/.local/bin/mustmatch" ] || \
+           ! "$HOME/.local/bin/mustmatch" --version | grep -Fxq "mustmatch $MUSTMATCH_VERSION"; then
+          uv tool install "mustmatch==$MUSTMATCH_VERSION"
+        fi
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
     - name: Install pinned lint tools
       if: ${{ inputs.lint-tools == 'true' }}
       shell: bash
       run: |
-        cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
-        uv tool install "ruff==$RUFF_VERSION"
+        if [ ! -x "$HOME/.local/bin/ruff" ] || \
+           ! "$HOME/.local/bin/ruff" --version | grep -Fxq "ruff $RUFF_VERSION"; then
+          uv tool install "ruff==$RUFF_VERSION"
+        fi
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        staged="$HOME/.cache/gate-tools/cargo-deny/cargo-deny"
+        if [ -x "$staged" ] && "$staged" --version | grep -Fxq "cargo-deny $CARGO_DENY_VERSION"; then
+          mkdir -p "$HOME/.cargo/bin"
+          install -m 0755 "$staged" "$HOME/.cargo/bin/cargo-deny"
+        else
+          cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
+          mkdir -p "$(dirname "$staged")"
+          install -m 0755 "$HOME/.cargo/bin/cargo-deny" "$staged"
+        fi
         tools/bootstrap-lint-tools >> "$GITHUB_PATH"
     - name: Record exact tool versions
       # Informational only: the lanes enable different tool groups, so

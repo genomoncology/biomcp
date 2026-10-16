@@ -46,10 +46,23 @@ prepare-test: prepare-routine-test-tmp
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
 	$(MAKE) prepare-test-contracts
 
+# Ticket 2094: the two halves run at the same time, each writing its
+# own log under .cache, and the gate fails when either half fails; the
+# branch's CI run is the ticket's one full check, so this target is a
+# developer convenience, not a second gate of record.
 test:
 	$(MAKE) prepare-test
-	$(MAKE) test-rust
-	$(MAKE) test-python
+	@set -u; \
+	  mkdir -p "$(CURDIR)/.cache"; \
+	  rust_log="$(CURDIR)/.cache/make-test-rust.log"; \
+	  python_log="$(CURDIR)/.cache/make-test-python.log"; \
+	  $(MAKE) test-rust >"$$rust_log" 2>&1 & rust_pid=$$!; \
+	  $(MAKE) test-python >"$$python_log" 2>&1 & python_pid=$$!; \
+	  status=0; \
+	  wait "$$rust_pid" || { echo "make test-rust failed (log: $$rust_log):" >&2; tail -n 40 "$$rust_log" >&2; status=1; }; \
+	  wait "$$python_pid" || { echo "make test-python failed (log: $$python_log):" >&2; tail -n 40 "$$python_log" >&2; status=1; }; \
+	  grep -hE 'Summary \[|tests? run:|^=+ .* (passed|failed|error).* =+$$|built in [0-9.]+ seconds' "$$rust_log" "$$python_log" || true; \
+	  exit $$status
 
 # The two halves of `make test` (ticket 2075) so the CI lanes run
 # the Rust tests and the Python contracts in parallel against the

@@ -8,6 +8,9 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # The lane-setup action keys its gate-tools cache on these pins
+  # (ticket 2094), so a version bump here empties that cache on its
+  # own; tests/test_ci_workflow_contract.py pins the key's members.
   RUST_TOOLCHAIN: 1.93.1
   PYTHON_VERSION: 3.12.3
   UV_VERSION: 0.8.0

@@ -48,8 +48,13 @@ def test_lane_setup_installs_unpinned_gate_tools() -> None:
         assert "APPARMOR_VERSION" not in text
         assert "RIPGREP_VERSION" not in text
     sandbox = _action_step("Install the offline sandbox")
-    assert "sudo apt-get install -y --no-install-recommends" in sandbox
-    install = sandbox.split("sudo apt-get install", 1)[1]
+    # The install keeps its unpinned package list; the
+    # -o Dir::Cache::archives option only points the download cache at
+    # the gate-tools cache, and NEEDRESTART_SUSPEND skips the runner's
+    # service-restart scan (pinned in test_ci_workflow_contract.py).
+    assert "apt-get install -y --no-install-recommends" in sandbox
+    install = sandbox.split("apt-get install -y --no-install-recommends", 1)[1]
+    install = install.split('-o Dir::Cache::archives="$archives"', 1)[1]
     install = install.split("sudo install", 1)[0]
     assert "=" not in install
     packages = (
