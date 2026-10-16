@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision bb6b990, accept
+
 ## Outcome
 
 `get article ... asset KEY --output FILE` exits nonzero and names the empty response when a source returns no bytes, and the assets list marks or drops an alternative known to return nothing, so a caller never takes an empty copy for the supplement.
