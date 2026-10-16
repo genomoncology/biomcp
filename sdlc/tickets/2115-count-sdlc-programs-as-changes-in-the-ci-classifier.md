@@ -1,8 +1,10 @@
 # 2115 — Count sdlc programs as changes in the CI classifier
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 1e5dca4, accept
 
 ## Outcome
 

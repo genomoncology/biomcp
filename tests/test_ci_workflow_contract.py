@@ -69,11 +69,23 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
     # The base is the merge-base with origin/main (a failed tip
     # followed by a markdown commit must not skip the Rust jobs),
     # and executable markdown (spec/, skills/, src/, the compiled
-    # CLI reference) never counts as docs.
+    # CLI reference) never counts as docs. Under sdlc/ only record
+    # and planning text counts as docs: both routes consult the one
+    # shared text allow function, so an sdlc program or
+    # configuration change never skips the gates.
     assert "git merge-base" in classify
-    assert "sdlc/*|notes/*" in classify
-    allow_list = classify.split("case")[1].split("esac")[0]
-    stripped = allow_list.replace("sdlc/*|notes/*|.github/*.md)", "")
+    assert classify.count('sdlc_record_text "$path"') == 2
+    # The route-1 allow list, comment lines stripped so the checks
+    # below bind the case patterns, not the prose explaining them.
+    allow_list = "\n".join(
+        line
+        for line in classify.split("while IFS= read -r path")[1]
+        .split("esac")[0]
+        .splitlines()
+        if not line.lstrip().startswith("#")
+    )
+    assert "notes/*|.github/*.md)" in allow_list
+    stripped = allow_list.replace("notes/*|.github/*.md)", "")
     for executable in ("docs/*", "README.md|", "|README"):
         assert executable not in stripped, (
             "docs/ and README.md are read by Rust tests and compiled in; they must run full CI"
@@ -89,8 +101,7 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
     # spec/surface/mcp.md reads it, so an AGENTS.md-only push must
     # run the spec pages — its docs-only skip is what turned main
     # red on 2026-10-14 until ec4029345.
-    allow_line = next(line for line in classify.splitlines() if "sdlc/*|notes/*" in line)
-    assert "AGENTS.md" not in allow_line, (
+    assert "AGENTS.md" not in allow_list, (
         "AGENTS.md is read by spec/surface/mcp.md; an AGENTS.md-only push "
         "must run the spec pages, so it must not be docs-only"
     )

@@ -8,7 +8,9 @@
 # markdown is executable, embedded or read by Rust tests (spec/*,
 # skills/*, src/**, docs/user-guide/cli-reference.md, AGENTS.md —
 # spec/surface/mcp.md reads AGENTS.md, so an AGENTS.md-only push
-# must run the spec pages; 2026-10-14 amendment).
+# must run the spec pages; 2026-10-14 amendment). Under sdlc/ the
+# allow list is record and planning text only (2115): programs,
+# gate wrappers and configuration there run the full suite.
 #
 # Ticket 2086 adds a second route for exactly the pm landing shape:
 # a ticket-branch push whose only changes since its previous tip are
@@ -19,6 +21,20 @@
 set -euo pipefail
 
 out() { echo "docs_only=$1" >> "${GITHUB_OUTPUT:-/dev/null}"; }
+
+# Docs-only under sdlc/ is record and planning text only: the
+# tickets, records, decisions, designs, ideas, issues and planning
+# folders, and plan.md. Every other sdlc/ path is a program, gate
+# wrapper or configuration — sdlc/scripts, sdlc/project, sdlc/skills,
+# sdlc/pm.json, sdlc/release-checklist.md — and counts as a change
+# (2115). The text folders keep skipping because their readers run
+# in the repository-contracts job, which runs on every push.
+sdlc_record_text() {
+  case "$1" in
+    sdlc/tickets/*|sdlc/records/*|sdlc/decisions/*|sdlc/designs/*|sdlc/ideas/*|sdlc/issues/*|sdlc/planning/*|sdlc/plan.md) return 0 ;;
+  esac
+  return 1
+}
 
 # Pull requests and tag pushes always run everything; tags carry
 # the release bar.
@@ -73,7 +89,13 @@ while IFS= read -r path; do
     # lane ("not needs_binary") skips it and only the canonical lane
     # runs it — a changelog-only push must classify as full CI
     # (2026-10-07 review, finding 4).
-    sdlc/*|notes/*|.github/*.md) ;;
+    # sdlc/ narrows to record and planning text (2115): the folders
+    # and file sdlc_record_text names stay docs-only, and every other
+    # sdlc/ path — the gate wrappers, the lifecycle programs, the
+    # skills, pm.json, the release checklist — runs the full suite.
+    notes/*|.github/*.md) ;;
+    sdlc/*)
+      if ! sdlc_record_text "$path"; then docs_only=false; break; fi ;;
     *) docs_only=false; break ;;
   esac
 done < <(git diff --name-only "$before" "$after")
@@ -110,13 +132,20 @@ if ! git merge-base --is-ancestor "$push_before" "$after"; then
   out false; exit 0
 fi
 
-# Only sdlc/ counts on this route, not the wider allow list: the
-# previous tip's run is the proof, and sdlc/ is what pm writes.
+# Only sdlc record and planning text counts on this route, not the
+# wider allow list: the previous tip's run is the proof, records
+# are what pm writes, and a program or configuration change under
+# sdlc/ counts like any other change (2115).
 records_only=true
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
   case "$path" in
-    sdlc/*) ;;
+    sdlc/*)
+      if ! sdlc_record_text "$path"; then
+        records_only=false
+        echo "classify: green-tip route refused ($path is not sdlc record text)"
+        break
+      fi ;;
     *)
       records_only=false
       echo "classify: green-tip route refused ($path is outside sdlc/)"
