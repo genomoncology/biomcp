@@ -1,6 +1,6 @@
 # 2079 — Add a replay server and golden output tests
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
