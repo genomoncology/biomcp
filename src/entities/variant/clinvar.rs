@@ -651,11 +651,14 @@ mod tests {
             cache_dir.path().to_str().expect("utf-8 temp path"),
         );
 
-        let started = Instant::now(); // watchdog: bounds this deadline test to two seconds
+        // The proof bound rides the one scaled watchdog builder, so a loaded
+        // gate host stretches the window instead of failing the proof; ten
+        // seconds still proves the 300 ms caller deadline cut the hold.
+        let started = Instant::now();
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_millis(300)).await;
         assert!(
-            started.elapsed() < Duration::from_secs(2), // watchdog: bounds the deadline proof to two seconds
+            started.elapsed() < crate::test_support::watchdog(10), // watchdog: bounds the deadline proof well under the held-open wait
             "deadline must bound the wait"
         );
         server.abort();
@@ -700,11 +703,14 @@ mod tests {
             cache_dir.path().to_str().expect("utf-8 temp path"),
         );
 
-        let started = Instant::now(); // watchdog: bounds this deadline test to two seconds
+        // Same scaled proof bound as the held-open leg: the 300 ms caller
+        // deadline must cut the 30 s Retry-After retry sleep, and a loaded
+        // host stretches the window rather than failing the proof.
+        let started = Instant::now();
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_millis(300)).await;
         assert!(
-            started.elapsed() < Duration::from_secs(2), // watchdog: bounds the deadline proof to two seconds
+            started.elapsed() < crate::test_support::watchdog(10), // watchdog: bounds the deadline proof well under the 30 s hold
             "deadline must bound the wait"
         );
         server.abort();

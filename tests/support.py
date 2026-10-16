@@ -26,6 +26,11 @@ def _timeout_scale() -> float:
     return _SCALE
 
 
+def scaled_timeout(secs: float) -> float:
+    """One scaled wall bound for subprocess and select deadlines."""
+    return secs * _timeout_scale()
+
+
 def wait_until(
     predicate: object,
     watchdog_secs: float = 10.0,

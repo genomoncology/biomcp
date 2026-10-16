@@ -170,6 +170,13 @@ def _benchmark_env(base_url: str) -> dict[str, str]:
     env.update(
         {
             "BIOMCP_CACHE_MODE": "off",
+            # The corpus measures output bytes, not provider latency: a loaded
+            # host must not let the 60 s invocation deadline fire mid-corpus
+            # and degrade different sources in the two collect passes. The
+            # release binary reads this hook unconditionally, so one pinned
+            # contract deadline covers every run of the fixed corpus while
+            # staying under each case's subprocess timeout.
+            "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS": "240000",
             "BIOMCP_MYGENE_BASE": f"{base_url}/mygene",
             "BIOMCP_MYVARIANT_BASE": f"{base_url}/myvariant",
             "BIOMCP_PUBMED_BASE": f"{base_url}/pubmed",

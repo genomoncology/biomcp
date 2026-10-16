@@ -4,12 +4,14 @@ import json
 import os
 import select
 import subprocess
+import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from support import scaled_timeout
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -228,8 +230,12 @@ def fixture() -> _FixtureServer:
         server.close()
 
 
-def _env_with_orcid(base: str, token: str | None = "fixture-public-read-token") -> dict[str, str]:
-    env = _env_with_base(base)
+def _env_with_orcid(
+    base: str,
+    token: str | None,
+    cache_dir: str,
+) -> dict[str, str]:
+    env = _env_with_base(base, cache_dir)
     env["BIOMCP_ORCID_BASE"] = base
     env["BIOMCP_TEST_UNPACED_ORIGIN"] = base
     if token is None:
@@ -243,20 +249,25 @@ def _run_orcid_cli(
     args: list[str], base: str, token: str | None = "fixture-public-read-token"
 ) -> subprocess.CompletedProcess[str]:
     assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
-    return subprocess.run(
-        [str(RELEASE_BIN), *args],
-        cwd=ROOT,
-        env=_env_with_orcid(base, token),
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+    # A fresh empty cache root keeps the subprocess's shared-client
+    # construction fast and load-insensitive: startup maintenance on the
+    # default user cache grows with that cache, not with this contract.
+    with tempfile.TemporaryDirectory(prefix="biomcp-orcid-cli-") as cache_dir:
+        return subprocess.run(
+            [str(RELEASE_BIN), *args],
+            cwd=ROOT,
+            env=_env_with_orcid(base, token, cache_dir),
+            capture_output=True,
+            text=True,
+            timeout=scaled_timeout(60),
+        )
 
 
-def _env_with_base(base: str) -> dict[str, str]:
+def _env_with_base(base: str, cache_dir: str) -> dict[str, str]:
     env = dict(os.environ)
     env["BIOMCP_S2_BASE"] = base
     env["BIOMCP_TEST_UNPACED_ORIGIN"] = base
+    env["BIOMCP_CACHE_DIR"] = cache_dir
     env.pop("S2_API_KEY", None)
     for proxy in ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY", "all_proxy", "ALL_PROXY"):
         env.pop(proxy, None)
@@ -265,23 +276,32 @@ def _env_with_base(base: str) -> dict[str, str]:
 
 def _run_cli(args: list[str], base: str) -> subprocess.CompletedProcess[str]:
     assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
-    return subprocess.run(
-        [str(RELEASE_BIN), *args],
-        cwd=ROOT,
-        env=_env_with_base(base),
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+    # Same fresh-cache isolation as the ORCID runner above.
+    with tempfile.TemporaryDirectory(prefix="biomcp-author-cli-") as cache_dir:
+        return subprocess.run(
+            [str(RELEASE_BIN), *args],
+            cwd=ROOT,
+            env=_env_with_base(base, cache_dir),
+            capture_output=True,
+            text=True,
+            timeout=scaled_timeout(60),
+        )
 
 
 class _StdioMcp:
     def __init__(self, base: str) -> None:
+        # A fresh empty cache root keeps the spawned server's shared-client
+        # construction off the default user cache; the directory lives
+        # exactly as long as the child process.
+        self._cache_dir = tempfile.TemporaryDirectory(prefix="biomcp-author-mcp-")
+        self._spawn(_env_with_base(base, self._cache_dir.name))
+
+    def _spawn(self, env: dict[str, str]) -> None:
         assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
         self.process = subprocess.Popen(
             [str(RELEASE_BIN), "serve"],
             cwd=ROOT,
-            env=_env_with_base(base),
+            env=env,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -294,7 +314,7 @@ class _StdioMcp:
         assert self.process.stdout is not None
         self.process.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
         self.process.stdin.flush()
-        ready, _, _ = select.select([self.process.stdout], [], [], 30)
+        ready, _, _ = select.select([self.process.stdout], [], [], scaled_timeout(30))
         if not ready:
             if self.process.poll() is not None:
                 assert self.process.stderr is not None
@@ -326,22 +346,15 @@ class _StdioMcp:
     def close(self) -> None:
         if self.process.poll() is None:
             self.process.terminate()
-            self.process.wait(timeout=5)
+            self.process.wait(timeout=scaled_timeout(5))
+        self._cache_dir.cleanup()
 
 
 class _OrcidStdioMcp(_StdioMcp):
     def __init__(self, base: str, token: str | None = "fixture-public-read-token") -> None:
-        assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
-        self.process = subprocess.Popen(
-            [str(RELEASE_BIN), "serve"],
-            cwd=ROOT,
-            env=_env_with_orcid(base, token),
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1,
-        )
+        # Same fresh-cache isolation as the plain server above.
+        self._cache_dir = tempfile.TemporaryDirectory(prefix="biomcp-orcid-mcp-")
+        self._spawn(_env_with_orcid(base, token, self._cache_dir.name))
 
 
 RICH_COMMAND = "biomcp --json author papers semanticscholar:1716151 --full"
