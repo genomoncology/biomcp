@@ -812,7 +812,6 @@ fn refresh_leader_removes_only_owned_abandoned_temporaries() {
 #[serial_test::serial(source_env)]
 fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     use super::store::{PublishMetadata, Store, StoreError};
-    use fs2::FileExt;
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
@@ -830,7 +829,7 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
         .write(true)
         .open(anchor_path)
         .unwrap();
-    held.lock_exclusive().unwrap();
+    held.lock().unwrap();
     let release = std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(60));
         drop(held);
@@ -844,7 +843,7 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
         .write(true)
         .open(root.join(".store.lock"))
         .unwrap();
-    held.lock_exclusive().unwrap();
+    held.lock().unwrap();
     let release = std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(60));
         drop(held);
@@ -858,7 +857,7 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
         .write(true)
         .open(root.join(".store.lock"))
         .unwrap();
-    held.lock_exclusive().unwrap();
+    held.lock().unwrap();
     let result = Store::open_until(std::time::Instant::now() + Duration::from_millis(30));
     assert!(matches!(result, Err(StoreError::Deadline)));
     drop(held);

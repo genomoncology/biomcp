@@ -1,10 +1,14 @@
 # 2072 — Trim dependency features and small crates
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Depends on: 2076
+
+Reviews: revision cffbdfb, accept
+
+Reviews: revision cffbdfb, accept
 
 ## Outcome
 

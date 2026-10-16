@@ -334,7 +334,7 @@ fn lock_contention_fails_open_without_rewriting_existing_baseline() {
         .truncate(false)
         .open(lock_path(root.path()))
         .expect("open lock");
-    lock.lock_exclusive().expect("hold session store lock");
+    lock.lock().expect("hold session store lock");
 
     let suggestions = record_success_and_suggestions(
         root.path(),

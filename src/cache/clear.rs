@@ -5,9 +5,8 @@ use std::io::{self, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock};
 
-use fs2::FileExt;
-
 use crate::error::BioMcpError;
+use crate::utils::fs_lock;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub(crate) struct ClearReport {
@@ -128,7 +127,7 @@ pub(crate) struct CacheOperationGuard {
 
 impl Drop for CacheOperationGuard {
     fn drop(&mut self) {
-        let _ = FileExt::unlock(&self.file);
+        let _ = self.file.unlock();
     }
 }
 
@@ -193,7 +192,7 @@ fn try_exclusive_without_local_shared(cache_root: &Path, file: &File) -> io::Res
     if leases.get(cache_root).copied().unwrap_or_default() > 0 {
         return Err(local_shared_upgrade_error());
     }
-    match file.try_lock_exclusive() {
+    match fs_lock::try_lock_exclusive(file) {
         Ok(()) => Ok(true),
         Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(false),
         Err(error) => Err(error),
@@ -209,7 +208,7 @@ pub(crate) fn lock_cache_maintenance(cache_root: &Path) -> io::Result<CacheOpera
     if leases.get(cache_root).copied().unwrap_or_default() > 0 {
         return Err(local_shared_upgrade_error());
     }
-    file.lock_exclusive()?;
+    file.lock()?;
     drop(leases);
     Ok(exclusive_guard(file))
 }
@@ -222,7 +221,7 @@ pub(crate) fn lock_cache_maintenance_after_shared(
     while leases.get(cache_root).copied().unwrap_or_default() > 0 {
         leases = crate::utils::sync::recover_poison(shared_leases().1.wait(leases));
     }
-    file.lock_exclusive()?;
+    file.lock()?;
     drop(leases);
     Ok(exclusive_guard(file))
 }
@@ -266,7 +265,7 @@ pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationG
     let lease = register_shared(cache_root);
     let result = if let Some(deadline) = crate::sources::current_variant_article_deadline() {
         loop {
-            match FileExt::try_lock_shared(&file) {
+            match fs_lock::try_lock_shared(&file) {
                 Ok(()) => break Ok(()),
                 Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
                     if let Err(error) = deadline.ensure_time_io() {
@@ -284,7 +283,7 @@ pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationG
             }
         }
     } else {
-        FileExt::lock_shared(&file)
+        file.lock_shared()
     };
     result.map(|()| shared_guard(file, lease))
 }
@@ -314,7 +313,7 @@ fn lock_cache_key(
     let mut options = OpenOptions::new();
     options.read(true).write(true).create(true);
     let file = super::private::open_private(&mut options, &super::key_lock_path(cache_root, key))?;
-    file.lock_exclusive()?;
+    file.lock()?;
     Ok(CacheKeyGuard {
         _shared: shared,
         _key: exclusive_guard(file),
@@ -390,7 +389,7 @@ where
     F: FnMut(),
 {
     loop {
-        match FileExt::try_lock_shared(&file) {
+        match fs_lock::try_lock_shared(&file) {
             Ok(()) => return Ok(shared_guard(file, lease)),
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
                 waiting();
@@ -406,7 +405,7 @@ async fn lock_file_until(
     deadline: crate::sources::VariantArticleDeadline,
 ) -> io::Result<CacheOperationGuard> {
     loop {
-        match file.try_lock_exclusive() {
+        match fs_lock::try_lock_exclusive(&file) {
             Ok(()) => return Ok(exclusive_guard(file)),
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => wait(&deadline).await?,
             Err(error) => return Err(error),
