@@ -32,4 +32,5 @@ Bound or shed the load sensitivity of each: raise the deadline for contract purp
 - New instance from 2071's lane: `tests/test_output_footprint_benchmark.py::test_offline_corpus_is_deterministic_and_reports_real_token_counts` - `article_search_compact` hit its 60s deadline only under lane-build contention on Yellow (load 8+); passes in CI at the same tip. Same class, this ticket's home.
 - Also from 2100's lane: `human_mcp_command_dispatches_to_provider_once` and the full-suite timeout of `mcp_error_text_keeps_each_cli_refusal_line (corrected 2026-10-16: the earlier name was a lane-report shorthand; this is the real test)` - load-only failures, pass isolated with the export. Same class, this ticket's home.
 - Also from 2073's lane (evening runs): `raw_mcp_rejects_contradictory_variant_filters_and_non_trial_batch_source` and `test_rich_hostile_paper_id_is_contained_and_never_a_command` join the class - contention-only, isolated runs pass.
+- Also from 2105's lane: `test_disease_survival_setup_reaps_ppid_one_marker_orphan` (same module, PPID-transition wait, tripped once under two concurrent module runs) - same family, this home unless 2080 claims it first.
 
