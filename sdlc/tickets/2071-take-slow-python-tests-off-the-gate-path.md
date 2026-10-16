@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 Depends on: 2075
 
+Reviews: revision 12f3665, accept
+
 ## Outcome
 
 No test in `make test`'s Python lane compiles BioMCP or reads the developer's own HTTP cache.
