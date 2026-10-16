@@ -62,8 +62,15 @@ def test_the_wrapper_env_export_mode_still_exports_the_identity(
     identity environment."""
     root = tmp_path / "fixture"
     root.mkdir()
+    # The wrapper reads the version through cargo metadata, so the fixture
+    # must be a package cargo accepts on its own: a target for the manifest
+    # to parse, and an empty [workspace] so a basetemp inside the repository
+    # workspace does not make cargo reject the fixture as a non-member.
+    (root / "src").mkdir()
+    (root / "src" / "main.rs").write_text("fn main() {}\n", encoding="utf-8")
     (root / "Cargo.toml").write_text(
-        '[package]\nname = "identity-fixture"\nversion = "0.1.0"\n', encoding="utf-8"
+        '[package]\nname = "identity-fixture"\nversion = "0.1.0"\n\n[workspace]\n',
+        encoding="utf-8",
     )
     for args in (
         ["git", "init", "-q"],
