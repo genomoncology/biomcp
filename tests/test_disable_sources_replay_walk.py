@@ -74,7 +74,9 @@ WALK: tuple[WalkEntry, ...] = (
     WalkEntry("gnomad", ("--json", "get", "variant", "BRAF V600E", "population"), ("gnomad",)),
     WalkEntry("gwas-catalog", ("--json", "get", "variant", "BRAF V600E", "gwas"), ("gwas",)),
     WalkEntry("myvariant-info", ("--json", "get", "variant", "BRAF V600E", "predictions"), ("myvariant",)),
-    WalkEntry("cbioportal", ("--json", "get", "variant", "BRAF V600E", "cbioportal"), ("cbioportal", "cbioportal-datahub")),
+    # The variant card queries the cbioPortal API; its data-hub study
+    # download endpoint shares the id and stays unqueried here.
+    WalkEntry("cbioportal", ("--json", "get", "variant", "BRAF V600E", "cbioportal"), ("cbioportal",)),
     WalkEntry("oncokb", ("--json", "variant", "oncokb", "BRAF V600E"), ("oncokb",), extra_env=ONCOKB_ENV),
     WalkEntry("mutalyzer", ("--json", "variant", "normalize", "mutalyzer", "NM_004448.2:c.829G>A"), ("mutalyzer",)),
     WalkEntry("variantvalidator", ("--json", "variant", "normalize", "variantvalidator", "NM_004448.2:c.829G>T"), ("variantvalidator",)),
@@ -168,7 +170,9 @@ WALK: tuple[WalkEntry, ...] = (
     WalkEntry("orcid", ("--json", "author", "papers", "orcid:0000-0002-1825-0097"), ("orcid",), extra_env=ORCID_ENV),
     # Local dataset syncs.
     WalkEntry("cdc-cvx", ("--json", "cvx", "sync"), ("cvx", "cvx-tradename", "mvx")),
-    WalkEntry("gtr", ("--json", "gtr", "sync"), ("gtr-condition-gene", "gtr-test-version")),
+    # The sync's version probe is the request the replay store sees; the
+    # condition-gene download follows only when the version differs.
+    WalkEntry("gtr", ("--json", "gtr", "sync"), ("gtr-test-version",)),
     WalkEntry("who-ivd", ("--json", "who-ivd", "sync"), ("who-ivd",)),
     WalkEntry("who-prequalification", ("--json", "who", "sync"), ("who-pq", "who-pq-api", "who-vaccines")),
     WalkEntry("ema", ("--json", "ema", "sync"), ("ema-report",)),
