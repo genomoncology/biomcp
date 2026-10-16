@@ -124,17 +124,84 @@ biomcp --json --no-cache search variant -g BRAF --has revel --limit 3 \
   | mustmatch 'true'
 ```
 
-## Captured GRCh38 MyVariant lookup
+## Declared assembly constrains the variant lookup
 
-Use `--assembly hg38` when supplying a GRCh38 coordinate. The command sends
-that declared build to MyVariant and keeps the answering coordinate space in
-its public provenance. The routine fixture replays the recorded BRAF V600E
-response only for that request.
+Use `--assembly hg19` or `--assembly hg38` to declare the build for a
+chromosome-prefixed coordinate. The command sends that declared build to
+MyVariant and keeps the answering coordinate space in its public provenance.
+The declared build also constrains the lookup: the other build is never
+queried and never answers. The routine fixture replays the recorded BRAF
+V600E responses only for the declared build of each request.
 
 ```bash
 biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140753336A>T' \
   | jq '{gene, id, genome_build}' \
   | mustmatch like '{"gene":"BRAF","id":"chr7:g.140753336A>T","genome_build":"GRCh38"}'
+```
+
+The fixture holds the recorded GRCh37 BRAF V600E answer only under
+`assembly=hg19` on the GRCh37 spelling `chr7:g.140453136A>T`, so declaring
+`hg38` on that coordinate reports the miss instead of answering the GRCh37
+record, and declaring `hg19` resolves it.
+
+```bash run id=declared-assembly-miss exit=1
+biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140453136A>T'
+```
+
+```json expect=declared-assembly-miss contains
+{
+  "error": {
+    "code": "not_found"
+  }
+}
+```
+
+```bash
+biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140453136A>T' 2>/dev/null \
+  | jq -r '.error.message' \
+  | grep -F 'attempted GRCh38' \
+  | mustmatch 'attempted GRCh38'
+```
+
+```bash
+biomcp --json --no-cache get variant --assembly hg19 'chr7:g.140453136A>T' \
+  | jq '{gene, id, rsid, genome_build}' \
+  | mustmatch like '{"gene":"BRAF","id":"chr7:g.140453136A>T","rsid":"rs113488022","genome_build":"GRCh37"}'
+```
+
+A flag that agrees with a coordinate prefix behaves as the prefix alone, and
+a flag that contradicts the prefix refuses naming both builds before any
+provider call.
+
+```bash
+biomcp --json --no-cache get variant --assembly hg38 'GRCh38:chr7:g.140753336A>T' \
+  | jq '{gene, id, genome_build}' \
+  | mustmatch like '{"gene":"BRAF","id":"chr7:g.140753336A>T","genome_build":"GRCh38"}'
+```
+
+```bash run id=declared-assembly-conflict exit=2
+biomcp --json --no-cache get variant --assembly hg19 'GRCh38:chr7:g.140753336A>T'
+```
+
+```json expect=declared-assembly-conflict contains
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
+```bash run id=declared-assembly-conflict-message
+message="$(biomcp --json --no-cache get variant --assembly hg19 'GRCh38:chr7:g.140753336A>T' 2>/dev/null \
+  | jq -r '.error.message')"
+printf '%s\n' "$message" | grep -Fq 'conflicts'
+printf '%s\n' "$message" | grep -Fq 'GRCh37'
+printf '%s\n' "$message" | grep -Fq 'GRCh38'
+printf 'the conflicting refusal names both builds\n'
+```
+
+```text expect=declared-assembly-conflict-message
+the conflicting refusal names both builds
 ```
 
 ## Variant follow-ups keep the headline coordinate
@@ -216,7 +283,9 @@ biomcp --json --no-cache get variant '{{input}}' \
 A bare coordinate is probed in both builds only when needed. A GRCh38-only
 coordinate resolves as GRCh38. When both builds have different records,
 BioMCP prefers GRCh38 and makes the competing GRCh37 identity explicit instead
-of silently discarding it.
+of silently discarding it. An explicit `--assembly` on a bare coordinate
+declares the build and never reaches this search; `BIOMCP_DEFAULT_ASSEMBLY`
+only orders it.
 
 ```bash
 biomcp --json --no-cache get variant 'chr7:g.140753336A>T' \

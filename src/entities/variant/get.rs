@@ -994,17 +994,25 @@ async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, 
     parse_variant_id(&normalized_id)
 }
 
+/// The public spelling of a genome build. One definition serves the
+/// not-found report and the conflicting-declaration refusal.
+fn genome_build_name(build: GenomeBuild) -> &'static str {
+    match build {
+        GenomeBuild::Grch37 => "GRCh37",
+        GenomeBuild::Grch38 => "GRCh38",
+    }
+}
+
 fn build_aware_not_found(id: &str, build: GenomeBuild, error: BioMcpError) -> BioMcpError {
     if !error.is_not_found() {
         return error;
     }
-    let build = match build {
-        GenomeBuild::Grch37 => "GRCh37",
-        GenomeBuild::Grch38 => "GRCh38",
-    };
     BioMcpError::NotFound {
         entity: "variant".into(),
-        id: format!("{id} (attempted {build}; upstream HTTP 404)"),
+        id: format!(
+            "{id} (attempted {}; upstream HTTP 404)",
+            genome_build_name(build)
+        ),
         suggestion: "Try searching: biomcp search variant".into(),
     }
 }
@@ -1051,10 +1059,17 @@ pub(super) async fn resolve_base_with_hit(
     if let (Some(declared), Some(inferred)) = (genome_build, inferred_build)
         && declared != inferred
     {
-        return Err(BioMcpError::InvalidArgument(
-            "--assembly conflicts with the genomic coordinate's genome build".into(),
-        ));
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--assembly {} conflicts with the genomic coordinate's {} build",
+            genome_build_name(declared),
+            genome_build_name(inferred),
+        )));
     }
+    // A declared build — the --assembly flag or the coordinate's own
+    // prefix — constrains the lookup to that one build, and a miss there
+    // reports not found instead of answering from the other build. A bare
+    // coordinate with no flag keeps the dual-build search, which the
+    // BIOMCP_DEFAULT_ASSEMBLY preference orders but never constrains.
     let effective_build = inferred_build.or(genome_build);
 
     let compatible = |hit: &crate::sources::myvariant::MyVariantHit| {
@@ -1066,8 +1081,9 @@ pub(super) async fn resolve_base_with_hit(
             if normalized_coordinate
                 .as_ref()
                 .is_some_and(|coordinate| coordinate.requires_comparison)
+                && genome_build.is_none()
             {
-                let preferred = effective_build.unwrap_or(GenomeBuild::Grch38);
+                let preferred = super::resolved_default_assembly(None)?;
                 let other = if preferred == GenomeBuild::Grch38 {
                     GenomeBuild::Grch37
                 } else {
