@@ -8,6 +8,8 @@ Depends on: 2071
 Depends on: 2074
 Depends on: 2075
 
+Reviews: revision fd3693b, accept
+
 ## Outcome
 
 The size, line-cap and wait audits and their three inventories are gone, clippy limits function length and refuses a new sleep in production code, and ruff refuses a new `time.sleep` in tests.
