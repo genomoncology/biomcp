@@ -55,6 +55,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=20.0,
         help="Deprecated compatibility option; MCP client contracts now run in Rust.",
     )
+    golden = parser.getgroup("golden")
+    golden.addoption(
+        "--update",
+        action="store_true",
+        help="rewrite the golden output files instead of diffing against them",
+    )
 
 
 def _provision_study_fixture(root: Path) -> str:
@@ -83,15 +89,3 @@ def study_fixture_env() -> Iterator[dict[str, str]]:
         root = Path(root_name)
         yield {"BIOMCP_STUDY_DIR": _provision_study_fixture(root)}
 
-
-def pytest_addoption(parser) -> None:
-    """Register the golden-suite flag at the tests/ root so every
-    invocation that collects tests/ sees it (CI collects tests/
-    wholesale; the nested tests/golden/conftest registers it only when
-    tests/golden is the invocation target)."""
-    group = parser.getgroup("golden")
-    group.addoption(
-        "--update",
-        action="store_true",
-        help="rewrite the golden output files instead of diffing against them",
-    )
