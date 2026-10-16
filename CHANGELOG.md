@@ -33,6 +33,7 @@
 - CI builds once and runs the lanes in parallel: a `build` job runs `make prepare-test` and uploads the dev build's nextest archive and binaries as one artifact, the lint, Rust-test, Python and spec lanes download it and each run one Makefile target through a shared composite action, `make test` splits into `test-rust` and `test-python`, and the all-features, Windows, stress and release-panic jobs run only on pushes to `main`, where every release tag still needs their green run. (2075)
 - Dev and test builds pin line-tables-only debug info for the crate and none for dependencies, and a `debugging` profile gives full debug info when a debugger needs it; measured on the gate host, builds are byte-identical to before on cargo 1.93.1, which already defaults to this layout. (2101)
 
+- Deadline-proof and surface tests bound their waits with a shared load-scaled watchdog and private cache roots, so routine suites stay green while other jobs share the build host. (2103)
 ## 0.9.2 — 2026-10-11
 
 ### Fixes
