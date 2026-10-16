@@ -4927,9 +4927,8 @@ mod tests {
         // The recorded rs113488022 autocomplete reply carries the rsID in db_id
         // while the display name holds the p.M600E label, so an rsID request
         // must keep that entity and search by its id instead of dropping it.
-        const AUTOCOMPLETE: &[u8] = include_bytes!(
-            "../../../testdata/sources/pubtator/autocomplete_rsid_rs113488022.json"
-        );
+        const AUTOCOMPLETE: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/autocomplete_rsid_rs113488022.json");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
         let fixture = TestHttpFixture::spawn(move |request| {
@@ -4999,10 +4998,8 @@ mod tests {
             "autocomplete queried the rsID: {logged:?}"
         );
         assert!(
-            logged
-                .iter()
-                .any(|line| line.starts_with("GET /search/")
-                    && line.contains("VARIANT_p.V600E_BRAF_human")),
+            logged.iter().any(|line| line.starts_with("GET /search/")
+                && line.contains("VARIANT_p.V600E_BRAF_human")),
             "the search ran by the kept entity id: {logged:?}"
         );
     }
@@ -5091,15 +5088,10 @@ mod tests {
             "the indeterminate provider validation keeps the page incomplete"
         );
         assert!(
-            outcome
-                .response
-                .source_status
-                .iter()
-                .all(|status| matches!(
-                    status.status,
-                    VariantArticleSourceStatusKind::Ok
-                        | VariantArticleSourceStatusKind::Skipped
-                )),
+            outcome.response.source_status.iter().all(|status| matches!(
+                status.status,
+                VariantArticleSourceStatusKind::Ok | VariantArticleSourceStatusKind::Skipped
+            )),
             "every route answered: {:?}",
             outcome.response.source_status
         );
