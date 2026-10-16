@@ -10,7 +10,6 @@ command consults and the query shapes the pages asserted by hand.
 
 from __future__ import annotations
 
-import urllib.parse
 from pathlib import Path
 
 import pytest
@@ -42,7 +41,9 @@ def _routes(run) -> list[str]:
     routes: list[str] = []
     for entry in run.request_log_lines:
         key = str(entry["key"])
-        routes.append(urllib.parse.urlparse(key).path.strip("/").split("/", 1)[0])
+        # The log key is "METHOD /path?query"; strip the method before the path.
+        path = key.split(" ", 1)[1] if " " in key else key
+        routes.append(path.split("?", 1)[0].strip("/").split("/", 1)[0])
     return routes
 
 

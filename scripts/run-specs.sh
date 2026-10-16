@@ -11,9 +11,6 @@ cd "$ROOT"
 # yet stay out of the lists below; the ticket that converts a page re-lists
 # it.
 SPEC_ROUTINE_PATHS=(
-  spec/entity/variant-input-forms.md
-  spec/entity/variant-protein-change-resolution.md
-  spec/entity/variant-gene-first-routing.md
   spec/surface/cli-contract-ratchet.md
   spec/surface/build-profile.md
   tests/golden/spec
@@ -177,9 +174,14 @@ run_replay_server() {
   . "$env_file"
   # Every provider shares the replay origin, so one unpaced-origin signal
   # removes provider pacing, and recorded failures answer instantly, so the
-  # retry back-off sleeps are turned off for the whole lane.
+  # retry back-off sleeps are turned off for the whole lane. The lane's
+  # commands get their own empty cache root so no page reads or cleans
+  # another lane's cache under the offline sandbox.
   export BIOMCP_TEST_UNPACED_ORIGIN="$origin"
   export BIOMCP_TEST_RETRY_SLEEP_OFF=1
+  export BIOMCP_CACHE_DIR="$ROOT/.cache/spec-replay-http-cache"
+  rm -rf "$BIOMCP_CACHE_DIR"
+  mkdir -p "$BIOMCP_CACHE_DIR"
   register_cleanup stop_replay_server
 }
 
