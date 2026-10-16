@@ -30,7 +30,8 @@ use super::ranking::validate_article_ranking_options;
 use super::{
     ArticleSearchDiagnostics, ArticleSearchFilters, ArticleSearchPage, ArticleSearchResult,
     ArticleSearchTiming, ArticleSort, ArticleSource, ArticleSourceAvailability,
-    ArticleSourceFilter, ArticleSourceStatus, MAX_FEDERATED_FETCH_RESULTS, MAX_SEARCH_LIMIT,
+    ArticleSourceFilter, ArticleSourceStatus, EUROPE_PMC_PAGE_SIZE, MAX_FEDERATED_FETCH_RESULTS,
+    MAX_SEARCH_LIMIT, PUBTATOR_PAGE_SIZE,
 };
 
 pub const VARIANT_ENTITY_RETRIEVAL_PATH: &str = "PubTator variant annotation recall";
@@ -661,6 +662,15 @@ async fn search_type_capable_page(
     Ok(article_search_page(enrichment.page, source_status, timings))
 }
 
+// Single-backend relevance plans rank a local pool and then slice it, so a
+// window shorter than the provider page would rank a prefix of the page and
+// disagree with a wider window over the same rows. Rounding the pool up to
+// whole provider pages keeps every --limit/--offset split of one window over
+// one identically ranked pool.
+fn relevance_pool_page_aligned(fetch_count: usize, page_size: usize) -> usize {
+    fetch_count.div_ceil(page_size) * page_size
+}
+
 async fn search_relevance_page(
     filters: &ArticleSearchFilters,
     limit: usize,
@@ -680,6 +690,7 @@ async fn search_relevance_page(
     // timed for --full diagnostics.
     match plan {
         BackendPlan::EuropeOnly => {
+            let fetch_count = relevance_pool_page_aligned(fetch_count, EUROPE_PMC_PAGE_SIZE);
             let (result, timing) = timed_source_call(
                 ArticleSource::EuropePmc,
                 "search",
@@ -703,6 +714,7 @@ async fn search_relevance_page(
             ))
         }
         BackendPlan::PubTatorOnly => {
+            let fetch_count = relevance_pool_page_aligned(fetch_count, PUBTATOR_PAGE_SIZE);
             let (result, timing) = timed_source_call(
                 ArticleSource::PubTator,
                 "search",

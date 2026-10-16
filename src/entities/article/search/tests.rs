@@ -7,6 +7,7 @@ mod deadline;
 mod finalizer;
 mod integration;
 mod merge;
+mod relevance_paging;
 mod type_capable;
 
 fn semantic_scholar_unavailable_status(message: &str) -> ArticleSourceStatus {

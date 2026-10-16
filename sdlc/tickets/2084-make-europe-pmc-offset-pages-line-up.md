@@ -1,8 +1,16 @@
 # 2084 — Make Europe PMC offset pages line up
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 1691261, accept
+
+Reviews: revision 1691261, accept
+
+Reviews: revision 1691261, accept
+
+Reviews: revision 83cb484, accept
 
 ## Outcome
 
