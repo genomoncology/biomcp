@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 2a84466, accept
+
 ## Evidence
 
 - Test: raw_and_typed_article_query_validation_converges_before_provider_work (tests/rmcp_client_contract.rs, ~line 1146).
