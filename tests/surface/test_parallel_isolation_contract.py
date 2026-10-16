@@ -1859,6 +1859,7 @@ def test_ticket_378_release_gate_routes_routine_specs_to_standard_gates() -> Non
     assert re.search(
         r"^release-gate: lint\n"
         r"\t\$\(MAKE\) test\n"
+        r'\ttools/run-offline -- env BIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -m release_gate -v \$\(PYTEST_XDIST_ARGS\)\n'
         r"\t\$\(MAKE\) full-feature-check\n"
         r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
         makefile,

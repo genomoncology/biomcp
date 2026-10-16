@@ -13,11 +13,30 @@ def pytest_configure(config: pytest.Config) -> None:
     """Register the needs_binary marker: the test drives a built
     biomcp binary or the spec runner. The docs-only CI lane excludes
     these with -m "not needs_binary"; the canonical-gates lane runs
-    the full suite.
+    the full suite. The release_gate marker holds the checks that
+    compile the crate: the routine Python lane deselects them with
+    -m "not release_gate", and `make release-gate` runs them alone.
     """
     config.addinivalue_line(
         "markers", "needs_binary: requires a built biomcp binary"
     )
+    config.addinivalue_line(
+        "markers",
+        "release_gate: compiles the crate; only make release-gate runs it",
+    )
+
+
+@pytest.fixture(autouse=True)
+def own_http_cache_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Give every test its own HTTP cache root.
+
+    The shipped binary falls back to the platform cache directory when
+    BIOMCP_CACHE_DIR is unset, so without this guard a test that builds
+    the HTTP client reads and writes the developer's own cache.
+    """
+    monkeypatch.setenv("BIOMCP_CACHE_DIR", str(tmp_path / "biomcp-cache"))
 
 
 

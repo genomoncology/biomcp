@@ -32,6 +32,7 @@
 - The HTTP cache's start-up clean now runs at most once a day per cache root, recorded in a marker under the HTTP cache, and `BIOMCP_CACHE_MODE=off` skips it entirely, so a command no longer scans a large cache index on every start-up. (2092)
 - CI builds once and runs the lanes in parallel: a `build` job runs `make prepare-test` and uploads the dev build's nextest archive and binaries as one artifact, the lint, Rust-test, Python and spec lanes download it and each run one Makefile target through a shared composite action, `make test` splits into `test-rust` and `test-python`, and the all-features, Windows, stress and release-panic jobs run only on pushes to `main`, where every release tag still needs their green run. (2075)
 - Dev and test builds pin line-tables-only debug info for the crate and none for dependencies, and a `debugging` profile gives full debug info when a debugger needs it; measured on the gate host, builds are byte-identical to before on cargo 1.93.1, which already defaults to this layout. (2101)
+- No Python test in the routine lane compiles BioMCP or reads the developer's own HTTP cache: every test gets its own cache root through one conftest fixture, the packaged-crate cold compile moved behind the `release_gate` marker that only `make release-gate` runs, and the short-Unix-socket contract keeps its source pin instead of rerunning a Rust test through cargo. (2071)
 
 ## 0.9.2 — 2026-10-11
 

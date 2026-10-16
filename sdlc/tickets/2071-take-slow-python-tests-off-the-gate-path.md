@@ -1,10 +1,14 @@
 # 2071 — Take slow Python tests off the gate path
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Depends on: 2075
+
+Reviews: revision 12f3665, accept
+
+Reviews: revision 12f3665, accept
 
 ## Outcome
 
