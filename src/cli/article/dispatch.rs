@@ -246,6 +246,9 @@ pub(in crate::cli) async fn handle_search(
     let diagnostics = page.diagnostics;
     let complete = page.complete;
     let results = page.results;
+    // Captured before `results` moves into the JSON page: the zero-row
+    // outage rule reads it after rendering.
+    let hard_error = !complete && results.is_empty();
     let pagination = super::super::PaginationMeta::offset(offset, limit, results.len(), page.total);
     let _ = (request.sort, &request.ranking);
     let semantic_scholar_enabled =
@@ -354,7 +357,7 @@ pub(in crate::cli) async fn handle_search(
     // source was unavailable is a structured error and exit 1, never a
     // silent empty page; rows that arrived beside a down source keep the
     // normal exit-0 reply with `complete: false` in JSON.
-    if !complete && results.is_empty() {
+    if hard_error {
         if json {
             return Ok(CommandOutcome::stdout_with_exit(text, 1));
         }
