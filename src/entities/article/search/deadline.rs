@@ -25,11 +25,11 @@ pub(super) const ARTICLE_SEARCH_DEADLINE: Duration = Duration::from_secs(60);
 /// binary under `make verify` (no `debug_assertions`), so the hook is read
 /// unconditionally, exactly like `BIOMCP_TEST_UNPACED_ORIGIN`.
 pub(crate) fn article_search_deadline_budget() -> Duration {
-    article_search_deadline_budget_from(std::env::var(
-        "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS",
+    article_search_deadline_budget_from(
+        std::env::var("BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS")
+            .ok()
+            .as_deref(),
     )
-    .ok()
-    .as_deref())
 }
 
 /// The injected-clock core of the deadline budget seam: a recorded fixture
@@ -49,11 +49,11 @@ pub(crate) fn article_search_deadline_budget_from(override_value: Option<&str>) 
 /// `BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS` is read unconditionally,
 /// exactly like the deadline seam, so release-profile lanes can narrow it too.
 pub(super) fn federated_article_source_timeout() -> Duration {
-    federated_article_source_timeout_from(std::env::var(
-        "BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS",
+    federated_article_source_timeout_from(
+        std::env::var("BIOMCP_TEST_FEDERATED_ARTICLE_SOURCE_TIMEOUT_MS")
+            .ok()
+            .as_deref(),
     )
-    .ok()
-    .as_deref())
 }
 
 pub(super) fn federated_article_source_timeout_from(override_value: Option<&str>) -> Duration {
