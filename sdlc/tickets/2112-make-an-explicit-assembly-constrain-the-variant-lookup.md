@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 Reviews: revision 6cb464c, accept
 
+Reviews: revision 6cb464c, accept
+
 ## Outcome
 
 `biomcp get variant --assembly hg38 'chr7:g.140453136A>T'` looks the coordinate up on GRCh38 only and reports not found when GRCh38 has no hit, the same as `GRCh38:chr7:g.140453136A>T`. It never answers with the GRCh37 record. An unprefixed coordinate with no flag keeps the dual-build search.
