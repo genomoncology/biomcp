@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 594fe68, accept
+
 ## Outcome
 
 The ticket holds a measured audit of BioMCP's build and test cost after the 0.9.3 speed work already landed, and a list of findings, each with its measured cost now and the expected cost after a fix, ready to file as one ticket each.
