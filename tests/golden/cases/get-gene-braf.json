@@ -1,0 +1,172 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "NCBI Gene",
+        "url": "https://www.ncbi.nlm.nih.gov/gene/673"
+      },
+      {
+        "label": "UniProt",
+        "url": "https://www.uniprot.org/uniprot/P15056"
+      },
+      {
+        "label": "Ensembl",
+        "url": "https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000157764"
+      },
+      {
+        "label": "OMIM",
+        "url": "https://www.omim.org/entry/164757"
+      }
+    ],
+    "next_commands": [
+      "biomcp get gene BRAF pathways",
+      "biomcp get gene BRAF ontology",
+      "biomcp get gene BRAF diseases",
+      "biomcp get gene BRAF diagnostics",
+      "biomcp search diagnostic --gene BRAF",
+      "biomcp search pgx -g BRAF",
+      "biomcp search variant -g BRAF",
+      "biomcp search article -g BRAF",
+      "biomcp search drug --target BRAF",
+      "biomcp gene trials BRAF"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene / MyGene.info"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene"
+        ]
+      },
+      {
+        "key": "aliases",
+        "label": "Aliases",
+        "outcome": "data",
+        "sources": [
+          "NCBI Gene / MyGene.info"
+        ]
+      }
+    ],
+    "suggestions": [
+      "biomcp search diagnostic --gene BRAF",
+      "biomcp search pgx -g BRAF",
+      "biomcp search variant -g BRAF",
+      "biomcp search article -g BRAF",
+      "biomcp search drug --target BRAF",
+      "biomcp gene trials BRAF"
+    ],
+    "workflow": "mechanism-pathway",
+    "workflow_playbook": "biomcp skill mechanism-pathway",
+    "workflow_rationale": "Orient from a mechanism-relevant drug to target and pathway context, then confirm the disease mechanism in review literature."
+  },
+  "aliases": [
+    "B-RAF1",
+    "BRAF1",
+    "NS7",
+    "RAFB1"
+  ],
+  "clinical_diseases": [
+    "cardiofaciocutaneous syndrome",
+    "Noonan syndrome",
+    "melanoma",
+    "cardiofaciocutaneous syndrome 1",
+    "Noonan syndrome 7"
+  ],
+  "clinical_drugs": [
+    "BELVARAFENIB",
+    "PLIXORAFENIB",
+    "SORAFENIB",
+    "REGORAFENIB",
+    "TOVORAFENIB"
+  ],
+  "ensembl_id": "ENSG00000157764",
+  "entrez_id": "673",
+  "gene_type": "protein-coding",
+  "genomic_coordinates": {
+    "coordinate": "7:140719327-140925199 (strand: -1)",
+    "genome_build": "GRCh38",
+    "provenance": "MyGene.info provider default",
+    "source": "MyGene.info"
+  },
+  "location": "7",
+  "name": "B-Raf proto-oncogene, serine/threonine kinase",
+  "omim_id": "164757",
+  "section_outcomes": {
+    "civic": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "clingen": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "constraint": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "diagnostics": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "diseases": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "disgenet": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "druggability": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "expression": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "funding": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "gencc": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "go": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "hpa": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "interactions": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "ontology": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "pathways": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "protein": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "summary": "This gene encodes a protein belonging to the RAF family of serine/threonine protein kinases. This protein plays a role in regulating the MAP kinase/ERK signaling pathway, which affects cell division, differentiation, and secretion.",
+  "symbol": "BRAF",
+  "uniprot_id": "P15056"
+}

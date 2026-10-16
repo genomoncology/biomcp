@@ -1,0 +1,1 @@
+{"code":500,"reason":"INTERNAL_SERVER_ERROR","url":"http://reactome.org/ContentService/search/query","messages":["Solr exception occurred with query: fq=-isReferenceSummary:true&fq={!tag%3Dsf}species_facet:(\"Homo+sapiens\")&fq=-deleted&qt=/facet&q=BRAF"],"targets":null}
