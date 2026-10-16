@@ -4602,11 +4602,16 @@ printed in the message; BioMCP never half-parses them.</p>
 <p>These exact formats are accepted by <code>biomcp get variant</code> and the exact-ID
 helper commands. Use <code>--assembly hg19</code> or <code>--assembly hg38</code> to declare the
 build for a chromosome-prefixed coordinate; build-qualified and versioned RefSeq
-inputs already establish it. For a bare coordinate, BioMCP checks both GRCh37
-and GRCh38, preferring GRCh38. Set <code>BIOMCP_DEFAULT_ASSEMBLY=grch37</code> (or <code>hg19</code>)
-to restore GRCh37 preference; an explicit <code>--assembly</code> always wins. If the same
-spelling identifies different records, BioMCP returns the preferred record and
-reports the other identity in <code>build_candidates</code> JSON and a Markdown warning.</p>
+inputs already establish it. A declared build, from the flag or the coordinate
+prefix, constrains the lookup to that one build: when that build holds no
+record, <code>get variant</code> reports not found instead of answering the other build's
+record, and a flag that contradicts a coordinate prefix refuses naming both
+builds. For a bare coordinate with no flag, BioMCP checks both GRCh37 and
+GRCh38, preferring GRCh38. Set <code>BIOMCP_DEFAULT_ASSEMBLY=grch37</code> (or <code>hg19</code>)
+to order that dual-build search GRCh37 first; the preference never constrains
+it. If the same spelling identifies different records, BioMCP returns the
+preferred record and reports the other identity in <code>build_candidates</code> JSON and
+a Markdown warning.</p>
 <p>A gene-protein form names a protein change, and the same change can sit on
 several genomic variants; provider alias lists even carry other isoforms'
 spellings on different variants. <code>get variant</code> counts a hit as a match only
