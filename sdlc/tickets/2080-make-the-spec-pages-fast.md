@@ -1,10 +1,14 @@
 # 2080 — Make the spec pages fast
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Depends on: 2071
+
+Reviews: revision 4ebe5a2, accept
+
+Reviews: revision 235e185, accept
 
 ## Outcome
 

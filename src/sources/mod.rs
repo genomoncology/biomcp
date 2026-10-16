@@ -998,11 +998,38 @@ fn parse_retry_after_header(headers: &HeaderMap) -> Option<Duration> {
     Some(Duration::from_secs(seconds))
 }
 
+/// Test setting for `BIOMCP_TEST_RETRY_SLEEP_OFF`: recorded replies answer
+/// simulated failures instantly, so the back-off sleep between retries costs
+/// wall time without proving anything. With the setting on, retries still
+/// happen but never sleep. Read unconditionally, exactly like the article
+/// deadline seam, because the release-profile lanes also run recorded
+/// fixtures without `debug_assertions`.
+fn retry_sleep_disabled() -> bool {
+    std::env::var("BIOMCP_TEST_RETRY_SLEEP_OFF").ok().as_deref() == Some("1")
+}
+
 fn retry_sleep_duration(
     attempt: u32,
     retry_after_floor: Option<Duration>,
     sleep_budget_used: Duration,
 ) -> Option<Duration> {
+    retry_sleep_duration_with_setting(
+        attempt,
+        retry_after_floor,
+        sleep_budget_used,
+        retry_sleep_disabled(),
+    )
+}
+
+fn retry_sleep_duration_with_setting(
+    attempt: u32,
+    retry_after_floor: Option<Duration>,
+    sleep_budget_used: Duration,
+    sleep_off: bool,
+) -> Option<Duration> {
+    if sleep_off {
+        return None;
+    }
     let backoff_ms = 100_u64.saturating_mul(2_u64.saturating_pow(attempt));
     let backoff = Duration::from_millis(backoff_ms);
     let capped_floor = retry_after_floor.map(|floor| floor.min(MAX_RETRY_AFTER_SLEEP));
@@ -2677,6 +2704,26 @@ mod tests {
         assert_eq!(
             retry_sleep_duration(0, Some(Duration::from_secs(2)), Duration::ZERO),
             Some(Duration::from_secs(2))
+        );
+    }
+
+    #[test]
+    fn retry_sleep_off_returns_no_sleep_for_every_attempt() {
+        // The recorded-reply lanes set BIOMCP_TEST_RETRY_SLEEP_OFF, so the
+        // setting must report no sleep at every attempt and budget,
+        // including a Retry-After floor that would otherwise win.
+        assert_eq!(
+            retry_sleep_duration_with_setting(
+                3,
+                Some(Duration::from_secs(2)),
+                Duration::ZERO,
+                true,
+            ),
+            None
+        );
+        assert_eq!(
+            retry_sleep_duration_with_setting(0, None, Duration::ZERO, false),
+            Some(Duration::from_millis(100))
         );
     }
 

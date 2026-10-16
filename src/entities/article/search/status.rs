@@ -1,7 +1,7 @@
 //! Source-status assembly for article search: the Semantic Scholar
 //! enrichment tracker and the shared degraded/timeout status builders.
 
-use super::FEDERATED_ARTICLE_SOURCE_TIMEOUT;
+use super::deadline::federated_article_source_timeout;
 use super::{ArticleSource, ArticleSourceAvailability, ArticleSourceStatus};
 
 #[derive(Default)]
@@ -81,7 +81,7 @@ pub(super) fn timed_out_source_status(source: ArticleSource) -> ArticleSourceSta
         format!(
             "{} timed out after {}s",
             source.display_name(),
-            FEDERATED_ARTICLE_SOURCE_TIMEOUT.as_secs()
+            federated_article_source_timeout().as_secs()
         ),
     )
 }

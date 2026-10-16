@@ -109,7 +109,7 @@ async fn with_federated_source_timeout<T, F>(
 where
     F: Future<Output = Result<T, BioMcpError>>,
 {
-    match timeout(FEDERATED_ARTICLE_SOURCE_TIMEOUT, future).await {
+    match timeout(deadline::federated_article_source_timeout(), future).await {
         Ok(Ok(value)) => FederatedSourceOutcome::Available(value),
         Ok(Err(err)) => {
             crate::error::warn_external_failure(
