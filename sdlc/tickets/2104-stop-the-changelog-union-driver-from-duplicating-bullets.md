@@ -6,9 +6,11 @@ deps: [2083]
 
 # 2104: Stop the changelog union driver from duplicating bullets
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision fa667f9, accept
 
 ## Evidence
 

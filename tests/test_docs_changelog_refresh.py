@@ -554,8 +554,8 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
     heading and keeps a shape every branch only appends to: the three
     named subsections stay in place even when empty, every bullet
     closes with its ticket number, and every cited ticket is filed
-    for this milestone, so two branches merge without touching each
-    other's lines."""
+    for this milestone, so a branch's changelog change is its own
+    bullet alone and a landing merge touches no other line."""
     changelog = _read("CHANGELOG.md")
     assert DEV_CYCLE_HEADING in changelog
     assert changelog.index(DEV_CYCLE_HEADING) < changelog.index(
