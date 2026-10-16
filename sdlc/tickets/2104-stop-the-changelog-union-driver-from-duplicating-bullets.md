@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision fa667f9, accept
+
 ## Evidence
 
 - Filed 2026-10-15 by the PM: CHANGELOG on main carries the 2085 bullet twice, the second copy misspelling hexylresorcinol, after several landings that relied on the union merge driver installed by 2083. A union merge of the same section from two branches can append both sides' copies of an unchanged bullet, duplicating it silently.
