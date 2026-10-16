@@ -507,6 +507,7 @@ fn coverage_json(
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results,
             pagination: PaginationMeta::offset(0, 10, count, Some(count)),
             next_commands: Vec::new(),

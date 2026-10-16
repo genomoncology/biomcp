@@ -8,6 +8,7 @@ use crate::cli::PaginationMeta;
 fn article_search_diagnostics_render_only_in_full_detail() {
     let filters = super::super::super::related_article_filters();
     let page = || ArticleSearchJsonPage {
+        complete: true,
         results: Vec::new(),
         pagination: PaginationMeta::offset(0, 1, 0, Some(0)),
         next_commands: Vec::new(),

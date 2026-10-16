@@ -68,7 +68,10 @@ fn outage_fixture_reply(
         return http("200 OK", r#"{"documents":[]}"#);
     }
     if path.starts_with("/search/") && target.contains("text=") {
-        return http("200 OK", r#"{"results":[],"count":0,"total_pages":1,"current":1,"page_size":25,"facets":{}}"#);
+        return http(
+            "200 OK",
+            r#"{"results":[],"count":0,"total_pages":1,"current":1,"page_size":25,"facets":{}}"#,
+        );
     }
     if path.starts_with("/search") && target.contains("query=") {
         let body = match primary {
@@ -98,10 +101,7 @@ async fn outage_fixture(
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind article outage fixture");
-    let base = format!(
-        "http://{}",
-        listener.local_addr().expect("fixture address")
-    );
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
     tokio::spawn(async move {
@@ -137,7 +137,12 @@ async fn outage_env(base: &str) -> crate::test_support::FixtureEnv {
 }
 
 async fn search_article_outcome(argv: &[&str]) -> crate::cli::CommandOutcome {
-    let mut raw = vec!["biomcp".to_string(), "--json".to_string(), "search".into()];
+    let mut raw = vec![
+        "biomcp".to_string(),
+        "--json".to_string(),
+        "search".to_string(),
+        "article".to_string(),
+    ];
     raw.extend(argv.iter().map(|value| value.to_string()));
     let cli = Cli::try_parse_from(raw).expect("parse article search argv");
     let Commands::Search {
@@ -172,7 +177,10 @@ async fn zero_rows_with_semantic_scholar_down_exits_one_with_source_unavailable(
     assert_eq!(outcome.exit_code, 1, "stdout:\n{}", outcome.text);
     let value: serde_json::Value = serde_json::from_str(&outcome.text).expect("json reply");
     assert_eq!(value["complete"], serde_json::Value::Bool(false));
-    assert_eq!(value["error"]["code"], serde_json::Value::String("source_unavailable".into()));
+    assert_eq!(
+        value["error"]["code"],
+        serde_json::Value::String("source_unavailable".into())
+    );
     assert!(
         value["error"]["message"]
             .as_str()

@@ -66,6 +66,7 @@ fn article_search_page(
     timings: Vec<ArticleSearchTiming>,
 ) -> ArticleSearchPage {
     ArticleSearchPage {
+        complete: article_source_statuses_complete(&source_status),
         results: page.results,
         total: page.total,
         next_page_token: page.next_page_token,
@@ -77,6 +78,20 @@ fn article_search_page(
             source_timings: timings,
         },
     }
+}
+
+/// The search-article completeness rule, mirroring the variant-article
+/// `source_statuses_incomplete`: a page is complete when every source the
+/// plan asked answered. Sources only appear in `source_status` when they
+/// were degraded or unavailable (the Semantic Scholar tracker always
+/// reports), so an empty list means every source answered.
+fn article_source_statuses_complete(source_status: &[ArticleSourceStatus]) -> bool {
+    source_status.iter().all(|status| {
+        matches!(
+            status.status,
+            None | Some(ArticleSourceAvailability::Ok | ArticleSourceAvailability::Skipped)
+        )
+    })
 }
 
 pub(super) struct FederatedArticleRows {

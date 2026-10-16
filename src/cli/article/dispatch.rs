@@ -244,6 +244,7 @@ pub(in crate::cli) async fn handle_search(
     };
     let source_status = page.source_status;
     let diagnostics = page.diagnostics;
+    let complete = page.complete;
     let results = page.results;
     let pagination = super::super::PaginationMeta::offset(offset, limit, results.len(), page.total);
     let _ = (request.sort, &request.ranking);
@@ -318,6 +319,7 @@ pub(in crate::cli) async fn handle_search(
             article_type_note,
             debug_plan,
             ArticleSearchJsonPage {
+                complete,
                 results,
                 pagination,
                 next_commands,
@@ -348,7 +350,48 @@ pub(in crate::cli) async fn handle_search(
         )?
     };
 
+    // The zero-row outage rule, mirroring `variant articles`: no rows while a
+    // source was unavailable is a structured error and exit 1, never a
+    // silent empty page; rows that arrived beside a down source keep the
+    // normal exit-0 reply with `complete: false` in JSON.
+    if !complete && results.is_empty() {
+        if json {
+            return Ok(CommandOutcome::stdout_with_exit(text, 1));
+        }
+        let sources = article_search_unavailable_sources(&source_status);
+        return Ok(CommandOutcome::stderr_with_exit(
+            format!(
+                "Article search returned no rows while some sources were unavailable: {sources}. Retry the request."
+            ),
+            1,
+        ));
+    }
+
     Ok(CommandOutcome::stdout(text))
+}
+
+/// The down sources named in the zero-row error: degraded or unavailable
+/// entries from `source_status`, deduplicated and sorted for a stable
+/// message.
+fn article_search_unavailable_sources(
+    source_status: &[crate::entities::article::ArticleSourceStatus],
+) -> String {
+    source_status
+        .iter()
+        .filter(|status| {
+            matches!(
+                status.status,
+                Some(
+                    crate::entities::article::ArticleSourceAvailability::Degraded
+                        | crate::entities::article::ArticleSourceAvailability::Unavailable
+                )
+            )
+        })
+        .map(|status| status.source.display_name())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 pub(super) fn article_session_suggestions(
@@ -578,6 +621,7 @@ pub(super) fn build_article_debug_plan(
 }
 
 pub(super) struct ArticleSearchJsonPage {
+    pub complete: bool,
     pub results: Vec<crate::entities::article::ArticleSearchResult>,
     pub pagination: crate::cli::PaginationMeta,
     pub next_commands: Vec<String>,
@@ -629,6 +673,9 @@ pub(super) fn article_search_json_with_detail(
         #[serde(skip_serializing_if = "Option::is_none")]
         note: Option<String>,
         pagination: crate::cli::PaginationMeta,
+        complete: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        error: Option<ArticleSearchJsonError>,
         count: usize,
         results: ArticleSearchJsonRows<'a>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -639,6 +686,15 @@ pub(super) fn article_search_json_with_detail(
         diagnostics: Option<crate::entities::article::ArticleSearchDiagnostics>,
         #[serde(skip_serializing_if = "Option::is_none")]
         _meta: Option<ArticleSearchJsonMeta>,
+    }
+
+    /// The zero-row outage error, mirroring the `variant articles`
+    /// structured error: present only when no rows arrived and a source
+    /// was unavailable or timed out.
+    #[derive(serde::Serialize)]
+    struct ArticleSearchJsonError {
+        code: &'static str,
+        message: String,
     }
 
     let count = page.results.len();
@@ -659,6 +715,14 @@ pub(super) fn article_search_json_with_detail(
         ranking_policy: crate::entities::article::article_relevance_ranking_policy(filters),
         note,
         pagination: page.pagination,
+        complete: page.complete,
+        error: (!page.complete && count == 0).then(|| ArticleSearchJsonError {
+            code: "source_unavailable",
+            message: format!(
+                "no article rows were returned while some sources were unavailable: {}",
+                article_search_unavailable_sources(&page.source_status),
+            ),
+        }),
         count,
         results,
         debug_plan,

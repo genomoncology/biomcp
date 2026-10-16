@@ -605,6 +605,10 @@ pub struct ArticleSearchPage {
     // dead-code reason: mod::next_page_token is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub next_page_token: Option<String>,
+    /// Whether every source the plan asked answered: the zero-row outage
+    /// rule (`complete: false` plus a structured error and exit 1 when no
+    /// rows arrived) reads this, mirroring `variant articles`.
+    pub complete: bool,
     pub source_status: Vec<ArticleSourceStatus>,
     pub diagnostics: ArticleSearchDiagnostics,
 }

@@ -88,6 +88,7 @@ fn article_search_json_includes_query_and_ranking_context() {
         ),
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results,
             pagination,
             next_commands,
@@ -237,6 +238,7 @@ fn article_search_json_emits_structured_exact_entity_suggestions() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results,
             pagination,
             next_commands,
@@ -318,6 +320,7 @@ fn article_search_json_allows_loop_suggestions_without_sections() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results: Vec::new(),
             pagination,
             next_commands: Vec::new(),
@@ -437,6 +440,7 @@ fn article_session_suggestions_flow_into_search_json_after_overlap() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results: current_results,
             pagination: PaginationMeta::offset(0, 1, 1, Some(1)),
             next_commands,
@@ -525,6 +529,7 @@ fn article_search_json_next_commands_preserve_source_filter() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results,
             pagination,
             next_commands,
@@ -559,6 +564,7 @@ fn compact_article_search_rows_preserve_triage_fields_and_date_warnings() {
     row.matched_sources
         .push(crate::entities::article::ArticleSource::SemanticScholar);
     let page = || ArticleSearchJsonPage {
+        complete: true,
         results: vec![row.clone()],
         pagination: PaginationMeta::offset(0, 1, 1, Some(1)),
         next_commands: vec!["biomcp get article PMC123".into()],
@@ -637,6 +643,7 @@ fn date_warning_alone_retains_article_search_metadata() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results: Vec::new(),
             pagination: PaginationMeta::offset(0, 1, 0, Some(0)),
             next_commands: Vec::new(),
@@ -662,6 +669,7 @@ fn ticket_377_article_renderer_envelope_contracts_json_meta() {
         None,
         None,
         ArticleSearchJsonPage {
+            complete: true,
             results: Vec::new(),
             pagination: PaginationMeta::offset(0, 1, 0, Some(0)),
             next_commands: vec!["biomcp get article 22663011".to_string()],
