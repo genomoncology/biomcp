@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 2390cdf, accept
+
 ## Outcome
 
 The coverage block of `tools/measure-0-9-3-baseline` prints a coverage set as incomplete, with the failed suite named and no percentage, whenever any suite feeding it failed. It states its denominator once.
