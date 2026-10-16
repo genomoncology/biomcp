@@ -1,8 +1,10 @@
 # 2100 — Pin the disk floor in the stale-cache test fixture
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 3b9ee6d, accept
 
 ## Outcome
 

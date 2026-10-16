@@ -52,13 +52,24 @@ impl FixtureEnv {
 
     fn scratch_cache(cache_mode: Option<crate::sources::TestCacheModeGuard>) -> Self {
         let cache_dir = TempDirGuard::new("fixture-cache");
-        let saved = vec![("BIOMCP_CACHE_DIR", std::env::var_os("BIOMCP_CACHE_DIR"))];
+        let saved = vec![
+            ("BIOMCP_CACHE_DIR", std::env::var_os("BIOMCP_CACHE_DIR")),
+            (
+                "BIOMCP_CACHE_MIN_DISK_FREE",
+                std::env::var_os("BIOMCP_CACHE_MIN_DISK_FREE"),
+            ),
+        ];
         // SAFETY: callers hold the serial-test process-wide environment lock.
         unsafe {
             std::env::set_var(
                 "BIOMCP_CACHE_DIR",
                 cache_dir.path().to_string_lossy().as_ref(),
             );
+            // Pin the smallest legal disk-free floor beside the scratch
+            // dir, so the host filesystem's free space cannot evict a
+            // test's cached entry; a test that sets its own floor after
+            // this guard still wins.
+            std::env::set_var("BIOMCP_CACHE_MIN_DISK_FREE", "1B");
         }
         Self {
             saved,
