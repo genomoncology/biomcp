@@ -1167,10 +1167,11 @@ mod tests {
         let root = TempDirGuard::new("seed-estimate");
         let cache_path = root.path().join("http");
         // Referenced entries, not loose blobs: the day's clean runs inside
-        // construction and orphans would not survive it, so the kept total
-        // the estimate reads is the referenced total the clean leaves.
-        write_entry(&cache_path, "seed-a", b"abc", 1_000);
-        write_entry(&cache_path, "seed-b", b"defgh", 1_000);
+        // construction, so orphans would leave the kept total at zero and
+        // expired entries would not survive it.
+        let now = super::current_time_ms();
+        write_entry(&cache_path, "seed-a", b"abc", now);
+        write_entry(&cache_path, "seed-b", b"defgh", now);
         let manager = SizeAwareCacheManager::new(
             cache_path,
             test_config(root.path(), 100, DiskFreeThreshold::Percent(10)),
