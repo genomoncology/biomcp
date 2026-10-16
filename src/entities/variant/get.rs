@@ -1579,9 +1579,14 @@ fn civic_molecular_profile_name(variant: &Variant) -> Option<String> {
         .map(str::trim)
         .filter(|v| !v.is_empty())
     {
-        let normalized = hgvs_p.strip_prefix("p.").unwrap_or(hgvs_p).trim();
-        if !normalized.is_empty() {
-            return Some(format!("{gene} {normalized}"));
+        let body = hgvs_p.strip_prefix("p.").unwrap_or(hgvs_p).trim();
+        if !body.is_empty() {
+            // CIViC names molecular profiles with the one-letter spelling
+            // (`BRAF V600E`), while variant records carry the three-letter
+            // HGVSp (`p.Val600Glu`); a complex alteration the normalizer
+            // cannot spell keeps the change as the record carries it.
+            let change = super::normalize_protein_change(body).unwrap_or_else(|| body.to_string());
+            return Some(format!("{gene} {change}"));
         }
     }
 

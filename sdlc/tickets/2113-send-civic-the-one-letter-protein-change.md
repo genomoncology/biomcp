@@ -4,6 +4,10 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 1a6894e, accept
+
+Reviews: revision 29548cf, accept
+
 ## Outcome
 
 `biomcp get variant 'BRAF V600E' civic` and `get variant 'EGFR C797S' civic` query CIViC with the molecular profile names `BRAF V600E` and `EGFR C797S` and show the accepted evidence CIViC holds, where today they query the three-letter names and show an empty section.
