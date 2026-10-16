@@ -15,6 +15,9 @@ Found 2026-10-16 from a literature-coverage test of an older install, and confir
 - PubTator3 autocomplete for `rs113488022` returns one variant entity: id `@VARIANT_p.V600E_BRAF_human`, `db_id` `rs113488022##`, name `p.M600E`. Its text search for the rsID returns 47 papers; searching the entity id returns 27,919.
 - `autocomplete_source_identity` (`src/entities/article/query.rs:356-360`) builds the source identity from `name` and `id` only; the parsed `db_id` (`src/sources/pubtator.rs:432`) is never read. Neither field holds the rsID, so the comparison is undecided (`src/entities/variant/resolution.rs:1380-1382`) and only a full match is kept (`query.rs:466-472`). The annotation route returns nothing for an rsID-only query; the plain-text route still runs (`variant_search.rs:1797`).
 
+- Also reported 2026-10-16 by a literature probe of 0.9.2: `biomcp --json variant articles rs372266620 --limit 50` returns resolution `ambiguous`, no results, and error `source_unavailable` ("all required variant article routes were unavailable") while every route reports ok. LitVar2 lists 39 papers. `--confirmed-only` on "SAMHD1 I448T" gives the same false error. The fix also reports an empty search as an empty ok result, never as an outage.
+- ABCC8 paper 16429405, returned by 0.8.25, is missing from every 0.9.2 query. Find why while fixing the rsID route; file a separate ticket if the cause lies elsewhere.
+
 - Starts from: the lines above.
 - Decisions:
   - Read the rsID from `db_id` (the part before `##`) into the source identity, so an rsID request matches on it.
