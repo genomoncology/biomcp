@@ -71,6 +71,17 @@ say() { printf '\n### %s — %s\n' "$1" "$2"; }
 result() { printf 'RESULT %s = %s\n' "$1" "$2"; }
 show() { printf '$ %s\n' "$1"; }
 
+# The manifest and lockfile parsers need tomllib (Python 3.11); the macOS
+# gate host's system python3 is older, so they run under the first
+# interpreter that has it, syncing the clone's uv venv when needed.
+if python3 -c 'import tomllib' >/dev/null 2>&1; then
+  TOML_PY=(python3)
+elif command -v uv >/dev/null 2>&1; then
+  TOML_PY=(uv run python3)
+else
+  TOML_PY=(python3)
+fi
+
 # runsh runs a shell string and prints it first; the record shows the
 # command behind every number.
 runsh() {
@@ -225,9 +236,9 @@ fi
 
 if want_section dep-counts; then
   say dep-counts "direct dependencies, Cargo.lock packages, crates compiled, duplicate names"
-  show "python3 (counts from Cargo.toml and Cargo.lock)"
+  show "${TOML_PY[*]} (counts from Cargo.toml and Cargo.lock)"
   if ((!DRY_RUN)); then
-    python3 - "$LOGD/dep-counts.txt" <<'PY'
+    "${TOML_PY[@]}" - "$LOGD/dep-counts.txt" <<'PY'
 import sys
 import tomllib
 from collections import Counter
@@ -257,9 +268,9 @@ PY
   fi
   runsh "cargo tree --locked --no-default-features -e normal,build --prefix none > $LOGD/tree-normal-build.txt"
   runsh "cargo tree --locked --no-default-features -e normal,build,dev --prefix none > $LOGD/tree-normal-build-dev.txt"
-  show "python3 (unique crate name@version pairs in each cargo tree, workspace members excluded)"
+  show "${TOML_PY[*]} (unique crate name@version pairs in each cargo tree, workspace members excluded)"
   if ((!DRY_RUN)); then
-    python3 - "$LOGD/tree-normal-build.txt" "$LOGD/tree-normal-build-dev.txt" <<'PY'
+    "${TOML_PY[@]}" - "$LOGD/tree-normal-build.txt" "$LOGD/tree-normal-build-dev.txt" <<'PY'
 import sys
 from collections import Counter
 
@@ -472,9 +483,9 @@ fi
 
 if want_section deny-advisories; then
   say deny-advisories "advisories ignored in deny.toml"
-  show "python3 (count of [advisories].ignore entries)"
+  show "${TOML_PY[*]} (count of [advisories].ignore entries)"
   if ((!DRY_RUN)); then
-    python3 - <<'PY'
+    "${TOML_PY[@]}" - <<'PY'
 import tomllib
 from pathlib import Path
 
