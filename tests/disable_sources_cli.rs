@@ -568,7 +568,8 @@ fn mcp_and_cli_read_the_same_env_setting() {
 // refuses to reach any live provider without --record, which keeps the
 // proof honest on a branch that has not fixed the gate yet.
 struct ReplayServer {
-    scratch: tempfile::TempDir,
+    // Held so the scratch directory lives exactly as long as the server.
+    _scratch: tempfile::TempDir,
     env: Vec<(String, String)>,
     request_log: std::path::PathBuf,
     child: std::process::Child,
@@ -629,7 +630,7 @@ impl ReplayServer {
             origin.clone(),
         ));
         ReplayServer {
-            scratch,
+            _scratch: scratch,
             env,
             request_log,
             child,
@@ -664,7 +665,7 @@ impl Drop for ReplayServer {
     fn drop(&mut self) {
         let _ = self.child.kill();
         let _ = self.child.wait();
-        let _ = self.scratch.close();
+        // The scratch TempDir removes itself when it drops right after.
     }
 }
 
