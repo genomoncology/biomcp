@@ -154,6 +154,11 @@ validate-skills:
 # One-CPU pinning is avoided deliberately: it deadlocks the pipe
 # handshake child deterministically (issue
 # sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md).
+# The fixture-server case is the replay server behind the golden suite:
+# its readiness handshake blocks on the server's greeting line, so a
+# loaded host slows the run without turning startup into a race
+# (the disease-survival fixture lifecycle test it replaces is gone with
+# its fixture).
 stress: prepare-routine-test-tmp
 	@test -s "$(ROUTINE_TEST_ARCHIVE)" && test -x "$(SPEC_RUN_BIN)" || { \
 	  echo "stress needs the prepared dev build at $(ROUTINE_TEST_ARCHIVE) and $(SPEC_RUN_BIN); run: make prepare-test" >&2; \
@@ -166,5 +171,5 @@ stress: prepare-routine-test-tmp
 	  echo "=== stress round $$round/$$repeat (two CPUs, 4 workers, timeout scale $$scale) ==="; \
 	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
 	    -E 'test(subprocess_lease_defers_old_generation_cleanup_until_reader_exits) | test(subprocess_lease_child_exits_on_parent_end_of_input) | test(cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work) | test(cancelled_publication_settles_and_the_previous_generation_survives)'; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/test_disease_survival_fixture_lifecycle.py -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/golden -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
 	done
