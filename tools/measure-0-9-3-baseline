@@ -93,6 +93,25 @@ timedsh() {
   result "${label}_wall_s" "$wall"
 }
 
+# timedsh_exit prints the command, runs it, records its wall time, and
+# writes the command's own exit status to the named file. A coverage suite's
+# nonzero exit is data the reports need, so the run continues and the status
+# reaches the report step instead of stopping the script.
+timedsh_exit() {
+  local label="$1" exitfile="$2" command="$3" start end wall status
+  show "$command"
+  if ((DRY_RUN)); then result "${label}_wall_s" dry-run; return 0; fi
+  start=$(date +%s.%N)
+  set +e
+  bash -c "$command"
+  status=$?
+  set -e
+  end=$(date +%s.%N)
+  wall=$(awk -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", e - s }')
+  printf '%s\n' "$status" >"$exitfile"
+  result "${label}_wall_s" "$wall"
+}
+
 want_section() {
   [[ -z "$ONLY" ]] && return 0
   [[ ",$ONLY," == *",$1,"* ]]
@@ -451,6 +470,80 @@ fi
 
 if want_section coverage; then
   say coverage "line coverage of three suites through cargo-llvm-cov (dev build instrumented)"
+
+  # cov_suite_reason[label] names every suite whose run cannot back a
+  # coverage number: its exit is nonzero, its summary shows failed tests,
+  # or its summary never parsed. A report set fed by any such suite prints
+  # incomplete instead of a percentage.
+  declare -A cov_suite_reason=()
+
+  # cov_clause prints the count of one "N <clause>" piece of a suite
+  # summary (cov_clause <clause> <summary>), or nothing when the piece is
+  # absent (nextest omits a zero "failed" clause; pytest omits zero pieces
+  # entirely).
+  cov_clause() {
+    grep -oE "[0-9]+ $1" <<<"$2" | grep -oE '^[0-9]+' || true
+  }
+
+  # record_cov_suite prints one RESULT line with a suite's exit status and
+  # test counts, and fills cov_suite_reason for a failed or unproven run.
+  record_cov_suite() {
+    local label="$1" kind="$2" exitfile="$3" logfile="$4"
+    local status summary counts reason n_run n_passed n_failed n_errors n_skipped pages failed_pages
+    status="$(<"$exitfile")"
+    counts="summary unparsed"
+    n_failed=""
+    n_errors=""
+    case "$kind" in
+      nextest)
+        summary="$(grep -E 'Summary \[' "$logfile" | tail -1 || true)"
+        if [[ -n "$summary" ]]; then
+          n_run="$(cov_clause 'tests? run:' "$summary")"
+          n_passed="$(cov_clause passed "$summary")"
+          n_failed="$(cov_clause failed "$summary")"
+          n_skipped="$(cov_clause skipped "$summary")"
+          counts="${n_run:-0} run: ${n_passed:-0} passed, ${n_failed:-0} failed, ${n_skipped:-0} skipped"
+        fi
+        ;;
+      pytest)
+        summary="$(grep -E '^=+ .* (passed|failed|error).* =+$' "$logfile" | tail -1 || true)"
+        if [[ -n "$summary" ]]; then
+          n_passed="$(cov_clause passed "$summary")"
+          n_failed="$(cov_clause failed "$summary")"
+          n_errors="$(cov_clause errors? "$summary")"
+          n_skipped="$(cov_clause skipped "$summary")"
+          counts="${n_passed:-0} passed, ${n_failed:-0} failed, ${n_errors:-0} errors, ${n_skipped:-0} skipped"
+        fi
+        ;;
+      spec)
+        pages="$(grep -c '^=== spec page: ' "$logfile" || true)"
+        failed_pages="$(grep -oE 'spec run failed \([0-9]+\)' "$logfile" | grep -oE '[0-9]+' | tail -1 || true)"
+        if [[ -z "$failed_pages" ]]; then
+          failed_pages="$(grep -c 'spec page failed: ' "$logfile" || true)"
+        fi
+        n_failed="$failed_pages"
+        counts="${pages:-0} pages, ${failed_pages:-0} failed"
+        ;;
+    esac
+    result "coverage_${label}" "exit ${status}; ${counts}"
+    reason=""
+    if [[ "$counts" == "summary unparsed" ]]; then
+      reason="summary unparsed"
+    elif [[ -n "$n_failed" && "$n_failed" != "0" ]]; then
+      reason="${n_failed} failed"
+      if [[ -n "$n_errors" && "$n_errors" != "0" ]]; then
+        reason="$reason, ${n_errors} errors"
+      fi
+    elif [[ -n "$n_errors" && "$n_errors" != "0" ]]; then
+      reason="${n_errors} errors"
+    elif [[ "$status" != "0" ]]; then
+      reason="exit ${status}"
+    fi
+    if [[ -n "$reason" ]]; then
+      cov_suite_reason["$label"]="${label}: ${reason}"
+    fi
+  }
+
   COVT="target/llvm-cov-target"
   runsh 'cargo llvm-cov clean --workspace'
   show 'eval each line of "cargo llvm-cov show-env" as an export; CARGO_TARGET_DIR=target/llvm-cov-target; LLVM_PROFILE_FILE per suite'
@@ -467,12 +560,18 @@ if want_section coverage; then
   # absolute path: the suites run subprocesses from many working
   # directories, and a relative profile path silently drops their profiles
   export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/out-%8m.profraw"
-  timedsh coverage_integration_tests \
-    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(test)' > $LOGD/cov-integration.log 2>&1 || true"
+  timedsh_exit coverage_integration_tests "$LOGD/cov-integration.exit" \
+    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(test)' > $LOGD/cov-integration.log 2>&1"
   runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-integration.log | tail -1 || true"
-  timedsh coverage_python_lane \
-    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp TMPDIR=\$PWD/$LOGD/tmp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1 || true"
+  if ((!DRY_RUN)); then
+    record_cov_suite integration_tests nextest "$LOGD/cov-integration.exit" "$LOGD/cov-integration.log"
+  fi
+  timedsh_exit coverage_python_lane "$LOGD/cov-pytest.exit" \
+    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp TMPDIR=\$PWD/$LOGD/tmp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1"
   runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/cov-pytest.log | tail -2 || true"
+  if ((!DRY_RUN)); then
+    record_cov_suite python_lane pytest "$LOGD/cov-pytest.exit" "$LOGD/cov-pytest.log"
+  fi
   say coverage "spec lane against the instrumented dev binary (hand-written artifacts env)"
   runsh "cat > .cache/spec-artifacts.env <<'ENVEOF'
 export BIOMCP_SPEC_ARTIFACT_MODE=spec
@@ -483,27 +582,34 @@ export BIOMCP_SPEC_CARGO_METADATA=$PWD/.cache/spec-artifacts/cargo-metadata.json
 export BIOMCP_BIN=$PWD/$COVT/debug/biomcp
 ENVEOF
 cat .cache/spec-artifacts.env"
-  timedsh coverage_spec_lane \
-    "PATH=\"$PWD/$COVT/debug:\$PATH\" BIOMCP_SPEC_ARTIFACTS_PREPARED=1 ROUTINE_CARGO_FEATURES=--no-default-features SPEC_PROFILE=dev tools/run-offline -- bash scripts/run-specs.sh spec > $LOGD/cov-spec.log 2>&1 || true"
+  timedsh_exit coverage_spec_lane "$LOGD/cov-spec.exit" \
+    "PATH=\"$PWD/$COVT/debug:\$PATH\" BIOMCP_SPEC_ARTIFACTS_PREPARED=1 ROUTINE_CARGO_FEATURES=--no-default-features SPEC_PROFILE=dev tools/run-offline -- bash scripts/run-specs.sh spec > $LOGD/cov-spec.log 2>&1"
   runsh "tail -4 $LOGD/cov-spec.log || true"
+  if ((!DRY_RUN)); then
+    record_cov_suite spec_lane spec "$LOGD/cov-spec.exit" "$LOGD/cov-spec.log"
+  fi
   export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/unit-%8m.profraw"
-  timedsh coverage_unit_tests \
-    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(lib) | kind(bin)' > $LOGD/cov-unit.log 2>&1 || true"
+  timedsh_exit coverage_unit_tests "$LOGD/cov-unit.exit" \
+    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(lib) | kind(bin)' > $LOGD/cov-unit.log 2>&1"
   runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-unit.log | tail -1 || true"
+  if ((!DRY_RUN)); then
+    record_cov_suite unit_tests nextest "$LOGD/cov-unit.exit" "$LOGD/cov-unit.log"
+  fi
   # Reports: report merges every profraw under target/llvm-cov-target, so
   # the set not being reported moves aside first. Test code leaves the
   # report by path; inline #[cfg(test)] modules stay in, so these are the
   # llvm-cov view, not the span-reduced view of the iteration-speed study.
   # Field 10 of the TOTAL row is the Lines cover percentage.
   COV_REGEX='(^|/)(tests?|examples?|benches)/|(^|/)(tests?\.rs|_tests?\.rs|tests?_[^/]*\.rs)$|test_support|(^|/)generated/'
+  echo "denominator, one rule for all three reports: product code only — removed by --ignore-filename-regex: files under a tests/, test/, examples/, example/, benches/ or bench/ directory; files named tests.rs, test.rs, _tests.rs, _test.rs, tests_*.rs or test_*.rs; any path containing test_support; files under a generated/ directory — inline #[cfg(test)] modules stay counted"
   COV_HOLD="$LOGD/cov-hold"
   mkdir -p "$COV_HOLD"
   for report_set in outside-in unit combined; do
     say coverage "report: $report_set"
     case "$report_set" in
-      outside-in) aside="unit" ;;
-      unit) aside="out" ;;
-      combined) aside="" ;;
+      outside-in) aside="unit"; feeds="integration_tests python_lane spec_lane" ;;
+      unit) aside="out"; feeds="unit_tests" ;;
+      combined) aside=""; feeds="integration_tests python_lane spec_lane unit_tests" ;;
     esac
     if ((!DRY_RUN)); then
       if [[ -n "$aside" ]]; then
@@ -520,8 +626,19 @@ cat .cache/spec-artifacts.env"
     # all three are unset for the report only.
     runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
     if ((!DRY_RUN)); then
-      pct=$(awk '/^TOTAL/ {print $10}' "$LOGD/cov-report-${report_set//-/_}.txt" | tr -d '%')
-      result "coverage_${report_set//-/_}_lines_pct" "${pct:-parse-failed}"
+      incomplete=""
+      for feed in $feeds; do
+        if [[ -n "${cov_suite_reason[$feed]:-}" ]]; then
+          incomplete="${incomplete:+$incomplete, }${cov_suite_reason[$feed]}"
+        fi
+      done
+      if [[ -n "$incomplete" ]]; then
+        # a set fed by a failed or unproven suite never prints a number
+        result "coverage_${report_set//-/_}_lines_pct" "incomplete ($incomplete)"
+      else
+        pct=$(awk '/^TOTAL/ {print $10}' "$LOGD/cov-report-${report_set//-/_}.txt" | tr -d '%')
+        result "coverage_${report_set//-/_}_lines_pct" "${pct:-parse-failed}"
+      fi
       if [[ -n "$aside" ]]; then
         show "mv $COV_HOLD/*.profraw $COVT/ (restore)"
         mv "$COV_HOLD"/*.profraw "$COVT"/ 2>/dev/null || true
