@@ -594,9 +594,12 @@ impl ReplayServer {
             .expect("start tools/replay-server");
         let ready = {
             use std::io::BufRead;
-            let stdout = child.stdout.as_mut().expect("replay server stdout piped");
+            let stdout = std::io::BufReader::new(
+                child.stdout.take().expect("replay server stdout piped"),
+            );
+            let mut reader = stdout;
             let mut line = String::new();
-            stdout
+            reader
                 .read_line(&mut line)
                 .expect("read the replay server readiness line");
             line
@@ -789,7 +792,10 @@ async fn serve_http_civic_description(
         let initialize = client
             .peer_info()
             .expect("rmcp client stores initialize result as peer info");
-        let instructions = initialize.instructions.unwrap_or_default();
+        let instructions = initialize
+            .instructions
+            .clone()
+            .unwrap_or_default();
         let before = replay.line_count();
         let get = client
             .peer()
