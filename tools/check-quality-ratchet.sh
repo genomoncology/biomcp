@@ -14,7 +14,7 @@ HEALTH_FILE="${QUALITY_RATCHET_HEALTH_FILE:-$ROOT_DIR/src/cli/health/catalog.rs}
 audit_args=()
 if [[ -n "${QUALITY_RATCHET_AUDITS:-}" ]]; then
   read -r -a requested_audits <<<"$QUALITY_RATCHET_AUDITS"
-  for audit in "${requested_audits[@]}"; do
+  for audit in ${requested_audits[@]+"${requested_audits[@]}"}; do
     audit_args+=(--audit "$audit")
   done
 fi
@@ -25,6 +25,8 @@ uv run --no-project python "$ROOT_DIR/tools/check-zero-coupling.py" \
   --root "$ROOT_DIR"
 
 status=0
+# Bash 3.2 (macOS) treats "${arr[@]}" on an empty array as an unbound
+# variable under set -u; the ${arr[@]+...} expansion stays safe everywhere.
 uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --root-dir "$ROOT_DIR" \
   --output-dir "$OUTPUT_DIR" \
@@ -35,7 +37,7 @@ uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --sources-dir "$SOURCES_DIR" \
   --sources-mod "$SOURCES_MOD" \
   --health-file "$HEALTH_FILE" \
-  "${audit_args[@]}" || status=$?
+  ${audit_args[@]+"${audit_args[@]}"} || status=$?
 
 # The ratchet reports per-audit findings only in its JSON artifacts, so
 # a failing run used to exit with no output at all. Print the summary and
