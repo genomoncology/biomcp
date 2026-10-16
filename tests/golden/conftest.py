@@ -31,7 +31,7 @@ def replay(request: pytest.FixtureRequest) -> Iterator["ReplayEnvironment"]:
     Set BIOMCP_GOLDEN_RECORD=1 for a run that records live replies for
     unrecorded requests; without it every request must replay from disk.
     """
-    from replay_env import ReplayEnvironment, replay_environment
+    from replay_env import replay_environment
 
     record = os.environ.get("BIOMCP_GOLDEN_RECORD") == "1"
     with replay_environment(record=record) as environment:
