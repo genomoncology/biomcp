@@ -1,7 +1,7 @@
 # 2145 build record — the search-article zero-row outage rule
 
 Branch `ticket/2145-mark-an-empty-article-search-incomplete-when-a-source-is-down`,
-tip `19880831c` (2026-10-16), rebased onto main `74dfc40e9` (the package-file
+tip `926e326be` (2026-10-16), rebased onto main `74dfc40e9` (the package-file
 pin fix that landed after this branch started; the pins merge to 1,408).
 `search article` now follows the rule `variant articles` already follows,
 coded at `src/entities/article/variant_search.rs` and documented in
@@ -73,11 +73,13 @@ Each proof fails on current main first and passes on the branch.
 
 ## Gates (yellow = routine offline lane, M5 = gate host, Linux CI authoritative)
 
-- `make test` (yellow, `1792191210181-1920047`, `200f5004e`): Rust lane
-  4,165 run, 4,164 passed, the one failure the structure pin above (fixed in
-  `19880831c`); the make stopped at the Rust lane so the Python lane ran in
-  CI instead. `make test` re-run at `79980358d`: yellow job
-  `1792191661120-1956874`, result below in Findings.
+- `make test` (yellow): `1792191210181-1920047` at `200f5004e` ran the Rust
+  lane 4,164/4,165 with the structure-pin failure (fixed next commit);
+  `1792191661120-1956874` at `79980358d` passed the Rust lane and failed the
+  Python lane's two package-file tests on the stale pre-`74dfc40e9` base;
+  `1792192290683-1988598` at the rebased tip `926e326be` passed both lanes —
+  Rust 4,289 run, 4,289 passed (33 skipped), Python 1,155 passed (3 skipped),
+  exit 0 in about 7 minutes.
 - `make lint` (M5, `1792190225711-16682`): failed on the machine, not the
   change — no pinned ShellCheck/actionlint archive for darwin-arm64 (same as
   the 2124 record). The CI `lint` job passed at `200f5004e` (run
@@ -92,8 +94,9 @@ Each proof fails on current main first and passes on the branch.
   pins, all fixed in `79980358d`; run `38978578427` (`79980358d`) passed
   build, lint, spec-lane, rust-tests, repository-contracts and still failed
   python-lane's file count because the branch predated main's `74dfc40e9`
-  pin fix. The run on the rebased tip `19880831c` is the tip run; its verdict
-  is the landing bar.
+  pin fix. The tip run `38980012142` on `926e326be` is green in every lane
+  (build, lint, rust-tests, python-lane, spec-lane, repository-contracts,
+  release-checks, generated-sources); that run is the landing bar.
 
 ## Findings
 
