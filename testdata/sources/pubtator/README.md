@@ -1,5 +1,9 @@
 # PubTator fixtures
 
+## `autocomplete_rsid_rs113488022.json`
+
+Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=rs113488022` on 2026-10-16 for ticket 2130. Provider-faithful capture of the one variant entity an rsID autocomplete returns: the `db_id` carries the normalized dbSNP id before `##` (`rs113488022##`) while the display name holds the protein-change label `p.M600E`. The rsID entity-resolution tests depend on this provider shape.
+
 ## `export_22663011.json`
 
 Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=22663011` on 2026-07-30. This is a provider-faithful capture: it retains the Gene, Disease, Chemical, Species, and Variant annotation shapes returned for the article, including numeric and string `normalized_id` values. Do not minimize away returned annotation kinds; the Tier 3 parser contract depends on these provider shapes.
