@@ -29,3 +29,13 @@ Fix the run-time measuring method.
   - Each cache-off run gets its own copy of the prefetched cache folder.
   - The block prints the names, never the values, of the provider key variables set in its environment, and the GWAS section's error field for each `search all` run.
 - Proof: re-measure the run-time block on v0.9.2 with the fixed method and on the release candidate, so before and after compare like with like; the record shows both, and warm comes out at or below cache-off for every command whose providers allow caching.
+
+## Amendment, 2026-10-16
+
+The 0.9.3 adversarial review found the before column unsound for some rows and several speed claims never measured.
+
+- Measure v0.9.2 again, with the fixed method, for the coverage rows (2069's outside-in and combined numbers came from runs with 1 failed integration test and 26 failed Python tests) and the run-time rows (three warm `search all` runs read 12.02 s, the GWAS section's timeout). Mark the old 2069 numbers superseded in the record.
+- Compute CI medians as true medians; the script's `list[n//2]` (lines 780 and 787) takes the upper median.
+- Record the live proofs 2089, 2090 and 2091 left undone: five live `search all` runs with the median and GWAS errors (2089); ten-run main against v0.9.2 medians for `get drug` with output checksums (2090); before and after medians for the day-cached GWAS and openFDA calls (2091).
+- Record 2117's forced-fail and clean coverage outputs.
+- Order: after 2120 and 2123.

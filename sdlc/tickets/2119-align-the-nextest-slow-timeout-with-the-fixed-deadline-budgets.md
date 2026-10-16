@@ -6,9 +6,13 @@ deps: [2102, 2103]
 
 # 2119: Align the nextest slow timeout with the fixed deadline budgets
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-16, superseded by 2126.
 
 Milestone: 0.9.3
+
+Superseded by: 2126
 
 ## Evidence
 

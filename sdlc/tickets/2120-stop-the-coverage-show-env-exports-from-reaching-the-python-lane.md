@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 2
-deps: [2117, 2082]
+deps: [2117]
 ---
 
 # 2120: Stop the coverage show-env exports from reaching the Python lane
@@ -21,3 +21,7 @@ Milestone: 0.9.3
 ## Acceptance
 
 1. The coverage measure runs every suite green; outside-in and combined print numbers, not incomplete.
+
+## Amendment, 2026-10-16
+
+The 0.9.3 review found the dependency backwards: 2082 needs this ticket's fix to print outside-in and combined coverage, so this ticket lands before 2082 and depends only on 2117.
