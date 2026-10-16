@@ -330,11 +330,17 @@ fn settle_visible_row_metadata_fallback(
 /// One budget-honoring Europe PMC lookup that can still cover a row the
 /// variant-article resolve could not, reusing one deadline client across
 /// the rows that need it. `None` means no covering hit: the caller warns.
+/// An exhausted invocation deadline must not begin a unit at all — reserve
+/// would record Europe PMC as planned-but-not-attempted where the route
+/// reconciles an untouched source as healthy zero work.
 async fn variant_visible_row_europe_fallback(
     execution: &super::variant_search::VariantArticleExecutionContext,
     client: &mut Option<EuropePmcClient>,
     pmid: u64,
 ) -> Option<crate::sources::europepmc::EuropePmcResult> {
+    if execution.deadline_exhausted() {
+        return None;
+    }
     let unit = execution
         .begin_provider_unit("enrichment", "europepmc")
         .await?;
