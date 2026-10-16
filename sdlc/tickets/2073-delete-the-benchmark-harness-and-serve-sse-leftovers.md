@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Reviews: revision a777200, accept
 
+Reviews: revision a777200, accept
+
 ## Outcome
 
 The unused benchmark harness and hidden serve-sse command are removed, and `biomcp serve-sse` exits 2 with the unrecognized-subcommand error.
