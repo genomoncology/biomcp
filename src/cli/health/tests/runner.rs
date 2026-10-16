@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use super::super::HealthStatus;
-use super::super::catalog::ProbeKind;
+use super::super::catalog::{ProbeKind, SourceDescriptor};
 use super::super::runner::{
     HEALTH_API_PROBE_CONCURRENCY_LIMIT, ProbeClass, ProbeOutcome, report_from_outcomes,
     run_buffered_in_order, timed_out_probe_outcome_for_test,
