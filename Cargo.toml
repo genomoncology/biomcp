@@ -99,14 +99,15 @@ minijinja = { version = "2", features = ["builtins"] }
 # carry a runtime lookup root into the world.
 rust-embed = { version = "8", features = ["debug-embed"] }
 
-# Self-update. The zip crate's defaults build bzip2, AES and a second
-# zstd C library; both call sites read deflate archives only.
+# Self-update. The zip crate's defaults build bzip2, AES, zopfli and a
+# second zstd C library; both call sites read deflate archives only, so
+# deflate-flate2 keeps the plain flate2 codec and no other backend.
 flate2 = "1"
 semver = "1"
 sha2 = "0.10"
 libc = "0.2"
 tar = "0.4"
-zip = { version = "0.6", default-features = false, features = ["deflate"] }
+zip = { version = "9", default-features = false, features = ["deflate-flate2"] }
 
 # Logging
 tracing = "0.1"

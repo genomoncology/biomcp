@@ -30,7 +30,7 @@ fn zip_bytes(entries: &[(&str, &[u8])], directories: &[&str]) -> Vec<u8> {
     let mut out = Cursor::new(Vec::new());
     {
         let mut archive = zip::ZipWriter::new(&mut out);
-        let options = zip::write::FileOptions::default();
+        let options = zip::write::SimpleFileOptions::default();
         for directory in directories {
             archive.add_directory(*directory, options).unwrap();
         }

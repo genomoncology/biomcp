@@ -121,11 +121,16 @@ fn extract_binary_from_zip(bytes: &[u8], binary_name: &str) -> Result<Vec<u8>, B
             api: "update".into(),
             message: format!("ZIP error: {err}"),
         })?;
-        let name = file
+        let entry_name = file
             .name()
+            .map_err(|err| BioMcpError::Api {
+                api: "update".into(),
+                message: format!("ZIP error: {err}"),
+            })?;
+        let name = entry_name
             .rsplit('/')
             .find(|s| !s.is_empty())
-            .unwrap_or(file.name());
+            .unwrap_or(&entry_name);
         if name != binary_name {
             continue;
         }
