@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 1e5dca4, accept
+
 ## Outcome
 
 A push that changes a program, gate wrapper or configuration under `sdlc/` runs the full CI jobs. Only record and planning text under `sdlc/` still counts as docs-only.
