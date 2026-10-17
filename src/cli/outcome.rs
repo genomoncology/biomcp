@@ -330,7 +330,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 } else { Ok(content) }
             }
             Commands::Mcp(args) if args.is_tools() => crate::mcp::tool_catalog_json(),
-            Commands::Mcp(_) | Commands::Serve | Commands::ServeHttp(_) | Commands::ServeSse => {
+            Commands::Mcp(_) | Commands::Serve | Commands::ServeHttp(_) => {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
             }
             Commands::Version(args) => {

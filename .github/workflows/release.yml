@@ -13,7 +13,15 @@ on:
     inputs:
       tag:
         description: Tag to upload assets to (e.g. v0.9.0)
-        required: true
+        required: false
+        type: string
+      candidate_sha:
+        description: Full untagged candidate SHA; dispatch the workflow from this exact revision
+        required: false
+        type: string
+      rehearsal_version:
+        description: Stable intended version for a full nonpublishing rehearsal (e.g. 0.9.3)
+        required: false
         type: string
       container_only:
         description: Build and push only the container image for an already-published release
@@ -24,72 +32,59 @@ on:
 permissions: {}
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-${{ inputs.candidate_sha || inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
   UV_VERSION: 0.8.0
+  TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
 
 jobs:
   version-check:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      # gh run list reads the workflow-run history; the default token
-      # carries this only when the job asks for it.
-      actions: read
-    env:
-      TAG: ${{ inputs.tag || github.ref_name }}
+    outputs:
+      source_sha: ${{ steps.identity.outputs.source_sha }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.tag || github.ref_name }}
+          ref: ${{ inputs.candidate_sha || inputs.tag || github.ref_name }}
           fetch-depth: 0
 
       - name: Require the tag and committed versions to agree
-        run: python3 scripts/check-release-versions.py --tag "$TAG"
+        id: identity
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          REHEARSAL_VERSION: ${{ inputs.rehearsal_version }}
+          INPUT_TAG: ${{ inputs.tag }}
+          CONTAINER_ONLY: ${{ inputs.container_only }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          fi
+          if [ -n "$CANDIDATE_SHA$REHEARSAL_VERSION" ]; then
+            args=(--candidate-sha "$CANDIDATE_SHA" --workflow-sha "$WORKFLOW_SHA" --rehearsal-version "$REHEARSAL_VERSION")
+            if [ -n "$INPUT_TAG" ]; then args+=(--tag "$INPUT_TAG"); fi
+            if [ "$CONTAINER_ONLY" = true ]; then args+=(--container-only); fi
+            python3 scripts/check-release-versions.py "${args[@]}"
+          else
+            python3 scripts/check-release-versions.py --tag "$TAG"
+          fi
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Require the changelog to cover merged tickets
-        run: python3 scripts/check-changelog-coverage.py --tag "$TAG"
-
-      # Ticket 2053: a tag releases only from a commit whose CI
-      # passed. The filter names the workflow and the commit, so it
-      # can never pick another workflow's run, and a missing or
-      # failed run fails the release here, before any publisher
-      # starts.
-      # Ticket 2060: gh has no --conclusion flag on the versions the
-      # runners ship, so jq counts only the successful ones.
-      # Ticket 2125: only a push run of ci.yml on main counts. A
-      # ticket-branch push of the same commit is green without the
-      # main-only lanes (393737eae carried a failed main run and a
-      # green branch run), so the branch and the event ride with the
-      # query flags and the jq filter both; the pipe keeps the
-      # counting itself in this script.
-      - name: Require green CI on the tagged commit
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
-          # The count runs through jq in this script, not through
-          # gh's --jq, so a filter that stops counting fails here
-          # where the release can see it. A failing gh or jq call
-          # leaves the count empty and the same refusal answers it.
-          if ! green="$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" \
-            --branch main --event push \
-            --limit 100 \
-            --json conclusion,event,headBranch \
-            | jq '[.[] | select(.event == "push" and .headBranch == "main" and .conclusion == "success")] | length')"; then
-            green=""
+          if [ -n "$CANDIDATE_SHA" ]; then
+            python3 scripts/check-changelog-coverage.py --tag "$TAG" --revision HEAD
+          else
+            python3 scripts/check-changelog-coverage.py --tag "$TAG"
           fi
-          # Refuse an empty count (gh or jq failed), zero successful
-          # runs, and anything that is not a plain number.
-          case "$green" in
-            '' | 0 | *[!0-9]*)
-              echo "ci.yml has no finished green push run on main for ${GITHUB_SHA}; refusing to release" >&2
-              exit 1
-              ;;
-          esac
-          echo "ci.yml finished green on main for ${GITHUB_SHA}"
+
 
   # Ticket 2125: the release-gate marker set — the packaged-crate
   # cold compile behind `-m release_gate` and any later check that
@@ -98,9 +93,19 @@ jobs:
   # in CI or this workflow compiled the packaged crate; `build` and
   # `pypi-build` wait on this job, so no tarball, wheel or zip is
   # built before the marker set passes.
-  release-gate:
+  qualification:
     needs: [version-check]
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || inputs.candidate_sha != ''
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      revision: ${{ needs.version-check.outputs.source_sha }}
+
+  release-gate:
+    needs: [version-check, qualification]
+    if: github.event_name == 'push' || inputs.candidate_sha != ''
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     permissions:
@@ -108,7 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
         with:
@@ -132,7 +137,7 @@ jobs:
         run: make release-gate-markers
 
   create-draft:
-    needs: [version-check]
+    needs: [version-check, qualification]
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     permissions:
@@ -142,15 +147,13 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       # Ticket 2064: v0.9.2 and v0.9.1 published with no release
       # notes. The draft carries the tag's changelog section from the
-      # moment it exists, so a rehearsal reads the notes off the
-      # draft before publish-release makes it public.
+      # moment it exists, before publish-release makes it public.
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - name: Render the release notes from the changelog
         run: |
@@ -163,10 +166,10 @@ jobs:
         run: gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
 
   build:
-    needs: [version-check, create-draft, release-gate]
-    if: github.event_name == 'push'
+    needs: [version-check, release-gate]
+    if: github.event_name == 'push' || inputs.candidate_sha != ''
     permissions:
-      contents: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -194,11 +197,10 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       # Ticket 2024: the build steps run tools/with-build-identity so
       # the shipped binaries report their commit instead of
@@ -278,20 +280,37 @@ jobs:
           sha256sum ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
         shell: bash
 
+      - name: Retain archive and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: archive-${{ matrix.target }}
+          if-no-files-found: error
+          path: |
+            ${{ matrix.artifact }}
+            ${{ matrix.artifact }}.sha256
+
+  publish-assets:
+    needs: [build, create-draft]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: archive-*
+          path: dist
+          merge-multiple: true
       - name: Upload release assets
-        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          gh release upload "$TAG" \
-            "${{ matrix.artifact }}" \
-            "${{ matrix.artifact }}.sha256" \
-            --clobber
+        run: gh release upload "$TAG" dist/* --clobber
 
   pypi-build:
     needs: [version-check, release-gate]
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || inputs.candidate_sha != ''
     permissions:
       contents: read
     strategy:
@@ -314,7 +333,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         if: runner.os != 'Linux'
@@ -391,12 +410,8 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      # The tag decides the version every smoke must print, read the
-      # same way check-release-versions.py reads it (v prefix
-      # stripped), so a binary printing anything else fails the leg.
-      TAG: ${{ inputs.tag || github.ref_name }}
     needs: [pypi-build]
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || inputs.candidate_sha != ''
     strategy:
       fail-fast: false
       matrix:
@@ -570,8 +585,23 @@ jobs:
           fi
           require_json --json get article 32794606
 
+  docs-publish:
+    needs: [version-check, qualification]
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+      pages: write
+    uses: ./.github/workflows/docs-edge.yml
+    with:
+      revision: ${{ needs.version-check.outputs.source_sha }}
+
   docs-live:
-    needs: [version-check]
+    needs: [version-check, qualification, docs-publish]
+    if: >-
+      !cancelled() && !inputs.candidate_sha && needs.version-check.result == 'success' &&
+      (needs.qualification.result == 'success' ||
+      (github.event_name == 'workflow_dispatch' && needs.qualification.result == 'skipped')) &&
+      (needs.docs-publish.result == 'success' || needs.docs-publish.result == 'skipped')
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -580,7 +610,6 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.tag || github.ref_name }}
       LIVE_REVISION_URL: https://biomcp.org/__biomcp_revision__/latest.txt
       RETRY_WINDOW_SECONDS: "600"
       RETRY_INTERVAL_SECONDS: "30"
@@ -588,10 +617,11 @@ jobs:
       - name: Check out the gate helper
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - name: Resolve the tag commit
         env:
+          QUALIFIED_SHA: ${{ needs.version-check.outputs.source_sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_SHA=""
@@ -600,6 +630,7 @@ jobs:
             sleep $(( attempt * 2 ))
           done
           test -n "$TAG_SHA"
+          test "$TAG_SHA" = "$QUALIFIED_SHA"
           echo "TAG_SHA=${TAG_SHA}" >> "$GITHUB_ENV"
           echo "release tag ${TAG} resolves to ${TAG_SHA}"
 
@@ -688,7 +719,6 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -716,32 +746,8 @@ jobs:
           # and checks both platform checksums before it exits.
           FORMULA_DIR="${RUNNER_TEMP:-$(mktemp -d)}"
           mkdir -p "${FORMULA_DIR}/Formula"
-          cat > "${FORMULA_DIR}/Formula/biomcp.rb" << FORMULA
-          class Biomcp < Formula
-            desc "Biomedical MCP CLI and knowledge server"
-            homepage "https://biomcp.org"
-            version "${VERSION}"
-            on_macos do
-              if Hardware::CPU.intel?
-                url "https://github.com/genomoncology/biomcp/releases/download/v${VERSION}/biomcp-darwin-x86_64.tar.gz"
-                sha256 "${X86_SHA256}"
-              else
-                url "https://github.com/genomoncology/biomcp/releases/download/v${VERSION}/biomcp-darwin-arm64.tar.gz"
-                sha256 "${ARM64_SHA256}"
-              end
-            end
-            def install
-              bin.install "biomcp"
-            end
-
-            test do
-              assert_match version.to_s, shell_output("#{bin}/biomcp --version")
-            end
-          end
-          FORMULA
-          for expected in "${X86_SHA256}" "${ARM64_SHA256}"; do
-            grep -q "\"${expected}\"" "${FORMULA_DIR}/Formula/biomcp.rb"
-          done
+          python3 release/homebrew_formula.py --version "$VERSION" \
+            --checksums dist --output "${FORMULA_DIR}/Formula/biomcp.rb"
           if [ "$GITHUB_REPOSITORY" != "genomoncology/biomcp" ]; then
             echo "rehearsal: formula ${VERSION} renders with both release checksums; not pushing"
             exit 0
@@ -765,12 +771,13 @@ jobs:
           git push origin HEAD:main
 
   container-publish:
-    needs: [build, docs-live, version-check, wheel-smoke, create-draft]
+    needs: [build, docs-live, version-check, wheel-smoke, create-draft, publish-assets]
     if: >-
-      !cancelled() && ((github.event_name == 'push' && success()) ||
+      !cancelled() && !inputs.candidate_sha && ((github.event_name == 'push' && success()) ||
       (inputs.container_only == true && needs.version-check.result == 'success' &&
       needs.docs-live.result == 'success' && needs.create-draft.result == 'skipped' &&
-      needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped'))
+      needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped' &&
+      needs.publish-assets.result == 'skipped'))
     runs-on: ubuntu-24.04
     permissions:
       # The draft release is the artifact source: `gh release
@@ -785,13 +792,15 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Check out the packaging ref
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - name: Resolve the image version and source revision
         env:
+          QUALIFIED_SHA: ${{ needs.version-check.outputs.source_sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${TAG#v}"
@@ -801,6 +810,8 @@ jobs:
             sleep $(( attempt * 2 ))
           done
           test -n "$SOURCE_SHA"
+          test "$SOURCE_SHA" = "$QUALIFIED_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           {
             echo "VERSION=${VERSION}"
@@ -912,7 +923,6 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       # The repository must be present before any step runs a
       # repository script (2026-09-30 third go-request review: the
@@ -973,3 +983,144 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release edit "$TAG" --draft=false
+
+  rehearsal-docs:
+    needs: [version-check, qualification]
+    if: inputs.candidate_sha != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.candidate_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a
+        with:
+          version: ${{ env.UV_VERSION }}
+      - name: Validate the candidate documentation without deployment
+        env:
+          BIOMCP_DOCS_REVISION: ${{ inputs.candidate_sha }}
+          NO_MKDOCS_2_WARNING: "1"
+        run: |
+          uv sync --extra dev --no-install-project --locked
+          uv run --no-sync mkdocs build --strict
+          test "$(cat site/__biomcp_revision__/latest.txt)" = "$BIOMCP_DOCS_REVISION"
+          test "$(cat "site/__biomcp_revision__/${BIOMCP_DOCS_REVISION}.txt")" = "$BIOMCP_DOCS_REVISION"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rehearsal-documentation
+          path: site
+          if-no-files-found: error
+
+  rehearsal-container:
+    needs: [version-check, build, wheel-smoke]
+    if: inputs.candidate_sha != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    env:
+      SOURCE_SHA: ${{ inputs.candidate_sha }}
+      IMAGE: biomcp-rehearsal:${{ matrix.arch }}
+      PLATFORM: linux/${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.candidate_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: archive-*-unknown-linux-gnu
+          path: dist
+          merge-multiple: true
+      - name: Stage the checked Linux executables
+        run: |
+          (cd dist && sha256sum -c biomcp-linux-x86_64.tar.gz.sha256 biomcp-linux-arm64.tar.gz.sha256)
+          mkdir -p dist/container/amd64 dist/container/arm64
+          tar -xzf dist/biomcp-linux-x86_64.tar.gz -C dist/container/amd64 biomcp
+          tar -xzf dist/biomcp-linux-arm64.tar.gz -C dist/container/arm64 biomcp
+          (cd dist/container/amd64 && sha256sum biomcp > biomcp.sha256)
+          (cd dist/container/arm64 && sha256sum biomcp > biomcp.sha256)
+          echo "CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: docker/setup-qemu-action@e77e8065d9f7ec6abdd9838668cd7b43924dd64d
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+      - name: Build the production Dockerfile without a registry push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: .
+          platforms: ${{ env.PLATFORM }}
+          push: false
+          load: true
+          tags: ${{ env.IMAGE }}
+          build-args: |
+            SOURCE_SHA=${{ inputs.candidate_sha }}
+            VERSION=${{ inputs.rehearsal_version }}
+            CREATED=${{ env.CREATED }}
+            IMAGE_SOURCE=https://github.com/${{ github.repository }}
+      - name: Smoke the local platform image and retain it
+        run: |
+          test "$(docker run --rm --platform "$PLATFORM" "$IMAGE" --version | tr -d '\r\n')" = "biomcp ${TAG#v}"
+          test "$(docker run --rm --platform "$PLATFORM" --entrypoint id "$IMAGE" -u)" != 0
+          test "$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$IMAGE")" = "$SOURCE_SHA"
+          docker run --rm --platform "$PLATFORM" "$IMAGE" cache stats --json | python3 -c 'import json,sys; assert isinstance(json.load(sys.stdin), dict)'
+          docker save "$IMAGE" -o rehearsal-image.tar
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rehearsal-image-${{ matrix.arch }}
+          path: rehearsal-image.tar
+          if-no-files-found: error
+
+  rehearsal-payloads:
+    needs: [version-check, build, pypi-build]
+    if: inputs.candidate_sha != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.candidate_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: archive-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: wheel-*
+          path: dist
+          merge-multiple: true
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a
+        with:
+          version: ${{ env.UV_VERSION }}
+      - name: Validate release publication payloads without credentials
+        run: |
+          (cd dist && sha256sum -c ./*.sha256)
+          uvx --from twine==6.2.0 twine check dist/*.whl
+          python3 release/release_notes.py --changelog CHANGELOG.md --version "${TAG#v}" --output release-notes.md
+          test -s release-notes.md
+          python3 release/homebrew_formula.py --version "${TAG#v}" --checksums dist --output biomcp.rb
+          ruby -c biomcp.rb
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rehearsal-publication-payloads
+          path: |
+            release-notes.md
+            biomcp.rb
+          if-no-files-found: error
+
+  rehearsal-complete:
+    needs: [qualification, release-gate, build, pypi-build, wheel-smoke, rehearsal-docs, rehearsal-container, rehearsal-payloads]
+    if: inputs.candidate_sha != ''
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Record the limits of a successful rehearsal
+        run: |
+          echo "All candidate builds, artifact smokes, documentation and publication payload checks passed."
+          echo "Unexercised: GitHub release creation/upload/publication, registry authentication and pushes, PyPI trusted upload, Pages deployment/live-site verification, Homebrew push, and latest pointer movement." >> "$GITHUB_STEP_SUMMARY"

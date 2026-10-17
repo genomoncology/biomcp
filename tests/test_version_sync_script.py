@@ -4,7 +4,6 @@ import json
 import re
 import shutil
 import subprocess
-import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +36,16 @@ def _copy_version_sync_fixture(tmp_path: Path) -> Path:
         target = fixture_root / relative_path
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
+    # Exercise the intended development state independently of the checkout's
+    # release preparation state.
+    _replace_first_version(fixture_root / "Cargo.toml", "0.9.3-dev")
+    _replace_first_version(fixture_root / "pyproject.toml", "0.9.3.dev0")
+    _replace_lock_root_version(fixture_root / "Cargo.lock", "0.9.3-dev")
+    _replace_lock_root_version(fixture_root / "uv.lock", "0.9.3.dev0")
+    _replace_manifest_version(fixture_root / "manifest.json", "0.9.2")
+    _replace_citation_version(fixture_root / "CITATION.cff", "0.9.2")
+    _replace_server_version(fixture_root / "server.json", "0.9.2")
+    _replace_server_package_version(fixture_root / "server.json", "0.9.2")
     subprocess.run(["git", "init", "-q"], cwd=fixture_root, check=True)
     subprocess.run(
         ["git", "config", "user.email", "test@example.com"], cwd=fixture_root, check=True
@@ -405,16 +414,8 @@ def test_version_sync_script_reports_all_mismatches_in_one_run(tmp_path: Path) -
 
 
 def test_manifest_and_citation_versions_match_repo_metadata() -> None:
-    cargo = tomllib.loads((REPO_ROOT / "Cargo.toml").read_text(encoding="utf-8"))
-    pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-
-    # The package metadata carries the development candidate while the
-    # registry, citation, and plugin metadata stay on the published release.
-    assert cargo["package"]["version"] == "0.9.3-dev"
-    assert pyproject["project"]["version"] == "0.9.3.dev0"
-    assert _read_manifest_version(REPO_ROOT / "manifest.json") == "0.9.2"
-    assert _read_server_versions(REPO_ROOT / "server.json") == ("0.9.2", "0.9.2")
-    assert _read_citation_version(REPO_ROOT / "CITATION.cff") == "0.9.2"
+    result = _run_version_sync_script(REPO_ROOT)
+    assert result.returncode == 0, result.stderr
 
 
 def test_uv_lock_matches_release_version_and_excludes_mustmatch_package() -> None:
@@ -423,7 +424,7 @@ def test_uv_lock_matches_release_version_and_excludes_mustmatch_package() -> Non
     root_match = UV_LOCK_ROOT_VERSION_PATTERN.search(uv_lock)
 
     assert root_match is not None, "missing biomcp-cli package entry in uv.lock"
-    assert root_match.group(2) == "0.9.3.dev0"
+    assert root_match.group(2) == _read_version(REPO_ROOT / "pyproject.toml")
     assert 'name = "mustmatch"' not in uv_lock
     assert "mustmatch" + "==0.0.4" not in uv_lock
     assert 'specifier = "==0.0.4"' not in uv_lock

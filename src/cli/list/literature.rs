@@ -16,7 +16,7 @@ Author records stay provider-exact. BioMCP does not merge same-name people acros
 - `author papers --full` returns the same one bounded page (at most 100 rows) with source-exact rich metadata; there is no enrichment.
 - IDs are case-sensitive and always provider-qualified.
 - Paper lists preserve Semantic Scholar order and provider pagination.
-- `author papers orcid:<id>` lists public works claimed on one exact ORCID record; `get author orcid:<id>` opens that record. ORCID lookups need `ORCID_ACCESS_TOKEN`.
+- `author papers orcid:<id>` lists public works claimed on one exact ORCID record; `get author orcid:<id>` opens that record. ORCID reads work without a token; setting `ORCID_ACCESS_TOKEN` moves them onto a dedicated rate limit.
 - Coauthor aggregation, topic, affiliation-filter, and PubMed operations are future work; BioMCP does not merge authors across providers.
 "#.to_string()
 }

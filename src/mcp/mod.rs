@@ -44,13 +44,3 @@ pub async fn run_http(
     crate::sources::disable::init(disable_sources)?;
     shell::run_http(host, port, allowed_hosts, unsafe_allow_any_host).await
 }
-
-/// Returns the deprecation guidance for the removed SSE transport command.
-pub const fn sse_deprecation_message() -> &'static str {
-    "The legacy SSE transport has been removed. Use `biomcp serve-http` and connect to `/mcp` instead."
-}
-
-/// Returns a deprecation error for the removed SSE transport command.
-pub async fn run_sse() -> anyhow::Result<()> {
-    anyhow::bail!("{}", sse_deprecation_message())
-}

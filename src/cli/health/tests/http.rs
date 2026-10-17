@@ -218,13 +218,23 @@ mod orcid_row {
     use super::super::super::{HealthRow, HealthStatus};
     use std::io::{Read as _, Write};
     use std::net::TcpListener;
+    use std::sync::{Arc, Mutex};
 
-    /// Counts connections; serves one canned 200 response per connection.
-    fn probe_server() -> (String, std::sync::Arc<std::sync::Mutex<usize>>) {
+    struct ProbeServer {
+        url: String,
+        hits: Arc<Mutex<usize>>,
+        authorizations: Arc<Mutex<Vec<String>>>,
+    }
+
+    /// Counts connections; serves one canned 200 response per connection;
+    /// records each request's Authorization header value, if any.
+    fn probe_server() -> ProbeServer {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind probe listener");
         let address = listener.local_addr().expect("probe address");
-        let hits = std::sync::Arc::new(std::sync::Mutex::new(0usize));
+        let hits = Arc::new(Mutex::new(0usize));
         let counter = hits.clone();
+        let authorizations = Arc::new(Mutex::new(Vec::<String>::new()));
+        let logged_headers = authorizations.clone();
         std::thread::spawn(move || {
             for stream in listener.incoming() {
                 let Ok(mut stream) = stream else {
@@ -233,6 +243,16 @@ mod orcid_row {
                 *counter.lock().unwrap() += 1;
                 let mut buffer = [0_u8; 4096];
                 let _ = stream.read(&mut buffer);
+                let request = String::from_utf8_lossy(&buffer);
+                let authorization = request
+                    .lines()
+                    .find_map(|line| {
+                        line.split_once(':')
+                            .filter(|(name, _)| name.eq_ignore_ascii_case("authorization"))
+                            .map(|(_, value)| value.trim().to_string())
+                    })
+                    .unwrap_or_else(|| "none".into());
+                logged_headers.lock().unwrap().push(authorization);
                 let body = r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"public","given-names":{"value":"Josiah"},"family-name":{"value":"Carberry"}}}"#;
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -242,7 +262,11 @@ mod orcid_row {
                 let _ = stream.write_all(response.as_bytes());
             }
         });
-        (format!("http://{address}/0000-0002-1825-0097/person"), hits)
+        ProbeServer {
+            url: format!("http://{address}/0000-0002-1825-0097/person"),
+            hits,
+            authorizations,
+        }
     }
 
     struct TokenEnv {
@@ -283,9 +307,13 @@ mod orcid_row {
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
-    async fn a_missing_token_excludes_the_row_without_any_request() {
+    async fn a_missing_token_probes_the_public_person_endpoint_unauthenticated() {
         let _env = TokenEnv::set(None);
-        let (url, hits) = probe_server();
+        let ProbeServer {
+            url,
+            hits,
+            authorizations,
+        } = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
@@ -294,27 +322,29 @@ mod orcid_row {
             Some("get author and author papers for ORCID IDs"),
         )
         .await;
-        assert_eq!(outcome.class, ProbeClass::Excluded);
-        assert_eq!(outcome.row.status, HealthStatus::Excluded);
-        assert_eq!(outcome.row.latency, "n/a");
+        assert_eq!(outcome.class, ProbeClass::Healthy);
+        assert_eq!(outcome.row.status, HealthStatus::Available);
         assert_eq!(outcome.row.key_configured, Some(false));
+        assert_eq!(*hits.lock().unwrap(), 1, "exactly one tokenless GET");
         assert_eq!(
-            outcome.row.required_env_var.as_deref(),
-            Some("ORCID_ACCESS_TOKEN")
+            *authorizations.lock().unwrap(),
+            vec!["none".to_string()],
+            "the tokenless probe sends no Authorization header"
         );
-        assert_eq!(*hits.lock().unwrap(), 0, "zero GETs while excluded");
         let json = row_json(&outcome.row);
-        assert_eq!(
-            json,
-            r#"{"api":"ORCID","status":"excluded","latency":"n/a","affects":"get author and author papers for ORCID IDs","key_configured":false,"required_env_var":"ORCID_ACCESS_TOKEN"}"#
+        assert!(
+            json.starts_with(r#"{"api":"ORCID","status":"available","latency":""#),
+            "{json}"
         );
+        assert!(json.ends_with(r#"ms","key_configured":false}"#), "{json}");
+        assert!(!json.contains("Authorization"), "{json}");
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn an_invalid_nonblank_token_is_an_error_row_without_any_request() {
         let _env = TokenEnv::set(Some("bad token"));
-        let (url, hits) = probe_server();
+        let ProbeServer { url, hits, .. } = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
@@ -337,7 +367,11 @@ mod orcid_row {
     #[serial_test::serial(source_env)]
     async fn a_configured_token_probes_the_public_person_endpoint() {
         let _env = TokenEnv::set(Some("fixture-public-read-token"));
-        let (url, hits) = probe_server();
+        let ProbeServer {
+            url,
+            hits,
+            authorizations,
+        } = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
@@ -350,5 +384,9 @@ mod orcid_row {
         assert_eq!(outcome.row.status, HealthStatus::Ok);
         assert_eq!(outcome.row.key_configured, Some(true));
         assert_eq!(*hits.lock().unwrap(), 1, "exactly one non-retried GET");
+        assert_eq!(
+            *authorizations.lock().unwrap(),
+            vec!["Bearer fixture-public-read-token"]
+        );
     }
 }

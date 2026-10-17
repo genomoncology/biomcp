@@ -7,7 +7,7 @@ use tracing::warn;
 use super::commands::Commands;
 use super::types::{Cli, CommandOutcome};
 
-pub(super) const RUNTIME_HELP_SUBCOMMANDS: [&str; 4] = ["mcp", "serve", "serve-http", "serve-sse"];
+pub(super) const RUNTIME_HELP_SUBCOMMANDS: [&str; 3] = ["mcp", "serve", "serve-http"];
 const HIDDEN_GLOBAL_FLAGS: [&str; 3] = ["--json", "-j", "--no-cache"];
 const SEARCH_ENTITY_NAMES: [&str; 15] = [
     "all",

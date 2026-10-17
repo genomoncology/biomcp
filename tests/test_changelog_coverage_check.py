@@ -13,6 +13,71 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "scripts" / "check-changelog-coverage.py"
 
+
+def test_release_candidate_coverage_needs_no_created_tag(tmp_path: Path) -> None:
+    def git(*args: str) -> None:
+        subprocess.run([
+            "git", "-C", str(tmp_path), "-c", "user.name=Test", "-c",
+            "user.email=test@example.invalid", *args,
+        ], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("commit", "--allow-empty", "-qm", "Previous release")
+    git("tag", "v0.9.0")
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text(
+        "## 0.9.1 — 2026-10-17\n\n- Qualify the release candidate without creating a tag. (2161)\n",
+        encoding="utf-8",
+    )
+    git("add", ".")
+    git("commit", "-qm", "Land 2161: qualify the candidate")
+    result = subprocess.run([
+        sys.executable, str(CHECK), "--tag", "v0.9.1", "--revision", "HEAD",
+    ], cwd=tmp_path, text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    assert "covers all 1 tickets" in result.stdout
+    assert subprocess.check_output([
+        "git", "-C", str(tmp_path), "tag", "--list", "v0.9.1",
+    ], text=True) == ""
+
+
+@pytest.mark.parametrize("describe_release_record", [False, True])
+def test_release_candidate_ignores_records_from_other_release_lines(
+    tmp_path: Path, describe_release_record: bool,
+) -> None:
+    def git(*args: str) -> None:
+        subprocess.run([
+            "git", "-C", str(tmp_path), "-c", "user.name=Test", "-c",
+            "user.email=test@example.invalid", *args,
+        ], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("commit", "--allow-empty", "-qm", "Previous release")
+    git("tag", "v0.9.0")
+    tickets = tmp_path / "sdlc/tickets"
+    records = tmp_path / "sdlc/records"
+    tickets.mkdir(parents=True)
+    records.mkdir()
+    (tickets / "2054-housekeeping.md").write_text("Status: COMPLETE.\nMilestone: 0.9.0\n")
+    (records / "2054-housekeeping.md").write_text("Close prior-release housekeeping.\n")
+    git("add", ".")
+    git("commit", "-qm", "Land 2054: close prior-release housekeeping")
+    (tickets / "2041-sync.md").write_text("Status: OPEN.\nMilestone: 1.0\n")
+    (records / "2041-sync.md").write_text("Record a synchronization on another line.\n")
+    (tickets / "2096-stress.md").write_text("Status: COMPLETE.\nMilestone: 0.9.1\n")
+    (records / "2096-stress.md").write_text("Prepare the stress test directory.\n")
+    description = "- Prepare the stress test directory. (2096)\n" if describe_release_record else ""
+    (tmp_path / "CHANGELOG.md").write_text("## 0.9.1 — 2026-10-17\n\n" + description)
+    git("add", ".")
+    git("commit", "-qm", "Record the two independent release lines")
+    result = subprocess.run([
+        sys.executable, str(CHECK), "--tag", "v0.9.1", "--revision", "HEAD",
+    ], cwd=tmp_path, text=True, capture_output=True)
+    assert "2041" not in result.stderr
+    assert result.returncode == (0 if describe_release_record else 1), result.stderr
+    if not describe_release_record:
+        assert "2096" in result.stderr
+
 _SPEC = importlib.util.spec_from_file_location("check_changelog_coverage", CHECK)
 _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
@@ -683,6 +748,52 @@ def test_milestone_problems_names_each_kind_of_wrong_ticket() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ("landed_milestone", "references", "exit_code"),
+    [("0.9.3", "1234", 0), ("0.9.4", "1234", 1),
+     ("0.9.3", "1234 and 1235", 1)],
+)
+def test_release_keeps_only_batches_landed_for_its_milestone(
+    tmp_path: Path, landed_milestone: str, references: str, exit_code: int
+) -> None:
+    def git(*args: str) -> None:
+        subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "test")
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-qm", "Previous release")
+    git("tag", "v0.9.2")
+    tickets = tmp_path / "sdlc" / "tickets"
+    tickets.mkdir(parents=True)
+    landed = tickets / "1234-batches.md"
+    landed.write_text(f"Status: OPEN.\nMilestone: {landed_milestone}\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-qm", "Land 1234: finish the first batch")
+    landed.write_text("Status: OPEN.\nMilestone: 0.9.4\n", encoding="utf-8")
+    (tickets / "1235-future.md").write_text(
+        "Status: OPEN.\nMilestone: 0.9.4\n", encoding="utf-8"
+    )
+    changelog.write_text(
+        f"# Changelog\n\n## 0.9.3 — 2026-10-17\n\n- Landed the first batch. ({references})\n",
+        encoding="utf-8",
+    )
+    git("add", "-A")
+    git("commit", "-qm", "Move unfinished work to the next release")
+    git("tag", "v0.9.3")
+    result = subprocess.run(
+        [sys.executable, str(CHECK), "--tag", "v0.9.3"],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+    assert result.returncode == exit_code, result.stdout + result.stderr
+    if exit_code:
+        expected = "1235" if "1235" in references else "1234"
+        assert f"{expected} (0.9.4)" in result.stderr
+
+
 def test_cited_ticket_of_another_milestone_fails_the_tag_run(
     tmp_path: Path,
 ) -> None:
@@ -1002,3 +1113,51 @@ def test_carried_tickets_from_another_release_line_do_not_demand_bullets() -> No
         _MODULE.run_git = original
     assert found == {"1200", "2200"}, found
     assert "2100" not in found
+
+
+@pytest.mark.parametrize("mode", ["branch", "branch-record-only", "tag"])
+@pytest.mark.parametrize("separator", ["", " ", "\n"])
+def test_checker_rejects_joined_entries_but_accepts_separate_bullets(
+    tmp_path: Path, mode: str, separator: str,
+) -> None:
+    # The first entry changes only repository checks, so ordinary branch
+    # coverage does not catch its loss when both bullets share one line.
+    entries = (
+        "- Improved repository checks. (1226)"
+        + separator
+        + "- Repaired article search. (1227)\n"
+    )
+    changelog = "# C\n\n## Unreleased\n\n### Fixes\n\n" + entries
+    if mode.startswith("branch"):
+        result = _run_branch(
+            tmp_path, changelog=changelog, ref_name="main",
+            landings={
+                "sha1": ("Land 1226: improve checks", ["tests/test_gate.py"]),
+                "sha2": ("Land 1227: repair search", ["src/search.rs"] if mode == "branch" else []),
+            },
+        )
+    else:
+        result = _run(tmp_path, changelog=changelog, subjects=["Land 1227: repair search"])
+    if separator == "\n":
+        assert result.returncode == 0, result.stderr
+    else:
+        assert result.returncode == 1, result.stdout
+        assert "joined changelog entries" in result.stderr
+
+
+@pytest.mark.parametrize("example", [
+    "The notation (1226) - example remains ordinary prose.\n",
+    "- Explain the notation (1226) - example without another ticket group.\n",
+    "- Document the literal `- First entry. (1226)- Second entry. (1228)` syntax. (1227)\n",
+    "```markdown\n- First entry. (1226)- Second entry. (1228)\n```\n",
+    "~~~markdown\n- First entry. (1226)- Second entry. (1228)\n~~~\n",
+])
+def test_checker_accepts_prose_and_code_examples(tmp_path: Path, example: str) -> None:
+    result = _run_branch(
+        tmp_path,
+        changelog=("# C\n\n## Unreleased\n\n### Fixes\n\n" + example
+                   + "\n- Repaired article search. (1227)\n"),
+        ref_name="main",
+        landings={"sha1": ("Land 1227: repair search", ["src/search.rs"])},
+    )
+    assert result.returncode == 0, result.stderr

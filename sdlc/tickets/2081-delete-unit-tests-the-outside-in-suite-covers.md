@@ -1,29 +1,37 @@
+---
+priority: 3
+---
+
 # 2081 — Delete every test that is not one of the four kinds
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
+Reviews: revision e65830a, accept
+
+Reviews: revision 9fa3573, accept
+
+Reviews: revision 48d9168, accept
+
+Reviews: revision 61d1cfb, accept
+
+Reviews: revision f3359f7, accept
+
+Reviews: revision 3e05883, accept
+
 ## Outcome
 
-Every Rust and Python test left in the routine suite is a behavior test through a real entry point, an edge-case table, a contract check, a regression test that failed before its fix, or a test that pins one of BioMCP's refusals, and no routine test waits on the wall clock.
+Retained routine tests protect behavior, edge cases, external contracts, fixed defects or refusals; redundant construction/restatement tests and unused test-only code are removed in reviewed small batches.
 
-## Evidence
+Depends on: 2156
 
-- Ian ruled on 2026-10-14 that tests are deleted boldly and come back when a real need shows up ([decision](../decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md)). This rewrite replaces the bar that combined coverage stays within a few points of 84% and the wait for 2079.
-- The 2069 baseline: 4,205 Rust tests and 1,251 Python tests; 62 tests over one second (`sdlc/records/2069-0-9-3-baseline.md`). The lib test unit takes 1.7 times as long to compile as the lib (`sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, Build). 75 files are covered 90% or more from outside; 34 files are never reached from outside (same design, Coverage, step 7).
-- 63 test-only items (about 450 lines) and 58 unread fields exist only for construction tests (`sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`, Dead code).
-- PM decision 2026-10-14: `search all`, `update` and `uninstall` stay, as the 2026-10-13 amendment ruled. Their unit tests go in the last batch, after 2079 gives `search all` golden cases and an outside-in test covers `update --check`, `update` and `uninstall` against a staged local release, including the refusal to touch a package-managed install.
+- Starts from: existing reviewed deletion batches and their outside-in replacements. Preserve their work rather than restarting it.
+- Keeps: caller behavior and refusal regressions, parser/resolver edge cases, stress-filter targets, search all, update and uninstall. Do not delete the only test of a required behavior.
+- Changes: claims `spec/surface/cli.md` `scripts/run-specs.sh` `scripts/prepare-spec-artifacts.py` `tests/golden/spec/test_cleanup_cli_behaviors.py` `CHANGELOG.md`. Before each batch, name its actual files and avoid active product claims. Remove redundant tests and their unused test-only items. Remove avoidable waits with clocks, signals or bounded fixtures; remove sleep allowances when their final legitimate use disappears.
+- Proof: each batch names the removed claims and their surviving outside-in tests, reports counts/compile time/routine duration and coverage without a new coverage threshold, and passes the routine merged-candidate gate through the build job. The existing article CLI and drug-label deletion branch must execute its replacements in an active lane before landing: adding claims only to omitted spec pages does not qualify. Cover update/check/uninstall through a staged local release before deleting their owning tests.
+- Defers: runner warning behavior to 2095; extra golden recordings to 2079; broad fixture restructuring to the next release.
 
-- Starts from: the per-file outside-in coverage method in `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, the dead-code list in `sdlc/designs/2026-10-13-0-9-3-dependencies-and-dead-code.md`, and the four kinds in the decision.
-- Keeps: behavior tests through `biomcp` commands and the MCP server, edge-case tables for parsers and resolvers, contract checks on JSON and Markdown output, the MCP schema and releases, and every regression test that pins a refusal or a fixed wrong answer.
-- Changes: claims `CHANGELOG.md`. Each batch names its files on this ticket before its first push, and avoids files an open product ticket claims, so the parallel lane never waits on it.
-  - Files every batch avoids while their tickets are open: `tests/conftest.py` and `tests/test_source_package_boundary.py` (2071); the ratchet self-tests `tests/test_quality_ratchet_contract.py` and `tests/test_test_wait_ratchet_check.py` (2076, which deletes them); the four `tests/test_*_fixture_lifecycle.py` files (2080); `src/entities/drug/get/tests.rs` and the other drug files (2085, 2090, 2068). `pm next` shows the current claims.
-  - Keep the four Rust tests the `Makefile` `stress` target names in its `-E` filter, since nextest fails when a filter matches no test.
-  - Work in small batches, one module or file group each, starting with the 75 files the outside-in suite already covers at 90% or more. Each batch deletes every test that is not one of the four kinds and the test-only items and unread fields its deleted tests used.
-  - Where a kept behavior has no outside-in test, write that test in the same batch before deleting the inside one. Do not add outside-in tests for behavior nobody needs; delete the code instead.
-  - Give each slow test that stays an injected clock or a shorter deadline. The last batch removes the remaining test sleeps and deletes 2076's group allowances for them (`#![cfg_attr(test, allow(clippy::disallowed_methods))]` in `src/lib.rs` and ruff's `per-file-ignores` for `time.sleep`).
-  - Each batch lands on its own: `pm ticket progress 2081 --landed SHA --next TEXT`. Run `pm ticket land` after the last batch.
-  - One Internal changelog bullet, with the first batch.
-- Proof: per batch, the names of the deleted tests, so the reviewer can confirm none pins a refusal or a fixed wrong answer; the Rust and Python test counts, the lib test compile time and the routine test run time before and after; outside-in and combined coverage reported, not gated. The first batch also records the share of test code, so the milestone's test-code target can be set. At the end, no routine test takes more than 10 s in `cargo nextest run --no-default-features` or `pytest --durations=0`, and no test sleep allowance remains.
-- Defers: enforcing the per-test limit in the runners (2095); the `search all` golden cases (2079).
+PM decision: 2026-10-17. Remove the hard ten-second acceptance bar. Long tests belong in the long suite; elapsed time alone never fails the routine runner. Require only replacement claims affected by each deletion, not blanket new coverage or reopened completed batches. Search-all prerequisites use the existing executed golden cases.
+
+PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.

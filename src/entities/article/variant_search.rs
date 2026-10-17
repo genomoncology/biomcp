@@ -32,10 +32,10 @@ use super::enrichment::{
     enrich_visible_article_search_rows_with_article_base_context,
 };
 use super::identity_verification::{
-    PUBTATOR_EXPORT_TEMPLATE_VERSION, VariantArticleIdentity, VariantArticleVerificationOptions,
-    VariantArticleVerificationPlan, canonical_content_subset, canonical_response_subset,
-    combine_identities, verification_plan, verify_captured_abstract, verify_ldh_annotation,
-    verify_pubtator,
+    PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION, VariantArticleIdentity,
+    VariantArticleVerificationOptions, VariantArticleVerificationPlan, canonical_content_subset,
+    canonical_response_subset, combine_identities, verification_plan, verify_captured_abstract,
+    verify_ldh_annotation, verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query, europepmc_escape,
@@ -4117,7 +4117,7 @@ async fn search_variant_articles_identity(
                         )
                         .await
                         {
-                            Ok(client) => client.export_biocjson(pmid).await,
+                            Ok(client) => client.export_biocjson_fulltext(pmid).await,
                             Err(error) => Err(error),
                         };
                     match response {
@@ -4331,7 +4331,7 @@ async fn search_variant_articles_identity(
         if verification.verify_identity {
             plan.verification = Some(verification_plan(
                 &context.requested,
-                PUBTATOR_EXPORT_TEMPLATE_VERSION,
+                PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION,
                 &verification_response_subsets,
                 &verification_content_subsets,
             ));
@@ -8650,5 +8650,309 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["exact_lexical", "pubtator_variant"]
         );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn fulltext_annotations_preserve_typed_identity_requirements() {
+        // The 2139 probe: the abstract-only BioC export carries no I448T
+        // annotation for 30275001, 32371413 or 34480199, so the identity check
+        // left all three unverified. Full text supplies typed linkage for two;
+        // 32371413 still lacks a typed SAMHD1 Gene annotation.
+        const FULLTEXT_30275001: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/export_fulltext_30275001.json");
+        const FULLTEXT_32371413: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/export_fulltext_32371413.json");
+        const FULLTEXT_34480199: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/export_fulltext_34480199.json");
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"[{"_id":"@VARIANT_p.I448T_SAMHD1_human","biotype":"variant","db_id":"rs774964432##","db":"litvar","name":"p.I448T","description":"SAMHD1 (human)"}]"#
+                        .as_slice(),
+                ));
+            }
+            if first_line.starts_with("GET /search/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"{"results":[{"_id":"30275001","pmid":"30275001","title":"SAMHD1 I448T case report","journal":"Fixture Journal","date":"2018-10-01"},{"_id":"32371413","pmid":"32371413","title":"SAMHD1 I448T case series","journal":"Fixture Journal","date":"2020-06-12"},{"_id":"34480199","pmid":"34480199","title":"SAMHD1 in cancer review","journal":"Fixture Journal","date":"2022-03-01"}],"count":3,"total_pages":1,"current":1,"page_size":25}"#
+                        .as_slice(),
+                ));
+            }
+            if first_line.starts_with("GET /publications/export/biocjson?pmids=") {
+                let export_pmid = first_line
+                    .trim_start_matches("GET /publications/export/biocjson?pmids=")
+                    .split('&')
+                    .next()
+                    .unwrap_or_default();
+                let body: &[u8] = match export_pmid {
+                    "30275001" => FULLTEXT_30275001,
+                    "32371413" => FULLTEXT_32371413,
+                    "34480199" => FULLTEXT_34480199,
+                    _ => br#"{"PubTator3":[]}"#,
+                };
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    body,
+                ));
+            }
+            let body: &[u8] = if first_line.starts_with("GET /query") {
+                br#"{"total":1,"hits":[{"_id":"fixture-samhd1-i448t","dbnsfp":{"genename":["SAMHD1"]}}]}"#
+            } else if first_line.starts_with("GET /search?") {
+                br#"{"version":"6.9","hitCount":0,"resultList":{"result":[]}}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                br#"{"esearchresult":{"count":"0","idlist":[]}}"#
+            } else if first_line.starts_with("GET /graph/v1/paper/search") {
+                br#"{"total":0,"data":[]}"#
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                body,
+            ))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("samhd1-fulltext-identity");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "SAMHD1 I448T",
+            VariantArticleStrategy::Union,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions {
+                verify_identity: true,
+                confirmed_only: false,
+            },
+            std::time::Duration::from_secs(30),
+        )
+        .await
+        .expect("fulltext identity outcome");
+
+        assert!(!outcome.hard_error);
+        let logged = requests.lock().expect("request log").clone();
+        for pmid in ["30275001", "32371413", "34480199"] {
+            assert!(
+                logged.iter().any(
+                    |line| line.starts_with("GET /publications/export/biocjson?")
+                        && line.contains(&format!("pmids={pmid}"))
+                        && line.contains("full=true")
+                ),
+                "the identity check reads the full-text export for {pmid}: {logged:?}"
+            );
+            let row = outcome
+                .response
+                .results
+                .iter()
+                .find(|row| row.article.pmid == pmid)
+                .unwrap_or_else(|| panic!("row {pmid} present"));
+            let identity = row
+                .identity
+                .as_ref()
+                .unwrap_or_else(|| panic!("identity for {pmid}"));
+            assert_eq!(
+                identity.status,
+                if pmid == "32371413" {
+                    "unverified"
+                } else {
+                    "confirmed"
+                },
+                "{pmid}: contradictions {:?}",
+                identity.contradictions
+            );
+            assert_eq!(
+                identity.observations.is_empty(),
+                pmid == "32371413",
+                "{pmid} observations"
+            );
+            assert_eq!(
+                identity.reason,
+                if pmid == "32371413" {
+                    Some("missing_typed_gene_annotation")
+                } else {
+                    None
+                }
+            );
+            assert!(!identity.incomplete, "{pmid} verification is complete");
+        }
+        // Plain gene text does not replace a missing typed Gene annotation.
+        // This recorded table needs a separate owning decision before it can
+        // confirm under a broader identity rule.
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn unsupported_fulltext_evidence_does_not_confirm_a_paper() {
+        for case in [
+            "unannotated",
+            "missing-gene",
+            "wrong-paper",
+            "wrong-gene",
+            "wrong-alias",
+        ] {
+            let mut export = serde_json::json!({"PubTator3":[{
+                "id":"40000010", "pmid":40000010, "pmcid":"PMC40000010",
+                "passages":[{"infons":{"type":"table"}, "text":"SAMHD1 I448T",
+                    "annotations":[
+                        {"id":"g1","infons":{"type":"Gene","name":"SAMHD1","identifier":"25939","normalized_id":25939}},
+                        {"id":"v1","infons":{"type":"Variant","hgvs":"p.I448T","gene_id":25939,"gene_ids":[25939],"identifier":"Variant:p.I448T;CorrespondingGene:25939"}}
+                    ]}]
+            }]});
+            match case {
+                "unannotated" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"] = serde_json::json!([])
+                }
+                "missing-gene" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"]
+                        .as_array_mut()
+                        .expect("annotations")
+                        .remove(0);
+                }
+                "wrong-paper" => export["PubTator3"][0]["pmid"] = serde_json::json!(40000011),
+                "wrong-gene" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"][0]["infons"]["name"] =
+                        serde_json::json!("BRAF")
+                }
+                "wrong-alias" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"][1]["infons"]["hgvs"] =
+                        serde_json::json!("p.K999E");
+                    export["PubTator3"][0]["passages"][0]["annotations"][1]["infons"]["identifier"] =
+                        serde_json::json!("Variant:p.K999E;CorrespondingGene:25939");
+                }
+                _ => unreachable!(),
+            }
+            let export = serde_json::to_vec(&export).expect("fixture export");
+            // Full text adds an evidence source without weakening typed identity,
+            // expected-paper validation, or existing contradiction reporting.
+            let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"[{"_id":"@VARIANT_p.I448T_SAMHD1_human","biotype":"variant","db_id":"rs774964432##","db":"litvar","name":"p.I448T","description":"SAMHD1 (human)"}]"#
+                        .as_slice(),
+                ));
+            }
+            if first_line.starts_with("GET /search/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"{"results":[{"_id":"40000010","pmid":"40000010","title":"SAMHD1 I448T unannotated paper","journal":"Fixture Journal","date":"2026-01-02"}],"count":1,"total_pages":1,"current":1,"page_size":25}"#
+                        .as_slice(),
+                ));
+            }
+            if first_line.starts_with("GET /publications/export/biocjson?pmids=") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    &export,
+                ));
+            }
+            let body: &[u8] = if first_line.starts_with("GET /query") {
+                br#"{"total":1,"hits":[{"_id":"fixture-samhd1-i448t","dbnsfp":{"genename":["SAMHD1"]}}]}"#
+            } else if first_line.starts_with("GET /search?") {
+                br#"{"version":"6.9","hitCount":0,"resultList":{"result":[]}}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                br#"{"esearchresult":{"count":"0","idlist":[]}}"#
+            } else if first_line.starts_with("GET /graph/v1/paper/search") {
+                br#"{"total":0,"data":[]}"#
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                body,
+            ))
+        })
+        .await;
+            let cache = crate::test_support::TempDirGuard::new("samhd1-unannotated-identity");
+            let mut env = TestEnv::new();
+            env.set("BIOMCP_CACHE_DIR", cache.path());
+            env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+            env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+            env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+            env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+            env.set(
+                "BIOMCP_PUBMED_BASE",
+                format!("{}/entrez/eutils", fixture.base),
+            );
+            env.set("BIOMCP_S2_BASE", &fixture.base);
+
+            let outcome = search_variant_articles_with_deadline(
+                "SAMHD1 I448T",
+                VariantArticleStrategy::Union,
+                50,
+                0,
+                false,
+                VariantArticleVerificationOptions {
+                    verify_identity: true,
+                    confirmed_only: false,
+                },
+                std::time::Duration::from_secs(30),
+            )
+            .await
+            .expect("unannotated identity outcome");
+
+            assert!(!outcome.hard_error);
+            let row = outcome
+                .response
+                .results
+                .iter()
+                .find(|row| row.article.pmid == "40000010")
+                .expect("unannotated row present");
+            let identity = row.identity.as_ref().expect("identity present");
+            assert_ne!(identity.status, "confirmed", "{case}: {identity:?}");
+            assert!(identity.observations.is_empty(), "{case}");
+            if case == "wrong-gene" {
+                assert!(!identity.contradictions.is_empty());
+            } else {
+                assert_eq!(identity.status, "unverified", "{case}");
+                assert!(identity.contradictions.is_empty(), "{case}");
+            }
+            assert_eq!(
+                identity.reason,
+                if case == "missing-gene" {
+                    Some("missing_typed_gene_annotation")
+                } else {
+                    None
+                },
+                "{case}"
+            );
+            assert_eq!(identity.incomplete, case == "wrong-paper", "{case}");
+        }
     }
 }

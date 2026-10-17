@@ -456,6 +456,7 @@ def test_archive_scan_rejects_forbidden_member_name_with_clean_contents(
     assert checker.scan_archive(archive_path) == [name]
 
 
+@pytest.mark.repo_audit
 def test_repository_historical_inventory_is_exact_and_current() -> None:
     checker = _module()
     assert checker.scan_files(ROOT, checker.tracked(ROOT)) == []

@@ -660,3 +660,40 @@ fn identity_comparison_is_indeterminate_for_missing_or_unlinked_annotation_evide
         }
     );
 }
+
+#[test]
+fn every_protein_spelling_refuses_invalid_residue_letters() {
+    for input in ["BRAF 600Z", "Z999Q", "p.Z999Q", "BRAF Z999Q"] {
+        assert!(
+            variant_guidance(input).is_none(),
+            "invalid residues must not become guidance"
+        );
+        let message = parse_variant_id(input)
+            .expect_err("invalid residue")
+            .to_string();
+        assert!(
+            message.contains("invalid amino acid residue 'Z'"),
+            "{input}: {message}"
+        );
+    }
+}
+
+#[test]
+fn a_gene_name_alone_is_not_reported_as_an_invalid_amino_acid() {
+    for input in ["BRCA1", "BCR1"] {
+        let message = parse_variant_id(input)
+            .expect_err("a gene alone is not an exact variant")
+            .to_string();
+        assert!(!message.contains("invalid amino acid"), "{message}");
+    }
+}
+
+#[test]
+fn uppercase_three_letter_residues_remain_valid() {
+    for input in ["BRAF GLU600LYS", "BRAF p.GLU600LYS", "BRAF Glu600Lys"] {
+        assert!(
+            matches!(parse_variant_id(input), Ok(VariantIdFormat::GeneProteinChange { change, .. }) if change == "E600K"),
+            "{input}"
+        );
+    }
+}

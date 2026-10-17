@@ -50,7 +50,9 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # fda_orphan.rs owns two bounded, fixed-route form clients: acquisition and
     # its uncached health probe. Both reject redirects, cap response bytes, and
     # accept a private base only through the documented fixture override seam.
-    # cli/health owns the bounded probe client and its stub-client test fixtures.
+    # cli/health owns the bounded probe client and its stub-client test
+    # fixtures: tests/fda.rs carries the four stub clients that drive the
+    # orphan probe row tests, and the split runner tests carry none.
     # ca_bundle.rs constructs three builders in the process-reentry parse-once test.
     # The article deadline tests construct one raw loopback client for the
     # held-reply self-release proof: paused time drives the bound,
@@ -70,7 +72,7 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
             "src/entities/trial/search/ctgov/tests.rs": 1,
             "src/cli/health/runner.rs": 1,
             "src/cli/health/tests/http.rs": 1,
-            "src/cli/health/tests/runner.rs": 3,
+            "src/cli/health/tests/fda.rs": 4,
         }
     )
 

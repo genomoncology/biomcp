@@ -56,6 +56,51 @@ request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article reque
 test "$(grep -Fc 'search:semanticscholar:review of "drug: safety"' "$request_log")" -eq 1
 ```
 
+## The Article Command Grammar And Help Live On The Surface
+
+The CLI grammar and its help text are the contract callers read, so the page
+pins the accepted forms, the shapes the year flags refuse, and the guidance
+the long help carries.
+
+```bash
+../../tools/biomcp-ci search article --help | mustmatch like 'When to use:
+QUERY FORMULATION:
+Tokens are not secrets
+Published after date (YYYY, YYYY-MM, or YYYY-MM-DD)
+--max-per-source <N>'
+../../tools/biomcp-ci get article --help | mustmatch like 'Allow Semantic Scholar PDF as a final fulltext fallback
+--output <FILE>
+Binary or unknown-type assets are refused when standard output is a terminal'
+```
+
+Year flags accept a four-digit year, expand to whole-year date bounds in the
+recorded query, and refuse partial years and mixes with explicit dates.
+
+```bash
+../../tools/biomcp-ci --json search article --source semanticscholar \
+  -k 'review of "drug: safety"' --year-min 2000 --year-max 2013 --limit 5 \
+  | jq -r '.query' \
+  | mustmatch like 'keyword=review of "drug: safety", date_from=2000-01-01, date_to=2013-12-31'
+../../tools/biomcp-ci --json search article --source semanticscholar \
+  -k 'review of "drug: safety"' --session grammar-loop-1 --limit 5 \
+  | jq -e '(.results | type) == "array"' | mustmatch true
+year_tmp="$(mktemp -d)"
+set +e
+../../tools/biomcp-ci search article -g BRAF --year-min 200 \
+  >"$year_tmp/partial-year.err" 2>&1
+partial_year_status=$?
+../../tools/biomcp-ci search article -g BRAF --year-min 2000 --date-from 2000-01-01 \
+  >"$year_tmp/date-mix.err" 2>&1
+date_mix_status=$?
+set -e
+test "$partial_year_status" -eq 2
+test "$date_mix_status" -eq 2
+mustmatch like "invalid value '200' for '--year-min <YYYY>': expected YYYY" \
+  <"$year_tmp/partial-year.err"
+mustmatch like "the argument '--year-min <YYYY>' cannot be used with '--date-from <DATE_FROM>'" \
+  <"$year_tmp/date-mix.err"
+```
+
 ## Deterministic Source Contracts
 
 Ticket 376 moves routine article-source proof from public upstream canaries to
