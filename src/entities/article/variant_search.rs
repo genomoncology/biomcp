@@ -1753,10 +1753,6 @@ fn canonical_equivalence(
     }
 }
 
-/// The resolution context the exact-name strategy runs with: no provider
-/// resolution happened, so nothing is resolved, nothing is validated, and
-/// every discovery decision rests on the caller's string alone.
-
 /// Resolve the search context, canonical equivalence, and selected exact
 /// aliases for one invocation. The exact-name strategy skips every provider
 /// resolution step and carries the caller's string as its only alias.
