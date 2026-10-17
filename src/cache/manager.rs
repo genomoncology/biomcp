@@ -743,7 +743,6 @@ fn persist_content_totals(cache_path: &Path, total_bytes: u64) {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::fs;
     use std::path::Path;
     use std::sync::Arc;
     use std::sync::Mutex;
