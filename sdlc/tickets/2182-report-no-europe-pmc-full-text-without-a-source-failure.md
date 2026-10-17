@@ -17,3 +17,9 @@ When Europe PMC has no full text for a PubMed ID, the full-text attempt reports 
 - Keeps: a real Europe PMC outage still reports unavailable; retries stay for transient failures.
 - Changes: claims `src/sources/europepmc.rs` `src/entities/article/fulltext.rs`, their tests, `CHANGELOG.md`.
 - Proof: a recorded 404 for the MED attempt yields an attempt outcome of no full text with no retries and no source-failure message; on current main the same case reports `source_unavailable`. A recorded 503 still reports unavailable.
+
+Coordinator outcome before code: Distinguish an ordinary absent Europe PMC MED full-text response from a genuine transient source failure, preserving outage retries and unavailable reporting. Before product edits, reproduce on current main through the build job and report the exact command/output, proposed implementation/test files and the outside-in failing proof. Root records that evidence and scope before implementation. Developers write no ticket or status records.
+
+## Progress
+
+- 2026-10-17 started
