@@ -8654,11 +8654,11 @@ mod tests {
 
     #[serial_test::serial(source_env)]
     #[tokio::test]
-    async fn fulltext_annotations_confirm_the_samhd1_i448t_papers() {
+    async fn fulltext_annotations_preserve_typed_identity_requirements() {
         // The 2139 probe: the abstract-only BioC export carries no I448T
         // annotation for 30275001, 32371413 or 34480199, so the identity check
-        // left all three unverified. The full-text export annotates the variant
-        // in paragraph and table passages, so reading it must confirm them.
+        // left all three unverified. Full text supplies typed linkage for two;
+        // 32371413 still lacks a typed SAMHD1 Gene annotation.
         const FULLTEXT_30275001: &[u8] =
             include_bytes!("../../../testdata/sources/pubtator/export_fulltext_30275001.json");
         const FULLTEXT_32371413: &[u8] =
@@ -8779,40 +8779,80 @@ mod tests {
                 .as_ref()
                 .unwrap_or_else(|| panic!("identity for {pmid}"));
             assert_eq!(
-                identity.status, "confirmed",
+                identity.status,
+                if pmid == "32371413" {
+                    "unverified"
+                } else {
+                    "confirmed"
+                },
                 "{pmid}: contradictions {:?}",
                 identity.contradictions
             );
-            assert!(!identity.observations.is_empty(), "{pmid} observations");
+            assert_eq!(
+                identity.observations.is_empty(),
+                pmid == "32371413",
+                "{pmid} observations"
+            );
+            assert_eq!(
+                identity.reason,
+                if pmid == "32371413" {
+                    Some("missing_typed_gene_annotation")
+                } else {
+                    None
+                }
+            );
             assert!(!identity.incomplete, "{pmid} verification is complete");
         }
-        // 32371413 names SAMHD1 only in the table text beside the annotated
-        // variant, with no Gene annotation for NCBI 25939 anywhere: its proof
-        // must still name the full-text table section.
-        let case_series = outcome
-            .response
-            .results
-            .iter()
-            .find(|row| row.article.pmid == "32371413")
-            .expect("32371413 row");
-        let identity = case_series.identity.as_ref().expect("32371413 identity");
-        assert!(
-            identity
-                .observations
-                .iter()
-                .any(|observation| observation.section == "table"
-                    && observation.observed_alias == "p.I448T"),
-            "32371413 confirms from its full-text table: {:?}",
-            identity.observations
-        );
+        // Plain gene text does not replace a missing typed Gene annotation.
+        // This recorded table needs a separate owning decision before it can
+        // confirm under a broader identity rule.
     }
 
     #[serial_test::serial(source_env)]
     #[tokio::test]
-    async fn a_paper_with_no_annotation_of_any_kind_stays_unverified() {
-        // Full text only adds evidence: a paper whose export carries plain
-        // passages with no annotations at all keeps identity unverified.
-        let fixture = TestHttpFixture::spawn(move |request| {
+    async fn unsupported_fulltext_evidence_does_not_confirm_a_paper() {
+        for case in [
+            "unannotated",
+            "missing-gene",
+            "wrong-paper",
+            "wrong-gene",
+            "wrong-alias",
+        ] {
+            let mut export = serde_json::json!({"PubTator3":[{
+                "id":"40000010", "pmid":40000010, "pmcid":"PMC40000010",
+                "passages":[{"infons":{"type":"table"}, "text":"SAMHD1 I448T",
+                    "annotations":[
+                        {"id":"g1","infons":{"type":"Gene","name":"SAMHD1","identifier":"25939","normalized_id":25939}},
+                        {"id":"v1","infons":{"type":"Variant","hgvs":"p.I448T","gene_id":25939,"gene_ids":[25939],"identifier":"Variant:p.I448T;CorrespondingGene:25939"}}
+                    ]}]
+            }]});
+            match case {
+                "unannotated" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"] = serde_json::json!([])
+                }
+                "missing-gene" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"]
+                        .as_array_mut()
+                        .expect("annotations")
+                        .remove(0);
+                }
+                "wrong-paper" => export["PubTator3"][0]["pmid"] = serde_json::json!(40000011),
+                "wrong-gene" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"][0]["infons"]["name"] =
+                        serde_json::json!("BRAF")
+                }
+                "wrong-alias" => {
+                    export["PubTator3"][0]["passages"][0]["annotations"][1]["infons"]["hgvs"] =
+                        serde_json::json!("p.K999E");
+                    export["PubTator3"][0]["passages"][0]["annotations"][1]["infons"]["identifier"] =
+                        serde_json::json!("Variant:p.K999E;CorrespondingGene:25939");
+                }
+                _ => unreachable!(),
+            }
+            let export = serde_json::to_vec(&export).expect("fixture export");
+            // Full text adds an evidence source without weakening typed identity,
+            // expected-paper validation, or existing contradiction reporting.
+            let fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             if first_line.starts_with("GET /entity/autocomplete/") {
                 return TestHttpReply::Bytes(test_http_response(
@@ -8834,8 +8874,7 @@ mod tests {
                 return TestHttpReply::Bytes(test_http_response(
                     "200 OK",
                     "application/json",
-                    br#"{"PubTator3":[{"id":"40000010","pmid":40000010,"pmcid":"PMC40000010","passages":[{"infons":{"type":"title"},"text":"SAMHD1 I448T unannotated paper"},{"infons":{"type":"abstract"},"text":"A report whose text mentions SAMHD1 and I448T but carries no annotation of any kind."}]}]}"#
-                        .as_slice(),
+                    &export,
                 ));
             }
             let body: &[u8] = if first_line.starts_with("GET /query") {
@@ -8860,45 +8899,60 @@ mod tests {
             ))
         })
         .await;
-        let cache = crate::test_support::TempDirGuard::new("samhd1-unannotated-identity");
-        let mut env = TestEnv::new();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
-        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
-        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
-        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
-        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
-        env.set(
-            "BIOMCP_PUBMED_BASE",
-            format!("{}/entrez/eutils", fixture.base),
-        );
-        env.set("BIOMCP_S2_BASE", &fixture.base);
+            let cache = crate::test_support::TempDirGuard::new("samhd1-unannotated-identity");
+            let mut env = TestEnv::new();
+            env.set("BIOMCP_CACHE_DIR", cache.path());
+            env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+            env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+            env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+            env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+            env.set(
+                "BIOMCP_PUBMED_BASE",
+                format!("{}/entrez/eutils", fixture.base),
+            );
+            env.set("BIOMCP_S2_BASE", &fixture.base);
 
-        let outcome = search_variant_articles_with_deadline(
-            "SAMHD1 I448T",
-            VariantArticleStrategy::Union,
-            50,
-            0,
-            false,
-            VariantArticleVerificationOptions {
-                verify_identity: true,
-                confirmed_only: false,
-            },
-            std::time::Duration::from_secs(30),
-        )
-        .await
-        .expect("unannotated identity outcome");
+            let outcome = search_variant_articles_with_deadline(
+                "SAMHD1 I448T",
+                VariantArticleStrategy::Union,
+                50,
+                0,
+                false,
+                VariantArticleVerificationOptions {
+                    verify_identity: true,
+                    confirmed_only: false,
+                },
+                std::time::Duration::from_secs(30),
+            )
+            .await
+            .expect("unannotated identity outcome");
 
-        assert!(!outcome.hard_error);
-        let row = outcome
-            .response
-            .results
-            .iter()
-            .find(|row| row.article.pmid == "40000010")
-            .expect("unannotated row present");
-        let identity = row.identity.as_ref().expect("identity present");
-        assert_eq!(identity.status, "unverified");
-        assert!(identity.observations.is_empty());
-        assert!(identity.contradictions.is_empty());
-        assert!(!identity.incomplete);
+            assert!(!outcome.hard_error);
+            let row = outcome
+                .response
+                .results
+                .iter()
+                .find(|row| row.article.pmid == "40000010")
+                .expect("unannotated row present");
+            let identity = row.identity.as_ref().expect("identity present");
+            assert_ne!(identity.status, "confirmed", "{case}: {identity:?}");
+            assert!(identity.observations.is_empty(), "{case}");
+            if case == "wrong-gene" {
+                assert!(!identity.contradictions.is_empty());
+            } else {
+                assert_eq!(identity.status, "unverified", "{case}");
+                assert!(identity.contradictions.is_empty(), "{case}");
+            }
+            assert_eq!(
+                identity.reason,
+                if case == "missing-gene" {
+                    Some("missing_typed_gene_annotation")
+                } else {
+                    None
+                },
+                "{case}"
+            );
+            assert_eq!(identity.incomplete, case == "wrong-paper", "{case}");
+        }
     }
 }
