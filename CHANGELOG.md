@@ -18,7 +18,6 @@
 - Article full text reports no full text promptly when no PMC record exists, instead of retrying an unsupported Europe PMC PMID XML request and reporting a source failure. Supported PMC requests still distinguish missing full text from transient source outages. (2182)
 - `variant articles --strategy exact` searches the caller's exact phrase across Europe PMC full text, finding PMID 10811118 for `F1761I`, while PubMed keeps its title/abstract search and the debug plan retains per-source yields. (2181)
 - Report HTML and other non-PDF full-text replies as unavailable downloads, including replies labeled as PDF; reserve unusable PDF text for PDF bytes that cannot yield text. (2183)
-
 - Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
 - Fulltext replay fixtures keep their server and Unicode cache state inside ignored test output, so concurrent repository audits never scan files that fixture cleanup can remove. (2177)
 - Reject changelog entries accidentally joined onto one line before landing or release, including repository-only changes. (2158)
