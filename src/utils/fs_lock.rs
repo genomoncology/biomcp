@@ -2,7 +2,8 @@
 //! `io::ErrorKind::WouldBlock`, so every deadline poll that matches on the
 //! kind shares this one mapping instead of restating it per call site. The
 //! deadline and contention tests in the cache, article-search and GenCC
-//! homes cover the mapping through their real entry points.
+//! homes cover the mapping through their real entry points. The cross-platform
+//! `windows_lock_contract` regression also checks both lock modes directly.
 
 use std::fs::File;
 use std::fs::TryLockError;

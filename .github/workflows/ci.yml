@@ -2,6 +2,11 @@ name: CI
 
 on:
   workflow_dispatch:
+    inputs:
+      windows_only:
+        description: Run only the Windows cache-lock regression checks
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       revision:
@@ -62,7 +67,7 @@ jobs:
     needs: changes
     # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
@@ -106,7 +111,7 @@ jobs:
     needs: [changes, build]
     # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -135,7 +140,7 @@ jobs:
     needs: [changes, build]
     # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -165,7 +170,7 @@ jobs:
     needs: [changes, build]
     # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -211,7 +216,7 @@ jobs:
     needs: [changes, build]
     # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -249,7 +254,7 @@ jobs:
   stress-lane:
     needs: [changes, build]
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 40
     runs-on: ubuntu-24.04
     steps:
@@ -277,7 +282,7 @@ jobs:
   release-panic:
     needs: changes
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     # The release-mode panic-recovery contract (ticket 1257): the
     # same build and nextest invocation `make verify` runs, without
     # network or credentials — the test drives an in-process stdio
@@ -303,7 +308,7 @@ jobs:
   full-features:
     needs: changes
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
@@ -322,7 +327,7 @@ jobs:
     needs: changes
     # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && needs.changes.outputs.docs_only != 'true'
+      (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && !inputs.windows_only && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
@@ -365,7 +370,14 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: 3.12.3
+      - name: Check cache-lock contention and article-search deadlines
+        shell: bash
+        run: |
+          cargo test --locked --no-default-features --test windows_lock_contract
+          cargo test --locked --no-default-features --lib body_limit_epoch_lock_contention_obeys_variant_article_deadline
+          cargo test --locked --no-default-features --lib construction_under_a_held_epoch_lock_honors_the_deadline
       - name: Compile Windows CSpec and managed-state boundaries
+        if: ${{ !inputs.windows_only }}
         run: |
           cargo check --locked
           cargo test --locked --test managed_state_permissions
@@ -378,6 +390,7 @@ jobs:
       # unless it waits for the child and passes the exit code
       # through.
       - name: Check with-build-identity passes exit codes through
+        if: ${{ !inputs.windows_only }}
         shell: bash
         run: |
           python tools/with-build-identity cargo --version
@@ -395,6 +408,7 @@ jobs:
           fi
 
   repository-contracts:
+    if: ${{ !inputs.windows_only }}
     # Always runs, including docs-only pushes: these are the
     # tests that read the files a docs-only push changes
     # (2026-09-29 review). The needs_binary marker excludes
@@ -433,6 +447,7 @@ jobs:
   # python3, gh and jq only — no Rust build — so it runs on each
   # manual run alongside the heavy release-shaped jobs.
   release-checks:
+    if: ${{ !inputs.windows_only }}
     timeout-minutes: 5
     runs-on: ubuntu-24.04
     permissions:
