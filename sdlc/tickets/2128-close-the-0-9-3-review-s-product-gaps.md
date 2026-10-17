@@ -57,3 +57,4 @@ Found by the 0.9.3 adversarial review on 2026-10-16.
 
 - 2026-10-17 started
 - 2026-10-17 next: Review accepted 78e627f01. Original batch failures 1792249841729-7187 and 1792250314261-50149 exposed stale shared-name expectations inconsistent with approved exact-owner decision3. Minimal assertion/fixture-key corrections preserve runtime logic and recorded responses. Complete drug family passed 180 cases without fail-fast in 1792250810209-75160; formatting passed and Clippy reused from 1792250665363-95005. Corrected six-ticket batch gate is running.
+- 2026-10-17 next: Batch members: 2159, 2149, 2168, 2128, 2122 and 2171. Shared landing gate: job 1792250897357-93113, candidate ea4161cc814ad034634ffd249e67b475e77e38dc. Required preceding main check 1792249698624-96397 passed. Gate is running; each ticket keeps its individual review and landing commit.
