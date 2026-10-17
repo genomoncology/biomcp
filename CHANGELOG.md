@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.3
+## 0.9.3 — 2026-10-17
 
 ### New features
 
@@ -38,6 +38,7 @@
 
 ### Internal
 
+- Prepare consistent stable release metadata for the final measurements and nonpublishing rehearsal. (2164)
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)
