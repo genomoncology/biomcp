@@ -40,6 +40,7 @@
 
 ### Internal
 
+- HTTP contract startup waits for healthy or exited children after a slow-start warning, with bounded hung-child cleanup and failure diagnostics. (2175)
 - Full main checks build and exercise PNG, SVG and terminal output with the development profile; release qualification and the final rehearsal retain optimized builds and output checks. (2171)
 - Keep retry fixtures on real time during loopback requests; preserve the HPO four-attempt policy and compact-command retry cancellation checks. (2167)
 - Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
