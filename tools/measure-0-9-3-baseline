@@ -538,7 +538,9 @@ if want_section coverage; then
           n_failed="$(cov_clause failed "$summary")"
           n_timeout="$(cov_clause 'timed out' "$summary")"
           n_skipped="$(cov_clause skipped "$summary")"
-          counts="${n_run:-0} run: ${n_passed:-0} passed, ${n_failed:-0} failed, ${n_timeout:-0} timed out, ${n_skipped:-0} skipped"
+          if [[ -n "$n_run" ]]; then
+            counts="${n_run} run: ${n_passed:-0} passed, ${n_failed:-0} failed, ${n_timeout:-0} timed out, ${n_skipped:-0} skipped"
+          fi
         fi
         ;;
       pytest)

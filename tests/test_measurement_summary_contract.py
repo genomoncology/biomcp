@@ -50,6 +50,13 @@ def executable(path: Path, body: str) -> None:
             True,
         ),
         (
+            "Summary [ 1.0s] unknown runner output",
+            "=== spec pages: spec/a.md ===",
+            "0",
+            ("summary unparsed", "1 pages, 0 failed"),
+            True,
+        ),
+        (
             "",
             "=== spec pages: spec/a.md ===",
             "0",
