@@ -2193,7 +2193,9 @@ mod tests {
         get_keys.sort_unstable();
         assert_eq!(
             get_keys,
-            vec!["assembly", "entity", "id", "json", "sections", "source"]
+            vec![
+                "assembly", "entity", "id", "json", "pdf", "sections", "source"
+            ]
         );
         assert_eq!(get["required"], json!(["entity", "id"]));
         // The sections items enum unions every entity's sections, and the
