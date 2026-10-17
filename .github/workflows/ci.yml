@@ -1,14 +1,7 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    # Ticket branches run CI too (2026-09-29 direction): a branch's
-    # green CI run is the merge condition, which closes the
-    # gate-passed-CI-failed gap and lets branches run in parallel.
-    # ticket/** is pm's landing branch form (2026-10-12); tickets/**
-    # stays until no open branch uses it.
-    branches: [main, "tickets/**", "ticket/**"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -61,12 +54,9 @@ jobs:
   # its longest lane.
   build:
     needs: changes
-    # Docs-only pushes (every changed file is docs, sdlc or
-    # notes) skip the Rust jobs; the classify job decides by
-    # the files changed across the whole push, never by the
-    # commit message.
+    # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      github.event_name == 'pull_request' || needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
@@ -106,12 +96,9 @@ jobs:
 
   lint:
     needs: [changes, build]
-    # Docs-only pushes (every changed file is docs, sdlc or
-    # notes) skip the Rust jobs; the classify job decides by
-    # the files changed across the whole push, never by the
-    # commit message.
+    # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      github.event_name == 'pull_request' || needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -136,12 +123,9 @@ jobs:
 
   rust-tests:
     needs: [changes, build]
-    # Docs-only pushes (every changed file is docs, sdlc or
-    # notes) skip the Rust jobs; the classify job decides by
-    # the files changed across the whole push, never by the
-    # commit message.
+    # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      github.event_name == 'pull_request' || needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -167,12 +151,9 @@ jobs:
 
   python-lane:
     needs: [changes, build]
-    # Docs-only pushes (every changed file is docs, sdlc or
-    # notes) skip the Rust jobs; the classify job decides by
-    # the files changed across the whole push, never by the
-    # commit message.
+    # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      github.event_name == 'pull_request' || needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -215,12 +196,9 @@ jobs:
 
   spec-lane:
     needs: [changes, build]
-    # Docs-only pushes (every changed file is docs, sdlc or
-    # notes) skip the Rust jobs; the classify job decides by
-    # the files changed across the whole push, never by the
-    # commit message.
+    # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      github.event_name == 'pull_request' || needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
@@ -250,23 +228,14 @@ jobs:
       - name: Canonical specification gate
         run: make spec
 
-  # The main-only jobs (2026-10-14 decision): branches trade the
-  # all-features, Windows, stress and release-panic jobs for a fast
-  # lane; every push to main still runs them, so the release
-  # workflow's needs-green-CI check on the tagged commit gates every
-  # release on them, and a ticket whose changes only these jobs build
-  # runs `make full-feature-check` itself before landing.
-
-  # The stress lane cannot rot: it runs on every push to main against
-  # the build job's archive instead of rebuilding it. It reuses the
-  # known load-flaky set pinned to a two-CPU set (one-CPU pinning
-  # deadlocks the pipe handshake child; see
-  # sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md).
+  # Manual runs exercise the stress, release-panic, full-feature and
+  # Windows checks on the selected revision alongside the routine lanes.
+  # The stress lane reuses the build job's archive and pins the known
+  # load-flaky set to two CPUs; one CPU deadlocks the handshake child.
   stress-lane:
     needs: [changes, build]
     if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 40
     runs-on: ubuntu-24.04
     steps:
@@ -292,8 +261,7 @@ jobs:
   release-panic:
     needs: changes
     if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     # The release-mode panic-recovery contract (ticket 1257): the
     # same build and nextest invocation `make verify` runs, without
     # network or credentials — the test drives an in-process stdio
@@ -317,8 +285,7 @@ jobs:
   full-features:
     needs: changes
     if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
@@ -333,12 +300,9 @@ jobs:
 
   generated-sources:
     needs: changes
-    # Docs-only pushes (every changed file is docs, sdlc or
-    # notes) skip the Rust jobs; the classify job decides by
-    # the files changed across the whole push, never by the
-    # commit message.
+    # Manual dispatch classifies as full CI, so every Rust lane runs.
     if: >-
-      github.event_name == 'pull_request' || needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
@@ -357,8 +321,7 @@ jobs:
   windows-contracts:
     needs: changes
     if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.changes.outputs.docs_only != 'true'
+      github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     runs-on: windows-2022
     steps:
@@ -436,15 +399,14 @@ jobs:
       - run: bash scripts/check-version-sync.sh
       - run: bash scripts/check-no-climb-tracked.sh
 
-  # The release checks on every push (2026-10-14 direction): a
+  # The release checks on each manual run: a
   # branch that changes shipped behavior must carry its changelog
   # bullet before review, and the release's green-CI query must
   # parse on the real gh the runners ship. Both failures used to
   # surface only at a tag, 13 seconds into the release workflow's
   # version check, after a 26-minute CI run. This lane is git,
-  # python3, gh and jq only — no Rust build — so it runs on every
-  # push, docs-only pushes included; the heavy release-shaped jobs
-  # stay main-only.
+  # python3, gh and jq only — no Rust build — so it runs on each
+  # manual run alongside the heavy release-shaped jobs.
   release-checks:
     timeout-minutes: 5
     runs-on: ubuntu-24.04

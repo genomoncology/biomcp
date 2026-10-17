@@ -1,8 +1,7 @@
 name: Publish documentation
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: publish-biomcp-docs
@@ -15,7 +14,7 @@ jobs:
   publish-docs:
     # Ticket 2049: the Pages publication serves the production site and
     # needs this repository's gh-pages history; the scratch repo has none.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'genomoncology/biomcp'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'genomoncology/biomcp'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
