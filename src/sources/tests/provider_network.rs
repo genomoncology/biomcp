@@ -646,6 +646,145 @@ async fn expired_invocation_cannot_build_a_cache_fallback_client() {
     assert!(!root.path().join("http").exists());
 }
 
+#[tokio::test(start_paused = true)]
+#[serial_test::serial(source_env)]
+async fn lazy_cache_initialization_settles_before_deadline_releases_its_locks() {
+    let root = TempDirGuard::new("lazy-cache-settlement");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let origin = reqwest::Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
+    let policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
+        provider_url_policy::ProviderUrlConsumer::GithubRelease,
+        &origin,
+    )
+    .unwrap();
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
+        ("BIOMCP_CACHE_MODE", None),
+        (
+            "BIOMCP_TEST_UNPACED_ORIGIN",
+            Some(origin.as_str().trim_end_matches('/')),
+        ),
+    ]);
+    super::super::reset_shared_http_client_for_tests();
+    let entered = Arc::new(tokio::sync::Notify::new());
+    let release = Arc::new(tokio::sync::Notify::new());
+    *super::super::CACHE_EPOCH_MUTATION_PAUSE.write().unwrap() = Some((
+        root.path().to_path_buf(),
+        Arc::clone(&entered),
+        Arc::clone(&release),
+    ));
+    let client = super::super::operator_provider_url_client(&policy).unwrap();
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+    // Keep virtual time still while Tokio's real filesystem workers settle.
+    let driving = Arc::new(AtomicBool::new(true));
+    let driver = tokio::spawn({
+        let driving = Arc::clone(&driving);
+        async move {
+            while driving.load(Ordering::SeqCst) {
+                tokio::task::yield_now().await;
+            }
+        }
+    });
+    let request = with_variant_article_deadline(deadline.clone(), async {
+        client
+            .get(origin.clone())
+            .send_with_source_context(crate::error::SourceContext::narrow(
+                crate::error::SourceProvider::OLS4,
+            ))
+            .await
+    });
+    tokio::pin!(request);
+    tokio::select! {
+        () = entered.notified() => {}
+        result = &mut request => panic!("request finished before initialization pause: {result:?}"),
+    }
+    driving.store(false, Ordering::SeqCst);
+    driver.await.unwrap();
+    assert!(
+        crate::cache::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .is_none()
+    );
+    tokio::time::advance(std::time::Duration::from_secs(11)).await;
+    let pending = futures::poll!(&mut request).is_pending();
+    let held = crate::cache::try_lock_cache_maintenance(root.path())
+        .unwrap()
+        .is_none();
+    release.notify_one();
+    assert!(
+        pending,
+        "deadline must wait for admitted cache initialization to settle"
+    );
+    let result = request.await;
+    assert!(
+        held,
+        "initialization must retain its maintenance lock until settlement"
+    );
+    result.expect_err("expired initialization cannot return a provider answer");
+    assert!(
+        super::super::shared_http_clients()
+            .unwrap()
+            .cache
+            .ready
+            .get()
+            .is_none()
+    );
+    {
+        let acceptance = listener.accept();
+        tokio::pin!(acceptance);
+        assert!(
+            futures::poll!(&mut acceptance).is_pending(),
+            "expired initialization must not contact the provider"
+        );
+    }
+    assert!(
+        crate::cache::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .is_some()
+    );
+
+    // A retry may finish setup, but its subsequent transport still expires.
+    let later = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+    driving.store(true, Ordering::SeqCst);
+    let driver = tokio::spawn({
+        let driving = Arc::clone(&driving);
+        async move {
+            while driving.load(Ordering::SeqCst) {
+                tokio::task::yield_now().await;
+            }
+        }
+    });
+    let retry = with_variant_article_deadline(later.clone(), async {
+        client
+            .get(origin.clone())
+            .send_with_source_context(crate::error::SourceContext::narrow(
+                crate::error::SourceProvider::OLS4,
+            ))
+            .await
+    });
+    tokio::pin!(retry);
+    let (_connection, _) = tokio::select! {
+        accepted = listener.accept() => accepted.unwrap(),
+        result = &mut retry => panic!("retry finished before provider accepted: {result:?}"),
+    };
+    driving.store(false, Ordering::SeqCst);
+    driver.await.unwrap();
+    assert!(
+        super::super::shared_http_clients()
+            .unwrap()
+            .cache
+            .ready
+            .get()
+            .is_some()
+    );
+    tokio::time::advance(std::time::Duration::from_secs(11)).await;
+    retry
+        .await
+        .expect_err("successful cache setup must preserve the transport deadline");
+    super::super::reset_shared_http_client_for_tests();
+}
+
 #[derive(Clone, Copy)]
 enum CacheOriginMode {
     Initial,

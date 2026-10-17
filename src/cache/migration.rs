@@ -282,7 +282,10 @@ async fn ensure_body_limited_cache_epoch_until_with(
         maintenance,
         state,
         deadline,
-        |_| async {},
+        |_| async {
+            #[cfg(test)]
+            crate::sources::observe_cache_epoch_mutation(cache_root).await;
+        },
     )
     .await
 }

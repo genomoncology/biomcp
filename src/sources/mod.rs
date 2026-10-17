@@ -42,6 +42,29 @@ impl CachePublicationState {
     }
 }
 
+// Request deadline guards must drain admitted initialization before dropping
+// its filesystem locks. Restore their ordinary behavior before provider work.
+struct CacheInitializationSettlement {
+    state: CachePublicationState,
+    previous: bool,
+}
+
+impl CacheInitializationSettlement {
+    fn begin() -> Option<Self> {
+        let state = current_cache_publication_state()?;
+        let previous = state.marker().swap(true, std::sync::atomic::Ordering::AcqRel);
+        Some(Self { state, previous })
+    }
+}
+
+impl Drop for CacheInitializationSettlement {
+    fn drop(&mut self) {
+        self.state
+            .marker()
+            .store(self.previous, std::sync::atomic::Ordering::Release);
+    }
+}
+
 impl VariantArticleDeadline {
     pub(crate) fn from_now(limit: Duration) -> Self {
         Self {
@@ -586,6 +609,7 @@ impl SharedHttpCache {
         let initialized = self
             .ready
             .get_or_try_init(|| async {
+                let _settlement = CacheInitializationSettlement::begin();
                 let manager = match deadline {
                     Some(deadline) => prepare_http_cache_with_deadline(config, deadline).await?,
                     None => prepare_http_cache(config, crate::cache::SizeAwareCacheManager::new)?,
@@ -662,6 +686,33 @@ type CacheSetupObservation = (
 #[cfg(test)]
 static CACHE_SETUP_OBSERVER: std::sync::RwLock<Option<CacheSetupObservation>> =
     std::sync::RwLock::new(None);
+
+#[cfg(test)]
+type CacheEpochMutationPause = (
+    std::path::PathBuf,
+    std::sync::Arc<tokio::sync::Notify>,
+    std::sync::Arc<tokio::sync::Notify>,
+);
+
+#[cfg(test)]
+static CACHE_EPOCH_MUTATION_PAUSE: std::sync::RwLock<Option<CacheEpochMutationPause>> =
+    std::sync::RwLock::new(None);
+
+#[cfg(test)]
+pub(crate) async fn observe_cache_epoch_mutation(root: &std::path::Path) {
+    let pause = {
+        let mut slot = CACHE_EPOCH_MUTATION_PAUSE.write().unwrap();
+        if slot.as_ref().is_some_and(|(path, _, _)| path == root) {
+            slot.take()
+        } else {
+            None
+        }
+    };
+    if let Some((_, entered, release)) = pause {
+        entered.notify_one();
+        release.notified().await;
+    }
+}
 
 #[cfg(test)]
 pub(crate) fn observe_cache_setup(root: &std::path::Path, epoch_acquired: bool) {
