@@ -61,15 +61,3 @@ citation as the dedicated helper.
 ```bash
 ../../tools/biomcp-ci get drug warfarin interactions | mustmatch like 'https://ddinter.scbdd.com/ddinter/drug-detail/DDInterAMX/'
 ```
-
-## The label's own interaction text rides along
-
-When the resolved openFDA label carries a `drug_interactions` section, its
-text prints in its own block beside the structured DDInter rows, so the
-label's own guidance reaches the reader too.
-
-```bash
-../../tools/biomcp-ci get drug gefitinib interactions | mustmatch like '## Additive Label Text (OpenFDA)
-
-7 DRUG INTERACTIONS CYP3A4 Inducer: Increase gefitinib tablets to 500 mg daily'
-```

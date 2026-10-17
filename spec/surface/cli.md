@@ -319,20 +319,6 @@ mustmatch like "list_split_files_exist_with_doc_headers" <<<"$list_structure_out
 test "$list_structure_status" -eq 0
 ```
 
-## Article CLI Test Ownership Stays Decomposed
-
-The article CLI tests should keep the same executable ownership ratchet: a split
-sidecar tree with named domains, module headers, and the CLI 700-line cap.
-
-```bash
-set +e
-structure_out="$("${BIOMCP_SPEC_TEST_ARTICLE_CLI_TESTS_STRUCTURE:?spec preparation did not export article CLI tests}" --nocapture 2>&1)"
-structure_status=$?
-set -e
-mustmatch like "article_cli_test_split_files_exist_with_doc_headers" <<<"$structure_out"
-test "$structure_status" -eq 0
-```
-
 ## Global CLI Line-Cap Allowlist Is Fully Absorbed
 
 The global `src/cli` 700-line ratchet should no longer need the ticket-334

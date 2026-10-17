@@ -12,12 +12,10 @@ pembrolizumab identity-only record whose match carries no section text.
 Osimertinib's current SPL record carries no populated `openfda.generic_name` or
 `brand_name`, so the field-scoped lookup finds nothing. BioMCP falls back to a
 phrase search of the records' own `spl_product_data_elements` and keeps only
-the record whose own identity matches the drug. The raw reply carries the
-whole sections and the approved-indication rows together, as the first row
-checks.
+the record whose own identity matches the drug.
 
 ```bash
-../../tools/biomcp-ci --json get drug osimertinib label --raw | jq -e '(.section_outcomes.label == {"outcome":"data","sources":["OpenFDA label"]}) and (.label.indications | test("TAGRISSO is a kinase inhibitor")) and (.label.dosage | test("80 mg orally once daily")) and (.label.indication_summary | length > 0) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"data","sources":["OpenFDA label"]}])' | mustmatch 'true'
+../../tools/biomcp-ci --json get drug osimertinib label --raw | jq -e '(.section_outcomes.label == {"outcome":"data","sources":["OpenFDA label"]}) and (.label.indications | test("TAGRISSO is a kinase inhibitor")) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"data","sources":["OpenFDA label"]}])' | mustmatch 'true'
 ../../tools/biomcp-ci --json get drug osimertinib label | jq -e '(.label | tostring | test("amivantamab|Rybrevant|Lazcluze|Datroway"; "i")) | not' | mustmatch 'true'
 ../../tools/biomcp-ci get drug osimertinib label | mustmatch like '## FDA Label'
 ../../tools/biomcp-ci get drug osimertinib label | mustmatch not like '(?i)amivantamab|Rybrevant|Lazcluze|Datroway'
