@@ -452,6 +452,11 @@ fn open_pdf_failures_name_the_part_that_failed() {
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr)
         );
+        let recorded = String::from_utf8_lossy(&output.stdout).to_lowercase();
+        assert!(
+            !recorded.contains("secret"),
+            "{pmid} recorded output echoed the refused URL: {recorded}"
+        );
         let doc: serde_json::Value =
             serde_json::from_slice(&output.stdout).expect("article JSON should parse");
         let attempt = article_fulltext_pdf_attempt(&doc);
@@ -462,14 +467,6 @@ fn open_pdf_failures_name_the_part_that_failed() {
         assert_eq!(attempt["outcome"], outcome, "wrong pdf-step outcome for {pmid}");
         assert_eq!(doc["full_text_path"], serde_json::Value::Null);
     }
-
-    // The refused link's credentials never reach the record.
-    let refused = successful_output(
-        &fixture,
-        &["--json", "get", "article", "22663027", "fulltext", "--pdf"],
-    );
-    let stderrless = String::from_utf8_lossy(&refused.stdout).to_lowercase();
-    assert!(!stderrless.contains("secret"), "refusal echoed the URL: {stderrless}");
 }
 
 #[test]
