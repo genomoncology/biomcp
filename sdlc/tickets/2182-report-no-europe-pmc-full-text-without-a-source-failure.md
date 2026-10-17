@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision ecdba16, accept
+
 ## Outcome
 
 When Europe PMC has no full text for a PubMed ID, the full-text attempt reports that it found no full text, promptly, and the section never says a source failed.
