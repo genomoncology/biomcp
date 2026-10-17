@@ -170,7 +170,9 @@ fn extract_workbook(
     spend: &mut ArchiveBudget,
     extraction: &mut SupplementTextExtraction,
 ) {
-    if format == SupplementFormat::Xlsx {
+    // The reader detects the container from bytes, even when its extension is
+    // .xls. Inspect that same container before it can allocate expanded XML.
+    if format == SupplementFormat::Xlsx || zip::ZipArchive::new(Cursor::new(bytes)).is_ok() {
         if let Err(reason) = admit_package(bytes, budget, spend) {
             extraction
                 .problems

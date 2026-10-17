@@ -249,9 +249,16 @@ fn workbook_package_limits_follow_bytes_when_extension_is_xls() {
     limits.max_member_bytes = BRCA1_SHEET1_XLSX.len() as u64 + 1;
     let extraction =
         extract_supplement_text(SupplementFormat::Xls, BRCA1_SHEET1_XLSX, &limits);
-    assert!(extraction.blocks.is_empty(), "oversized XML must not be parsed");
-    assert!(extraction.problems.iter().any(|problem|
-        problem.reason.contains("extraction size limit")));
+    assert!(
+        extraction.blocks.is_empty(),
+        "oversized XML must not be parsed"
+    );
+    assert!(
+        extraction
+            .problems
+            .iter()
+            .any(|problem| problem.reason.contains("extraction size limit"))
+    );
 }
 
 #[test]
