@@ -189,11 +189,16 @@ impl RateLimiter {
                 Duration::from_millis(334),
             ),
         ];
-        Self::new(
-            policies,
-            Duration::from_millis(100),
-            UnpacedOrigin::from_env(),
-        )
+        // Recorded provider tests can retain loopback authorization while
+        // exercising the same pacing as a real provider request.
+        let preserve_rate_limits =
+            std::env::var("BIOMCP_TEST_PRESERVE_RATE_LIMITS").as_deref() == Ok("1");
+        let unpaced_origin = if preserve_rate_limits {
+            None
+        } else {
+            UnpacedOrigin::from_env()
+        };
+        Self::new(policies, Duration::from_millis(100), unpaced_origin)
     }
 
     fn new(

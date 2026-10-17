@@ -1127,7 +1127,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        decoded_path = unquote(parsed.path)
+        # Keep paced discovery on its own policy prefix while other recorded
+        # providers share this listener.
+        decoded_path = unquote(parsed.path).removeprefix("/paced-s2")
         query = parse_qs(parsed.query)
 
         candidate_route = {

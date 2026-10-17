@@ -451,13 +451,22 @@ fn run_fixture(
     fixture: &biomcp_mcp_contract_client::ArticleFulltextFixture,
     args: &[&str],
 ) -> Output {
+    fixture_command(fixture, args)
+        .output()
+        .expect("run fixture-backed article batch")
+}
+
+fn fixture_command(
+    fixture: &biomcp_mcp_contract_client::ArticleFulltextFixture,
+    args: &[&str],
+) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
     command.env("RUST_LOG", "off");
     command.args(args);
     for (name, value) in article_fulltext_fixture_env(fixture) {
         command.env(name, value);
     }
-    command.output().expect("run fixture-backed article batch")
+    command
 }
 
 fn run_fixture_with_warnings(
@@ -1331,7 +1340,7 @@ fn batch_article_detail_pdf_fetches_three_papers_under_one_limiter() {
         .expect("provision article fixture");
     std::fs::write(&fixture.request_log, b"").expect("truncate fixture request log");
 
-    let output = run_fixture(
+    let output = fixture_command(
         &fixture,
         &[
             "--json",
@@ -1344,7 +1353,12 @@ fn batch_article_detail_pdf_fetches_three_papers_under_one_limiter() {
             "fulltext",
             "--pdf",
         ],
-    );
+    )
+    .env("BIOMCP_TEST_PRESERVE_RATE_LIMITS", "1")
+    .env("BIOMCP_S2_BASE", format!("{}/paced-s2", fixture.base_url))
+    .env("S2_API_KEY", "")
+    .output()
+    .expect("run paced fixture-backed article batch");
     assert_eq!(
         output.status.code(),
         Some(0),
@@ -1405,10 +1419,8 @@ fn batch_article_detail_pdf_fetches_three_papers_under_one_limiter() {
         json!("unavailable")
     );
 
-    // One process, one limiter: this single run issued every Semantic
-    // Scholar paper lookup, and consecutive requests to the paced publisher
-    // origin keep the limiter's per-origin interval (100 ms, checked with a
-    // 10 ms clock-schedule allowance).
+    // Exercise the real keyless Semantic Scholar policy in one process.
+    // Allow 10 ms for transport scheduling between the limiter and server.
     let log = std::fs::read_to_string(&fixture.request_log).expect("fixture request log");
     let paper_lookups = log
         .lines()
@@ -1418,6 +1430,13 @@ fn batch_article_detail_pdf_fetches_three_papers_under_one_limiter() {
         paper_lookups, 3,
         "each article asked Semantic Scholar once in this one process: {log}"
     );
+    for pair in logged_timestamps(&log, "s2:paper:").windows(2) {
+        let gap = pair[1] - pair[0];
+        assert!(
+            gap >= 1.99,
+            "Semantic Scholar discovery must keep its 2 s interval, saw {gap:.3}s: {log}"
+        );
+    }
     let stamps = logged_timestamps(&log, "publisher-pdf:");
     assert!(
         stamps.len() >= 3,
