@@ -138,6 +138,15 @@ def status_token(content: str) -> str:
     return ""
 
 
+def belongs_to_release_line(content: str | None, version: str) -> bool:
+    """A copied record for another release line is not a landing here."""
+    line = re.match(r"v(\d+)\.(\d+)", version)
+    milestone = re.search(r"^Milestone:\s*(\S+)", content or "", re.MULTILINE)
+    return line is None or milestone is None or milestone.group(1).startswith(
+        f"{line.group(1)}.{line.group(2)}"
+    )
+
+
 def completed_status_tickets(previous: str, tag: str, version: str | None = None) -> set[str]:
     names = run_git(
         "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/tickets/"
@@ -146,8 +155,6 @@ def completed_status_tickets(previous: str, tag: str, version: str | None = None
     # tickets only. Carried tickets from another line (the 1.0
     # planning records landed mid-cycle) complete on their own line
     # and never demand a bullet here.
-    line = re.match(r"v(\d+)\.(\d+)", version or tag)
-    line_prefix = f"{line.group(1)}.{line.group(2)}" if line else None
     found: set[str] = set()
     for name in names:
         match = TICKET_FILE.match(name)
@@ -159,10 +166,8 @@ def completed_status_tickets(previous: str, tag: str, version: str | None = None
         # reads complete at the release.
         if status_token(content) != "complete":
             continue
-        if line_prefix is not None:
-            milestone = re.search(r"^Milestone:\s*(\S+)", content, re.MULTILINE)
-            if milestone is not None and not milestone.group(1).startswith(line_prefix):
-                continue
+        if not belongs_to_release_line(content, version or tag):
+            continue
         found.add(match.group(1))
     return found
 
@@ -174,9 +179,14 @@ def merged_tickets(previous: str, tag: str, version: str | None = None) -> set[s
     # (2010, absorbed by 1304). A record can lag a landing while a
     # subject can be rewritten or absent. Fail closed on the union,
     # one ticket once across every shape.
+    read_ticket = tag_ticket_reader(tag)
+    records = {
+        ticket for ticket in record_tickets(previous, tag)
+        if belongs_to_release_line(read_ticket(ticket), version or tag)
+    }
     return (
         landing_subject_tickets(previous, tag)
-        | record_tickets(previous, tag)
+        | records
         | completed_status_tickets(previous, tag, version)
     )
 

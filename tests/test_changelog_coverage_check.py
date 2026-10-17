@@ -40,6 +40,40 @@ def test_release_candidate_coverage_needs_no_created_tag(tmp_path: Path) -> None
         "git", "-C", str(tmp_path), "tag", "--list", "v0.9.1",
     ], text=True) == ""
 
+
+@pytest.mark.parametrize("describe_release_record", [False, True])
+def test_release_candidate_ignores_records_from_other_release_lines(
+    tmp_path: Path, describe_release_record: bool,
+) -> None:
+    def git(*args: str) -> None:
+        subprocess.run([
+            "git", "-C", str(tmp_path), "-c", "user.name=Test", "-c",
+            "user.email=test@example.invalid", *args,
+        ], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("commit", "--allow-empty", "-qm", "Previous release")
+    git("tag", "v0.9.0")
+    tickets = tmp_path / "sdlc/tickets"
+    records = tmp_path / "sdlc/records"
+    tickets.mkdir(parents=True)
+    records.mkdir()
+    (tickets / "2041-sync.md").write_text("Status: OPEN.\nMilestone: 1.0\n")
+    (records / "2041-sync.md").write_text("Record a synchronization on another line.\n")
+    (tickets / "2096-stress.md").write_text("Status: COMPLETE.\nMilestone: 0.9.1\n")
+    (records / "2096-stress.md").write_text("Prepare the stress test directory.\n")
+    description = "- Prepare the stress test directory. (2096)\n" if describe_release_record else ""
+    (tmp_path / "CHANGELOG.md").write_text("## 0.9.1 — 2026-10-17\n\n" + description)
+    git("add", ".")
+    git("commit", "-qm", "Record the two independent release lines")
+    result = subprocess.run([
+        sys.executable, str(CHECK), "--tag", "v0.9.1", "--revision", "HEAD",
+    ], cwd=tmp_path, text=True, capture_output=True)
+    assert "2041" not in result.stderr
+    assert result.returncode == (0 if describe_release_record else 1), result.stderr
+    if not describe_release_record:
+        assert "2096" in result.stderr
+
 _SPEC = importlib.util.spec_from_file_location("check_changelog_coverage", CHECK)
 _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
