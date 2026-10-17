@@ -47,9 +47,6 @@ jobs:
       contents: read
     outputs:
       source_sha: ${{ steps.identity.outputs.source_sha }}
-      release_tag: ${{ steps.identity.outputs.release_tag }}
-    env:
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -65,13 +62,16 @@ jobs:
           CONTAINER_ONLY: ${{ inputs.container_only }}
           WORKFLOW_SHA: ${{ github.workflow_sha }}
         run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          fi
           if [ -n "$CANDIDATE_SHA$REHEARSAL_VERSION" ]; then
             args=(--candidate-sha "$CANDIDATE_SHA" --workflow-sha "$WORKFLOW_SHA" --rehearsal-version "$REHEARSAL_VERSION")
             if [ -n "$INPUT_TAG" ]; then args+=(--tag "$INPUT_TAG"); fi
             if [ "$CONTAINER_ONLY" = true ]; then args+=(--container-only); fi
-            python3 scripts/check-release-versions.py "${args[@]}"
+            python3 scripts/check-release-versions.py "${args[@]}" --github-output "$GITHUB_OUTPUT"
           else
-            python3 scripts/check-release-versions.py --tag "$TAG"
+            python3 scripts/check-release-versions.py --tag "$TAG" --github-output "$GITHUB_OUTPUT"
           fi
 
       - name: Require the changelog to cover merged tickets
@@ -87,6 +87,7 @@ jobs:
   # built before the marker set passes.
   qualification:
     needs: [version-check]
+    if: inputs.container_only != true
     permissions:
       contents: read
       actions: read
@@ -104,7 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.candidate_sha || inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
         with:
@@ -138,15 +139,13 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
     steps:
       # Ticket 2064: v0.9.2 and v0.9.1 published with no release
       # notes. The draft carries the tag's changelog section from the
-      # moment it exists, so a rehearsal reads the notes off the
-      # draft before publish-release makes it public.
+      # moment it exists, before publish-release makes it public.
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.candidate_sha || inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - name: Render the release notes from the changelog
         run: |
@@ -190,11 +189,10 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.candidate_sha || inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       # Ticket 2024: the build steps run tools/with-build-identity so
       # the shipped binaries report their commit instead of
@@ -327,7 +325,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.candidate_sha || inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         if: runner.os != 'Linux'
@@ -404,10 +402,6 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      # The tag decides the version every smoke must print, read the
-      # same way check-release-versions.py reads it (v prefix
-      # stripped), so a binary printing anything else fails the leg.
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
     needs: [pypi-build]
     if: github.event_name == 'push' || inputs.candidate_sha != ''
     strategy:
@@ -597,7 +591,8 @@ jobs:
     needs: [version-check, qualification, docs-publish]
     if: >-
       !cancelled() && !inputs.candidate_sha && needs.version-check.result == 'success' &&
-      needs.qualification.result == 'success' &&
+      (needs.qualification.result == 'success' ||
+      (inputs.container_only == true && needs.qualification.result == 'skipped')) &&
       (needs.docs-publish.result == 'success' || needs.docs-publish.result == 'skipped')
     runs-on: ubuntu-24.04
     permissions:
@@ -607,7 +602,6 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
       LIVE_REVISION_URL: https://biomcp.org/__biomcp_revision__/latest.txt
       RETRY_WINDOW_SECONDS: "600"
       RETRY_INTERVAL_SECONDS: "30"
@@ -615,10 +609,11 @@ jobs:
       - name: Check out the gate helper
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.candidate_sha || inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - name: Resolve the tag commit
         env:
+          QUALIFIED_SHA: ${{ needs.version-check.outputs.source_sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_SHA=""
@@ -627,6 +622,7 @@ jobs:
             sleep $(( attempt * 2 ))
           done
           test -n "$TAG_SHA"
+          test "$TAG_SHA" = "$QUALIFIED_SHA"
           echo "TAG_SHA=${TAG_SHA}" >> "$GITHUB_ENV"
           echo "release tag ${TAG} resolves to ${TAG_SHA}"
 
@@ -715,7 +711,6 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -789,15 +784,15 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
     steps:
       - name: Check out the packaging ref
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.tag || github.ref_name }}
+          ref: ${{ needs.version-check.outputs.source_sha }}
 
       - name: Resolve the image version and source revision
         env:
+          QUALIFIED_SHA: ${{ needs.version-check.outputs.source_sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${TAG#v}"
@@ -807,6 +802,8 @@ jobs:
             sleep $(( attempt * 2 ))
           done
           test -n "$SOURCE_SHA"
+          test "$SOURCE_SHA" = "$QUALIFIED_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           {
             echo "VERSION=${VERSION}"
@@ -918,7 +915,6 @@ jobs:
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.rehearsal_version && format('v{0}', inputs.rehearsal_version) || inputs.tag || github.ref_name }}
     steps:
       # The repository must be present before any step runs a
       # repository script (2026-09-30 third go-request review: the

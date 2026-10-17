@@ -101,6 +101,7 @@ def test_sync_failure_fails_the_release_check(tmp_path: Path) -> None:
     [
         ("HEAD", "HEAD", "0.9.1", [], True),
         ("short", "HEAD", "0.9.1", [], False),
+        ("0" * 40, "HEAD", "0.9.1", [], False),
         ("HEAD", "0" * 40, "0.9.1", [], False),
         ("HEAD", "HEAD", "0.9.2", [], False),
         ("HEAD", "HEAD", "0.9.1-dev", [], False),

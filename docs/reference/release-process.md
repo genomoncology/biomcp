@@ -28,7 +28,7 @@ The GitHub release, its assets, and the container `latest` pointer stay non-publ
 
 A manual run takes `tag` and `container_only`. `TAG` comes from the input on dispatch and from `github.ref_name` on a tag push.
 
-With `container_only: true`, `version-check`, direct `qualification`, `docs-live`, and `container-publish` run. The container condition requires both gates to succeed and every push-only need to be skipped. This republishes an existing release image without touching its assets, PyPI, the tap, or the GitHub release state.
+With `container_only: true`, `version-check`, `docs-live`, and `container-publish` run. This mode reuses released executables and does not build an old tag with the current qualification commands. The container condition requires both gates to succeed and every push-only need to be skipped. This republishes an existing release image without touching its assets, PyPI, the tap, or the GitHub release state.
 
 With only `tag` and without `container_only`, a dispatch runs `version-check`, direct `qualification` and `docs-live`; it is a check-only dry run and publishes nothing. PyPI and Homebrew carry explicit push-only gates.
 

@@ -49,6 +49,10 @@ def test_rehearsal_builds_have_no_publication_permissions_or_credentials() -> No
     assert "!inputs.candidate_sha" in jobs["container-publish"]["if"]
 
 EXPECTED_NEEDS = {
+    "rehearsal-docs": ["version-check", "qualification"],
+    "rehearsal-container": ["version-check", "build", "wheel-smoke"],
+    "rehearsal-payloads": ["version-check", "build", "pypi-build"],
+    "rehearsal-complete": ["qualification", "release-gate", "build", "pypi-build", "wheel-smoke", "rehearsal-docs", "rehearsal-container", "rehearsal-payloads"],
     "version-check": [],
     "qualification": ["version-check"],
     "release-gate": ["version-check", "qualification"],
@@ -370,12 +374,6 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "3ffb87228f0c77aecb87c34ee83d661a80bff50e397e911e917de5891db2a5fb",
     ("version-check", "Require the tag and committed versions to agree"): "8bdcc74fd872a7a77d8341bd5049e3a3845a89825f02875f4258e5d665243b8b",
     ("version-check", "Require the changelog to cover merged tickets"): "8dcf47fdb31ff44771a511058fa05d8e17d1a551744dcc1e8631fa7f8979118e",
-    # The release waits on a finished green ci.yml run for the exact
-    # tagged commit. Re-pinned 2026-10-13: gh has no --conclusion
-    # flag, so jq counts the successful conclusions. Re-pinned:
-    # only a push run on main counts — the branch and the event
-    # ride with the gh flags and the jq filter, and the count is
-    # piped through jq so the filter runs in this script.
     # The marker-set job's run steps are pinned like the pipeline
     # jobs' — the fetch feeds the offline compile and the make
     # target is the marker selection itself.
@@ -934,6 +932,13 @@ def test_release_locked_build_assertion_catches_a_dropped_flag(tmp_path: Path) -
 # `&& !cancelled()` would re-run a publish after an upstream failure
 # and must break the contract.
 EXPECTED_JOB_IFS = {
+    "qualification": "inputs.container_only != true",
+    "publish-assets": "github.event_name == 'push'",
+    "docs-publish": "github.event_name == 'push'",
+    "rehearsal-docs": "inputs.candidate_sha != ''",
+    "rehearsal-container": "inputs.candidate_sha != ''",
+    "rehearsal-payloads": "inputs.candidate_sha != ''",
+    "rehearsal-complete": "inputs.candidate_sha != ''",
     "create-draft": "github.event_name == 'push'",
     "release-gate": "github.event_name == 'push' || inputs.candidate_sha != ''",
     "build": "github.event_name == 'push' || inputs.candidate_sha != ''",
@@ -1461,7 +1466,8 @@ def test_removing_a_container_condition_clause_breaks_the_contract(
 ) -> None:
     workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
     scratch = tmp_path / "release.yml"
-    scratch.write_text(workflow.replace(clause, "true", 1), encoding="utf-8")
+    container = _job_block(workflow, "container-publish")
+    scratch.write_text(workflow.replace(container, container.replace(clause, "true", 1), 1), encoding="utf-8")
     with pytest.raises(AssertionError):
         _assert_release_contract(scratch.read_text(encoding="utf-8"))
 
@@ -1764,14 +1770,14 @@ def test_the_strict_parse_rejects_the_duplicated_with_shape_github_refused() -> 
     # which legitimately carries fetch-depth.
     original = (
         "        with:\n"
-        "          ref: ${{ inputs.tag || github.ref_name }}\n"
+        "          ref: ${{ needs.version-check.outputs.source_sha }}\n"
         "\n"
         "      # Ticket 2024: the build steps run tools/with-build-identity so"
     )
     duplicated = workflow.replace(
         original,
         "        with:\n"
-        "          ref: ${{ inputs.tag || github.ref_name }}\n"
+        "          ref: ${{ needs.version-check.outputs.source_sha }}\n"
         "        with:\n"
         "          fetch-depth: 0\n"
         "\n"

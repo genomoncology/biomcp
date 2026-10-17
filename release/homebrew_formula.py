@@ -6,7 +6,28 @@ import argparse
 from pathlib import Path
 import re
 
-TEMPLATE = 'class Biomcp < Formula\n  desc "Biomedical MCP CLI and knowledge server"\n  homepage "https://biomcp.org"\n  version "${VERSION}"\n  on_macos do\n    if Hardware::CPU.intel?\n      url "https://github.com/genomoncology/biomcp/releases/download/v${VERSION}/biomcp-darwin-x86_64.tar.gz"\n      sha256 "${X86_SHA256}"\n    else\n      url "https://github.com/genomoncology/biomcp/releases/download/v${VERSION}/biomcp-darwin-arm64.tar.gz"\n      sha256 "${ARM64_SHA256}"\n    end\n  end\n  def install\n    bin.install "biomcp"\n  end\n\n  test do\n    assert_match version.to_s, shell_output("#{bin}/biomcp --version")\n  end\nend\n'
+TEMPLATE = """class Biomcp < Formula
+  desc "Biomedical MCP CLI and knowledge server"
+  homepage "https://biomcp.org"
+  version "${VERSION}"
+  on_macos do
+    if Hardware::CPU.intel?
+      url "https://github.com/genomoncology/biomcp/releases/download/v${VERSION}/biomcp-darwin-x86_64.tar.gz"
+      sha256 "${X86_SHA256}"
+    else
+      url "https://github.com/genomoncology/biomcp/releases/download/v${VERSION}/biomcp-darwin-arm64.tar.gz"
+      sha256 "${ARM64_SHA256}"
+    end
+  end
+  def install
+    bin.install "biomcp"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/biomcp --version")
+  end
+end
+"""
 
 
 def main() -> int:

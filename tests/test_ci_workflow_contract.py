@@ -217,7 +217,7 @@ def test_the_routine_lanes_share_one_build_job_and_run_in_parallel() -> None:
         )
 
 
-def test_ci_runs_only_when_dispatched_manually() -> None:
+def test_ci_runs_only_when_dispatched_or_called_for_a_release() -> None:
     triggers = DOC.get("on", DOC.get(True))
     assert triggers == {"workflow_dispatch": None, "workflow_call": {"inputs": {"revision": {"required": True, "type": "string"}}}}
 
