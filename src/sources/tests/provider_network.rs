@@ -520,6 +520,118 @@ async fn contended_maintenance_deadline_publishes_no_partial_client_or_cache_tre
 }
 
 #[tokio::test]
+#[serial_test::serial(source_env)]
+async fn parallel_sources_share_one_cache_construction_and_epoch_acquisition() {
+    let root = TempDirGuard::new("parallel-shared-cache");
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
+        ("BIOMCP_CACHE_MODE", None),
+    ]);
+    super::super::reset_shared_http_client_for_tests();
+    let counts = Arc::new([AtomicUsize::new(0), AtomicUsize::new(0)]);
+    *super::super::CACHE_SETUP_OBSERVER.write().unwrap() =
+        Some((root.path().to_path_buf(), Arc::clone(&counts)));
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(3));
+    let results = futures::future::join_all(
+        (0..8).map(|_| super::super::shared_client_with_deadline("europe-pmc", &deadline)),
+    )
+    .await;
+    let policy = provider_url_policy::ProviderUrlPolicy::semantic_scholar_api(
+        &reqwest::Url::parse("https://api.semanticscholar.org").unwrap(),
+    )
+    .unwrap();
+    for authenticated in [true, false] {
+        super::super::semantic_scholar_provider_client("semantic-scholar", &policy, authenticated)
+            .unwrap();
+        super::super::semantic_scholar_provider_client_with_deadline(
+            "semantic-scholar",
+            &policy,
+            authenticated,
+            &deadline,
+        )
+        .await
+        .unwrap();
+    }
+    super::super::provider_url_client("semantic-scholar", &policy).unwrap();
+    super::super::provider_url_client_with_deadline("semantic-scholar", &policy, &deadline)
+        .await
+        .unwrap();
+    super::super::operator_provider_url_client(&policy).unwrap();
+    *super::super::CACHE_SETUP_OBSERVER.write().unwrap() = None;
+    super::super::reset_shared_http_client_for_tests();
+    for result in results {
+        result.expect("parallel source client");
+    }
+    assert_eq!(
+        counts[0].load(Ordering::SeqCst),
+        1,
+        "one cache construction for parallel sources"
+    );
+    assert_eq!(
+        counts[1].load(Ordering::SeqCst),
+        1,
+        "one successful epoch-lock acquisition for parallel sources"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_later_invocation_retries_cache_setup_after_a_failed_expired_invocation() {
+    let root = TempDirGuard::new("retry-shared-cache-setup");
+    let cache_root = root.path().join("cache");
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_CACHE_DIR", Some(cache_root.to_str().unwrap())),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
+        ("BIOMCP_CACHE_MODE", None),
+    ]);
+    super::super::reset_shared_http_client_for_tests();
+    std::fs::write(&cache_root, b"temporary obstruction").unwrap();
+    let first = VariantArticleDeadline::from_now(std::time::Duration::from_millis(100));
+    super::super::shared_client_with_deadline("europe-pmc", &first)
+        .await
+        .expect("cache setup failure leaves provider available");
+    tokio::time::sleep(first.remaining()).await;
+    assert!(first.is_exhausted());
+    std::fs::remove_file(&cache_root).unwrap();
+    let later = VariantArticleDeadline::from_now(std::time::Duration::from_secs(3));
+    super::super::shared_client_with_deadline("europe-pmc", &later)
+        .await
+        .expect("later invocation gets a cached client");
+    assert!(
+        cache_root.join("http/.tree-secured-v1").is_file(),
+        "later invocation retries setup without retaining the first deadline"
+    );
+    super::super::reset_shared_http_client_for_tests();
+}
+
+#[tokio::test]
+async fn legacy_cache_upgrade_waits_for_local_source_lease() {
+    let root = TempDirGuard::new("legacy-local-source-lease");
+    std::fs::create_dir_all(root.path().join("http-cacache")).unwrap();
+    std::fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
+    let shared = crate::cache::lock_cache_shared(root.path()).unwrap();
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
+    let construction = build_http_client_with_config_deadline(
+        SharedHttpClientKind::Default,
+        super::test_cache_config(root.path()),
+        None,
+        &deadline,
+    );
+    tokio::pin!(construction);
+    assert!(
+        futures::poll!(&mut construction).is_pending(),
+        "legacy upgrade must wait for the local source"
+    );
+    drop(shared);
+    construction
+        .await
+        .expect("cached client after local source release");
+    assert!(root.path().join(".body-limit-cache-v1").is_file());
+    assert!(!root.path().join("http-cacache").exists());
+}
+
+#[tokio::test]
 async fn expired_invocation_cannot_build_a_cache_fallback_client() {
     let root = TempDirGuard::new("expired-cache-fallback");
     let deadline = VariantArticleDeadline::from_now(std::time::Duration::ZERO);

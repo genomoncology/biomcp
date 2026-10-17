@@ -78,13 +78,15 @@ pub(crate) use limits::{
 pub(crate) use maintenance::{
     CacheOperationGuard, ClearReport, execute_cache_clear, lock_cache_key_async,
     lock_cache_maintenance, lock_cache_maintenance_after_shared, lock_cache_maintenance_until,
-    lock_cache_shared, lock_cache_shared_until, try_lock_cache_maintenance, try_lock_cache_shared,
+    lock_cache_shared, lock_cache_shared_until, try_lock_cache_maintenance,
+    try_lock_cache_maintenance_until, try_lock_cache_shared,
 };
 pub(crate) use manager::SizeAwareCacheManager;
 
 pub(crate) use migration::{
     MigrationOutcome, ensure_body_limited_cache_epoch, try_ensure_body_limited_cache_epoch,
     try_ensure_body_limited_cache_epoch_until, try_migrate_http_cache,
+    try_migrate_http_cache_until,
 };
 #[allow(unused_imports)]
 pub(crate) use planner::{

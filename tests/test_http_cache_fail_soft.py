@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 import threading
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 import pytest
@@ -31,10 +32,14 @@ def provider(tmp_path: Path):
                 # Reuse the recorded article answer: its search-all route anchors
                 # the same gene, while this CLI case only exercises cache behavior.
                 path = self.path.replace("query=BRAF+AND+melanoma", "query=GENE_PROTEIN%3ABRAF+AND+melanoma")
-                with urlopen(replay.origin + path, timeout=10) as reply:
+                try:
+                    reply = urlopen(replay.origin + path, timeout=10)
+                except HTTPError as error:
+                    reply = error
+                with reply:
                     body = reply.read()
                     status = reply.status
-                if path.startswith("/europepmc/"):
+                if status == 200 and path.startswith("/europepmc/"):
                     payload = json.loads(body)
                     payload["hitCount"] = len(payload["resultList"]["result"])
                     payload.pop("nextCursorMark", None)
@@ -43,7 +48,7 @@ def provider(tmp_path: Path):
                 before_reply[0]()
                 self.send_response(status)
                 self.send_header("Content-Type", "application/json")
-                self.send_header("Cache-Control", "public, max-age=3600")
+                self.send_header("Cache-Control", "public, max-age=3600" if status == 200 else "no-store")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
@@ -102,6 +107,29 @@ def test_invalid_cache_tree_uses_provider_without_trusting_tree(provider, tmp_pa
     assert sentinel.read_bytes() == b"unchanged"
     assert list(outside.iterdir()) == [sentinel]
 
+
+
+@pytest.mark.parametrize("command", [ARTICLE, ("search", "all", "--gene", "BRAF", "--disease", "melanoma")])
+def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, command):
+    run, cache, _, replay = provider
+    first = run(command)
+    assert first.returncode == 0, first.stderr
+    first_payload = json.loads(first.stdout)
+    assert first_payload.get("results") or any(section["results"] for section in first_payload["sections"])
+    assert list((cache / "http/index-v5").rglob("*")), "cold search must fill HTTP cache"
+    before = replay.request_log_line_count()
+    second = run(command)
+    assert second.returncode == 0, second.stderr
+    second_payload = json.loads(second.stdout)
+    assert second_payload.get("results", second_payload.get("sections")) == first_payload.get("results", first_payload.get("sections"))
+    cached_keys = {
+        entry["key"] for entry in replay.request_log_entries()[:before]
+        if entry["status"] == 200 and entry["key"].startswith(("GET /europepmc/", "GET /mygene/"))
+    }
+    assert cached_keys, "cold search must contact the cacheable providers"
+    repeated = {entry["key"] for entry in replay.request_log_entries(since=before)}
+    assert not cached_keys & repeated, "identical search must reuse cached provider answers"
+    assert "local HTTP cache" not in first.stderr + second.stderr
 
 def test_undecodable_cache_entry_refetches_then_keeps_cache_hits(provider):
     run, cache, _, replay = provider

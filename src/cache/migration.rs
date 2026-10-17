@@ -93,6 +93,23 @@ pub(crate) fn try_migrate_http_cache(cache_root: &Path) -> io::Result<MigrationO
     migrate_http_cache_locked(cache_root)
 }
 
+pub(crate) async fn try_migrate_http_cache_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<MigrationOutcome> {
+    deadline.ensure_time_io()?;
+    if !directory_exists(&cache_root.join("http-cacache"), "legacy cache path")? {
+        return Ok(MigrationOutcome::SkippedOldMissing);
+    }
+    let _maintenance = super::try_lock_cache_maintenance_until(cache_root, deadline)
+        .await?
+        .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?;
+    deadline.ensure_time_io()?;
+    let result = migrate_http_cache_locked(cache_root);
+    deadline.ensure_time_io()?;
+    result
+}
+
 pub(crate) fn try_ensure_body_limited_cache_epoch(
     cache_root: &Path,
     legacy_cache_was_renamed: bool,
@@ -100,6 +117,8 @@ pub(crate) fn try_ensure_body_limited_cache_epoch(
     fs::create_dir_all(cache_root)?;
     let lock = open_epoch_lock(cache_root)?;
     fs_lock::try_lock_exclusive(&lock)?;
+    #[cfg(test)]
+    crate::sources::observe_cache_setup(cache_root, true);
     if epoch_state(cache_root, legacy_cache_was_renamed)? == EpochState::Current {
         return lock.unlock();
     }
@@ -236,6 +255,8 @@ async fn ensure_body_limited_cache_epoch_until_with(
             Err(error) => return Err(error),
         }
     }
+    #[cfg(test)]
+    crate::sources::observe_cache_setup(cache_root, true);
     let current_root = cache_root.to_path_buf();
     let state = deadline_blocking_io(deadline, move |cancelled| {
         if cancelled.load(Ordering::Acquire) {
@@ -248,7 +269,8 @@ async fn ensure_body_limited_cache_epoch_until_with(
         return lock.unlock();
     }
     let maintenance = if try_only {
-        super::try_lock_cache_maintenance(cache_root)?
+        super::try_lock_cache_maintenance_until(cache_root, deadline)
+            .await?
             .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?
     } else {
         super::lock_cache_maintenance_until(cache_root, deadline).await?

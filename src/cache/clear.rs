@@ -190,7 +190,7 @@ fn local_shared_upgrade_error() -> io::Error {
 fn try_exclusive_without_local_shared(cache_root: &Path, file: &File) -> io::Result<bool> {
     let leases = lease_registry();
     if leases.get(cache_root).copied().unwrap_or_default() > 0 {
-        return Err(local_shared_upgrade_error());
+        return Ok(false);
     }
     match fs_lock::try_lock_exclusive(file) {
         Ok(()) => Ok(true),
@@ -402,6 +402,32 @@ pub(crate) async fn lock_cache_maintenance_until(
     }
 }
 
+/// Wait for this process's source leases, then try the external lock once.
+pub(crate) async fn try_lock_cache_maintenance_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<Option<CacheOperationGuard>> {
+    deadline.ensure_time_io()?;
+    let file = operation_lock_file(cache_root)?;
+    loop {
+        deadline.ensure_time_io()?;
+        let attempt = {
+            let leases = lease_registry();
+            if leases.get(cache_root).copied().unwrap_or_default() > 0 {
+                None
+            } else {
+                Some(fs_lock::try_lock_exclusive(&file))
+            }
+        };
+        match attempt {
+            None => wait(deadline).await?,
+            Some(Ok(())) => return Ok(Some(exclusive_guard(file))),
+            Some(Err(error)) if error.kind() == io::ErrorKind::WouldBlock => return Ok(None),
+            Some(Err(error)) => return Err(error),
+        }
+    }
+}
+
 async fn lock_file_shared_until<F>(
     file: File,
     lease: SharedLease,
@@ -513,6 +539,39 @@ mod operation_lock_tests {
         drop(second);
         drop(lock_cache_maintenance(root.path()).expect("maintenance after shared release"));
         drop(lock_cache_shared(root.path()).expect("shared lease after maintenance release"));
+    }
+
+    #[tokio::test]
+    async fn local_shared_lease_delays_maintenance_until_release_within_deadline() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let shared = lock_cache_shared(root.path()).expect("shared source lease");
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(1));
+        let maintenance = lock_cache_maintenance_until(root.path(), &deadline);
+        tokio::pin!(maintenance);
+        assert!(
+            futures::poll!(&mut maintenance).is_pending(),
+            "maintenance must wait for the local source"
+        );
+        drop(shared);
+        drop(maintenance.await.expect("maintenance after source release"));
+    }
+
+    #[tokio::test]
+    async fn local_shared_lease_maintenance_wait_expires_without_retaining_locks() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let shared = lock_cache_shared(root.path()).expect("shared source lease");
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(20));
+        let error = match lock_cache_maintenance_until(root.path(), &deadline).await {
+            Ok(_) => panic!("held source lease must exhaust maintenance deadline"),
+            Err(error) => error,
+        };
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        drop(shared);
+        drop(
+            try_lock_cache_maintenance(root.path())
+                .unwrap()
+                .expect("no retained maintenance lock"),
+        );
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

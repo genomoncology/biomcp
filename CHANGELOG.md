@@ -12,6 +12,7 @@
 
 ### Fixes
 
+- Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
 - Reject changelog entries accidentally joined onto one line before landing or release, including repository-only changes. (2158)
 - Local HTTP cache failures keep provider searches working: initialization and lock contention bypass the cache, unreadable or undecodable entries refetch, and failed cache writes retain the provider answer. A local warning names the failing cache operation without exposing paths or request details; invocation deadlines and cache security checks still apply. (2172)
 - Windows cache-lock contention is checked through both lock modes and article-search deadlines. Provider warnings name local I/O kinds and OS error codes without exposing paths, and Semantic Scholar search failures retain their warning. (2170)
