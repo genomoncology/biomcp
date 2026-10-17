@@ -15,6 +15,7 @@
 
 - Asset downloads accept a bare `--output` filename and save it in the current directory, while still refusing missing output directories. (2179)
 - Find protein substitutions in supplement text across one-letter, three-letter and `p.` name forms while keeping exact source locators and literal matching for other text. (2180)
+- Article full text reports no full text promptly when no PMC record exists, instead of retrying an unsupported Europe PMC PMID XML request and reporting a source failure. Supported PMC requests still distinguish missing full text from transient source outages. (2182)
 
 - Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
 - Fulltext replay fixtures keep their server and Unicode cache state inside ignored test output, so concurrent repository audits never scan files that fixture cleanup can remove. (2177)
