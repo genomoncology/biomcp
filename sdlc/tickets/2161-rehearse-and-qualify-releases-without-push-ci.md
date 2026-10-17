@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision d6adf66, accept
+
 ## Outcome
 
 A release qualifies its exact revision directly, and the full release workflow can rehearse an untagged candidate without publishing before Ian tags it.
