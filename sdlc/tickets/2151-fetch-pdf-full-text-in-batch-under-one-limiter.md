@@ -11,6 +11,8 @@ Milestone: 0.9.3
 
 Reviews: revision 86572f8, accept
 
+Reviews: revision 3036796, accept
+
 ## Outcome
 
 Coordinator implementation brief: preserve the adopted batch PDF command and typed MCP behavior. Prove Semantic Scholar discovery spacing through the actual batch command with its limiter enabled. The old acceptance test times publisher downloads, so it does not establish this requirement. Expand the claim to `src/sources/rate_limit.rs` for a fixture-only `BIOMCP_TEST_PRESERVE_RATE_LIMITS` switch: retain existing exact-loopback authorization while bypassing only the fixture's unpaced exemption. The default product policy remains unchanged. Limit new test edits to `tests/article_batch_outcome.rs`; preserve the existing implementation and its evidence.
