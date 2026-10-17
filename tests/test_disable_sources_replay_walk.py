@@ -95,6 +95,11 @@ WALK: tuple[WalkEntry, ...] = (
     # sits behind identity verification there, and OpenCitations behind
     # the citation-evidence chain.
     WalkEntry("clingen_ldh", ("--json", "variant", "articles", "BRAF V600E", "--verify-identity", "--limit", "1"), ("ldh",), kind="carried"),
+    # LitVar2 joins the variant-literature routes beside PubTator3; the
+    # replay store's variant-articles chain stops at resolution, so the
+    # litvar prefix stays silent either way and the disable must not change
+    # the command's outcome.
+    WalkEntry("litvar2", ("--json", "variant", "articles", "BRAF V600E", "--limit", "1"), ("litvar",), kind="carried"),
     WalkEntry("ncbi-e-utilities", ("--json", "get", "article", "42875213", "fulltext"), kind="carried"),
     WalkEntry("ncbi-id-converter", ("--json", "get", "article", "42875213", "fulltext"), ("ncbi-idconv",), kind="carried"),
     WalkEntry("figshare", ("--json", "get", "article", "42875213", "assets"), ("figshare",), kind="carried"),

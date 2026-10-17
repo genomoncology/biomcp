@@ -123,6 +123,12 @@ impl RateLimiter {
                 Duration::from_secs(1),
             ),
             policy(
+                "litvar2",
+                "BIOMCP_LITVAR_BASE",
+                "https://www.ncbi.nlm.nih.gov/research/litvar2-api",
+                Duration::from_secs(1),
+            ),
+            policy(
                 "ncbi-idconv",
                 "BIOMCP_NCBI_IDCONV_BASE",
                 "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles",

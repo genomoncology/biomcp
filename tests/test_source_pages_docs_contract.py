@@ -587,6 +587,29 @@ SOURCE_PAGE_SPECS = {
             "biomcp discover \"Marfan syndrome\"",
         ],
     },
+    "litvar.md": {
+        "title": "LitVar2 MCP Tool for Variant-Linked Literature | BioMCP",
+        "description": "Use BioMCP to merge NCBI LitVar2 variant-literature PMIDs into variant article searches for a gene plus protein change or an rsID.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://www.ncbi.nlm.nih.gov/research/litvar2/",
+        "required_intro_phrases": [
+            "variant-to-literature index",
+            "variant article sources",
+            "`litvar` source attribution",
+            "The match is exact",
+            "degrades that source only",
+        ],
+        "exposes": [
+            'biomcp variant articles "<gene> <protein change>"',
+            "biomcp variant articles <rsID>",
+            "--disable-sources litvar2",
+        ],
+        "example_commands": [
+            'biomcp --json variant articles "CDKN2A A57V" --limit 50',
+            "biomcp --json variant articles rs113488022 --limit 50",
+            "biomcp --json variant articles rs372266620 --limit 50",
+        ],
+    },
     "cellosaurus.md": {
         "title": "Cellosaurus MCP Tool for Cell Line Lookup | BioMCP",
         "description": "Use BioMCP to turn any common spelling of a cell line into its Cellosaurus accession, then read species, disease, cross-references, and curated variants.",
@@ -821,6 +844,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - CDC CVX/MVX: sources/cdc-cvx.md
       - CDC WONDER VAERS: sources/vaers.md
       - MedlinePlus: sources/medlineplus.md
+      - LitVar2: sources/litvar.md
       - KEGG: sources/kegg.md
       - PharmGKB / CPIC: sources/pharmgkb.md
       - Human Protein Atlas: sources/human-protein-atlas.md

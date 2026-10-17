@@ -49,6 +49,7 @@ impl SourceProvider {
     pub const INTERPRO: Self = Self::new("InterPro");
     pub const KEGG: Self = Self::new("KEGG");
     pub const LITSENSE2: Self = Self::new("LitSense 2");
+    pub const LITVAR2: Self = Self::new("LitVar2");
     pub const MEDLINEPLUS: Self = Self::new("MedlinePlus");
     pub const MONARCH: Self = Self::new("Monarch Initiative");
     pub const MUTALYZER: Self = Self::new("Mutalyzer");
@@ -119,6 +120,7 @@ impl SourceProvider {
         Self::INTERPRO,
         Self::KEGG,
         Self::LITSENSE2,
+        Self::LITVAR2,
         Self::MEDLINEPLUS,
         Self::MONARCH,
         Self::MUTALYZER,
@@ -200,6 +202,7 @@ impl SourceProvider {
             "interpro" | "InterPro" => Self::INTERPRO,
             "kegg" | "KEGG" => Self::KEGG,
             "litsense2" | "LitSense 2" => Self::LITSENSE2,
+            "litvar2" | "LitVar2" => Self::LITVAR2,
             "medlineplus" | "MedlinePlus" => Self::MEDLINEPLUS,
             "monarch" | "Monarch Initiative" => Self::MONARCH,
             "mutalyzer" | "Mutalyzer" => Self::MUTALYZER,

@@ -1168,11 +1168,15 @@ fn strategy_route_skeleton(
         VariantArticleStrategy::Union => {
             rows.extend(federated.map(|source| ("strict", source)));
             rows.push(("pubtator_variant", "pubtator"));
+            rows.push(("litvar_variant", "litvar"));
             rows.extend(federated.map(|source| ("exact_lexical", source)));
             rows.extend(federated.map(|source| ("best_effort_free_text", source)));
             rows.push(("source_citation", "myvariant"));
         }
-        VariantArticleStrategy::Annotation => rows.push(("pubtator_variant", "pubtator")),
+        VariantArticleStrategy::Annotation => {
+            rows.push(("pubtator_variant", "pubtator"));
+            rows.push(("litvar_variant", "litvar"));
+        }
         VariantArticleStrategy::Lexical => {
             rows.extend(federated.map(|source| ("strict", source)));
             rows.extend(federated.map(|source| ("exact_lexical", source)));
@@ -2215,6 +2219,105 @@ async fn strict_provider_candidates(
     (candidates, incomplete, succeeded, statuses)
 }
 
+/// LitVar2's variant-linked papers. The route resolves the request through
+/// the LitVar2 autocomplete, keeps only an entry whose gene and change, or
+/// rsID, match the request exactly through the existing variant identity
+/// comparison, and merges the entry's publication PMIDs as PubMed rows
+/// attributed to the litvar source. A LitVar2 failure degrades this source
+/// only: the error lands on the litvar row and the search keeps its other
+/// routes.
+async fn litvar_candidates(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    execution: &VariantArticleExecutionContext,
+) -> Result<(Vec<ArticleCandidate>, bool, bool), BioMcpError> {
+    let Some(unit) = execution
+        .begin_provider_unit("litvar_variant", "litvar")
+        .await
+    else {
+        return Ok((Vec::new(), true, false));
+    };
+    let client =
+        match crate::sources::litvar::LitVarClient::new_with_deadline(execution.deadline()).await {
+            Ok(client) => client,
+            Err(error) => {
+                unit.record_error(&error);
+                return Err(error);
+            }
+        };
+    let entries = match client.autocomplete(input).await {
+        Ok(entries) => unit.commit("ok", 1, || entries),
+        Err(error) => {
+            unit.record_error(&error);
+            return Err(error);
+        }
+    };
+    let matched = entries
+        .into_iter()
+        .filter_map(|entry| {
+            let identity = entry.source_identity()?;
+            match crate::entities::variant::compare_variant_identity(&context.requested, &identity)
+            {
+                crate::entities::variant::VariantIdentityComparison::Compatible {
+                    matched_alias,
+                } => Some((identity.genomic_id.clone(), matched_alias)),
+                _ => None,
+            }
+        })
+        .collect::<Vec<_>>();
+    if matched.is_empty() {
+        // An answered autocomplete with no exactly-matching entry is a
+        // complete zero-row answer, not a failure.
+        return Ok((Vec::new(), false, true));
+    }
+    for _ in &matched {
+        execution.add_route_unit("litvar_variant", "litvar");
+    }
+    let mut candidates = Vec::new();
+    let mut incomplete = false;
+    let mut succeeded = false;
+    for (variant_id, matched_alias) in matched {
+        let query_alias = context
+            .requested
+            .gene
+            .as_deref()
+            .filter(|_| !matched_alias.to_ascii_lowercase().starts_with("rs"))
+            .map(|gene| format!("{gene} {matched_alias}"))
+            .unwrap_or(matched_alias);
+        let Some(unit) = execution
+            .begin_provider_unit("litvar_variant", "litvar")
+            .await
+        else {
+            incomplete = true;
+            break;
+        };
+        match client.publications(&variant_id).await {
+            Ok(publications) => {
+                unit.record("ok", 1);
+                succeeded = true;
+                for (position, pmid) in publications.pmids.into_iter().enumerate() {
+                    if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
+                        return Ok((candidates, true, succeeded));
+                    }
+                    let mut row = pmid_seed(pmid.to_string());
+                    row.source_local_position = position;
+                    candidates.push(candidate_with_provenance(
+                        row,
+                        "litvar_variant",
+                        "litvar",
+                        vec![query_alias.clone()],
+                    ));
+                }
+            }
+            Err(error) => {
+                unit.record_error(&error);
+                incomplete = true;
+            }
+        }
+    }
+    Ok((candidates, incomplete, succeeded))
+}
+
 async fn lexical_candidates(
     aliases: Vec<String>,
     alias_budget_stopped: bool,
@@ -2507,6 +2610,9 @@ fn plan_queries(
         // id autocomplete returns; the debug plan carries the entity-id
         // queries the route ran, never bare text aliases.
         "pubtator_variant" => Vec::new(),
+        // The route resolves its own variant through the LitVar2
+        // autocomplete, so its query is the request itself.
+        "litvar_variant" => vec![input.trim().to_string()],
         _ => Vec::new(),
     }
 }
@@ -2644,6 +2750,16 @@ fn materialize_discovery_route_plans(
         annotation_applicable.then_some(1),
     );
 
+    // LitVar2 resolves the variant through its own autocomplete, so the
+    // route stays applicable without a resolved identity; a contradicted
+    // provider identity still refuses it.
+    let litvar_applicable = compatible
+        && matches!(
+            strategy,
+            VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
+        );
+    execution.set_route_unit_plan("litvar_variant", "litvar", litvar_applicable.then_some(1));
+
     let citation_units = (strategy == VariantArticleStrategy::Union
         && matches!(
             context.resolution.provider_validation.status,
@@ -2727,10 +2843,12 @@ fn build_debug_plan(
                     VariantProviderValidationStatus::Contradictory
                 ) =>
             {
-                vec!["strict", "best_effort_free_text"]
+                vec!["strict", "litvar_variant", "best_effort_free_text"]
             }
             VariantArticleStrategy::Union => vec!["best_effort_free_text"],
-            VariantArticleStrategy::Annotation => vec!["pubtator_variant"],
+            VariantArticleStrategy::Annotation => {
+                vec!["pubtator_variant", "litvar_variant"]
+            }
             VariantArticleStrategy::Lexical => vec!["exact_lexical"],
         }
     } else {
@@ -2739,11 +2857,14 @@ fn build_debug_plan(
                 vec![
                     "strict",
                     "pubtator_variant",
+                    "litvar_variant",
                     "exact_lexical",
                     "source_citation",
                 ]
             }
-            VariantArticleStrategy::Annotation => vec!["pubtator_variant"],
+            VariantArticleStrategy::Annotation => {
+                vec!["pubtator_variant", "litvar_variant"]
+            }
             VariantArticleStrategy::Lexical => vec!["strict", "exact_lexical"],
         }
     };
@@ -3101,6 +3222,36 @@ async fn search_variant_articles_identity(
     }
     let mut succeeded_routes = 0usize;
     let mut failed_routes = 0usize;
+
+    // LitVar2 links a variant to its papers through the provider's own
+    // exact match, so it runs beside the other routes whenever the provider
+    // identity was not contradicted — including an unresolved request,
+    // where PubTator's annotation route cannot run yet.
+    if !matches!(
+        context.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Contradictory
+    ) && matches!(
+        strategy,
+        VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
+    ) {
+        match litvar_candidates(input, &context, &execution).await {
+            Ok((rows, incomplete, succeeded)) => {
+                candidates.extend(rows);
+                let calls = execution.events();
+                statuses.extend(provider_statuses_for_route("litvar_variant", &calls));
+                succeeded_routes += usize::from(succeeded);
+                failed_routes += usize::from(incomplete || !succeeded);
+            }
+            Err(_) => {
+                statuses.push(status(
+                    "litvar_variant",
+                    "litvar",
+                    VariantArticleSourceStatusKind::Unavailable,
+                ));
+                failed_routes += 1;
+            }
+        }
+    }
 
     if !resolved {
         match strategy {
@@ -4387,13 +4538,15 @@ mod tests {
                         VariantArticleStrategy::Union => {
                             expected.extend(federated.map(|source| ("strict", source)));
                             expected.push(("pubtator_variant", "pubtator"));
+                            expected.push(("litvar_variant", "litvar"));
                             expected.extend(federated.map(|source| ("exact_lexical", source)));
                             expected
                                 .extend(federated.map(|source| ("best_effort_free_text", source)));
                             expected.push(("source_citation", "myvariant"));
                         }
                         VariantArticleStrategy::Annotation => {
-                            expected.push(("pubtator_variant", "pubtator"))
+                            expected.push(("pubtator_variant", "pubtator"));
+                            expected.push(("litvar_variant", "litvar"));
                         }
                         VariantArticleStrategy::Lexical => {
                             expected.extend(federated.map(|source| ("strict", source)));
@@ -4642,6 +4795,14 @@ mod tests {
                                         VariantArticleStrategy::Union
                                             | VariantArticleStrategy::Annotation
                                     );
+                                (usize::from(applicable), !applicable, false)
+                            }
+                            "litvar_variant" => {
+                                let applicable = matches!(
+                                    strategy,
+                                    VariantArticleStrategy::Union
+                                        | VariantArticleStrategy::Annotation
+                                );
                                 (usize::from(applicable), !applicable, false)
                             }
                             "source_citation" => (0, true, false),
@@ -5254,6 +5415,8 @@ mod tests {
                 br#"{"total":0,"data":[]}"#
             } else if first_line.starts_with("GET /entity/autocomplete/") {
                 b"[]"
+            } else if first_line.starts_with("GET /variant/autocomplete/") {
+                b"[]"
             } else {
                 return TestHttpReply::Bytes(test_http_response(
                     "404 Not Found",
@@ -5274,6 +5437,7 @@ mod tests {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
         env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
         env.set(
             "BIOMCP_PUBMED_BASE",
@@ -5321,6 +5485,279 @@ mod tests {
                 VariantArticleSourceStatusKind::Ok | VariantArticleSourceStatusKind::Skipped
             )),
             "every route answered: {:?}",
+            outcome.response.source_status
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn litvar_papers_merge_into_the_union_with_attribution() {
+        // The recorded CDKN2A A57V chain: LitVar2's autocomplete names the
+        // requested gene and protein change exactly and links 39 papers, none
+        // of which the other routes return, so the union result carries them
+        // attributed to the litvar source.
+        const AUTOCOMPLETE: &[u8] =
+            include_bytes!("../../../testdata/sources/litvar/autocomplete_cdkn2a_a57v.json");
+        const PUBLICATIONS: &[u8] =
+            include_bytes!("../../../testdata/sources/litvar/publications_rs372266620.json");
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            let body: &[u8] = if first_line.starts_with("GET /variant/autocomplete/?query=CDKN2A") {
+                AUTOCOMPLETE
+            } else if first_line.starts_with("GET /variant/get/") {
+                PUBLICATIONS
+            } else if first_line.starts_with("GET /query") {
+                br#"{"total":0,"hits":[]}"#
+            } else if first_line.starts_with("GET /search/") {
+                br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
+            } else if first_line.starts_with("GET /search?") {
+                br#"{"version":"6.9","hitCount":0,"resultList":{"result":[]}}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                br#"{"esearchresult":{"count":"0","idlist":[]}}"#
+            } else if first_line.starts_with("GET /graph/v1/paper/search") {
+                br#"{"total":0,"data":[]}"#
+            } else if first_line.starts_with("GET /entity/autocomplete/") {
+                b"[]"
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("litvar-merge-union");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "CDKN2A A57V",
+            VariantArticleStrategy::Union,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(30),
+        )
+        .await
+        .expect("union outcome");
+
+        assert!(
+            !outcome.hard_error,
+            "a search where LitVar2 answered and every other route answered empty exits zero"
+        );
+        assert!(outcome.response.error.is_none());
+        assert_eq!(
+            outcome.response.results.len(),
+            39,
+            "every recorded LitVar2 paper appears: {:?}",
+            outcome
+                .response
+                .results
+                .iter()
+                .map(|row| row.article.pmid.as_str())
+                .collect::<Vec<_>>()
+        );
+        let first = &outcome.response.results[0];
+        assert_eq!(first.sources, vec!["litvar".to_string()]);
+        assert_eq!(first.retrieval_routes, vec!["litvar_variant".to_string()]);
+        assert_eq!(first.matched_aliases, vec!["CDKN2A p.A57V".to_string()]);
+        assert_eq!(first.provenance[0].source, "litvar");
+        assert_eq!(first.provenance[0].route, "litvar_variant");
+        assert_eq!(first.article.pmid, "29936259");
+        assert_eq!(first.article.source, ArticleSource::PubMed);
+        assert!(
+            outcome
+                .response
+                .source_status
+                .iter()
+                .any(|status| status.route == "litvar_variant"
+                    && status.source == "litvar"
+                    && status.status == VariantArticleSourceStatusKind::Ok)
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn litvar_drops_a_non_matching_autocomplete_entry() {
+        // A reply naming BRAF p.V600K beside the requested BRAF p.V600E keeps
+        // only the requested variant, so its publications are the only ones
+        // fetched.
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            if first_line.starts_with("GET /variant/autocomplete/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"[{"_id":"litvar@rs113488022##","rsid":"rs113488022","gene":["BRAF"],"name":"p.V600E","hgvs":"p.V600E","pmids_count":32227},{"_id":"litvar@rs121913227##","rsid":"rs121913227","gene":["BRAF"],"name":"p.V600K","hgvs":"p.V600K","pmids_count":2115}]"#
+                        .as_slice(),
+                ));
+            }
+            if first_line.starts_with("GET /variant/get/litvar%40rs113488022%23%23/publications") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"{"pmids":[3985111,40000002],"pmcids":["PMC1","PMC2"],"pmids_count":2}"#
+                        .as_slice(),
+                ));
+            }
+            TestHttpReply::Bytes(test_http_response(
+                "404 Not Found",
+                "application/json",
+                b"{}",
+            ))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("litvar-non-matching-entry");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
+
+        let execution = VariantArticleExecutionContext::single();
+        let (rows, incomplete, succeeded) =
+            litvar_candidates("BRAF p.V600E", &resolved_context(), &execution)
+                .await
+                .expect("litvar route");
+
+        assert!(succeeded);
+        assert!(!incomplete);
+        let pmids = rows
+            .iter()
+            .map(|candidate| candidate.row.pmid.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(pmids, vec!["3985111", "40000002"]);
+        let logged = requests.lock().expect("request log").clone();
+        assert!(
+            logged
+                .iter()
+                .any(|line| line.starts_with("GET /variant/autocomplete/?query=BRAF p.V600E")),
+            "autocomplete queried the request: {logged:?}"
+        );
+        assert!(
+            logged
+                .iter()
+                .any(|line| line.contains("/variant/get/litvar%40rs113488022%23%23/publications")),
+            "publications fetched for the matched entry: {logged:?}"
+        );
+        assert!(
+            logged.iter().any(|line| line.contains("rs121913227")),
+            "the non-matching entry's id was never fetched: {logged:?}"
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn litvar_failure_degrades_only_its_source() {
+        // LitVar2 answers 503 while Europe PMC keeps one strict row: the row
+        // still returns with exit 0, only the litvar source reports
+        // unavailable, and no other route inherits the failure.
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            if first_line.starts_with("GET /variant/autocomplete/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "503 Service Unavailable",
+                    "application/json",
+                    b"{}",
+                ));
+            }
+            let body: &[u8] = if first_line.starts_with("GET /query") {
+                br#"{"total":0,"hits":[]}"#
+            } else if first_line.starts_with("GET /search/") {
+                br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
+            } else if first_line.starts_with("GET /search?") {
+                br#"{"version":"6.9","hitCount":1,"resultList":{"result":[{"id":"41800004","pmid":"41800004","title":"litvar outage Europe PMC row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                br#"{"esearchresult":{"count":"0","idlist":[]}}"#
+            } else if first_line.starts_with("GET /graph/v1/paper/search") {
+                br#"{"total":0,"data":[]}"#
+            } else if first_line.starts_with("GET /entity/autocomplete/") {
+                b"[]"
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("litvar-degrades-own-source");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "CDKN2A A57V",
+            VariantArticleStrategy::Union,
+            5,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(30),
+        )
+        .await
+        .expect("union outcome");
+
+        assert!(
+            !outcome.hard_error,
+            "rows beside a down LitVar2 keep exit zero"
+        );
+        assert!(outcome.response.error.is_none());
+        assert_eq!(outcome.response.results.len(), 1);
+        assert!(
+            outcome.response.results[0]
+                .sources
+                .contains(&"europepmc".to_string())
+        );
+        assert!(!outcome.response.complete);
+        let litvar = outcome
+            .response
+            .source_status
+            .iter()
+            .find(|status| status.route == "litvar_variant" && status.source == "litvar")
+            .expect("litvar status row");
+        assert_eq!(litvar.status, VariantArticleSourceStatusKind::Unavailable);
+        assert!(
+            outcome
+                .response
+                .source_status
+                .iter()
+                .filter(|status| status.route != "litvar_variant")
+                .all(|status| !matches!(
+                    status.status,
+                    VariantArticleSourceStatusKind::Unavailable
+                        | VariantArticleSourceStatusKind::TimedOut
+                )),
+            "no other source inherited the LitVar2 failure: {:?}",
             outcome.response.source_status
         );
     }

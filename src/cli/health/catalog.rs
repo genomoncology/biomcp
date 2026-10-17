@@ -127,6 +127,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "LitVar2",
+        affects: Some("variant article literature route"),
+        probe: ProbeKind::Get {
+            url: "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/autocomplete/?query=rs113488022",
+        },
+    },
+    SourceDescriptor {
         api: "PMC OA",
         affects: Some("article fulltext resolution"),
         probe: ProbeKind::Get {
