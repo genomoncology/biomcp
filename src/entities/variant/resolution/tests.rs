@@ -687,3 +687,13 @@ fn a_gene_name_alone_is_not_reported_as_an_invalid_amino_acid() {
         assert!(!message.contains("invalid amino acid"), "{message}");
     }
 }
+
+#[test]
+fn uppercase_three_letter_residues_remain_valid() {
+    for input in ["BRAF GLU600LYS", "BRAF p.GLU600LYS", "BRAF Glu600Lys"] {
+        assert!(
+            matches!(parse_variant_id(input), Ok(VariantIdFormat::GeneProteinChange { change, .. }) if change == "E600K"),
+            "{input}"
+        );
+    }
+}

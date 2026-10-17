@@ -560,6 +560,9 @@ fn amino_acid_one_letter(token: &str) -> Option<char> {
 fn invalid_protein_input(input: &str) -> Option<(&str, char)> {
     let spelling = input.split_whitespace().last()?;
     let compact = protein_alias_body(spelling);
+    if normalize_protein_substitution(compact).is_some() {
+        return None;
+    }
     let start = compact.find(|c: char| c.is_ascii_digit())?;
     let end = compact[start..]
         .find(|c: char| !c.is_ascii_digit())
