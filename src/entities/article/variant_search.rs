@@ -6337,8 +6337,6 @@ mod tests {
                 br#"{"total":1,"hits":[{"_id":"chr11:g.17417157C>T","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"],"hgvsc":["c.4309G>A"]}}]}"#
             } else if first_line.starts_with("GET /entity/autocomplete/") {
                 b"[]"
-            } else if first_line.starts_with("GET /variant/autocomplete/") {
-                b"[]"
             } else if first_line.starts_with("GET /search/") {
                 br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
             } else if first_line.starts_with("GET /search?") {
