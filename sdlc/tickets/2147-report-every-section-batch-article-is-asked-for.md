@@ -76,6 +76,31 @@ and says nothing, and an unrequested `tldr` section appears.
   carries. fulltext, indexing and tldr each already report data, empty and
   unavailable outcomes.
 
+## Proof recorded on the branch
+
+- Red on main: Linux gate host job `1792207710207-2221274` at `8b8a503ba`
+  (origin/main `b138f6097` plus this record and the acceptance tests, no
+  product change). Both acceptance tests failed:
+  `batch_article_detail_refuses_assets_sections_before_any_request` (main
+  runs the batch instead of refusing) and
+  `batch_article_detail_returns_no_tldr_section_unless_asked_for` (main
+  reports a requested-sections-only batch with `section_outcomes.tldr`
+  `"data"`). CI runs 38997800282 and 38998904048 failed the same way at the
+  tests-only tips.
+- Green: macOS gate host job `1792209765960-83224` ran the two acceptance
+  tests, the fixture goldens, the preflight rejection matrix, the batch
+  preflight unit test and the batch help test at `bdd7941` — 6/6 passed.
+- Gates: `make lint` passed on the macOS gate host at `855b026`
+  (job `1792210074926-7700`); CI run `39001365788` is green on every lane at
+  `855b026`.
+- Live at the fixed tip (macOS gate host job `1792213551327-39998`): the
+  reported command now exits 2 before any provider request with `Article
+  batch does not support the "assets" section; asset lists and downloads
+  need get article (example: biomcp get article 22663011 assets). Supported
+  article batch sections: annotations, fulltext, indexing, tldr, all`, and
+  `--sections fulltext` returns fulltext `data` (PMC) with `tldr`
+  `not_requested`, no tldr provenance row and no Semantic Scholar payload.
+
 ## Acceptance
 
 1. A test of `--sections fulltext,assets` returns both sections with outcomes, or refuses before any request; it fails on current main.
