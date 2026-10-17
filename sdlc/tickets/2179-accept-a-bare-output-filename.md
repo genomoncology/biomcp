@@ -16,3 +16,9 @@ Milestone: 0.9.3
 - Keeps: refusing a real missing directory, and managed-tree security.
 - Changes: claims `src/utils/download.rs` `CHANGELOG.md`. Treat an empty parent as the current directory.
 - Proof: an outside-in CLI test against the recorded-reply server writes `bare.pdf` from a bare name; on current main it fails with the message above. A missing directory still fails.
+
+Coordinator outcome before code: Write a bare asset output filename in the current directory exactly as ./filename, while refusing genuinely missing directories and preserving managed-tree security. Before product edits, reproduce on current main through the build job and report the exact command/output, proposed implementation/test files and the outside-in failing proof. Root records that evidence and scope before implementation. Developers write no ticket or status records.
+
+## Progress
+
+- 2026-10-17 started
