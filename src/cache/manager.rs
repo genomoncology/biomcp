@@ -11,7 +11,7 @@ use http_cache_reqwest::CACacheManager;
 use http_cache_semantics::CachePolicy;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
-use tracing::{debug, warn};
+use tracing::debug;
 
 use super::{
     CleanOptions, FilesystemSpace, ResolvedCacheConfig, evaluate_cache_limits, execute_cache_clean,
@@ -613,7 +613,6 @@ fn spawn_eviction_task(
         }
 
         let _reset_flag = ResetFlag(Arc::clone(&eviction_running));
-        let warn_path = cache_path.clone();
         let result = tokio::task::spawn_blocking(move || {
             run_eviction_cycle(&cache_path, &config, approx_bytes.as_ref())
         })
@@ -621,14 +620,8 @@ fn spawn_eviction_task(
 
         match result {
             Ok(Ok(())) => {}
-            Ok(Err(err)) => warn!(
-                cache_path = %warn_path.display(),
-                "cache eviction cycle failed: {err}"
-            ),
-            Err(err) => warn!(
-                cache_path = %warn_path.display(),
-                "cache eviction task join failed: {err}"
-            ),
+            Ok(Err(err)) => super::warn_local_http_cache("maintenance", &err),
+            Err(err) => super::warn_local_http_cache("maintenance", &err),
         }
     });
 }
@@ -693,10 +686,9 @@ where
     )?;
 
     if !report.errors.is_empty() {
-        warn!(
-            cache_path = %cache_path.display(),
-            errors = report.errors.len(),
-            "cache eviction completed with cleanup errors"
+        super::warn_local_http_cache(
+            "maintenance",
+            &io::Error::other("cache cleanup incomplete"),
         );
     }
 
@@ -728,10 +720,7 @@ where
 /// exact without another walk.
 fn persist_content_totals(cache_path: &Path, total_bytes: u64) {
     if let Err(err) = write_content_totals_marker(cache_path, total_bytes) {
-        warn!(
-            cache_path = %cache_path.display(),
-            "writing cache size totals marker failed after eviction: {err}"
-        );
+        super::warn_local_http_cache("maintenance", &err);
     }
 }
 
