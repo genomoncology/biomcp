@@ -349,8 +349,16 @@ fi
 
 if want_section rust-test-census; then
   say rust-test-census "test-duration census of the routine Rust suite (from the archive make test built)"
-  timedsh rust_test_census \
-    "NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 tools/run-offline -- cargo nextest run --archive-file .cache/routine-tests.tar.zst --config-file .config/nextest.toml --message-format libtest-json-plus > $LOGD/census.jsonl 2> $LOGD/census.err || true"
+  timedsh_exit rust_test_census "$LOGD/census.exit" \
+    "NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 tools/run-offline -- cargo nextest run --archive-file .cache/routine-tests.tar.zst --config-file .config/nextest.toml --message-format libtest-json-plus > $LOGD/census.jsonl 2> $LOGD/census.err"
+  if ((!DRY_RUN)); then
+    census_status="$(<"$LOGD/census.exit")"
+    if [[ "$census_status" == "0" ]]; then
+      result rust_test_census_collection complete
+    else
+      result rust_test_census_collection "incomplete (exit $census_status)"
+    fi
+  fi
   runsh "tail -2 $LOGD/census.err || true"
   show "python3 (count tests at or over one second from the libtest-json-plus stream)"
   if ((!DRY_RUN)); then

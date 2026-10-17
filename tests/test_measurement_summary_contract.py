@@ -248,3 +248,40 @@ def test_build_measurement_fallback_is_executable(tmp_path: Path, bash: str) -> 
         timeout=10,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+@pytest.mark.parametrize("status", [0, 42])
+def test_census_retains_the_runner_exit_status(
+    tmp_path: Path, bash: str, status: int
+) -> None:
+    """A failed census retains its samples without claiming complete collection."""
+    clone = tmp_path / "clone"
+    clone.mkdir()
+    fake_home = tmp_path / "home"
+    executable(clone / "tools/run-offline", 'shift; exec "$@"\n')
+    executable(
+        fake_home / ".cargo/bin/cargo",
+        "printf '%s\\n' "
+        '\'{"type":"test","event":"ok","name":"sample","exec_time":1.5}\'\n'
+        'exit "$CENSUS_EXIT"\n',
+    )
+    env = dict(os.environ, HOME=str(fake_home), CENSUS_EXIT=str(status))
+    proc = subprocess.run(
+        [
+            bash,
+            str(ROOT / "tools/measure-0-9-3-baseline"),
+            str(clone),
+            "--only",
+            "rust-test-census",
+        ],
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=10,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert (clone / ".cache/measure/census.exit").read_text().strip() == str(status)
+    expected = "complete" if status == 0 else "incomplete (exit 42)"
+    assert f"RESULT rust_test_census_collection = {expected}" in proc.stdout
+    assert (clone / ".cache/measure/census.jsonl").read_text()
+    assert "RESULT rust_tests_with_duration = 1" in proc.stdout
