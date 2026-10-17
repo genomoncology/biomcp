@@ -2322,17 +2322,15 @@ async fn litvar_candidates(
 /// whether it counted as a succeeded or failed route. The route only runs
 /// for the union and annotation strategies with a provider identity that
 /// was not contradicted.
+#[allow(clippy::too_many_arguments)]
 async fn litvar_route_outcome(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
     execution: &VariantArticleExecutionContext,
-) -> (
-    Vec<ArticleCandidate>,
-    Vec<VariantArticleSourceStatus>,
-    bool,
-    bool,
-) {
+    candidates: &mut Vec<ArticleCandidate>,
+    statuses: &mut Vec<VariantArticleSourceStatus>,
+) -> (bool, bool) {
     if !matches!(
         context.resolution.provider_validation.status,
         VariantProviderValidationStatus::Contradictory
@@ -2342,27 +2340,22 @@ async fn litvar_route_outcome(
     ) {
         return match litvar_candidates(input, context, execution).await {
             Ok((rows, incomplete, succeeded)) => {
+                candidates.extend(rows);
                 let calls = execution.events();
-                (
-                    rows,
-                    provider_statuses_for_route("litvar_variant", &calls),
-                    succeeded,
-                    incomplete || !succeeded,
-                )
+                statuses.extend(provider_statuses_for_route("litvar_variant", &calls));
+                (succeeded, incomplete || !succeeded)
             }
-            Err(_) => (
-                Vec::new(),
-                vec![status(
+            Err(_) => {
+                statuses.push(status(
                     "litvar_variant",
                     "litvar",
                     VariantArticleSourceStatusKind::Unavailable,
-                )],
-                false,
-                true,
-            ),
+                ));
+                (false, true)
+            }
         };
     }
-    (Vec::new(), Vec::new(), false, false)
+    (false, false)
 }
 
 async fn lexical_candidates(
@@ -3274,10 +3267,15 @@ async fn search_variant_articles_identity(
     // exact match, so it runs beside the other routes whenever the provider
     // identity was not contradicted — including an unresolved request,
     // where PubTator's annotation route cannot run yet.
-    let (litvar_rows, litvar_statuses, litvar_succeeded, litvar_failed) =
-        litvar_route_outcome(input, &context, strategy, &execution).await;
-    candidates.extend(litvar_rows);
-    statuses.extend(litvar_statuses);
+    let (litvar_succeeded, litvar_failed) = litvar_route_outcome(
+        input,
+        &context,
+        strategy,
+        &execution,
+        &mut candidates,
+        &mut statuses,
+    )
+    .await;
     succeeded_routes += usize::from(litvar_succeeded);
     failed_routes += usize::from(litvar_failed);
 
