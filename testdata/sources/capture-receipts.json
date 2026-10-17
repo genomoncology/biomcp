@@ -3996,6 +3996,311 @@
       "path": "pmc_article/pmc-bot-challenge.html",
       "classification": "authored",
       "authored_reason": "Repository-authored provider-shaped bot-challenge page based on the recorded 0.9.2 probe evidence (page title 'Checking your browser - reCAPTCHA' served in place of the article); no live recording was made because the gate is intermittent."
+    },
+    {
+      "path": "variant_articles_2140/myvariant/query_samhd1_i448t_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ASAMHD1+AND+dbnsfp.hgvsp%3A%22p.I448T%22&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp%2A.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence&size=50&from=0",
+        "captured_at": "2026-10-17T03:05:18Z",
+        "sha256": "d32eea3b587724b25041083b60788519933a91f238f0b2edb39829f7e697d6d2",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/myvariant/query_cdkn2a_a57v_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ACDKN2A+AND+dbnsfp.hgvsp%3A%22p.A57V%22&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp%2A.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence&size=50&from=0",
+        "captured_at": "2026-10-17T03:05:19Z",
+        "sha256": "9ca366ec98491f2d1ee9a399c161f549e640e55c7469a3b1c3d95f82b9813df4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/myvariant/variant_chr20_g_35533834A_G_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr20:g.35533834A%3EG?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic",
+        "captured_at": "2026-10-17T03:05:20Z",
+        "sha256": "0089645f810dd117a427aed7428218d02e7db58451baa9eb8bc402a99d3af25d",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/myvariant/variant_chr9_g_21971188G_A_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr9:g.21971188G%3EA?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic",
+        "captured_at": "2026-10-17T03:05:21Z",
+        "sha256": "69aff33dbb2b1ec427d70710b87b17482021395f54c5efc30cc1096b9736fc99",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esearch_samhd1_i448t_keyword_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=SAMHD1+I448T+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+        "captured_at": "2026-10-17T03:05:22Z",
+        "sha256": "73be7570109281ca7b760ab92dd0ddedba7623ba0b9483021c2c6b79f3256b5b",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esearch_samhd1_chr20_bare_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=chr20%3Ag.35533834A%3EG+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+        "captured_at": "2026-10-17T03:05:22Z",
+        "sha256": "a589777be3ac6522a61cd9c0d45ee10a9df45c5d3934fdd53e61d95b13d254c7",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esearch_samhd1_chr20_gene_tied_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=SAMHD1+chr20%3Ag.35533834A%3EG+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+        "captured_at": "2026-10-17T03:05:23Z",
+        "sha256": "de1b6c23625f39e500ab2deb67703ce69969dd0ed3227349afbe6ee5ad91a389",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esearch_cdkn2a_a57v_keyword_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=CDKN2A+A57V+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+        "captured_at": "2026-10-17T03:05:24Z",
+        "sha256": "442a110054fb9903ce02c17b8446d922044e6566a4d91fd49efb94535b1ebb90",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esearch_cdkn2a_chr9_bare_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=chr9%3Ag.21971188G%3EA+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+        "captured_at": "2026-10-17T03:05:24Z",
+        "sha256": "00e1a7fd4836e2e7119a901f60c8dc869af2f20dda40b9a4bdc27ad4b4fb119a",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esearch_cdkn2a_chr9_gene_tied_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=CDKN2A+chr9%3Ag.21971188G%3EA+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+        "captured_at": "2026-10-17T03:05:25Z",
+        "sha256": "48c2aae3dd32cff24790095e0a0a6ea7361f67060f250864262aed691b08d5d7",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esearch_samhd1_strict_i448t_empty_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22SAMHD1%22%5BTitle%2FAbstract%5D+AND+%22I448T%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+        "captured_at": "2026-10-17T03:05:26Z",
+        "sha256": "7458efdef2d46ca3f7cc639dbd2919b0772245bb4b25c72bc694e06a6648251a",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esummary_samhd1_i448t_keyword_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42857107%2C42849603%2C42849309%2C42833300%2C42799975%2C42722809%2C42707006%2C42657394%2C42650879%2C42619998%2C42611810%2C42533231%2C42501740%2C42457644%2C42453569%2C42407378%2C42376186%2C42341861%2C42306943%2C42304468%2C42237046%2C42234672%2C42224255%2C42221009%2C42190982%2C42112903%2C42112341%2C42079651%2C42079063%2C42069976%2C42043251%2C42016148%2C42001384%2C41941697%2C41938780%2C41932858%2C41929158%2C41855156%2C41839614%2C41812824%2C41787734%2C41776196%2C41711315%2C41709234%2C41666947%2C41662332%2C41647062%2C41640653%2C41618306%2C41617034%2C41611242%2C41538457%2C41522335%2C41511918%2C41496005%2C41475842%2C41399259%2C41392286%2C41387995%2C41365095%2C41280104%2C41239605%2C41225729%2C41204114%2C41201557%2C41118075%2C41078716%2C41049926%2C41023502%2C41014199%2C40996854%2C40971347%2C40960339%2C40939891%2C40913614%2C40909894%2C40902696%2C40894167%2C40886983%2C40886904%2C40825105%2C40780411%2C40778417%2C40737595%2C40730659%2C40699766%2C40683980%2C40613151%2C40586616%2C40581121%2C40568220%2C40522994%2C40497153%2C40487403%2C40450917%2C40442339%2C40434097%2C40386946%2C40352920%2C40332080",
+        "captured_at": "2026-10-17T03:05:27Z",
+        "sha256": "751bf64b2137eab8f52adccf6614c7acb8f5718054727d2401bc199c1a088379",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esummary_samhd1_chr20_bare_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42754015%2C42042080%2C41894898%2C41553577%2C41078079%2C40799282%2C40076735%2C39910854%2C39810085%2C39156922%2C36780047%2C34409643%2C32700107%2C29391400%2C28794480",
+        "captured_at": "2026-10-17T03:05:28Z",
+        "sha256": "b65613a9eb25bd7ae9a65e264b7cf4d7962c7bef99779a4efa4f2f75a7885352",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esummary_cdkn2a_a57v_keyword_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=23190892%2C18509008",
+        "captured_at": "2026-10-17T03:05:29Z",
+        "sha256": "8ec7fec94df581da603b499ac4cae2a1d413f064a9d382079d7a631c8fc20c87",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esummary_cdkn2a_chr9_bare_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42810092%2C42284679%2C42273279%2C42026014%2C41894487%2C41300709%2C41254487%2C41252683%2C41153917%2C41153341%2C41087862%2C40830689%2C40790239%2C40733479%2C40680582%2C40640980%2C40328884%2C40282400%2C40235155%2C39984493%2C39921654%2C39897619%2C39840623%2C39777458%2C39669124%2C39650934%2C39623453%2C39569145%2C39336773%2C39332896%2C39133763%2C39062710%2C38945087%2C38927594%2C38732191%2C38528672%2C38283104%2C38113703%2C38054028%2C37917626%2C37891516%2C37582927%2C37240329%2C37217920%2C37172102%2C36794146%2C36755569%2C36712253%2C36614218%2C36614046%2C36434693%2C36404219%2C35981996%2C35978816%2C35946310%2C35903038%2C35860586%2C35694722%2C35675801%2C35611211%2C35530130%2C35096865%2C34623791%2C34402589%2C34256839%2C34156092%2C33933146%2C33865315%2C33755043%2C33713179%2C33710367%2C33545980%2C33485293%2C33335285%2C33179234%2C32949441%2C32889144%2C32582242%2C32486017%2C32468074%2C32442646%2C32074988%2C31805171%2C31752696%2C31750350%2C31692205%2C31532594%2C31475187%2C31330999%2C30896804%2C30847195%2C30838031%2C30767300%2C30758658%2C30320389%2C30308506%2C30195710%2C30075747%2C29967288%2C29847813",
+        "captured_at": "2026-10-17T03:05:30Z",
+        "sha256": "e071876dfa21c05fb6d34d4efdc0001ea13fe3f806d1a08da9383f1fca18273d",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubmed/esummary_cdkn2a_chr9_gene_tied_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42284679%2C34256839%2C33335285%2C11025389",
+        "captured_at": "2026-10-17T03:05:31Z",
+        "sha256": "5cad180104b14773788c26a2b479c044bfc8df4dab7cd9c916781fc03ca3ed15",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/europepmc/search_cdkn2a_a57v_keyword_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=CDKN2A+A57V+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=%2A&pageSize=25",
+        "captured_at": "2026-10-17T03:05:32Z",
+        "sha256": "352e071f600db01ecfafa5be92cc3d8a4a9520561a4dd1baa8d6eba542e70cd9",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/europepmc/search_zero_hit_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SAMHD1+I378T+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=%2A&pageSize=25",
+        "captured_at": "2026-10-17T03:05:33Z",
+        "sha256": "8e25c4f145ce54b822e4b14ce5e399ca065abd961de2a91e92cb4a49a8fcdbc2",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubtator/autocomplete_samhd1_i448t_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=SAMHD1+I448T",
+        "captured_at": "2026-10-17T03:05:33Z",
+        "sha256": "1de39e3c7cb4d137cebfad47265eeaeef0665bfd54970278c0c6b0161efc5df9",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubtator/autocomplete_cdkn2a_a57v_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=CDKN2A+A57V",
+        "captured_at": "2026-10-17T03:05:34Z",
+        "sha256": "cdeabd2c15808db6354d0d7eff6c98ba84d0f6b42bd4fafca050482ba0ecf0e0",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubtator/search_zero_hit_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=SAMHD1+I378T&page=1&size=25",
+        "captured_at": "2026-10-17T03:05:38Z",
+        "sha256": "b7dcf3f1159a01e40b75ea8c9028a30f2c4faf9424eafc5615a1c4899a5ec05b",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubtator/search_samhd1_entity_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40VARIANT_p.I448T_SAMHD1_human&page=1&size=25",
+        "captured_at": "2026-10-17T03:05:40Z",
+        "sha256": "a2fb923b2b5030c921779f1955c56a4ecb36e2a6997e7cce86509132e56cf16d",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/pubtator/search_cdkn2a_entity_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40VARIANT_p.A57V_CDKN2A_human&page=1&size=25",
+        "captured_at": "2026-10-17T03:05:43Z",
+        "sha256": "4bd1c9e2512b97f6aa60efd58c0346ac083217d3e2ce95c3d2d6edaa1fa87ed8",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "variant_articles_2140/README.md",
+      "classification": "authored",
+      "authored_reason": "Repository-authored fixture provenance and derivation inventory."
+    },
+    {
+      "path": "litvar/autocomplete_samhd1_i448t_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "LitVar2",
+        "request": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/autocomplete/?query=SAMHD1%20I448T",
+        "captured_at": "2026-10-17T08:06:40Z",
+        "sha256": "c3372027a339c9800d42556614f9347eb63f7e82291c25887969af9a31afb3f8",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "litvar/publications_rs774964432_20261017.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "LitVar2",
+        "request": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/litvar%40rs774964432%23%23/publications",
+        "captured_at": "2026-10-17T08:06:40Z",
+        "sha256": "fe64b713d0306d09b0f5d33c904e13e102154ebba8a5a8234f22650bc5e7b7e0",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
     }
   ],
   "fixture_key_contract": {

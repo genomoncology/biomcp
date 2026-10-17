@@ -1,0 +1,1 @@
+{"header":{"type":"esearch","version":"0.3"},"esearchresult":{"count":"0","retmax":"0","retstart":"0","idlist":[],"translationset":[],"querytranslation":"(\"SAMHD1\"[Title/Abstract] AND \"I448T\"[Title/Abstract])","warninglist":{"phrasesignored":[],"quotedphrasesnotfound":["\"I448T\"[Title/Abstract]"],"outputmessages":["No items found."]}}}

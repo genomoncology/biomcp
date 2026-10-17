@@ -1730,6 +1730,19 @@ pub(crate) async fn resolve_canonical_equivalence(
     canonical_equivalence(observations, aliases)
 }
 
+/// The gene symbol every gene-tied alias spelling shares: the requested
+/// symbol when the caller named one, else the resolved source identity's
+/// first gene. The strict query builder strips exactly this spelling before
+/// rebuilding `"<gene> <alias>"`, so keep the two in one place.
+fn variant_source_gene(context: &VariantArticleResolutionContext) -> Option<&str> {
+    context.requested.gene.as_deref().or_else(|| {
+        context
+            .source_identity
+            .as_ref()
+            .and_then(|source| source.genes.first().map(String::as_str))
+    })
+}
+
 fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
     if context.requested.is_authoritative_refseq() {
         let mut aliases = BTreeSet::new();
@@ -1762,11 +1775,7 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
         return (aliases.into_iter().take(MAX_EXACT_ALIASES).collect(), false);
     }
     let mut aliases = BTreeSet::new();
-    let gene = context
-        .source_identity
-        .as_ref()
-        .and_then(|source| source.genes.first())
-        .or(context.requested.gene.as_ref());
+    let gene = variant_source_gene(context);
     let mut insert_change = |change: &str| {
         let change = change.trim();
         if change.is_empty() {
@@ -1792,7 +1801,12 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
             insert_change(change);
         }
         if !source.genomic_id.trim().is_empty() {
-            aliases.insert(source.genomic_id.trim().to_string());
+            // A genomic coordinate alias travels with the gene symbol
+            // (2140): PubMed tokenizes a bare "chr20:g.35533834A>G" to
+            // "chr20" AND "G", which matches any paper naming the
+            // chromosome — cotton and citrus included. Tied to the gene, the
+            // same alias keeps only papers about the requested gene.
+            insert_change(source.genomic_id.trim());
         }
         aliases.extend(source.rsids.iter().map(|value| value.trim().to_string()));
     }
@@ -1824,15 +1838,27 @@ fn exact_aliases_with_equivalence(
     {
         return (aliases, truncated);
     }
+    // Confirmed ClinGen equivalence contributes its own genomic coordinate
+    // aliases; they travel with the gene symbol for the same reason as the
+    // source identity's genomic id above (2140). Transcript, protein and
+    // external-identifier aliases name the variant uniquely and stay bare.
+    let gene = variant_source_gene(context);
+    let tie = |alias: &str| -> String {
+        match gene.filter(|_| alias.contains(":g.")) {
+            Some(gene) => format!("{gene} {alias}"),
+            None => alias.to_string(),
+        }
+    };
     for alias in &equivalence.aliases {
-        if !aliases.contains(alias) && aliases.len() < MAX_EXACT_ALIASES {
-            aliases.push(alias.clone());
+        let alias = tie(alias);
+        if !aliases.contains(&alias) && aliases.len() < MAX_EXACT_ALIASES {
+            aliases.push(alias);
         }
     }
     let aliases_truncated = equivalence
         .aliases
         .iter()
-        .any(|alias| !aliases.contains(alias));
+        .any(|alias| !aliases.contains(&tie(alias)));
     (aliases, truncated || aliases_truncated)
 }
 
@@ -5380,12 +5406,18 @@ mod tests {
         // A resolved variant whose PubTator autocomplete answer holds no
         // variant entity must say so: the route degrades with a plain-words
         // status, the page keeps complete false, and the run stays exit zero
-        // instead of reporting a silently complete empty result.
+        // instead of reporting a silently complete empty result. The run also
+        // pins the LitVar2 base to the fixture: the annotation strategy has
+        // consulted LitVar2 since it joined the union, an empty autocomplete
+        // is that source's healthy zero-row answer, and without the pin the
+        // test would depend on the real provider's rate limits.
         let fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             let body: &[u8] = if first_line.starts_with("GET /query") {
                 br#"{"total":1,"hits":[{"_id":"chr11:g.17417157C>T","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"],"hgvsc":["c.4309G>A"]}}]}"#
             } else if first_line.starts_with("GET /entity/autocomplete/") {
+                b"[]"
+            } else if first_line.starts_with("GET /variant/autocomplete/") {
                 b"[]"
             } else if first_line.starts_with("GET /search/") {
                 br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
@@ -5417,6 +5449,7 @@ mod tests {
             format!("{}/entrez/eutils", fixture.base),
         );
         env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
 
         let outcome = search_variant_articles_with_deadline(
             "ABCC8 R1436Q",
@@ -5828,6 +5861,418 @@ mod tests {
         );
     }
 
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn samhd1_i448t_articles_tie_the_genomic_alias_to_the_gene() {
+        // The exact-lexical route sent MyVariant's genomic coordinate alias
+        // bare, so PubMed's loose tokenization of "chr20:g.35533834A>G"
+        // ("chr20"[All Fields] AND "G"[All Fields]) pulled the cotton paper
+        // 28794480 into a SAMHD1 search. The recorded replies are the live
+        // provider bytes: the bare keyword term returns 15 chromosome-20
+        // papers including the cotton one, the gene-tied term returns none,
+        // and the SAMHD1 I448T keyword keeps the SAMHD1-naming papers.
+        const MYVARIANT_QUERY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/query_samhd1_i448t_20261017.json"
+        ));
+        const MYVARIANT_HYDRATION: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/variant_chr20_g_35533834A_G_20261017.json"
+        ));
+        const AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/autocomplete_samhd1_i448t_20261017.json"
+        ));
+        const ENTITY_SEARCH: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_samhd1_entity_20261017.json"
+        ));
+        const PUBTATOR_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_zero_hit_20261017.json"
+        ));
+        const EPMC_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/europepmc/search_zero_hit_20261017.json"
+        ));
+        const ESEARCH_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_i448t_keyword_20261017.json"
+        ));
+        const ESUMMARY_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_samhd1_i448t_keyword_20261017.json"
+        ));
+        const ESEARCH_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_chr20_bare_20261017.json"
+        ));
+        const ESUMMARY_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_samhd1_chr20_bare_20261017.json"
+        ));
+        const ESEARCH_GENE_TIED: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_chr20_gene_tied_20261017.json"
+        ));
+        const ESEARCH_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_strict_i448t_empty_20261017.json"
+        ));
+        const S2_EMPTY: &[u8] = br#"{"total":0,"data":[]}"#;
+        const LITVAR_AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/autocomplete_samhd1_i448t_20261017.json"
+        ));
+        const LITVAR_PUBLICATIONS: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/publications_rs774964432_20261017.json"
+        ));
+
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            let json = |body: &[u8]| {
+                TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+            };
+            if first_line.starts_with("GET /variant/autocomplete/") {
+                return json(LITVAR_AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /variant/get/") {
+                return json(LITVAR_PUBLICATIONS);
+            }
+            if first_line.starts_with("GET /query") {
+                return json(MYVARIANT_QUERY);
+            }
+            if first_line.starts_with("GET /variant/") {
+                return json(MYVARIANT_HYDRATION);
+            }
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return json(AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /search/") {
+                return json(if first_line.contains("%40VARIANT") {
+                    ENTITY_SEARCH
+                } else {
+                    PUBTATOR_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /search?") {
+                return json(EPMC_EMPTY);
+            }
+            if first_line.starts_with("GET /graph/v1/") {
+                return json(S2_EMPTY);
+            }
+            if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                // The gene-tied term also contains the bare coordinate, so it
+                // is matched first.
+                return json(if first_line.contains("term=SAMHD1+chr20%3Ag") {
+                    ESEARCH_GENE_TIED
+                } else if first_line.contains("term=chr20%3Ag") {
+                    ESEARCH_BARE
+                } else if first_line.contains("term=SAMHD1+I448T+NOT") {
+                    ESEARCH_KEYWORD
+                } else {
+                    ESEARCH_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
+                return json(if first_line.contains("id=42754015") {
+                    ESUMMARY_BARE
+                } else {
+                    ESUMMARY_KEYWORD
+                });
+            }
+            json(b"{}")
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("2140-samhd1");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
+        env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "SAMHD1 I448T",
+            VariantArticleStrategy::Union,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(60),
+        )
+        .await
+        .expect("recorded SAMHD1 I448T search outcome");
+
+        let rows = &outcome.response.results;
+        assert!(
+            rows.iter().all(|row| row.article.pmid != "28794480"),
+            "the cotton paper matched only by the bare coordinate must drop; got {}",
+            rows.iter()
+                .filter(|row| row.article.pmid == "28794480")
+                .count()
+        );
+        assert!(
+            rows.iter().any(|row| {
+                row.article.pmid == "42857107" || row.article.title.contains("SAMHD1")
+            }),
+            "papers that name SAMHD1 stay; titles: {:?}",
+            rows.iter()
+                .map(|row| row.article.title.as_str())
+                .take(5)
+                .collect::<Vec<_>>()
+        );
+        for row in rows {
+            for fact in &row.provenance {
+                assert_ne!(
+                    fact.matched_alias.as_deref(),
+                    Some("chr20:g.35533834A>G"),
+                    "the genomic alias may only match papers alongside the gene: {} ({:?})",
+                    row.article.pmid,
+                    row.provenance
+                );
+            }
+        }
+        let logged = requests.lock().expect("request log").clone();
+        assert!(
+            logged
+                .iter()
+                .all(|line| !line.contains("term=chr20%3Ag.35533834A%3EG+NOT")),
+            "no provider leg may query the bare coordinate; saw {:?}",
+            logged
+                .iter()
+                .filter(|line| line.contains("chr20%3Ag.35533834A%3EG+NOT"))
+                .cloned()
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn cdkn2a_a57v_articles_tie_the_genomic_alias_to_the_gene() {
+        // The second report: the citrus paper 41894487 reached the CDKN2A
+        // search's second page matched only by the bare chr9:g.21971188G>A
+        // alias. The recorded replies hold both sides: the bare keyword term
+        // returns 100 chromosome-9 papers including citrus, and the gene-tied
+        // term returns the four CDKN2A-related papers PubMed keeps. Europe
+        // PMC's keyword reply carries the CDKN2A-naming paper 18178632 the
+        // search must keep.
+        const MYVARIANT_QUERY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/query_cdkn2a_a57v_20261017.json"
+        ));
+        const MYVARIANT_HYDRATION: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/variant_chr9_g_21971188G_A_20261017.json"
+        ));
+        const AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/autocomplete_cdkn2a_a57v_20261017.json"
+        ));
+        const ENTITY_SEARCH: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_cdkn2a_entity_20261017.json"
+        ));
+        const PUBTATOR_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_zero_hit_20261017.json"
+        ));
+        const EPMC_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/europepmc/search_cdkn2a_a57v_keyword_20261017.json"
+        ));
+        const EPMC_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/europepmc/search_zero_hit_20261017.json"
+        ));
+        const ESEARCH_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_cdkn2a_a57v_keyword_20261017.json"
+        ));
+        const ESUMMARY_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_cdkn2a_a57v_keyword_20261017.json"
+        ));
+        const ESEARCH_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_cdkn2a_chr9_bare_20261017.json"
+        ));
+        const ESUMMARY_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_cdkn2a_chr9_bare_20261017.json"
+        ));
+        const ESEARCH_GENE_TIED: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_cdkn2a_chr9_gene_tied_20261017.json"
+        ));
+        const ESUMMARY_GENE_TIED: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_cdkn2a_chr9_gene_tied_20261017.json"
+        ));
+        const ESEARCH_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_strict_i448t_empty_20261017.json"
+        ));
+        const S2_EMPTY: &[u8] = br#"{"total":0,"data":[]}"#;
+        const LITVAR_AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/autocomplete_cdkn2a_a57v.json"
+        ));
+        const LITVAR_PUBLICATIONS: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/publications_rs372266620.json"
+        ));
+
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            let json = |body: &[u8]| {
+                TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+            };
+            if first_line.starts_with("GET /variant/autocomplete/") {
+                return json(LITVAR_AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /variant/get/") {
+                return json(LITVAR_PUBLICATIONS);
+            }
+            if first_line.starts_with("GET /query") {
+                return json(MYVARIANT_QUERY);
+            }
+            if first_line.starts_with("GET /variant/") {
+                return json(MYVARIANT_HYDRATION);
+            }
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return json(AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /search/") {
+                return json(if first_line.contains("%40VARIANT") {
+                    ENTITY_SEARCH
+                } else {
+                    PUBTATOR_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /search?") {
+                return json(if first_line.contains("CDKN2A+A57V+AND+NOT+PUB_TYPE") {
+                    EPMC_KEYWORD
+                } else {
+                    EPMC_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /graph/v1/") {
+                return json(S2_EMPTY);
+            }
+            if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                // The gene-tied term also contains the bare coordinate, so it
+                // is matched first.
+                return json(if first_line.contains("term=CDKN2A+chr9%3Ag") {
+                    ESEARCH_GENE_TIED
+                } else if first_line.contains("term=chr9%3Ag") {
+                    ESEARCH_BARE
+                } else if first_line.contains("term=CDKN2A+A57V+NOT") {
+                    ESEARCH_KEYWORD
+                } else {
+                    ESEARCH_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
+                return json(if first_line.contains("id=42810092") {
+                    ESUMMARY_BARE
+                } else if first_line.contains("id=42284679") {
+                    ESUMMARY_GENE_TIED
+                } else {
+                    ESUMMARY_KEYWORD
+                });
+            }
+            json(b"{}")
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("2140-cdkn2a");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
+        env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "CDKN2A A57V",
+            VariantArticleStrategy::Union,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(60),
+        )
+        .await
+        .expect("recorded CDKN2A A57V search outcome");
+
+        let rows = &outcome.response.results;
+        assert!(
+            rows.iter().all(|row| row.article.pmid != "41894487"),
+            "the citrus paper matched only by the bare coordinate must drop; got {}",
+            rows.iter()
+                .filter(|row| row.article.pmid == "41894487")
+                .count()
+        );
+        assert!(
+            rows.iter().any(|row| row.article.title.contains("CDKN2A")),
+            "papers that name CDKN2A stay; titles: {:?}",
+            rows.iter()
+                .map(|row| row.article.title.as_str())
+                .take(5)
+                .collect::<Vec<_>>()
+        );
+        for row in rows {
+            for fact in &row.provenance {
+                assert_ne!(
+                    fact.matched_alias.as_deref(),
+                    Some("chr9:g.21971188G>A"),
+                    "the genomic alias may only match papers alongside the gene: {} ({:?})",
+                    row.article.pmid,
+                    row.provenance
+                );
+            }
+        }
+        let logged = requests.lock().expect("request log").clone();
+        assert!(
+            logged
+                .iter()
+                .all(|line| !line.contains("term=chr9%3Ag.21971188G%3EA+NOT")),
+            "no provider leg may query the bare coordinate; saw {:?}",
+            logged
+                .iter()
+                .filter(|line| line.contains("chr9%3Ag.21971188G%3EA+NOT"))
+                .cloned()
+                .collect::<Vec<_>>()
+        );
+    }
+
     #[test]
     fn resolved_exact_aliases_include_validated_source_forms_once() {
         let (aliases, truncated) = exact_aliases(&resolved_context());
@@ -5838,9 +6283,50 @@ mod tests {
                 "BRAF p.V600E",
                 "BRAF V600E",
                 "BRAF c.1799T>A",
+                "BRAF chr7:g.140453136A>T",
                 "BRAF p.Val600Glu",
-                "chr7:g.140453136A>T",
                 "rs113488022",
+            ]
+        );
+    }
+
+    #[test]
+    fn confirmed_car_genomic_aliases_travel_with_the_gene_symbol() {
+        // 2140: a confirmed ClinGen equivalence contributes genomic
+        // coordinate aliases (`:g.` HGVS); like the source identity's genomic
+        // id they must carry the gene symbol, while the variant-unique
+        // transcript, protein and identifier aliases stay bare.
+        let equivalence = CanonicalEquivalence {
+            status: "confirmed".into(),
+            caid: Some("CA000072".into()),
+            exhaustive: true,
+            complete: true,
+            applicable_identity_count: 2,
+            observations: Vec::new(),
+            aliases: vec![
+                "NM_000546.6:c.215C>G".into(),
+                "NP_000537.3:p.Pro72Arg".into(),
+                "NC_000017.11:g.7676154G>C".into(),
+                "CA000072".into(),
+            ],
+            message: String::new(),
+        };
+        let (aliases, truncated) =
+            exact_aliases_with_equivalence(&resolved_context(), &equivalence);
+        assert!(!truncated);
+        assert_eq!(
+            aliases,
+            vec![
+                "BRAF p.V600E",
+                "BRAF V600E",
+                "BRAF c.1799T>A",
+                "BRAF chr7:g.140453136A>T",
+                "BRAF p.Val600Glu",
+                "rs113488022",
+                "NM_000546.6:c.215C>G",
+                "NP_000537.3:p.Pro72Arg",
+                "BRAF NC_000017.11:g.7676154G>C",
+                "CA000072",
             ]
         );
     }
