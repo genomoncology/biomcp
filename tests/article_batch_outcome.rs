@@ -1461,17 +1461,22 @@ fn batch_article_detail_pdf_names_the_fulltext_source_each_article_used() {
     assert_eq!(doc["summary"]["failed"], json!(0));
 
     // 22663011 wins on Europe PMC JATS XML before the PDF rung: --pdf adds
-    // the fallback without changing the reported source, and the PDF row the
-    // coverage still records names the absent open link, not a failure.
+    // the fallback without changing the reported source, and an XML winner
+    // records no PDF attempt at all because the ladder stopped at its first
+    // full-text rung.
     let xml_winner = &items[0]["result"];
     assert_eq!(xml_winner["full_text_manifest"]["source_kind"], json!("jats_xml"));
     assert_eq!(
         xml_winner["section_outcomes"]["fulltext"],
         json!({"outcome": "data", "sources": ["Europe PMC"]})
     );
-    assert_eq!(
-        article_fulltext_pdf_attempt(xml_winner)["reason"],
-        json!("open_pdf_link_absent")
+    assert!(
+        xml_winner["full_text_coverage"]["attempts"]
+            .as_array()
+            .expect("attempts should be a list")
+            .iter()
+            .all(|attempt| attempt["source_kind"] != "pdf"),
+        "an XML winner records no PDF attempt: {xml_winner}"
     );
 
     // 22663026 falls through to the vouched open PDF, and the provenance row
