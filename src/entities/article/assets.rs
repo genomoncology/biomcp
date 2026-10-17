@@ -1568,7 +1568,7 @@ fn assign_asset_keys(
         };
         asset.entry.handle = article_asset_command(requested_id, &asset.entry.asset_key);
     }
-    for (identity, coverage) in pending.iter_mut() {
+    for ((identity, _), coverage) in pending.iter_mut() {
         if !coverage.refused_download {
             continue;
         }
