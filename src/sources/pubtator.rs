@@ -107,6 +107,21 @@ impl PubTatorClient {
         plan
     }
 
+    /// The same export with `full=true`: PubTator3 adds the PMC full-text
+    /// passages (tables, paragraphs) beside the abstract when the paper is in
+    /// PMC, and answers the abstract-only shape otherwise. The identity check
+    /// reads this shape because a paper can carry the variant annotation only
+    /// in its full text.
+    pub fn export_biocjson_fulltext_plan(pmid: u64, api_key: Option<&str>) -> RequestPlan {
+        let mut plan = RequestPlan::get("publications/export/biocjson")
+            .query("pmids", pmid.to_string())
+            .query("full", "true");
+        if let Some(key) = clean_api_key(api_key) {
+            plan = plan.query("api_key", key);
+        }
+        plan
+    }
+
     // dead-code reason: pubtator::export_biocjson_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn export_biocjson_request_plan(&self, pmid: u64) -> PubTatorExportRequestPlan {
@@ -132,6 +147,16 @@ impl PubTatorClient {
     pub async fn export_biocjson(&self, pmid: u64) -> Result<PubTatorExportResponse, BioMcpError> {
         let authenticated = self.api_key.is_some();
         let plan = Self::export_biocjson_plan(pmid, self.api_key.as_deref());
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.get_json(req, authenticated).await
+    }
+
+    pub async fn export_biocjson_fulltext(
+        &self,
+        pmid: u64,
+    ) -> Result<PubTatorExportResponse, BioMcpError> {
+        let authenticated = self.api_key.is_some();
+        let plan = Self::export_biocjson_fulltext_plan(pmid, self.api_key.as_deref());
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.get_json(req, authenticated).await
     }

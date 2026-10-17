@@ -433,8 +433,14 @@ makes a provider request is reported as source-neutral `internal` /
 retrieved pool. `--confirmed-only` requires it and filters before ranking and
 pagination. Query aliases remain retrieval provenance, never observed aliases.
 Identity observations retain source, section, locator, linked gene, observed
-alias, typed `provider_linkage`, and canonical captured-content hash. Confirmation uses returned-PMID typed PubTator Gene/Variant facts with matching
-exact HGVS and CorrespondingGene/NCBI Gene-ID evidence, or an optional bounded
+alias, typed `provider_linkage`, and canonical captured-content hash. Verification reads
+the PubTator3 full-text export, so a paper whose variant annotation sits in a table or
+paragraph of the full text confirms the same way an abstract annotation does; a
+document keyed by its numeric PMC id counts as the expected paper when its own pmid
+field agrees. Confirmation uses returned-PMID typed PubTator Gene/Variant facts with matching
+exact HGVS and CorrespondingGene/NCBI Gene-ID evidence, a variant annotation whose
+complete CorrespondingGene linkage has no Gene annotation in the document when the
+passage carrying it names the requested gene, or an optional bounded
 ClinGen LDH annotation that binds the applicable CAid, requested gene, known PMCID,
 and one exact text/table selector. LDH only observes already retrieved PMCID
 candidates: missing coverage, malformed data, and outages never remove a candidate
