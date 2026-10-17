@@ -1756,82 +1756,6 @@ fn canonical_equivalence(
 /// The resolution context the exact-name strategy runs with: no provider
 /// resolution happened, so nothing is resolved, nothing is validated, and
 /// every discovery decision rests on the caller's string alone.
-/// The hard-error outcome a run whose variant resolution is unavailable
-/// returns: no provider discovery ran, so the page is empty, incomplete, and
-/// names the outage.
-#[allow(clippy::too_many_arguments)]
-fn resolution_unavailable_outcome(
-    context: VariantArticleResolutionContext,
-    canonical_equivalence: CanonicalEquivalence,
-    strategy: VariantArticleStrategy,
-    limit: usize,
-    offset: usize,
-    include_debug_plan: bool,
-    execution: &VariantArticleExecutionContext,
-) -> VariantArticleOutcome {
-    let events = execution.events();
-    let mut source_status = terminal_reconciled_statuses(execution, &events);
-    if source_status.is_empty() {
-        source_status.push(status(
-            "resolution",
-            "myvariant",
-            VariantArticleSourceStatusKind::Unavailable,
-        ));
-    }
-    // Preserve legacy failure priority while ordering any additionally
-    // materialized terminal routes deterministically.
-    source_status.sort_by_key(|status| {
-        (
-            status.route != "resolution",
-            status.route.clone(),
-            status.source.clone(),
-        )
-    });
-    let debug_plan = include_debug_plan.then(|| {
-        let mut plan =
-            empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
-        plan.budgets.item = execution.item_work();
-        plan.budgets.request = execution.request_work();
-        plan.deadline = execution.deadline_plan();
-        plan
-    });
-    let outage_message = variant_article_outage_message(&source_status);
-    VariantArticleOutcome {
-        response: VariantArticleResponse {
-            requested_variant: context.requested,
-            resolution: context.resolution,
-            canonical_equivalence: Some(canonical_equivalence),
-            strategy,
-            complete: false,
-            truncated: true,
-            pagination: VariantArticlePagination {
-                offset,
-                limit,
-                returned: 0,
-                total: None,
-                has_more: true,
-                next_page_token: None,
-            },
-            source_status,
-            retrieval_path: "variant resolution unavailable",
-            results: Vec::new(),
-            error: Some(VariantArticleItemError {
-                code: if execution.deadline.is_exhausted() {
-                    "deadline_exceeded"
-                } else {
-                    "source_unavailable"
-                },
-                message: if execution.deadline.is_exhausted() {
-                    "the variant article invocation deadline expired before a usable result was available".into()
-                } else {
-                    outage_message
-                },
-            }),
-            debug_plan,
-        },
-        hard_error: true,
-    }
-}
 
 /// Resolve the search context, canonical equivalence, and selected exact
 /// aliases for one invocation. The exact-name strategy skips every provider
@@ -3817,6 +3741,7 @@ fn resolution_status_rows(
     statuses
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_identity(
     input: &str,
     requested: RequestedVariantIdentity,
