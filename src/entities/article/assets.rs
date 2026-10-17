@@ -371,7 +371,7 @@ async fn resolve_article_assets(
     let mut nonretrievable = Vec::<PendingCoverage>::new();
     // Supplement file names an official archive route listed without delivering
     // a usable copy: after the primary observations, the remaining official
-    // routes are checked for each of them (ticket 2150).
+    // routes are checked for each of them.
     let mut undelivered_supplements = BTreeSet::<String>::new();
     let mut complex_tables = 0usize;
     let mut source_attempts = Vec::new();
@@ -660,7 +660,7 @@ async fn resolve_article_assets(
         // A supplement the archive routes listed without delivering a usable
         // copy gets the remaining official routes: the PMC open-data bucket
         // object the retained manifest names, then the PMC article page's
-        // file route when no declared link already covers it (ticket 2150).
+        // file route when no declared link already covers it.
         supplement_fallback(
             requested_id,
             &article,
@@ -997,7 +997,7 @@ const FALLBACK_AGGREGATE_LIMIT: usize = 64 * 1024 * 1024;
 /// Consult the remaining official routes for supplements the archive routes
 /// listed without delivering a usable copy: the PMC open-data bucket object
 /// the retained manifest names, then the PMC article page's file route when no
-/// declared link already covers the file name (ticket 2150).
+/// declared link already covers the file name.
 #[allow(clippy::too_many_arguments)]
 async fn supplement_fallback(
     requested_id: &str,
@@ -2145,15 +2145,14 @@ async fn observe_figshare_assets(
                     &file.filename,
                     ArticleAssetNamedOutcome::EmptyResponse,
                 )),
-                Ok(bytes) if !asset_bytes_match_filename(&file.filename, &bytes) => {
-                    nonretrievable.push(refused_download_coverage(
+                Ok(bytes) if !asset_bytes_match_filename(&file.filename, &bytes) => nonretrievable
+                    .push(refused_download_coverage(
                         identity,
                         provider.clone(),
                         ArticleAssetSourceDocument::Figshare,
                         &file.filename,
                         ArticleAssetNamedOutcome::UnusableAsset,
-                    ))
-                }
+                    )),
                 Ok(bytes) => {
                     let mut entry = figshare_asset_entry(
                         requested_id,
@@ -2599,13 +2598,8 @@ fn asset_bytes_match_filename(filename: &str, bytes: &[u8]) -> bool {
     };
     let starts = |magic: &[u8]| bytes.starts_with(magic);
     match extension {
-        "pdf" => bytes
-            .windows(5)
-            .take(1024)
-            .any(|window| window == b"%PDF-"),
-        "docx" | "xlsx" | "pptx" | "zip" | "odt" | "ods" | "odp" | "epub" | "jar" => {
-            starts(b"PK")
-        }
+        "pdf" => bytes.windows(5).take(1024).any(|window| window == b"%PDF-"),
+        "docx" | "xlsx" | "pptx" | "zip" | "odt" | "ods" | "odp" | "epub" | "jar" => starts(b"PK"),
         "doc" | "xls" | "ppt" => starts(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]),
         "gz" | "tgz" => starts(&[0x1F, 0x8B]),
         "png" => starts(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]),
@@ -2835,7 +2829,7 @@ mod tests {
 
     #[test]
     fn build_manifest_hashes_binary_bytes_and_quotes_retrieval_commands() {
-        let binary = vec![0, 0xff, b'P', b'N', b'G', b'\n'];
+        let binary = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0xff];
         let csv = b"time,value\n0,1\n".to_vec();
         let jats_xml = br#"<?xml version="1.0"?>
 <!DOCTYPE article PUBLIC
@@ -3443,16 +3437,28 @@ mod tests {
         // Extensions with a committed signature refuse bytes that do not
         // carry it; the observed wrong-type shape is HTML under a .docx name.
         for (filename, bytes) in [
-            ("supplement.pdf", b"%PDF-1.4\nscrubbed fixture body\n".as_slice()),
+            (
+                "supplement.pdf",
+                b"%PDF-1.4\nscrubbed fixture body\n".as_slice(),
+            ),
             (
                 "supplement.docx",
                 b"PK\x03\x14\x00\x06\x00scrubbed docx fixture bytes\n",
             ),
-            ("supplement.xlsx", b"PK\x05\x06scrubbed xlsx fixture bytes\n"),
+            (
+                "supplement.xlsx",
+                b"PK\x05\x06scrubbed xlsx fixture bytes\n",
+            ),
             ("supplement.zip", b"PK\x07\x08scrubbed zip fixture bytes\n"),
-            ("legacy-supplement.doc", &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1][..]),
+            (
+                "legacy-supplement.doc",
+                &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1][..],
+            ),
             ("archive.tgz", &[0x1F, 0x8B, 0x08][..]),
-            ("figure.png", &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A][..]),
+            (
+                "figure.png",
+                &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A][..],
+            ),
             ("figure.gif", b"GIF89a\x01\x00".as_slice()),
             ("figure.jpg", &[0xFF, 0xD8, 0xFF, 0xE0][..]),
         ] {
@@ -3464,7 +3470,8 @@ mod tests {
         for (filename, bytes) in [
             (
                 "pgen.1009231.s004.docx",
-                b"<!DOCTYPE html>\n<html lang=\"en-US\"><body>vendor page</body></html>\n".as_slice(),
+                b"<!DOCTYPE html>\n<html lang=\"en-US\"><body>vendor page</body></html>\n"
+                    .as_slice(),
             ),
             (
                 "NIHMS1501645-supplement-2.docx",
@@ -3485,7 +3492,10 @@ mod tests {
             b"junk-before-header\n%PDF-1.4\nbody"
         ));
         assert!(asset_bytes_match_filename("table.csv", b"a,b\n1,2\n"));
-        assert!(asset_bytes_match_filename("article.nxml", b"<?xml version=\"1.0\"?>"));
+        assert!(asset_bytes_match_filename(
+            "article.nxml",
+            b"<?xml version=\"1.0\"?>"
+        ));
         assert!(asset_bytes_match_filename("page.html", b"<!DOCTYPE html>"));
         assert!(asset_bytes_match_filename("README", b"anything at all"));
         // Known types with no bytes at all are a mismatch; callers classify

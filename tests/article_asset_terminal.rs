@@ -260,7 +260,7 @@ fn pdf_case_fixture_bytes() -> &'static [u8] {
 #[test]
 #[serial_test::serial(article_output_fixture)]
 fn empty_europe_pmc_supplement_finds_the_pmc_oa_bucket_copy() {
-    // Ticket 2150, the Word case (PMID 30224644): the only listed copy is
+    // The Word case (PMC6168352): the only listed copy is
     // Europe PMC's zero-byte member and the package download fails, so the
     // PMC open-data bucket object the manifest names is fetched per file.
     let fixture = ArticleFixture::start();
@@ -297,8 +297,9 @@ fn empty_europe_pmc_supplement_finds_the_pmc_oa_bucket_copy() {
         .filter(|row| row["filename"] == filename)
         .collect::<Vec<_>>();
     assert!(
-        rows.iter().any(|row| row["outcome"] == "empty_response"
-            && row["provider"]["source"] == "Europe PMC"),
+        rows.iter()
+            .any(|row| row["outcome"] == "empty_response"
+                && row["provider"]["source"] == "Europe PMC"),
         "the empty Europe PMC member stays marked"
     );
 
@@ -326,7 +327,7 @@ fn empty_europe_pmc_supplement_finds_the_pmc_oa_bucket_copy() {
 #[test]
 #[serial_test::serial(article_output_fixture)]
 fn wrong_type_supplement_reply_fails_the_download_and_writes_no_file() {
-    // Ticket 2150, the wrong-type case (PMID 33332384): a vendor HTML page
+    // The wrong-type case (PMC7787686): a vendor HTML page
     // under a .docx name is refused with its own outcome instead of being
     // delivered as the file.
     let fixture = ArticleFixture::start();
@@ -357,9 +358,10 @@ fn wrong_type_supplement_reply_fails_the_download_and_writes_no_file() {
         .find(|row| row["provider"]["source"] == "Europe PMC")
         .expect("the Europe PMC route stays named");
     assert_eq!(europe_row["outcome"], "unusable_asset");
-    assert!(rows
-        .iter()
-        .any(|row| row["outcome"] == "unusable_asset" && row["provider"]["source"] == "PMC OA"));
+    assert!(
+        rows.iter()
+            .any(|row| row["outcome"] == "unusable_asset" && row["provider"]["source"] == "PMC OA")
+    );
     let europe_key = europe_row["asset_key"]
         .as_str()
         .expect("the wrong-type route keeps a stable key")
@@ -405,7 +407,7 @@ fn wrong_type_supplement_reply_fails_the_download_and_writes_no_file() {
 #[test]
 #[serial_test::serial(article_output_fixture)]
 fn two_route_pdf_supplement_prefers_the_pmc_oa_copy() {
-    // Ticket 2150, the PDF case (PMID 27149063): Europe PMC's zero-byte PDF
+    // The PDF case (PMC4858276): Europe PMC's zero-byte PDF
     // member beside a figure with bytes, and the PMC OA package holding the
     // real file.
     let fixture = ArticleFixture::start();
@@ -429,13 +431,15 @@ fn two_route_pdf_supplement_prefers_the_pmc_oa_copy() {
         listed[0]["size_bytes"],
         serde_json::json!(pdf_case_fixture_bytes().len())
     );
-    assert!(doc["coverage"]
-        .as_array()
-        .expect("coverage should be a list")
-        .iter()
-        .any(|row| row["filename"] == filename
-            && row["outcome"] == "empty_response"
-            && row["provider"]["source"] == "Europe PMC"));
+    assert!(
+        doc["coverage"]
+            .as_array()
+            .expect("coverage should be a list")
+            .iter()
+            .any(|row| row["filename"] == filename
+                && row["outcome"] == "empty_response"
+                && row["provider"]["source"] == "Europe PMC")
+    );
 
     let destination = fixture.root.join("pdf-case.pdf");
     successful_output(
