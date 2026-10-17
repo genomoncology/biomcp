@@ -2653,7 +2653,19 @@ fn plan_queries(
         // The route resolves its own variant through the LitVar2
         // autocomplete, so its query is the request itself.
         "litvar_variant" => vec![input.trim().to_string()],
-        _ => Vec::new(),
+        _ => {
+            let aliases = combined_normalized_aliases(context);
+            aliases
+                .genomic_ids
+                .into_iter()
+                .chain(aliases.rsids)
+                .chain(aliases.protein_changes)
+                .chain(aliases.coding_changes)
+                .chain(std::iter::once(input.to_string()))
+                .filter(|query| !query.trim().is_empty())
+                .take(MAX_EXACT_ALIASES)
+                .collect()
+        }
     }
 }
 
