@@ -8901,5 +8901,4 @@ mod tests {
         assert!(identity.contradictions.is_empty());
         assert!(!identity.incomplete);
     }
-
 }
