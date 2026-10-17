@@ -58,6 +58,12 @@ answers with a bot-challenge page that the linked classifier records as
     skipped) and, for names no declared JATS/page link covers, on the PMC
     article page's own file route (`/articles/instance/<id>/bin/<name>`
     through the linked machinery with its PoW/absent classification).
+  - `article_asset_bytes_from_resolution` answers a bare file name that
+    several routes refused with the strongest single refusal (the same
+    priority order the fold uses) instead of a bare not-found, so the new
+    article-page rows cannot hide 2146's empty-response refusal; coverage
+    folds per (canonical identity, source document) so one route's outcome
+    never hides another's reason while delivered copies still merge.
 - `src/sources/pmc_oa.rs`: `object_bytes` is crate-visible for the fallback;
   the media-object filename extraction moved to `media_object_filename`,
   which `archive_package` now shares.
@@ -95,8 +101,64 @@ only, no product change (see Gates for the job):
 
 | Job | Machine | Command | Verdict |
 | --- | --- | --- | --- |
-| (fill) | | | |
+| 1792207717808-50107 | macOS gate host | live reproduction at `43252305f` (main) | both defects shown; PDF control good |
+| 1792207792924-54817 | macOS gate host | live downloads at `43252305f` (main) | wrong-type exits 0 with the HTML bytes; PDF control good |
+| 1792208463514-2224639 | Linux gate host | targeted nextest at `ed7a71343` (main + tests/fixture) | failed: Word and wrong-type red, PDF control green |
+| 1792221301105-3455609 | Linux gate host | targeted nextest (8 tests: the three new terminal tests, 2146's two terminal tests, three unit tests) at `326ab7fd1` | passed, 8/8 |
+| 1792224468485-3601840 | Linux gate host | `make test` at `326ab7fd1` | passed |
+| 1792225823259-3666708 | Linux gate host | `make lint` at `6a1b8ac6a` | passed |
+| 1792226733989-3671083 | Linux gate host | `make spec` at `6a1b8ac6a` | passed |
+| 1792226898757-77664 | macOS gate host | live probe with the fixed binary at `6a1b8ac6a` | see below |
+| CI run 39017486462 | GitHub Linux | full ci.yml at the tip `6a1b8ac6a` | green (every executed lane) |
+
+Superseded failures on the way (all understood, none open): CI 39005740828
+and 39010671915 were compile errors fixed before the next push; CI 39006024620
+and 39009800755 caught the two real defects below (both fixed in
+`1f65999b6`/`326ab7fd1` and re-proven by the 8/8 run); CI 39012916822 was a
+spec-lint short-match literal; yellow 1792214563558-2790300 and
+1792219137243-3407725 ran stale tips and failed the same fixed defects.
+
+### Live probe at the tip (read-only public GETs, job 1792226898757-77664)
+
+- Word case (30224644): the assets manifest now lists eleven retrievable
+  copies through the bucket fallback (main listed none), and
+  `asset NIHMS1501645-supplement-3.xlsx --output /tmp/sup3.xlsx` downloads
+  the real 397,947-byte workbook (PK header). The reported 46 MiB
+  `NIHMS1501645-supplement-2.docx` itself refuses with exit 1 and no file;
+  its coverage rows read Europe PMC `empty_response`, PMC OA
+  `source_unavailable` (the 8 MiB per-object budget), PMC
+  `pmc_proof_of_work` (the page route's gate).
+- Wrong-type case (33332384): `asset pgen.1009231.s004.docx` now exits 1 and
+  writes no file (main exited 0 and wrote 40,919 bytes of HTML).
+- PDF control (27149063): unchanged — exit 0, the good 18,070-byte PMC OA
+  copy, SHA-256 `3e3ab5a0…9ef0`.
 
 ## Findings
 
-- (fill)
+- The Word case's 46 MiB supplement still cannot download whole: the 8 MiB
+  per-object budget refuses it at the bucket as it refused the package, so
+  the manifest says no usable copy exists with three honest route reasons.
+  The ticket's acceptance explicitly allows "the manifest says none exists";
+  a follow-up could raise the per-file budget for the fallback if the
+  research team needs that one file tonight.
+- A bare file name that several routes refused answers with the strongest
+  single reason (proof-of-work above wrong-type above empty above
+  unavailable). Live, that means the wrong-type article's bare name names
+  the article-page bot gate while the route keys answer `unusable_asset`;
+  the recorded test pins the `unusable_asset` refusal through the stable
+  route key, the same key form 2146 established.
+- Coverage now folds per (canonical identity, source document): the bucket
+  route and the linked page route share an identity so a delivered copy
+  still merges into one asset, but their refusals stay separate rows so one
+  route's outcome cannot hide another's reason. This was forced by the
+  fallback: without it the page's proof-of-work row swallowed the PMC OA
+  `unusable_asset` row on the wrong-type article.
+- Existing xlsx/docx fixture bytes gained committed leading bytes (`PK`)
+  because the binaries they stand in for now answer a type check; substring
+  assertions elsewhere still match, and 2146's tests are green at the tip.
+- `make lint` still cannot run on the macOS gate host (no Darwin-arm64
+  archive for the pinned shellcheck/actionlint; same finding as 2146), so
+  the lint gate ran on the Linux gate host and in CI.
+- The pre-existing `unused import: std::fs` warning for
+  `src/cache/manager.rs` still appears in nextest builds (present on main
+  since `d59599c88`); clippy's lane passes.
