@@ -233,7 +233,15 @@ async fn capture_visible_fallback_events<T>(
 
 #[serial_test::serial(source_env)]
 #[tokio::test]
-async fn a_pubtator_empty_reply_falls_back_to_europe_pmc_without_a_warning() {
+async fn metadata_fallback_warns_only_when_no_source_covers_the_row() {
+    for variant in [false, true] {
+        for covered in [true, false] {
+            check_metadata_fallback(variant, covered).await;
+        }
+    }
+}
+
+async fn check_metadata_fallback(variant: bool, covered: bool) {
     // The trigger this ticket names, confirmed: PubTator answers 200 with
     // an empty PubTator3 array for a PMID the search itself returned, so
     // the resolve fails without the HTTP 400/404 lag fallback and the row
@@ -265,7 +273,11 @@ async fn a_pubtator_empty_reply_falls_back_to_europe_pmc_without_a_warning() {
             TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/json",
-                europepmc_search.as_bytes(),
+                if covered {
+                    europepmc_search.as_bytes()
+                } else {
+                    br#"{"hitCount":0,"resultList":{"result":[]}}"#
+                },
             ))
         } else {
             TestHttpReply::Bytes(test_http_response(
@@ -295,8 +307,17 @@ async fn a_pubtator_empty_reply_falls_back_to_europe_pmc_without_a_warning() {
         upstream_total: None,
         partial_note: None,
     };
-    let (enriched, events) = capture_visible_fallback_events(async {
-        enrich_visible_article_search_page(page, &[ArticleSource::PubTator]).await
+    let (rows, events) = capture_visible_fallback_events(async {
+        if variant {
+            let mut rows = page.results;
+            let execution = super::super::variant_search::VariantArticleExecutionContext::single();
+            enrich_visible_article_search_rows_with_article_base_context(
+                &mut rows, Some(&execution),
+            ).await;
+            rows
+        } else {
+            enrich_visible_article_search_page(page, &[ArticleSource::PubTator]).await.page.results
+        }
     })
     .await;
     let warns: Vec<_> = events
@@ -304,26 +325,20 @@ async fn a_pubtator_empty_reply_falls_back_to_europe_pmc_without_a_warning() {
         .filter(|(level, _)| *level == tracing::Level::WARN)
         .cloned()
         .collect();
-    assert!(
-        warns.is_empty(),
-        "fallback that works must not warn: {warns:?}"
-    );
-    assert!(
-        events
-            .iter()
-            .any(|(level, _)| *level == tracing::Level::DEBUG),
-        "the covering PubTator failure logs at debug: {events:?}"
-    );
     assert_eq!(
-        enriched.page.results[0].citation_count,
-        Some(133),
-        "the recorded Europe PMC reply fills the row's citation count"
+        warns.is_empty(), covered,
+        "variant={variant}, covered={covered}: {events:?}"
     );
+    if covered {
+        assert!(events.iter().any(|(level, _)| *level == tracing::Level::DEBUG),
+            "a covered failure logs at debug: {events:?}");
+    }
+    assert_eq!(rows[0].citation_count, covered.then_some(133));
     let requests = requests.lock().unwrap().clone();
     assert!(
         requests
             .iter()
             .any(|target| target.starts_with("/search?query=EXT_ID%3A20516115")),
-        "Europe PMC covers the row (the colon arrives percent-encoded): {requests:?}"
+        "Europe PMC is consulted (the colon arrives percent-encoded): {requests:?}"
     );
 }
