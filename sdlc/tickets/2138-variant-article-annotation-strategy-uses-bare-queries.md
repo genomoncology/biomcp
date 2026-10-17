@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 6f40bfd, accept
+
 ## Outcome
 
 `variant articles --strategy annotation` searches PubTator3 by the variant's entity id, so "ABCC8 R1436Q" returns the papers PubTator annotates with that variant.
