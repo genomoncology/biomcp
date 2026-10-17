@@ -21,3 +21,7 @@ The existing measurement coverage command fixture must exercise its controlled C
 
 - Command: `make test-python` in qualification/python-lane, job117531654838 of https://github.com/genomoncology/biomcp/actions/runs/39078684323 .
 - The coordinator retains its complete raw log in temporary scratch. Main remains7e4ede39a6fd54815a9a6dd0db67bcd8a554db86; ordinary landings stay held except these reviewed repairs.
+
+## Progress
+
+- 2026-10-17 started
