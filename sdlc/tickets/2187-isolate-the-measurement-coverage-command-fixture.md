@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision e5604a6, accept
+
 ## Outcome
 
 The existing measurement coverage command fixture must exercise its controlled Cargo/coverage replies regardless of the host tool installation. Preserve environment scoping, suite exit capture and incomplete-collection assertions.
