@@ -52,7 +52,7 @@
 - Keep article-validation and disease-survival fixture tests reliable under concurrent load with bounded watchdogs and readiness checks. (2102, 2105)
 - Qualify release revisions directly and rehearse complete untagged candidates without publication credentials or external publication. (2161)
 - Report slow routine tests with their names and host load without timing out passing cases; keep exhaustive cases in an explicit release-candidate suite (2095).
-- MCP article-query request-count failures include bounded, redacted request-line and transport diagnostics while preserving the zero-request invalid-input boundary. (2176)
+- MCP article-query request-count failures include bounded, redacted request-line and transport diagnostics while preserving the zero-request invalid-input boundary. Counting fixtures mark responses nonstorable so cached answers cannot change raw and typed reply equality or hide provider requests, even in infinite cache mode. (2176)
 - HTTP contract startup waits for healthy or exited children after a slow-start warning, with bounded hung-child cleanup and failure diagnostics. (2175)
 - Report executed test counts and current specification page totals in release measurements; keep absent suite summaries incomplete (2169).
 - Full main checks build and exercise PNG, SVG and terminal output with the development profile; release qualification and the final rehearsal retain optimized builds and output checks. (2171)
