@@ -4,7 +4,7 @@ priority: 3
 
 # 2129 — Remove private names from the release changes
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -16,7 +16,7 @@ Reviews: revision 448fe07, accept
 
 Reviews: revision cb5abb5, accept
 
-Reviews: revision b6f8ee0, accept
+Reviews: revision fec440a, accept
 
 ## Outcome
 
@@ -34,6 +34,4 @@ Coordinator claim expansion: Final added-line review found private build-host wo
 
 Final integration proof: Fresh public-text review accepted cb5abb556 after merging main a68a64a4f. The two additional private build-host references were replaced without changing status, measurements, job identities, historical filenames or provider identifier `SIG-M5`. Job 1792262258721-62899 passed all 19 affected documentation contracts; its later direct script invocation stopped on executable permission. Corrected follow-up 1792262275091-66574 passed tracked-text checks, capture-receipt audit (419 files, zero confirmed byte-unfaithful captures) and whitespace checks. No source changed between those jobs. Earlier accepted cleanup remains unchanged.
 
-Integration finding and claim: The complete public-text cleanup removes the final private-project mention from the capture-receipt manifest, but its old encoded exemption remains in `tools/zero-coupling-historical.json`. Shared proof1792263658427-57266 passed formatting, eighteen targeted Rust cases, the CLI build, all-target Clippy and all thirteen cache CLI cases; both existing resource-bound quality cases then failed with `forbidden coupling: missing-or-renamed:testdata/sources/capture-receipts.json`. The detector marks an allowed path seen only while forbidden text remains; repinning that digest cannot help. A fresh review must remove genuinely obsolete exemption entries, preserve guard logic and legitimate unchanged historical exemptions, and validate the complete candidate including the reviewed SDLC text changes. No runtime rebuild is needed.
-
-Final integration review accepted b6f8ee0736de05ac70da4c6d85467ac79a8ea03f. Only the obsolete capture-manifest exemption was removed; all thirty-three remaining historical exemptions match unchanged files. Complete-context build job1792264019248-86746 passed thirty-seven coupling/resource-bound contracts, the existing full quality wrapper and requested Python lint. The patch included every SDLC change and matches the reviewed tree. Original nineteen documentation contracts, tracked-text checks and four-hundred-nineteen-file receipt audit remain applicable because this correction changes no receipt or prose. This reviewed member joins the 2172/2173 landing batch; it adds no runtime behavior.
+Independent landing preparation: Restore the accepted privacy-only candidate9b92e8f19 on full-green main22b4cecd292c8197e1ff9317e4f1d9926270d324 and carry only the reviewed obsolete capture-manifest exemption deletion fromb6f8ee073. No cache implementation or cache-test changes are included. All original public-text replacements, measurements, provider identifiers and receipt hashes are unchanged. The nineteen documentation checks, tracked-text check and419-file receipt audit remain valid. Complete-context follow-up1792264019248-86746 passed thirty-seven coupling/resource-bound contracts, the existing full quality wrapper and Python lint; the one removed exemption and all thirty-three retained entries match this candidate. The earlier combined gate1792264475137-47812 passed4358Rust cases but failed unrelated new cache reuse and CA-constructor assertions. Those changes remain in the separate2172/2173 lane. Land2129 independently to avoid holding accepted work behind that repair. Run the ordinary landing gate on this exact privacy-only revision; main22b4cecd2 already passed full check1792263241297-93944.
