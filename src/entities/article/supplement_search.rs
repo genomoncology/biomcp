@@ -549,4 +549,17 @@ mod tests {
             .unwrap();
         assert!(!alive.success(), "timed out extraction worker must be gone");
     }
+    #[test]
+    fn an_empty_archive_is_reported_as_a_read_file() {
+        let asset: ArticleAssetEntry = serde_json::from_value(serde_json::json!({
+            "filename": "empty.zip", "asset_key": "empty", "kind": "supplement",
+            "size_bytes": 22, "sha256": "checksum", "provider": {"label": "fixture", "source": "fixture"},
+            "reuse": {"license_present": false}, "provenance": {},
+            "discovery_routes": [], "handle": "empty"
+        })).unwrap();
+        let rows = file_outcome_rows(&asset, &SupplementTextExtraction::default());
+        assert_eq!(rows.len(), 1, "a readable empty archive must not disappear");
+        assert_eq!(rows[0].outcome, ArticleSupplementSearchFileOutcome::EmptyText);
+    }
+
 }
