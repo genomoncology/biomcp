@@ -312,11 +312,16 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
             let mut rows = page.results;
             let execution = super::super::variant_search::VariantArticleExecutionContext::single();
             enrich_visible_article_search_rows_with_article_base_context(
-                &mut rows, Some(&execution),
-            ).await;
+                &mut rows,
+                Some(&execution),
+            )
+            .await;
             rows
         } else {
-            enrich_visible_article_search_page(page, &[ArticleSource::PubTator]).await.page.results
+            enrich_visible_article_search_page(page, &[ArticleSource::PubTator])
+                .await
+                .page
+                .results
         }
     })
     .await;
@@ -326,12 +331,17 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
         .cloned()
         .collect();
     assert_eq!(
-        warns.is_empty(), covered,
+        warns.is_empty(),
+        covered,
         "variant={variant}, covered={covered}: {events:?}"
     );
     if covered {
-        assert!(events.iter().any(|(level, _)| *level == tracing::Level::DEBUG),
-            "a covered failure logs at debug: {events:?}");
+        assert!(
+            events
+                .iter()
+                .any(|(level, _)| *level == tracing::Level::DEBUG),
+            "a covered failure logs at debug: {events:?}"
+        );
     }
     assert_eq!(rows[0].citation_count, covered.then_some(133));
     let requests = requests.lock().unwrap().clone();
