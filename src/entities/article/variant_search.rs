@@ -6274,27 +6274,23 @@ mod tests {
         env.set("BIOMCP_S2_BASE", &fixture.base);
         env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
 
-        let requested = RequestedVariantIdentity::from_variant_input("ABCC8 R1436Q")
-            .expect("requested identity");
-
-        let execution = VariantArticleExecutionContext::single();
-        let outcome = search_variant_articles_identity(
+        let outcome = search_variant_articles_with_deadline(
             "ABCC8 R1436Q",
-            requested,
             VariantArticleStrategy::Lexical,
             50,
             0,
             true,
             VariantArticleVerificationOptions::default(),
-            execution,
+            std::time::Duration::from_secs(30),
         )
         .await
         .expect("lexical outcome");
         assert_eq!(
             outcome.response.resolution.status,
             VariantResolutionStatus::Resolved,
-            "the fixture resolves ABCC8 R1436Q: {:?}",
-            outcome.response.resolution
+            "the fixture resolves ABCC8 R1436Q: {:?} {:?}",
+            outcome.response.resolution,
+            outcome.response.source_status
         );
 
         let plan = outcome
