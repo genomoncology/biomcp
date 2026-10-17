@@ -11,8 +11,6 @@ const LEGACY_XLS: &[u8] =
     include_bytes!("../../../../tests/fixtures/article/supplements/legacy-supplement.xls");
 const METHOD_NOTES_DOCX: &[u8] =
     include_bytes!("../../../../tests/fixtures/article/supplements/method-notes.docx");
-const CDC_STI_GUIDELINE_PDF: &[u8] =
-    include_bytes!("../../../../tests/fixtures/article/fulltext/pdf/cdc_sti_guideline.pdf");
 const SUPPLEMENT_NOTES_PDF: &[u8] =
     include_bytes!("../../../../tests/fixtures/article/supplements/supplement-notes.pdf");
 
