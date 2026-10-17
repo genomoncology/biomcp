@@ -4726,11 +4726,23 @@ whose supplementary materials could not be reached.</p>
 <td><code>source_unavailable</code></td>
 <td>The provider could not be reached, or returned unusable content.</td>
 </tr>
+<tr>
+<td><code>empty_response</code></td>
+<td>The route answered, but its reply held no bytes for the file.</td>
+</tr>
 </tbody>
 </table>
 <p>Entries with a <code>pmc_proof_of_work</code> outcome carry no <code>asset_key</code> and no
 <code>handle</code>. The file is named because the article references it, and BioMCP
 will not present a challenge page as the file's contents.</p>
+<p>A route that answers with a zero-byte body gets the <code>empty_response</code>
+outcome: the download fails with an <code>article_asset_not_retrievable</code> error
+naming the empty response, no output file is written, and the file is never
+listed in <code>assets</code>. When the same filename is held by several routes, the
+route that returned bytes stays listed under its own asset key and the
+empty route is kept in <code>coverage</code> with the asset key it would have carried,
+so a caller holding either key gets the copy that exists or a refusal that
+names why.</p>
 <p>An article whose supplementary materials are deposited only as an author
 manuscript is the common case for this outcome. When Europe PMC holds its
 own copy the file is returned normally; when it does not, the file is named

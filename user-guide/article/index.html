@@ -4790,9 +4790,14 @@ not provider download URLs. Europe PMC reuse remains unknown unless article
 metadata or a retained PMC OA manifest supplies a license; retained licenses
 name PMC OA as their source. When named coverage exists but no bytes are
 retrievable, the manifest remains available with <code>assets: []</code> and a specific
-per-file outcome. If no route names an asset, a healthy all-source miss is
-<code>not_found</code>; source failures remain <code>source_unavailable</code>. A missing or unknown
-asset key is <code>not_found</code>. Figshare supplement PDFs and tables remain assets,
+per-file outcome. A route whose reply holds zero bytes is a failed download
+with the <code>empty_response</code> outcome, writes no output file, and never lists in
+<code>assets</code>; when several routes hold one filename, the route that returned
+bytes stays listed and the empty route is marked in <code>coverage</code> under the
+asset key it would have carried. If no route names an asset, a healthy
+all-source miss is <code>not_found</code>; source failures remain <code>source_unavailable</code>.
+A missing or unknown asset key is <code>not_found</code>. Figshare supplement PDFs and
+tables remain assets,
 not full-text article substitutes. Full-text downloads are managed private
 state (<code>0600</code> files on Unix); routine managed-state maintenance also repairs
 older permissive files.</p>
