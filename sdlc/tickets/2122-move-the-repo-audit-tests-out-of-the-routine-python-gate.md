@@ -27,3 +27,7 @@ Depends on: 2156
 PM decision: 2026-10-17. Manual hosted repository-contract jobs cannot replace required local coverage. This work follows the parallel local runner and does not depend on the withdrawn automatic-main cache work.
 
 PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.
+
+## Progress
+
+- 2026-10-17 started
