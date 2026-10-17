@@ -213,17 +213,31 @@ mod closing {
     }
     impl OrcidEnv {
         fn new(base: &str) -> Self {
+            Self::with_token(base, Some("fixture-public-read-token"))
+        }
+
+        fn tokenless(base: &str) -> Self {
+            Self::with_token(base, None)
+        }
+
+        fn with_token(base: &str, token: Option<&str>) -> Self {
             let mut env = Self {
                 previous: Vec::new(),
             };
             for (key, value) in [
                 (ORCID_BASE_ENV, base.to_string()),
-                (ORCID_TOKEN_ENV, "fixture-public-read-token".to_string()),
+                (ORCID_TOKEN_ENV, token.unwrap_or("").to_string()),
                 ("BIOMCP_TEST_UNPACED_ORIGIN", base.to_string()),
             ] {
                 env.previous.push((key, std::env::var_os(key)));
                 // SAFETY: serial-guarded test environment mutation.
                 unsafe { std::env::set_var(key, value) };
+            }
+            // An empty token string is a *set* invalid-blank value, not the
+            // unset tokenless state, so unset it explicitly when asked.
+            if token.is_none() {
+                // SAFETY: serial-guarded test environment mutation.
+                unsafe { std::env::remove_var(ORCID_TOKEN_ENV) };
             }
             env
         }
@@ -240,6 +254,134 @@ mod closing {
                 }
             }
         }
+    }
+
+    /// Recorded loopback: serves the tokenless captures from
+    /// `testdata/sources/orcid/` by path and logs each request's target
+    /// beside its Authorization header, so a test can prove the header
+    /// was never sent.
+    async fn spawn_recorded_orcid(
+        person: &'static str,
+        works: &'static str,
+    ) -> (String, Arc<StdMutex<Vec<String>>>) {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        let requests = Arc::new(StdMutex::new(Vec::<String>::new()));
+        let logged = requests.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind recorded orcid fixture");
+        let address = listener.local_addr().expect("recorded orcid address");
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let logged = logged.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    let target = request.split_whitespace().nth(1).unwrap_or_default();
+                    let authorization = request
+                        .lines()
+                        .find_map(|line| {
+                            line.split_once(':')
+                                .filter(|(name, _)| name.eq_ignore_ascii_case("authorization"))
+                                .map(|(_, value)| value.trim().to_string())
+                        })
+                        .unwrap_or_else(|| "none".into());
+                    logged
+                        .lock()
+                        .unwrap()
+                        .push(format!("{target} auth={authorization}"));
+                    let body = if target.ends_with("/person") {
+                        person
+                    } else if target.ends_with("/works") {
+                        works
+                    } else {
+                        "{}"
+                    };
+                    let response = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    let _ = stream.write_all(response.as_bytes()).await;
+                });
+            }
+        });
+        (format!("http://{address}"), requests)
+    }
+
+    const RECORDED_TOKENLESS_ID: &str = "0000-0002-4299-3018";
+    const RECORDED_PERSON: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/orcid/person_0000-0002-4299-3018.json"
+    ));
+    const RECORDED_WORKS: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/orcid/works_0000-0002-4299-3018.json"
+    ));
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn configured_person_read_records_the_bearer_header() {
+        let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
+        let _env = OrcidEnv::new(&base);
+        OrcidClient::new()
+            .expect("client")
+            .person(RECORDED_TOKENLESS_ID, deadline(30))
+            .await
+            .expect("configured person read");
+        assert_eq!(
+            *requests.lock().unwrap(),
+            vec![format!(
+                "/{RECORDED_TOKENLESS_ID}/person auth=Bearer fixture-public-read-token"
+            )]
+        );
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn tokenless_person_read_serves_the_recorded_reply_without_bearer_auth() {
+        let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
+        let _env = OrcidEnv::tokenless(&base);
+        let person = OrcidClient::new()
+            .expect("client")
+            .person(RECORDED_TOKENLESS_ID, deadline(30))
+            .await
+            .expect("tokenless person read");
+        assert_eq!(
+            person.public_display_name().expect("public name"),
+            "Charles Swanton"
+        );
+        let logged = requests.lock().unwrap().clone();
+        assert_eq!(
+            logged,
+            vec![format!("/{RECORDED_TOKENLESS_ID}/person auth=none")],
+            "no Authorization header may leave the tokenless client"
+        );
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn tokenless_works_read_serves_the_recorded_reply_without_bearer_auth() {
+        let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
+        let _env = OrcidEnv::tokenless(&base);
+        let works = OrcidClient::new()
+            .expect("client")
+            .works(RECORDED_TOKENLESS_ID, deadline(30))
+            .await
+            .expect("tokenless works read");
+        let selected = works
+            .validate(RECORDED_TOKENLESS_ID)
+            .expect("recorded works validate")
+            .selected_works()
+            .expect("recorded works project");
+        assert!(!selected.is_empty(), "recorded groups project works");
+        let logged = requests.lock().unwrap().clone();
+        assert_eq!(
+            logged,
+            vec![format!("/{RECORDED_TOKENLESS_ID}/works auth=none")],
+            "no Authorization header may leave the tokenless client"
+        );
     }
 
     fn deadline(seconds: u64) -> Instant {

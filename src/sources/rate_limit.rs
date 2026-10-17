@@ -94,7 +94,8 @@ pub(crate) struct RateLimiter {
 
 impl RateLimiter {
     pub(crate) fn from_env() -> Self {
-        // NCBI_API_KEY enables the higher PubTator request budget (10 req/sec).
+        // NCBI_API_KEY raises the E-utilities budget only; PubTator3
+        // publishes three requests a second for every caller.
         let has_ncbi_api_key = crate::sources::ncbi_api_key().is_some();
         let has_s2_api_key = crate::sources::s2_api_key().is_some();
         let policies = vec![
@@ -189,11 +190,16 @@ impl RateLimiter {
                 Duration::from_millis(334),
             ),
         ];
-        Self::new(
-            policies,
-            Duration::from_millis(100),
-            UnpacedOrigin::from_env(),
-        )
+        // Recorded provider tests can retain loopback authorization while
+        // exercising the same pacing as a real provider request.
+        let preserve_rate_limits =
+            std::env::var("BIOMCP_TEST_PRESERVE_RATE_LIMITS").as_deref() == Ok("1");
+        let unpaced_origin = if preserve_rate_limits {
+            None
+        } else {
+            UnpacedOrigin::from_env()
+        };
+        Self::new(policies, Duration::from_millis(100), unpaced_origin)
     }
 
     fn new(
@@ -266,12 +272,11 @@ impl RateLimiter {
     }
 }
 
-fn pubtator_min_interval(has_ncbi_api_key: bool) -> Duration {
-    if has_ncbi_api_key {
-        Duration::from_millis(100)
-    } else {
-        Duration::from_millis(334)
-    }
+fn pubtator_min_interval(_has_ncbi_api_key: bool) -> Duration {
+    // PubTator3's API documentation asks every caller for no more than
+    // three requests a second and names no keyed rate; the NCBI key
+    // raises only the E-utilities budget.
+    Duration::from_millis(334)
 }
 
 fn pubmed_eutils_min_interval(has_ncbi_api_key: bool) -> Duration {
@@ -627,9 +632,9 @@ mod tests {
     }
 
     #[test]
-    fn pubtator_interval_uses_key_aware_values() {
+    fn pubtator_interval_stays_at_three_per_second_with_or_without_the_key() {
         assert_eq!(pubtator_min_interval(false), Duration::from_millis(334));
-        assert_eq!(pubtator_min_interval(true), Duration::from_millis(100));
+        assert_eq!(pubtator_min_interval(true), Duration::from_millis(334));
     }
 
     #[test]

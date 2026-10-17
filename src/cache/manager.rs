@@ -273,15 +273,7 @@ impl CacheManager for SizeAwareCacheManager {
                 if day_cache_entry_expired(&policy) {
                     return Ok(None);
                 }
-                // A day-cache serve is fresh by BioMCP's own day window,
-                // not the provider's headers — a no-store provider answer
-                // is exactly what the kind stores — so it must not carry
-                // the stale-serve note that would append to printed
-                // bodies. Every other request keeps the provider-window
-                // marker.
-                if !crate::sources::day_cache_request_active() {
-                    stamp_stale_serve_marker(&mut response, &policy);
-                }
+                stamp_stale_serve_marker(&mut response, &policy);
                 return Ok(Some((response, policy)));
             }
             stored

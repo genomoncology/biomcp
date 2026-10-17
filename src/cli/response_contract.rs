@@ -82,6 +82,7 @@ const RECOMMENDATIONS_PATH: JsonPath = &["recommendations"];
 const CITATION_EVIDENCE_PATH: JsonPath = &["passages"];
 const PAPERS_PATH: JsonPath = &["papers"];
 const AUTHORS_PATH: JsonPath = &["authors"];
+const HITS_PATH: JsonPath = &["hits"];
 const INTERACTIONS_PATH: JsonPath = &["interactions"];
 const STRUCTURES_PATH: JsonPath = &["structures"];
 const PATHWAYS_PATH: JsonPath = &["pathways"];
@@ -197,6 +198,9 @@ impl JsonResponseContract {
                 },
                 super::article::ArticleCommand::Entities { .. }
                 | super::article::ArticleCommand::Batch { .. } => Self::NONE,
+                super::article::ArticleCommand::SupplementSearch { .. } => Self {
+                    collection_paths: &[HITS_PATH],
+                },
             },
             Commands::Author { .. } => Self {
                 collection_paths: &[PAPERS_PATH],
@@ -235,7 +239,6 @@ impl JsonResponseContract {
             | Commands::Serve
             | Commands::McpConfig(_)
             | Commands::ServeHttp(_)
-            | Commands::ServeSse
             | Commands::Skill { .. }
             | Commands::Chart { .. }
             | Commands::Update(_)

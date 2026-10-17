@@ -1445,13 +1445,13 @@
     "bioMcp_auth": "optional_env",
     "commercial_terms": null,
     "env_var": "NCBI_API_KEY",
-    "provider_access": "open public API; optional My NCBI API key improves throughput",
+    "provider_access": "open public API; the provider asks for no more than three requests a second and publishes no keyed rate",
     "license_summary": "NCBI/NLM public-domain annotation service",
     "redistribution_summary": "results are broadly reusable, but preserve PMID/source provenance and article-level rights separately",
     "terms_url": "https://www.ncbi.nlm.nih.gov/research/pubtator3/api",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
-    "reviewed_on": "2026-09-27",
-    "notes": "BioMCP uses PubTator3 for article search fan-out and article annotation. `NCBI_API_KEY` is optional quota uplift only."
+    "reviewed_on": "2026-10-16",
+    "notes": "BioMCP uses PubTator3 for article search fan-out and article annotation, paced at the provider's published three requests a second whether or not `NCBI_API_KEY` is set."
   },
   {
     "id": "quickgo",

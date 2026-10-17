@@ -14,6 +14,7 @@ mod planner;
 mod query;
 mod ranking;
 mod search;
+mod supplement_search;
 #[cfg(test)]
 mod test_support;
 pub(crate) mod variant_search;
@@ -36,6 +37,7 @@ pub(crate) use self::search::{
     ARTICLE_SEARCH_DEADLINE_REASON_PREFIX, ARTICLE_SEARCH_DEADLINE_SUGGESTION,
 };
 pub use self::search::{search, search_page, validate_search_page_request};
+pub use self::supplement_search::{article_supplement_search, supplement_text_worker};
 #[allow(unused_imports)]
 pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};
 #[allow(unused_imports)]
@@ -395,6 +397,64 @@ pub struct ArticleFulltextProvenance {
     pub package_url: Option<String>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub pdf_fallback_used: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleSupplementSearch {
+    pub article_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pmid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pmcid: Option<String>,
+    pub query: String,
+    pub files: Vec<ArticleSupplementSearchFile>,
+    pub hits: Vec<ArticleSupplementSearchHit>,
+    pub hits_truncated: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleSupplementSearchFileOutcome {
+    Searched,
+    EmptyText,
+    Unextractable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleSupplementSearchFile {
+    pub asset_key: String,
+    pub filename: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub member: Option<String>,
+    pub format: String,
+    pub sha256: String,
+    pub outcome: ArticleSupplementSearchFileOutcome,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub truncated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleSupplementSearchHit {
+    pub asset_key: String,
+    pub filename: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub member: Option<String>,
+    pub format: String,
+    pub sha256: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worksheet: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub row: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub paragraph: Option<u32>,
+    /// Rendered locator, for example `Sheet1 row 2780` or
+    /// `member 'supplement.xlsx' ST2 row 85`.
+    pub locator: String,
+    pub context: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

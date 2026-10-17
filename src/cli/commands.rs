@@ -177,12 +177,6 @@ EXAMPLES:
         long_about = "Run the MCP Streamable HTTP server at /mcp.\n\nThis is the canonical remote/server deployment mode.\nHealth routes: GET /health, GET /readyz, GET /."
     )]
     ServeHttp(system::ServeHttpArgs),
-    #[command(
-        hide = true,
-        about = "removed legacy SSE compatibility command; use `serve-http`",
-        long_about = "removed legacy SSE compatibility command.\n\ndeprecated users should run `biomcp serve-http` and connect remote clients to `/mcp` instead."
-    )]
-    ServeSse,
     /// BioMCP skill overview and installer for agents
     #[command(after_help = "\
 EXAMPLES:
@@ -223,6 +217,7 @@ EXAMPLES:
 EXAMPLES:
   biomcp batch article 22663011,24200969 --mode compact
   biomcp batch article 22663011,24200969 --mode detail --sections tldr
+  biomcp batch article 22663011,24200969 --mode detail --sections fulltext --pdf
   biomcp batch gene BRAF,TP53 --sections pathways,interactions
   biomcp batch trial NCT02576665,NCT03715933 --source nci
   biomcp batch variant \"BRAF V600E\",\"KRAS G12D\" --json
@@ -231,6 +226,7 @@ NOTES:
   - Article compact mode accepts up to 20 IDs; detail and other batches accept up to 10.
   - Each call must use a single entity type.
   - Article batch sections: annotations, fulltext, indexing, tldr, all; assets and asset downloads need `biomcp get article <id> assets`.
+  - `--pdf` adds the Semantic Scholar open-PDF fulltext fallback; article detail batches only, and only with the fulltext section.
 
 See also: biomcp list batch")]
     Batch(system::BatchArgs),

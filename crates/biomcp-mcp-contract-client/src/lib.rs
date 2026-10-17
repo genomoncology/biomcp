@@ -27,6 +27,9 @@ pub struct ArticleFulltextFixture {
     workspace: tempfile::TempDir,
     repo_root: PathBuf,
     pub base_url: String,
+    /// The second listener standing in for the publisher origin Semantic
+    /// Scholar vouches open PDF links against.
+    pub publisher_url: String,
     pub cache_dir: PathBuf,
     pub request_log: PathBuf,
 }
@@ -925,9 +928,11 @@ pub fn provision_article_fulltext_fixture(
     repo_root: impl AsRef<Path>,
 ) -> anyhow::Result<ArticleFulltextFixture> {
     let repo_root = repo_root.as_ref().to_path_buf();
+    let fixture_output = repo_root.join(".cache/routine-test-tmp");
+    std::fs::create_dir_all(&fixture_output)?;
     let workspace = tempfile::Builder::new()
         .prefix("biomcp-rmcp-fulltext-")
-        .tempdir_in(&repo_root)?;
+        .tempdir_in(&fixture_output)?;
     let output = std::process::Command::new("bash")
         .arg(repo_root.join("spec/fixtures/setup-article-fulltext-source-fixture.sh"))
         .arg(workspace.path())
@@ -942,21 +947,31 @@ pub fn provision_article_fulltext_fixture(
     let base_url = std::fs::read_to_string(fixture_root.join("base-url"))?
         .trim()
         .to_string();
+    let publisher_url = std::fs::read_to_string(fixture_root.join("publisher-url"))?
+        .trim()
+        .to_string();
     let cache_dir = workspace.path().join("cache path naïve 🧬");
     Ok(ArticleFulltextFixture {
         workspace,
         repo_root,
         base_url,
+        publisher_url,
         cache_dir,
         request_log: fixture_root.join("request-log.txt"),
     })
 }
 
 pub fn article_fulltext_fixture_env(fixture: &ArticleFulltextFixture) -> Vec<EnvVar> {
-    let mut env = vec![(
-        "BIOMCP_CACHE_DIR",
-        fixture.cache_dir.to_string_lossy().into_owned(),
-    )];
+    let mut env = vec![
+        (
+            "BIOMCP_CACHE_DIR",
+            fixture.cache_dir.to_string_lossy().into_owned(),
+        ),
+        (
+            "BIOMCP_S2_PDF_FIXTURE_ORIGIN",
+            fixture.publisher_url.clone(),
+        ),
+    ];
     for name in [
         "BIOMCP_TEST_UNPACED_ORIGIN",
         "BIOMCP_PUBTATOR_BASE",
@@ -1167,6 +1182,7 @@ impl ContractHarness {
         let port = listener.local_addr()?.port();
         drop(listener);
 
+        let stderr = tempfile::NamedTempFile::new()?;
         let mut command = self.server_command_with(extra_env);
         command
             .args(args)
@@ -1175,25 +1191,67 @@ impl ContractHarness {
             .arg("127.0.0.1")
             .arg("--port")
             .arg(port.to_string())
-            .stdout(Stdio::null());
+            .stdout(Stdio::null())
+            .stderr(stderr.reopen()?)
+            .kill_on_drop(true);
         let mut child = command.spawn()?;
 
         let base_url = format!("http://127.0.0.1:{port}");
-        for _ in 0..200 {
-            if reqwest::get(format!("{base_url}/health"))
-                .await
+        // Read only bounded failure output, without allowing a read error to
+        // replace the startup failure that brought us here.
+        let stderr_excerpt = || {
+            let mut bytes = Vec::new();
+            match stderr
+                .reopen()
+                .and_then(|file| file.take(8192).read_to_end(&mut bytes))
+            {
+                Ok(_) => String::from_utf8_lossy(&bytes).into_owned(),
+                Err(error) => format!("<could not read stderr: {error}>"),
+            }
+        };
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(1))
+            .build()?;
+        let started = tokio::time::Instant::now();
+        let mut warned = false;
+        let mut last_probe;
+        loop {
+            let probe = client.get(format!("{base_url}/health")).send().await;
+            if probe
+                .as_ref()
                 .is_ok_and(|response| response.status().is_success())
             {
                 return Ok((child, base_url));
             }
+            last_probe = match probe {
+                Ok(response) => format!("HTTP {}", response.status()),
+                Err(error) => error.to_string(),
+            };
             if let Some(status) = child.try_wait()? {
-                anyhow::bail!("serve-http exited before healthcheck succeeded: {status}");
+                anyhow::bail!(
+                    "serve-http exited before healthcheck succeeded: {status}; last probe: {last_probe}; stderr: {}",
+                    stderr_excerpt()
+                );
+            }
+            let elapsed = started.elapsed();
+            if !warned && elapsed >= Duration::from_secs(5) {
+                eprintln!("warning: serve-http startup is slow; waiting for health or child exit");
+                warned = true;
+            }
+            // A latency warning never fails startup. This separate watchdog
+            // bounds an unresponsive child even outside the test runner.
+            if elapsed >= Duration::from_secs(120) {
+                break;
             }
             tokio::time::sleep(Duration::from_millis(25)).await;
         }
 
+        let status = child.try_wait()?;
         let _ = child.kill().await;
-        anyhow::bail!("serve-http did not become ready at {base_url}/health")
+        anyhow::bail!(
+            "serve-http startup watchdog expired at {base_url}/health; child status: {status:?}; last probe: {last_probe}; stderr: {}",
+            stderr_excerpt()
+        )
     }
 
     pub async fn http_client(

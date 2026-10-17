@@ -3,7 +3,7 @@ name = "biomcp-cli"
 # Main carries the next development version between releases (2132):
 # 0.9.3-dev until the 0.9.3 release commit drops the suffix. A build
 # from main then reports 0.9.3-dev+g<sha>, never the released number.
-version = "0.9.3-dev"
+version = "0.9.3"
 edition = "2024"
 # The minimum Rust the code needs (ticket 2125): the std file locks
 # 2072 introduced are 1.89 or later; release lanes pin 1.93.1.
@@ -89,6 +89,9 @@ humantime = "2"
 regex = "1"
 csv = "1"
 roxmltree = "0.20"
+# 2152: the supplement text search reads xlsx and binary xls workbooks;
+# calamine is the one maintained Rust reader covering both container types.
+calamine = { version = "0.36", default-features = false }
 # default-features = false drops the scraper CLI's getopts binary.
 scraper = { version = "0.27", default-features = false, features = ["errors"] }
 ssri = "9"
