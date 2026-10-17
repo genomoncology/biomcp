@@ -773,6 +773,24 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
     assert_eq!(files[0]["outcome"], "searched");
     assert_eq!(files[0]["sha256"], hits[0]["sha256"]);
 
+    let cache = fixture.root.join("cache/sessions/article-supplement-text-v1")
+        .join(format!("{sha256}.json"));
+    let mut cached: serde_json::Value = serde_json::from_slice(&fs::read(&cache).unwrap()).unwrap();
+    cached["format"] = serde_json::json!("csv");
+    cached["extraction"]["blocks"][0]["text"] = serde_json::json!("wrong parser cache");
+    fs::write(&cache, serde_json::to_vec(&cached).unwrap()).unwrap();
+    let again = successful_output(&fixture, &["--json", "article", "supplement-search", "30209399", "F1761I"]);
+    let again: serde_json::Value = serde_json::from_slice(&again.stdout).unwrap();
+    assert_eq!(again["hits"][0]["row"], 2780, "incompatible cached format must be reparsed");
+
+    let mut cached: serde_json::Value = serde_json::from_slice(&fs::read(&cache).unwrap()).unwrap();
+    cached["extraction"]["blocks"][0]["text"] = serde_json::json!(format!("F1761I{}", "é".repeat(400)));
+    fs::write(&cache, serde_json::to_vec(&cached).unwrap()).unwrap();
+    let unicode = successful_output(&fixture, &["--json", "article", "supplement-search", "30209399", "F1761I"]);
+    let unicode: serde_json::Value = serde_json::from_slice(&unicode.stdout).unwrap();
+    assert!(unicode["hits"][0]["context"].as_str().unwrap().len() <= 400);
+
+
     let search = successful_output(
         &fixture,
         &[

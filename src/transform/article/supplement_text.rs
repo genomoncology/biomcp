@@ -130,16 +130,23 @@ pub fn extract_supplement_text(
     bytes: &[u8],
     budget: &SupplementTextBudget,
 ) -> SupplementTextExtraction {
+    extract_with_budget(format, bytes, budget, &mut ArchiveBudget::default())
+}
+
+fn extract_with_budget(
+    format: SupplementFormat, bytes: &[u8], budget: &SupplementTextBudget,
+    spend: &mut ArchiveBudget,
+) -> SupplementTextExtraction {
     let mut extraction = SupplementTextExtraction::default();
     match format {
         SupplementFormat::Xlsx | SupplementFormat::Xls => {
-            extract_workbook(format, bytes, &mut extraction)
+            extract_workbook(format, bytes, budget, spend, &mut extraction)
         }
         SupplementFormat::Csv => extract_csv(bytes, &mut extraction),
-        SupplementFormat::Docx => extract_docx(bytes, &mut extraction),
+        SupplementFormat::Docx => extract_docx(bytes, budget, spend, &mut extraction),
         SupplementFormat::Pdf => extract_pdf(bytes, budget, &mut extraction),
         SupplementFormat::Zip => {
-            extract_archive(bytes, budget, budget.archive_depth, &mut extraction);
+            extract_archive(bytes, budget, budget.archive_depth, spend, &mut extraction);
         }
     }
     extraction
@@ -157,8 +164,19 @@ fn truncate_reason(reason: String) -> String {
 fn extract_workbook(
     format: SupplementFormat,
     bytes: &[u8],
+    budget: &SupplementTextBudget,
+    spend: &mut ArchiveBudget,
     extraction: &mut SupplementTextExtraction,
 ) {
+    if format == SupplementFormat::Xlsx {
+        if let Err(reason) = admit_package(bytes, budget, spend) {
+            extraction.problems.push(SupplementExtractionProblem::unread(None, format.as_str(), if reason.starts_with("package could") { format!("workbook could not be opened: {reason}") } else { reason }));
+            return;
+        }
+    } else if let Err(reason) = spend.admit(bytes.len() as u64, budget) {
+        extraction.problems.push(SupplementExtractionProblem::unread(None, format.as_str(), reason.into()));
+        return;
+    }
     let cursor = Cursor::new(bytes);
     let mut workbook = match open_workbook_auto_from_rs(cursor) {
         Ok(workbook) => workbook,
@@ -252,7 +270,11 @@ fn extract_csv(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
     }
 }
 
-fn extract_docx(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
+fn extract_docx(bytes: &[u8], budget: &SupplementTextBudget, spend: &mut ArchiveBudget, extraction: &mut SupplementTextExtraction) {
+    if let Err(reason) = admit_package(bytes, budget, spend) {
+        extraction.problems.push(SupplementExtractionProblem::unread(None, "docx", reason));
+        return;
+    }
     let mut archive = match zip::ZipArchive::new(Cursor::new(bytes)) {
         Ok(archive) => archive,
         Err(error) => {
@@ -269,7 +291,7 @@ fn extract_docx(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
     let mut document = Vec::new();
     match archive.by_name("word/document.xml") {
         Ok(mut file) => {
-            if let Err(error) = file.read_to_end(&mut document) {
+            if let Err(error) = file.by_ref().take(budget.max_member_bytes.saturating_add(1)).read_to_end(&mut document) {
                 extraction
                     .problems
                     .push(SupplementExtractionProblem::unread(
@@ -408,10 +430,23 @@ impl ArchiveBudget {
     }
 }
 
+// Inspect every package member before parsers allocate decompressed XML. The
+// same ledger travels through nested ZIPs, workbooks and document packages.
+fn admit_package(bytes: &[u8], budget: &SupplementTextBudget, spend: &mut ArchiveBudget) -> Result<(), String> {
+    let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
+        .map_err(|error| format!("package could not be opened: {error}"))?;
+    for index in 0..archive.len() {
+        let file = archive.by_index(index).map_err(|error| format!("package member could not be opened: {error}"))?;
+        spend.admit(file.size(), budget).map_err(str::to_owned)?;
+    }
+    Ok(())
+}
+
 fn extract_archive(
     bytes: &[u8],
     budget: &SupplementTextBudget,
     depth: usize,
+    spend: &mut ArchiveBudget,
     extraction: &mut SupplementTextExtraction,
 ) {
     let mut archive = match zip::ZipArchive::new(Cursor::new(bytes)) {
@@ -427,7 +462,6 @@ fn extract_archive(
             return;
         }
     };
-    let mut spend = ArchiveBudget::default();
     for index in 0..archive.len() {
         let mut file = match archive.by_index(index) {
             Ok(file) => file,
@@ -527,10 +561,10 @@ fn extract_archive(
                     ));
                 continue;
             }
-            extract_member_archive(&member, &path, budget, depth - 1, extraction);
+            extract_member_archive(&member, &path, budget, depth - 1, spend, extraction);
             continue;
         }
-        extract_member(format, &member, &path, budget, extraction);
+        extract_member(format, &member, &path, budget, spend, extraction);
     }
 }
 
@@ -539,10 +573,11 @@ fn extract_member_archive(
     member: &str,
     budget: &SupplementTextBudget,
     depth: usize,
+    spend: &mut ArchiveBudget,
     extraction: &mut SupplementTextExtraction,
 ) {
     let mut nested = SupplementTextExtraction::default();
-    extract_archive(bytes, budget, depth, &mut nested);
+    extract_archive(bytes, budget, depth, spend, &mut nested);
     for mut block in nested.blocks {
         block.member = Some(match block.member.take() {
             Some(inner) => format!("{member}/{inner}"),
@@ -565,9 +600,10 @@ fn extract_member(
     bytes: &[u8],
     member: &str,
     budget: &SupplementTextBudget,
+    spend: &mut ArchiveBudget,
     extraction: &mut SupplementTextExtraction,
 ) {
-    let nested = extract_supplement_text(format, bytes, budget);
+    let nested = extract_with_budget(format, bytes, budget, spend);
     let member_textless = nested.blocks.is_empty() && nested.problems.is_empty();
     for mut block in nested.blocks {
         block.member = Some(member.to_string());

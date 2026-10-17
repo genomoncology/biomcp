@@ -85,6 +85,12 @@ not supplements.
 - Required repairs: share one 256 MiB aggregate budget across every extraction layer; bound workbook processing and DOCX XML reads; permit one nested archive rather than two; enforce the twenty-second wall limit beyond merely abandoning a blocking task; cap context by bytes at character boundaries; validate format compatibility on cache reads while preserving content-addressed paths.
 - Defers: a broad fixture-identifier/scenario refactor to 2163. Fix only fixture collisions blocking this contracted behavior.
 
+## Implementation brief
+
+Preserve the adopted article-scoped, exact case-sensitive six-format search and its recorded locators and response envelope. Repair the shared extraction budgets, byte-bounded context and cache-format identity. Enforce the extraction timeout by killing and reaping a private worker process. The additional `src/main.rs` and `src/lib.rs` claims expose only the private worker entry point; the user command stays as designed.
+
+Before product edits, current-main build job `1792241016358-72714` on `078ce756d` ran `cargo run --no-default-features -- --json article supplement-search 30209399 F1761I` and exited 2 with JSON error `invalid_argument`, `unrecognized subcommand 'supplement-search'`. Focused extraction-boundary regressions were committed locally at `e4732a000` before implementation; the review-ready job will demonstrate those checks against the adopted production code and then the repair.
+
 ## Acceptance
 
 1. Recorded-file tests find both acceptance examples at the stated locators.

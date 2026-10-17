@@ -37,7 +37,7 @@ pub(crate) use self::search::{
     ARTICLE_SEARCH_DEADLINE_REASON_PREFIX, ARTICLE_SEARCH_DEADLINE_SUGGESTION,
 };
 pub use self::search::{search, search_page, validate_search_page_request};
-pub use self::supplement_search::article_supplement_search;
+pub use self::supplement_search::{article_supplement_search, supplement_text_worker};
 #[allow(unused_imports)]
 pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};
 #[allow(unused_imports)]

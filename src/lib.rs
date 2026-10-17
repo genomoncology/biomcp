@@ -54,3 +54,6 @@ async fn enrich_sparse_disease_identity_prefers_exact_ols4_match() {
 fn disease_markdown_renders_ot_only_gene_association_table() {
     crate::render::markdown::tests::proof_disease_markdown_renders_ot_only_gene_association_table();
 }
+
+#[doc(hidden)]
+pub use entities::article::supplement_text_worker;
