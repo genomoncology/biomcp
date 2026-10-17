@@ -60,3 +60,4 @@ Fresh final review accepted initialization-settlement source e36b3d80f3396cd9c98
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 next: One repair lane checks same-process cache shard contention after gate1792264475137-47812 failed federated reuse and the centralized CA guard; deterministic regression precedes production changes. Public cleanup lands separately.
