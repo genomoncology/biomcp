@@ -38,8 +38,8 @@ https://biomcp.org/:
   ad hoc docs. Specification pages execute prepared paths and must not invoke
   `cargo run`, `cargo build`, `cargo rustc`, `cargo test`, `cargo tree`, or
   `cargo metadata`.
-- Unit/static layers run with `make test`: Rust nextest first, then the Python
-  CLI/MCP/docs contract lane.
+- Unit/static layers run with `make test`: Rust nextest and the Python
+  CLI/MCP/docs contract lane run concurrently.
 
 ## Working
 
@@ -61,6 +61,12 @@ for the release checks. `make landing-gate` runs lint, routine tests and
 specifications in order. `make main-gate` runs that standard gate and then
 `make full-feature-check`. Routine lint includes test targets. Long, load,
 coverage and release-only packaging checks stay outside per-landing gates.
+Routine test runners warn with the test identity and machine load when a case
+exceeds the threshold in their runner configuration; time alone never fails
+or terminates a test. Assertions still fail. Exhaustive Rust cases use a
+`long_` test name and Python cases use `@pytest.mark.long`. Run these explicitly
+with `make test-long` at release candidate; `make release-gate` includes them.
+Live-service tests and subprocess helpers retain their existing ignored selections.
 
 ## Releases
 
