@@ -609,7 +609,7 @@ if want_section coverage; then
     record_cov_suite integration_tests nextest "$LOGD/cov-integration.exit" "$LOGD/cov-integration.log"
   fi
   timedsh_exit coverage_python_lane "$LOGD/cov-pytest.exit" \
-    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp TMPDIR=\$PWD/$LOGD/tmp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1"
+    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1"
   runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/cov-pytest.log | tail -2 || true"
   if ((!DRY_RUN)); then
     record_cov_suite python_lane pytest "$LOGD/cov-pytest.exit" "$LOGD/cov-pytest.log"
