@@ -5990,9 +5990,10 @@ mod tests {
     /// assertions can read the exact query BioMCP sent instead of guessing
     /// the encoder's punctuation.
     fn query_param(line: &str, key: &str) -> Option<String> {
-        let path = line.split_whitespace().nth(1)?;
+        let target = line.split_whitespace().nth(1)?;
+        let query = target.split_once('?')?.1;
         let prefix = format!("{key}=");
-        let value = path
+        let value = query
             .split('&')
             .find_map(|pair| pair.strip_prefix(prefix.as_str()))?;
         let mut decoded = String::with_capacity(value.len());
@@ -6195,7 +6196,11 @@ mod tests {
         let fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             let decoded = |key: &str| query_param(&first_line, key).unwrap_or_default();
-            let body: &[u8] = if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+            let body: &[u8] = if first_line.starts_with("GET /query") {
+                // MyVariant resolves ABCC8 R1436Q to a hit carrying only the
+                // gene and p.R1436Q, so the run selects exactly two aliases.
+                br#"{"total":1,"hits":[{"_id":"fixture-abcc8","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"]}}]}\"#
+            } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
                 let term = decoded("term");
                 if term.contains("p.R1436Q") && term.contains("[Title/Abstract]") {
                     br#"{"esearchresult":{"count":"0","idlist":[]}}"#
@@ -6271,24 +6276,6 @@ mod tests {
 
         let requested = RequestedVariantIdentity::from_variant_input("ABCC8 R1436Q")
             .expect("requested identity");
-        let mut context = resolved_context();
-        context.requested = requested.clone();
-        context.source_id = None;
-        context.source_identity = Some(SourceVariantIdentity {
-            genomic_id: String::new(),
-            genome_build: "unknown".into(),
-            genes: vec!["ABCC8".into()],
-            protein_changes: vec!["p.R1436Q".into()],
-            coding_changes: Vec::new(),
-            rsids: Vec::new(),
-        });
-        context.resolution.normalized_aliases = combined_normalized_aliases(&context);
-        let aliases = exact_aliases(&context).0;
-        assert_eq!(
-            aliases,
-            vec!["ABCC8 R1436Q".to_string(), "ABCC8 p.R1436Q".to_string()],
-            "the fixture context must select exactly two aliases"
-        );
 
         let execution = VariantArticleExecutionContext::single();
         let outcome = search_variant_articles_identity(
@@ -6303,6 +6290,12 @@ mod tests {
         )
         .await
         .expect("lexical outcome");
+        assert_eq!(
+            outcome.response.resolution.status,
+            VariantResolutionStatus::Resolved,
+            "the fixture resolves ABCC8 R1436Q: {:?}",
+            outcome.response.resolution
+        );
 
         let plan = outcome
             .response
