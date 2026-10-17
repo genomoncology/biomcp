@@ -43,6 +43,8 @@ Depends on: 2177
 
 Reviews: revision 4160f2f, accept
 
+Reviews: revision ff6ce34, accept
+
 ## Outcome
 
 Fresh v0.9.2 and release-candidate measurements run on the same build machine with the same corrected harness, toolchain, workloads, provider settings and cache preparation, and the baseline record reports raw samples, honest comparisons and remaining failures.
