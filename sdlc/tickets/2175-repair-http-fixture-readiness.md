@@ -35,6 +35,7 @@ The disable-source HTTP contract reliably starts its isolated server and proves 
 - 2026-10-17 next: Six full main checks passed since startup hardening; latest54fb25e in2156/1792266562026-19174. Cache batch2172+2173 now landed at62cefadf9 and its mandatory full main check runs. Startup issue has not recurred; continue observation through final rehearsal.
 - 2026-10-17 next: Seven full main checks passed since startup hardening, latest62cefadf9 in2156/1792267362041-77812 after2172+2173. Startup issue has not recurred. The unchanged adverse-event MCP contract also passed fifty repetitions. Continue observation through final rehearsal.
 - 2026-10-17 next: Eight full main checks passed since startup hardening, latest234d2b32d in2156/1792269541418-30247 after the reviewed TCP fixture repair. Startup issue has not recurred. Continue observation through final rehearsal.
+- 2026-10-17 next: Ten full main checks passed since startup hardening, latest518a0e689 in2156/1792275455029-64826 after the five research fixes. No startup recurrence. Observe through final rehearsal.
 
 ## Investigation result
 
