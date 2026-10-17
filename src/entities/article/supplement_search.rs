@@ -195,7 +195,7 @@ fn file_outcome_rows(
     let format = supplement_format_for_filename(&asset.filename)
         .map(|format| format.as_str())
         .unwrap_or("other");
-    let mut row = |member: Option<String>,
+    let row = |member: Option<String>,
                    outcome: ArticleSupplementSearchFileOutcome,
                    reason: Option<String>| {
         let member_format = match &member {
