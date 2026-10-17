@@ -26,7 +26,9 @@ def test_coverage_scopes_compiler_environment_and_marks_failed_collections(
     repo = tmp_path / "repo"
     repo.mkdir()
     (repo / ".cache").mkdir()
-    tool_bin = tmp_path / "bin"
+    home = tmp_path / "home"
+    # The measurement harness prepends HOME/.cargo/bin before the supplied PATH.
+    tool_bin = home / ".cargo/bin"
     executable(
         tool_bin / "cargo",
         """#!/usr/bin/env bash
@@ -72,6 +74,7 @@ printf '===== 2 passed in 0.1s =====\\n'
     )
     env = os.environ.copy()
     env.update(
+        HOME=str(home),
         PATH=f"{tool_bin}{os.pathsep}{env['PATH']}",
         RUSTFLAGS="--cfg normal_linker",
         RUSTC_WRAPPER="normal-cache-wrapper",
