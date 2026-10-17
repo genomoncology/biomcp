@@ -38,6 +38,8 @@
 
 ### Internal
 
+- Source package checks compare archive membership with Cargo's declared package list instead of maintaining a parallel file count, so legitimate source additions preserve the runtime boundary without a counter edit. (2159)
+
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)
