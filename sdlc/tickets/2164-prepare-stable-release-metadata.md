@@ -11,6 +11,8 @@ Milestone: 0.9.3
 
 Reviews: revision 1dff5f3, accept
 
+Reviews: revision 51940b5, accept
+
 ## Outcome
 
 The final candidate consistently identifies itself as 0.9.3 across its published metadata before final measurements and the untagged release rehearsal.
