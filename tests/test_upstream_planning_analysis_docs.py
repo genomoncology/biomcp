@@ -6,6 +6,7 @@ import tomllib
 from pathlib import Path
 
 import pytest
+import yaml
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -1111,18 +1112,15 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`CHANGELOG.md`" in source_addition_section
 
 
-def test_pull_request_contracts_remain_separate_from_protected_release() -> (
-    None
-):
+def test_manual_qualification_remains_separate_from_protected_release() -> None:
     ci = _read_repo(".github/workflows/ci.yml")
     release = _read_repo(".github/workflows/release.yml")
     contracts_smoke = _read_repo(".github/workflows/contracts.yml")
     lane_setup = _read_repo(".github/actions/lane-setup/action.yml")
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
-    assert "pull_request:" in ci
-    # 2026-09-29: ticket branches run CI too; the
-    # push trigger still names main first.
-    assert "push:" in ci and "main" in ci and "tickets/**" in ci
+    ci_workflow = yaml.safe_load(ci)
+    ci_triggers = ci_workflow.get("on", ci_workflow.get(True))
+    assert set(ci_triggers) == {"workflow_dispatch"}
     # One build job prepares the dev build; the lanes each run one
     # Make target, so CI copies no smaller command list.
     for job, command in (

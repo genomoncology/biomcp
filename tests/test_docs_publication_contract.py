@@ -26,10 +26,10 @@ def _load_verifier():
     return module
 
 
-def test_docs_publication_is_one_main_push_only_writer() -> None:
+def test_docs_publication_is_one_manual_production_main_writer() -> None:
     workflow = _workflow()
     triggers = workflow.get("on", workflow.get(True))
-    assert triggers == {"push": {"branches": ["main"]}}
+    assert triggers == {"workflow_dispatch": None}
     assert workflow["concurrency"] == {
         "group": "publish-biomcp-docs",
         "cancel-in-progress": True,
@@ -37,7 +37,7 @@ def test_docs_publication_is_one_main_push_only_writer() -> None:
     assert list(workflow["jobs"]) == ["publish-docs"]
     job = workflow["jobs"]["publish-docs"]
     assert job["if"] == (
-        "github.event_name == 'push' && github.ref == 'refs/heads/main' "
+        "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' "
         "&& github.repository == 'genomoncology/biomcp'"
     )
     assert job["permissions"] == {"contents": "write", "pages": "write"}

@@ -11,6 +11,7 @@ corrected shapes so drift fails loudly.
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -23,11 +24,8 @@ ACTION = REPO_ROOT / ".github" / "actions" / "lane-setup" / "action.yml"
 DOC = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
 ACTION_DOC = yaml.safe_load(ACTION.read_text(encoding="utf-8"))
 
-# Every job that drives the Rust toolchain. All of them wait on the
-# changes job for the docs-only classification; the main-only four
-# additionally restrict themselves to pushes to main (2026-10-14
-# decision: branches trade those jobs for a fast lane, and every
-# release tag still needs their green run on its commit).
+# Every job that drives the Rust toolchain waits on classification.
+# Manual dispatch must classify as full CI and admit every lane.
 RUST_JOBS = [
     "build",
     "lint",
@@ -44,7 +42,6 @@ RUST_JOBS = [
 # 2075): none of them waits on another lane, so they run in
 # parallel once the build job uploads its artifact.
 LANE_JOBS = ["lint", "rust-tests", "python-lane", "spec-lane"]
-MAIN_ONLY_JOBS = ["stress-lane", "release-panic", "full-features", "windows-contracts"]
 CACHE_PIN = "Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6"
 
 
@@ -220,25 +217,28 @@ def test_the_routine_lanes_share_one_build_job_and_run_in_parallel() -> None:
         )
 
 
-def test_the_main_only_jobs_skip_every_branch_push() -> None:
-    """Ticket 2075: full-features, windows-contracts, stress-lane and
-    release-panic run only on pushes to main. A branch's green CI run
-    is its merge condition; the release workflow's needs-green-CI
-    check on the tagged commit still gates every release on these
-    jobs, and a ticket whose changes only they build runs
-    `make full-feature-check` itself before landing (2026-10-14
-    decision)."""
-    for jid in MAIN_ONLY_JOBS:
-        if_expr = str(_job(jid).get("if", ""))
-        assert "github.event_name == 'push'" in if_expr, (
-            f"{jid} must not run on pull requests"
-        )
-        assert "github.ref == 'refs/heads/main'" in if_expr, (
-            f"{jid} must run only on pushes to main"
-        )
-        assert "needs.changes.outputs.docs_only != 'true'" in if_expr, (
-            f"{jid} must still skip docs-only pushes to main"
-        )
+def test_ci_runs_only_when_dispatched_manually() -> None:
+    triggers = DOC.get("on", DOC.get(True))
+    assert triggers == {"workflow_dispatch": None}
+
+
+def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
+    step = next(s for s in _job("changes")["steps"] if s.get("id") == "classify")
+    output = tmp_path / "classification"
+    result = subprocess.run(
+        ["bash", "-e", "-c", step["run"]],
+        cwd=REPO_ROOT,
+        env={"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_OUTPUT": str(output)},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert output.read_text(encoding="utf-8") == "docs_only=false\n"
+    for jid in RUST_JOBS:
+        assert _job(jid)["if"].strip() == (
+            "github.event_name == 'workflow_dispatch' && "
+            "needs.changes.outputs.docs_only != 'true'"
+        ), f"{jid} must run for a manual dispatch on the selected revision"
 
 
 def test_the_changes_job_covers_the_whole_push() -> None:

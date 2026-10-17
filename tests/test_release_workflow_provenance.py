@@ -689,6 +689,9 @@ def _assert_pipeline_contract(parsed: dict) -> None:
     # The trigger block: tag pushes only, never a release publication
     # event (the YAML 1.1 `on:` key parses as boolean True).
     triggers = parsed[True]
+    assert set(triggers) == {"push", "workflow_dispatch"}, (
+        "trigger block must be tag pushes only plus manual dispatch"
+    )
     assert triggers["push"] == {"tags": ["v*"]}, "trigger block must be tag pushes only"
     assert "release" not in triggers, "trigger block must be tag pushes only"
     assert "workflow_dispatch" in triggers, (
