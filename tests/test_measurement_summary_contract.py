@@ -9,6 +9,9 @@ from pathlib import Path
 
 import pytest
 
+# Fake binaries use built-artifact paths, so the canonical lane owns this harness.
+pytestmark = [pytest.mark.needs_binary]
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
