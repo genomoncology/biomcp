@@ -32,3 +32,24 @@ Reported 2026-10-16 by a literature probe of 0.9.2.
 1. A recorded-reply test of the ABCC8 R1436Q route sends the entity-id query and returns the 7 papers; it fails on current main.
 2. A run that finds no entity says so in the result instead of reporting `complete: true` with nothing.
 3. The changelog carries a bullet for this ticket.
+
+## Reproduction on main
+
+Run 2026-10-17 on the macOS gate host at `43252305f` (origin/main tip), pm job
+`1792206072419-57493`, live providers, `--no-cache`:
+
+```
+biomcp --json variant articles "ABCC8 R1436Q" --strategy annotation --limit 50 --no-cache
+```
+
+exits 0 with `"complete": true`, `"error": null`, `results: []`,
+`"retrieval_path": "PubTator variant annotation recall"`, and the
+`pubtator_variant/pubtator` route reporting `ok`. The debug-plan run of the same
+command (pm job `1792206158984-70753`) plans only bare text queries for the
+route — `chr11:g.17417157C>T`, `rs387906407`, `R1436Q`, and neighboring
+misspellings — and no entity id, because the autocomplete reply's display name
+carries only `p.R1436Q` while the gene lives in the entity id
+`@VARIANT_p.R1436Q_ABCC8_human`, which the row matcher drops as an
+indeterminate gene. The provider side is receipted:
+`entity/autocomplete/?query=ABCC8%20R1436Q` returns that one variant entity, and
+`search/?text=@VARIANT_p.R1436Q_ABCC8_human` returns 7 papers.
