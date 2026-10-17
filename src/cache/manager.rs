@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use http_cache::{CacheManager, HttpResponse};
 use http_cache_reqwest::CACacheManager;
 use http_cache_semantics::CachePolicy;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokio::io::AsyncWriteExt;
 use tracing::{debug, warn};
 
@@ -29,12 +29,6 @@ type CacheAsyncObserverFn =
 type BeforeKeyLockDirCreateFn = dyn Fn(&Path) + Send + Sync;
 const POST_WRITE_FINALIZATION_ERROR: &str =
     "cache security finalization failed after successful put";
-
-#[derive(Deserialize, Serialize)]
-struct StoredResponse<R, P> {
-    response: R,
-    policy: P,
-}
 
 /// Marker header stamped on a cached response served past its freshness
 /// window (see `SizeAwareCacheManager::get`). The header survives only on
@@ -87,7 +81,7 @@ fn day_cache_entry_expired(policy: &CachePolicy) -> bool {
 /// Strip the stale-serve marker. Called on every `put` path — both the
 /// revalidated cached response and a fresh 200 — so the stored entry and
 /// the served response never carry a marker a later serve would misread.
-pub(super) fn strip_stale_serve_marker(response: &mut HttpResponse) {
+fn strip_stale_serve_marker(response: &mut HttpResponse) {
     response.headers.remove(STALE_SERVE_AGE_HEADER);
 }
 
@@ -108,15 +102,9 @@ pub(crate) struct SizeAwareCacheManager {
     approx_bytes: Arc<AtomicU64>,
     eviction_running: Arc<AtomicBool>,
     services: ManagerServices,
-    try_locks: bool,
 }
 
 impl SizeAwareCacheManager {
-    pub(crate) fn for_http_requests(mut self) -> Self {
-        self.try_locks = true;
-        self
-    }
-
     pub(crate) fn new(path: PathBuf, config: ResolvedCacheConfig) -> Result<Self, BioMcpError> {
         Self::new_at(path, config, current_time_ms())
     }
@@ -266,7 +254,6 @@ impl SizeAwareCacheManager {
             approx_bytes: Arc::new(AtomicU64::new(approx_bytes)),
             eviction_running: Arc::new(AtomicBool::new(false)),
             services,
-            try_locks: false,
         }
     }
 }
@@ -281,23 +268,15 @@ impl CacheManager for SizeAwareCacheManager {
             (self.services.observe_get)(&self.inner.path, cache_key);
             let content_root = super::content_root(&self.inner.path);
             super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
-            // The library manager masks every content read error as a miss.
-            // Keep ordinary absent entries quiet, but let actual read and
-            // integrity failures reach the optional HTTP adapter's warning.
-            let bytes = match cacache::read(&self.inner.path, cache_key).await {
-                Ok(bytes) => bytes,
-                Err(cacache::Error::EntryNotFound(..)) => return Ok(None),
-                Err(error) => return Err(error.into()),
-            };
-            let StoredResponse {
-                mut response,
-                policy,
-            }: StoredResponse<HttpResponse, CachePolicy> = bincode::deserialize(&bytes)?;
-            if day_cache_entry_expired(&policy) {
-                return Ok(None);
+            let stored = self.inner.get(cache_key).await;
+            if let Ok(Some((mut response, policy))) = stored {
+                if day_cache_entry_expired(&policy) {
+                    return Ok(None);
+                }
+                stamp_stale_serve_marker(&mut response, &policy);
+                return Ok(Some((response, policy)));
             }
-            stamp_stale_serve_marker(&mut response, &policy);
-            Ok(Some((response, policy)))
+            stored
         };
         run_with_variant_article_deadline(operation).await
     }
@@ -313,16 +292,20 @@ impl CacheManager for SizeAwareCacheManager {
         strip_stale_serve_marker(&mut res);
         // Cancellation is safe only until CACache atomically publishes the entry.
         let safe_return = crate::sources::current_cache_publication_state().unwrap_or_default();
+        #[derive(Serialize)]
+        struct Store<'a> {
+            response: &'a HttpResponse,
+            policy: &'a CachePolicy,
+        }
         let pre_commit = async {
             let _operation = super::lock_cache_key_async(
                 self.config.cache_root.clone(),
                 cache_key.clone(),
                 Arc::clone(&self.services.before_key_lock_dir_create),
-                self.try_locks,
             )
             .await?;
             super::prepare_write_paths(&self.inner.path, &cache_key)?;
-            let bytes = bincode::serialize(&StoredResponse {
+            let bytes = bincode::serialize(&Store {
                 response: &res,
                 policy: &policy,
             })?;
@@ -389,7 +372,6 @@ impl CacheManager for SizeAwareCacheManager {
                 self.config.cache_root.clone(),
                 cache_key.to_owned(),
                 Arc::clone(&self.services.before_key_lock_dir_create),
-                self.try_locks,
             )
             .await?;
             let content_root = super::content_root(&self.inner.path);
