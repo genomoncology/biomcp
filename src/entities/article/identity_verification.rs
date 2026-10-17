@@ -251,9 +251,7 @@ pub(crate) fn canonical_content_subset(identity: &VariantArticleIdentity) -> Str
 /// gene dozens of times, and each extra naming is the same proof, not a new
 /// one. Collapses to one observation per linked gene, observed alias, and
 /// variant annotation.
-fn observation_evidence_key(
-    observation: &VariantArticleIdentityObservation,
-) -> (&str, &str, &str) {
+fn observation_evidence_key(observation: &VariantArticleIdentityObservation) -> (&str, &str, &str) {
     (
         &observation.linked_gene,
         &observation.observed_alias,
@@ -292,9 +290,9 @@ fn canonical_pmid(value: &str) -> Option<&str> {
 /// The numeric PMC id a full-text export keys its document by (`PMC7304353`
 /// → `7304353`); an abstract-only export keys the same paper by its PMID.
 fn pmcid_digits(value: &str) -> Option<&str> {
-    value.strip_prefix("PMC").filter(|digits| {
-        !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
-    })
+    value
+        .strip_prefix("PMC")
+        .filter(|digits| !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit()))
 }
 
 fn bounded(value: &str, limit: usize) -> bool {
@@ -439,19 +437,20 @@ pub(crate) fn verify_pubtator(
         // abstract-only export keys it by the PMID; either key names the
         // expected paper only when the document's own pmid field agrees with
         // the PMID being verified.
-        let document_is_expected = document
-            .id
-            .as_deref()
-            .and_then(canonical_pmid)
-            .is_some_and(|returned| {
-                (returned == expected_pmid && pmid_agrees)
-                    || (pmid_confirms
-                        && document
-                            .pmcid
-                            .as_deref()
-                            .and_then(pmcid_digits)
-                            .is_some_and(|digits| digits == returned))
-            });
+        let document_is_expected =
+            document
+                .id
+                .as_deref()
+                .and_then(canonical_pmid)
+                .is_some_and(|returned| {
+                    (returned == expected_pmid && pmid_agrees)
+                        || (pmid_confirms
+                            && document
+                                .pmcid
+                                .as_deref()
+                                .and_then(pmcid_digits)
+                                .is_some_and(|digits| digits == returned))
+                });
         if !document_is_expected {
             semantic_anomaly = true;
             continue;
@@ -629,13 +628,13 @@ pub(crate) fn verify_pubtator(
     }
     observations.sort_by_key(|observation| serde_json::to_string(observation).unwrap_or_default());
     observations.dedup();
-    observations.dedup_by(|left, right| observation_evidence_key(left) == observation_evidence_key(right));
+    observations
+        .dedup_by(|left, right| observation_evidence_key(left) == observation_evidence_key(right));
     contradictions
         .sort_by_key(|observation| serde_json::to_string(observation).unwrap_or_default());
     contradictions.dedup();
-    contradictions.dedup_by(|left, right| {
-        observation_evidence_key(left) == observation_evidence_key(right)
-    });
+    contradictions
+        .dedup_by(|left, right| observation_evidence_key(left) == observation_evidence_key(right));
     let status = status_for(&observations, &contradictions);
     VariantArticleIdentity {
         status,
