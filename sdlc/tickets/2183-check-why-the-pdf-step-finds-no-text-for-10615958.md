@@ -4,11 +4,13 @@ priority: 3
 
 # 2183 — Check why the PDF step finds no text for 10615958
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 89a1dcc, accept
+
+Landed: 89a1dcc (fast-forward: Accepted work reached main in reviewed combined research-fix landing bf9916b; completion records this source batch without another source change.)
 
 ## Outcome
 
