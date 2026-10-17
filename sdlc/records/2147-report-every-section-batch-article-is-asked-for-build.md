@@ -68,7 +68,7 @@ runs 38997800282 and 38998904048 failed the same way at the tests-only tips.
 | 1792210074926-7700 | macOS gate host | `make lint` at `855b026` | passed |
 | 1792213551327-39998 | macOS gate host | live probe at `855b026` | passed, see below |
 | 39001365788 | GitHub Linux | full ci.yml at `855b026` | green, every lane |
-| 1792211112998-2414047 | Linux gate host | `make test` at `855b026` | see the ticket's Proof line |
+| 1792211112998-2414047 | Linux gate host | `make test` at `855b026` | passed (exit 0, 25.9 minutes) |
 
 ### Live probe (read-only public GETs, macOS gate host)
 
@@ -101,6 +101,11 @@ gate host's fixture setup should look at the ERepo supervisor there.
   warning for `src/cache/manager.rs:746` (present on main; see 2146's record).
 - The one-job-at-a-time yellow queue ran long tonight; the `make test` gate
   waited behind sibling tickets 2148–2150.
+- origin/main moved during the build (2138 and 2148 landed; new tip
+  `f9a11e81e`). `git merge-tree` against that tip reports exactly one
+  conflict, both sides adding bullets to `CHANGELOG.md`'s Fixes list — the
+  landing rebase is mechanical and stays with the coordinator per the
+  team's flow.
 
 ## Seams for 2151 (batch `--pdf` fulltext under one limiter)
 

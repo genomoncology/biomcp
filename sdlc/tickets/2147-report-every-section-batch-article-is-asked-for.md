@@ -91,8 +91,13 @@ and says nothing, and an unrequested `tldr` section appears.
   tests, the fixture goldens, the preflight rejection matrix, the batch
   preflight unit test and the batch help test at `bdd7941` — 6/6 passed.
 - Gates: `make lint` passed on the macOS gate host at `855b026`
-  (job `1792210074926-7700`); CI run `39001365788` is green on every lane at
-  `855b026`.
+  (job `1792210074926-7700`); `make test` passed on the Linux gate host at
+  `855b026` (job `1792211112998-2414047`, 25.9 minutes); CI run
+  `39001365788` is green on every lane at `855b026`. `make spec` on the macOS
+  gate host fails only the frozen ClinGen ERepo page, identically at
+  origin/main `b138f60` (job `1792213641126-45906`), so that failure
+  predates this branch and is host-specific; CI's spec lane is green at the
+  same tip.
 - Live at the fixed tip (macOS gate host job `1792213551327-39998`): the
   reported command now exits 2 before any provider request with `Article
   batch does not support the "assets" section; asset lists and downloads
