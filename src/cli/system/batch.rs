@@ -80,10 +80,7 @@ pub(crate) fn validate_batch_args(args: &BatchArgs) -> Result<(), crate::error::
             "--pdf is only supported for article batches".into(),
         ));
     }
-    if entity == "article"
-        && args.pdf
-        && args.mode == Some(ArticleBatchMode::Compact)
-    {
+    if entity == "article" && args.pdf && args.mode == Some(ArticleBatchMode::Compact) {
         return Err(crate::error::BioMcpError::InvalidArgument(
             "--pdf is not supported for compact article batches".into(),
         ));
@@ -111,10 +108,7 @@ pub(crate) fn validate_batch_args(args: &BatchArgs) -> Result<(), crate::error::
             .unwrap_or_default()
             .split(',')
             .map(str::trim)
-            .any(|section| matches!(
-                section.to_ascii_lowercase().as_str(),
-                "fulltext" | "all"
-            ))
+            .any(|section| matches!(section.to_ascii_lowercase().as_str(), "fulltext" | "all"))
     {
         // The shared detail path refuses --pdf without the fulltext section;
         // preflight mirrors it so the refusal happens before any provider
@@ -481,16 +475,18 @@ mod tests {
                     .contains("--pdf is only supported for article batches")
             );
         }
-        assert!(validate_batch_args(&args_with_pdf(
-            "article",
-            "one".into(),
-            Some(ArticleBatchMode::Compact),
-            None,
-            true,
-        ))
-        .expect_err("compact refuses pdf")
-        .to_string()
-        .contains("--pdf is not supported for compact article batches"));
+        assert!(
+            validate_batch_args(&args_with_pdf(
+                "article",
+                "one".into(),
+                Some(ArticleBatchMode::Compact),
+                None,
+                true,
+            ))
+            .expect_err("compact refuses pdf")
+            .to_string()
+            .contains("--pdf is not supported for compact article batches")
+        );
         for sections in [None, Some("tldr"), Some("tldr,indexing")] {
             let value = args_with_pdf(
                 "article",

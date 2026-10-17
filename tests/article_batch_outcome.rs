@@ -1173,13 +1173,7 @@ fn rejected_batch_matrix_never_reaches_real_cli_client_cache_fs_or_item_work() {
         ),
         (
             vec![
-                "--json",
-                "batch",
-                "article",
-                "1",
-                "--mode",
-                "compact",
-                "--pdf",
+                "--json", "batch", "article", "1", "--mode", "compact", "--pdf",
             ],
             "--pdf is not supported for compact article batches",
         ),
@@ -1188,7 +1182,15 @@ fn rejected_batch_matrix_never_reaches_real_cli_client_cache_fs_or_item_work() {
             "--pdf requires the fulltext section",
         ),
         (
-            vec!["--json", "batch", "article", "1", "--sections", "tldr", "--pdf"],
+            vec![
+                "--json",
+                "batch",
+                "article",
+                "1",
+                "--sections",
+                "tldr",
+                "--pdf",
+            ],
             "--pdf requires the fulltext section",
         ),
         (
@@ -1352,7 +1354,9 @@ fn batch_article_detail_pdf_fetches_three_papers_under_one_limiter() {
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("batch JSON should parse");
-    let items = doc["items"].as_array().expect("batch items should be a list");
+    let items = doc["items"]
+        .as_array()
+        .expect("batch items should be a list");
     assert_eq!(items.len(), 3);
     assert_eq!(doc["summary"]["failed"], json!(0));
 
@@ -1456,7 +1460,9 @@ fn batch_article_detail_pdf_names_the_fulltext_source_each_article_used() {
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("batch JSON should parse");
-    let items = doc["items"].as_array().expect("batch items should be a list");
+    let items = doc["items"]
+        .as_array()
+        .expect("batch items should be a list");
     assert_eq!(items.len(), 2);
     assert_eq!(doc["summary"]["failed"], json!(0));
 
@@ -1465,7 +1471,10 @@ fn batch_article_detail_pdf_names_the_fulltext_source_each_article_used() {
     // records no PDF attempt at all because the ladder stopped at its first
     // full-text rung.
     let xml_winner = &items[0]["result"];
-    assert_eq!(xml_winner["full_text_manifest"]["source_kind"], json!("jats_xml"));
+    assert_eq!(
+        xml_winner["full_text_manifest"]["source_kind"],
+        json!("jats_xml")
+    );
     assert_eq!(
         xml_winner["section_outcomes"]["fulltext"],
         json!({"outcome": "data", "sources": ["Europe PMC"]})
@@ -1482,7 +1491,10 @@ fn batch_article_detail_pdf_names_the_fulltext_source_each_article_used() {
     // 22663026 falls through to the vouched open PDF, and the provenance row
     // names the per-article source beside the section outcome.
     let pdf_winner = &items[1]["result"];
-    assert_eq!(pdf_winner["full_text_manifest"]["source_kind"], json!("pdf"));
+    assert_eq!(
+        pdf_winner["full_text_manifest"]["source_kind"],
+        json!("pdf")
+    );
     let row = pdf_winner["_meta"]["section_sources"]
         .as_array()
         .expect("section_sources should be a list")

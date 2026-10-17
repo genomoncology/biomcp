@@ -2083,8 +2083,9 @@ async fn typed_article_get_accepts_pdf_fulltext_over_stdio() -> anyhow::Result<(
                 .await?;
             assert_eq!(call.is_error, Some(false), "typed get for {id} failed");
             let text = biomcp_mcp_contract_client::first_text(&call.content);
-            let doc: serde_json::Value = serde_json::from_str(text)
-                .unwrap_or_else(|error| panic!("typed get {id} JSON should parse: {error}\n{text}"));
+            let doc: serde_json::Value = serde_json::from_str(text).unwrap_or_else(|error| {
+                panic!("typed get {id} JSON should parse: {error}\n{text}")
+            });
             match expected_source {
                 Some(source_kind) => {
                     assert_eq!(doc["full_text_manifest"]["source_kind"], json!(source_kind));
