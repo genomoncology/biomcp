@@ -231,3 +231,62 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
     assert "=== Rust lane (exit " in result.stdout
     assert "=== Python lane (exit " in result.stdout
     assert "rust output" in result.stdout and "python output" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("target", "profile", "directory"),
+    [("main-gate", "dev", "debug"), ("release-gate", "release", "release")],
+)
+def test_full_feature_gates_build_and_smoke_the_selected_profile(
+    tmp_path: Path, target: str, profile: str, directory: str
+) -> None:
+    """Run the gate recipes; replace only external commands and unrelated leaves."""
+    recorder = tmp_path / "record.py"
+    recorder.write_text(
+        "import json, sys\n"
+        "print('invocation:' + json.dumps(sys.argv[1:]))\n",
+        encoding="utf-8",
+    )
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    for name in ("check-png-artifact", "run-offline"):
+        command = tools / name
+        command.write_text(
+            f"#!{sys.executable}\n"
+            "import json, sys\n"
+            f"print('invocation:' + json.dumps([{name!r}, *sys.argv[1:]]))\n",
+            encoding="utf-8",
+        )
+        command.chmod(0o755)
+    wrapper = tmp_path / "gate.mk"
+    wrapper.write_text(
+        f"include {REPO_ROOT / 'Makefile'}\n"
+        "landing-gate lint test spec:\n\t@:\n",
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            "make", "--no-print-directory", "-s", "-f", str(wrapper), target,
+            f"MAKE=make --no-print-directory -s -f {wrapper}",
+            f"CARGO_WITH_IDENTITY={sys.executable} {recorder} cargo",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    calls = [
+        json.loads(line.removeprefix("invocation:"))
+        for line in result.stdout.splitlines()
+        if line.startswith("invocation:")
+    ]
+    assert [call for call in calls if call[0] == "cargo"] == [
+        ["cargo", "clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "warnings"],
+        ["cargo", "test", "--locked", "--all-features", "--lib", "sources::alphagenome::tests"],
+        ["cargo", "build", "--locked", "--profile", profile, "--all-features", "--bin", "biomcp"],
+    ]
+    assert [call for call in calls if call[0] == "check-png-artifact"] == [
+        ["check-png-artifact", f"target/{directory}/biomcp"]
+    ]
