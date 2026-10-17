@@ -7,6 +7,7 @@ import subprocess
 import textwrap
 from pathlib import Path
 import pytest
+from support import scaled_timeout
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -23,8 +24,9 @@ def _fake_biomcp_script(git_sha: str, build_date: str = "2026-06-24T00:00:00Z") 
         f"""\
         #!/usr/bin/env python3
         import json
+        import signal
         import sys
-        import time
+        from pathlib import Path
 
         GIT_SHA = {git_sha!r}
         BUILD_DATE = {build_date!r}
@@ -42,8 +44,16 @@ def _fake_biomcp_script(git_sha: str, build_date: str = "2026-06-24T00:00:00Z") 
             raise SystemExit(0)
 
         if args and args[0] == "serve-http":
-            time.sleep(30)
-            raise SystemExit(0)
+            port = args[args.index("--port") + 1]
+            ready = Path(f"serve-http-{{port}}.ready")
+
+            def stop_server(signum, frame):
+                ready.unlink(missing_ok=True)
+                raise SystemExit(0)
+
+            signal.signal(signal.SIGTERM, stop_server)
+            ready.touch()
+            signal.pause()
 
         if args == ["serve"]:
             for line in sys.stdin:
@@ -155,12 +165,19 @@ def _install_fake_tools(repo_root: Path, head_sha: str) -> Path:
     fake_bin.mkdir()
     _write_executable(
         fake_bin / "curl",
-        """#!/usr/bin/env bash
-case "$*" in
-  *"/mcp"*) printf '403' ;;
-  *" -w "*) printf '200' ;;
-esac
-exit 0
+        """#!/usr/bin/env python3
+import sys
+from pathlib import Path
+from urllib.parse import urlsplit
+
+args = sys.argv[1:]
+url = urlsplit(args[-1])
+if not Path(f"serve-http-{url.port}.ready").is_file():
+    raise SystemExit(1)
+if url.path == "/mcp":
+    print("403", end="")
+elif "-w" in args:
+    print("200", end="")
 """,
     )
     _write_executable(fake_bin / "jq", "#!/usr/bin/env bash\nexit 0\n")
@@ -194,7 +211,8 @@ def _run_release_smoke(repo_root: Path, fake_bin: Path, *args: str) -> subproces
         capture_output=True,
         text=True,
         check=False,
-        timeout=30,
+        # The runner warns at 30 seconds; this only bounds a hung child.
+        timeout=scaled_timeout(300),
     )
 
 
