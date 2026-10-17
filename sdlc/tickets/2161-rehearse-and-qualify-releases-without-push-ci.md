@@ -8,6 +8,8 @@ Reviews: revision d6adf66, accept
 
 Reviews: revision f5b2e64, accept
 
+Reviews: revision 1bb445b, accept
+
 ## Outcome
 
 A release qualifies its exact revision directly, and the full release workflow can rehearse an untagged candidate without publishing before Ian tags it.
