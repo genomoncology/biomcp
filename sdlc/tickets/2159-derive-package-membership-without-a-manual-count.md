@@ -29,3 +29,7 @@ Package boundary checks detect missing required files and unexpected packaged fi
 - Defers: unrelated package restructuring.
 
 PM decision: 2026-10-17. Ian approved removing this small source-of-truth duplication for 0.9.3. Derive membership from the declared package boundary; do not replace the count with another hand-maintained whole-file inventory.
+
+## Progress
+
+- 2026-10-17 started

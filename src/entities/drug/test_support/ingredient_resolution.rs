@@ -484,8 +484,9 @@ async fn aspirin_card_names_the_ingredient_not_a_product_rows_strength() {
 }
 
 /// `q=Qlex` (live answer recorded 2026-10-11): no record names the brand,
-/// so the text query's answer is another drug's record and the brand
-/// resolves through the openFDA identity candidate alone.
+/// so the text query's answer is another drug's record. The fixture also
+/// reuses this miss for the exact recorded label name, KEYTRUDA QLEX, to
+/// exercise the openFDA identity fallback without a MyChem identity.
 const QLEX_MYCHEM_MISS: &str = r#"
 {
   "total": 1,
@@ -544,29 +545,31 @@ const PEMBROLIZUMAB_FOR_QLEX_CAPTURE: &str = r#"
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn qlex_pairing_derives_the_plain_ingredient_from_the_records_own_list() {
+async fn keytruda_qlex_pairing_derives_the_plain_ingredient_from_the_records_own_list() {
     let (base, server) = name_resolution_fixture_server(
         vec![
-            ("Qlex".to_string(), QLEX_MYCHEM_MISS.to_string()),
+            ("Keytruda Qlex".to_string(), QLEX_MYCHEM_MISS.to_string()),
             (
                 "pembrolizumab".to_string(),
                 PEMBROLIZUMAB_FOR_QLEX_CAPTURE.to_string(),
             ),
         ],
         vec![
-            ("Qlex".to_string(), QLEX_LABEL_BODY.to_string()),
+            ("Keytruda Qlex".to_string(), QLEX_LABEL_BODY.to_string()),
             ("pembrolizumab".to_string(), QLEX_LABEL_BODY.to_string()),
         ],
         Vec::new(),
     )
     .await;
 
+    // Use the exact brand the recorded label owns. The abbreviated Qlex
+    // query has no exact owner and must not resolve through this label.
     // "berahyaluronidase alfa-pmph" is a qualified form of
     // the listed ingredient "berahyaluronidase alfa", and pembrolizumab
     // is listed as the plain ingredient itself, so the pairing resolves to
     // pembrolizumab without any code naming the enzyme (the literal
     // hyaluronidase match refused this query).
-    let drug = name_resolution_fixture_drug(&base, "Qlex").await;
+    let drug = name_resolution_fixture_drug(&base, "Keytruda Qlex").await;
     assert_eq!(drug.name, "pembrolizumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09037"));
     assert_label_data_with_set_id(&drug, "097d166f-b73b-41d3-9b37-7653cd2a0c41");
