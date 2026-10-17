@@ -22,3 +22,7 @@ The intermittent failure of `raw_and_typed_mcp_preserve_adverse_event_subset_and
 - Defers: nothing. This ticket gets no fourth gate rerun as a substitute for a cause.
 
 Coordinator outcome before the repeat run: Check whether the unchanged adverse-event MCP contract recurs after the reviewed fail-soft cache and shared-client batch. Actual main62cefadf94b11b25bc5f79d88723aaec049dbf06 contains carrier790c32a and the companion closure. Its cache product/test inputs match the passing landing gate1792267083498-22341 on reviewed sourcedbaeb8bc7; only landing records differ. The historical once-only `isError` failure remains the failing evidence; the original cause is unconfirmed. PM explicitly permits closure if fifty repetitions after2172 show no failure. Run those fifty actual contract executions through one build job, reusing the qualified gate archive and CLI where available. Preserve complete reply/equality/count assertions and bounded existing failure diagnostics. No source or assertion change is planned. Record the exact command, artifact provenance, count and every failure; a clean result establishes non-recurrence under this check, not historical causation. The actual-main full check runs separately in parallel.
+
+## Progress
+
+- 2026-10-17 started
