@@ -351,22 +351,10 @@ fn extract_pdf(bytes: &[u8], budget: &SupplementTextBudget, extraction: &mut Sup
     if page_count > budget.max_pdf_pages {
         extraction.truncated = true;
     }
-    for page in 1..=last_page {
-        // unpdf's page selection addresses pages by zero-based index; the
-        // locator reports the one-based page a reader opens.
-        let index = page - 1;
-        let options = unpdf::render::RenderOptions::default().with_page_range(index..=index);
-        let text = match unpdf::render::to_text(&document, &options) {
-            Ok(text) => text.trim().to_string(),
-            Err(error) => {
-                extraction.problems.push(SupplementExtractionProblem::unread(
-                    None,
-                    "pdf",
-                    truncate_reason(format!("pdf page {page} could not be rendered: {error}")),
-                    ));
-                continue;
-            }
-        };
+    for (index, page) in document.pages.iter().take(last_page as usize).enumerate() {
+        // unpdf numbers parsed pages from zero; the locator reports the
+        // one-based page a reader opens.
+        let text = page.plain_text().trim().to_string();
         if text.is_empty() {
             continue;
         }
@@ -374,7 +362,7 @@ fn extract_pdf(bytes: &[u8], budget: &SupplementTextBudget, extraction: &mut Sup
             member: None,
             worksheet: None,
             row: None,
-            page: Some(page),
+            page: Some(index as u32 + 1),
             paragraph: None,
             text,
         });
