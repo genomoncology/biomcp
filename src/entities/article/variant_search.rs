@@ -8658,15 +8658,12 @@ mod tests {
         // annotation for 30275001, 32371413 or 34480199, so the identity check
         // left all three unverified. The full-text export annotates the variant
         // in paragraph and table passages, so reading it must confirm them.
-        const FULLTEXT_30275001: &[u8] = include_bytes!(
-            "../../../testdata/sources/pubtator/export_fulltext_30275001.json"
-        );
-        const FULLTEXT_32371413: &[u8] = include_bytes!(
-            "../../../testdata/sources/pubtator/export_fulltext_32371413.json"
-        );
-        const FULLTEXT_34480199: &[u8] = include_bytes!(
-            "../../../testdata/sources/pubtator/export_fulltext_34480199.json"
-        );
+        const FULLTEXT_30275001: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/export_fulltext_30275001.json");
+        const FULLTEXT_32371413: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/export_fulltext_32371413.json");
+        const FULLTEXT_34480199: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/export_fulltext_34480199.json");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
         let fixture = TestHttpFixture::spawn(move |request| {
@@ -8763,10 +8760,11 @@ mod tests {
         let logged = requests.lock().expect("request log").clone();
         for pmid in ["30275001", "32371413", "34480199"] {
             assert!(
-                logged.iter().any(|line| line
-                    .starts_with("GET /publications/export/biocjson?")
-                    && line.contains(&format!("pmids={pmid}"))
-                    && line.contains("full=true")),
+                logged.iter().any(
+                    |line| line.starts_with("GET /publications/export/biocjson?")
+                        && line.contains(&format!("pmids={pmid}"))
+                        && line.contains("full=true")
+                ),
                 "the identity check reads the full-text export for {pmid}: {logged:?}"
             );
             let row = outcome
