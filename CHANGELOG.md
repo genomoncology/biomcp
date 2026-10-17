@@ -38,6 +38,8 @@
 
 ### Internal
 
+- Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
+
 - The no-entity annotation regression returns an empty reply for both PubTator and LitVar2 autocomplete through one shared fixture handler, so an empty LitVar2 match stays a healthy zero-row answer and the test no longer mistakes a missing fixture route for an outage. (2154)
 - The frozen ERepo specification removes its final output byte with Python instead of a GNU-only `head` option, so its exact Markdown assertions also run on macOS. (2157)
 - The 0.9 gates run through pm job on the gate hosts: lint, spec, release-gate and builds run on the macOS host, where the lint bootstrap installs the pinned ShellCheck and actionlint on Darwin-arm64, the spec runner and fixture scripts read process data through ps, fcntl and lsof where /proc and the GNU-only tools are absent, and the runner's cleanup and replay greeting work on the bundled Bash 3.2, while the offline routine gate keeps its verdict on the Linux host under the bubblewrap sandbox and `tools/run-offline` runs the command without the sandbox on macOS as a fallback, printing one stderr line saying the run is not network-isolated; `tools/with-build-identity` reads the package version through cargo metadata instead of Python 3.11's tomllib, and the baseline measure script carries no host locks and runs wherever pm jobs schedule it. (2137)

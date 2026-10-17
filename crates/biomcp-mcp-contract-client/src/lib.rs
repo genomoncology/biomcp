@@ -47,6 +47,7 @@ impl Drop for ArticleFulltextFixture {
 pub struct ContractHarness {
     pub biomcp_bin: PathBuf,
     pub repo_root: PathBuf,
+    environment: Arc<tempfile::TempDir>,
 }
 
 impl ContractHarness {
@@ -54,6 +55,7 @@ impl ContractHarness {
         Self {
             biomcp_bin: biomcp_bin.into(),
             repo_root: repo_root.into(),
+            environment: Arc::new(tempfile::tempdir().expect("create isolated MCP environment")),
         }
     }
 
@@ -62,10 +64,7 @@ impl ContractHarness {
         let biomcp_bin = std::env::var_os("CARGO_BIN_EXE_biomcp")
             .map(PathBuf::from)
             .unwrap_or_else(|| repo_root.join("target/debug/biomcp"));
-        Self {
-            biomcp_bin,
-            repo_root,
-        }
+        Self::new(biomcp_bin, repo_root)
     }
 }
 
@@ -1073,10 +1072,35 @@ impl ContractHarness {
 
     fn server_command_with(&self, extra_env: &[(String, String)]) -> Command {
         let mut command = Command::new(&self.biomcp_bin);
-        command.env_remove("RUST_MIN_STACK");
-        command.env_remove("BIOMCP_TEST_PANIC_TOOL");
-        command.env_remove("BIOMCP_DISABLE_SOURCES");
-        command.env("UMLS_API_KEY", "");
+        // Keep process support and enclosing network enforcement, but never
+        // inherit provider credentials or another test's product configuration.
+        command.env_clear();
+        for key in [
+            "PATH",
+            "TMPDIR",
+            "TMP",
+            "TEMP",
+            "SYSTEMROOT",
+            "WINDIR",
+            "LD_LIBRARY_PATH",
+            "LD_PRELOAD",
+            "DYLD_LIBRARY_PATH",
+            "DYLD_INSERT_LIBRARIES",
+        ] {
+            if let Some(value) = std::env::var_os(key) {
+                command.env(key, value);
+            }
+        }
+        let root = self.environment.path();
+        command
+            .env("HOME", root)
+            .env("USERPROFILE", root)
+            .env("APPDATA", root.join("config"))
+            .env("LOCALAPPDATA", root.join("data"))
+            .env("XDG_CONFIG_HOME", root.join("config"))
+            .env("XDG_CACHE_HOME", root.join("cache"))
+            .env("XDG_DATA_HOME", root.join("data"))
+            .env("BIOMCP_CACHE_DIR", root.join("cache/biomcp"));
         for (key, value) in extra_env {
             command.env(key, value);
         }

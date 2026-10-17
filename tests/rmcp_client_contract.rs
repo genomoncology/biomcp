@@ -1366,6 +1366,14 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
         .await?;
     assert_eq!(raw_json.is_error, Some(false));
     assert_eq!(typed_json.is_error, Some(false));
+    let raw_value: serde_json::Value =
+        serde_json::from_str(biomcp_mcp_contract_client::first_text(&raw_json.content))?;
+    assert_eq!(raw_value["complete"], true);
+    assert_eq!(raw_value["results"], json!([]));
+    assert_eq!(
+        raw_value["_meta"]["source_status"][0]["auth_mode"],
+        "shared_pool"
+    );
     assert_eq!(
         biomcp_mcp_contract_client::first_text(&raw_json.content),
         biomcp_mcp_contract_client::first_text(&typed_json.content)
@@ -1603,7 +1611,7 @@ async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> 
     .await?;
     assert_eq!(markdown_result.is_error, Some(false));
     let markdown = biomcp_mcp_contract_client::first_text(&markdown_result.content);
-    assert!(markdown.contains("Share of returned reports"));
+    assert!(markdown.contains("Share of returned reports"), "{markdown}");
     assert!(markdown.contains("not incidence"));
     assert!(markdown.contains("does not establish causality"));
 
