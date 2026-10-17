@@ -35,3 +35,4 @@ Concurrent routine Rust job 1792255057254-3297 on the accepted startup repair pl
 
 - 2026-10-17 started
 - 2026-10-17 landed 38610b46596bf9099e58203a2442c6e5714a0562; next: Safe request diagnostics landed in the shared2175slice after gate1792255317711-24775; actual-main check runs now. Original extra-request cause remains unknown; keep open for recurrence.
+- 2026-10-17 next: PM permits closure after the final release rehearsal if no recurrence. Three clean full main checks since diagnostics landed:1792255511240-54847,1792256658840-2776,1792259305768-13311. Count subsequent checks after2172/2173 land too; original extra-request cause remains unconfirmed.
