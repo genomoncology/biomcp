@@ -5,13 +5,15 @@ priority: 1
 
 # 2165 — Isolate the credential-redaction command contract
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision af740ee, accept
 
 Reviews: revision 244055d, accept
+
+Landed: fdd3330 (fast-forward: PM approved combined repair a79f1b3; this accepted credential fixture implementation is carried by that passing-gate landing.)
 
 ## Outcome
 
