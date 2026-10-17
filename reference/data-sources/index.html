@@ -2309,6 +2309,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/litvar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LitVar2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/kegg/" class="md-nav__link">
         
   
@@ -4596,6 +4624,13 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td><code>variant articles --verify-identity</code> may add bounded, auditable CAid/gene/PMCID/selector observations after retrieval; LDH never discovers, removes, ranks, or supplies negative evidence for candidates</td>
 </tr>
 <tr>
+<td>Variant article literature</td>
+<td>LitVar2</td>
+<td><code>https://www.ncbi.nlm.nih.gov/research/litvar2-api</code></td>
+<td>No</td>
+<td><code>variant articles &lt;gene&gt; &lt;protein change&gt;</code> and <code>variant articles &lt;rsID&gt;</code> merge the PMIDs LitVar2 links to the matched variant into the union with <code>litvar</code> source attribution; an autocomplete entry must match the request exactly and a LitVar2 failure degrades that source only</td>
+</tr>
+<tr>
 <td>Variant normalization</td>
 <td>Mutalyzer</td>
 <td><code>variant normalize</code> / <code>https://mutalyzer.nl/api</code></td>
@@ -5152,7 +5187,7 @@ manifest, then an exact advertised <code>biomcp get trial &lt;NCT_ID&gt; documen
 <ol>
 <li>PubTator3 + Europe PMC + PubMed for default federated search, with an optional Semantic Scholar leg when the filter set is compatible; Semantic Scholar and LitSense2 can also be queried alone through explicit <code>--source semanticscholar</code> / <code>--source litsense2</code> (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
-<li>PubTator3 for entity annotations</li>
+<li>PubTator3 for entity annotations, and LitVar2 for variant-linked literature in <code>variant articles</code> (an autocomplete entry must match the requested gene and protein change, or rsID, exactly)</li>
 <li>PubMed citation EFetch XML for opt-in author-affiliation/ORCID and MeSH indexing metadata (<code>all</code> includes it; ordinary detail/search/batch do not)</li>
 <li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback, and supported Figshare article-asset discovery</li>
 <li>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and PMC OA asset rungs when the base article lacks PMCID</li>

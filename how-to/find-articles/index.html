@@ -2309,6 +2309,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/litvar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LitVar2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/kegg/" class="md-nav__link">
         
   
@@ -4693,7 +4721,9 @@ than manually trying one spelling at a time:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF p.V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>The default union resolves the variant once, searches compatible PubTator
-annotations and normalized exact aliases, adds validated source citations,
+annotations and normalized exact aliases, asks NCBI LitVar2 for the papers it
+links to the variant (a gene-plus-protein-change or rsID request must match
+the entry exactly), adds validated source citations,
 then merges, ranks, and paginates once. JSON preserves each paper's route,
 source, and matched-alias provenance. Use <code>--strategy annotation</code> or
 <code>--strategy lexical</code> only to diagnose route recall. If a selected provider is

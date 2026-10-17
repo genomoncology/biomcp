@@ -2309,6 +2309,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/litvar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LitVar2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/kegg/" class="md-nav__link">
         
   
@@ -3557,6 +3585,17 @@
     <span class="md-ellipsis">
       
         LitSense2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#litvar2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LitVar2
       
     </span>
   </a>
@@ -5366,6 +5405,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#litvar2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LitVar2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#mondo" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6650,6 +6700,15 @@ sources stay out on their recorded open readings.</p>
 <td><a href="https://www.ncbi.nlm.nih.gov/research/litsense2-api/">https://www.ncbi.nlm.nih.gov/research/litsense2-api/</a></td>
 </tr>
 <tr>
+<td>LitVar2</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>NCBI/NLM public-domain literature service; variant-literature links are free to query</td>
+<td>query results are broadly reusable, but each paper's own reuse rights stay separate</td>
+<td><a href="https://www.ncbi.nlm.nih.gov/research/litvar2-api/">https://www.ncbi.nlm.nih.gov/research/litvar2-api/</a></td>
+</tr>
+<tr>
 <td>MedlinePlus</td>
 <td>1</td>
 <td>direct_api</td>
@@ -7093,6 +7152,18 @@ Reviewed on: <code>2026-09-27</code></li>
 <li>Official terms URL: <a href="https://www.ncbi.nlm.nih.gov/research/litsense2-api/">https://www.ncbi.nlm.nih.gov/research/litsense2-api/</a></li>
 <li>Reviewed on: <code>2026-04-10</code></li>
 <li>Notes: LitSense2 is individually selectable with <code>search article --source litsense2</code> and contributes semantic-signal metadata; it is not part of the default <code>--source all</code> federation.</li>
+</ul>
+<h3 id="litvar2">LitVar2<a class="headerlink" href="#litvar2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>variant articles &lt;gene&gt; &lt;protein change&gt;</code>, <code>variant articles &lt;rsID&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API without a key</li>
+<li>License / terms summary: NCBI/NLM public-domain literature service; variant-literature links are free to query</li>
+<li>Redistribution / reuse summary: query results are broadly reusable, but each paper's own reuse rights stay separate</li>
+<li>Official terms URL: <a href="https://www.ncbi.nlm.nih.gov/research/litvar2-api/">https://www.ncbi.nlm.nih.gov/research/litvar2-api/</a></li>
+<li>Reviewed on: <code>2026-10-17</code></li>
+<li>Notes: LitVar2 joins the variant article search beside PubTator3's annotation route: an autocomplete entry must match the requested gene and protein change, or rsID, exactly, and a LitVar2 failure degrades that source only. <code>--disable-sources litvar2</code> turns it off.</li>
 </ul>
 <h3 id="mondo">MONDO<a class="headerlink" href="#mondo" title="Permanent link">&para;</a></h3>
 <ul>

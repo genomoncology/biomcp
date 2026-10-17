@@ -923,6 +923,27 @@
     "notes": "LitSense2 is individually selectable with search article --source litsense2 and contributes semantic-signal metadata; it is not part of the default --source all federation."
   },
   {
+    "id": "litvar2",
+    "name": "LitVar2",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "variant articles <gene> <protein change>",
+      "variant articles <rsID>"
+    ],
+    "bioMcp_auth": "none",
+    "commercial_terms": null,
+    "env_var": null,
+    "provider_access": "open public API without a key",
+    "license_summary": "NCBI/NLM public-domain literature service; variant-literature links are free to query",
+    "redistribution_summary": "query results are broadly reusable, but each paper's own reuse rights stay separate",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/",
+    "key_url": null,
+    "reviewed_on": "2026-10-17",
+    "notes": "LitVar2 joins the variant article search beside PubTator3's annotation route: an autocomplete entry must match the requested gene and protein change, or rsID, exactly, and a LitVar2 failure degrades that source only. `--disable-sources litvar2` turns it off."
+  },
+  {
     "id": "medlineplus",
     "name": "MedlinePlus",
     "tier": 1,

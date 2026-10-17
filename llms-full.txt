@@ -82,6 +82,7 @@ An expanded index of the BioMCP documentation.
 - [Human Protein Atlas](https://biomcp.org/sources/human-protein-atlas/): Access details and query guidance for the Human Protein Atlas data source.
 - [Biomedical Data Sources for AI Agents](https://biomcp.org/sources/): Overview of biomedical data sources available through BioMCP.
 - [KEGG](https://biomcp.org/sources/kegg/): Access details and query guidance for the KEGG data source.
+- [LitVar2](https://biomcp.org/sources/litvar/): Access details and query guidance for the LitVar2 data source.
 - [MedlinePlus](https://biomcp.org/sources/medlineplus/): Access details and query guidance for the MedlinePlus data source.
 - [Monarch Initiative](https://biomcp.org/sources/monarch-initiative/): Access details and query guidance for the Monarch Initiative data source.
 - [OncoKB](https://biomcp.org/sources/oncokb/): Access details and query guidance for the OncoKB data source.

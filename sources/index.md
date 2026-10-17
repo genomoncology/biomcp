@@ -41,6 +41,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | WHO Prequalified IVD | Infectious-disease diagnostic products, assay formats, and WHO product-card provenance | [WHO Prequalified IVD](who-ivd.md) |
 | CDC CVX/MVX | Vaccine brand-to-antigen bridge for EMA/default lookups and explicit WHO vaccine search | [CDC CVX/MVX](cdc-cvx.md) |
 | MedlinePlus | Plain-language disease/symptom context for `discover` | [MedlinePlus](medlineplus.md) |
+| LitVar2 | Variant-linked literature merged into `variant articles` | [LitVar2](litvar.md) |
 | Cellosaurus | Cell line identity, accessions, cross-reference join keys, and curated variants | [Cellosaurus](cellosaurus.md) |
 | PharmacoDB | Published drug sensitivity experiments for a cell line or a compound, per dataset | [PharmacoDB](pharmacodb.md) |
 | KEGG | KEGG pathway IDs, summary cards, and pathway genes | [KEGG](kegg.md) |
