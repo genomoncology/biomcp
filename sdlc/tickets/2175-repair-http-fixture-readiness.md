@@ -12,6 +12,8 @@ Reviews: revision 28dc42b, accept
 
 Reviews: revision 58e5e47, accept
 
+Reviews: revision 45237a7, accept
+
 ## Outcome
 
 The disable-source HTTP contract reliably starts its isolated server and proves that the flag and environment forms behave alike. Name and fix the actual readiness failure without weakening source-disable assertions or hiding child errors.
