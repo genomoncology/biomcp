@@ -740,6 +740,24 @@ fn serve_flag_disables_civic_on_the_stdio_server() {
 }
 
 #[test]
+fn serve_http_startup_failure_reports_child_exit_and_stderr() {
+    let harness =
+        biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
+    let error = serve_runtime().block_on(async {
+        harness
+            .spawn_http_server_with_args(&["--not-a-valid-server-flag"], &[])
+            .await
+            .expect_err("the invalid flag must prevent server startup")
+    });
+    let message = error.to_string();
+    assert!(message.contains("exited before healthcheck"), "{message}");
+    assert!(message.contains("last probe:"), "{message}");
+    assert!(message.contains("stderr:"), "{message}");
+    assert!(message.contains("unexpected argument"), "{message}");
+    assert!(message.contains("--not-a-valid-server-flag"), "{message}");
+}
+
+#[test]
 fn serve_http_flag_matches_the_env_variable_form() {
     let replay = ReplayServer::start();
     let harness =

@@ -1167,6 +1167,7 @@ impl ContractHarness {
         let port = listener.local_addr()?.port();
         drop(listener);
 
+        let stderr = tempfile::NamedTempFile::new()?;
         let mut command = self.server_command_with(extra_env);
         command
             .args(args)
@@ -1175,25 +1176,52 @@ impl ContractHarness {
             .arg("127.0.0.1")
             .arg("--port")
             .arg(port.to_string())
-            .stdout(Stdio::null());
+            .stdout(Stdio::null())
+            .stderr(stderr.reopen()?)
+            .kill_on_drop(true);
         let mut child = command.spawn()?;
 
         let base_url = format!("http://127.0.0.1:{port}");
+        // Read only bounded failure output, without allowing a read error to
+        // replace the startup failure that brought us here.
+        let stderr_excerpt = || {
+            let mut bytes = Vec::new();
+            match stderr
+                .reopen()
+                .and_then(|file| file.take(8192).read_to_end(&mut bytes))
+            {
+                Ok(_) => String::from_utf8_lossy(&bytes).into_owned(),
+                Err(error) => format!("<could not read stderr: {error}>"),
+            }
+        };
+        let mut last_probe = String::new();
         for _ in 0..200 {
-            if reqwest::get(format!("{base_url}/health"))
-                .await
+            let probe = reqwest::get(format!("{base_url}/health")).await;
+            if probe
+                .as_ref()
                 .is_ok_and(|response| response.status().is_success())
             {
                 return Ok((child, base_url));
             }
+            last_probe = match probe {
+                Ok(response) => format!("HTTP {}", response.status()),
+                Err(error) => error.to_string(),
+            };
             if let Some(status) = child.try_wait()? {
-                anyhow::bail!("serve-http exited before healthcheck succeeded: {status}");
+                anyhow::bail!(
+                    "serve-http exited before healthcheck succeeded: {status}; last probe: {last_probe}; stderr: {}",
+                    stderr_excerpt()
+                );
             }
             tokio::time::sleep(Duration::from_millis(25)).await;
         }
 
+        let status = child.try_wait()?;
         let _ = child.kill().await;
-        anyhow::bail!("serve-http did not become ready at {base_url}/health")
+        anyhow::bail!(
+            "serve-http did not become ready at {base_url}/health; child status: {status:?}; last probe: {last_probe}; stderr: {}",
+            stderr_excerpt()
+        )
     }
 
     pub async fn http_client(
