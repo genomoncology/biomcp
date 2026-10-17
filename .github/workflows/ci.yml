@@ -452,6 +452,9 @@ jobs:
           fetch-depth: 0
           filter: blob:none
       - name: Require the changelog to cover the branch
+        # Reusable release qualification already passed the release-form gate.
+        # An untagged stable candidate has a dated, closed changelog section.
+        if: inputs.revision == ''
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: python3 scripts/check-changelog-coverage.py --branch
