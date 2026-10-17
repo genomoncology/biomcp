@@ -423,3 +423,15 @@ async fn write_cached_supplement_text(sha256: &str, extraction: &SupplementTextE
         tracing::warn!("Supplement text cache write failed: {error}");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unicode_search_context_fits_the_byte_limit() {
+        let context = truncate_chars(&"é".repeat(401), 400);
+        assert!(context.len() <= 400, "context is {} bytes", context.len());
+        assert!(context.ends_with('…'));
+    }
+}

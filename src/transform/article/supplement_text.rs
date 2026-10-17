@@ -780,6 +780,46 @@ mod tests {
         );
     }
 
+    fn archive_bytes(name: &str, bytes: &[u8]) -> Vec<u8> {
+        let mut archive = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        archive.start_file(name, zip::write::SimpleFileOptions::default()).unwrap();
+        archive.write_all(bytes).unwrap();
+        archive.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn extraction_limits_cover_nested_archives_and_document_packages() {
+        let table = vec![b'x'; 1000];
+        let inner = archive_bytes("table.csv", &table);
+        let outer = archive_bytes("inner.zip", &inner);
+        let mut small = budget();
+        small.max_aggregate_bytes = inner.len() as u64 + 999;
+        let extraction = extract_supplement_text(SupplementFormat::Zip, &outer, &small);
+        assert!(extraction.problems.iter().any(|p| p.reason == "extraction size limit exceeded"),
+            "nested members share their source budget: {:?}", extraction.problems);
+        for (format, bytes) in [(SupplementFormat::Docx, METHOD_NOTES_DOCX),
+                                (SupplementFormat::Xlsx, BRCA1_SHEET1_XLSX)] {
+            small.max_member_bytes = 16;
+            small.max_aggregate_bytes = 32;
+            let extraction = extract_supplement_text(format, bytes, &small);
+            assert!(extraction.blocks.is_empty(), "oversized package must not be parsed: {format:?}");
+            assert!(extraction.problems.iter().any(|p| p.reason.contains("extraction size limit")),
+                "package bytes obey the same limits: {:?}", extraction.problems);
+        }
+    }
+
+    #[test]
+    fn only_one_nested_archive_is_searched() {
+        let table = archive_bytes("table.csv", b"TARGET");
+        let nested = archive_bytes("nested.zip", &table);
+        let source = archive_bytes("inner.zip", &nested);
+        let mut limits = budget();
+        limits.archive_depth = 1;
+        let extraction = extract_supplement_text(SupplementFormat::Zip, &source, &limits);
+        assert!(extraction.blocks.is_empty());
+        assert!(extraction.problems.iter().any(|p| p.reason.contains("extraction depth")));
+    }
+
     #[test]
     fn unreadable_bytes_report_format_and_reason() {
         // The scrubbed two-route fixture shape: a .xlsx name over bytes that
