@@ -5904,7 +5904,12 @@ message so failed symbols are not mistaken for confident empty evidence.</p>
 <h2 id="batch-mode">Batch mode<a class="headerlink" href="#batch-mode" title="Permanent link">&para;</a></h2>
 <p>Batch accepts up to 20 article IDs in compact mode and up to 10 IDs in article
 detail mode or for any other entity. Each call must use a single entity type.
-Named sections are entity-dependent. Adverse-event batches do not support <code>--sections</code>; use individual <code>get adverse-event</code> calls for FAERS report sections.
+Named sections are entity-dependent. Article batch sections are annotations,
+fulltext, indexing, tldr and all; <code>assets</code> and <code>asset &lt;asset-key&gt;</code> are refused
+before any request, and asset lists and downloads need
+<code>biomcp get article &lt;id&gt; assets</code>. A requested section comes back with data or
+a section outcome saying why it is missing, and no unrequested section
+appears. Adverse-event batches do not support <code>--sections</code>; use individual <code>get adverse-event</code> calls for FAERS report sections.
 <code>--source &lt;ctgov|nci&gt;</code> is available only for trial batches; trials default to
 <code>ctgov</code>, and other entities reject the flag before provider work.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact
