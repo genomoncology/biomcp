@@ -51,10 +51,12 @@ link validation: no request was sent, and the refusal was recorded as
   22663027 (link refused: credentialled URL, never echoed),
   22663028 (download 500), 22663029 (bytes that are not a parsable PDF);
   the fixture env exports `BIOMCP_S2_PDF_FIXTURE_ORIGIN`.
-- `testdata/sources/plos/pbio-3000076-printable.pdf`: the captured open-access
-  PLOS Biology PDF (PMID 30571682, DOI 10.1371/journal.pbio.3000076, CC BY),
-  byte-faithful with a receipt; the receipts audit passes with no boundary pin
-  change (`code_keys_checked` stays 109, audited files 378 → 379).
+- `testdata/sources/plos/pone-0342026-printable.pdf`: the captured open-access
+  PLOS ONE correction PDF (PMID 41615898, DOI 10.1371/journal.pone.0342026,
+  CC BY), byte-faithful with a receipt and byte-identical to the PMC OA
+  package copy; the receipts audit passes with no fixture-count pin change
+  (`code_keys_checked` stays 109, audited files 378 → 379) and the receipts
+  digest repin lives in `tools/zero-coupling-historical.json`.
 - Tests: `tests/article_asset_terminal.rs` —
   `publisher_open_pdf_link_downloads_and_returns_its_text` (recorded reply:
   downloads the captured PDF through the publisher origin, saves its text,
@@ -89,11 +91,13 @@ ran — both caught by CI's rust lane and fixed in the final tip):
 | --- | --- | --- | --- |
 | 1792213118704-3620 | the macOS gate host | scratch diagnostic: candidate PDF through the real CLI | clean text, capture swapped |
 | 1792213389724-11900 | the macOS gate host | `make lint` at `d34868ba4` | passed |
+| 1792214725519-38339 | the macOS gate host | `make lint` at `c878b691b` | passed |
 | 1792213392668-12436 | the macOS gate host | `make spec` at `d34868ba4` | 59 passed; the only 2 failures are the pre-existing clingen-erepo page (below) |
 | 1792212451039-54350 | the macOS gate host | `make spec` at plain main `b138f6097` | same 2 clingen-erepo failures — pre-existing, not this ticket |
-| «yellow-targeted» | the Linux gate host | targeted nextest: the new tests at `d34868ba4` | «fill» |
-| «yellow-test» | the Linux gate host | `make test` at `d34868ba4` | «fill» |
-| CI run 39004824318 | GitHub Linux | full ci.yml at `d34868ba4` | «fill» |
+| «yellow-targeted» | the Linux gate host | targeted nextest: the new tests at `d34868ba4` | CI's rust lane covers the same tests green at both tips; the queued yellow runs are noted below |
+| «yellow-test» | the Linux gate host | `make test` at `c878b691b` | «fill» |
+| CI run 39004824318 | GitHub Linux | full ci.yml at `d34868ba4` | python-lane failed (3 contract gaps below), all other executed lanes green |
+| CI run 39006201972 | GitHub Linux | full ci.yml at `c878b691b` (final tip) | green — every executed lane passed |
 
 ### Live probe (read-only public GETs, the macOS gate host, job 1792213938177-72006, `d34868ba4`)
 
@@ -131,6 +135,11 @@ ran — both caught by CI's rust lane and fixed in the final tip):
 
 ## Findings
 
+- The python lane caught three contract gaps at `d34868ba4`, all fixed at
+  `c878b691b`: the new env var needed a fixture-only classification, the replay
+  env needed it listed as a non-provider override (it is an allowlist entry the
+  article fixture exports, like the health probe hook), and a blank line had
+  split the changelog's Fixes bullet list.
 - `make spec` fails its clingen-erepo page on the macOS gate host at plain main
   (`b138f6097`, job `1792212451039-54350`) exactly as at this ticket's tip: a
   pre-existing gate-host breakage, not this change (CI's Linux spec lane passes
