@@ -12,6 +12,8 @@ Reviews: revision b72ad5d, accept
 
 Reviews: revision d19fa79, accept
 
+Reviews: revision 4aa761b, accept
+
 ## Outcome
 
 Every full main check builds the full feature set with the development profile and exercises its PNG, SVG and terminal output. Optimized builds and their output checks remain required in release qualification and the final release rehearsal.
