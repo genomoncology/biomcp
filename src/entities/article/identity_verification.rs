@@ -35,6 +35,8 @@ pub(crate) struct VariantArticleVerificationOptions {
 pub(crate) struct VariantArticleIdentity {
     pub status: &'static str,
     pub basis: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<&'static str>,
     pub requested_gene: Option<String>,
     pub requested_allele: Option<String>,
     pub observations: Vec<VariantArticleIdentityObservation>,
@@ -425,6 +427,7 @@ pub(crate) fn verify_pubtator(
     let mut observations = Vec::new();
     let mut contradictions = Vec::new();
     let mut semantic_anomaly = canonical_pmid(expected_pmid).is_none();
+    let mut missing_typed_gene = false;
 
     for document in &response.documents {
         let pmid_agrees = document
@@ -465,17 +468,18 @@ pub(crate) fn verify_pubtator(
         for passage in &document.passages {
             semantic_anomaly |= passage.annotations.iter().any(linkage_bounds_exceeded);
         }
-        // Genes the provider names anywhere in the document. A variant
-        // annotation whose CorrespondingGene has no named Gene annotation
-        // cannot pair through the typed loop below; its passage text carries
-        // the only in-document gene naming.
-        let named_gene_ids: std::collections::HashSet<u64> = document
-            .passages
-            .iter()
-            .flat_map(|passage| passage.annotations.iter())
-            .filter_map(typed_gene)
-            .map(|(_, gene_id, _)| gene_id)
-            .collect();
+        missing_typed_gene |= document.passages.iter().any(|passage| {
+            passage.annotations.iter().any(|annotation| {
+                typed_variant(annotation).is_some_and(|(alias, gene_id, _, _)| {
+                    requested_aliases.contains(&normalized(alias))
+                        && !document.passages.iter().any(|gene_passage| {
+                            gene_passage.annotations.iter().any(|annotation| {
+                                typed_gene(annotation).is_some_and(|(_, id, _)| id == gene_id)
+                            })
+                        })
+                })
+            })
+        });
         for (gene_passage_index, gene_passage) in document.passages.iter().enumerate() {
             for gene_annotation in &gene_passage.annotations {
                 let Some((gene_name, gene_id, gene_annotation_id)) = typed_gene(gene_annotation)
@@ -561,70 +565,6 @@ pub(crate) fn verify_pubtator(
                 }
             }
         }
-        // Full-text tables often name the gene in plain text while the
-        // provider gives the variant annotation a complete CorrespondingGene
-        // linkage and no Gene annotation for that gene anywhere in the paper.
-        // Such an annotation confirms when its own passage names the requested
-        // gene and its HGVS spells a requested alias; the coordinate fallback
-        // the typed pairing allows stays tied to a named Gene annotation.
-        for (variant_passage_index, variant_passage) in document.passages.iter().enumerate() {
-            for variant_annotation in &variant_passage.annotations {
-                let Some((observed_hgvs, variant_gene_id, tokens, variant_annotation_id)) =
-                    typed_variant(variant_annotation)
-                else {
-                    continue;
-                };
-                if named_gene_ids.contains(&variant_gene_id) {
-                    continue;
-                }
-                if !requested_aliases.contains(&normalized(observed_hgvs)) {
-                    continue;
-                }
-                let passage_text = variant_passage.text.as_deref().unwrap_or_default();
-                if !contains_token(&passage_text.to_ascii_lowercase(), gene) {
-                    continue;
-                }
-                let section = variant_passage
-                    .infons
-                    .as_ref()
-                    .and_then(|infons| infons.kind.as_deref())
-                    .unwrap_or("unknown")
-                    .to_string();
-                observations.push(VariantArticleIdentityObservation {
-                    source: "pubtator",
-                    section,
-                    locator: format!(
-                        "document:{returned_pmid}:variant-passage:{}",
-                        variant_passage_index + 1,
-                    ),
-                    linked_gene: requested.gene.clone().unwrap_or_default(),
-                    observed_alias: observed_hgvs.into(),
-                    gene_annotation_id: String::new(),
-                    allele_annotation_id: variant_annotation_id.into(),
-                    provider_relation: None,
-                    provider_linkage: Some(ProviderLinkage::Pubtator {
-                        expected_pmid: expected_pmid.into(),
-                        returned_pmid: returned_pmid.into(),
-                        gene_annotation_id: String::new(),
-                        variant_annotation_id: variant_annotation_id.into(),
-                        gene_id: variant_gene_id,
-                        observed_hgvs: observed_hgvs.into(),
-                        identifier_tokens: tokens,
-                        relation_id: None,
-                        relation_type: None,
-                        relation_roles: None,
-                        provenance: ProviderLinkageProvenance {
-                            source: "pubtator3",
-                            request_template_version: PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION,
-                            verifier_version: VERIFIER_VERSION,
-                            response_subset_version: RESPONSE_SUBSET_VERSION,
-                            canonical_response_subset_sha256: response_digest.clone(),
-                        },
-                    }),
-                    canonical_content_hash: hash(passage_text),
-                });
-            }
-        }
     }
     observations.sort_by_key(|observation| serde_json::to_string(observation).unwrap_or_default());
     observations.dedup();
@@ -638,6 +578,8 @@ pub(crate) fn verify_pubtator(
     let status = status_for(&observations, &contradictions);
     VariantArticleIdentity {
         status,
+        reason: (status == "unverified" && missing_typed_gene)
+            .then_some("missing_typed_gene_annotation"),
         basis: if status == "confirmed" {
             "structured_annotation"
         } else {
@@ -833,6 +775,7 @@ pub(crate) fn verify_ldh_annotation(
     let status = status_for(&observations, &contradictions);
     VariantArticleIdentity {
         status,
+        reason: None,
         basis: if observations.is_empty() {
             "none"
         } else {
@@ -925,6 +868,7 @@ pub(crate) fn verify_captured_abstract(
     }
     VariantArticleIdentity {
         status: status_for(&[], &contradictions),
+        reason: None,
         basis: "none",
         requested_gene: requested.gene.clone(),
         requested_allele,
@@ -945,6 +889,11 @@ pub(crate) fn combine_identities(
     let status = status_for(&observations, &contradictions);
     VariantArticleIdentity {
         status,
+        reason: if status == "unverified" {
+            fetched.reason.or(captured.reason)
+        } else {
+            None
+        },
         basis: if status == "confirmed" {
             if fetched.basis != "none" {
                 fetched.basis
@@ -1256,60 +1205,6 @@ mod tests {
         let identity = verify_pubtator(&requested(), "1", &bare_digits, false);
         assert_eq!(identity.status, "unverified");
         assert!(identity.incomplete);
-    }
-
-    #[test]
-    fn unnamed_variant_gene_confirms_from_the_variant_passage_text() {
-        // The 32371413 shape: a complete CorrespondingGene linkage on the
-        // variant annotation, no Gene annotation for that gene anywhere in the
-        // document, and the gene named in plain text beside the annotation.
-        let mut unnamed = response(false);
-        unnamed.documents[0].passages[0].annotations.remove(0);
-        unnamed.documents[0].passages[0].text = Some("Trio SAMHD1-like BRAF p.V600E row".into());
-        unnamed.documents[0].passages[0].infons = Some(PubTatorInfons {
-            kind: Some("table".into()),
-        });
-        let identity = verify_pubtator(&requested(), "1", &unnamed, false);
-        assert_eq!(identity.status, "confirmed");
-        assert_eq!(identity.observations.len(), 1);
-        let observation = &identity.observations[0];
-        assert_eq!(observation.section, "table");
-        assert_eq!(observation.locator, "document:1:variant-passage:1");
-        assert_eq!(observation.linked_gene, "BRAF");
-        assert_eq!(observation.gene_annotation_id, "");
-        assert!(!identity.incomplete);
-    }
-
-    #[test]
-    fn passage_text_gene_link_requires_the_requested_gene_token() {
-        let mut other_text = response(false);
-        other_text.documents[0].passages[0].annotations.remove(0);
-        other_text.documents[0].passages[0].text = Some("captured".into());
-        let identity = verify_pubtator(&requested(), "1", &other_text, false);
-        assert_eq!(identity.status, "unverified");
-        assert!(identity.observations.is_empty());
-        assert!(!identity.incomplete);
-    }
-
-    #[test]
-    fn passage_text_gene_link_requires_the_exact_allele_alias() {
-        let mut other_allele = response(false);
-        other_allele.documents[0].passages[0].annotations.remove(0);
-        other_allele.documents[0].passages[0].text = Some("BRAF activity described".into());
-        other_allele.documents[0].passages[0].annotations[0]
-            .infons
-            .as_mut()
-            .expect("variant infons")
-            .hgvs = Some("p.K601E".into());
-        other_allele.documents[0].passages[0].annotations[0]
-            .infons
-            .as_mut()
-            .expect("variant infons")
-            .identifier = Some("Variant:p.K601E;CorrespondingGene:673".into());
-        let identity = verify_pubtator(&requested(), "1", &other_allele, false);
-        assert_eq!(identity.status, "unverified");
-        assert!(identity.observations.is_empty());
-        assert!(identity.contradictions.is_empty());
     }
 
     #[test]
