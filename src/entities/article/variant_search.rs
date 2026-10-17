@@ -3180,7 +3180,7 @@ fn resolution_unavailable_outcome(
         plan
     });
     let outage_message = variant_article_outage_message(&source_status);
-    return Ok(VariantArticleOutcome {
+    VariantArticleOutcome {
         response: VariantArticleResponse {
             requested_variant: context.requested,
             resolution: context.resolution,
@@ -3214,7 +3214,7 @@ fn resolution_unavailable_outcome(
             debug_plan,
         },
         hard_error: true,
-    });
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -5709,7 +5709,7 @@ mod tests {
             "publications fetched for the matched entry: {logged:?}"
         );
         assert!(
-            logged.iter().any(|line| line.contains("rs121913227")),
+            !logged.iter().any(|line| line.contains("rs121913227")),
             "the non-matching entry's id was never fetched: {logged:?}"
         );
     }
