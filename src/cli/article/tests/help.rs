@@ -19,21 +19,6 @@ fn render_article_search_long_help() -> String {
     String::from_utf8(help).expect("help should be utf-8")
 }
 
-fn render_article_get_long_help() -> String {
-    let mut command = Cli::command();
-    let get = command
-        .find_subcommand_mut("get")
-        .expect("get subcommand should exist");
-    let article = get
-        .find_subcommand_mut("article")
-        .expect("article subcommand should exist");
-    let mut help = Vec::new();
-    article
-        .write_long_help(&mut help)
-        .expect("help should render");
-    String::from_utf8(help).expect("help should be utf-8")
-}
-
 #[test]
 fn article_full_flag_parses_and_help_explains_compact_default() {
     let cli = Cli::try_parse_from([
