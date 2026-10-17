@@ -14,6 +14,8 @@ Reviews: revision 2992721, accept
 
 Reopened: 2026-10-17 — Full actual-main check2156/1792267972991-69042 atda3be5638db5f6b21b395998e412e6bbe9587b0c reproduced the same MCP case after fifty clean isolated repetitions. Diagnostic names an OpenFDA HTTP request failure at rmcp_client_contract.rs1619. Reopen for one captured-cause repair lane; formal measurements and ordinary landings wait for green main.
 
+Reviews: revision 81142aa, accept
+
 ## Outcome
 
 The recurring failure of `raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts` has a captured cause and a minimal fix that preserves its complete contract.
