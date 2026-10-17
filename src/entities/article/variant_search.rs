@@ -5857,14 +5857,13 @@ mod tests {
     #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn samhd1_i448t_articles_tie_the_genomic_alias_to_the_gene() {
-        // Ticket 2140: the exact-lexical route sent MyVariant's genomic
-        // coordinate alias bare, so PubMed's loose tokenization of
-        // "chr20:g.35533834A>G" ("chr20"[All Fields] AND "G"[All Fields])
-        // pulled the cotton paper 28794480 into a SAMHD1 search. The recorded
-        // replies are the live provider bytes: the bare keyword term returns
-        // 15 chromosome-20 papers including the cotton one, the gene-tied
-        // term returns none, and the SAMHD1 I448T keyword keeps the
-        // SAMHD1-naming papers.
+        // The exact-lexical route sent MyVariant's genomic coordinate alias
+        // bare, so PubMed's loose tokenization of "chr20:g.35533834A>G"
+        // ("chr20"[All Fields] AND "G"[All Fields]) pulled the cotton paper
+        // 28794480 into a SAMHD1 search. The recorded replies are the live
+        // provider bytes: the bare keyword term returns 15 chromosome-20
+        // papers including the cotton one, the gene-tied term returns none,
+        // and the SAMHD1 I448T keyword keeps the SAMHD1-naming papers.
         const MYVARIANT_QUERY: &[u8] = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/variant_articles_2140/myvariant/query_samhd1_i448t_20261017.json"
@@ -6043,13 +6042,13 @@ mod tests {
     #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn cdkn2a_a57v_articles_tie_the_genomic_alias_to_the_gene() {
-        // Ticket 2140's second report: the citrus paper 41894487 reached the
-        // CDKN2A search's second page matched only by the bare
-        // chr9:g.21971188G>A alias. The recorded replies hold both sides: the
-        // bare keyword term returns 100 chromosome-9 papers including citrus,
-        // and the gene-tied term returns the four CDKN2A-related papers PubMed
-        // keeps. Europe PMC's keyword reply carries the CDKN2A-naming paper
-        // 18178632 the search must keep.
+        // The second report: the citrus paper 41894487 reached the CDKN2A
+        // search's second page matched only by the bare chr9:g.21971188G>A
+        // alias. The recorded replies hold both sides: the bare keyword term
+        // returns 100 chromosome-9 papers including citrus, and the gene-tied
+        // term returns the four CDKN2A-related papers PubMed keeps. Europe
+        // PMC's keyword reply carries the CDKN2A-naming paper 18178632 the
+        // search must keep.
         const MYVARIANT_QUERY: &[u8] = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/variant_articles_2140/myvariant/query_cdkn2a_a57v_20261017.json"
