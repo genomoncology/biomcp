@@ -12,6 +12,8 @@ Reviews: revision 28dc42b, accept
 
 Reviews: revision 58e5e47, accept
 
+Reviews: revision 45237a7, accept
+
 ## Outcome
 
 The disable-source HTTP contract reliably starts its isolated server and proves that the flag and environment forms behave alike. Name and fix the actual readiness failure without weakening source-disable assertions or hiding child errors.
@@ -38,3 +40,5 @@ Review proof: job 1792253716177-76612 ran the real CLI with an invalid startup f
 The configured landing gate 1792253819443-83966 reproduced the HTTP parity failure and the new invalid-argument startup case. Both children were alive, with empty stderr and failed health connections, at the five-second helper deadline. The invalid-argument process ordinarily exits immediately; this establishes that the fixture can kill a live process before its argument parsing completes. It does not establish the underlying scheduler/runtime cause. The repair outcome is to treat that short latency threshold as a warning, preserve real child-exit errors and source-disable assertions, and retain separate bounded hung-process protection. The shared ContractHarness helper and its existing HTTP command tests are the implementation and outside-in test sites. A controlled delayed real CLI start must fail on the old helper and pass after this correction.
 
 Controlled delayed-start proof 1792254207305-32303 failed on the old helper: a real CLI delayed six seconds before execution was still alive when the five-second fixture threshold killed it. Focused job 1792254230316-33422 passed the delayed healthy and invalid-argument cases plus both existing serve cases, formatting and targeted compiler lint after the fix. Job 1792254268688-35247 passed full lint and the quality ratchet. Fresh review accepted source af1b8022e without changes. The helper now warns once after five seconds and waits for readiness or an actual child exit; a separate 120-second hung-child watchdog and one-second probe timeout preserve bounded cleanup for callers outside the test runner. This fixes the premature fixture kill, while the original operating-system/runtime startup delay remains unknown. Keep this ticket open for recurrence under the PM decision above.
+
+PM confirmation, 2026-10-17: warn at five seconds while the child remains alive, fail on child exit, and retain an outer hung-process watchdog. The PM identified first-launch operating-system scanning as one possible explanation for delay before argument parsing; this is unverified and not the basis of the fixture correction. No production startup change is justified by the available evidence.
