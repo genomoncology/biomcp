@@ -155,23 +155,11 @@ fn ema_local_data_json_reports_error_row_with_affects() {
 }
 
 #[test]
-fn mcp_local_rows_name_datasets_without_paths() {
-    let fixture_root = fixture_ema_root();
-    set_stale_ema_mtimes(fixture_root.path());
-
-    let outcome = ema_local_data_outcome(fixture_root.path(), false, true);
-
-    assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.api, "EMA local data");
-    assert_eq!(outcome.row.local_path, None);
-    assert_eq!(outcome.row.stale, Some(true));
-}
-
-#[test]
 fn mcp_local_rows_serialize_and_render_without_local_paths() {
     let fixture_root = fixture_ema_root();
     set_stale_ema_mtimes(fixture_root.path());
     let outcome = ema_local_data_outcome(fixture_root.path(), false, true);
+    assert_eq!(outcome.class, ProbeClass::Warning);
     let report = report_from_outcomes(vec![outcome]);
 
     let value = serde_json::to_value(&report).expect("serialize health report");
