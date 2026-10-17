@@ -48,6 +48,41 @@ def test_rehearsal_builds_have_no_publication_permissions_or_credentials() -> No
         assert jobs[name]["if"] == "github.event_name == 'push'", name
     assert "!inputs.candidate_sha" in jobs["container-publish"]["if"]
 
+
+@pytest.mark.parametrize("container_only", ["false", "true"])
+def test_existing_tag_modes_keep_the_released_helper_command_line(
+    tmp_path: Path, container_only: str,
+) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    # Released helpers accept --tag, without the new rehearsal arguments.
+    for name in ("check-release-versions.py", "check-changelog-coverage.py"):
+        (scripts / name).write_text(
+            'import argparse\np=argparse.ArgumentParser()\n'
+            'p.add_argument("--tag", required=True)\n'
+            'assert p.parse_args().tag == "v0.9.2"\n', encoding="utf-8",
+        )
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    subprocess.run([
+        "git", "-C", str(tmp_path), "-c", "user.name=Test", "-c",
+        "user.email=test@example.invalid", "commit", "--allow-empty", "-qm", "Released source",
+    ], check=True)
+    sha = subprocess.check_output(["git", "-C", str(tmp_path), "rev-parse", "HEAD"], text=True).strip()
+    output = tmp_path / "outputs"
+    env = os.environ | {
+        "CANDIDATE_SHA": "", "REHEARSAL_VERSION": "", "INPUT_TAG": "v0.9.2",
+        "CONTAINER_ONLY": container_only, "WORKFLOW_SHA": "0" * 40,
+        "GITHUB_SHA": "0" * 40, "GITHUB_EVENT_NAME": "workflow_dispatch",
+        "GITHUB_OUTPUT": str(output), "TAG": "v0.9.2",
+    }
+    steps = _load_release_pipeline()["jobs"]["version-check"]["steps"]
+    for step in steps:
+        if "run" in step:
+            result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp_path,
+                                    env=env, text=True, capture_output=True)
+            assert result.returncode == 0, result.stderr
+    assert output.read_text(encoding="utf-8") == f"source_sha={sha}\n"
+
 EXPECTED_NEEDS = {
     "rehearsal-docs": ["version-check", "qualification"],
     "rehearsal-container": ["version-check", "build", "wheel-smoke"],
@@ -372,8 +407,8 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("docs-live", "Resolve the tag commit"): "b9e7731ec89c65f683eb9045aa898fcb7091e0c718f75c1f6ca29bc49d615255",
     ("docs-live", "Require the live documentation revision to equal or descend from the tag"): "d8e88f95d2e890e14d314242bcce698767ddd834b4ccbab56469d5fd684eb54d",
     ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "20b8f03bdcde7c6e9713aa4c8aefe129de93e2dcc00e902f2b22cf8589b63a9f",
-    ("version-check", "Require the tag and committed versions to agree"): "57fd2a89d6752ec8dcee41588b0490af6600fc47d009ba6fc1dc36e2f4c2590d",
-    ("version-check", "Require the changelog to cover merged tickets"): "7d6c854e119ddbe0d13abeb01c6bf19b07b2859627f9ae9de647b3eb7c91943d",
+    ("version-check", "Require the tag and committed versions to agree"): "c2d07928dc3e896981d3a1497b56ab77a81e484fcb23bad911e2627c64fe6265",
+    ("version-check", "Require the changelog to cover merged tickets"): "1f76a37b3d73ab514debb49e722c4e1be630ffec9d136fadb6c2c0ad70a1b78b",
     # The marker-set job's run steps are pinned like the pipeline
     # jobs' — the fetch feeds the offline compile and the make
     # target is the marker selection itself.
