@@ -218,19 +218,22 @@ mod orcid_row {
     use super::super::super::{HealthRow, HealthStatus};
     use std::io::{Read as _, Write};
     use std::net::TcpListener;
+    use std::sync::{Arc, Mutex};
+
+    struct ProbeServer {
+        url: String,
+        hits: Arc<Mutex<usize>>,
+        authorizations: Arc<Mutex<Vec<String>>>,
+    }
 
     /// Counts connections; serves one canned 200 response per connection;
     /// records each request's Authorization header value, if any.
-    fn probe_server() -> (
-        String,
-        std::sync::Arc<std::sync::Mutex<usize>>,
-        std::sync::Arc<std::sync::Mutex<Vec<String>>>,
-    ) {
+    fn probe_server() -> ProbeServer {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind probe listener");
         let address = listener.local_addr().expect("probe address");
-        let hits = std::sync::Arc::new(std::sync::Mutex::new(0usize));
+        let hits = Arc::new(Mutex::new(0usize));
         let counter = hits.clone();
-        let authorizations = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+        let authorizations = Arc::new(Mutex::new(Vec::<String>::new()));
         let logged_headers = authorizations.clone();
         std::thread::spawn(move || {
             for stream in listener.incoming() {
@@ -259,11 +262,11 @@ mod orcid_row {
                 let _ = stream.write_all(response.as_bytes());
             }
         });
-        (
-            format!("http://{address}/0000-0002-1825-0097/person"),
+        ProbeServer {
+            url: format!("http://{address}/0000-0002-1825-0097/person"),
             hits,
             authorizations,
-        )
+        }
     }
 
     struct TokenEnv {
@@ -306,7 +309,11 @@ mod orcid_row {
     #[serial_test::serial(source_env)]
     async fn a_missing_token_probes_the_public_person_endpoint_unauthenticated() {
         let _env = TokenEnv::set(None);
-        let (url, hits, authorizations) = probe_server();
+        let ProbeServer {
+            url,
+            hits,
+            authorizations,
+        } = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
@@ -337,7 +344,7 @@ mod orcid_row {
     #[serial_test::serial(source_env)]
     async fn an_invalid_nonblank_token_is_an_error_row_without_any_request() {
         let _env = TokenEnv::set(Some("bad token"));
-        let (url, hits, _authorizations) = probe_server();
+        let ProbeServer { url, hits, .. } = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
@@ -360,7 +367,11 @@ mod orcid_row {
     #[serial_test::serial(source_env)]
     async fn a_configured_token_probes_the_public_person_endpoint() {
         let _env = TokenEnv::set(Some("fixture-public-read-token"));
-        let (url, hits, authorizations) = probe_server();
+        let ProbeServer {
+            url,
+            hits,
+            authorizations,
+        } = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
