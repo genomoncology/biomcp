@@ -244,8 +244,9 @@ mod orcid_row {
                 let authorization = request
                     .lines()
                     .find_map(|line| {
-                        line.strip_prefix("Authorization:")
-                            .map(|value| value.trim().to_string())
+                        line.split_once(':')
+                            .filter(|(name, _)| name.eq_ignore_ascii_case("authorization"))
+                            .map(|(_, value)| value.trim().to_string())
                     })
                     .unwrap_or_else(|| "none".into());
                 logged_headers.lock().unwrap().push(authorization);
@@ -372,6 +373,9 @@ mod orcid_row {
         assert_eq!(outcome.row.status, HealthStatus::Ok);
         assert_eq!(outcome.row.key_configured, Some(true));
         assert_eq!(*hits.lock().unwrap(), 1, "exactly one non-retried GET");
-        assert_eq!(*authorizations.lock().unwrap(), vec!["Bearer fixture-public-read-token"]);
+        assert_eq!(
+            *authorizations.lock().unwrap(),
+            vec!["Bearer fixture-public-read-token"]
+        );
     }
 }

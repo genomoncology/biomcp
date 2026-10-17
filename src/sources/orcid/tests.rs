@@ -282,8 +282,9 @@ mod closing {
                     let authorization = request
                         .lines()
                         .find_map(|line| {
-                            line.strip_prefix("Authorization:")
-                                .map(|value| value.trim().to_string())
+                            line.split_once(':')
+                                .filter(|(name, _)| name.eq_ignore_ascii_case("authorization"))
+                                .map(|(_, value)| value.trim().to_string())
                         })
                         .unwrap_or_else(|| "none".into());
                     logged
@@ -331,7 +332,9 @@ mod closing {
             .expect("configured person read");
         assert_eq!(
             *requests.lock().unwrap(),
-            vec![format!("/{RECORDED_TOKENLESS_ID}/person auth=Bearer fixture-public-read-token")]
+            vec![format!(
+                "/{RECORDED_TOKENLESS_ID}/person auth=Bearer fixture-public-read-token"
+            )]
         );
     }
 
