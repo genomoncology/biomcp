@@ -39,6 +39,7 @@ HEALTH_ALIASES = {
     "fda_orphan": "FDA Orphan Drug Designations",
     "gprofiler": "g:Profiler",
     "gwas": "GWAS Catalog",
+    "litvar": "LitVar2",
     "ncbi_efetch": "NCBI E-utilities",
     "ncbi_idconv": "NCBI ID Converter",
     "nci_cts": "NCI CTS",
