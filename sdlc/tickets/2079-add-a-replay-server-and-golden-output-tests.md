@@ -6,7 +6,7 @@ priority: 3
 
 Status: OPEN.
 
-Milestone: 0.9.3
+Milestone: 0.9.4
 
 Reviews: revision 8552ed1, accept
 
@@ -25,3 +25,5 @@ Depends on: 2156
 - Defers: broad shared fixture identifiers/scenario restructuring to the next release unless a named current migration needs a narrow change.
 
 PM decision: 2026-10-17. Extend the existing infrastructure rather than rebuilding its first batch. Prioritize the replacement claims a pending 2081 deletion or named 2111 migration needs. Those claims must execute in an active outside-in lane before deletion; unrelated deletion batches do not wait for the whole ticket. Record batches through pm progress and close only after the remaining contracted command coverage is addressed.
+
+PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every bug is fixed; this ticket improves tests, tooling or dependencies and fixes no user-facing bug. Rebase onto main before resuming; earlier reviews cover the old base only.

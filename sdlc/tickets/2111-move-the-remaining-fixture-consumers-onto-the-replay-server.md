@@ -7,7 +7,7 @@ priority: 3
 
 Status: OPEN.
 
-Milestone: 0.9.3
+Milestone: 0.9.4
 
 ## Outcome
 
@@ -22,3 +22,5 @@ Depends on: 2159
 - Defers: local study-dataset provisioning and broad shared fixture identifiers to the next release.
 
 PM decision: 2026-10-17. Study setup provisions files rather than an HTTP server and is outside this migration. Do not require deletion of every fixture outside live canaries. Reuse existing replay infrastructure and depend only on a particular recording batch when a named consumer actually needs it.
+
+PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every bug is fixed; this ticket improves tests, tooling or dependencies and fixes no user-facing bug. Rebase onto main before resuming; earlier reviews cover the old base only.

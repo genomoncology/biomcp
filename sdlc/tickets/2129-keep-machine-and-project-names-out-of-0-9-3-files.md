@@ -8,7 +8,6 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
-Depends on: 2123
 Depends on: 2120
 Depends on: 2095
 Depends on: 2152

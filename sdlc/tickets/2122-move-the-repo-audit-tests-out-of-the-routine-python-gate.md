@@ -6,7 +6,7 @@ priority: 3
 
 Status: OPEN.
 
-Milestone: 0.9.3
+Milestone: 0.9.4
 
 ## Outcome
 
@@ -22,3 +22,5 @@ Depends on: 2156
 - Defers: long audit execution to the declared long-suite policy.
 
 PM decision: 2026-10-17. Manual hosted repository-contract jobs cannot replace required local coverage. This work follows the parallel local runner and does not depend on the withdrawn automatic-main cache work.
+
+PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every bug is fixed; this ticket improves tests, tooling or dependencies and fixes no user-facing bug. Rebase onto main before resuming; earlier reviews cover the old base only.

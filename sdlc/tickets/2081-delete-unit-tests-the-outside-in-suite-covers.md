@@ -6,7 +6,7 @@ priority: 3
 
 Status: OPEN.
 
-Milestone: 0.9.3
+Milestone: 0.9.4
 
 ## Outcome
 
@@ -21,3 +21,5 @@ Depends on: 2156
 - Defers: runner warning behavior to 2095; extra golden recordings to 2079; broad fixture restructuring to the next release.
 
 PM decision: 2026-10-17. Remove the hard ten-second acceptance bar. Long tests belong in the long suite; elapsed time alone never fails the routine runner. Require only replacement claims affected by each deletion, not blanket new coverage or reopened completed batches. Search-all prerequisites use the existing executed golden cases.
+
+PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every bug is fixed; this ticket improves tests, tooling or dependencies and fixes no user-facing bug. Rebase onto main before resuming; earlier reviews cover the old base only.
