@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 878f243, accept
+
 ## Outcome
 
 `batch article --sections` returns each requested section or an outcome saying why it is missing, adds no section nobody asked for, and refuses a section it never supports.
