@@ -44,3 +44,9 @@ Deadline interpretation: explicit invocation expiration or cancellation remains 
 ## Affected checks
 
 Developer source db84f476fbf81f1bf54affb6172791fde9146e53 is ready for fresh review. Job 1792257536468-48301 passed 96 affected Rust tests, including cache security and maintenance behavior, HTTP write/finalization response retention, invocation expiry, and article fallback with a held epoch lock. Job 1792257759015-16175 confirmed the unreadable configuration case fails against the old main binary, then passed ten unaffected Python cases against the new binary. Job 1792257917040-39513 passed all three article cases after correcting only the recorded fixture pagination, and passed the quality ratchet. Final formatting and all-target routine Clippy with warnings denied passed in 1792257930740-41306. Reuse these focused results; the reviewed merge candidate still requires its landing gate.
+
+## Fresh review
+
+The fresh reviewer accepts source 15f83e28e2b61c5f7576af942d72b3f7a15bdb3b with two fixes. Missing indexed content and integrity failures now reach the optional adapter for a warning, while absent entries remain normal misses; red job 1792258114232-65093 failed both warning cases and green 1792258139951-67305 passed ten Python cases, four relevant Rust cases, formatting and Clippy. A retained response after successful 304 revalidation now drops the stale marker before cloning: red 1792258467441-19268 failed its new assertion and green 1792258538494-23343 passed the revalidation and publication-deadline cases, formatting and Clippy.
+
+Preserved limit: invocation expiry before the publication marker arms during writer creation or write_all remains final, even if the provider body already arrived. Slow filesystem calls remain outside this fix. The request-path lock bypass and local I/O fallback do not remove the end-to-end invocation deadline.
