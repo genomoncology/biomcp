@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision e815385, accept
+
 ## Outcome
 
 The frozen ERepo executable specification passes through the routine build job on the supported build host, preserving its summary, detail and typed MCP source-fact assertions.
