@@ -37,7 +37,7 @@
 - An explicit `--assembly` on `get variant` constrains the lookup to that build: `--assembly hg38 'chr7:g.140453136A>T'` reports not found when GRCh38 holds no record instead of answering MyVariant's GRCh37 record, a flag that contradicts a coordinate prefix refuses naming both builds, and `BIOMCP_DEFAULT_ASSEMBLY` keeps ordering the dual-build search for a bare coordinate without ever constraining it. (2112)
 
 ### Internal
-- Report executed test counts and current specification page totals in release measurements; keep absent suite summaries incomplete (#2169).
+- Report executed test counts and current specification page totals in release measurements; keep absent suite summaries incomplete (2169).
 
 - Keep retry fixtures on real time during loopback requests; preserve the HPO four-attempt policy and compact-command retry cancellation checks. (2167)
 - Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
