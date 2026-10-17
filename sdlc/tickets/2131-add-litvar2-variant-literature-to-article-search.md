@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision ca7dea1, accept
+
 ## Outcome
 
 `search article` with a variant (gene plus protein change, or rsID) also asks NCBI LitVar2 for the papers it links to that variant, and merges them with the existing sources, so variant papers PubTator and Europe PMC miss appear.
