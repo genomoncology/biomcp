@@ -18,6 +18,26 @@ def executable(path: Path, body: str) -> None:
     path.chmod(0o755)
 
 
+@pytest.fixture(scope="session")
+def bash() -> str:
+    for directory in os.get_exec_path():
+        for name in ("bash", "bash5", "bash4"):
+            candidate = shutil.which(name, path=directory)
+            if candidate is None:
+                continue
+            try:
+                version = subprocess.run(
+                    [candidate, "-c", '[[ "${BASH_VERSINFO[0]}" -ge 4 ]]'],
+                    check=False,
+                    capture_output=True,
+                )
+            except OSError:
+                continue
+            if version.returncode == 0:
+                return candidate
+    pytest.skip("coverage measurement requires Bash 4 or newer on PATH")
+
+
 @pytest.mark.parametrize(
     ("nextest_summary", "spec_summary", "status", "expected", "incomplete"),
     [
@@ -74,19 +94,13 @@ def executable(path: Path, body: str) -> None:
 )
 def test_coverage_summary_counts_executed_work(
     tmp_path: Path,
+    bash: str,
     nextest_summary: str,
     spec_summary: str,
     status: str,
     expected: tuple[str, str],
     incomplete: bool,
 ) -> None:
-    bash = shutil.which("bash") or "bash"
-    version = subprocess.run(
-        [bash, "-c", '[[ "${BASH_VERSINFO[0]}" -ge 4 ]]'],
-        check=False,
-    )
-    if version.returncode:
-        pytest.skip("coverage measurement requires Bash 4 or newer on PATH")
     clone = tmp_path / "clone"
     clone.mkdir()
     fake_home = tmp_path / "home"
