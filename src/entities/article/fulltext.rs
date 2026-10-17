@@ -1,5 +1,4 @@
 use reqwest::Url;
-use reqwest::header::CONTENT_TYPE;
 use tracing::debug;
 
 use super::{
@@ -272,18 +271,6 @@ async fn render_fulltext_pdf(bytes: Vec<u8>, page_limit: usize) -> Result<String
     })?
 }
 
-fn pdf_content_type_is_supported(content_type: Option<&reqwest::header::HeaderValue>) -> bool {
-    let Some(content_type) = content_type.and_then(|value| value.to_str().ok()) else {
-        return false;
-    };
-    let media_type = content_type
-        .split(';')
-        .next()
-        .map(str::trim)
-        .unwrap_or_default();
-    media_type.eq_ignore_ascii_case("application/pdf")
-}
-
 fn pdf_body_signature_matches(body: &[u8]) -> bool {
     body.starts_with(b"%PDF-")
 }
@@ -461,7 +448,6 @@ async fn resolve_pdf_url_with_client(
         );
     }
 
-    let content_type = response.headers().get(CONTENT_TYPE).cloned();
     let bytes = match crate::sources::read_limited_source_body_with_limit(
         response,
         crate::error::SourceContext::narrow(crate::error::SourceProvider::SEMANTIC_SCHOLAR),
@@ -479,9 +465,8 @@ async fn resolve_pdf_url_with_client(
             return FulltextStepOutcome::Failed(err);
         }
     };
-    if !pdf_content_type_is_supported(content_type.as_ref()) && !pdf_body_signature_matches(&bytes)
-    {
-        return FulltextStepOutcome::Unusable(
+    if !pdf_body_signature_matches(&bytes) {
+        return FulltextStepOutcome::Failed(
             BioMcpError::Api {
                 api: ARTICLE_FULLTEXT_API.to_string(),
                 message: "Semantic Scholar PDF returned unsupported content".to_string(),
@@ -1339,14 +1324,6 @@ mod tests {
                 .await
                 .expect("valid article XML");
         assert_eq!(classified.coverage, ArticleDocumentCoverage::FullText);
-    }
-
-    #[test]
-    fn pdf_detection_rejects_non_pdf_payloads() {
-        let text_plain = reqwest::header::HeaderValue::from_static("text/plain");
-
-        assert!(!pdf_content_type_is_supported(Some(&text_plain)));
-        assert!(!pdf_body_signature_matches(b"not a pdf"));
     }
 
     #[serial_test::serial(source_env)]

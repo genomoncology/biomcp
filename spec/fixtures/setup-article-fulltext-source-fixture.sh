@@ -243,6 +243,7 @@ PDF_FALLBACK = (
 # publisher URL as the paper's open PDF, and the second listener below
 # stands in for the publisher origin so the download replays offline.
 PLOS_OPEN_PDF = source_bytes("plos/pone-0342026-printable.pdf")
+BLANK_OPEN_PDF = (FIXTURE_DIR / "pdf" / "blank.pdf").read_bytes()
 INVALID_OPEN_PDF = b"%PDF-1.4\nnot a parsable document\n%%EOF\n"
 FIGSHARE_SUPPLEMENT = b"%PDF-1.4\nFigshare supplemental fixture bytes\n%%EOF\n"
 FIGSHARE_TABLE_S1 = b"PK\x03\x04\nS1 workbook fixture bytes\n"
@@ -841,6 +842,10 @@ ARTICLES = {
         "abstract": "Abstract text.",
         "paper_id": "paper-19",
     },
+    "22663041": {"pmcid": None, "title": "Open PDF response classification", "abstract": "Abstract text.", "paper_id": "paper-22663041"},
+    "22663042": {"pmcid": None, "title": "Open PDF response classification", "abstract": "Abstract text.", "paper_id": "paper-22663042"},
+    "22663043": {"pmcid": None, "title": "Open PDF response classification", "abstract": "Abstract text.", "paper_id": "paper-22663043"},
+    "22663044": {"pmcid": None, "title": "Open PDF response classification", "abstract": "Abstract text.", "paper_id": "paper-22663044"},
     "22663030": {
         "pmcid": None,
         "title": "Open PDF link unavailable fixture",
@@ -1983,6 +1988,12 @@ class Handler(BaseHTTPRequestHandler):
                     "status": "GREEN",
                     "license": "CC BY",
                 }
+            if pmid in {"22663041", "22663042", "22663043", "22663044"}:
+                payload["openAccessPdf"] = {
+                    "url": f"http://127.0.0.1:{PUBLISHER_PORT}/publisher/response-{pmid}.pdf",
+                    "status": "GREEN",
+                    "license": "CC BY",
+                }
             send_json(self, 200, payload)
             return
 
@@ -2176,6 +2187,16 @@ class PublisherHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/publisher/unreachable.pdf":
             send_text(self, 500, "publisher unavailable", "text/plain")
+            return
+        if parsed.path == "/publisher/response-22663041.pdf":
+            send_text(self, 403, "<html>Access denied</html>", "text/html")
+            return
+        if parsed.path in {"/publisher/response-22663042.pdf", "/publisher/response-22663043.pdf"}:
+            content_type = "text/html" if "22663042" in parsed.path else "application/pdf"
+            send_text(self, 200, "<html>Access denied</html>", content_type)
+            return
+        if parsed.path == "/publisher/response-22663044.pdf":
+            send_bytes(self, 200, BLANK_OPEN_PDF, "application/pdf")
             return
         if parsed.path == "/publisher/broken.pdf":
             send_bytes(self, 200, INVALID_OPEN_PDF, "application/pdf")
