@@ -6,7 +6,7 @@ deps: []
 
 # 2148: Make the Linux gate host's contract gates match the pm-job checkout shape
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
