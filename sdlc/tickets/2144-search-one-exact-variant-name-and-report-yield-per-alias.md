@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 216e182, accept
+
 ## Outcome
 
 A caller can search literature for one exact variant name with no alias expansion, and can see how many papers each alias found from each source, so a scorer attributes yield per name.
