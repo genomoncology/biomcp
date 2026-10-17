@@ -47,6 +47,7 @@
 - Keep article-validation and disease-survival fixture tests reliable under concurrent load with bounded watchdogs and readiness checks. (2102, 2105)
 - Qualify release revisions directly and rehearse complete untagged candidates without publication credentials or external publication. (2161)
 - Report slow routine tests with their names and host load without timing out passing cases; keep exhaustive cases in an explicit release-candidate suite (2095).
+- HTTP contract startup waits for healthy or exited children after a slow-start warning, with bounded hung-child cleanup and failure diagnostics. (2175)
 - Full main checks build and exercise PNG, SVG and terminal output with the development profile; release qualification and the final rehearsal retain optimized builds and output checks. (2171)
 - Keep retry fixtures on real time during loopback requests; preserve the HPO four-attempt policy and compact-command retry cancellation checks. (2167)
 - Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
