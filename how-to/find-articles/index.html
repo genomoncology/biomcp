@@ -4726,7 +4726,9 @@ links to the variant (a gene-plus-protein-change or rsID request must match
 the entry exactly), adds validated source citations,
 then merges, ranks, and paginates once. JSON preserves each paper's route,
 source, and matched-alias provenance. Use <code>--strategy annotation</code> or
-<code>--strategy lexical</code> only to diagnose route recall. If a selected provider is
+<code>--strategy lexical</code> only to diagnose route recall, and <code>--strategy exact</code>
+when the search must use one caller-supplied name with no resolution or
+alias expansion. If a selected provider is
 incomplete, inspect <code>complete</code>, <code>truncated</code>, <code>pagination.total</code>, and
 <code>source_status</code> rather than treating an empty page as a complete miss.
 The command applies one 60-second monotonic provider-work deadline to the

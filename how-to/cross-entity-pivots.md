@@ -74,7 +74,8 @@ rather than a specific provider subsection. Resolved `variant articles` calls
 union exact annotation, normalized-alias, and source-citation routes before one
 ranking/pagination pass. Unresolved input labels its discovery route as
 best-effort free text; `--strategy annotation|lexical` isolates exact routes for
-diagnosis. The diagnostics pivot is an opt-in
+diagnosis, and `--strategy exact` searches one caller-supplied name with no
+resolution or alias expansion. The diagnostics pivot is an opt-in
 `get disease` section that can combine GTR and WHO IVD local rows for the
 resolved condition. It is capped at 10 rows and prints a `See also:` command
 for `biomcp search diagnostic --disease <query> --source all --limit 50`; use
