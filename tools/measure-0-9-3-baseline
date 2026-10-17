@@ -585,13 +585,23 @@ if want_section coverage; then
   # exports, so the lanes that never compile anything can strip exactly
   # those keys again before they run.
   COV_BUILD_ENV_KEYS=()
+  declare -A COV_BUILD_ENV_RESTORE=()
+  remember_cov_env() {
+    local key="$1"
+    if [[ ! ${COV_BUILD_ENV_RESTORE[$key]+saved} ]]; then
+      COV_BUILD_ENV_RESTORE[$key]="$(declare -p "$key" 2>/dev/null || printf 'unset %q' "$key")"
+    fi
+  }
   runsh 'cargo llvm-cov clean --workspace'
   show 'eval each line of "cargo llvm-cov show-env" as an export; CARGO_TARGET_DIR=target/llvm-cov-target; LLVM_PROFILE_FILE per suite'
   if ((!DRY_RUN)); then
     while IFS= read -r line; do
+      remember_cov_env "${line%%=*}"
       eval "export $line"
       COV_BUILD_ENV_KEYS+=("${line%%=*}")
     done < <(cargo llvm-cov show-env 2>/dev/null | grep -E '^[A-Z_]+=')
+    remember_cov_env CARGO_INCREMENTAL
+    remember_cov_env CARGO_TARGET_DIR
     export CARGO_INCREMENTAL=0
     export CARGO_TARGET_DIR="$PWD/$COVT"
     COV_BUILD_ENV_KEYS+=(CARGO_INCREMENTAL CARGO_TARGET_DIR)
@@ -615,15 +625,14 @@ if want_section coverage; then
   if ((!DRY_RUN)); then
     record_cov_suite unit_tests nextest "$LOGD/cov-unit.exit" "$LOGD/cov-unit.log"
   fi
-  # The coverage build environment serves only the suites that compile
-  # instrumented artifacts. The Python lane and the spec lane drive
-  # binaries that already exist, and their cargo-driving tests and pages
-  # fail when the show-env exports reach them, so every key the eval
-  # above exported is stripped before they run; LLVM_PROFILE_FILE stays
-  # set so the instrumented binaries keep writing their profiles.
-  show "unset ${COV_BUILD_ENV_KEYS[*]:-<every show-env key, CARGO_INCREMENTAL, CARGO_TARGET_DIR>}"
+  # Driver suites consume prepared instrumented binaries, while nested
+  # Cargo checks need the caller's ordinary compiler/cache/linker settings.
+  # Restore each previous value, or unset keys introduced by show-env.
+  show "restore ${COV_BUILD_ENV_KEYS[*]:-<every show-env key, CARGO_INCREMENTAL, CARGO_TARGET_DIR>}"
   if ((!DRY_RUN)); then
-    unset ${COV_BUILD_ENV_KEYS[@]+"${COV_BUILD_ENV_KEYS[@]}"}
+    for key in "${!COV_BUILD_ENV_RESTORE[@]}"; do
+      eval "${COV_BUILD_ENV_RESTORE[$key]}"
+    done
   fi
   export LLVM_PROFILE_FILE="$PWD/$COVT/out-%8m.profraw"
   timedsh_exit coverage_python_lane "$LOGD/cov-pytest.exit" \
@@ -677,10 +686,9 @@ cat .cache/spec-artifacts.env"
     # its own, but only while no show-env export pins its search: the eval'd
     # CARGO_LLVM_COV_TARGET_DIR (printed before CARGO_TARGET_DIR was set, so
     # it names the plain target directory, which holds no profraws at its
-    # top level) pins it. The unset before the Python lane already dropped
-    # every key the eval exported; the -u prefixes guard the report against
-    # any later change that re-exports one between the suites and the
-    # reports.
+    # top level) pins it. Driver suites already restored the caller's
+    # environment; these report-only removals prevent any caller pins
+    # from redirecting profile discovery.
     runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV -u CARGO_LLVM_COV_TARGET_DIR cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
     if ((!DRY_RUN)); then
       incomplete=""
