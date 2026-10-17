@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision f617667, accept
+
 ## Outcome
 
 A variant article search keeps a paper matched only by a genomic coordinate alias when the paper is about the requested gene, and drops it otherwise.
