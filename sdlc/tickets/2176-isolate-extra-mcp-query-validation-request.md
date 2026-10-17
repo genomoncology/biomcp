@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 819befe, accept
+
 ## Outcome
 
 The raw and typed article-query validation contract proves that invalid input makes no provider request, and ordinary valid prose has equivalent results and the correct explained request count. Name and fix the actual extra-request cause without weakening the invalid-input boundary or hiding retries.
