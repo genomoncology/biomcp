@@ -6193,8 +6193,14 @@ mod tests {
         // A two-alias lexical search must attribute yield per alias and per
         // source: rows each source returned for each alias, rows kept after
         // merging, and whether the 25-result cap cut each source's list.
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
         let fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
             let decoded = |key: &str| query_param(&first_line, key).unwrap_or_default();
             let body: &[u8] = if first_line.starts_with("GET /query") {
                 // MyVariant resolves ABCC8 R1436Q to a hit carrying only the
@@ -6288,9 +6294,10 @@ mod tests {
         assert_eq!(
             outcome.response.resolution.status,
             VariantResolutionStatus::Resolved,
-            "the fixture resolves ABCC8 R1436Q: {:?} {:?}",
+            "the fixture resolves ABCC8 R1436Q: {:?} {:?} requests {:?}",
             outcome.response.resolution,
-            outcome.response.source_status
+            outcome.response.source_status,
+            requests.lock().expect("request log")
         );
 
         let plan = outcome
