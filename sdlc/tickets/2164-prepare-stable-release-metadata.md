@@ -5,13 +5,15 @@ priority: 3
 
 # 2164 — Prepare the stable release metadata
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 1dff5f3, accept
 
 Reviews: revision 51940b5, accept
+
+Landed: 51940b5 (fast-forward: Accepted source landed in shared carrier 1dbe0a0e826f562eb2555d2fa419c572b4464dc0 after gate1792258974753-64575; individual review retained and stable metadata integration corrections are included in the carrier.)
 
 ## Outcome
 
