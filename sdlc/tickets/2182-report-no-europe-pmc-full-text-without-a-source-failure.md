@@ -18,7 +18,7 @@ When Europe PMC has no full text for a PubMed ID, the full-text attempt reports 
 - Starts from: the request the MED attempt actually sends and the status it gets; find why it retries instead of reading 404.
 - Keeps: a real Europe PMC outage still reports unavailable; retries stay for transient failures.
 - Changes: claims `src/sources/europepmc.rs` `tests/article_asset_terminal.rs` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `CHANGELOG.md`. Skip unsupported non-PMC XML requests while retaining the empty MED attempt; preserve supported PMC failure handling.
-- Proof: a recorded 404 for the MED attempt yields an attempt outcome of no full text with no retries and no source-failure message; on current main the same case reports `source_unavailable`. A recorded 503 still reports unavailable.
+- Proof: an unsupported MED resource produces an empty visible attempt without an XML request or source-failure message; current main instead requests the unsupported bare PMID resource and reports source_unavailable. Supported PMC404 is absence with exactly one request; PMC503 remains unavailable with retries. This is the PM-confirmed correction of the original MED404 premise.
 
 Coordinator outcome before code: Distinguish an ordinary absent Europe PMC MED full-text response from a genuine transient source failure, preserving outage retries and unavailable reporting. Before product edits, reproduce on current main through the build job and report the exact command/output, proposed implementation/test files and the outside-in failing proof. Root records that evidence and scope before implementation. Developers write no ticket or status records.
 
