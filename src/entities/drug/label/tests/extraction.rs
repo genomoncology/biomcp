@@ -194,3 +194,35 @@ fn extract_label_boxed_warning_is_truncated() {
     let warning = extract_label_boxed_warning(&response).expect("boxed warning");
     assert!(warning.ends_with("(truncated, 2001 chars total)"));
 }
+
+#[test]
+fn extract_label_set_id_prefers_top_level_set_id() {
+    let response = serde_json::json!({
+        "results": [{
+            "set_id": "abc-123",
+            "openfda": {
+                "spl_set_id": ["fallback-456"]
+            }
+        }]
+    });
+
+    assert_eq!(extract_label_set_id(&response).as_deref(), Some("abc-123"));
+}
+
+
+#[test]
+fn extract_label_set_id_falls_back_to_spl_set_id() {
+    let response = serde_json::json!({
+        "results": [{
+            "openfda": {
+                "spl_set_id": ["fallback-456"]
+            }
+        }]
+    });
+
+    assert_eq!(
+        extract_label_set_id(&response).as_deref(),
+        Some("fallback-456")
+    );
+}
+
