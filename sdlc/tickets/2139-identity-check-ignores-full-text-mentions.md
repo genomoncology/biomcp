@@ -5,7 +5,7 @@ priority: 2
 
 # 2139: Count full-text mentions in the variant identity check
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -14,6 +14,8 @@ Reviews: revision 07b2520, accept
 Reviews: revision 34d0bb9, accept
 
 Reviews: revision ac7f5a4, accept
+
+Landed: ac7f5a4 (fast-forward: Accepted source landed inside carrier 61a8b075ef075e5650dbb85f8572ee8a341803ad with shared gate1792256340018-55751; individual review retained and actual-main full check follows the batch.)
 
 ## Outcome
 
