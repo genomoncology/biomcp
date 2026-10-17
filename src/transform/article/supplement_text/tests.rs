@@ -33,8 +33,7 @@ fn hit<'a>(extraction: &'a SupplementTextExtraction, needle: &str) -> &'a Supple
 
 #[test]
 fn xlsx_extract_locates_a_row_on_sheet1() {
-    let extraction =
-        extract_supplement_text(SupplementFormat::Xlsx, BRCA1_SHEET1_XLSX, &budget());
+    let extraction = extract_supplement_text(SupplementFormat::Xlsx, BRCA1_SHEET1_XLSX, &budget());
     assert!(extraction.problems.is_empty(), "{:?}", extraction.problems);
     let block = hit(&extraction, "F1761I");
     assert_eq!(block.worksheet.as_deref(), Some("Sheet1"));
@@ -75,8 +74,7 @@ fn xls_extract_reads_the_legacy_binary_workbook() {
 
 #[test]
 fn docx_extract_locates_a_paragraph() {
-    let extraction =
-        extract_supplement_text(SupplementFormat::Docx, METHOD_NOTES_DOCX, &budget());
+    let extraction = extract_supplement_text(SupplementFormat::Docx, METHOD_NOTES_DOCX, &budget());
     assert!(extraction.problems.is_empty(), "{:?}", extraction.problems);
     let block = hit(&extraction, "G12D");
     assert_eq!(block.paragraph, Some(3));
@@ -107,8 +105,7 @@ fn pdf_extract_locates_a_page() {
 fn pdf_page_budget_marks_truncation() {
     let mut small = budget();
     small.max_pdf_pages = 1;
-    let extraction =
-        extract_supplement_text(SupplementFormat::Pdf, SUPPLEMENT_NOTES_PDF, &small);
+    let extraction = extract_supplement_text(SupplementFormat::Pdf, SUPPLEMENT_NOTES_PDF, &small);
     assert!(extraction.truncated);
     assert_eq!(extraction.blocks.len(), 1);
 }

@@ -749,6 +749,7 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
     let doc: serde_json::Value =
         serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
     let hits = doc["hits"].as_array().expect("hits should be a list");
+    assert_eq!(doc["hits_truncated"], false);
     assert_eq!(hits.len(), 1, "one acceptance hit is expected: {doc}");
     assert_eq!(hits[0]["worksheet"], "Sheet1");
     assert_eq!(hits[0]["row"], serde_json::json!(2780));
@@ -798,8 +799,13 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
     );
 
     let mut cached: serde_json::Value = serde_json::from_slice(&fs::read(&cache).unwrap()).unwrap();
-    let mut block = cached["extraction"]["blocks"].as_array().unwrap().iter()
-        .find(|block| block["row"] == 2780).unwrap().clone();
+    let mut block = cached["extraction"]["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|block| block["row"] == 2780)
+        .unwrap()
+        .clone();
     block["text"] = serde_json::json!(format!("F1761I{}", "é".repeat(400)));
     cached["extraction"]["blocks"] = serde_json::json!([block]);
     fs::write(&cache, serde_json::to_vec(&cached).unwrap()).unwrap();
@@ -889,11 +895,22 @@ fn supplement_search_reports_an_absent_search_and_stays_json_only() {
     assert_eq!(doc["hits"].as_array().expect("hits list").len(), 0);
     assert_eq!(doc["files"][0]["outcome"], "searched");
 
-    let literal = successful_output(&fixture,
-        &["--json", "article", "supplement-search", "30209399", " F1761I"]);
+    let literal = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            " F1761I",
+        ],
+    );
     let literal: serde_json::Value = serde_json::from_slice(&literal.stdout).unwrap();
     assert_eq!(literal["query"], " F1761I");
-    assert!(literal["hits"].as_array().unwrap().is_empty(), "spaces are literal search text");
+    assert!(
+        literal["hits"].as_array().unwrap().is_empty(),
+        "spaces are literal search text"
+    );
 
     let refused = fixture
         .biomcp_command(&["article", "supplement-search", "30209399", "F1761I"])

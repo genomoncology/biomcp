@@ -351,9 +351,11 @@ async fn run_extraction_worker(
         .take()
         .ok_or("extraction worker output unavailable")?;
     let exchange = async {
-        let send = async {
+        let send = async move {
             input.write_all(bytes).await?;
-            input.shutdown().await
+            input.shutdown().await?;
+            drop(input);
+            Ok::<(), std::io::Error>(())
         };
         let receive = async {
             let mut result = Vec::new();

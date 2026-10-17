@@ -213,8 +213,13 @@ fn extract_workbook(
         let range = match workbook.worksheet_range(&worksheet) {
             Ok(range) => range,
             Err(error) => {
-                extraction.problems.push(SupplementExtractionProblem::unread(None, format.as_str(),
-                    truncate_reason(format!("worksheet could not be read: {error}"))));
+                extraction
+                    .problems
+                    .push(SupplementExtractionProblem::unread(
+                        None,
+                        format.as_str(),
+                        truncate_reason(format!("worksheet could not be read: {error}")),
+                    ));
                 return;
             }
         };
@@ -227,7 +232,13 @@ fn extract_workbook(
                 continue;
             }
             if let Err(reason) = spend.admit(text.len() as u64, budget) {
-                extraction.problems.push(SupplementExtractionProblem::unread(None, format.as_str(), reason.into()));
+                extraction
+                    .problems
+                    .push(SupplementExtractionProblem::unread(
+                        None,
+                        format.as_str(),
+                        reason.into(),
+                    ));
                 return;
             }
             extraction.blocks.push(SupplementTextBlock {

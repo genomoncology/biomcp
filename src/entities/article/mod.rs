@@ -409,7 +409,6 @@ pub struct ArticleSupplementSearch {
     pub query: String,
     pub files: Vec<ArticleSupplementSearchFile>,
     pub hits: Vec<ArticleSupplementSearchHit>,
-    #[serde(default, skip_serializing_if = "is_false")]
     pub hits_truncated: bool,
 }
 
