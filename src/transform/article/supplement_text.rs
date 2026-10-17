@@ -83,7 +83,7 @@ pub struct SupplementTextBlock {
 pub struct SupplementExtractionProblem {
     /// Archive member the problem is about, when there is one.
     pub member: Option<String>,
-    pub format: &'static str,
+    pub format: String,
     pub reason: String,
     /// The bytes read fine but held no text: a text layer problem, not a
     /// parse failure.
@@ -93,10 +93,10 @@ pub struct SupplementExtractionProblem {
 impl SupplementExtractionProblem {
     /// Constructs a parse-failure report. Extraction failures are data, not
     /// control flow, so callers outside this module build them too.
-    pub(crate) fn unread(member: Option<String>, format: &'static str, reason: String) -> Self {
+    pub(crate) fn unread(member: Option<String>, format: &str, reason: String) -> Self {
         SupplementExtractionProblem {
             member,
-            format,
+            format: format.to_string(),
             reason,
             empty_text: false,
         }
@@ -304,14 +304,18 @@ fn extract_docx(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
     };
     let mut paragraph = 0u32;
     for node in doc.descendants().filter(|node| node.is_element()) {
-        if node.tag_name().name != "p" {
+        if node.tag_name().name() != "p" {
             continue;
         }
         paragraph = paragraph.saturating_add(1);
         let mut text = String::new();
         for run in node.descendants().filter(|run| run.is_element()) {
-            match run.tag_name().name {
-                "t" => text.push_str(&run.text()),
+            match run.tag_name().name() {
+                "t" => {
+                    if let Some(run_text) = run.text() {
+                        text.push_str(run_text);
+                    }
+                }
                 "tab" if !text.is_empty() => text.push('\t'),
                 _ => {}
             }
@@ -442,9 +446,10 @@ fn extract_archive(
             continue;
         }
         if let Err(reason) = spend.admit(file.size(), budget) {
+            let member_format = member_format_name(&path);
             extraction.problems.push(SupplementExtractionProblem::unread(
                 Some(path),
-                member_format_name(&path),
+                &member_format,
                 reason.to_string(),
                 ));
             extraction.truncated = true;
@@ -456,17 +461,19 @@ fn extract_archive(
             .take(budget.max_member_bytes.saturating_add(1))
             .read_to_end(&mut member)
         {
+            let member_format = member_format_name(&path);
             extraction.problems.push(SupplementExtractionProblem::unread(
                 Some(path),
-                member_format_name(&path),
+                &member_format,
                 truncate_reason(format!("archive member could not be read: {error}")),
                 ));
             continue;
         }
         if member.is_empty() {
+            let member_format = member_format_name(&path);
             extraction.problems.push(SupplementExtractionProblem::unread(
                 Some(path),
-                member_format_name(&path),
+                &member_format,
                 "empty archive member".to_string(),
                 ));
             continue;
@@ -543,7 +550,7 @@ fn extract_member(
         // searched empty stays distinguishable from one never attempted.
         extraction.problems.push(SupplementExtractionProblem {
             member: Some(member.to_string()),
-            format: format.as_str(),
+            format: format.as_str().to_string(),
             reason: "no text extracted".to_string(),
             empty_text: true,
         });
@@ -551,10 +558,10 @@ fn extract_member(
     extraction.truncated |= nested.truncated;
 }
 
-fn member_format_name(member: &str) -> &'static str {
+fn member_format_name(member: &str) -> String {
     supplement_format_for_filename(member)
-        .map(|format| format.as_str())
-        .unwrap_or("zip")
+        .map(|format| format.as_str().to_string())
+        .unwrap_or_else(|| "zip".to_string())
 }
 
 #[cfg(test)]
@@ -693,7 +700,7 @@ mod tests {
         let reasons: Vec<(Option<&str>, &str, &str)> = extraction
             .problems
             .iter()
-            .map(|problem| (problem.member.as_deref(), problem.format, problem.reason.as_str()))
+            .map(|problem| (problem.member.as_deref(), problem.format.as_str(), problem.reason.as_str()))
             .collect();
         assert!(
             reasons.contains(&(Some("figure-1.gif"), "zip", "unsupported member format")),

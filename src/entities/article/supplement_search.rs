@@ -136,7 +136,7 @@ pub async fn article_supplement_search(
                 asset_key: asset.asset_key.clone(),
                 filename: asset.filename.clone(),
                 member: None,
-                format: problem.format.to_string(),
+                format: problem.format.clone(),
                 sha256: asset.sha256.clone(),
                 outcome: if problem.empty_text {
                     ArticleSupplementSearchFileOutcome::EmptyText
