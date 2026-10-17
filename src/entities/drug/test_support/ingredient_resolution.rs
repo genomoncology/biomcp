@@ -548,6 +548,7 @@ const PEMBROLIZUMAB_FOR_QLEX_CAPTURE: &str = r#"
 async fn keytruda_qlex_pairing_derives_the_plain_ingredient_from_the_records_own_list() {
     let (base, server) = name_resolution_fixture_server(
         vec![
+            ("Qlex".to_string(), QLEX_MYCHEM_MISS.to_string()),
             ("Keytruda Qlex".to_string(), QLEX_MYCHEM_MISS.to_string()),
             (
                 "pembrolizumab".to_string(),
@@ -555,6 +556,7 @@ async fn keytruda_qlex_pairing_derives_the_plain_ingredient_from_the_records_own
             ),
         ],
         vec![
+            ("Qlex".to_string(), QLEX_LABEL_BODY.to_string()),
             ("Keytruda Qlex".to_string(), QLEX_LABEL_BODY.to_string()),
             ("pembrolizumab".to_string(), QLEX_LABEL_BODY.to_string()),
         ],
@@ -569,6 +571,20 @@ async fn keytruda_qlex_pairing_derives_the_plain_ingredient_from_the_records_own
     // is listed as the plain ingredient itself, so the pairing resolves to
     // pembrolizumab without any code naming the enzyme (the literal
     // hyaluronidase match refused this query).
+    {
+        let (_env, _ddinter) = drug_fixture_env(&base, "qlex-exact-owner-ddinter");
+        let err = super::super::get("Qlex", &["label".to_string()])
+            .await
+            .expect_err("the abbreviated name has no exact label owner");
+        let message = err.to_string();
+        assert!(
+            message.contains("No label record owns the exact drug name 'Qlex'.")
+                && message.contains("biomcp search drug -q \"Qlex\"")
+                && !message.contains("Candidates:")
+                && !message.contains("pembrolizumab"),
+            "{message}"
+        );
+    }
     let drug = name_resolution_fixture_drug(&base, "Keytruda Qlex").await;
     assert_eq!(drug.name, "pembrolizumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09037"));
