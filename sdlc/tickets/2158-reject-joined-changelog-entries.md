@@ -4,7 +4,7 @@ priority: 1
 
 # 2158 — Reject joined changelog entries
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -13,6 +13,8 @@ Depends on: 2156
 Reviews: revision 1407c25, accept
 
 Reviews: revision 848f366, accept
+
+Landed: 848f366 (fast-forward: Accepted source landed in shared carrier 1dbe0a0e826f562eb2555d2fa419c572b4464dc0 after gate1792258974753-64575; individual review retained and stable metadata integration corrections are included in the carrier.)
 
 ## Outcome
 
