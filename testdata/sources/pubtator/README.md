@@ -1,5 +1,13 @@
 # PubTator fixtures
 
+## `autocomplete_abcc8_r1436q.json`
+
+Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=ABCC8%20R1436Q` on 2026-10-17 for ticket 2138. Provider-faithful capture of the one variant entity a gene-and-protein autocomplete returns: the `_id` carries the entity id `@VARIANT_p.R1436Q_ABCC8_human` while the display `name` holds only the protein-change label `p.R1436Q` (the gene sits in the entity id and the description). The variant-entity route tests depend on this provider shape.
+
+## `search_variant_abcc8_r1436q.json`
+
+Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40VARIANT_p.R1436Q_ABCC8_human&page=1&size=25` on 2026-10-17 for ticket 2138. Provider-faithful capture of the seven papers PubTator annotates with the ABCC8 p.R1436Q variant entity. The variant-entity route tests return these papers when the annotation strategy searches by the entity id.
+
 ## `autocomplete_rsid_rs113488022.json`
 
 Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=rs113488022` on 2026-10-16 for ticket 2130. Provider-faithful capture of the one variant entity an rsID autocomplete returns: the `db_id` carries the normalized dbSNP id before `##` (`rs113488022##`) while the display name holds the protein-change label `p.M600E`. The rsID entity-resolution tests depend on this provider shape.

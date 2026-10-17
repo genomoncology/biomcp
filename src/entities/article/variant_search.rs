@@ -5006,6 +5006,178 @@ mod tests {
 
     #[serial_test::serial(source_env)]
     #[tokio::test]
+    async fn gene_change_search_keeps_the_pubtator_entity_and_searches_by_its_id() {
+        // The recorded ABCC8 R1436Q autocomplete reply carries the gene only
+        // in the entity id (@VARIANT_p.R1436Q_ABCC8_human) — the display name
+        // holds just p.R1436Q — so a gene-and-protein request must keep that
+        // entity and search by its id, returning PubTator's seven annotated
+        // papers where the run used to report zero results as complete.
+        const AUTOCOMPLETE: &[u8] = include_bytes!(
+            "../../../testdata/sources/pubtator/autocomplete_abcc8_r1436q.json",
+        );
+        const SEARCH: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/search_variant_abcc8_r1436q.json");
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    AUTOCOMPLETE,
+                ));
+            }
+            if first_line.starts_with("GET /search/")
+                && first_line.contains("VARIANT_p.R1436Q_ABCC8_human")
+            {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    SEARCH,
+                ));
+            }
+            TestHttpReply::Bytes(test_http_response(
+                "404 Not Found",
+                "application/json",
+                b"{}",
+            ))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("abcc8-entity-search");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+
+        let requested = RequestedVariantIdentity::from_variant_input("ABCC8 R1436Q")
+            .expect("requested identity");
+        assert_eq!(requested.gene.as_deref(), Some("ABCC8"));
+        assert_eq!(requested.protein_change.as_deref(), Some("R1436Q"));
+        let mut context = resolved_context();
+        context.requested = requested;
+        context.source_id = None;
+        context.source_identity = None;
+        context.source_hit = None;
+        let execution = VariantArticleExecutionContext::single();
+        let (rows, incomplete, succeeded, _stopped) =
+            annotation_candidates("ABCC8 R1436Q", &context, &execution)
+                .await
+                .expect("annotation candidates");
+
+        assert!(succeeded, "the annotation route ran its kept entity");
+        assert!(!incomplete);
+        assert_eq!(
+            rows.len(),
+            7,
+            "the entity-id search returns the seven annotated papers"
+        );
+        assert_eq!(rows[0].row.pmid, "10615958");
+        assert_eq!(
+            rows[0].variant_provenance[0].query_aliases,
+            vec!["ABCC8 p.R1436Q".to_string()]
+        );
+        let logged = requests.lock().expect("request log").clone();
+        assert!(
+            logged
+                .iter()
+                .any(|line| line.starts_with("GET /entity/autocomplete/?query=ABCC8%20R1436Q")),
+            "autocomplete queried the gene-and-protein input: {logged:?}"
+        );
+        assert!(
+            logged.iter().any(|line| line.starts_with("GET /search/")
+                && line.contains("VARIANT_p.R1436Q_ABCC8_human")),
+            "the search ran by the entity id: {logged:?}"
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn no_entity_annotation_run_names_the_miss_instead_of_complete_empty() {
+        // A resolved variant whose PubTator autocomplete answer holds no
+        // variant entity must say so: the route degrades with a plain-words
+        // status, the page keeps complete false, and the run stays exit zero
+        // instead of reporting a silently complete empty result.
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            let body: &[u8] = if first_line.starts_with("GET /query") {
+                br#"{"total":1,"hits":[{"_id":"chr11:g.17417157C>T","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"],"hgvsc":["c.4309G>A"]}}]}"#
+            } else if first_line.starts_with("GET /entity/autocomplete/") {
+                b"[]"
+            } else if first_line.starts_with("GET /search/") {
+                br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
+            } else if first_line.starts_with("GET /search?") {
+                br#"{"version":"6.9","hitCount":0,"resultList":{"result":[]}}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                br#"{"esearchresult":{"count":"0","idlist":[]}}"#
+            } else if first_line.starts_with("GET /graph/v1/paper/search") {
+                br#"{"total":0,"data":[]}"#
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("no-entity-annotation-run");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "ABCC8 R1436Q",
+            VariantArticleStrategy::Annotation,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(30),
+        )
+        .await
+        .expect("no-entity annotation outcome");
+
+        assert!(!outcome.hard_error, "a no-entity miss is not an outage");
+        assert!(
+            outcome.response.error.is_none(),
+            "no false outage error: {:?}",
+            outcome.response.error
+        );
+        assert!(outcome.response.results.is_empty());
+        assert!(
+            !outcome.response.complete,
+            "a run with no entity is not a complete empty page"
+        );
+        let status = outcome
+            .response
+            .source_status
+            .iter()
+            .find(|status| status.route == "pubtator_variant" && status.source == "pubtator")
+            .expect("the annotation route reports its status");
+        assert_eq!(status.status, VariantArticleSourceStatusKind::Degraded);
+        assert!(status.reason_codes.contains(&"no_variant_entity"));
+        assert_eq!(
+            status.detail.as_deref(),
+            Some("PubTator autocomplete returned no variant entity for this request")
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
     async fn empty_search_where_every_source_answered_stays_an_ok_result() {
         // The rs372266620 report: MyVariant answers with an indeterminate hit,
         // every discovery route answers with zero rows, and the old terminal
@@ -5399,15 +5571,15 @@ mod tests {
             primary_exact_alias(&context).as_deref(),
             Some("ATM c.1066-6T>G")
         );
-        assert_eq!(
-            plan_queries(
-                "NC_000011.10:g.108248927T>G",
-                &context,
-                "pubtator_variant",
-                &[],
-            ),
-            vec!["NC_000011.10:g.108248927T>G"]
-        );
+        // The pubtator_variant route searches by entity id only; the plan
+        // carries no bare text query for it, RefSeq literal included.
+        assert!(plan_queries(
+            "NC_000011.10:g.108248927T>G",
+            &context,
+            "pubtator_variant",
+            &[],
+        )
+        .is_empty());
 
         context.resolution.status = VariantResolutionStatus::Unresolved;
         context.resolution.basis = None;

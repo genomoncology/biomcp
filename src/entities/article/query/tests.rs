@@ -362,6 +362,62 @@ fn gene_plus_change_matching_survives_a_db_id_rsid() {
 }
 
 #[test]
+fn gene_change_request_matches_the_pubtator_entity_from_its_id() {
+    // The ABCC8 R1436Q reply shape: the display name holds only the change,
+    // so the gene lives in the entity id and the match must rest on it.
+    let requested = crate::entities::variant::RequestedVariantIdentity {
+        gene: Some("ABCC8".into()),
+        protein_change: Some("R1436Q".into()),
+        ..Default::default()
+    };
+    let row = PubTatorAutocompleteResult {
+        id: Some("@VARIANT_p.R1436Q_ABCC8_human".into()),
+        biotype: Some("variant".into()),
+        db_id: Some("rs387906407##".into()),
+        db: Some("litvar".into()),
+        name: Some("p.R1436Q".into()),
+    };
+
+    assert_eq!(
+        autocomplete_row_matches(&row, &requested).as_deref(),
+        Some("p.R1436Q"),
+        "the entity id carries the requested gene and change"
+    );
+
+    let other_gene = crate::entities::variant::RequestedVariantIdentity {
+        gene: Some("KCNJ11".into()),
+        protein_change: Some("R1436Q".into()),
+        ..Default::default()
+    };
+    assert_eq!(
+        autocomplete_row_matches(&row, &other_gene),
+        None,
+        "an entity id naming another gene is not the request"
+    );
+
+    let other_change = crate::entities::variant::RequestedVariantIdentity {
+        gene: Some("ABCC8".into()),
+        protein_change: Some("R1436W".into()),
+        ..Default::default()
+    };
+    assert_eq!(
+        autocomplete_row_matches(&row, &other_change),
+        None,
+        "an entity id naming another change is not the request"
+    );
+
+    let gene_only = crate::entities::variant::RequestedVariantIdentity {
+        gene: Some("ABCC8".into()),
+        ..Default::default()
+    };
+    assert_eq!(
+        autocomplete_row_matches(&row, &gene_only),
+        None,
+        "a gene-only request does not keep a variant entity on the id alone"
+    );
+}
+
+#[test]
 fn build_pubmed_esearch_params_rejects_open_access() {
     let mut filters = empty_filters();
     filters.gene = Some("BRAF".into());

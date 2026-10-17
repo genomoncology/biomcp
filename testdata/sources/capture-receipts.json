@@ -3347,6 +3347,30 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "pubtator/autocomplete_abcc8_r1436q.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=ABCC8%20R1436Q",
+        "captured_at": "2026-10-17T02:48:00Z",
+        "sha256": "60355f412ad9718b83da14a399eeb397703e9dcc05c291cc05a84777bef6d1a1",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2138)."
+      }
+    },
+    {
+      "path": "pubtator/search_variant_abcc8_r1436q.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40VARIANT_p.R1436Q_ABCC8_human&page=1&size=25",
+        "captured_at": "2026-10-17T02:48:00Z",
+        "sha256": "ddb1428c2486c0704a489fc03872b1ef02265a1293cd58d577f6ad6ea3770613",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2138)."
+      }
+    },
+    {
       "path": "quickgo/annotations_braf_20260811.json",
       "classification": "real_and_receipted",
       "receipt": {
