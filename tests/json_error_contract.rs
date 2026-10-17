@@ -264,6 +264,11 @@ fn serve_credential_redaction_request(
             r#"{"error":"fixture outage"}"#,
             "503 Service Unavailable",
         ),
+        "/variant/autocomplete/" => (
+            "litvar",
+            r#"{"error":"fixture outage"}"#,
+            "503 Service Unavailable",
+        ),
         _ => {
             return Err(format!(
                 "credential fixture received unexpected path {path}"
@@ -688,6 +693,7 @@ fn swallowed_source_failures_do_not_log_credentials() {
         &[
             ("BIOMCP_MYVARIANT_BASE", &fixture.base_url),
             ("BIOMCP_PUBTATOR_BASE", &fixture.base_url),
+            ("BIOMCP_LITVAR_BASE", &fixture.base_url),
             ("NCBI_API_KEY", SECRET),
             ("HTTP_PROXY", &deny_proxy.url),
             ("HTTPS_PROXY", &deny_proxy.url),
@@ -731,6 +737,10 @@ fn swallowed_source_failures_do_not_log_credentials() {
             "myvariant" => assert!(
                 !request.credential_present && !request.credential_in_approved_position,
                 "MyVariant fixture record={request:?}"
+            ),
+            "litvar" => assert!(
+                !request.credential_present && !request.credential_in_approved_position,
+                "LitVar2 fixture record={request:?}"
             ),
             "pubtator" => assert!(
                 request.credential_present && request.credential_in_approved_position,
