@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 751d7ea, accept
+
 ## Outcome
 
 Every open 0.9.3 ticket has a current, observable contract, correct prerequisites and priority under the approved local qualification and untagged rehearsal process.
