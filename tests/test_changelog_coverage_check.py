@@ -58,6 +58,10 @@ def test_release_candidate_ignores_records_from_other_release_lines(
     records = tmp_path / "sdlc/records"
     tickets.mkdir(parents=True)
     records.mkdir()
+    (tickets / "2054-housekeeping.md").write_text("Status: COMPLETE.\nMilestone: 0.9.0\n")
+    (records / "2054-housekeeping.md").write_text("Close prior-release housekeeping.\n")
+    git("add", ".")
+    git("commit", "-qm", "Land 2054: close prior-release housekeeping")
     (tickets / "2041-sync.md").write_text("Status: OPEN.\nMilestone: 1.0\n")
     (records / "2041-sync.md").write_text("Record a synchronization on another line.\n")
     (tickets / "2096-stress.md").write_text("Status: COMPLETE.\nMilestone: 0.9.1\n")

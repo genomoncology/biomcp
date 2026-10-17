@@ -38,7 +38,7 @@
 
 ### Internal
 
-- Remove duplicate repository review-status tests after the shared landing tool enforced accepted reviews itself. (2054, 2063)
+- Remove duplicate repository review-status tests after the shared landing tool enforced accepted reviews itself. (2063)
 - Prepare the routine temporary directory before stress tests and contract checks, so their fixtures use the same prepared checkout paths as the routine suite. (2096, 2148)
 - Keep article-validation and disease-survival fixture tests reliable under concurrent load with bounded watchdogs and readiness checks. (2102, 2105)
 - Qualify release revisions directly and rehearse complete untagged candidates without publication credentials or external publication. (2161)

@@ -184,11 +184,24 @@ def merged_tickets(previous: str, tag: str, version: str | None = None) -> set[s
         ticket for ticket in record_tickets(previous, tag)
         if belongs_to_release_line(read_ticket(ticket), version or tag)
     }
-    return (
+    candidates = (
         landing_subject_tickets(previous, tag)
         | records
         | completed_status_tickets(previous, tag, version)
     )
+    release = version or tag
+    required: set[str] = set()
+    for ticket in candidates:
+        content = read_ticket(ticket)
+        milestone = re.search(r"^Milestone:\s*(\S+)", content or "", re.MULTILINE)
+        # Prior-release housekeeping can close after that release's tag.
+        # Missing or nonstandard records still demand a description.
+        if milestone is not None and STABLE_TAG.fullmatch("v" + milestone.group(1)):
+            if version_key("v" + milestone.group(1)) < version_key(release):
+                if not landed_in_milestone(ticket, release.removeprefix("v"), previous, tag):
+                    continue
+        required.add(ticket)
+    return required
 
 
 def section_text(path: Path, tag: str) -> tuple[str, str]:
@@ -433,15 +446,34 @@ def tag_ticket_reader(tag: str) -> Callable[[str], str | None]:
     return read
 
 
+def landed_in_milestone(
+    ticket: str, milestone: str, previous: str, head: str
+) -> bool:
+    """Keep a landed batch in its release when unfinished work moves later."""
+    log = run_git("log", "--format=%H%x09%s", f"{previous}..{head}")
+    for line in log.splitlines():
+        revision, _, subject = line.partition("\t")
+        if ticket not in subject_tickets(subject):
+            continue
+        content = tag_ticket_reader(revision)(ticket)
+        if content is not None and re.search(
+            rf"^Milestone:\s*{re.escape(milestone)}\s*$", content, re.MULTILINE
+        ):
+            return True
+    return False
+
+
 def milestone_problems(
-    section: str, milestone: str, read_ticket: Callable[[str], str | None]
+    section: str, milestone: str, read_ticket: Callable[[str], str | None],
+    *, previous: str | None = None, head: str = "HEAD",
 ) -> dict[str, str]:
     """Why each ticket a section cites is not a ticket of `milestone`.
 
     The value is NO_TICKET_FILE when no ticket file exists, NO_MILESTONE
     when the file carries no Milestone line, and the milestone the file
     carries otherwise. Only the last value proves the cited ticket
-    belongs to another release.
+    belongs to another release, unless a landing since `previous` records
+    its batch in this milestone. Missing records still fail closed.
     """
     problems: dict[str, str] = {}
     for ticket in sorted(cited_tickets(section), key=int):
@@ -453,7 +485,8 @@ def milestone_problems(
         if found is None:
             problems[ticket] = NO_MILESTONE
         elif found.group(1) != milestone:
-            problems[ticket] = found.group(1)
+            if previous is None or not landed_in_milestone(ticket, milestone, previous, head):
+                problems[ticket] = found.group(1)
     return problems
 
 
@@ -484,7 +517,8 @@ def main() -> int:
         label, section = section_text(args.changelog, args.tag)
         described = described_tickets(section)
         problems = milestone_problems(
-            section, args.tag.removeprefix("v"), tag_ticket_reader(revision)
+            section, args.tag.removeprefix("v"), tag_ticket_reader(revision),
+            previous=previous, head=revision,
         )
     except RuntimeError as error:
         print(f"changelog coverage check failed: {error}", file=sys.stderr)
