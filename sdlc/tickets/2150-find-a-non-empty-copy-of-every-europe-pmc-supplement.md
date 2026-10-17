@@ -6,7 +6,7 @@ deps: [2146]
 
 # 2150: Find a usable copy of every supplement
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
