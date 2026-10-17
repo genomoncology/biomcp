@@ -4,7 +4,7 @@ priority: 3
 
 # 2094 — Run the local test lanes in parallel
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 

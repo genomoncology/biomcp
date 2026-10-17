@@ -372,13 +372,14 @@ use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
 struct RequestCounterFixture {
     base: String,
     requests: Arc<AtomicUsize>,
+    trace: Arc<Mutex<Vec<String>>>,
     stop: Arc<AtomicBool>,
     thread: Option<thread::JoinHandle<()>>,
 }
@@ -389,6 +390,8 @@ impl RequestCounterFixture {
         listener.set_nonblocking(true)?;
         let base = format!("http://{}", listener.local_addr()?);
         let requests = Arc::new(AtomicUsize::new(0));
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let thread_trace = Arc::clone(&trace);
         let stop = Arc::new(AtomicBool::new(false));
         let thread_requests = Arc::clone(&requests);
         let thread_stop = Arc::clone(&stop);
@@ -396,15 +399,32 @@ impl RequestCounterFixture {
             while !thread_stop.load(Ordering::SeqCst) {
                 match listener.accept() {
                     Ok((mut stream, _)) => {
-                        thread_requests.fetch_add(1, Ordering::SeqCst);
+                        let count = thread_requests.fetch_add(1, Ordering::SeqCst) + 1;
+                        let started = std::time::Instant::now();
                         let mut request = [0_u8; 2048];
-                        let _ = stream.read(&mut request);
+                        let read = stream.read(&mut request);
+                        let read_elapsed = started.elapsed();
+                        let request_line = match &read {
+                            Ok(bytes) => safe_counter_request_line(&request[..*bytes]),
+                            Err(error) => format!("read_error={:?}", error.kind()),
+                        };
+                        let headers_complete = read.as_ref().is_ok_and(|bytes| {
+                            request[..*bytes].windows(4).any(|part| part == b"\r\n\r\n")
+                        });
                         let body = r#"{"total":0,"data":[]}"#;
                         let response = format!(
                             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                             body.len()
                         );
-                        let _ = stream.write_all(response.as_bytes());
+                        let write = stream.write_all(response.as_bytes());
+                        let write_outcome = write.map_err(|error| error.kind());
+                        let mut trace = thread_trace.lock().expect("request trace");
+                        if trace.len() < 32 {
+                            trace.push(format!(
+                            "connection={count} {request_line} read={:?} headers_complete={headers_complete} read_elapsed={read_elapsed:?} write={write_outcome:?} elapsed={:?}",
+                            read.map_err(|error| error.kind()), started.elapsed()
+                            ));
+                        }
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(5))
@@ -416,10 +436,42 @@ impl RequestCounterFixture {
         Ok(Self {
             base,
             requests,
+            trace,
             stop,
             thread: Some(thread),
         })
     }
+}
+
+// This listener also serves health probes. Log only known fixed request-line
+// tokens: never print arbitrary paths, query values, headers or read buffers.
+fn safe_counter_request_line(request: &[u8]) -> String {
+    let text = String::from_utf8_lossy(request);
+    let mut parts = text.lines().next().unwrap_or_default().split_whitespace();
+    let method = match parts.next() {
+        Some("GET") => "GET",
+        Some("POST") => "POST",
+        _ => "<other-method>",
+    };
+    let target = parts.next().unwrap_or_default();
+    let (path, query) = target.split_once('?').unwrap_or((target, ""));
+    let path = match path {
+        "/graph/v1/paper/search" => "/graph/v1/paper/search",
+        "/health" => "/health",
+        "/" => "/",
+        _ => "<other-path>",
+    };
+    let expected_query = reqwest::Url::parse(&format!("http://fixture.invalid/?{query}"))
+        .is_ok_and(|url| {
+            url.query_pairs()
+                .any(|(key, value)| key == "query" && value == r#"review of "drug: safety""#)
+        });
+    let version = match parts.next() {
+        Some("HTTP/1.1") => "HTTP/1.1",
+        Some("HTTP/1.0") => "HTTP/1.0",
+        _ => "<other-version>",
+    };
+    format!("{method} {path}?<redacted> {version} expected_prose_query={expected_query}")
 }
 
 impl Drop for RequestCounterFixture {
@@ -1305,12 +1357,22 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
         );
     }
     thread::sleep(Duration::from_millis(20));
-    assert_eq!(fixture.requests.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        fixture.requests.load(Ordering::SeqCst),
+        0,
+        "request trace: {:?}",
+        fixture.trace.lock().expect("request trace")
+    );
 
     let harmless = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
     assert_eq!(harmless.is_error, Some(false));
     thread::sleep(Duration::from_millis(20));
-    assert_eq!(fixture.requests.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        fixture.requests.load(Ordering::SeqCst),
+        0,
+        "request trace: {:?}",
+        fixture.trace.lock().expect("request trace")
+    );
 
     let raw_prose = biomcp_mcp_contract_client::call_biomcp(
         &client,
@@ -1341,7 +1403,12 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
     assert!(!raw_text.contains("does not accept"), "{raw_text}");
     assert_eq!(typed_text, raw_text);
     thread::sleep(Duration::from_millis(20));
-    assert_eq!(fixture.requests.load(Ordering::SeqCst), 2);
+    assert_eq!(
+        fixture.requests.load(Ordering::SeqCst),
+        2,
+        "request trace: {:?}",
+        fixture.trace.lock().expect("request trace")
+    );
 
     let raw_json = biomcp_mcp_contract_client::call_biomcp_json(
         &client,
@@ -1379,7 +1446,12 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
         biomcp_mcp_contract_client::first_text(&typed_json.content)
     );
     thread::sleep(Duration::from_millis(20));
-    assert_eq!(fixture.requests.load(Ordering::SeqCst), 4);
+    assert_eq!(
+        fixture.requests.load(Ordering::SeqCst),
+        4,
+        "request trace: {:?}",
+        fixture.trace.lock().expect("request trace")
+    );
     client.cancel().await?;
     Ok(())
 }
@@ -1490,7 +1562,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
         "biomcp get adverse-event 1001 reactions reactions guidance guidance",
     )
     .await?;
-    assert_eq!(raw_subset.is_error, Some(false));
+    assert_eq!(
+        raw_subset.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&raw_subset.content)
+    );
     let raw_subset: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&raw_subset.content))?;
 
@@ -1512,7 +1589,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
             ),
         )
         .await?;
-    assert_eq!(typed_subset.is_error, Some(false));
+    assert_eq!(
+        typed_subset.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&typed_subset.content)
+    );
     let typed_subset: serde_json::Value = serde_json::from_str(
         biomcp_mcp_contract_client::first_text(&typed_subset.content),
     )?;
@@ -1531,7 +1613,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     let raw_full =
         biomcp_mcp_contract_client::call_biomcp_json(&client, "biomcp get adverse-event 1003")
             .await?;
-    assert_eq!(raw_full.is_error, Some(false));
+    assert_eq!(
+        raw_full.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&raw_full.content)
+    );
     let raw_full: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&raw_full.content))?;
 
@@ -1550,7 +1637,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
             ),
         )
         .await?;
-    assert_eq!(typed_all.is_error, Some(false));
+    assert_eq!(
+        typed_all.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&typed_all.content)
+    );
     let typed_all: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&typed_all.content))?;
     assert_eq!(typed_all, raw_full);

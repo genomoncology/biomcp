@@ -4,7 +4,7 @@ priority: 3
 
 # 2095 — Warn when routine tests exceed the slow-test threshold
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 Depends on: 2094
@@ -15,6 +15,10 @@ Depends on: 2156
 Reviews: revision 5b7f6dd, accept
 
 Reviews: revision 3c79683, accept
+
+Reviews: revision 6fc832b, accept
+
+Landed: 6fc832b (fast-forward: Accepted source landed inside carrier 61a8b075ef075e5650dbb85f8572ee8a341803ad with shared gate1792256340018-55751; individual review retained and actual-main full check follows the batch.)
 
 ## Outcome
 

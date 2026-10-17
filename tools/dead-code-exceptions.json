@@ -23,15 +23,6 @@
       "removal_condition": "Remove when `pub(in crate::cli::health) fn affects_for_api(api: &str) -> Option<&'static str> {` is used by every compiled target or deleted."
     },
     {
-      "path": "src/cli/mod.rs",
-      "scope": "module",
-      "item": "mod benchmark;",
-      "occurrence": 1,
-      "owner": "cli-contracts",
-      "reason": "benchmark is an internal regression harness compiled only for native tests",
-      "removal_condition": "Remove when `mod benchmark;` is used by every compiled target or deleted."
-    },
-    {
       "path": "src/cli/shared/search_payloads.rs",
       "scope": "item",
       "item": "struct SearchJsonResponse<T: serde::Serialize> {",

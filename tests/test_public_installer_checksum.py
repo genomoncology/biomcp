@@ -435,3 +435,30 @@ def test_pinned_install_still_refuses_a_version_mismatch(tmp_path: Path) -> None
     assert result.returncode != 0
     assert "requested 0.9.1" in result.stderr
     assert not (install_dir / "biomcp").exists()
+
+
+def test_installer_reads_existing_version_when_install_path_contains_spaces(tmp_path: Path) -> None:
+    fixture, digest = _fixture(tmp_path, None)
+    (fixture / "sidecar").write_text(f"{digest}\n")
+    binary = fixture / "biomcp"
+    _write_executable(binary, "#!/bin/sh\nprintf '%s\\n' \"$0\" >> \"$SMOKE_LOG\"\necho 'biomcp 0.0.0'\n")
+    archive = fixture / ASSET
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(binary, arcname="biomcp")
+    (fixture / "sidecar").write_text(f"{hashlib.sha256(archive.read_bytes()).hexdigest()}\n")
+    tools = _tools(tmp_path, "curl", "system")
+    install_dir = tmp_path / "install with spaces"
+    install_dir.mkdir()
+    old = install_dir / "biomcp"
+    _write_executable(old, "#!/bin/sh\nprintf 'existing binary called\\n' >> \"$SMOKE_LOG\"\necho 'biomcp old'\n")
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    smoke_log = tmp_path / "smoke.log"
+    result = subprocess.run(
+        ["bash", str(INSTALLER)], text=True, capture_output=True,
+        env=os.environ | {"BIOMCP_INSTALL_DIR": str(install_dir), "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture), "TMPDIR": str(scratch), "PATH": str(tools), "SMOKE_LOG": str(smoke_log)},
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "/.biomcp-stage." in smoke_log.read_text()
+    assert "existing binary called" in smoke_log.read_text()

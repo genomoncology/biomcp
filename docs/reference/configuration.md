@@ -22,7 +22,7 @@ internal fixture overrides and release/install variables.
 | Variable or file | Purpose |
 |---|---|
 | `BIOMCP_CACHE_DIR` | Overrides the BioMCP cache root |
-| `BIOMCP_CACHE_MODE` | Cache behavior; `infinite` is used for local replay/spec cache hits |
+| `BIOMCP_CACHE_MODE` | Cache behavior; `infinite` serves cached replies without expiration or revalidation, including GWAS and openFDA day-cache entries |
 | `BIOMCP_CACHE_MAX_AGE` | Optional cache age limit, as a positive integer number of seconds |
 | `BIOMCP_CACHE_MAX_SIZE` | Optional cache size limit |
 | `BIOMCP_CACHE_MIN_DISK_FREE` | Minimum free disk budget before cache eviction |

@@ -5,11 +5,17 @@ priority: 2
 
 # 2149: Keep PubTator at three requests a second
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 238ed5f, accept
+
+Reviews: revision 0d18634, accept
+
+Reviews: revision 6afc858, accept
+
+Landed: 6afc858 (fast-forward: Accepted source landed inside carrier 27e59b197 with its passing shared gate; record this carried ticket separately without rerunning unchanged code.)
 
 ## Outcome
 
@@ -72,3 +78,9 @@ cargo nextest run --no-default-features -E 'test(sources::rate_limit::tests::pub
 Start from pushed `7f701bfac`. Keep its implementation and existing evidence. The outcome means the PubTator policy never receives the keyed E-utilities uplift. The eight files named in Changes are the implementation claim; this record only reconciles the approved contract. Existing interval tests are retained as a numeric boundary regression instead of adding duplicate network timing tests. Before further implementation, rerun the corrected PubTator expectation against main `078ce756d` through a build job; it must fail with 100 ms versus 334 ms, while the keyed E-utilities expectation remains green. Then run those same interval tests against this branch.
 
 Primary source rechecked 2026-10-17: <https://www.ncbi.nlm.nih.gov/research/pubtator3/> embeds its API Documentation in <https://www.ncbi.nlm.nih.gov/research/pubtator3/main.b1489e87146c1c50.js>. It says users should post no more than three requests per second and grants no keyed rate. E-utilities separately documents its keyed uplift at <https://www.ncbi.nlm.nih.gov/books/NBK25497/>.
+
+## Progress
+
+- 2026-10-17 started
+- 2026-10-17 next: Batch members: 2159, 2149, 2168, 2128, 2122 and 2171. Shared landing gate: job 1792250897357-93113, candidate ea4161cc814ad034634ffd249e67b475e77e38dc. Required preceding main check 1792249698624-96397 passed. Gate is running; each ticket keeps its individual review and landing commit.
+- 2026-10-17 next: Batch members: 2159, 2149, 2168, 2128, 2122 and 2171. Shared configured landing gate PASSED: job 1792251400030-83132, candidate c264da2a525c2c6e5a424693d55dfab0f59fadf4, 240.3 seconds. This replaces the earlier failed batch attempts. Preceding full main check 1792249698624-96397 passed. Land each reviewed member through pm, then run one full check on final batch main.

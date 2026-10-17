@@ -780,9 +780,10 @@ fn holder_display_label(hit: &MyDiseaseHit) -> Option<String> {
     hit_label(hit)
 }
 
-fn abbreviation_candidate_lines(holders: &[MyDiseaseHit]) -> String {
+fn abbreviation_candidate_lines(holders: &[MyDiseaseHit], leading_id: Option<&str>) -> String {
     holders
         .iter()
+        .filter(|hit| Some(hit.id.as_str()) != leading_id)
         .map(|hit| format!("- {}\n", ambiguity::holder_display_line(hit)))
         .collect()
 }
@@ -803,11 +804,14 @@ fn ambiguous_abbreviation_error(
     // test found a pointer line alone buries the disease oncology
     // means under the source's rare holder.
     let leading_reading = ambiguity::default_reading_candidate_line(requested).unwrap_or_default();
+    let leading_id = ambiguity::clinical_reading(requested)
+        .filter(|reading| reading.relation == ambiguity::ReadingRelation::Default)
+        .map(|reading| reading.ontology_id);
     BioMcpError::InvalidArgument(format!(
         "Ambiguous disease {subject} '{requested}': {reason}; \
 BioMCP refuses rather than return one disease's definition with another's genes.\n\
 Candidates:\n{leading_reading}{}{reading}{retry}",
-        abbreviation_candidate_lines(holders),
+        abbreviation_candidate_lines(holders, leading_id),
     ))
 }
 
