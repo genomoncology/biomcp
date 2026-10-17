@@ -219,7 +219,12 @@ def test_the_routine_lanes_share_one_build_job_and_run_in_parallel() -> None:
 
 def test_ci_runs_only_when_dispatched_manually() -> None:
     triggers = DOC.get("on", DOC.get(True))
-    assert triggers == {"workflow_dispatch": None}
+    assert set(triggers) == {"workflow_dispatch"}
+    assert triggers["workflow_dispatch"]["inputs"]["windows_only"] == {
+        "description": "Run only the Windows cache-lock regression checks",
+        "type": "boolean",
+        "default": False,
+    }
 
 
 def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
@@ -235,10 +240,18 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert output.read_text(encoding="utf-8") == "docs_only=false\n"
     for jid in RUST_JOBS:
+        narrow_skip = "" if jid == "windows-contracts" else "!inputs.windows_only && "
         assert _job(jid)["if"].strip() == (
             "github.event_name == 'workflow_dispatch' && "
-            "needs.changes.outputs.docs_only != 'true'"
-        ), f"{jid} must run for a manual dispatch on the selected revision"
+            f"{narrow_skip}needs.changes.outputs.docs_only != 'true'"
+        ), f"{jid} must run for a full manual dispatch on the selected revision"
+    windows_runs = "\n".join(s.get("run", "") for s in _job("windows-contracts")["steps"])
+    for test in (
+        "windows_lock_contract",
+        "body_limit_epoch_lock_contention_obeys_variant_article_deadline",
+        "construction_under_a_held_epoch_lock_honors_the_deadline",
+    ):
+        assert test in windows_runs, f"Windows must run the {test} regression"
 
 
 def test_the_changes_job_covers_the_whole_push() -> None:
@@ -363,7 +376,9 @@ def test_the_lane_setup_action_pins_match_the_workflow_environment() -> None:
 
 def test_repository_contracts_always_runs_and_tests_the_docs() -> None:
     job = _job("repository-contracts")
-    assert "if" not in job, "repository-contracts must never be skipped"
+    assert job["if"] == "${{ !inputs.windows_only }}", (
+        "repository-contracts may skip only the explicit Windows proof"
+    )
     assert "needs" not in job
     steps = job.get("steps", [])
     runs = [str(s.get("run", "")) for s in steps]
@@ -379,10 +394,12 @@ def test_the_release_checks_lane_runs_on_every_push() -> None:
     """The cheap release checks run on branches (2026-10-14
     direction): the changelog coverage branch form and the release's
     green-CI query are git, python3, gh and jq only, so the lane
-    never skips and never waits on the Rust build — docs-only pushes
-    included. The heavy release-shaped jobs stay main-only."""
+    runs for every full manual dispatch and never waits on the Rust build.
+    Only the explicit Windows proof skips it."""
     job = _job("release-checks")
-    assert "if" not in job, "release-checks must never be skipped"
+    assert job["if"] == "${{ !inputs.windows_only }}", (
+        "release-checks may skip only the explicit Windows proof"
+    )
     assert "needs" not in job, (
         "release-checks must not wait on the build job; it builds nothing"
     )
