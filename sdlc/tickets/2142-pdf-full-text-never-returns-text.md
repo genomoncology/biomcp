@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 2925ba0, accept
+
 ## Outcome
 
 `get article ... fulltext --pdf` returns the PDF's text when Semantic Scholar lists an open PDF, and names the failure when it cannot.
