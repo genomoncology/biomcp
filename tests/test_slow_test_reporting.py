@@ -1,4 +1,5 @@
 """Runner regressions: timing warns without replacing the assertion result."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -22,13 +23,11 @@ def test_python_slow_warning_preserves_test_result(
         conftest += (
             "\ndef pytest_sessionstart(session):\n"
             "    def unavailable():\n"
-            "        raise OSError(\"load unavailable\")\n"
+            '        raise OSError("load unavailable")\n'
             "    os.getloadavg = unavailable\n"
         )
     (tmp_path / "conftest.py").write_text(conftest)
-    (tmp_path / "pytest.ini").write_text(
-        "[pytest]\nslow_test_warning_seconds = 0.01\n"
-    )
+    (tmp_path / "pytest.ini").write_text("[pytest]\nslow_test_warning_seconds = 0.01\n")
     (tmp_path / "test_case.py").write_text(
         "import threading\n"
         "def test_slow_case():\n"
@@ -72,9 +71,16 @@ def test_nextest_load_reporting_preserves_runner_exit(exit_code: int) -> None:
 
 def test_nextest_reporter_preserves_child_signal() -> None:
     result = subprocess.run(
-        [sys.executable, str(ROOT / "tools/report-slow-tests.py"),
-         sys.executable, "-c", "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"],
-        capture_output=True, text=True, timeout=10,
+        [
+            sys.executable,
+            str(ROOT / "tools/report-slow-tests.py"),
+            sys.executable,
+            "-c",
+            "import os, signal; os.kill(os.getpid(), signal.SIGTERM)",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
     )
     assert result.returncode == 143, result.stdout + result.stderr
 
@@ -84,10 +90,16 @@ def test_nextest_reporter_forwards_termination_and_reaps_runner() -> None:
 
     child_pid = None
     with subprocess.Popen(
-        [sys.executable, str(ROOT / "tools/report-slow-tests.py"),
-         sys.executable, "-c",
-         "import os, time; print(os.getpid(), flush=True); time.sleep(20)"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        [
+            sys.executable,
+            str(ROOT / "tools/report-slow-tests.py"),
+            sys.executable,
+            "-c",
+            "import os, time; print(os.getpid(), flush=True); time.sleep(20)",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     ) as process:
         try:
             assert process.stdout is not None

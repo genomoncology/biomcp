@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Add host load to nextest's nonterminating slow-test reports."""
+
 from __future__ import annotations
 
 import os
@@ -13,6 +14,7 @@ def main() -> int:
     with subprocess.Popen(
         sys.argv[1:], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     ) as process:
+
         def forward_signal(signum: int, _frame: object) -> None:
             if process.poll() is None:
                 process.send_signal(signum)
