@@ -423,6 +423,28 @@ See also: biomcp list article")]
         #[arg(long)]
         fulltext: bool,
     },
+    /// Search the text of an article's supplements for an exact string
+    #[command(after_help = "\\
+EXAMPLES:
+  biomcp --json article supplement-search 30209399 F1761I
+  biomcp --json article supplement-search 28944238 P245S
+  biomcp --json article supplement-search 30209399 F1761I --asset <asset-key>
+
+Extracts the text of the article's xlsx, xls, csv, docx, pdf and zip
+supplements and reports each hit with an exact locator: worksheet and row for
+spreadsheets, page for PDFs, paragraph for documents, member path inside
+archives, plus the source file's checksum. Files that cannot be extracted are
+reported with format and reason. Text match only; BioMCP interprets nothing.
+See also: biomcp list article")]
+    SupplementSearch {
+        /// PMID (e.g., 30209399), PMCID, or DOI
+        id: String,
+        /// Exact text to find (case-sensitive substring)
+        needle: String,
+        /// Restrict the search to one asset by asset key or file name
+        #[arg(long)]
+        asset: Option<String>,
+    },
     /// Find related papers from one or more positive seeds
     #[command(after_help = "\
 EXAMPLES:

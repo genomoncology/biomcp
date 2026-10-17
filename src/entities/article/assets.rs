@@ -93,9 +93,9 @@ const LINKED_FETCH_CONCURRENCY: usize = 8;
 const LINKED_AGGREGATE_LIMIT: usize = 64 * 1024 * 1024;
 
 #[derive(Clone)]
-struct ResolvedArticleAssets {
-    manifest: ArticleAssetsManifest,
-    bytes: BTreeMap<String, Vec<u8>>,
+pub(super) struct ResolvedArticleAssets {
+    pub(super) manifest: ArticleAssetsManifest,
+    pub(super) bytes: BTreeMap<String, Vec<u8>>,
 }
 
 #[derive(Clone)]
@@ -294,20 +294,14 @@ pub async fn article_asset_bytes(
     article_asset_bytes_from_resolution(requested_id, asset_key.trim(), resolved)
 }
 
-fn article_asset_bytes_from_resolution(
+pub(super) fn article_asset_bytes_from_resolution(
     requested_id: &str,
     wanted: &str,
     mut resolved: ResolvedArticleAssets,
 ) -> Result<(Vec<u8>, Option<String>, String), BioMcpError> {
     let assets = &resolved.manifest.assets;
     // Asset keys take precedence over unambiguous filename matches.
-    let asset = assets
-        .iter()
-        .find(|asset| asset.asset_key == wanted)
-        .or_else(|| {
-            let mut matches = assets.iter().filter(|asset| asset.filename == wanted);
-            matches.next().filter(|_| matches.next().is_none())
-        })
+    let asset = select_manifest_asset(assets, wanted)
         .map(|asset| (&asset.asset_key, &asset.media_type, &asset.filename));
     if let Some((asset_key, media_type, filename)) = asset
         && let Some(bytes) = resolved.bytes.remove(asset_key)
@@ -373,7 +367,7 @@ pub(super) async fn attach_not_included(article: &mut Article, requested_id: &st
     article.not_included = manifest.not_included;
 }
 
-async fn resolve_article_assets(
+pub(super) async fn resolve_article_assets(
     requested_id: &str,
     mut article: Article,
 ) -> Result<ResolvedArticleAssets, BioMcpError> {
@@ -1865,6 +1859,20 @@ async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePack
             SourceAttempt::Failed
         }
     }
+}
+
+/// Asset keys take precedence over unambiguous filename matches.
+pub(super) fn select_manifest_asset<'a>(
+    assets: &'a [super::ArticleAssetEntry],
+    wanted: &str,
+) -> Option<&'a super::ArticleAssetEntry> {
+    assets
+        .iter()
+        .find(|asset| asset.asset_key == wanted)
+        .or_else(|| {
+            let mut matches = assets.iter().filter(|asset| asset.filename == wanted);
+            matches.next().filter(|_| matches.next().is_none())
+        })
 }
 
 fn article_asset_not_found(requested_id: &str, wanted: &str) -> BioMcpError {

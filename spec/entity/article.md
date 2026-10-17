@@ -1398,6 +1398,33 @@ mustmatch like "article_asset_not_retrievable
 (unusable_asset)" <<<"$refusal"
 ```
 
+## Supplement Text Search Returns Exact Locators
+
+The manifest's bytes can be searched in place. `article supplement-search
+<id> <needle>` extracts the text of the article's xlsx, xls, csv, docx, pdf
+and zip supplements and reports each place the exact string appears with an
+exact locator and the source file's checksum. The match is text only;
+BioMCP interprets nothing. The fixture articles 30209399 and 28944238
+reproduce the research team's two acceptance examples on recorded xlsx
+fixtures: BRCA1 F1761I on Sheet1 row 2780, and AXIN2 P245S on ST2 row 85.
+
+```bash run id=supplement-search-acceptance-locators
+../../tools/biomcp-ci --json article supplement-search 30209399 F1761I | jq '(.hits | length == 1) and (.hits[0].worksheet == "Sheet1") and (.hits[0].row == 2780) and (.hits[0].locator == "Sheet1 row 2780") and (.hits[0].sha256 | test("^[0-9a-f]{64}$")) and (.hits[0].context | contains("BRCA1")) and (.files | length == 1 and .[0].outcome == "searched")' | mustmatch 'true'
+../../tools/biomcp-ci --json article supplement-search 28944238 P245S | jq '(.hits | length == 1) and (.hits[0].worksheet == "ST2") and (.hits[0].row == 85) and (.hits[0].locator == "ST2 row 85") and (.hits[0].context | contains("AXIN2"))' | mustmatch 'true'
+```
+
+## An Unreadable Supplement Is Reported, Not Hidden
+
+A file that cannot be extracted says so with its format and reason, so an
+empty search can be told from an unread file. The two-route fixture
+article 22663024 ships a `.xlsx` name over scrubbed bytes that are not a
+workbook: the search reports the file as `unextractable` with the reason,
+and the hits list stays empty.
+
+```bash run id=supplement-search-unreadable-file
+../../tools/biomcp-ci --json article supplement-search 22663024 F1761I | jq '(.hits | length == 0) and (.files | length == 1 and .[0].outcome == "unextractable" and .[0].format == "xlsx" and ((.[0].reason // "") | contains("workbook could not be opened")))' | mustmatch 'true'
+```
+
 ## Non-PMC Figshare Assets Manifest
 
 When an article has no PMC OA package but Semantic Scholar points at a supported

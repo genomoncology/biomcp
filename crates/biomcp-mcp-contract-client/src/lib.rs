@@ -928,9 +928,11 @@ pub fn provision_article_fulltext_fixture(
     repo_root: impl AsRef<Path>,
 ) -> anyhow::Result<ArticleFulltextFixture> {
     let repo_root = repo_root.as_ref().to_path_buf();
+    let fixture_output = repo_root.join(".cache/routine-test-tmp");
+    std::fs::create_dir_all(&fixture_output)?;
     let workspace = tempfile::Builder::new()
         .prefix("biomcp-rmcp-fulltext-")
-        .tempdir_in(&repo_root)?;
+        .tempdir_in(&fixture_output)?;
     let output = std::process::Command::new("bash")
         .arg(repo_root.join("spec/fixtures/setup-article-fulltext-source-fixture.sh"))
         .arg(workspace.path())

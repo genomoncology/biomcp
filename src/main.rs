@@ -97,6 +97,9 @@ fn init_tracing() {
 }
 
 fn main() -> std::process::ExitCode {
+    if let Some(status) = biomcp_cli::supplement_text_worker() {
+        return status;
+    }
     // An explicit multi-thread runtime: blocking threads
     // carry 4 MiB stacks as headroom above the XML depth cap, which is
     // the control for the recursive JATS and ClinVar walkers. The 8 MiB
