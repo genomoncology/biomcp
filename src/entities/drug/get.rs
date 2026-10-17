@@ -345,7 +345,7 @@ async fn openfda_label_identity_candidate(name: &str) -> LabelIdentityAnswer {
 /// A secondary identity resolution through openFDA's field-scoped label
 /// search: the label records the page
 /// holds vote on the drug they name. A record whose own brand equals the
-/// query owns it — only owner rows vote when any exist — and
+/// query owns it — only owner rows vote — and
 /// a vote reads as the plain ingredient the record's own ingredient list
 /// supports, so an under-the-skin pairing still resolves to the plain
 /// ingredient it names (Darzalex to daratumumab, Qlex to pembrolizumab)
@@ -360,11 +360,12 @@ async fn openfda_label_identity_candidate(name: &str) -> LabelIdentityAnswer {
 /// vote among combination votes is the brand whose labels mostly name one
 /// ingredient — Motrin's labels name ibuprofen. Anything
 /// else — several plain ingredients ("Sleep Aid"), several combinations
-/// ("Cold and Flu"), unrelated singles ("Pain Relief") — names no one
+/// ("Cold and Flu") — names no one
 /// drug: the name-miss caller refuses it as an ambiguous drug name whose
 /// candidates are the ingredients the counted records carry, while the
 /// card-keeping callers keep the card they already hold. Some label
-/// records carry no openFDA identity block at all, so this path can miss
+/// pages contain no exact brand owner, so the refusal names a search without
+/// listing unrelated ingredients. Records with no openFDA identity block can miss
 /// (a brand MyChem itself carries resolves through the MyChem record
 /// instead).
 fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIdentityAnswer {
