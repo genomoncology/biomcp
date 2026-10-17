@@ -3938,6 +3938,11 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful to the provider reply for BioMCP's production gene+protein query shape.",
         "provider_origin_statement": "Bytes were recorded from the public provider response (HTTP 200) with no minimization (ticket 2114)."
       }
+    },
+    {
+      "path": "pmc_article/pmc-bot-challenge.html",
+      "classification": "authored",
+      "authored_reason": "Repository-authored provider-shaped bot-challenge page based on the recorded 0.9.2 probe evidence (page title 'Checking your browser - reCAPTCHA' served in place of the article); no live recording was made because the gate is intermittent."
     }
   ],
   "fixture_key_contract": {
