@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 6b818bb, accept
+
 ## Outcome
 
 The changelog contract proves ticket ownership across development-cycle sections using locally available controlled history, including when the source checkout is partial and tests run offline. Preserve the real changelog behavior assertions.
