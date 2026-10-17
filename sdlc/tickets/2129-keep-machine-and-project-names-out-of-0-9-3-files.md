@@ -12,6 +12,8 @@ Depends on: 2120
 Depends on: 2095
 Depends on: 2152
 
+Reviews: revision 448fe07, accept
+
 ## Outcome
 
 A human review of additions since v0.9.2 removes private build-machine and other-project names while preserving meaningful provider identifiers and historical technical evidence.
