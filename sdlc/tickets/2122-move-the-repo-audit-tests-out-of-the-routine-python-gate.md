@@ -16,6 +16,7 @@ Depends on: 2094
 Depends on: 2156
 
 - Starts from: whole-tree checks in `tests/test_quality_ratchet_contract.py`, `tests/test_capture_receipts.py`, `tests/test_zero_coupling_ratchet.py`, `tests/test_cli_surface_contract_ratchet.py`, shared pytest setup and Makefile selections.
+- Additional reviewed runner-contract claim: `tests/test_routine_cargo_feature_contract.py`.
 - Keeps: meaningful audits and their failing exit codes; focused malformed-input and wrapper-behavior tests stay routine using small fixtures.
 - Changes: claims `tests/test_quality_ratchet_contract.py` `tests/test_capture_receipts.py` `tests/test_zero_coupling_ratchet.py` `tests/test_cli_surface_contract_ratchet.py` `tests/conftest.py` `Makefile` `AGENTS.md` `CHANGELOG.md`. Mark actual whole-tree checks rather than moving the old six-test list wholesale. Connect their explicit command to required postmerge qualification. Name runner-contract files before editing them. Keep release-only long audits in candidate qualification and run them when covered behavior changes.
 - Proof: through the build job, display routine and audit selections, show each retained audit runs in its declared required stage, and plant an audit violation that makes that stage fail. Compare routine timing on matching host settings.
