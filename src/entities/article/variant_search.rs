@@ -1730,6 +1730,19 @@ pub(crate) async fn resolve_canonical_equivalence(
     canonical_equivalence(observations, aliases)
 }
 
+/// The gene symbol every gene-tied alias spelling shares: the requested
+/// symbol when the caller named one, else the resolved source identity's
+/// first gene. The strict query builder strips exactly this spelling before
+/// rebuilding `"<gene> <alias>"`, so keep the two in one place.
+fn variant_source_gene(context: &VariantArticleResolutionContext) -> Option<&str> {
+    context.requested.gene.as_deref().or_else(|| {
+        context
+            .source_identity
+            .as_ref()
+            .and_then(|source| source.genes.first().map(String::as_str))
+    })
+}
+
 fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
     if context.requested.is_authoritative_refseq() {
         let mut aliases = BTreeSet::new();
@@ -1762,11 +1775,7 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
         return (aliases.into_iter().take(MAX_EXACT_ALIASES).collect(), false);
     }
     let mut aliases = BTreeSet::new();
-    let gene = context
-        .source_identity
-        .as_ref()
-        .and_then(|source| source.genes.first())
-        .or(context.requested.gene.as_ref());
+    let gene = variant_source_gene(context);
     let mut insert_change = |change: &str| {
         let change = change.trim();
         if change.is_empty() {
@@ -1792,7 +1801,12 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
             insert_change(change);
         }
         if !source.genomic_id.trim().is_empty() {
-            aliases.insert(source.genomic_id.trim().to_string());
+            // A genomic coordinate alias travels with the gene symbol
+            // (2140): PubMed tokenizes a bare "chr20:g.35533834A>G" to
+            // "chr20" AND "G", which matches any paper naming the
+            // chromosome — cotton and citrus included. Tied to the gene, the
+            // same alias keeps only papers about the requested gene.
+            insert_change(source.genomic_id.trim());
         }
         aliases.extend(source.rsids.iter().map(|value| value.trim().to_string()));
     }
@@ -1824,15 +1838,27 @@ fn exact_aliases_with_equivalence(
     {
         return (aliases, truncated);
     }
+    // Confirmed ClinGen equivalence contributes its own genomic coordinate
+    // aliases; they travel with the gene symbol for the same reason as the
+    // source identity's genomic id above (2140). Transcript, protein and
+    // external-identifier aliases name the variant uniquely and stay bare.
+    let gene = variant_source_gene(context);
+    let tie = |alias: &str| -> String {
+        match gene.filter(|_| alias.contains(":g.")) {
+            Some(gene) => format!("{gene} {alias}"),
+            None => alias.to_string(),
+        }
+    };
     for alias in &equivalence.aliases {
-        if !aliases.contains(alias) && aliases.len() < MAX_EXACT_ALIASES {
-            aliases.push(alias.clone());
+        let alias = tie(alias);
+        if !aliases.contains(&alias) && aliases.len() < MAX_EXACT_ALIASES {
+            aliases.push(alias);
         }
     }
     let aliases_truncated = equivalence
         .aliases
         .iter()
-        .any(|alias| !aliases.contains(alias));
+        .any(|alias| !aliases.contains(&tie(alias)));
     (aliases, truncated || aliases_truncated)
 }
 
@@ -6221,9 +6247,50 @@ mod tests {
                 "BRAF p.V600E",
                 "BRAF V600E",
                 "BRAF c.1799T>A",
+                "BRAF chr7:g.140453136A>T",
                 "BRAF p.Val600Glu",
-                "chr7:g.140453136A>T",
                 "rs113488022",
+            ]
+        );
+    }
+
+    #[test]
+    fn confirmed_car_genomic_aliases_travel_with_the_gene_symbol() {
+        // 2140: a confirmed ClinGen equivalence contributes genomic
+        // coordinate aliases (`:g.` HGVS); like the source identity's genomic
+        // id they must carry the gene symbol, while the variant-unique
+        // transcript, protein and identifier aliases stay bare.
+        let equivalence = CanonicalEquivalence {
+            status: "confirmed".into(),
+            caid: Some("CA000072".into()),
+            exhaustive: true,
+            complete: true,
+            applicable_identity_count: 2,
+            observations: Vec::new(),
+            aliases: vec![
+                "NM_000546.6:c.215C>G".into(),
+                "NP_000537.3:p.Pro72Arg".into(),
+                "NC_000017.11:g.7676154G>C".into(),
+                "CA000072".into(),
+            ],
+            message: String::new(),
+        };
+        let (aliases, truncated) =
+            exact_aliases_with_equivalence(&resolved_context(), &equivalence);
+        assert!(!truncated);
+        assert_eq!(
+            aliases,
+            vec![
+                "BRAF p.V600E",
+                "BRAF V600E",
+                "BRAF c.1799T>A",
+                "BRAF chr7:g.140453136A>T",
+                "BRAF p.Val600Glu",
+                "rs113488022",
+                "NM_000546.6:c.215C>G",
+                "NP_000537.3:p.Pro72Arg",
+                "BRAF NC_000017.11:g.7676154G>C",
+                "CA000072",
             ]
         );
     }
