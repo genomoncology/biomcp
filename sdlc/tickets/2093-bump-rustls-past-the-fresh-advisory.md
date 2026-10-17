@@ -22,5 +22,5 @@ Filed 2026-10-14 when a fresh rustls advisory (RUSTSEC, fixed in rustls >= 0.23.
 Executed on the branch (head `768d2522a6821e53086fadbedd85cb26636368be`):
 
 - `cargo update -p rustls` moved exactly one package: `rustls v0.23.45 -> v0.23.46`; the Cargo.lock diff is that package's version and checksum (2 lines), nothing else.
-- Yellow, both locks held: `cargo deny --locked check advisories` prints `advisories ok`; `make lint` green in 148.2 s (the advisory was the only failure on main before the bump); the changelog-refresh tests pass (19 passed).
+- Linux check host, both locks held: `cargo deny --locked check advisories` prints `advisories ok`; `make lint` green in 148.2 s (the advisory was the only failure on main before the bump); the changelog-refresh tests pass (19 passed).
 - CI run 38558549795 on that exact head: completed success, 28m11s.

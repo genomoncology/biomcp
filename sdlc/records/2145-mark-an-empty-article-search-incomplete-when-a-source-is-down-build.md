@@ -57,10 +57,10 @@ Each proof fails on current main first and passes on the branch.
   - Europe PMC returns one row while Semantic Scholar 503s: exit 0,
     `complete: false`, no `error` field, `count: 1`.
 - Red on main: branch `tickets/2145-red-proof` = origin/main + the test file
-  only, at `9e80d7c6e`. Yellow job `1792190160322-1866808`
+  only, at `9e80d7c6e`. Linux check host job `1792190160322-1866808`
   (`cargo nextest run --no-default-features -E 'test(cli::article::tests::outage)'`):
   3 run, 0 passed — the down-source case exits 0 with no `complete`, the two
-  completeness assertions read `Null`. Green on the branch: yellow job
+  completeness assertions read `Null`. Green on the branch: Linux check host job
   `1792190666531-1901461` at `200f5004e`, 3/3 passed. (A first red attempt at
   `eacb19f8a`, job `1792189138841-1828593`, failed on a test-side argv bug —
   the fixture command was missing the `article` word — and proved nothing; the
@@ -71,21 +71,21 @@ Each proof fails on current main first and passes on the branch.
   packaged file). A first bump to 1,407 rode the stale pre-`74dfc40e9` base
   and CI counted 1,408 actual; the rebase resolves it.
 
-## Gates (yellow = routine offline lane, M5 = gate host, Linux CI authoritative)
+## Gates (Linux check host = routine offline lane, macOS build host = gate host, Linux CI authoritative)
 
-- `make test` (yellow): `1792191210181-1920047` at `200f5004e` ran the Rust
+- `make test` (Linux check host): `1792191210181-1920047` at `200f5004e` ran the Rust
   lane 4,164/4,165 with the structure-pin failure (fixed next commit);
   `1792191661120-1956874` at `79980358d` passed the Rust lane and failed the
   Python lane's two package-file tests on the stale pre-`74dfc40e9` base;
   `1792192290683-1988598` at the rebased tip `926e326be` passed both lanes —
   Rust 4,289 run, 4,289 passed (33 skipped), Python 1,155 passed (3 skipped),
   exit 0 in about 7 minutes.
-- `make lint` (M5, `1792190225711-16682`): failed on the machine, not the
+- `make lint` (macOS build host, `1792190225711-16682`): failed on the machine, not the
   change — no pinned ShellCheck/actionlint archive for darwin-arm64 (same as
   the 2124 record). The CI `lint` job passed at `200f5004e` (run
   `38976939276`).
-- `make spec` (M5, `1792191214685-40694`): failed on the machine at
-  prepare-spec — the M5's CommandLineTools Python 3.9 lacks `tomllib`, which
+- `make spec` (macOS build host, `1792191214685-40694`): failed on the machine at
+  prepare-spec — the macOS build host's CommandLineTools Python 3.9 lacks `tomllib`, which
   `tools/with-build-identity` imports. The CI `spec-lane` job passed at
   `200f5004e` (run `38976939276`).
 - CI on the branch: run `38976939276` (`200f5004e`) — build, lint,
@@ -114,7 +114,7 @@ Each proof fails on current main first and passes on the branch.
   the same document family. This branch touches none of those files; the only
   shared surface is the CHANGELOG section and the two documents' lines around
   the variant-article rule, so rebase conflicts should stay textual.
-- The M5 cannot currently run `make lint` (no darwin lint tools) or
+- The macOS build host cannot currently run `make lint` (no darwin lint tools) or
   `make spec` (Python 3.9 without `tomllib`); ticket 2137 covers bringing the
   gates to the macOS host.
 - `src/cache/manager.rs` emits an `unused import: std::fs` warning on the

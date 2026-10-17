@@ -16,7 +16,7 @@ Reviews: revision 1b1f848, accept
 
 ## Evidence
 
-Filed 2026-10-15 from lanes 2066 and 2067 under the PM's two-jobs doctrine (a timing test that fails only with concurrent jobs is a test defect). Each fails under two concurrent Yellow jobs and passes otherwise; ticket 2102 already covers the rmcp contract deadline test, these are the rest observed the same day:
+Filed 2026-10-15 from lanes 2066 and 2067 under the PM's two-jobs doctrine (a timing test that fails only with concurrent jobs is a test defect). Each fails under two concurrent Linux check host jobs and passes otherwise; ticket 2102 already covers the rmcp contract deadline test, these are the rest observed the same day:
 
 - add_clinvar_admits_rate_limiting_when_a_sustained_429_outlives_the_deadline (ClinVar 429 deadline bound).
 - test_rich_cli_json_and_markdown_are_well_formed (60s subprocess deadline).
@@ -29,11 +29,11 @@ Bound or shed the load sensitivity of each: raise the deadline for contract purp
 
 ## Acceptance
 
-1. All four pass in a full suite while another Yellow job runs concurrently, twice.
+1. All four pass in a full suite while another Linux check host job runs concurrently, twice.
 
 ## Added 2026-10-15 (coordinator)
 
-- New instance from 2071's lane: `tests/test_output_footprint_benchmark.py::test_offline_corpus_is_deterministic_and_reports_real_token_counts` - `article_search_compact` hit its 60s deadline only under lane-build contention on Yellow (load 8+); passes in CI at the same tip. Same class, this ticket's home.
+- New instance from 2071's lane: `tests/test_output_footprint_benchmark.py::test_offline_corpus_is_deterministic_and_reports_real_token_counts` - `article_search_compact` hit its 60s deadline only under lane-build contention on the Linux check host (load 8+); passes in CI at the same tip. Same class, this ticket's home.
 - Also from 2100's lane: `human_mcp_command_dispatches_to_provider_once` and the full-suite timeout of `mcp_error_text_keeps_each_cli_refusal_line (corrected 2026-10-16: the earlier name was a lane-report shorthand; this is the real test)` - load-only failures, pass isolated with the export. Same class, this ticket's home.
 - Also from 2073's lane (evening runs): `raw_mcp_rejects_contradictory_variant_filters_and_non_trial_batch_source` and `test_rich_hostile_paper_id_is_contained_and_never_a_command` join the class - contention-only, isolated runs pass.
 - Also from 2105's lane: `test_disease_survival_setup_reaps_ppid_one_marker_orphan` (same module, PPID-transition wait, tripped once under two concurrent module runs) - same family, this home unless 2080 claims it first.

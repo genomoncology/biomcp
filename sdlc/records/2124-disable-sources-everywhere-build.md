@@ -39,24 +39,24 @@ Each proof fails on current main first and passes on the branch.
   `spawn_stdio_client_with_args` and `spawn_http_server_with_args` for leading global flags
   and runtime-built environment pairs.
 
-## Gates (M5 via pm job; the landing bar stays ci.yml green at the exact post-rebase tip)
+## Gates (macOS build host via pm job; the landing bar stays ci.yml green at the exact post-rebase tip)
 
 - `cargo fmt --check`: pass at `e8559f5f9` (job 1792184722826, after the fmt commit).
 - Rust disable-sources tests: 13/13 pass at `e8559f5f9` (job 1792184722826) and again at
   `f50cf9949`; the walk passes at every tip from `57cd1ae12` on (job 1792184418492).
-- Full Rust suite on the M5: the branch's failures are a subset of the failures pure main
+- Full Rust suite on the macOS build host: the branch's failures are a subset of the failures pure main
   produces in the same job worktree (main: 20, branch: 12, every branch failure also fails
   main except one load-flaky test that passes in isolation; jobs 1792185263926 and
-  1792185400313). The M5 runs without the offline sandbox, with sccache forcing
+  1792185400313). The macOS build host runs without the offline sandbox, with sccache forcing
   `RUSTC_WRAPPER=` and `CARGO_INCREMENTAL` unset, under load; Linux CI is authoritative.
-- Python lane on the M5: identical failure set on pure main and the branch (20 tests,
+- Python lane on the macOS build host: identical failure set on pure main and the branch (20 tests,
   all packaging/release-script/tooling tests; jobs 1792185681198 and 1792185777143);
   `mkdocs build --strict` passes.
-- `make lint`: blocked on the M5 (no pinned ShellCheck/actionlint archive for darwin-arm64);
-  clippy under the M5's rustc 1.95.0 fails on pure main as well, so the pinned CI toolchain
+- `make lint`: blocked on the macOS build host (no pinned ShellCheck/actionlint archive for darwin-arm64);
+  clippy under the macOS build host's rustc 1.95.0 fails on pure main as well, so the pinned CI toolchain
   is the bar.
 - `make spec`: prepare-spec and spec-static (7/7) pass; `scripts/run-specs.sh` needs bash 4
-  FD redirection and the M5 has bash 3.2, so the mustmatch pages run in Linux CI.
+  FD redirection and the macOS build host has bash 3.2, so the mustmatch pages run in Linux CI.
 - Red runs: branch `tickets/2124-red-proof` (main plus the probes) at `4a2c0562e`, jobs
   1792184285179 and 1792183481950.
 
@@ -72,6 +72,6 @@ Each proof fails on current main first and passes on the branch.
 - The GTR sync's replay-visible request is its version probe; the condition-gene download
   follows only when the version differs. The cbioPortal data-hub endpoint shares the
   cbioportal id and stays unqueried by the variant card.
-- The M5 cannot run `make lint`, the offline-enforced lanes, or `run-specs.sh` (bash 3.2);
-  ticket 2137 covers bringing the gates to the macOS host. The remote pm on the M5 was
+- The macOS build host cannot run `make lint`, the offline-enforced lanes, or `run-specs.sh` (bash 3.2);
+  ticket 2137 covers bringing the gates to the macOS host. The remote pm on the macOS build host was
   updated to protocol 4 mid-run to unblock dispatch.

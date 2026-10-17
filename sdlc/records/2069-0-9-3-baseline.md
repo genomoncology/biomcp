@@ -1,15 +1,15 @@
 # 2069 — The 0.9.3 baseline
 
-Measured 2026-10-13 and 2026-10-14 on yellow (Yellow, the BioMCP 0.9 build host), against a fresh clone of tag `v0.9.2` (commit `4049666f5cce2794f16cdbdf0ded49878e5bb147`) for each pass, with the machine otherwise idle. `tools/measure-0-9-3-baseline` printed every number below with the command behind it; this record holds its output from two passes. Ticket 2082 repeats the same commands after the 0.9.3 plan lands and compares.
+Measured 2026-10-13 and 2026-10-14 on the BioMCP 0.9 Linux build host, against a fresh clone of tag `v0.9.2` (commit `4049666f5cce2794f16cdbdf0ded49878e5bb147`) for each pass, with the machine otherwise idle. `tools/measure-0-9-3-baseline` printed every number below with the command behind it; this record holds its output from two passes. Ticket 2082 repeats the same commands after the 0.9.3 plan lands and compares.
 
 ## Method
 
-- Each pass: a fresh clone of tag v0.9.2 under `~/2069-baseline/passN`, then the script run once, holding `~/.yr-checkout.lock` and `~/.yellow-gate.lock` for the whole run. The script refuses to start while any cargo, rustc, nextest, clippy, pytest, mkdocs, make, uv, cargo-deny, or cargo-llvm-cov process is alive; the quiet check's output is in each pass's log.
+- Each pass: a fresh clone of tag v0.9.2 under `~/2069-baseline/passN`, then the script run once, holding `~/.yr-checkout.lock` and `~/.<build-host>-gate.lock` for the whole run. The script refuses to start while any cargo, rustc, nextest, clippy, pytest, mkdocs, make, uv, cargo-deny, or cargo-llvm-cov process is alive; the quiet check's output is in each pass's log.
 - Section order: host and toolchain conditions, clone identity, quiet check, cold dev build of every target, rebuild after one Rust edit, rebuild after one doc edit, dependency counts, one un-timed `make prepare-test` (context only, so the timed gates start with fresh artifacts), `make test`, build-folder size, test-duration census, Python collection count, spec-page block census, `make spec`, `make lint`, cold release build, build-folder size again, stripped binary size, `cargo llvm-lines`, `deny.toml` advisory count, the three coverage reports, the run-time block, and closing host conditions.
 - Routine gates use the Makefile's own feature set (`--no-default-features`); the release build uses the default features and the shipped profile (thin LTO, one codegen unit, strip), as the release workflow builds it. Nothing was tuned.
 - The coverage numbers are `cargo llvm-cov report` line percentages with test-only files removed by path (regex in each log). Inline `#[cfg(test)]` modules stay counted, so these are the llvm-cov view; the iteration-speed study's span-reduced production-line figures (65.1 / 73.9 / 84.1) are not reproducible by this script and stay quoted from that study.
 - The run-time block uses the release binary. Warm means `BIOMCP_CACHE_MODE=infinite` against a cache directory prefetched once by each command; cache off means `BIOMCP_CACHE_MODE=off` against the same directory. Five runs each, median and spread. The five commands: `get gene BRAF`, `get variant "BRAF V600E"`, `get drug imatinib`, `search article -g BRAF --limit 10`, `search all --gene BRAF --disease melanoma --counts-only`. These runs use the live network; their spread between passes reflects the providers, not the machine.
-- CI history comes from the same script's `ci-history` section run on the Beelink (`gh` is not authenticated on yellow); CI numbers do not depend on the host.
+- CI history comes from the same script's `ci-history` section run on the agent host (`gh` is not authenticated on the Linux check host); CI numbers do not depend on the host.
 
 ## Pass-shape notes (what is not one straight run)
 
@@ -78,7 +78,7 @@ Output sizes (bytes, one warm run each): gene 1646, variant 1371, drug 2410 — 
 
 ## CI history (the last ten green runs of ci.yml)
 
-Collected with the script's ci-history section on the Beelink, once at each pass (gh is not authenticated on yellow; CI numbers do not depend on the host). The raw tables follow.
+Collected with the script's ci-history section on the agent host, once at each pass (gh is not authenticated on the Linux check host; CI numbers do not depend on the host). The raw tables follow.
 
 ### At pass 1
 
@@ -144,7 +144,7 @@ Eight of the ten newest green runs are full runs (the two 2-3 minute ones are do
 
 ## Machine conditions
 
-yellow: Ubuntu, Linux 6.17, 4 cores, 14 GB RAM, one spinning disk (df and load lines are in every log). Toolchain: rustc/cargo 1.93.1, cargo-nextest 0.9.132, cargo-deny 0.19.4, cargo-llvm-cov 0.9.1, cargo-llvm-lines 0.4.48, ruff 0.13.2, Python 3.13.7, uv 0.9.26, Node 22.22.3, mustmatch 0.1.0. The host cargo config turns incremental builds off, keeps line-tables-only dev debug, and drops dependency debug info (full text in each log). Both passes started with the one-minute load average at or below 0.2 and both locks held; no other build or gate ran (the quiet-check output is in each log). Disk stayed above 430 GB free. Pass 1 ran 2026-10-13 evening, pass 2 finished 2026-10-14 early morning; the host's large HTTP cache held 19,689 files, 197 MB.
+Linux check host: Ubuntu, Linux 6.17, 4 cores, 14 GB RAM, one spinning disk (df and load lines are in every log). Toolchain: rustc/cargo 1.93.1, cargo-nextest 0.9.132, cargo-deny 0.19.4, cargo-llvm-cov 0.9.1, cargo-llvm-lines 0.4.48, ruff 0.13.2, Python 3.13.7, uv 0.9.26, Node 22.22.3, mustmatch 0.1.0. The host cargo config turns incremental builds off, keeps line-tables-only dev debug, and drops dependency debug info (full text in each log). Both passes started with the one-minute load average at or below 0.2 and both locks held; no other build or gate ran (the quiet-check output is in each log). Disk stayed above 430 GB free. Pass 1 ran 2026-10-13 evening, pass 2 finished 2026-10-14 early morning; the host's large HTTP cache held 19,689 files, 197 MB.
 
 ## What the numbers say (for 0.9.3)
 
@@ -156,19 +156,19 @@ yellow: Ubuntu, Linux 6.17, 4 cores, 14 GB RAM, one spinning disk (df and load l
 
 ## Pass outputs (verbatim script output)
 
-Absolute home paths are rewritten to `~` for the repository; nothing else changed. Each pass has two logs: the first attempt stopped at the flaky contract test in `make test` (its timing is not used), and the resumed attempt completed the pass. Pass 1's outside-in coverage suites were rerun after the profile-path fix and its reports follow that rerun; pass 2's reports were rerun once after the report-discovery fix; both reruns are inside the logs below.
+Absolute home paths are rewritten to `~` for the repository. Private host names and host-specific lock/configuration file names are replaced with role labels or `<build-host>`; commands, measurements and result identifiers otherwise remain unchanged. Each pass has two logs: the first attempt stopped at the flaky contract test in `make test` (its timing is not used), and the resumed attempt completed the pass. Pass 1's outside-in coverage suites were rerun after the profile-path fix and its reports follow that rerun; pass 2's reports were rerun once after the report-discovery fix; both reruns are inside the logs below.
 
 ### Pass 1, first attempt (host through dependency counts, and the flaky failure)
 
 ```
 
 ### locks — held for the whole run
-$ flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock
+$ flock -n ~/.yr-checkout.lock && flock -n ~/.<build-host>-gate.lock
 both locks held by pid 2271455
 
 ### host — machine and toolchain conditions at the start
 $ hostname; uname -sr; nproc
-yellow
+Linux check host
 Linux 6.17.0-35-generic
 4
 $ cat /proc/loadavg
@@ -195,10 +195,10 @@ uv 0.9.26
 v22.22.3
 mustmatch 0.1.0
 $ cat ~/.cargo/config.toml 2>/dev/null || echo "no ~/.cargo/config.toml"
-# Lean Rust dev builds on yellow, matching Blink (dotfiles cargo/config.toml).
+# Lean Rust dev builds on the Linux check host, matching the agent host (user cargo/config.toml).
 # Measured on BioMCP 2026-09-22: fresh build 833 s -> 296 s, next ticket 374 s -> 145 s, 13 GB -> 2.1 GB.
 # Long edit-compile loop on one crate: CARGO_INCREMENTAL=1. Debugger: CARGO_PROFILE_DEV_DEBUG=true.
-# No sccache or mold here, so no rustc-wrapper or linker flags. Record: dotfiles ubuntu/yellow-build-host.md.
+# No sccache or mold here, so no rustc-wrapper or linker flags. Record: user configuration, ubuntu/<build-host>-build-host.md.
 [build]
 incremental = false
 
@@ -1042,7 +1042,7 @@ $ make test > .cache/measure/make-test.log 2>&1
 ```
 
 ### locks — held for the whole run
-$ flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock
+$ flock -n ~/.yr-checkout.lock && flock -n ~/.<build-host>-gate.lock
 both locks held by pid 2302457
 
 ### make-test — the routine gate, wall time with artifacts already fresh
@@ -1310,7 +1310,7 @@ RESULT coverage_unit_lines_pct = 78.30
 RESULT coverage_combined_lines_pct = 86.26
 
 ### locks — held for the whole run
-$ flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock
+$ flock -n ~/.yr-checkout.lock && flock -n ~/.<build-host>-gate.lock
 both locks held by pid 2489308
 
 ### llvm-lines — LLVM IR lines and function copies of the library, release profile
@@ -1418,12 +1418,12 @@ addendum done
 ```
 
 ### locks — held for the whole run
-$ flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock
+$ flock -n ~/.yr-checkout.lock && flock -n ~/.<build-host>-gate.lock
 both locks held by pid 2490856
 
 ### host — machine and toolchain conditions at the start
 $ hostname; uname -sr; nproc
-yellow
+Linux check host
 Linux 6.17.0-35-generic
 4
 $ cat /proc/loadavg
@@ -1450,10 +1450,10 @@ uv 0.9.26
 v22.22.3
 mustmatch 0.1.0
 $ cat ~/.cargo/config.toml 2>/dev/null || echo "no ~/.cargo/config.toml"
-# Lean Rust dev builds on yellow, matching Blink (dotfiles cargo/config.toml).
+# Lean Rust dev builds on the Linux check host, matching the agent host (user cargo/config.toml).
 # Measured on BioMCP 2026-09-22: fresh build 833 s -> 296 s, next ticket 374 s -> 145 s, 13 GB -> 2.1 GB.
 # Long edit-compile loop on one crate: CARGO_INCREMENTAL=1. Debugger: CARGO_PROFILE_DEV_DEBUG=true.
-# No sccache or mold here, so no rustc-wrapper or linker flags. Record: dotfiles ubuntu/yellow-build-host.md.
+# No sccache or mold here, so no rustc-wrapper or linker flags. Record: user configuration, ubuntu/<build-host>-build-host.md.
 [build]
 incremental = false
 
@@ -2297,7 +2297,7 @@ $ make test > .cache/measure/make-test.log 2>&1
 ```
 
 ### locks — held for the whole run
-$ flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock
+$ flock -n ~/.yr-checkout.lock && flock -n ~/.<build-host>-gate.lock
 both locks held by pid 2523718
 
 ### make-test — the routine gate, wall time with artifacts already fresh
@@ -2593,7 +2593,7 @@ RESULT coverage_unit_lines_pct = 78.30
 RESULT coverage_combined_lines_pct = 86.27
 
 ### locks — held for the whole run
-$ flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock
+$ flock -n ~/.yr-checkout.lock && flock -n ~/.<build-host>-gate.lock
 both locks held by pid 2667277
 
 ### doc-edit-rebuild — rebuild after one doc edit (a spec page touch; v0.9.2 build.rs scans the whole package)

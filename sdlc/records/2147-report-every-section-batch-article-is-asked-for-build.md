@@ -99,7 +99,7 @@ gate host's fixture setup should look at the ERepo supervisor there.
   deserves its own ticket.
 - `cargo nextest` still emits the pre-existing `unused import: std::fs`
   warning for `src/cache/manager.rs:746` (present on main; see 2146's record).
-- The one-job-at-a-time yellow queue ran long tonight; the `make test` gate
+- The one-job-at-a-time Linux check host queue ran long tonight; the `make test` gate
   waited behind sibling tickets 2148–2150.
 - origin/main moved during the build (2138 and 2148 landed; new tip
   `f9a11e81e`). `git merge-tree` against that tip reports exactly one
