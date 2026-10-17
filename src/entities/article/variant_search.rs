@@ -5699,7 +5699,7 @@ mod tests {
         assert!(
             logged
                 .iter()
-                .any(|line| line.starts_with("GET /variant/autocomplete/?query=BRAF p.V600E")),
+                .any(|line| line.starts_with("GET /variant/autocomplete/?query=BRAF+p.V600E")),
             "autocomplete queried the request: {logged:?}"
         );
         assert!(
