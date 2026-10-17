@@ -1129,7 +1129,7 @@ fn batch_article_detail_returns_no_tldr_section_unless_asked_for() {
         .map(|source| source["key"].as_str().expect("key"))
         .collect();
     assert!(section_keys.contains(&"tldr"), "keys={section_keys:?}");
-    assert!(result["semantic_scholar"]["tldr"].is_some());
+    assert!(result["semantic_scholar"]["tldr"].is_string());
 }
 
 #[test]
