@@ -10,6 +10,8 @@ Reviews: revision d6adf66, accept
 
 A release qualifies its exact revision directly, and the full release workflow can rehearse an untagged candidate without publishing before Ian tags it.
 
+Coordinator qualification finding: stable metadata proof job `1792244785321-3844` exercised this branch's revision-based changelog checker against the prepared candidate and rejected missing historical references 2041, 2054, 2063, 2096, 2102, 2105 and 2148. Before changing qualification or descriptions, classify each against actual first-parent release landings and ticket milestones. Preserve valid missing-entry detection and avoid importing unrelated merged history into the release. Correct only the established qualification defect or factual missing descriptions, with a failing entry-point regression for any checker change.
+
 Depends on: 2156
 Depends on: 2159
 
