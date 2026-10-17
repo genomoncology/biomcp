@@ -5135,7 +5135,8 @@ mod tests {
         assert!(
             logged
                 .iter()
-                .any(|line| line.starts_with("GET /entity/autocomplete/?query=ABCC8%20R1436Q")),
+                .any(|line| line.starts_with("GET /entity/autocomplete/?query=ABCC8+R1436Q")
+                    || line.starts_with("GET /entity/autocomplete/?query=ABCC8%20R1436Q")),
             "autocomplete queried the gene-and-protein input: {logged:?}"
         );
         assert!(
