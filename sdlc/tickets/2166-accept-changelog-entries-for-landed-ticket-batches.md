@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision b14228c, accept
+
 ## Outcome
 
 Accept a current-release changelog entry for a batch already landed in this release even when the ticket's unfinished work moves to a later milestone. Keep rejecting missing tickets and unlanded future-release work. Do not remove the valid replay/golden entry or change its ticket's milestone.
