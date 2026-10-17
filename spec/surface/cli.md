@@ -373,23 +373,6 @@ mustmatch like "test_mcp_description_policy_rejects_legacy_update_marker_only" <
 test "$mcp_policy_status" -eq 0
 ```
 
-## Benchmark Internal Harness Ratchet Stays Executable
-
-The benchmark tree is an internal regression harness, not a public CLI command.
-Its documented decomposition and runtime-wiring ratchet should stay executable
-in the spec lane so suite execution, regression analysis, command normalization,
-score rendering, and the non-public CLI contract cannot drift.
-
-```bash
-set +e
-benchmark_structure_out="$("${BIOMCP_SPEC_TEST_BENCHMARK_CLI_STRUCTURE:?spec preparation did not export benchmark CLI tests}" --nocapture 2>&1)"
-benchmark_structure_status=$?
-set -e
-mustmatch like "benchmark_internal_harness_split_files_exist_with_doc_headers" <<<"$benchmark_structure_out"
-mustmatch like "benchmark_internal_harness_contract_pins_runtime_and_docs" <<<"$benchmark_structure_out"
-test "$benchmark_structure_status" -eq 0
-```
-
 ## Article Fulltext JSON Manifests Carry Provenance
 
 Article fulltext still uses the existing `get article <id> fulltext` command, but

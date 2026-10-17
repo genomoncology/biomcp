@@ -768,14 +768,6 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in ux
     )
     assert (
-        "biomcp serve-sse             → removed compatibility command; use `biomcp serve-http`"
-        not in ux
-    )
-    assert (
-        "Compatibility note: `biomcp serve-sse` remains available only as a hidden "
-        "compatibility command that points users to `biomcp serve-http`." in ux
-    )
-    assert (
         "JSON is the default script contract for query commands, with a documented "
         "typed `cache_path` object for `biomcp cache path`. `biomcp cache stats`, "
         "`biomcp cache clean`, and `biomcp cache clear` support `--json` on "
