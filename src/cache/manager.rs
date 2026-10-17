@@ -835,6 +835,7 @@ mod tests {
     struct CapturedEvent {
         level: tracing::Level,
         message: String,
+        fields: HashMap<String, String>,
     }
 
     #[derive(Clone, Default)]
@@ -855,6 +856,7 @@ mod tests {
                 .push(CapturedEvent {
                     level: *event.metadata().level(),
                     message: visitor.message.unwrap_or_default(),
+                    fields: visitor.fields,
                 });
         }
     }
@@ -862,12 +864,16 @@ mod tests {
     #[derive(Default)]
     struct MessageVisitor {
         message: Option<String>,
+        fields: HashMap<String, String>,
     }
 
     impl Visit for MessageVisitor {
         fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
             if field.name() == "message" {
                 self.message = Some(format!("{value:?}"));
+            } else {
+                self.fields
+                    .insert(field.name().to_owned(), format!("{value:?}"));
             }
         }
     }
@@ -1115,12 +1121,26 @@ mod tests {
     #[test]
     fn run_eviction_cycle_logs_cleanup_errors_at_warn() {
         let events = captured_eviction_events(25, vec!["simulated cleanup failure".to_string()]);
-        let message = "cache eviction completed with cleanup errors";
+        let warnings: Vec<_> = events
+            .iter()
+            .filter(|event| event.level == tracing::Level::WARN)
+            .collect();
+        assert_eq!(warnings.len(), 1, "one cache warning: {events:?}");
+        let warning = warnings[0];
+        assert_eq!(
+            warning
+                .fields
+                .keys()
+                .map(String::as_str)
+                .collect::<std::collections::HashSet<_>>(),
+            std::collections::HashSet::from(["operation", "category", "io_kind", "os_code"]),
+            "cache warnings must not include paths or raw errors: {warning:?}"
+        );
+        assert_eq!(warning.fields["operation"], "\"maintenance\"");
         assert!(
-            events
-                .iter()
-                .any(|event| event.level == tracing::Level::WARN && event.message.contains(message)),
-            "expected cleanup errors to warn; captured events: {events:?}"
+            warning
+                .message
+                .contains("local HTTP cache maintenance failed; continuing")
         );
     }
 
