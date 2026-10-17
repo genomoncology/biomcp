@@ -168,6 +168,9 @@ pub struct BatchArgs {
     /// Trial source when entity=trial (ctgov or nci)
     #[arg(long)]
     pub source: Option<String>,
+    /// Allow the Semantic Scholar open-access PDF as the final fulltext fallback (article detail batches; requires the fulltext section)
+    #[arg(long)]
+    pub pdf: bool,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]

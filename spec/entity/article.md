@@ -711,8 +711,43 @@ before="$(wc -l <"$request_log")"
 ! ../../tools/biomcp-ci batch article 22663011 --sections '' >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 22663011 --sections tldr,,annotations >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 1 --offset 1 >/dev/null 2>&1
+! ../../tools/biomcp-ci batch gene BRAF --pdf >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --mode compact --pdf >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --pdf >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --sections tldr --pdf >/dev/null 2>&1
 after="$(wc -l <"$request_log")"
 test "$after" = "$before"
+```
+
+## Detail Batch PDF Fallback Runs Under One Limiter
+
+`--pdf` adds the provider-vouched open-PDF rung to article detail batches that
+asked for the `fulltext` section. Every paper lookup and every PDF download of
+one batch runs in a single process under the single in-process Semantic Scholar
+limiter, and each item still names the full-text source it used or the part of
+the PDF step that failed.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+../../tools/biomcp-ci --json batch article 22663011,22663026,22663028 --mode detail --sections fulltext --pdf \
+  | jq '
+      .items[0].result as $xml
+      | .items[1].result as $pdf
+      | .items[2].result as $failed
+      | ($xml.full_text_manifest.source_kind == "jats_xml")
+        and ($xml.section_outcomes.fulltext.outcome == "data")
+        and ($pdf.full_text_manifest.source_kind == "pdf")
+        and ($pdf.full_text_manifest.provider.label == "Semantic Scholar PDF")
+        and ($pdf.section_outcomes.fulltext.outcome == "data")
+        and ($failed.full_text_path == null)
+        and ($failed.full_text_coverage.attempts
+             | any(.source_kind == "pdf"
+                   and .reason == "open_pdf_download_failed"))
+        and ($failed.section_outcomes.fulltext.outcome == "unavailable")' \
+  | mustmatch 'true'
+paper_lookups="$(grep -c '^s2:paper:' "$request_log" || true)"
+test "$paper_lookups" -eq 3
 ```
 
 ## MYD88 Protein-Alias Article Precision

@@ -369,6 +369,17 @@ provide only an abstract or metadata):
 biomcp get article 22663011 fulltext --pdf
 ```
 
+Batch detail requests take the same fallback for many papers in one process,
+where the single in-process Semantic Scholar limiter spaces every paper lookup
+and every PDF download instead of one fresh limiter per CLI call:
+
+```bash
+biomcp --json batch article 22663011,22663026,22663028 --mode detail --sections fulltext --pdf
+```
+
+Typed MCP `get article` carries the same option as the boolean `pdf` field
+beside `sections`.
+
 With `--pdf`, BioMCP downloads the Semantic Scholar open-access PDF URL at
 whatever HTTPS publisher origin Semantic Scholar lists — the link is
 provider-vouched, and the guards stay on the transport (HTTPS default-port
@@ -381,8 +392,10 @@ in its attempt `reason`: `open_pdf_link_unavailable` (the link could not be
 asked for), `open_pdf_link_absent` (no open PDF listed), `open_pdf_link_rejected`
 (the link was refused before contact), `open_pdf_download_failed`,
 `open_pdf_download_absent`, or `open_pdf_text_unusable`. `--pdf` is only
-valid with the `fulltext` section; `biomcp get article 22663011 --pdf` is
-rejected instead of silently doing nothing.
+valid with the `fulltext` section; `biomcp get article 22663011 --pdf` and
+`biomcp batch article 22663011 --pdf` are rejected instead of silently doing
+nothing, and each batch item still reports the full-text source it used and
+the named PDF-step failure when the fallback did not deliver.
 
 Indexing section:
 

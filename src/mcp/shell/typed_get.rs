@@ -35,6 +35,8 @@ pub(super) fn typed_get_allowed_keys(entity: &str, has_sections: bool) -> &'stat
         &["entity", "id", "sections", "assembly", "json"]
     } else if entity == "trial" {
         &["entity", "id", "sections", "source", "json"]
+    } else if entity == "article" {
+        &["entity", "id", "sections", "pdf", "json"]
     } else {
         &["entity", "id", "sections", "json"]
     }
@@ -84,6 +86,12 @@ pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
             }
             if entity == "trial" {
                 properties.insert("source".into(), json!({"enum":["ctgov","nci"],"default":"ctgov"}));
+            }
+            if entity == "article" {
+                properties.insert(
+                    "pdf".into(),
+                    json!({"type":"boolean","default":false}),
+                );
             }
             json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity","id"]})
         }).collect::<Vec<_>>();

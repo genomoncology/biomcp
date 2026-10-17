@@ -1168,6 +1168,30 @@ fn rejected_batch_matrix_never_reaches_real_cli_client_cache_fs_or_item_work() {
             "--source is only supported for trial batches",
         ),
         (
+            vec!["--json", "batch", "gene", "BRAF", "--pdf"],
+            "--pdf is only supported for article batches",
+        ),
+        (
+            vec![
+                "--json",
+                "batch",
+                "article",
+                "1",
+                "--mode",
+                "compact",
+                "--pdf",
+            ],
+            "--pdf is not supported for compact article batches",
+        ),
+        (
+            vec!["--json", "batch", "article", "1", "--pdf"],
+            "--pdf requires the fulltext section",
+        ),
+        (
+            vec!["--json", "batch", "article", "1", "--sections", "tldr", "--pdf"],
+            "--pdf requires the fulltext section",
+        ),
+        (
             vec!["--json", "batch", "trial", "NCT1", "--source", "unknown"],
             "Unknown --source 'unknown'",
         ),

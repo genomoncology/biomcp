@@ -74,12 +74,12 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
                 )
                 .await;
             }
+            let article_get_options = crate::entities::article::ArticleGetOptions {
+                allow_pdf: args.pdf,
+                ..Default::default()
+            };
             let futs = parsed_ids.iter().map(|id| {
-                crate::entities::article::get(
-                    id,
-                    &batch_sections,
-                    crate::entities::article::ArticleGetOptions::default(),
-                )
+                crate::entities::article::get(id, &batch_sections, article_get_options)
             });
             return settle_batch(
                 "article",
