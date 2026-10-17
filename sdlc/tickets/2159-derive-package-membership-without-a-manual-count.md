@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Depends on: 2156
 
+Reviews: revision ff0b41e, accept
+
 ## Outcome
 
 Package boundary checks detect missing required files and unexpected packaged files without maintaining an exact file-count constant.
