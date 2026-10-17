@@ -1097,3 +1097,21 @@ def test_checker_rejects_joined_entries_but_accepts_separate_bullets(
     else:
         assert result.returncode == 1, result.stdout
         assert "joined changelog entries" in result.stderr
+
+
+@pytest.mark.parametrize("example", [
+    "The notation (1226) - example remains ordinary prose.\n",
+    "- Explain the notation (1226) - example without another ticket group.\n",
+    "- Document the literal `- First entry. (1226)- Second entry. (1228)` syntax. (1227)\n",
+    "```markdown\n- First entry. (1226)- Second entry. (1228)\n```\n",
+    "~~~markdown\n- First entry. (1226)- Second entry. (1228)\n~~~\n",
+])
+def test_checker_accepts_prose_and_code_examples(tmp_path: Path, example: str) -> None:
+    result = _run_branch(
+        tmp_path,
+        changelog=("# C\n\n## Unreleased\n\n### Fixes\n\n" + example
+                   + "\n- Repaired article search. (1227)\n"),
+        ref_name="main",
+        landings={"sha1": ("Land 1227: repair search", ["src/search.rs"])},
+    )
+    assert result.returncode == 0, result.stderr
