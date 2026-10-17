@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 5151a59, accept
+
 ## Outcome
 
 `article supplement-search` finds a protein change written in one-letter, three-letter or HGVS protein form, whichever form the query uses, and the help example finds its row.
