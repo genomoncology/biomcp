@@ -52,8 +52,7 @@ CARGO_INCREMENTAL=1 cargo nextest run --no-default-features -E 'test(...)'
 Keep `CARGO_INCREMENTAL` set for the whole loop and unset it for the gates:
 toggling the setting recompiles the crate.
 
-Run affected tests during development. Run one Rust build at a time on a
-build host.
+Run affected tests during development. Run one Rust build at a time on a build host.
 
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
@@ -91,22 +90,11 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 ## Landing changes
 
-One coordinator lands one ticket at a time through `pm ticket land`. The
-configured `ticketsGate` runs `make landing-gate` through the build job on the
-reviewed merge candidate. Reuse a passing gate while its inputs stay unchanged.
-After merging, run `make main-gate` through the build job on the actual pushed
-main revision before another ordinary landing.
+One coordinator lands one ticket at a time through `pm ticket land`. The configured `ticketsGate` runs `make landing-gate` through the build job on the reviewed merge candidate. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
 
-A failed or absent check for current main holds ordinary landings. Only a
-reviewed repair or backout may land during that hold; check the resulting main
-before resuming. On resume, inspect current main's exact-revision job evidence
-before landing another ticket.
+A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another ticket.
 
-Everyday builds and tests use build jobs. GitHub Actions run for releases after
-local checks pass, and retain manual dispatch for explicit checks. The release
-workflow must qualify its candidate directly; a prior CI run on main does not
-qualify it. Rehearse the full release workflow without publishing before Ian
-tags a release.
+Everyday builds and tests use build jobs. GitHub Actions run for releases after local checks pass, and retain manual dispatch for explicit checks. The release workflow must qualify its candidate directly; a prior CI run on main does not qualify it. Rehearse the full release workflow without publishing before Ian tags a release.
 
 ## Source licensing
 
