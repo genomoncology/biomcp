@@ -56,8 +56,11 @@ quality ratchet, `make test` includes both Rust and Python contract tests, and
 `make spec` is the routine mustmatch contract gate. Routine gates use
 `--no-default-features` so lint, test, and spec share one small Cargo graph;
 that graph does not exercise AlphaGenome. Run `make full-feature-check` for all
-shipped features and the AlphaGenome behavior tests, and `make release-gate`
-for the release checks. `make landing-gate` runs lint, routine tests and
+shipped features and the AlphaGenome behavior tests with the development
+profile, including PNG, SVG and terminal output checks. `make release-gate`
+requires the same full-feature build and output checks with the optimized
+release profile before release-profile specifications. The final release
+rehearsal also requires optimized artifacts and their output checks. `make landing-gate` runs lint, routine tests and
 specifications in order. `make main-gate` runs that standard gate and then
 `make full-feature-check`. Routine lint includes test targets. Long, load,
 coverage and release-only packaging checks stay outside per-landing gates.

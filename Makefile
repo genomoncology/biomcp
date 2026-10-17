@@ -6,6 +6,8 @@ SHELL := /bin/bash
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
 SPEC_PROFILE ?= dev
+FULL_FEATURE_PROFILE ?= dev
+FULL_FEATURE_BIN = target/$(if $(filter dev,$(FULL_FEATURE_PROFILE)),debug,$(FULL_FEATURE_PROFILE))/biomcp
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
 PYTEST_WORKERS ?= 4
@@ -108,8 +110,8 @@ main-gate:
 full-feature-check:
 	$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features -- -D warnings
 	$(CARGO_WITH_IDENTITY) test --locked --all-features --lib sources::alphagenome::tests
-	$(CARGO_WITH_IDENTITY) build --release --locked --all-features --bin biomcp
-	tools/check-png-artifact target/release/biomcp
+	$(CARGO_WITH_IDENTITY) build --locked --profile $(FULL_FEATURE_PROFILE) --all-features --bin biomcp
+	tools/check-png-artifact $(FULL_FEATURE_BIN)
 
 png-artifact-smoke: build
 	tools/check-png-artifact target/release/biomcp
@@ -127,7 +129,7 @@ release-gate-markers:
 release-gate: lint
 	$(MAKE) test
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
-	$(MAKE) full-feature-check
+	$(MAKE) full-feature-check FULL_FEATURE_PROFILE=release
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 
 check-quality-ratchet:

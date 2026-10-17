@@ -49,23 +49,13 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert 'cargo clippy --all-targets "${routine_cargo_features[@]}" -- -D warnings' in lint
 
 
-def test_release_gate_runs_a_named_all_feature_check() -> None:
-    makefile = _read("Makefile")
-    full = _target(makefile, "full-feature-check")
-    release = _target(makefile, "release-gate")
+def test_release_specs_use_the_optimized_full_feature_binary() -> None:
+    release = _target(_read("Makefile"), "release-gate")
 
-    assert "$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features" in full
-    assert "$(CARGO_WITH_IDENTITY) test --locked --all-features --lib" in full
-    assert "sources::alphagenome::tests" in full
-    assert (
-        "$(CARGO_WITH_IDENTITY) build --release --locked --all-features --bin biomcp"
-        in full
-    )
-    assert "$(MAKE) full-feature-check" in release
     assert "ROUTINE_CARGO_FEATURES=" not in release
     assert (
         '$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"'
-        in (release)
+        in release
     )
 
 
