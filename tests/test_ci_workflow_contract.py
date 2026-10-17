@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -56,6 +58,51 @@ def _step_index(jid: str, needle: str) -> int:
         if needle in str(step.get("name", "")) or needle in str(step.get("uses", "")):
             return i
     raise AssertionError(f"{needle} not found in {jid}")
+
+
+def test_python_gate_prepares_a_clean_environment_before_offline_execution(
+    tmp_path: Path,
+) -> None:
+    shutil.copy2(REPO_ROOT / "Makefile", tmp_path / "Makefile")
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    offline = tools / "run-offline"
+    offline.write_text(
+        '#!/bin/sh\nset -eu\ntest "$1" = --\nshift\n'
+        'export BIOMCP_OFFLINE_NETWORK=1\nexec "$@"\n'
+    )
+    uv = tools / "uv"
+    uv.write_text(
+        f"#!{sys.executable}\n"
+        "import os, pathlib, sys\n"
+        "prepared = pathlib.Path('.venv/prepared')\n"
+        "if sys.argv[1] == 'sync':\n"
+        "    assert os.environ.get('BIOMCP_OFFLINE_NETWORK') != '1'\n"
+        "    assert sys.argv[2:] == ['--extra', 'dev', '--no-install-project']\n"
+        "    prepared.parent.mkdir(exist_ok=True)\n"
+        "    prepared.touch()\n"
+        "    event = 'sync'\n"
+        "else:\n"
+        "    assert prepared.is_file(), 'Python environment was not prepared'\n"
+        "    assert os.environ.get('BIOMCP_OFFLINE_NETWORK') == '1'\n"
+        "    assert sys.argv[1:3] == ['run', '--no-sync']\n"
+        "    event = sys.argv[3]\n"
+        "with pathlib.Path('commands').open('a') as log:\n"
+        "    log.write(event + '\\n')\n"
+    )
+    for executable in (uv, offline):
+        executable.chmod(0o755)
+    env = {key: value for key, value in os.environ.items()
+           if key not in ('MAKEFLAGS', 'MAKEOVERRIDES', 'BIOMCP_OFFLINE_NETWORK')}
+    env["PATH"] = str(tools) + os.pathsep + env["PATH"]
+    result = subprocess.run(
+        ["make", "test-python"], cwd=tmp_path, env=env,
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (tmp_path / "commands").read_text().splitlines() == [
+        "sync", "pytest", "mkdocs",
+    ]
 
 
 def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
