@@ -117,8 +117,40 @@ fn binary_article_assets_protect_terminals_and_preserve_files() {
     );
     assert_eq!(piped.stdout, expected);
 
-    let destination = fixture.root.join("supplement.docx");
-    let output = fixture
+    for destination in [
+        fixture.root.join("supplement.docx"),
+        PathBuf::from("./explicit.pdf"),
+        PathBuf::from("bare.pdf"),
+    ] {
+        let output = fixture
+            .biomcp_command(&[
+                "get",
+                "article",
+                "22663011",
+                "asset",
+                "traces-s1.csv",
+                "--output",
+                destination
+                    .to_str()
+                    .expect("destination path should be UTF-8"),
+            ])
+            .current_dir(&fixture.root)
+            .output()
+            .expect("file-destination asset command should run");
+        assert!(
+            output.status.success(),
+            "file destination {} should succeed\nstdout:\n{}\nstderr:\n{}",
+            destination.display(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(
+            fs::read(fixture.root.join(destination)).expect("destination should exist"),
+            expected
+        );
+    }
+
+    let missing = fixture
         .biomcp_command(&[
             "get",
             "article",
@@ -126,22 +158,19 @@ fn binary_article_assets_protect_terminals_and_preserve_files() {
             "asset",
             "traces-s1.csv",
             "--output",
-            destination
-                .to_str()
-                .expect("destination path should be UTF-8"),
+            "missing/bare.pdf",
         ])
+        .current_dir(&fixture.root)
         .output()
-        .expect("file-destination asset command should run");
+        .expect("missing-directory asset command should run");
+    assert!(!missing.status.success());
     assert!(
-        output.status.success(),
-        "file destination should succeed\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        String::from_utf8_lossy(&missing.stderr)
+            .contains("Output directory does not exist: missing"),
+        "a real missing directory should still be refused: {:?}",
+        missing
     );
-    assert_eq!(
-        fs::read(destination).expect("destination should exist"),
-        expected
-    );
+    assert!(!fixture.root.join("missing").exists());
 }
 
 fn successful_output(fixture: &ArticleFixture, args: &[&str]) -> std::process::Output {
