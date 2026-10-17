@@ -87,17 +87,17 @@ ff8425d37 also carries the package boundary file-count ratchet at 1420
 naming the two 2061 files.
 
 On 18debc486, `make lint`, `make test` (Rust 4226 passed, Python 1252
-passed) and `make spec` each passed once on Yellow holding the checkout
+passed) and `make spec` each passed once on the Linux check host holding the checkout
 and gate locks, and the CI run on 18debc486 finished green. Two full-test
-attempts on Yellow failed single timing-sensitive tests
+attempts on the Linux check host failed single timing-sensitive tests
 (`raw_and_typed_article_query_validation_converges_before_provider_work`
 at 120s and 63s, and once `citation_evidence_returns_the_bounded_error_when_the_bridge_stalls`),
 each passing in isolation in under 12s; the failures traced to
-concurrent lanes sharing Yellow's checkout, `.cache` and target dir. A
+concurrent lanes sharing Linux check host's checkout, `.cache` and target dir. A
 `make spec` gene.md failure under the same contention (help-text assert)
 did not reproduce on a quiet machine in three full runs, and two
 concurrent spec suites corrupt each other's shared fixture state by
-design; gates must hold `~/.yr-checkout.lock` and `~/.yellow-gate.lock`
+design; gates must hold `~/.yr-checkout.lock` and `~/.<build-host>-gate.lock`
 for the whole run.
 
 One live pass over the built binary (spec artifact of 18debc486):

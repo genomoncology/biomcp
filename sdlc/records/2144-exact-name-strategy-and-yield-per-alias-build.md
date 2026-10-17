@@ -68,17 +68,17 @@ fixture boundary pin is unchanged.
 
 | Gate | Host | SHA | Job | Verdict |
 | --- | --- | --- | --- | --- |
-| Whole variant_search suite | m5 | 791b9f5ae | 1792227408877-24586 | 58/59 passed; fmt and lib clippy clean; the one failure is 2138's `no_entity_annotation_run_names_the_miss_instead_of_complete_empty`, which fails identically at main tip `159c68610` (job `1792227303520-20164`) |
-| make lint | m5 | 791b9f5ae | 1792227512979-31574 | passed |
-| make spec | m5 | 791b9f5ae | 1792227562813-39652 | 59 passed, 2 failed — both `spec/entity/clingen-erepo.md` |
-| clingen-erepo page at main tip | m5 | 159c68610 | 1792227607658-50783 | fails the same two lines at current main, so that spec failure predates this branch |
-| make test | yellow | 791b9f5ae | 1792227514674-3691894 | failed on `no_entity_annotation_run_names_the_miss_instead_of_complete_empty` alone — the inherited main-tip defect below; every other test that ran before the abort passed and the Python lane never started |
+| Whole variant_search suite | macOS build host | 791b9f5ae | 1792227408877-24586 | 58/59 passed; fmt and lib clippy clean; the one failure is 2138's `no_entity_annotation_run_names_the_miss_instead_of_complete_empty`, which fails identically at main tip `159c68610` (job `1792227303520-20164`) |
+| make lint | macOS build host | 791b9f5ae | 1792227512979-31574 | passed |
+| make spec | macOS build host | 791b9f5ae | 1792227562813-39652 | 59 passed, 2 failed — both `spec/entity/clingen-erepo.md` |
+| clingen-erepo page at main tip | macOS build host | 159c68610 | 1792227607658-50783 | fails the same two lines at current main, so that spec failure predates this branch |
+| make test | Linux check host | 791b9f5ae | 1792227514674-3691894 | failed on `no_entity_annotation_run_names_the_miss_instead_of_complete_empty` alone — the inherited main-tip defect below; every other test that ran before the abort passed and the Python lane never started |
 
 Earlier pre-rebase evidence: gap job `1792211931779-13479`; targeted new +
 neighbor tests 5/5 at `1b61e5062` (job `1792214907410-52328`); variant_search
 suite 56/56 at `05d6bd590` (job `1792221621682-73418`); make lint passed at
 `05d6bd590` (job `1792221732163-88466`); make test passed at `05d6bd590`
-(yellow job `1792221714906-3482572`, 1160 Python tests plus the Rust lane);
+(Linux check host job `1792221714906-3482572`, 1160 Python tests plus the Rust lane);
 make spec at `05d6bd590` had the same two erepo lines failing (job
 `1792221783631-97832`) and the same page failed at `f9a11e81e` (job
 `1792221825021-99780`).

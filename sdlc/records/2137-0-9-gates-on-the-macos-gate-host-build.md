@@ -1,10 +1,10 @@
 # 2137 — 0.9 gates on the macOS gate host (build record)
 
 Status at Ian's pause (2026-10-16 evening): branch tip 4fb3dbaea pushed; one
-acceptance item (a fully green `make release-gate` run on the M5) is still
+acceptance item (a fully green `make release-gate` run on the macOS build host) is still
 open, blocked by contention flakes documented below, not by platform gaps.
 
-## What ran on the M5 (pm job, machine m5, repo biomcp)
+## What ran on the macOS build host (pm job, repo biomcp)
 
 Four-gate driver (one pm job running `make lint`, `make test`, `make spec`,
 `make release-gate` sequentially, each verdict captured; logs under
@@ -31,7 +31,7 @@ clean on the host's 1.95 at c35126ae1 (run 1792186437263); Python lane
 
 ## Node
 
-Node v22.22.3 was already installed on the M5
+Node v22.22.3 was already installed on the macOS build host
 (`/opt/zerobrew/opt/node@22/bin`, first on PATH). main's 0.9 tree carries
 no `website/prepare` (a 1.0-line artifact), so no 0.9 gate reads Node;
 nothing was installed. Recorded in the ticket.
@@ -80,21 +80,21 @@ nothing was installed. Recorded in the ticket.
 ## External blocker
 
 `cargo deny check advisories` fails on the zip 0.6.6 symlink advisory —
-ticket 2143 owns the fix. On the M5 `make lint` passes (the host's cached
+ticket 2143 owns the fix. On the macOS build host `make lint` passes (the host's cached
 advisory DB predates the entry); CI's lint lane fails on it. Landing needs
 the post-2143 rebase, then CI green at the exact tip.
 
 ## Remaining at the pause
 
 1. One clean four-gate run at the branch tip: `make lint`, `make test`,
-   `make spec` each passed green on the M5 in run 1792187230889;
+   `make spec` each passed green on the macOS build host in run 1792187230889;
    `make release-gate` still needs a run without a contention flake. The
    two flake families seen only above ~20/16 host load: the HPO retry proof
    (once after the rewrite) and individual `rmcp_client_contract` tests
    (two different tests, once each). Both pass isolated and in full suites
    at moderate load (4277/4277 twice).
 2. CI green at the tip: 4fb3dbaea fixes an E0597 the Linux-only build
-   caught in the ca_bundle gating (macOS cfg's the block out, so the M5
+   caught in the ca_bundle gating (macOS cfg's the block out, so the macOS build host
    compiled clean); its CI run was in flight at the pause. The only other
    expected failure anywhere on the branch is the zip advisory (2143).
 3. Landing (coordinator): rebase after 2143 lands, ci.yml green at the
@@ -102,7 +102,7 @@ the post-2143 rebase, then CI green at the exact tip.
 
 ## Machine notes
 
-Nothing ran on Yellow or the Beelink (the Beelink only ran python-only
+No builds ran on the Linux check host or the agent host (the agent host only ran python-only
 contract checks and read-only git/ssh). No pm jobs are running for 2137 at
-the pause. /tmp scratch on the M5 was removed; pm job-run logs under
+the pause. /tmp scratch on the macOS build host was removed; pm job-run logs under
 `~/workspace/job-runs/biomcp/2137/` keep the full evidence.

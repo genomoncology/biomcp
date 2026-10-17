@@ -21,7 +21,7 @@ Editing a doc, a spec page or a Python test recompiles nothing, and a ticket's g
 - Proof: on the build host, a spec-page touch then `cargo build --all-targets` compiles nothing; `make test` and `make spec` after a Rust edit print one `Compiling biomcp-cli`; their wall times recorded before and after; a CI run that touches only a spec page compiles nothing.
 - Defers: CI job structure (2075).
 
-Executed on the branch, yellow, both locks held, head `380c3bb68` (the rebase onto main `0df0214fa` — the landed 2093 — changed only the changelog, the dev-cycle ticket set, and Cargo.lock's rustls bump, none of which touch the build.rs deletion or the lane wiring, so every count below stands on the rebased head `1ee390af8` as well):
+Executed on the branch, Linux check host, both locks held, head `380c3bb68` (the rebase onto main `0df0214fa` — the landed 2093 — changed only the changelog, the dev-cycle ticket set, and Cargo.lock's rustls bump, none of which touch the build.rs deletion or the lane wiring, so every count below stands on the rebased head `1ee390af8` as well):
 
 Red state (before, base `ca54283f0`, build.rs present):
 
