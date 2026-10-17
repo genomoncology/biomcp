@@ -409,7 +409,9 @@ impl ProviderUrlPolicy {
             }
             OriginRule::ProviderVouchedUrl => {
                 if !unsafe_fixture
-                    && url.host_str().is_some_and(|host| parse_ip_literal(host).is_some())
+                    && url
+                        .host_str()
+                        .is_some_and(|host| parse_ip_literal(host).is_some())
                 {
                     return Err(self.error("IP-literal host is forbidden"));
                 }
@@ -798,7 +800,10 @@ mod tests {
                 .validate_url(&Url::parse(raw).unwrap())
                 .expect_err("transport guard must reject this URL");
             let message = error.to_string();
-            assert!(!message.contains("secret"), "diagnostic echoed the URL: {message}");
+            assert!(
+                !message.contains("secret"),
+                "diagnostic echoed the URL: {message}"
+            );
         }
     }
 

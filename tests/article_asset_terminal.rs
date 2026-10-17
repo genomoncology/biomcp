@@ -411,7 +411,12 @@ fn publisher_open_pdf_link_downloads_and_returns_its_text() {
     assert_eq!(manifest["source_kind"], "pdf");
     assert_eq!(manifest["provider"]["label"], "Semantic Scholar PDF");
     assert_eq!(manifest["provenance"]["pdf_fallback_used"], true);
-    assert!(manifest["reuse"]["license"].as_str().unwrap().contains("CC BY"));
+    assert!(
+        manifest["reuse"]["license"]
+            .as_str()
+            .unwrap()
+            .contains("CC BY")
+    );
 
     let attempt = article_fulltext_pdf_attempt(&doc);
     assert_eq!(attempt["outcome"], "data");
@@ -423,8 +428,14 @@ fn publisher_open_pdf_link_downloads_and_returns_its_text() {
         .expect("pdf fulltext should name its saved path");
     let text = fs::read_to_string(saved).expect("captured PDF text should be saved");
     let lower = text.to_lowercase();
-    assert!(lower.contains("plateaus"), "saved text lost the paper title");
-    assert!(lower.contains("newman"), "saved text lost the response target");
+    assert!(
+        lower.contains("plateaus"),
+        "saved text lost the paper title"
+    );
+    assert!(
+        lower.contains("newman"),
+        "saved text lost the response target"
+    );
 }
 
 #[test]
@@ -433,7 +444,7 @@ fn open_pdf_failures_name_the_part_that_failed() {
     let fixture = ArticleFixture::start();
 
     // Each recorded shape names its failed part instead of a bare
-    // source_unavailable/no_content (ticket 2142 acceptance).
+    // source_unavailable/no_content.
     for (pmid, expected_reason, outcome) in [
         ("22663019", "open_pdf_link_absent", "empty"),
         ("22663012", "open_pdf_link_unavailable", "unavailable"),
@@ -464,7 +475,10 @@ fn open_pdf_failures_name_the_part_that_failed() {
             attempt["reason"], expected_reason,
             "wrong pdf-step reason for {pmid}: {doc}"
         );
-        assert_eq!(attempt["outcome"], outcome, "wrong pdf-step outcome for {pmid}");
+        assert_eq!(
+            attempt["outcome"], outcome,
+            "wrong pdf-step outcome for {pmid}"
+        );
         assert_eq!(doc["full_text_path"], serde_json::Value::Null);
     }
 }
