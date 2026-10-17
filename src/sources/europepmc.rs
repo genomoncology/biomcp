@@ -293,7 +293,10 @@ impl EuropePmcClient {
     ) -> Result<Option<RequestPlan>, BioMcpError> {
         let source = source.trim();
         let id = id.trim();
-        if source.is_empty() || id.is_empty() {
+        // The REST fullTextXML resource serves PMC records only. Sending a
+        // bare PMID returns an upstream 500 instead of an ordinary absence.
+        // https://europepmc.org/RestfulWebService
+        if !source.eq_ignore_ascii_case("PMC") || id.is_empty() {
             return Ok(None);
         }
 

@@ -699,6 +699,78 @@ fn open_pdf_failures_name_the_part_that_failed() {
 
 #[test]
 #[serial_test::serial(article_output_fixture)]
+fn article_without_a_pmc_record_reports_no_fulltext_without_an_invalid_xml_request() {
+    let fixture = ArticleFixture::start();
+    let output = successful_output(
+        &fixture,
+        &["--json", "get", "article", "22663030", "fulltext"],
+    );
+    let doc: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(
+        doc["section_outcomes"]["fulltext"]["outcome"], "empty",
+        "{doc}"
+    );
+    assert_eq!(doc["full_text_coverage"]["coverage"], "none");
+    assert!(
+        doc["full_text_coverage"]["attempts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|attempt| attempt["outcome"] == "empty" && attempt["reason"] == "no_content")
+    );
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("sources failed"));
+    let requests = fs::read_to_string(fixture.root.join("request-log.txt")).unwrap();
+    assert!(!requests.contains("fulltext:xml:"), "{requests}");
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn article_fulltext_xml_absence_does_not_retry_but_an_outage_does() {
+    let fixture = ArticleFixture::start();
+    for (pmid, expected_outcome, request, retries) in [
+        ("22663014", "empty", "fulltext:xml:europepmc-pmc", false),
+        (
+            "22663019",
+            "unavailable",
+            "fulltext:xml:europepmc-pmc-outage",
+            true,
+        ),
+    ] {
+        let output = successful_output(&fixture, &["--json", "get", "article", pmid, "fulltext"]);
+        let doc: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(
+            doc["section_outcomes"]["fulltext"]["outcome"], expected_outcome,
+            "{doc}"
+        );
+        let attempts = doc["full_text_coverage"]["attempts"].as_array().unwrap();
+        let attempt = attempts
+            .iter()
+            .find(|attempt| attempt["provider"]["label"] == "Europe PMC XML")
+            .unwrap();
+        assert_eq!(attempt["outcome"], expected_outcome);
+        assert_eq!(
+            attempt["reason"],
+            if retries {
+                "source_unavailable"
+            } else {
+                "no_content"
+            }
+        );
+        let requests = fs::read_to_string(fixture.root.join("request-log.txt")).unwrap();
+        let count = requests.lines().filter(|line| *line == request).count();
+        if retries {
+            assert!(
+                count > 1,
+                "outage must retain transient retries: {requests}"
+            );
+        } else {
+            assert_eq!(count, 1, "absence must not retry: {requests}");
+        }
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
 fn article_fulltext_without_out_keeps_the_managed_cache_path() {
     let fixture = ArticleFixture::start();
 

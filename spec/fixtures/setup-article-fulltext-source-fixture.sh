@@ -1674,9 +1674,10 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/PMC123462/fullTextXML":
+            append_request_log("fulltext:xml:europepmc-pmc-outage")
             send_text(
                 self,
-                500,
+                503,
                 "SENSITIVE-UPSTREAM-DETAIL https://signed.example.invalid/article?token=secret",
                 "text/plain",
             )
@@ -1686,7 +1687,14 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, ABSTRACT_ONLY_XML, "application/xml")
             return
 
-        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML", "/22663020/fullTextXML", "/22663021/fullTextXML", "/22663022/fullTextXML", "/22663026/fullTextXML", "/22663027/fullTextXML", "/22663028/fullTextXML", "/22663029/fullTextXML", "/22663030/fullTextXML"}:
+        if decoded_path == "/22663030/fullTextXML":
+            append_request_log("fulltext:xml:europepmc-med-invalid-id")
+            # The live REST endpoint returns 500 for a bare PMID. Full text
+            # XML is supported for PMC records, not MED records.
+            send_text(self, 500, '{"status":500,"error":"Internal Server Error"}', "application/json")
+            return
+
+        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML", "/22663020/fullTextXML", "/22663021/fullTextXML", "/22663022/fullTextXML", "/22663026/fullTextXML", "/22663027/fullTextXML", "/22663028/fullTextXML", "/22663029/fullTextXML"}:
             append_request_log("fulltext:xml:europepmc-med")
             send_text(self, 404, "not found", "text/plain")
             return
