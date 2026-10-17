@@ -48,6 +48,7 @@
 
 ### Internal
 
+- MCP adverse-event contract failures include the provider error reply for diagnosis. (2174)
 - Describe private build hosts and fixture origins by their public roles in release records without changing measurements or provider identifiers (2129).
 - Prepare consistent stable release metadata for the final measurements and nonpublishing rehearsal. (2164)
 - Remove duplicate repository review-status tests after the shared landing tool enforced accepted reviews itself. (2063)
