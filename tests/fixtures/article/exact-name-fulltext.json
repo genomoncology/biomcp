@@ -1,0 +1,122 @@
+{
+  "captured_on": "2026-10-17",
+  "source": "Europe PMC REST search",
+  "captures": [
+    {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=%22F1761I%22&format=json&pageSize=25",
+      "query": "\"F1761I\"",
+      "response": {
+        "version": "6.9",
+        "hitCount": 1,
+        "request": {
+          "queryString": "\"F1761I\"",
+          "resultType": "lite",
+          "cursorMark": "*",
+          "pageSize": 25,
+          "sort": "",
+          "synonym": false
+        },
+        "resultList": {
+          "result": [
+            {
+              "id": "10811118",
+              "source": "MED",
+              "pmid": "10811118",
+              "pmcid": "PMC4893312",
+              "fullTextIdList": {
+                "fullTextId": [
+                  "PMC4893312"
+                ]
+              },
+              "title": "Functional assay for BRCA1: mutagenesis of the COOH-terminal region reveals critical residues for transcription activation.",
+              "authorString": "Hayes F, Cayanan C, Barill\u00e0 D, Monteiro AN.",
+              "journalTitle": "Cancer Res",
+              "issue": "9",
+              "journalVolume": "60",
+              "pubYear": "2000",
+              "journalIssn": "0008-5472; 1538-7445; ",
+              "pageInfo": "2411-2418",
+              "pubType": "research support, non-u.s. gov't; research-article; journal article",
+              "isOpenAccess": "N",
+              "inEPMC": "Y",
+              "inPMC": "Y",
+              "citedByCount": 61,
+              "hasReferences": "Y",
+              "hasTextMinedTerms": "Y",
+              "hasDbCrossReferences": "N",
+              "hasPDF": "Y",
+              "hasBook": "N",
+              "hasSuppl": "N",
+              "hasLabsLinks": "Y",
+              "hasTMAccessionNumbers": "Y",
+              "tmAccessionTypeList": {
+                "accessionType": [
+                  "gen"
+                ]
+              },
+              "firstPublicationDate": "2000-05-01",
+              "firstIndexDate": "2008-12-23"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22F1761I%22&format=json&pageSize=25",
+      "query": "TITLE_ABS:\"F1761I\"",
+      "response": {
+        "version": "6.9",
+        "hitCount": 0,
+        "request": {
+          "queryString": "TITLE_ABS:\"F1761I\"",
+          "resultType": "lite",
+          "cursorMark": "*",
+          "pageSize": 25,
+          "sort": "",
+          "synonym": false
+        },
+        "resultList": {
+          "result": []
+        }
+      }
+    },
+    {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=%22BRCA1+F1761I%22&format=json&pageSize=25",
+      "query": "\"BRCA1 F1761I\"",
+      "response": {
+        "version": "6.9",
+        "hitCount": 0,
+        "request": {
+          "queryString": "\"BRCA1 F1761I\"",
+          "resultType": "lite",
+          "cursorMark": "*",
+          "pageSize": 25,
+          "sort": "",
+          "synonym": false
+        },
+        "resultList": {
+          "result": []
+        }
+      }
+    },
+    {
+      "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F1761I%22&format=json&pageSize=25",
+      "query": "TITLE_ABS:\"BRCA1 F1761I\"",
+      "response": {
+        "version": "6.9",
+        "hitCount": 0,
+        "request": {
+          "queryString": "TITLE_ABS:\"BRCA1 F1761I\"",
+          "resultType": "lite",
+          "cursorMark": "*",
+          "pageSize": 25,
+          "sort": "",
+          "synonym": false
+        },
+        "resultList": {
+          "result": []
+        }
+      }
+    }
+  ]
+}
