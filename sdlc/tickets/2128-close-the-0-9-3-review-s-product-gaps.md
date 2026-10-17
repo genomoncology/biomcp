@@ -14,6 +14,8 @@ Reviews: revision 4fceba1, accept
 
 Reviews: revision 77e48fa, accept
 
+Reviews: revision 78e627f, accept
+
 ## Outcome
 
 Coordinator implementation brief: close exactly the nine recorded caller-visible gaps while preserving their existing clinical, identity and cache-policy decisions. The affected regressions were authored first. Draft production edits began before the remote baseline finished; those edits were parked until the baseline returned, so reproduction is not claimed to have preceded that drafting.
@@ -54,3 +56,4 @@ Found by the 0.9.3 adversarial review on 2026-10-16.
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 next: Review accepted 78e627f01. Original batch failures 1792249841729-7187 and 1792250314261-50149 exposed stale shared-name expectations inconsistent with approved exact-owner decision3. Minimal assertion/fixture-key corrections preserve runtime logic and recorded responses. Complete drug family passed 180 cases without fail-fast in 1792250810209-75160; formatting passed and Clippy reused from 1792250665363-95005. Corrected six-ticket batch gate is running.
