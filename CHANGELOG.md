@@ -38,7 +38,6 @@
 
 ### Internal
 - Report executed test counts and current specification page totals in release measurements; keep absent suite summaries incomplete (2169).
-
 - Keep retry fixtures on real time during loopback requests; preserve the HPO four-attempt policy and compact-command retry cancellation checks. (2167)
 - Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
 - The credential-redaction contract uses permanent local provider failures, so unrelated randomized retry delays cannot exhaust its command watchdog. (2165)
