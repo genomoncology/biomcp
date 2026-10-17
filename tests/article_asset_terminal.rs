@@ -730,3 +730,220 @@ fn article_fulltext_without_out_keeps_the_managed_cache_path() {
         "default retrieval should not create a user-library copy"
     );
 }
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
+    let fixture = ArticleFixture::start();
+
+    let search = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            "F1761I",
+        ],
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
+    let hits = doc["hits"].as_array().expect("hits should be a list");
+    assert_eq!(doc["hits_truncated"], false);
+    assert_eq!(hits.len(), 1, "one acceptance hit is expected: {doc}");
+    assert_eq!(hits[0]["worksheet"], "Sheet1");
+    assert_eq!(hits[0]["row"], serde_json::json!(2780));
+    assert_eq!(hits[0]["locator"], "Sheet1 row 2780");
+    assert_eq!(hits[0]["format"], "xlsx");
+    assert_eq!(hits[0]["filename"], "supplementary-table-s1.xlsx");
+    assert!(
+        hits[0]["context"]
+            .as_str()
+            .expect("context should be text")
+            .contains("BRCA1"),
+        "the hit context should carry the matched row text"
+    );
+    let sha256 = hits[0]["sha256"].as_str().expect("checksum should be text");
+    assert_eq!(
+        sha256.len(),
+        64,
+        "the source file's checksum rides each hit"
+    );
+    let files = doc["files"].as_array().expect("files should be a list");
+    assert_eq!(files.len(), 1);
+    assert_eq!(files[0]["outcome"], "searched");
+    assert_eq!(files[0]["sha256"], hits[0]["sha256"]);
+
+    let cache = fixture
+        .root
+        .join("cache/sessions/article-supplement-text-v1")
+        .join(format!("{sha256}.json"));
+    let mut cached: serde_json::Value = serde_json::from_slice(&fs::read(&cache).unwrap()).unwrap();
+    cached["format"] = serde_json::json!("csv");
+    cached["extraction"]["blocks"] = serde_json::json!([]);
+    fs::write(&cache, serde_json::to_vec(&cached).unwrap()).unwrap();
+    let again = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            "F1761I",
+        ],
+    );
+    let again: serde_json::Value = serde_json::from_slice(&again.stdout).unwrap();
+    assert_eq!(
+        again["hits"][0]["row"], 2780,
+        "incompatible cached format must be reparsed"
+    );
+
+    let mut cached: serde_json::Value = serde_json::from_slice(&fs::read(&cache).unwrap()).unwrap();
+    let mut block = cached["extraction"]["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|block| block["row"] == 2780)
+        .unwrap()
+        .clone();
+    block["text"] = serde_json::json!(format!("F1761I{}", "é".repeat(400)));
+    cached["extraction"]["blocks"] = serde_json::json!([block]);
+    fs::write(&cache, serde_json::to_vec(&cached).unwrap()).unwrap();
+    let unicode = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            "F1761I",
+        ],
+    );
+    let unicode: serde_json::Value = serde_json::from_slice(&unicode.stdout).unwrap();
+    assert!(unicode["hits"][0]["context"].as_str().unwrap().len() <= 400);
+
+    let search = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "28944238",
+            "P245S",
+        ],
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
+    let hits = doc["hits"].as_array().expect("hits should be a list");
+    assert_eq!(hits.len(), 1, "one acceptance hit is expected: {doc}");
+    assert_eq!(hits[0]["worksheet"], "ST2");
+    assert_eq!(hits[0]["row"], serde_json::json!(85));
+    assert_eq!(hits[0]["locator"], "ST2 row 85");
+    assert!(
+        hits[0]["context"]
+            .as_str()
+            .expect("context should be text")
+            .contains("AXIN2"),
+        "the hit context should carry the matched row text"
+    );
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn supplement_search_reports_an_unreadable_file_with_format_and_reason() {
+    let fixture = ArticleFixture::start();
+
+    let search = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "22663024",
+            "F1761I",
+        ],
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
+    let hits = doc["hits"].as_array().expect("hits should be a list");
+    assert_eq!(hits.len(), 0, "the scrubbed xlsx bytes hold no text: {doc}");
+    let files = doc["files"].as_array().expect("files should be a list");
+    assert_eq!(files.len(), 1, "the one supplement is reported: {doc}");
+    assert_eq!(files[0]["outcome"], "unextractable");
+    assert_eq!(files[0]["format"], "xlsx");
+    assert_eq!(files[0]["filename"], "NIHMS1501643-supplement-2.xlsx");
+    assert!(
+        files[0]["reason"]
+            .as_str()
+            .expect("reason should be text")
+            .contains("workbook could not be opened"),
+        "the refusal should name why the file could not be read: {doc}"
+    );
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn supplement_search_reports_an_absent_search_and_stays_json_only() {
+    let fixture = ArticleFixture::start();
+
+    let search = successful_output(
+        &fixture,
+        &["--json", "article", "supplement-search", "30209399", "G12D"],
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
+    assert_eq!(doc["hits"].as_array().expect("hits list").len(), 0);
+    assert_eq!(doc["files"][0]["outcome"], "searched");
+
+    let literal = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            " F1761I",
+        ],
+    );
+    let literal: serde_json::Value = serde_json::from_slice(&literal.stdout).unwrap();
+    assert_eq!(literal["query"], " F1761I");
+    assert!(
+        literal["hits"].as_array().unwrap().is_empty(),
+        "spaces are literal search text"
+    );
+
+    let refused = fixture
+        .biomcp_command(&["article", "supplement-search", "30209399", "F1761I"])
+        .output()
+        .expect("non-JSON supplement search should run");
+    assert!(
+        !refused.status.success(),
+        "supplement search is JSON-only:\n{}",
+        String::from_utf8_lossy(&refused.stdout)
+    );
+    let stderr = String::from_utf8_lossy(&refused.stderr);
+    assert!(
+        stderr.contains("JSON-only"),
+        "the refusal should tell the caller to add --json:\n{stderr}"
+    );
+
+    let filtered = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            "F1761I",
+            "--asset",
+            "supplementary-table-s1.xlsx",
+        ],
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&filtered.stdout).expect("filtered search should be JSON");
+    assert_eq!(
+        doc["hits"].as_array().expect("hits list").len(),
+        1,
+        "the asset filter still searches the one file: {doc}"
+    );
+}

@@ -89,6 +89,9 @@ humantime = "2"
 regex = "1"
 csv = "1"
 roxmltree = "0.20"
+# 2152: the supplement text search reads xlsx and binary xls workbooks;
+# calamine is the one maintained Rust reader covering both container types.
+calamine = { version = "0.36", default-features = false }
 # default-features = false drops the scraper CLI's getopts binary.
 scraper = { version = "0.27", default-features = false, features = ["errors"] }
 ssri = "9"

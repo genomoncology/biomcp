@@ -447,6 +447,7 @@ biomcp article citations 22663011 --limit 3 --offset 0   # one Semantic Scholar 
 biomcp article references 22663011 --limit 3 --offset 0  # one Semantic Scholar reference page
 biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related papers
 biomcp article citation-evidence 22663011 10.1038/nature10725  # passage for one directed citation
+biomcp --json article supplement-search 30209399 F1761I  # exact-locator text search inside supplements
 ```
 
 Variant rows in `article entities` print a `get variant` command that opens
