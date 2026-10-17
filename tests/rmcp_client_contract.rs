@@ -413,7 +413,7 @@ impl RequestCounterFixture {
                         });
                         let body = r#"{"total":0,"data":[]}"#;
                         let response = format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                             body.len()
                         );
                         let write = stream.write_all(response.as_bytes());
@@ -1207,7 +1207,10 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
 -> anyhow::Result<()> {
     let harness = harness();
     let fixture = RequestCounterFixture::start()?;
-    let mut env = Vec::new();
+    // Counting requires every valid call to reach the origin, even when the
+    // supported cache mode permits reuse of expired responses. The fixture
+    // must declare its answers nonstorable rather than rely on revalidation.
+    let mut env = vec![("BIOMCP_CACHE_MODE", "infinite".to_string())];
     for name in [
         "BIOMCP_PUBTATOR_BASE",
         "BIOMCP_EUROPEPMC_BASE",
