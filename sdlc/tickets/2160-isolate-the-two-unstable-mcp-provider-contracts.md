@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 88834f9, accept
+
 ## Outcome
 
 The FAERS report-share and raw/typed article-query contracts return their recorded fixture outcomes independently of live providers, credentials and unrelated test processes.
