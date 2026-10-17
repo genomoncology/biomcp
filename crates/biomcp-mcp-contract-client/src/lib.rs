@@ -1194,9 +1194,14 @@ impl ContractHarness {
                 Err(error) => format!("<could not read stderr: {error}>"),
             }
         };
-        let mut last_probe = String::new();
-        for _ in 0..200 {
-            let probe = reqwest::get(format!("{base_url}/health")).await;
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(1))
+            .build()?;
+        let started = tokio::time::Instant::now();
+        let mut warned = false;
+        let mut last_probe;
+        loop {
+            let probe = client.get(format!("{base_url}/health")).send().await;
             if probe
                 .as_ref()
                 .is_ok_and(|response| response.status().is_success())
@@ -1213,13 +1218,23 @@ impl ContractHarness {
                     stderr_excerpt()
                 );
             }
+            let elapsed = started.elapsed();
+            if !warned && elapsed >= Duration::from_secs(5) {
+                eprintln!("warning: serve-http startup is slow; waiting for health or child exit");
+                warned = true;
+            }
+            // A latency warning never fails startup. This separate watchdog
+            // bounds an unresponsive child even outside the test runner.
+            if elapsed >= Duration::from_secs(120) {
+                break;
+            }
             tokio::time::sleep(Duration::from_millis(25)).await;
         }
 
         let status = child.try_wait()?;
         let _ = child.kill().await;
         anyhow::bail!(
-            "serve-http did not become ready at {base_url}/health; child status: {status:?}; last probe: {last_probe}; stderr: {}",
+            "serve-http startup watchdog expired at {base_url}/health; child status: {status:?}; last probe: {last_probe}; stderr: {}",
             stderr_excerpt()
         )
     }

@@ -757,6 +757,35 @@ fn serve_http_startup_failure_reports_child_exit_and_stderr() {
     assert!(message.contains("--not-a-valid-server-flag"), "{message}");
 }
 
+#[cfg(unix)]
+#[test]
+fn serve_http_waits_for_delayed_startup_and_preserves_exit_diagnostics() {
+    let repo = env!("CARGO_MANIFEST_DIR");
+    let binary = biomcp_mcp_contract_client::ContractHarness::from_repo_root(repo).biomcp_bin;
+    let harness = biomcp_mcp_contract_client::ContractHarness::new("/bin/sh", repo);
+    let binary = binary.to_str().expect("CLI path is UTF-8");
+    serve_runtime().block_on(async {
+        // Delay the real CLI before argument parsing, matching a live child
+        // that has not yet produced either health responses or stderr.
+        let prefix = ["-c", "sleep 6; exec \"$@\"", "delayed-cli", binary];
+        let (mut child, _) = harness
+            .spawn_http_server_with_args(&prefix, &[])
+            .await
+            .expect("a slow live child can still become healthy");
+        child.kill().await.expect("reap the healthy server");
+        let mut invalid = prefix.to_vec();
+        invalid.push("--not-a-valid-server-flag");
+        let error = harness
+            .spawn_http_server_with_args(&invalid, &[])
+            .await
+            .expect_err("wait for the slow child's real argument error");
+        let message = error.to_string();
+        assert!(message.contains("exited before healthcheck"), "{message}");
+        assert!(message.contains("unexpected argument"), "{message}");
+        assert!(message.contains("--not-a-valid-server-flag"), "{message}");
+    });
+}
+
 #[test]
 fn serve_http_flag_matches_the_env_variable_form() {
     let replay = ReplayServer::start();
