@@ -1,5 +1,7 @@
 # AGENTS.md — BioMCP
 
+This repository is public and talks only about itself.
+
 BioMCP is a Rust CLI and MCP server with a Python docs/contract harness. The
 Rust runtime lives under `src/`; Python tests, docs checks, and executable
 contracts exercise the shipped CLI/MCP surface.
@@ -49,7 +51,9 @@ Run affected tests through the build job, leaving `CARGO_INCREMENTAL` unset so t
 pm job run <ticket> <revision> -- cargo nextest run --no-default-features -E 'test(...)'
 ```
 
-Run affected tests during development. Run one Rust build at a time on a build host.
+Run affected tests during development. Run one Rust build at a time within a lane. Build-job admission schedules independent lanes in parallel.
+
+tools/run-offline isolates the network only on Linux, so run any gate that must prove offline behavior on a Linux build host.
 
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
