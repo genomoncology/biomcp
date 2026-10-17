@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision be2dfea, accept
+
 ## Outcome
 
 `get article ID asset NAME --output bare.pdf` writes `bare.pdf` in the current directory, the same as `./bare.pdf`.
