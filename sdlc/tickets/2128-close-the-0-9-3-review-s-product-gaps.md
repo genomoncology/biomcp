@@ -50,3 +50,7 @@ Found by the 0.9.3 adversarial review on 2026-10-16.
 - Proof: reproduce each behavior on current main through its actual entry point: `biomcp variant structure`, day-cached `biomcp --json search gwas` and openFDA calls, `biomcp get drug`, `biomcp get disease MM`, MCP health, `biomcp get variant`, and a staged `install.sh` installation whose existing path contains spaces. Record the exact commands and replies before changes. Add the smallest recorded-reply regression for each behavior; review the corrected 2084 prose against its existing scope decision. Run affected regressions through the build job and the routine landing gate. No prose-only regression test is needed.
 - Keeps: all nine recorded product decisions above; no new clinical or identity rule. Reuse the approved shared residue check. Escalate a need to change those decisions through the PM.
 - Defers: unrelated clinical interpretation and broad fixture restructuring.
+
+## Progress
+
+- 2026-10-17 started
