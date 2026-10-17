@@ -1112,7 +1112,10 @@ def test_manual_qualification_remains_separate_from_protected_release() -> None:
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
     ci_workflow = yaml.safe_load(ci)
     ci_triggers = ci_workflow.get("on", ci_workflow.get(True))
-    assert set(ci_triggers) == {"workflow_dispatch"}
+    assert set(ci_triggers) == {"workflow_dispatch", "workflow_call"}
+    qualification = yaml.safe_load(release)["jobs"]["qualification"]
+    assert qualification["uses"] == "./.github/workflows/ci.yml"
+    assert qualification["with"]["revision"] == "${{ needs.version-check.outputs.source_sha }}"
     # One build job prepares the dev build; the lanes each run one
     # Make target, so CI copies no smaller command list.
     for job, command in (
