@@ -16,6 +16,7 @@ Depends on: 2156
 A routine Rust or Python test exceeding thirty seconds emits a warning identifying the test and machine load; elapsed time alone never fails or terminates it.
 
 - Starts from: `.config/nextest.toml`, the shared pytest runner and the routine/long suite selections.
+- Additional reviewed claims: `tools/report-slow-tests.py`, `tests/test_slow_test_reporting.py`, `tests/test_python_contract_parallelism.py`, `tests/test_upstream_planning_analysis_docs.py`, `tests/test_routine_cargo_feature_contract.py`.
 - Keeps: assertion failures fail; exhaustive tests have an explicit long-suite command and may take the time they need; meaningful tests are not deleted because they are slow.
 - Changes: claims `.config/nextest.toml` `tests/conftest.py` `Makefile` `pyproject.toml` `AGENTS.md` `CHANGELOG.md`. Add nonterminating Rust slow-test reporting and Python duration reporting with load. Name affected runner-contract files in this claim before changing them. Remove the proposed ten-second termination policy and its timeout exceptions. Keep the threshold in its runner configuration rather than duplicating it in instructions.
 - Proof: through the actual routine runner commands, planted passing Rust and Python cases exceeding the warning threshold emit test identity and load and still pass; a planted assertion failure fails. Verify long-suite selection separately. Run these proofs through the build job without unrelated exhaustive suites.
