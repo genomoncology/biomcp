@@ -12,6 +12,8 @@ Depends on: 2117
 
 Reviews: revision 76222b8, accept
 
+Reviews: revision 67c0d69, accept
+
 ## Outcome
 
 The coverage measurement applies show-env exports only to the instrumented Rust suite, clears them before Python and specification execution, and reports complete outside-in and combined coverage only when every required suite succeeds.
