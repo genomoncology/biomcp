@@ -677,8 +677,7 @@ detail path.
 request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
 : >"$request_log"
 before="$(wc -l <"$request_log")"
-refusal="$(../../tools/biomcp-ci --json batch article 22663011 --mode detail --sections fulltext,assets 2>&1 || true)"
-printf '%s\n' "$refusal" | mustmatch like 'Article batch does not support the "assets" section
+{ set +e; ../../tools/biomcp-ci --json batch article 22663011 --mode detail --sections fulltext,assets 2>/dev/null; status=$?; set -e; test "$status" -eq 2; } | mustmatch like 'Article batch does not support the "assets" section
 annotations, fulltext, indexing, tldr, all'
 ../../tools/biomcp-ci --json batch article 22663011 --mode detail --sections fulltext \
   | jq '
