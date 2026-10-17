@@ -9,6 +9,7 @@ Milestone: 0.9.3
 A release qualifies its exact revision directly, and the full release workflow can rehearse an untagged candidate without publishing before Ian tags it.
 
 Depends on: 2156
+Depends on: 2159
 
 - Starts from: `.github/workflows/release.yml`, the manually runnable CI/documentation workflows and their existing provenance and behavior contracts. Current release validation requires a main-push CI run, and ordinary dispatch only checks an existing tag; neither serves the approved process.
 - Keeps: five platform archives and wheels, checksums, existing package and container platform smokes, version/changelog checks, publication ordering, least permissions and existing container-only dispatch.
