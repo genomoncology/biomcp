@@ -1378,6 +1378,20 @@ fn terminal_reconciled_statuses(
         .collect()
 }
 
+/// The entity-id route names a no-entity miss in plain words; the ledger
+/// keeps the status, work counts, and reason codes.
+fn name_pubtator_variant_no_entity(statuses: &mut [VariantArticleSourceStatus]) {
+    for status in statuses {
+        if status.route == "pubtator_variant"
+            && status.source == "pubtator"
+            && status.reason_codes.contains(&"no_variant_entity")
+        {
+            status.detail =
+                Some("PubTator autocomplete returned no variant entity for this request".into());
+        }
+    }
+}
+
 /// The structured error for a zero-row outage names the failing sources
 /// instead of claiming every route was unavailable.
 fn variant_article_outage_message(statuses: &[VariantArticleSourceStatus]) -> String {
@@ -3491,16 +3505,8 @@ async fn search_variant_articles_identity(
         {
             status.detail.clone_from(&prior.detail);
         }
-        // The entity-id route names its miss in plain words; the ledger keeps
-        // the status, work counts, and reason codes.
-        if status.route == "pubtator_variant"
-            && status.source == "pubtator"
-            && status.reason_codes.contains(&"no_variant_entity")
-        {
-            status.detail =
-                Some("PubTator autocomplete returned no variant entity for this request".into());
-        }
     }
+    name_pubtator_variant_no_entity(&mut statuses);
     let runtime_incomplete = source_statuses_incomplete(&statuses);
     let provider_incomplete = matches!(
         context.resolution.provider_validation.status,
