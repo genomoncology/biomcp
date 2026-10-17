@@ -5828,6 +5828,389 @@ mod tests {
         );
     }
 
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn samhd1_i448t_articles_tie_the_genomic_alias_to_the_gene() {
+        // Ticket 2140: the exact-lexical route sent MyVariant's genomic
+        // coordinate alias bare, so PubMed's loose tokenization of
+        // "chr20:g.35533834A>G" ("chr20"[All Fields] AND "G"[All Fields])
+        // pulled the cotton paper 28794480 into a SAMHD1 search. The recorded
+        // replies are the live provider bytes: the bare keyword term returns
+        // 15 chromosome-20 papers including the cotton one, the gene-tied
+        // term returns none, and the SAMHD1 I448T keyword keeps the
+        // SAMHD1-naming papers.
+        const MYVARIANT_QUERY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/query_samhd1_i448t_20261017.json"
+        ));
+        const MYVARIANT_HYDRATION: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/variant_chr20_g_35533834A_G_20261017.json"
+        ));
+        const AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/autocomplete_samhd1_i448t_20261017.json"
+        ));
+        const ENTITY_SEARCH: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_samhd1_entity_20261017.json"
+        ));
+        const PUBTATOR_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_zero_hit_20261017.json"
+        ));
+        const EPMC_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/europepmc/search_zero_hit_20261017.json"
+        ));
+        const ESEARCH_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_i448t_keyword_20261017.json"
+        ));
+        const ESUMMARY_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_samhd1_i448t_keyword_20261017.json"
+        ));
+        const ESEARCH_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_chr20_bare_20261017.json"
+        ));
+        const ESUMMARY_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_samhd1_chr20_bare_20261017.json"
+        ));
+        const ESEARCH_GENE_TIED: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_chr20_gene_tied_20261017.json"
+        ));
+        const ESEARCH_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_strict_i448t_empty_20261017.json"
+        ));
+        const S2_EMPTY: &[u8] = br#"{"total":0,"data":[]}"#;
+
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            let json = |body: &[u8]| {
+                TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+            };
+            if first_line.starts_with("GET /query") {
+                return json(MYVARIANT_QUERY);
+            }
+            if first_line.starts_with("GET /variant/") {
+                return json(MYVARIANT_HYDRATION);
+            }
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return json(AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /search/") {
+                return json(if first_line.contains("%40VARIANT") {
+                    ENTITY_SEARCH
+                } else {
+                    PUBTATOR_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /search?") {
+                return json(EPMC_EMPTY);
+            }
+            if first_line.starts_with("GET /graph/v1/") {
+                return json(S2_EMPTY);
+            }
+            if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                // The gene-tied term also contains the bare coordinate, so it
+                // is matched first.
+                return json(if first_line.contains("term=SAMHD1+chr20%3Ag") {
+                    ESEARCH_GENE_TIED
+                } else if first_line.contains("term=chr20%3Ag") {
+                    ESEARCH_BARE
+                } else if first_line.contains("term=SAMHD1+I448T+NOT") {
+                    ESEARCH_KEYWORD
+                } else {
+                    ESEARCH_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
+                return json(if first_line.contains("id=42754015") {
+                    ESUMMARY_BARE
+                } else {
+                    ESUMMARY_KEYWORD
+                });
+            }
+            json(b"{}")
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("2140-samhd1");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "SAMHD1 I448T",
+            VariantArticleStrategy::Union,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(60),
+        )
+        .await
+        .expect("recorded SAMHD1 I448T search outcome");
+
+        let rows = &outcome.response.results;
+        assert!(
+            rows.iter().all(|row| row.article.pmid != "28794480"),
+            "the cotton paper matched only by the bare coordinate must drop; got {}",
+            rows.iter()
+                .filter(|row| row.article.pmid == "28794480")
+                .count()
+        );
+        assert!(
+            rows.iter().any(|row| {
+                row.article.pmid == "42857107" || row.article.title.contains("SAMHD1")
+            }),
+            "papers that name SAMHD1 stay; titles: {:?}",
+            rows.iter()
+                .map(|row| row.article.title.as_str())
+                .take(5)
+                .collect::<Vec<_>>()
+        );
+        for row in rows {
+            for fact in &row.provenance {
+                assert_ne!(
+                    fact.matched_alias.as_deref(),
+                    Some("chr20:g.35533834A>G"),
+                    "the genomic alias may only match papers alongside the gene: {} ({:?})",
+                    row.article.pmid,
+                    row.provenance
+                );
+            }
+        }
+        let logged = requests.lock().expect("request log").clone();
+        assert!(
+            logged
+                .iter()
+                .all(|line| !line.contains("term=chr20%3Ag.35533834A%3EG+NOT")),
+            "no provider leg may query the bare coordinate; saw {:?}",
+            logged
+                .iter()
+                .filter(|line| line.contains("chr20%3Ag.35533834A%3EG+NOT"))
+                .cloned()
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn cdkn2a_a57v_articles_tie_the_genomic_alias_to_the_gene() {
+        // Ticket 2140's second report: the citrus paper 41894487 reached the
+        // CDKN2A search's second page matched only by the bare
+        // chr9:g.21971188G>A alias. The recorded replies hold both sides: the
+        // bare keyword term returns 100 chromosome-9 papers including citrus,
+        // and the gene-tied term returns the four CDKN2A-related papers PubMed
+        // keeps. Europe PMC's keyword reply carries the CDKN2A-naming paper
+        // 18178632 the search must keep.
+        const MYVARIANT_QUERY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/query_cdkn2a_a57v_20261017.json"
+        ));
+        const MYVARIANT_HYDRATION: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/myvariant/variant_chr9_g_21971188G_A_20261017.json"
+        ));
+        const AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/autocomplete_cdkn2a_a57v_20261017.json"
+        ));
+        const ENTITY_SEARCH: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_cdkn2a_entity_20261017.json"
+        ));
+        const PUBTATOR_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubtator/search_zero_hit_20261017.json"
+        ));
+        const EPMC_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/europepmc/search_cdkn2a_a57v_keyword_20261017.json"
+        ));
+        const EPMC_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/europepmc/search_zero_hit_20261017.json"
+        ));
+        const ESEARCH_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_cdkn2a_a57v_keyword_20261017.json"
+        ));
+        const ESUMMARY_KEYWORD: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_cdkn2a_a57v_keyword_20261017.json"
+        ));
+        const ESEARCH_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_cdkn2a_chr9_bare_20261017.json"
+        ));
+        const ESUMMARY_BARE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_cdkn2a_chr9_bare_20261017.json"
+        ));
+        const ESEARCH_GENE_TIED: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_cdkn2a_chr9_gene_tied_20261017.json"
+        ));
+        const ESUMMARY_GENE_TIED: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esummary_cdkn2a_chr9_gene_tied_20261017.json"
+        ));
+        const ESEARCH_EMPTY: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_strict_i448t_empty_20261017.json"
+        ));
+        const S2_EMPTY: &[u8] = br#"{"total":0,"data":[]}"#;
+
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            let json = |body: &[u8]| {
+                TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+            };
+            if first_line.starts_with("GET /query") {
+                return json(MYVARIANT_QUERY);
+            }
+            if first_line.starts_with("GET /variant/") {
+                return json(MYVARIANT_HYDRATION);
+            }
+            if first_line.starts_with("GET /entity/autocomplete/") {
+                return json(AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /search/") {
+                return json(if first_line.contains("%40VARIANT") {
+                    ENTITY_SEARCH
+                } else {
+                    PUBTATOR_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /search?") {
+                return json(if first_line.contains("CDKN2A+A57V+AND+NOT+PUB_TYPE") {
+                    EPMC_KEYWORD
+                } else {
+                    EPMC_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /graph/v1/") {
+                return json(S2_EMPTY);
+            }
+            if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                // The gene-tied term also contains the bare coordinate, so it
+                // is matched first.
+                return json(if first_line.contains("term=CDKN2A+chr9%3Ag") {
+                    ESEARCH_GENE_TIED
+                } else if first_line.contains("term=chr9%3Ag") {
+                    ESEARCH_BARE
+                } else if first_line.contains("term=CDKN2A+A57V+NOT") {
+                    ESEARCH_KEYWORD
+                } else {
+                    ESEARCH_EMPTY
+                });
+            }
+            if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
+                return json(if first_line.contains("id=42810092") {
+                    ESUMMARY_BARE
+                } else if first_line.contains("id=42284679") {
+                    ESUMMARY_GENE_TIED
+                } else {
+                    ESUMMARY_KEYWORD
+                });
+            }
+            json(b"{}")
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("2140-cdkn2a");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "CDKN2A A57V",
+            VariantArticleStrategy::Union,
+            50,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(60),
+        )
+        .await
+        .expect("recorded CDKN2A A57V search outcome");
+
+        let rows = &outcome.response.results;
+        assert!(
+            rows.iter().all(|row| row.article.pmid != "41894487"),
+            "the citrus paper matched only by the bare coordinate must drop; got {}",
+            rows.iter()
+                .filter(|row| row.article.pmid == "41894487")
+                .count()
+        );
+        assert!(
+            rows.iter().any(|row| row.article.title.contains("CDKN2A")),
+            "papers that name CDKN2A stay; titles: {:?}",
+            rows.iter()
+                .map(|row| row.article.title.as_str())
+                .take(5)
+                .collect::<Vec<_>>()
+        );
+        for row in rows {
+            for fact in &row.provenance {
+                assert_ne!(
+                    fact.matched_alias.as_deref(),
+                    Some("chr9:g.21971188G>A"),
+                    "the genomic alias may only match papers alongside the gene: {} ({:?})",
+                    row.article.pmid,
+                    row.provenance
+                );
+            }
+        }
+        let logged = requests.lock().expect("request log").clone();
+        assert!(
+            logged
+                .iter()
+                .all(|line| !line.contains("term=chr9%3Ag.21971188G%3EA+NOT")),
+            "no provider leg may query the bare coordinate; saw {:?}",
+            logged
+                .iter()
+                .filter(|line| line.contains("chr9%3Ag.21971188G%3EA+NOT"))
+                .cloned()
+                .collect::<Vec<_>>()
+        );
+    }
+
     #[test]
     fn resolved_exact_aliases_include_validated_source_forms_once() {
         let (aliases, truncated) = exact_aliases(&resolved_context());
