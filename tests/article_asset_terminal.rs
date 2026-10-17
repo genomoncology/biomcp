@@ -822,30 +822,26 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
     let unicode: serde_json::Value = serde_json::from_slice(&unicode.stdout).unwrap();
     assert!(unicode["hits"][0]["context"].as_str().unwrap().len() <= 400);
 
-    let search = successful_output(
-        &fixture,
-        &[
-            "--json",
-            "article",
-            "supplement-search",
-            "28944238",
-            "P245S",
-        ],
-    );
-    let doc: serde_json::Value =
-        serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
-    let hits = doc["hits"].as_array().expect("hits should be a list");
-    assert_eq!(hits.len(), 1, "one acceptance hit is expected: {doc}");
-    assert_eq!(hits[0]["worksheet"], "ST2");
-    assert_eq!(hits[0]["row"], serde_json::json!(85));
-    assert_eq!(hits[0]["locator"], "ST2 row 85");
-    assert!(
-        hits[0]["context"]
-            .as_str()
-            .expect("context should be text")
-            .contains("AXIN2"),
-        "the hit context should carry the matched row text"
-    );
+    for needle in ["P245S", "Pro245Ser", "p.Pro245Ser"] {
+        let search = successful_output(
+            &fixture,
+            &["--json", "article", "supplement-search", "28944238", needle],
+        );
+        let doc: serde_json::Value =
+            serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
+        let hits = doc["hits"].as_array().expect("hits should be a list");
+        assert_eq!(doc["query"], needle);
+        assert_eq!(
+            hits.len(),
+            1,
+            "one acceptance hit is expected for {needle}: {doc}"
+        );
+        assert_eq!(hits[0]["worksheet"], "ST2");
+        assert_eq!(hits[0]["row"], serde_json::json!(85));
+        assert_eq!(hits[0]["locator"], "ST2 row 85");
+        let context = hits[0]["context"].as_str().expect("context should be text");
+        assert!(context.contains("AXIN2") && context.contains("p.Pro245Ser"));
+    }
 }
 
 #[test]
