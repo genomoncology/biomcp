@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Depends on: 2172
 
+Reviews: revision 2992721, accept
+
 ## Outcome
 
 The intermittent failure of `raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts` has a named cause and a fix, or a recorded finding that 2172 removed it.
