@@ -152,7 +152,8 @@ Worked examples:
 - `get article <id> assets` merges PMC OA, Europe PMC supplementary files, recognized JATS/PMC HTML links, and eligible Figshare metadata; named linked misses remain typed coverage rather than disappearing.
 - `get article <id> asset <asset-key>` streams the exact advertised bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.
-- `--pdf` requires the `fulltext` section and is rejected for other article requests; `batch article` takes the same fallback on its detail `--sections fulltext` request, and each item reports the full-text source it used or the named PDF-step failure.
+- `--pdf` requires the `fulltext` section and is rejected for other article requests.
+- `batch article --mode detail --sections fulltext --pdf` takes the same fallback for many papers in one process, and each item reports the full-text source it used or the named PDF-step failure.
 - On the default `search article --source all` route, `-a/--author` limits candidate search to Europe PMC + compatible PubMed; stricter filters may narrow further, and incapable explicit sources reject `--author` instead of treating it as free text.
 - Other compatible default searches remain broader PubTator3 + Europe PMC + PubMed + Semantic Scholar federation.
 - Add provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, and other free-text concepts; use `--author` or `--journal` instead of provider field syntax. Use `--source semanticscholar` or `--source litsense2` explicitly when you want one of those sources alone.
