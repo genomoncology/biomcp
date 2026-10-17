@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 ## Outcome
 
+PM decision needed: two independently reviewed main repairs cannot pass the whole landing gate separately. Changelog repair 2166 passes 78 focused contracts but its full gate fails the unchanged HPO fixture (1792244741687-84723); clock repair 2167 passes all 13 focused cases but its gate still sees the known changelog mismatch. Recommend one combined, reviewed repair landing containing both changes, then an immediate full main check, with both ticket records closed through pm against that landing. Alternative is an explicit temporary targeted-gate exception for these two repairs only. All ordinary accepted work remains queued until main is green; neither failure will be hidden or weakened.
+
 Make the existing HPO retry contract deterministic with real loopback sockets. Preserve the production retry count, retry classification, and request assertions; do not suppress the failing test or change provider behavior merely to pass it.
 
 Priority: 1.
