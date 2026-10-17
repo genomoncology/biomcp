@@ -27,3 +27,7 @@ pm job run 2154 67c42424e -- tools/with-build-identity cargo nextest run --locke
 ```
 
 The command exited 100: the existing regression failed with `a no-entity miss is not an outage` at the assertion in `src/entities/article/variant_search.rs`. One selected test failed; none passed. Restore the missing variant autocomplete predicate while sharing the empty response with the entity route.
+
+## Progress
+
+- 2026-10-17 started
