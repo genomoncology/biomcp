@@ -3154,7 +3154,7 @@ fn resolution_unavailable_outcome(
     execution: &VariantArticleExecutionContext,
 ) -> VariantArticleOutcome {
     let events = execution.events();
-    let mut source_status = terminal_reconciled_statuses(&execution, &events);
+    let mut source_status = terminal_reconciled_statuses(execution, &events);
     if source_status.is_empty() {
         source_status.push(status(
             "resolution",
