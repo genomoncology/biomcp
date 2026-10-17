@@ -8,7 +8,7 @@ SHELL := /bin/bash
 SPEC_PROFILE ?= dev
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
-PYTEST_WORKERS ?= $(TEST_LANE_WORKERS)
+PYTEST_WORKERS ?= 4
 PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
 # Cargo maps the dev profile to target/debug; every other profile name is
 # its own directory under target/.
@@ -48,7 +48,7 @@ prepare-test: prepare-routine-test-tmp
 
 # Each lane gets a bounded share of the host; callers can tune these after
 # measuring their workload. CPU discovery also works on supported non-Linux hosts.
-TEST_LANE_WORKERS ?= $(shell python3 -c 'import os; print(min(2, max(1, (os.cpu_count() or 1) // 2)))')
+TEST_LANE_WORKERS ?= $(shell python3 -c 'import os; print(min(4, max(1, (os.cpu_count() or 1) // 2)))')
 NEXTEST_JOBS ?= $(TEST_LANE_WORKERS)
 NEXTEST_JOBS_ARG = -j $(NEXTEST_JOBS)
 

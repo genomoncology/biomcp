@@ -42,10 +42,8 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert "nextest archive --locked $(ROUTINE_CARGO_FEATURES)" in _target(
         makefile, "prepare-test"
     )
-    # The lane split cut `make test` in two so the CI lanes can
-    # run the Rust half alone; the archive run is the rust lane's
-    # recipe, with `make test` passing its CPU-split job count through
-    # NEXTEST_JOBS so the two concurrent halves share the machine.
+    # Both local lanes consume the prepared archive; the Rust lane has
+    # an explicit worker budget so concurrent jobs share the machine.
     assert "nextest run --archive-file" in _target(makefile, "test-rust")
     assert "$(NEXTEST_JOBS_ARG)" in _target(makefile, "test-rust")
     assert "--cargo-feature-arg" in runner
@@ -216,7 +214,12 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
         str(overlay),
     ]
     result = subprocess.run(
-        [*command, "test", "MAKE=" + " ".join(command)],
+        [
+            *command,
+            "test",
+            "ROUTINE_TEST_TMPDIR=" + str(tmp_path),
+            "MAKE=" + " ".join(command),
+        ],
         cwd=REPO_ROOT,
         env={**os.environ, "FAILED_LANE": failed_lane},
         capture_output=True,
@@ -228,6 +231,7 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
     assert all(
         (tmp_path / (lane + ".finished")).exists() for lane in ("rust", "python")
     )
+    assert not any(path.is_dir() for path in tmp_path.iterdir())
     assert "=== Rust lane (exit " in result.stdout
     assert "=== Python lane (exit " in result.stdout
     assert "rust output" in result.stdout and "python output" in result.stdout
