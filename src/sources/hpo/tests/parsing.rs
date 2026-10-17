@@ -110,8 +110,14 @@ fn decoded_search_rows_preserve_hpo_labels_and_provider_order() {
     assert_eq!(rows[1].id, "HP:0001250");
 }
 
+// The retry policy's attempt count is pinned by requests the fixture
+// actually serves, on kept-alive connections: counting accepted
+// connections races the client's connection pool, which can hand a
+// dying connection to one attempt on a loaded host, so the physical
+// connection count comes up short while the policy still made every
+// attempt.
 #[tokio::test(start_paused = true)]
-async fn phenotype_hpo_operation_uses_only_the_shared_four_physical_attempts() {
+async fn phenotype_hpo_operation_uses_only_the_shared_four_attempts() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let attempts = Arc::new(AtomicUsize::new(0));
@@ -119,14 +125,33 @@ async fn phenotype_hpo_operation_uses_only_the_shared_four_physical_attempts() {
     let server = tokio::spawn(async move {
         loop {
             let (mut stream, _) = listener.accept().await.unwrap();
-            observed.fetch_add(1, Ordering::SeqCst);
+            let observed = Arc::clone(&observed);
             tokio::spawn(async move {
-                let mut request = [0_u8; 2048];
-                let _ = stream.read(&mut request).await;
-                stream
-                    .write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}")
-                    .await
-                    .unwrap();
+                let mut buffer = [0_u8; 2048];
+                let mut request = Vec::new();
+                loop {
+                    request.clear();
+                    loop {
+                        let read = match stream.read(&mut buffer).await {
+                            Ok(0) | Err(_) => return,
+                            Ok(read) => read,
+                        };
+                        request.extend_from_slice(&buffer[..read]);
+                        if request.windows(4).any(|window| window == b"\r\n\r\n") {
+                            break;
+                        }
+                    }
+                    observed.fetch_add(1, Ordering::SeqCst);
+                    if stream
+                        .write_all(
+                            b"HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}",
+                        )
+                        .await
+                        .is_err()
+                    {
+                        return;
+                    }
+                }
             });
         }
     });

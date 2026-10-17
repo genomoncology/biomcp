@@ -167,6 +167,14 @@ exit 0
     _write_executable(
         fake_bin / "cargo",
         "#!/usr/bin/env bash\n"
+        # The wrapper probes the package version through cargo metadata
+        # before running the build, so the fake cargo answers that probe
+        # for the fixture manifest and leaves cargo-called.log to record
+        # only the real build invocations.
+        'if [ "$1" = "metadata" ]; then\n'
+        '  printf \'{"packages":[{"manifest_path":"%s/Cargo.toml","version":"0.8.25"}]}\' "$(pwd)"\n'
+        "  exit 0\n"
+        "fi\n"
         "printf '%s\\n' \"$*\" >> cargo-called.log\n"
         "mkdir -p target/release\n"
         f"cat > target/release/biomcp <<'PY'\n{_fake_biomcp_script(head_sha)}PY\n"

@@ -132,6 +132,10 @@ def test_offline_runner_maps_root_inside_an_isolated_user_namespace() -> None:
     assert "BIOMCP_OFFLINE_OWNERSHIP_TOKEN" in runner
 
 
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Linux is authoritative; macOS runs the gates without the sandbox",
+)
 def test_failed_bubblewrap_preserves_bootstrap_error_and_status(tmp_path: Path) -> None:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
@@ -169,6 +173,10 @@ def test_failed_bubblewrap_preserves_bootstrap_error_and_status(tmp_path: Path) 
     assert list(sentinel_root.iterdir()) == []
 
 
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Linux is authoritative; macOS runs the gates without the sandbox",
+)
 def test_failed_verifier_preserves_isolation_error_and_status(tmp_path: Path) -> None:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
@@ -328,6 +336,10 @@ print(json.dumps({
 
 
 @pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Linux is authoritative; macOS runs the gates without the sandbox",
+)
+@pytest.mark.skipif(
     os.environ.get("BIOMCP_OFFLINE_NETWORK") == "1",
     reason="the outer-wrapper success test covers host-side ownership",
 )
@@ -355,6 +367,10 @@ def test_outer_runner_preserves_child_failure_and_cleans_ownership_sentinel(
     assert list(tmp_path.iterdir()) == []
 
 
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Linux is authoritative; macOS runs the gates without the sandbox",
+)
 @pytest.mark.skipif(
     os.environ.get("BIOMCP_OFFLINE_NETWORK") == "1",
     reason="requires an unisolated caller",

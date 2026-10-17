@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="${1:?repo root required}"
 ROOT="$(cd "$ROOT" && pwd)"
+# shellcheck source=fixture-supervisor.sh
+source "$ROOT/spec/fixtures/fixture-supervisor.sh"
 # Optional arguments: the forced deadline in milliseconds (default 8000)
 # and, after it, search-article arguments. With no arguments the invocation
 # stays byte-identical to the recorded federated case.
@@ -52,7 +54,7 @@ time.sleep(60)
 fi
 
 if (( $# )); then
-  timeout 30s "$ROOT/tools/biomcp-ci" --json search article "$@"
+  run_with_timeout 30s "$ROOT/tools/biomcp-ci" --json search article "$@"
 else
-  timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "deadline-bound federation" --full --limit 3
+  run_with_timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "deadline-bound federation" --full --limit 3
 fi

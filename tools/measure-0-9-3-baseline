@@ -9,9 +9,11 @@
 #   RESULT <key> = <value>
 #
 # so a record can hold the exact evidence and a second run can be compared
-# key by key. The script is written for the Yellow build host: it holds
-# ~/.yr-checkout.lock and ~/.yellow-gate.lock for the whole run and refuses
-# to start while any build, test, or gate process is still alive.
+# key by key. The script carries no host locks: the gate host's pm job is
+# the scheduler, so a measurement run books the machine through pm job and
+# both measurement arms run on that one host, which keeps a comparison
+# like 2082's like-for-like. The script still refuses to start while any
+# build, test, or gate process is alive.
 #
 # Usage:
 #   tools/measure-0-9-3-baseline <clone-dir> [options]
@@ -19,8 +21,6 @@
 # Options:
 #   --dry-run        print every command without running anything
 #   --only a,b,c     run only the named sections
-#   --no-locks       do not take or hold the Yellow locks (for read-only
-#                    sections such as ci-history on another host)
 #   --expect-tag T   fail unless the clone's HEAD is exactly at tag T
 #
 # The clone must be a clean checkout of the tree to measure (ticket 2069
@@ -31,7 +31,6 @@
 set -euo pipefail
 
 DRY_RUN=0
-NO_LOCKS=0
 ONLY=""
 EXPECT_TAG=""
 CLONE=""
@@ -39,7 +38,7 @@ CLONE=""
 usage() {
   cat >&2 <<'USAGEEOF'
 usage: measure-0-9-3-baseline <clone-dir> [--dry-run] [--only a,b,c]
-                              [--no-locks] [--expect-tag vX.Y.Z]
+                              [--expect-tag vX.Y.Z]
 USAGEEOF
   exit 2
 }
@@ -47,12 +46,11 @@ USAGEEOF
 while (($#)); do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
-    --no-locks) NO_LOCKS=1 ;;
     --only) shift; ONLY="${1:-}" ;;
     --only=*) ONLY="${1#*=}" ;;
     --expect-tag) shift; EXPECT_TAG="${1:-}" ;;
     --expect-tag=*) EXPECT_TAG="${1#*=}" ;;
-    -h|--help) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 0 ;;
+    -h|--help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 0 ;;
     -*) echo "unknown option: $1" >&2; usage ;;
     *) if [[ -n "$CLONE" ]]; then echo "one clone directory only" >&2; usage; fi
        CLONE="$1" ;;
@@ -73,6 +71,17 @@ say() { printf '\n### %s — %s\n' "$1" "$2"; }
 result() { printf 'RESULT %s = %s\n' "$1" "$2"; }
 show() { printf '$ %s\n' "$1"; }
 
+# The manifest and lockfile parsers need tomllib (Python 3.11); the macOS
+# gate host's system python3 is older, so they run under the first
+# interpreter that has it, syncing the clone's uv venv when needed.
+if python3 -c 'import tomllib' >/dev/null 2>&1; then
+  TOML_PY=(python3)
+elif command -v uv >/dev/null 2>&1; then
+  TOML_PY=(uv run python3)
+else
+  TOML_PY=(python3)
+fi
+
 # runsh runs a shell string and prints it first; the record shows the
 # command behind every number.
 runsh() {
@@ -82,13 +91,15 @@ runsh() {
 }
 
 # timedsh prints the command, runs it, and records its wall time.
+# python3's clock gives the same sub-second precision on every gate host;
+# GNU date's %s.%N does not exist on the macOS one.
 timedsh() {
   local label="$1" command="$2" start end wall
   show "$command"
   if ((DRY_RUN)); then result "${label}_wall_s" dry-run; return 0; fi
-  start=$(date +%s.%N)
+  start=$(python3 -c 'import time; print(time.time())')
   bash -c "$command"
-  end=$(date +%s.%N)
+  end=$(python3 -c 'import time; print(time.time())')
   wall=$(awk -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", e - s }')
   result "${label}_wall_s" "$wall"
 }
@@ -101,12 +112,12 @@ timedsh_exit() {
   local label="$1" exitfile="$2" command="$3" start end wall status
   show "$command"
   if ((DRY_RUN)); then result "${label}_wall_s" dry-run; return 0; fi
-  start=$(date +%s.%N)
+  start=$(python3 -c 'import time; print(time.time())')
   set +e
   bash -c "$command"
   status=$?
   set -e
-  end=$(date +%s.%N)
+  end=$(python3 -c 'import time; print(time.time())')
   wall=$(awk -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", e - s }')
   printf '%s\n' "$status" >"$exitfile"
   result "${label}_wall_s" "$wall"
@@ -130,27 +141,28 @@ quiet_pids() {
   return 0
 }
 
-# ---------------------------------------------------------------- locks
-
-if ((NO_LOCKS)); then
-  say locks "skipped by --no-locks"
-else
-  exec 9>"$HOME/.yr-checkout.lock"
-  flock -n 9 || { echo "busy: ~/.yr-checkout.lock is held" >&2; exit 3; }
-  exec 8>"$HOME/.yellow-gate.lock"
-  flock -n 8 || { echo "busy: ~/.yellow-gate.lock is held" >&2; exit 3; }
-  say locks "held for the whole run"
-  show "flock -n ~/.yr-checkout.lock && flock -n ~/.yellow-gate.lock"
-  echo "both locks held by pid $$"
-fi
-
 # ---------------------------------------------------------------- host
+
+# du_bytes, file_size and gnu_time answer on every gate host; the
+# Linux-specific tools stay first where they exist.
+file_size() { stat -c %s "$1" 2>/dev/null || stat -f %z "$1"; }
+du_bytes() {
+  if du -sb . >/dev/null 2>&1; then du -sb "$1" | awk '{print $1}'
+  else du -sk "$1" | awk '{print $1 * 1024}'; fi
+}
+# gnu_time finds a GNU time on the host (Linux /usr/bin/time, gtime
+# elsewhere) or echoes nothing, and the caller times without it.
+gnu_time() {
+  if /usr/bin/time --version >/dev/null 2>&1; then echo /usr/bin/time
+  elif command -v gtime >/dev/null 2>&1; then command -v gtime
+  else true; fi
+}
 
 if want_section host; then
   say host "machine and toolchain conditions at the start"
-  runsh 'hostname; uname -sr; nproc'
-  runsh 'cat /proc/loadavg'
-  runsh 'free -g | sed -n 1,2p'
+  runsh 'hostname; uname -sr; nproc || sysctl -n hw.ncpu'
+  runsh 'cat /proc/loadavg || uptime'
+  runsh 'free -g | sed -n 1,2p || vm_stat | head -5'
   runsh 'df -h . | tail -1'
   runsh 'rustc --version; cargo --version; cargo nextest --version; cargo-deny --version; cargo llvm-cov --version; cargo llvm-lines --version; ruff --version; python3 --version; uv --version; node --version 2>/dev/null || true; mustmatch --version 2>/dev/null || true'
   runsh 'cat ~/.cargo/config.toml 2>/dev/null || echo "no ~/.cargo/config.toml"'
@@ -183,8 +195,13 @@ fi
 
 if want_section cold-dev-build; then
   say cold-dev-build "cold dev build of every target (routine feature set)"
-  timedsh cold_dev_build \
-    '/usr/bin/time -f "TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M" cargo build --locked --no-default-features --all-targets --timings'
+  if TIME_BIN=$(gnu_time); then
+    timedsh cold_dev_build \
+      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" cargo build --locked --no-default-features --all-targets --timings"
+  else
+    timedsh cold_dev_build \
+      'cargo build --locked --no-default-features --all-targets --timings (no GNU time on this host)'
+  fi
 fi
 
 # ---------------------------------------------------------------- rebuild after one Rust edit
@@ -192,8 +209,13 @@ fi
 if want_section rust-edit-rebuild; then
   say rust-edit-rebuild "rebuild after one Rust edit (dev profile, incremental off)"
   runsh 'touch src/render/markdown/gene.rs'
-  timedsh rust_edit_rebuild \
-    '/usr/bin/time -f "TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M" cargo build --locked --no-default-features --all-targets'
+  if TIME_BIN=$(gnu_time); then
+    timedsh rust_edit_rebuild \
+      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" cargo build --locked --no-default-features --all-targets"
+  else
+    timedsh rust_edit_rebuild \
+      'cargo build --locked --no-default-features --all-targets (no GNU time on this host)'
+  fi
 fi
 
 # ---------------------------------------------------------------- rebuild after one doc edit
@@ -201,17 +223,22 @@ fi
 if want_section doc-edit-rebuild; then
   say doc-edit-rebuild "rebuild after one doc edit (a spec page touch; v0.9.2 build.rs scans the whole package)"
   runsh 'touch spec/entity/gene.md'
-  timedsh doc_edit_rebuild \
-    '/usr/bin/time -f "TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M" cargo build --locked --no-default-features --all-targets'
+  if TIME_BIN=$(gnu_time); then
+    timedsh doc_edit_rebuild \
+      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" cargo build --locked --no-default-features --all-targets"
+  else
+    timedsh doc_edit_rebuild \
+      'cargo build --locked --no-default-features --all-targets (no GNU time on this host)'
+  fi
 fi
 
 # ---------------------------------------------------------------- dependency counts
 
 if want_section dep-counts; then
   say dep-counts "direct dependencies, Cargo.lock packages, crates compiled, duplicate names"
-  show "python3 (counts from Cargo.toml and Cargo.lock)"
+  show "${TOML_PY[*]} (counts from Cargo.toml and Cargo.lock)"
   if ((!DRY_RUN)); then
-    python3 - "$LOGD/dep-counts.txt" <<'PY'
+    "${TOML_PY[@]}" - "$LOGD/dep-counts.txt" <<'PY'
 import sys
 import tomllib
 from collections import Counter
@@ -241,9 +268,9 @@ PY
   fi
   runsh "cargo tree --locked --no-default-features -e normal,build --prefix none > $LOGD/tree-normal-build.txt"
   runsh "cargo tree --locked --no-default-features -e normal,build,dev --prefix none > $LOGD/tree-normal-build-dev.txt"
-  show "python3 (unique crate name@version pairs in each cargo tree, workspace members excluded)"
+  show "${TOML_PY[*]} (unique crate name@version pairs in each cargo tree, workspace members excluded)"
   if ((!DRY_RUN)); then
-    python3 - "$LOGD/tree-normal-build.txt" "$LOGD/tree-normal-build-dev.txt" <<'PY'
+    "${TOML_PY[@]}" - "$LOGD/tree-normal-build.txt" "$LOGD/tree-normal-build-dev.txt" <<'PY'
 import sys
 from collections import Counter
 
@@ -305,10 +332,10 @@ fi
 
 if want_section build-folder-after-make-test; then
   say build-folder-after-make-test "target/ bytes after make test"
-  runsh 'du -sb target | awk "{print \$1}"'
+  show "du -sb target (du -sk * 1024 where -b is absent)"
   runsh 'du -sh target'
   if ((!DRY_RUN)); then
-    result build_folder_bytes_after_make_test "$(du -sb target | awk '{print $1}')"
+    result build_folder_bytes_after_make_test "$(du_bytes target)"
   fi
 fi
 
@@ -397,11 +424,16 @@ fi
 
 if want_section release-build; then
   say release-build "cold release build (default features, shipped profile: thin LTO, one codegen unit, strip)"
-  timedsh release_build \
-    "/usr/bin/time -v -o $LOGD/release-time.txt cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
-  runsh "grep -E 'Elapsed \\(wall clock|Maximum resident set size|User time|System time' $LOGD/release-time.txt"
+  if TIME_BIN=$(gnu_time); then
+    timedsh release_build \
+      "$TIME_BIN -v -o $LOGD/release-time.txt cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
+  else
+    timedsh release_build \
+      "cargo build --release --locked --timings > $LOGD/release-build.log 2>&1 (no GNU time on this host; peak rss unavailable)"
+  fi
+  runsh "grep -E 'Elapsed \\(wall clock|Maximum resident set size|User time|System time' $LOGD/release-time.txt 2>/dev/null || true"
   runsh "tail -3 $LOGD/release-build.log"
-  if ((!DRY_RUN)); then
+  if ((!DRY_RUN)) && [[ -f $LOGD/release-time.txt ]]; then
     rss=$(grep -oE 'Maximum resident set size \(kbytes\): [0-9]+' "$LOGD/release-time.txt" | grep -oE '[0-9]+')
     result release_peak_rss_kb "${rss:-parse-failed}"
   fi
@@ -411,10 +443,10 @@ fi
 
 if want_section build-folder-after-release; then
   say build-folder-after-release "target/ bytes after the release build"
-  runsh 'du -sb target | awk "{print \$1}"'
+  show "du -sb target (du -sk * 1024 where -b is absent)"
   runsh 'du -sh target'
   if ((!DRY_RUN)); then
-    result build_folder_bytes_after_release_build "$(du -sb target | awk '{print $1}')"
+    result build_folder_bytes_after_release_build "$(du_bytes target)"
   fi
 fi
 
@@ -422,15 +454,15 @@ fi
 
 if want_section stripped-binary; then
   say stripped-binary "the stripped release binary's size in bytes"
-  runsh 'stat -c %s target/release/biomcp'
+  show "stat -c %s target/release/biomcp (stat -f %z where -c is absent)"
   runsh 'file target/release/biomcp | head -1'
   if ((!DRY_RUN)); then
     if file target/release/biomcp | grep -q 'not stripped'; then
       cp target/release/biomcp "$LOGD/biomcp.stripped"
       strip "$LOGD/biomcp.stripped"
-      result stripped_release_binary_bytes "$(stat -c %s "$LOGD/biomcp.stripped") (stripped a copy; profile does not strip)"
+      result stripped_release_binary_bytes "$(file_size "$LOGD/biomcp.stripped") (stripped a copy; profile does not strip)"
     else
-      result stripped_release_binary_bytes "$(stat -c %s target/release/biomcp)"
+      result stripped_release_binary_bytes "$(file_size target/release/biomcp)"
     fi
   fi
 fi
@@ -451,9 +483,9 @@ fi
 
 if want_section deny-advisories; then
   say deny-advisories "advisories ignored in deny.toml"
-  show "python3 (count of [advisories].ignore entries)"
+  show "${TOML_PY[*]} (count of [advisories].ignore entries)"
   if ((!DRY_RUN)); then
-    python3 - <<'PY'
+    "${TOML_PY[@]}" - <<'PY'
 import tomllib
 from pathlib import Path
 
@@ -656,7 +688,9 @@ fi
 
 if want_section runtime; then
   say runtime "run-time measurements with the release binary (thin LTO, one codegen unit)"
-  runsh '{ find ~/.cache/biomcp/http -type f 2>/dev/null || true; } | wc -l; du -sh ~/.cache/biomcp 2>/dev/null || echo "no host cache"'
+  # The host's real cache root follows the platform default: ~/.cache on
+  # Linux, ~/Library/Caches on macOS.
+  runsh 'HOST_CACHE=$(python3 -c "import sys; print(sys.argv[1] if sys.platform != \"darwin\" else sys.argv[2])" "$HOME/.cache/biomcp" "$HOME/Library/Caches/biomcp"); { find "$HOST_CACHE/http" -type f 2>/dev/null || true; } | wc -l; du -sh "$HOST_CACHE" 2>/dev/null || echo "no host cache"'
   show "python3 (five timed runs per case; median, min, max in seconds)"
   if ((!DRY_RUN)); then
     RUN_SCRATCH="$PWD/$LOGD/runtime" python3 - <<'PY'
@@ -705,7 +739,7 @@ def measure(label, argv, cache_dir, mode, runs=5):
 
 empty = os.path.join(scratch, "empty-cache")
 os.makedirs(empty, exist_ok=True)
-large = os.path.expanduser("~/.cache/biomcp")
+large = os.path.expanduser("~/.cache/biomcp" if sys.platform != "darwin" else "~/Library/Caches/biomcp")
 warm = os.path.join(scratch, "warm-cache")
 os.makedirs(warm, exist_ok=True)
 
@@ -795,8 +829,8 @@ fi
 
 if want_section host-after; then
   say host-after "machine conditions at the end"
-  runsh 'cat /proc/loadavg'
-  runsh 'free -g | sed -n 1,2p'
+  runsh 'cat /proc/loadavg 2>/dev/null || uptime'
+  runsh 'free -g 2>/dev/null | sed -n 1,2p || vm_stat | head -5'
   runsh 'df -h . | tail -1'
 fi
 

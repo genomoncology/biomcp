@@ -1593,16 +1593,10 @@ Context cell becomes `Try:`, a contextual edge keeps its text, and the root
 continuation array and `Next:` footer stay exactly as landed by ticket 1144.
 
 ```bash
-../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -c '[.edges[] | {id:(.paper.doi // .paper.pmid), context:(.contexts[0] // ""), meta:._meta}]' | mustmatch "$(cat <<'EXPECTED'
-[{"id":"10.1038/nature10725","context":"","meta":{"next_commands":["biomcp article citation-evidence 39991290 10.1038/nature10725"]}},{"id":"39991291","context":"Grouped decoy context.","meta":null},{"id":"10.1093/host'ile`dollar;$x\\&y","context":"","meta":{"next_commands":["biomcp article citation-evidence 39991290 \"10.1093/host'ile\\`dollar;\\$x\\\\&y\""]}}]
-EXPECTED
-)"
-../../tools/biomcp-ci article references 39991290 --limit 3 --offset 0 | sed -n '5,7p' | mustmatch "$(cat <<'EXPECTED'
-| DOI 10.1038/nature10725 | Nature reference target | background | no | Try: `biomcp article citation-evidence 39991290 10.1038/nature10725` |
+../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -c '[.edges[] | {id:(.paper.doi // .paper.pmid), context:(.contexts[0] // ""), meta:._meta}]' | mustmatch '[{"id":"10.1038/nature10725","context":"","meta":{"next_commands":["biomcp article citation-evidence 39991290 10.1038/nature10725"]}},{"id":"39991291","context":"Grouped decoy context.","meta":null},{"id":"10.1093/host'\''ile`dollar;$x\\&y","context":"","meta":{"next_commands":["biomcp article citation-evidence 39991290 \"10.1093/host'\''ile\\`dollar;\\$x\\\\&y\""]}}]'
+../../tools/biomcp-ci article references 39991290 --limit 3 --offset 0 | sed -n '5,7p' | mustmatch '| DOI 10.1038/nature10725 | Nature reference target | background | no | Try: `biomcp article citation-evidence 39991290 10.1038/nature10725` |
 | PMID 39991291 | Contextual decoy target | background | no | Grouped decoy context. |
-| DOI 10.1093/host'ile`dollar;$x\&y | Hostile identifier carrier | background | no | Try: ``biomcp article citation-evidence 39991290 "10.1093/host'ile\`dollar;\$x\\&y"`` |
-EXPECTED
-)"
+| DOI 10.1093/host'\''ile`dollar;$x\&y | Hostile identifier carrier | background | no | Try: ``biomcp article citation-evidence 39991290 "10.1093/host'\''ile\`dollar;\$x\\&y"`` |'
 ../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -c '.pagination, ._meta' | mustmatch '{"offset":0,"limit":3,"returned":3,"next_offset":null,"coverage_status":"exhausted"}
 {"next_commands":[]}'
 ../../tools/biomcp-ci --json article references 39991290 --limit 1 --offset 0 | jq -c '.pagination, ._meta' | mustmatch '{"offset":0,"limit":1,"returned":1,"next_offset":1,"coverage_status":"continuable"}

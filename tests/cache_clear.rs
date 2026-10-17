@@ -35,9 +35,11 @@ fn resolved_cache_root(cache_home: &Path) -> PathBuf {
 fn run_biomcp(args: &[&str], cache_home: &Path, config_home: &Path) -> CommandResult {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
     command.args(args);
-    command.env("XDG_CACHE_HOME", cache_home);
+    // The platform cache root ignores XDG_CACHE_HOME on macOS, so the
+    // fixture root travels through the explicit override every platform
+    // honors.
+    command.env("BIOMCP_CACHE_DIR", resolved_cache_root(cache_home));
     command.env("XDG_CONFIG_HOME", config_home);
-    command.env_remove("BIOMCP_CACHE_DIR");
     command.env_remove("BIOMCP_CACHE_MAX_SIZE");
     command.env_remove("BIOMCP_CACHE_MAX_AGE");
     command.env_remove("RUST_LOG");

@@ -320,7 +320,19 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
     log_file = tmp_path / "cargo-deny.log"
     _write_executable(
         tool_dir / "cargo",
-        '#!/usr/bin/env bash\nif [ "$1" = "deny" ]; then\n  shift\n  exec cargo-deny "$@"\nfi\nexit 0\n',
+        '#!/usr/bin/env bash\n'
+        'if [ "$1" = "deny" ]; then\n'
+        '  shift\n'
+        '  exec cargo-deny "$@"\n'
+        'fi\n'
+        # with-build-identity probes the package version through cargo
+        # metadata before the clippy run, so the fake answers it for the
+        # fixture manifest.
+        'if [ "$1" = "metadata" ]; then\n'
+        "  printf '{\"packages\":[{\"manifest_path\":\"%s/Cargo.toml\",\"version\":\"0.1.0\"}]}' \"$(pwd)\"\n"
+        '  exit 0\n'
+        'fi\n'
+        'exit 0\n',
     )
     _write_executable(
         tool_dir / "cargo-deny",
@@ -335,7 +347,11 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
         repo_root,
         env={
             "CARGO_DENY_LOG": str(log_file),
-            "PATH": f"{tool_dir}:/usr/bin:/bin",
+            # The fixture cargo shadows the real one; the host PATH keeps
+            # every other lint tool (ruff above all) reachable, which a
+            # /usr/bin-only path cannot promise on a gate host whose
+            # toolchain lives elsewhere.
+            "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
         },
     )
 
@@ -358,7 +374,16 @@ def test_lint_fails_when_cargo_deny_advisory_check_fails(tmp_path: Path) -> None
     log_file = tmp_path / "cargo-deny.log"
     _write_executable(
         tool_dir / "cargo",
-        '#!/usr/bin/env bash\nif [ "$1" = "deny" ]; then\n  shift\n  exec cargo-deny "$@"\nfi\nexit 0\n',
+        '#!/usr/bin/env bash\n'
+        'if [ "$1" = "deny" ]; then\n'
+        '  shift\n'
+        '  exec cargo-deny "$@"\n'
+        'fi\n'
+        'if [ "$1" = "metadata" ]; then\n'
+        "  printf '{\"packages\":[{\"manifest_path\":\"%s/Cargo.toml\",\"version\":\"0.1.0\"}]}' \"$(pwd)\"\n"
+        '  exit 0\n'
+        'fi\n'
+        'exit 0\n',
     )
     _write_executable(
         tool_dir / "cargo-deny",

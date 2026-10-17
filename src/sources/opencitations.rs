@@ -51,13 +51,10 @@ pub(crate) struct OpenCitationsEdge {
 /// require the `10.` registrant prefix and a slash.
 pub(crate) fn normalize_doi(value: &str) -> Option<String> {
     let mut current = value.trim().to_ascii_lowercase();
-    loop {
-        let Some(rest) = DOI_PREFIXES
-            .iter()
-            .find_map(|prefix| current.strip_prefix(prefix))
-        else {
-            break;
-        };
+    while let Some(rest) = DOI_PREFIXES
+        .iter()
+        .find_map(|prefix| current.strip_prefix(prefix))
+    {
         current = rest.trim().to_string();
     }
     (current.starts_with("10.") && current.contains('/')).then_some(current)

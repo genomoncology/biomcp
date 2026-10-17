@@ -16,7 +16,7 @@ fn rank_result_rows_by_directness(
         .map(article_candidate_from_row)
         .collect::<Vec<_>>();
     rank_articles_by_directness(&mut candidates, filters);
-    for (slot, candidate) in rows.iter_mut().zip(candidates.into_iter()) {
+    for (slot, candidate) in rows.iter_mut().zip(candidates) {
         *slot = candidate.row;
     }
 }

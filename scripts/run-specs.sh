@@ -112,7 +112,9 @@ cleanup_all() {
   local exit_status=$?
   local cleanup_function
   set +e
-  for cleanup_function in "${CLEANUP_FUNCTIONS[@]}"; do
+  # Bash 3.2 (macOS) treats "${arr[@]}" on an empty array as an unbound
+  # variable under set -u; the ${arr[@]+...} expansion stays safe everywhere.
+  for cleanup_function in ${CLEANUP_FUNCTIONS[@]+"${CLEANUP_FUNCTIONS[@]}"}; do
     "$cleanup_function"
   done
   trap - EXIT
@@ -137,7 +139,7 @@ stop_replay_server() {
     wait "$REPLAY_SERVER_PID" 2>/dev/null || true
     REPLAY_SERVER_PID=""
   fi
-  if [[ -n "$REPLAY_GREETING_FD" ]]; then
+  if [[ -n "${REPLAY_GREETING_FD:-}" ]]; then
     eval "exec ${REPLAY_GREETING_FD}>&-"
     REPLAY_GREETING_FD=""
   fi
@@ -164,13 +166,16 @@ run_replay_server() {
   # that line observes readiness without a timed startup poll, and a server
   # that dies before serving closes the pipe; the read is bounded so a dead
   # server fails the lane loudly instead of hanging it.
+  # The greeting pipe lives on fd 3: dynamic `{var}<` allocation is Bash
+  # 4.1+ and the macOS gate host runs the bundled Bash 3.2.
   local greeting origin
-  exec {REPLAY_GREETING_FD}< <(
+  exec 3< <(
     python3 tools/replay-server \
       --root "$ROOT" \
       --env-file "$env_file" \
       --request-log "$request_log"
   )
+  REPLAY_GREETING_FD=3
   REPLAY_SERVER_PID=$!
   if ! IFS= read -r -t 60 -u "$REPLAY_GREETING_FD" greeting \
     || [[ "$greeting" != READY* ]]; then

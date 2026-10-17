@@ -55,7 +55,9 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
 }
 
 const POST_CHILD_FIXTURE_RESULT_TIMEOUT: Duration = Duration::from_secs(1);
-const CREDENTIAL_FIXTURE_HOST: &str = "127.0.0.2";
+// macOS configures only 127.0.0.1 on the loopback interface, so the
+// fixture binds the one address every Unix host offers.
+const CREDENTIAL_FIXTURE_HOST: &str = "127.0.0.1";
 
 #[derive(Debug)]
 struct CredentialFixtureRequest {
@@ -88,14 +90,16 @@ impl CredentialRedactionFixture {
                     return;
                 }
                 match listener.accept() {
-                    Ok((stream, _)) => {
-                        let result = serve_credential_redaction_request(stream, secret);
-                        let failed = result.is_err();
-                        let _ = request_tx.send(result);
-                        if failed {
+                    Ok((stream, _)) => match serve_credential_redaction_request(stream, secret) {
+                        Ok(Some(request)) => {
+                            let _ = request_tx.send(Ok(request));
+                        }
+                        Ok(None) => {}
+                        Err(violation) => {
+                            let _ = request_tx.send(Err(violation));
                             return;
                         }
-                    }
+                    },
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(10));
                     }
@@ -203,11 +207,14 @@ impl Drop for LoopbackDenyProxy {
 }
 
 fn read_http_request(stream: &mut TcpStream) -> Result<String, String> {
+    // A loaded gate host can stall a spawned client well past two
+    // seconds between connect and request, so the fixture windows match
+    // the ten-second bound the rest of this file already uses.
     stream
-        .set_read_timeout(Some(Duration::from_secs(2)))
+        .set_read_timeout(Some(Duration::from_secs(10)))
         .map_err(|_| "set fixture read timeout".to_string())?;
     stream
-        .set_write_timeout(Some(Duration::from_secs(2)))
+        .set_write_timeout(Some(Duration::from_secs(10)))
         .map_err(|_| "set fixture write timeout".to_string())?;
 
     let mut request = Vec::new();
@@ -235,8 +242,15 @@ fn request_target(request: &str) -> Result<&str, String> {
 fn serve_credential_redaction_request(
     mut stream: TcpStream,
     secret: &str,
-) -> Result<CredentialFixtureRequest, String> {
-    let request = read_http_request(&mut stream)?;
+) -> Result<Option<CredentialFixtureRequest>, String> {
+    // A loaded client abandons pool connections it opened but never
+    // wrote to; that churn is not the contract under test, so a
+    // read-phase failure skips the connection instead of killing the
+    // fixture thread with every later request.
+    let request = match read_http_request(&mut stream) {
+        Ok(request) => request,
+        Err(_) => return Ok(None),
+    };
     let target = request_target(&request)?;
     let path = target.split_once('?').map_or(target, |(path, _)| path);
     let (provider, body, status) = match path {
@@ -271,11 +285,11 @@ fn serve_credential_redaction_request(
     stream
         .flush()
         .map_err(|_| "flush credential fixture response".to_string())?;
-    Ok(CredentialFixtureRequest {
+    Ok(Some(CredentialFixtureRequest {
         provider,
         credential_present,
         credential_in_approved_position,
-    })
+    }))
 }
 
 fn deny_proxy_request(mut stream: TcpStream) -> Result<String, String> {
@@ -389,11 +403,12 @@ impl Drop for MyGeneFixture {
 }
 
 fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
+    // Same load bound as the credential fixture above.
     stream
-        .set_read_timeout(Some(Duration::from_secs(2)))
+        .set_read_timeout(Some(Duration::from_secs(10)))
         .map_err(|error| format!("set fixture read timeout: {error}"))?;
     stream
-        .set_write_timeout(Some(Duration::from_secs(2)))
+        .set_write_timeout(Some(Duration::from_secs(10)))
         .map_err(|error| format!("set fixture write timeout: {error}"))?;
 
     let mut request = Vec::new();
