@@ -6206,6 +6206,34 @@ mod tests {
                 // MyVariant resolves ABCC8 R1436Q to a hit carrying only the
                 // gene and p.R1436Q, so the run selects exactly two aliases.
                 br#"{"total":1,"hits":[{"_id":"fixture-abcc8","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"]}}]}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
+                // PubMed rejects an ESummary reply whose uids differ from the
+                // requested ids, so the reply echoes exactly what was asked.
+                let ids = decoded("id")
+                    .split(',')
+                    .filter(|id| !id.is_empty())
+                    .map(str::to_string)
+                    .collect::<Vec<_>>();
+                let entries = ids
+                    .iter()
+                    .map(|id| {
+                        format!(
+                            "\"{id}\":{{\"uid\":\"{id}\",\"title\":\"ABCC8 paper {id}\",\"sortpubdate\":\"2026/01/02 00:00\",\"pubdate\":\"2026 Jan 2\",\"fulljournalname\":\"Fixture Journal\",\"source\":\"Fixture Journal\"}}"
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",");
+                let uids = ids
+                    .iter()
+                    .map(|id| format!("\"{id}\""))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                let reply = format!("{{\"result\":{{\"uids\":[{uids}],{entries}}}}}");
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    reply.as_bytes(),
+                ));
             } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
                 let term = decoded("term");
                 if term.contains("p.R1436Q") && term.contains("[Title/Abstract]") {
@@ -6217,8 +6245,6 @@ mod tests {
                 } else {
                     br#"{"esearchresult":{"count":"2","idlist":["40001","40002"]}}"#
                 }
-            } else if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
-                br#"{"result":{"uids":["40001","40002","50001"],"40001":{"uid":"40001","title":"ABCC8 R1436Q shared paper","sortpubdate":"2026/01/02 00:00","pubdate":"2026 Jan 2","fulljournalname":"Fixture Journal","source":"Fixture Journal"},"40002":{"uid":"40002","title":"ABCC8 R1436Q second paper","sortpubdate":"2026/01/03 00:00","pubdate":"2026 Jan 3","fulljournalname":"Fixture Journal","source":"Fixture Journal"},"50001":{"uid":"50001","title":"ABCC8 R1436Q strict paper","sortpubdate":"2026/01/04 00:00","pubdate":"2026 Jan 4","fulljournalname":"Fixture Journal","source":"Fixture Journal"}}}"#
             } else if first_line.starts_with("GET /search?") {
                 let query = decoded("query");
                 if query.starts_with("TITLE_ABS:") && query.contains("p.R1436Q") {
