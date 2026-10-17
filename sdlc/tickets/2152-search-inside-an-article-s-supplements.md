@@ -87,6 +87,8 @@ not supplements.
 
 ## Implementation brief
 
+PM decision needed: Restore the build job's compiler wrapper: both unset and zero `CARGO_INCREMENTAL` make its version probe refuse before compilation. The coordinator authorized one temporary `RUSTC_WRAPPER=""` correctness check on the existing warm target; this changes no persistent configuration and supports no performance claim.
+
 Preserve the adopted article-scoped, exact case-sensitive six-format search and its recorded locators and response envelope. Repair the shared extraction budgets, byte-bounded context and cache-format identity. Enforce the extraction timeout by killing and reaping a private worker process. The additional `src/main.rs` and `src/lib.rs` claims expose only the private worker entry point; the user command stays as designed.
 
 Before product edits, current-main build job `1792241016358-72714` on `078ce756d` ran `cargo run --no-default-features -- --json article supplement-search 30209399 F1761I` and exited 2 with JSON error `invalid_argument`, `unrecognized subcommand 'supplement-search'`. Focused extraction-boundary regressions were committed locally at `e4732a000` before implementation; the review-ready job will demonstrate those checks against the adopted production code and then the repair.
