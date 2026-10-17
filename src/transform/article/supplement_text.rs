@@ -352,7 +352,10 @@ fn extract_pdf(bytes: &[u8], budget: &SupplementTextBudget, extraction: &mut Sup
         extraction.truncated = true;
     }
     for page in 1..=last_page {
-        let options = unpdf::render::RenderOptions::default().with_page_range(page..=page);
+        // unpdf's page selection addresses pages by zero-based index; the
+        // locator reports the one-based page a reader opens.
+        let index = page - 1;
+        let options = unpdf::render::RenderOptions::default().with_page_range(index..=index);
         let text = match unpdf::render::to_text(&document, &options) {
             Ok(text) => text.trim().to_string(),
             Err(error) => {
