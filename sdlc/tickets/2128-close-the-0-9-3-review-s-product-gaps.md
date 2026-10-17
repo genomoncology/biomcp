@@ -56,3 +56,4 @@ Found by the 0.9.3 adversarial review on 2026-10-16.
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 next: Review accepted 78e627f01. Original batch failures 1792249841729-7187 and 1792250314261-50149 exposed stale shared-name expectations inconsistent with approved exact-owner decision3. Minimal assertion/fixture-key corrections preserve runtime logic and recorded responses. Complete drug family passed 180 cases without fail-fast in 1792250810209-75160; formatting passed and Clippy reused from 1792250665363-95005. Corrected six-ticket batch gate is running.
