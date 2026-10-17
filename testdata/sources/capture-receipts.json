@@ -3202,6 +3202,18 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "plos/pbio-3000076-printable.pdf",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PLOS",
+        "request": "https://journals.plos.org/plosbiology/article/file?id=10.1371/journal.pbio.3000076&type=printable",
+        "captured_at": "2026-10-16T23:08:00Z",
+        "sha256": "227b89bbb4db8c0adf150f0a4fea7a80dfe652ad3777768d1ea7cd3233b76ede",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization; the paper (PMID 30571682, DOI 10.1371/journal.pbio.3000076) is CC BY, and the URL is the open PDF Semantic Scholar lists for it."
+      }
+    },
+    {
       "path": "pmc_article/pmc3040717-supplementary-tables-pow.html",
       "classification": "real_and_receipted",
       "receipt": {

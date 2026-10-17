@@ -387,6 +387,91 @@ fn two_route_supplement_prefers_bytes_and_marks_the_empty_alternative() {
     );
 }
 
+fn article_fulltext_pdf_attempt(doc: &serde_json::Value) -> &serde_json::Value {
+    doc["full_text_coverage"]["attempts"]
+        .as_array()
+        .expect("full_text_coverage attempts should be a list")
+        .iter()
+        .find(|attempt| attempt["source_kind"] == "pdf")
+        .unwrap_or_else(|| panic!("no pdf attempt recorded: {doc}"))
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn publisher_open_pdf_link_downloads_and_returns_its_text() {
+    let fixture = ArticleFixture::start();
+
+    let output = successful_output(
+        &fixture,
+        &["--json", "get", "article", "22663026", "fulltext", "--pdf"],
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("article JSON should parse");
+    let manifest = &doc["full_text_manifest"];
+    assert_eq!(manifest["source_kind"], "pdf");
+    assert_eq!(manifest["provider"]["label"], "Semantic Scholar PDF");
+    assert_eq!(manifest["provenance"]["pdf_fallback_used"], true);
+    assert!(manifest["reuse"]["license"].as_str().unwrap().contains("CC BY"));
+
+    let attempt = article_fulltext_pdf_attempt(&doc);
+    assert_eq!(attempt["outcome"], "data");
+    assert_eq!(attempt["coverage"], "full_text");
+    assert_eq!(attempt["reason"], "body_detected");
+
+    let saved = doc["full_text_path"]
+        .as_str()
+        .expect("pdf fulltext should name its saved path");
+    let text = fs::read_to_string(saved).expect("captured PDF text should be saved");
+    let lower = text.to_lowercase();
+    assert!(lower.contains("plateaus"), "saved text lost the paper title");
+    assert!(lower.contains("newman"), "saved text lost the response target");
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn open_pdf_failures_name_the_part_that_failed() {
+    let fixture = ArticleFixture::start();
+
+    // Each recorded shape names its failed part instead of a bare
+    // source_unavailable/no_content (ticket 2142 acceptance).
+    for (pmid, expected_reason, outcome) in [
+        ("22663019", "open_pdf_link_absent", "empty"),
+        ("22663012", "open_pdf_link_unavailable", "unavailable"),
+        ("22663027", "open_pdf_link_rejected", "unavailable"),
+        ("22663028", "open_pdf_download_failed", "unavailable"),
+        ("22663014", "open_pdf_download_absent", "empty"),
+        ("22663029", "open_pdf_text_unusable", "unavailable"),
+    ] {
+        let output = fixture
+            .biomcp_command(&["--json", "get", "article", pmid, "fulltext", "--pdf"])
+            .output()
+            .expect("article fulltext command should run");
+        assert!(
+            output.status.success(),
+            "{pmid} fulltext --pdf should still exit 0\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let doc: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("article JSON should parse");
+        let attempt = article_fulltext_pdf_attempt(&doc);
+        assert_eq!(
+            attempt["reason"], expected_reason,
+            "wrong pdf-step reason for {pmid}: {doc}"
+        );
+        assert_eq!(attempt["outcome"], outcome, "wrong pdf-step outcome for {pmid}");
+        assert_eq!(doc["full_text_path"], serde_json::Value::Null);
+    }
+
+    // The refused link's credentials never reach the record.
+    let refused = successful_output(
+        &fixture,
+        &["--json", "get", "article", "22663027", "fulltext", "--pdf"],
+    );
+    let stderrless = String::from_utf8_lossy(&refused.stdout).to_lowercase();
+    assert!(!stderrless.contains("secret"), "refusal echoed the URL: {stderrless}");
+}
+
 #[test]
 #[serial_test::serial(article_output_fixture)]
 fn article_fulltext_without_out_keeps_the_managed_cache_path() {

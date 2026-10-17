@@ -365,14 +365,20 @@ provide only an abstract or metadata):
 biomcp get article 22663011 fulltext --pdf
 ```
 
-With `--pdf`, BioMCP can use a Semantic Scholar open-access PDF URL from an
-explicitly allowed Semantic Scholar/CDN HTTPS origin as the final fallback and
-labels the winner as `Semantic Scholar PDF`. A successful lookup with no PDF is
-a healthy absence; a failed lookup contributes unavailable state only when PDF
-fallback was requested. Other provider-returned origins are rejected before
-contact. `--pdf` is only valid with the `fulltext` section;
-`biomcp get article 22663011 --pdf` is rejected instead of silently doing
-nothing.
+With `--pdf`, BioMCP downloads the Semantic Scholar open-access PDF URL at
+whatever HTTPS publisher origin Semantic Scholar lists — the link is
+provider-vouched, and the guards stay on the transport (HTTPS default-port
+host names, no credentials, DNS answers that cannot resolve to private or
+internal addresses, and redirects revalidated by the same rules) — and labels
+the winner as `Semantic Scholar PDF`. A successful lookup with no listed PDF
+is a healthy absence; a failed lookup contributes unavailable state only when
+PDF fallback was requested. Each PDF-step failure names the part that failed
+in its attempt `reason`: `open_pdf_link_unavailable` (the link could not be
+asked for), `open_pdf_link_absent` (no open PDF listed), `open_pdf_link_rejected`
+(the link was refused before contact), `open_pdf_download_failed`,
+`open_pdf_download_absent`, or `open_pdf_text_unusable`. `--pdf` is only
+valid with the `fulltext` section; `biomcp get article 22663011 --pdf` is
+rejected instead of silently doing nothing.
 
 Indexing section:
 
