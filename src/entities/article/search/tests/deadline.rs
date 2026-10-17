@@ -416,8 +416,7 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
 #[serial_test::serial(source_env)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
-    // Hold the cache epoch lock so shared-client construction cannot take
-    // it; the invocation must still exit at its deadline.
+    // An optional cache lock must leave the invocation time to ask its provider.
     // Process-state independence: the shared client is built
     // once per process, so the test first builds it and then clears the
     // slot. Without that reset the test passes only when it runs before
@@ -454,17 +453,11 @@ async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
         "construction contention honors the deadline: {:?} elapsed",
         started.elapsed()
     );
-    match result {
-        Err(BioMcpError::SourceUnavailable { reason, .. }) => assert!(
-            reason.starts_with(crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX),
-            "the locked-construction error names the deadline: {reason}"
-        ),
-        Ok(page) => panic!(
-            "held epoch lock must not yield a page: {} rows",
-            page.results.len()
-        ),
-        other => panic!("expected a deadline error, got {other:?}"),
-    }
+    let page = result.expect("cache lock contention must fall through to the provider");
+    assert!(
+        !page.results.is_empty(),
+        "the provider answer survives cache contention"
+    );
     held.unlock().expect("release epoch lock");
 }
 
