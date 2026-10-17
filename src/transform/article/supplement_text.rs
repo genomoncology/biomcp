@@ -132,7 +132,9 @@ pub fn extract_supplement_text(
 ) -> SupplementTextExtraction {
     let mut extraction = SupplementTextExtraction::default();
     match format {
-        SupplementFormat::Xlsx | SupplementFormat::Xls => extract_workbook(format, bytes, &mut extraction),
+        SupplementFormat::Xlsx | SupplementFormat::Xls => {
+            extract_workbook(format, bytes, &mut extraction)
+        }
         SupplementFormat::Csv => extract_csv(bytes, &mut extraction),
         SupplementFormat::Docx => extract_docx(bytes, &mut extraction),
         SupplementFormat::Pdf => extract_pdf(bytes, budget, &mut extraction),
@@ -161,11 +163,13 @@ fn extract_workbook(
     let mut workbook = match open_workbook_auto_from_rs(cursor) {
         Ok(workbook) => workbook,
         Err(error) => {
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                None,
-                format.as_str(),
-                truncate_reason(format!("workbook could not be opened: {error:?}")),
-            ));
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    None,
+                    format.as_str(),
+                    truncate_reason(format!("workbook could not be opened: {error:?}")),
+                ));
             return;
         }
     };
@@ -217,10 +221,12 @@ fn extract_csv(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
             Ok(true) => {}
             Ok(false) => break,
             Err(error) => {
-                extraction.problems.push(SupplementExtractionProblem::unread(
-                    None,
-                    "csv",
-                    truncate_reason(format!("csv record {row} could not be parsed: {error}")),
+                extraction
+                    .problems
+                    .push(SupplementExtractionProblem::unread(
+                        None,
+                        "csv",
+                        truncate_reason(format!("csv record {row} could not be parsed: {error}")),
                     ));
                 return;
             }
@@ -250,10 +256,12 @@ fn extract_docx(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
     let mut archive = match zip::ZipArchive::new(Cursor::new(bytes)) {
         Ok(archive) => archive,
         Err(error) => {
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                None,
-                "docx",
-                truncate_reason(format!("docx package could not be opened: {error}")),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    None,
+                    "docx",
+                    truncate_reason(format!("docx package could not be opened: {error}")),
                 ));
             return;
         }
@@ -262,42 +270,48 @@ fn extract_docx(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
     match archive.by_name("word/document.xml") {
         Ok(mut file) => {
             if let Err(error) = file.read_to_end(&mut document) {
-                extraction.problems.push(SupplementExtractionProblem::unread(
-                    None,
-                    "docx",
-                    truncate_reason(format!(
-                        "docx member word/document.xml could not be read: {error}"
-                    )),
-                ));
+                extraction
+                    .problems
+                    .push(SupplementExtractionProblem::unread(
+                        None,
+                        "docx",
+                        truncate_reason(format!(
+                            "docx member word/document.xml could not be read: {error}"
+                        )),
+                    ));
                 return;
             }
         }
         Err(error) => {
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                None,
-                "docx",
-                truncate_reason(format!(
-                    "docx member word/document.xml is missing: {error}"
-                )),
-            ));
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    None,
+                    "docx",
+                    truncate_reason(format!("docx member word/document.xml is missing: {error}")),
+                ));
             return;
         }
     }
     let Ok(xml) = std::str::from_utf8(&document) else {
-        extraction.problems.push(SupplementExtractionProblem::unread(
-            None,
-            "docx",
-            "docx member word/document.xml is not UTF-8".to_string(),
+        extraction
+            .problems
+            .push(SupplementExtractionProblem::unread(
+                None,
+                "docx",
+                "docx member word/document.xml is not UTF-8".to_string(),
             ));
         return;
     };
     let doc = match crate::xml::parse_external_xml(xml, crate::xml::ARTICLE_XML_NODE_LIMIT) {
         Ok(doc) => doc,
         Err(_) => {
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                None,
-                "docx",
-                "docx member word/document.xml is not parseable XML".to_string(),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    None,
+                    "docx",
+                    "docx member word/document.xml is not parseable XML".to_string(),
                 ));
             return;
         }
@@ -334,14 +348,20 @@ fn extract_docx(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
     }
 }
 
-fn extract_pdf(bytes: &[u8], budget: &SupplementTextBudget, extraction: &mut SupplementTextExtraction) {
+fn extract_pdf(
+    bytes: &[u8],
+    budget: &SupplementTextBudget,
+    extraction: &mut SupplementTextExtraction,
+) {
     let document = match unpdf::parse_bytes(bytes) {
         Ok(document) => document,
         Err(error) => {
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                None,
-                "pdf",
-                truncate_reason(format!("pdf could not be parsed: {error}")),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    None,
+                    "pdf",
+                    truncate_reason(format!("pdf could not be parsed: {error}")),
                 ));
             return;
         }
@@ -397,10 +417,12 @@ fn extract_archive(
     let mut archive = match zip::ZipArchive::new(Cursor::new(bytes)) {
         Ok(archive) => archive,
         Err(error) => {
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                None,
-                "zip",
-                truncate_reason(format!("archive could not be opened: {error}")),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    None,
+                    "zip",
+                    truncate_reason(format!("archive could not be opened: {error}")),
                 ));
             return;
         }
@@ -410,25 +432,34 @@ fn extract_archive(
         let mut file = match archive.by_index(index) {
             Ok(file) => file,
             Err(error) => {
-                extraction.problems.push(SupplementExtractionProblem::unread(
-                    None,
-                    "zip",
-                    truncate_reason(format!(
-                        "archive member {index} could not be opened: {error}"
-                    )),
-                ));
+                extraction
+                    .problems
+                    .push(SupplementExtractionProblem::unread(
+                        None,
+                        "zip",
+                        truncate_reason(format!(
+                            "archive member {index} could not be opened: {error}"
+                        )),
+                    ));
                 continue;
             }
         };
         let path = match file.enclosed_name() {
             Some(path) => path.to_string_lossy().into_owned(),
             None => {
-                extraction.problems.push(SupplementExtractionProblem::unread(
-                    Some(file.name().ok().map(|name| name.into_owned()).unwrap_or_else(|| {
-                        String::from_utf8_lossy(file.name_raw()).into_owned()
-                    })),
-                    "zip",
-                    "archive member name is not a safe path".to_string(),
+                extraction
+                    .problems
+                    .push(SupplementExtractionProblem::unread(
+                        Some(
+                            file.name()
+                                .ok()
+                                .map(|name| name.into_owned())
+                                .unwrap_or_else(|| {
+                                    String::from_utf8_lossy(file.name_raw()).into_owned()
+                                }),
+                        ),
+                        "zip",
+                        "archive member name is not a safe path".to_string(),
                     ));
                 continue;
             }
@@ -438,10 +469,12 @@ fn extract_archive(
         }
         if let Err(reason) = spend.admit(file.size(), budget) {
             let member_format = member_format_name(&path);
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                Some(path),
-                &member_format,
-                reason.to_string(),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    Some(path),
+                    &member_format,
+                    reason.to_string(),
                 ));
             extraction.truncated = true;
             continue;
@@ -453,36 +486,44 @@ fn extract_archive(
             .read_to_end(&mut member)
         {
             let member_format = member_format_name(&path);
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                Some(path),
-                &member_format,
-                truncate_reason(format!("archive member could not be read: {error}")),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    Some(path),
+                    &member_format,
+                    truncate_reason(format!("archive member could not be read: {error}")),
                 ));
             continue;
         }
         if member.is_empty() {
             let member_format = member_format_name(&path);
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                Some(path),
-                &member_format,
-                "empty archive member".to_string(),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    Some(path),
+                    &member_format,
+                    "empty archive member".to_string(),
                 ));
             continue;
         }
         let Some(format) = supplement_format_for_filename(&path) else {
-            extraction.problems.push(SupplementExtractionProblem::unread(
-                Some(path),
-                "zip",
-                "unsupported member format".to_string(),
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    Some(path),
+                    "zip",
+                    "unsupported member format".to_string(),
                 ));
             continue;
         };
         if matches!(format, SupplementFormat::Zip) {
             if depth == 0 {
-                extraction.problems.push(SupplementExtractionProblem::unread(
-                    Some(path),
-                    "zip",
-                    "nested archive exceeds the extraction depth".to_string(),
+                extraction
+                    .problems
+                    .push(SupplementExtractionProblem::unread(
+                        Some(path),
+                        "zip",
+                        "nested archive exceeds the extraction depth".to_string(),
                     ));
                 continue;
             }
@@ -582,10 +623,7 @@ mod tests {
         }
     }
 
-    fn hit<'a>(
-        extraction: &'a SupplementTextExtraction,
-        needle: &str,
-    ) -> &'a SupplementTextBlock {
+    fn hit<'a>(extraction: &'a SupplementTextExtraction, needle: &str) -> &'a SupplementTextBlock {
         extraction
             .blocks
             .iter()
@@ -595,7 +633,8 @@ mod tests {
 
     #[test]
     fn xlsx_extract_locates_a_row_on_sheet1() {
-        let extraction = extract_supplement_text(SupplementFormat::Xlsx, BRCA1_SHEET1_XLSX, &budget());
+        let extraction =
+            extract_supplement_text(SupplementFormat::Xlsx, BRCA1_SHEET1_XLSX, &budget());
         assert!(extraction.problems.is_empty(), "{:?}", extraction.problems);
         let block = hit(&extraction, "F1761I");
         assert_eq!(block.worksheet.as_deref(), Some("Sheet1"));
@@ -636,7 +675,8 @@ mod tests {
 
     #[test]
     fn docx_extract_locates_a_paragraph() {
-        let extraction = extract_supplement_text(SupplementFormat::Docx, METHOD_NOTES_DOCX, &budget());
+        let extraction =
+            extract_supplement_text(SupplementFormat::Docx, METHOD_NOTES_DOCX, &budget());
         assert!(extraction.problems.is_empty(), "{:?}", extraction.problems);
         let block = hit(&extraction, "G12D");
         assert_eq!(block.paragraph, Some(3));
@@ -697,7 +737,13 @@ mod tests {
         let reasons: Vec<(Option<&str>, &str, &str)> = extraction
             .problems
             .iter()
-            .map(|problem| (problem.member.as_deref(), problem.format.as_str(), problem.reason.as_str()))
+            .map(|problem| {
+                (
+                    problem.member.as_deref(),
+                    problem.format.as_str(),
+                    problem.reason.as_str(),
+                )
+            })
             .collect();
         assert!(
             reasons.contains(&(Some("figure-1.gif"), "zip", "unsupported member format")),
@@ -721,12 +767,17 @@ mod tests {
         }
         let mut small = budget();
         small.max_member_bytes = 1024;
-        let extraction =
-            extract_supplement_text(SupplementFormat::Zip, &out.into_inner(), &small);
+        let extraction = extract_supplement_text(SupplementFormat::Zip, &out.into_inner(), &small);
         assert!(extraction.truncated);
         assert_eq!(extraction.problems.len(), 1);
-        assert_eq!(extraction.problems[0].member.as_deref(), Some("big-table.csv"));
-        assert_eq!(extraction.problems[0].reason, "archive member exceeds the extraction size limit");
+        assert_eq!(
+            extraction.problems[0].member.as_deref(),
+            Some("big-table.csv")
+        );
+        assert_eq!(
+            extraction.problems[0].reason,
+            "archive member exceeds the extraction size limit"
+        );
     }
 
     #[test]
@@ -738,7 +789,11 @@ mod tests {
         assert!(extraction.blocks.is_empty());
         assert_eq!(extraction.problems.len(), 1);
         assert_eq!(extraction.problems[0].format, "xlsx");
-        assert!(extraction.problems[0].reason.contains("workbook could not be opened"));
+        assert!(
+            extraction.problems[0]
+                .reason
+                .contains("workbook could not be opened")
+        );
     }
 
     #[test]

@@ -20,7 +20,6 @@ mod test_support;
 pub(crate) mod variant_search;
 
 pub use self::assets::{article_asset_bytes, article_assets_manifest};
-pub use self::supplement_search::article_supplement_search;
 pub use self::batch::get_compact;
 pub use self::detail::get;
 pub use self::graph::citation_evidence::citation_evidence;
@@ -38,6 +37,7 @@ pub(crate) use self::search::{
     ARTICLE_SEARCH_DEADLINE_REASON_PREFIX, ARTICLE_SEARCH_DEADLINE_SUGGESTION,
 };
 pub use self::search::{search, search_page, validate_search_page_request};
+pub use self::supplement_search::article_supplement_search;
 #[allow(unused_imports)]
 pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};
 #[allow(unused_imports)]

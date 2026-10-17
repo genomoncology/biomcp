@@ -535,12 +535,9 @@ pub(in crate::cli) async fn handle_command(
                         .into(),
                 ));
             }
-            let search = crate::entities::article::article_supplement_search(
-                &id,
-                &needle,
-                asset.as_deref(),
-            )
-            .await?;
+            let search =
+                crate::entities::article::article_supplement_search(&id, &needle, asset.as_deref())
+                    .await?;
             crate::render::json::to_pretty(&search)?
         }
         ArticleCommand::Recommendations {

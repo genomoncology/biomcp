@@ -130,7 +130,10 @@ pub async fn article_supplement_search(
             continue;
         }
         let extraction = supplement_text_for_bytes(&asset.sha256, format, bytes).await;
-        if let Some(problem) = extraction.problems.iter().find(|problem| problem.member.is_none())
+        if let Some(problem) = extraction
+            .problems
+            .iter()
+            .find(|problem| problem.member.is_none())
         {
             files.push(ArticleSupplementSearchFile {
                 asset_key: asset.asset_key.clone(),
@@ -196,8 +199,8 @@ fn file_outcome_rows(
         .map(|format| format.as_str())
         .unwrap_or("other");
     let row = |member: Option<String>,
-                   outcome: ArticleSupplementSearchFileOutcome,
-                   reason: Option<String>| {
+               outcome: ArticleSupplementSearchFileOutcome,
+               reason: Option<String>| {
         let member_format = match &member {
             Some(member) => member_leaf_format(member).unwrap_or(format),
             None => format,

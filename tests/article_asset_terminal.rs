@@ -738,7 +738,13 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
 
     let search = successful_output(
         &fixture,
-        &["--json", "article", "supplement-search", "30209399", "F1761I"],
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            "F1761I",
+        ],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
@@ -757,7 +763,11 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
         "the hit context should carry the matched row text"
     );
     let sha256 = hits[0]["sha256"].as_str().expect("checksum should be text");
-    assert_eq!(sha256.len(), 64, "the source file's checksum rides each hit");
+    assert_eq!(
+        sha256.len(),
+        64,
+        "the source file's checksum rides each hit"
+    );
     let files = doc["files"].as_array().expect("files should be a list");
     assert_eq!(files.len(), 1);
     assert_eq!(files[0]["outcome"], "searched");
@@ -765,7 +775,13 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
 
     let search = successful_output(
         &fixture,
-        &["--json", "article", "supplement-search", "28944238", "P245S"],
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "28944238",
+            "P245S",
+        ],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
@@ -790,7 +806,13 @@ fn supplement_search_reports_an_unreadable_file_with_format_and_reason() {
 
     let search = successful_output(
         &fixture,
-        &["--json", "article", "supplement-search", "22663024", "F1761I"],
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "22663024",
+            "F1761I",
+        ],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
