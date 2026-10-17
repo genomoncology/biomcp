@@ -732,3 +732,20 @@ fn scored_best_candidate_breaks_ties_on_provider_names_like_rerank() {
         "the provider-named record outranks the label-only record"
     );
 }
+
+#[test]
+fn a_leading_reading_is_not_repeated_as_a_holder() {
+    let holder: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+        "_id":"MONDO:0009693", "disease_ontology":{"name":"multiple myeloma","synonyms":{"exact":["MM"]}}
+    })).expect("holder");
+    let message =
+        ambiguous_abbreviation_error("MM", &[holder], true, ambiguity::get_disease_retry("MM"))
+            .to_string();
+    assert_eq!(
+        message
+            .matches("- multiple myeloma (MONDO:0009693)")
+            .count(),
+        1,
+        "{message}"
+    );
+}

@@ -615,7 +615,12 @@ fn check_cache_limits_reports_snapshot_errors_as_error_rows() {
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.api, "Cache limits");
     assert_eq!(outcome.row.status, HealthStatus::Error);
-    assert!(outcome.row.latency.contains("boom"));
+    assert_eq!(outcome.row.latency, "Other");
+    assert!(
+        !serde_json::to_string(&outcome.row)
+            .unwrap()
+            .contains("/tmp/cache")
+    );
 }
 
 #[test]
@@ -687,12 +692,11 @@ fn check_cache_dir_config_error_matches_pinned_contract() {
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.api, "Cache dir");
     assert_eq!(outcome.row.status, HealthStatus::Error);
-    assert_eq!(
-        outcome.row.latency,
-        format!(
-            "Invalid argument: {}: [cache].max_size must be greater than 0",
-            config_path.display()
-        )
+    assert_eq!(outcome.row.latency, "invalid_argument");
+    assert!(
+        !serde_json::to_string(&outcome.row)
+            .unwrap()
+            .contains(config_path.to_str().unwrap())
     );
     assert_cache_dir_affects(outcome.row.affects.as_deref());
     assert_eq!(outcome.row.key_configured, None);

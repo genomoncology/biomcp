@@ -593,7 +593,16 @@ pub(super) fn card_own_label_brands(
             .iter()
             .any(|generic| label_generic_names_card(generic, card_name));
         if names_card {
-            out.extend(extract_openfda_values_from_result(result, "brand_name"));
+            let generics = extract_openfda_values_from_result(result, "generic_name");
+            out.extend(
+                extract_openfda_values_from_result(result, "brand_name")
+                    .into_iter()
+                    .filter(|brand| {
+                        !generics
+                            .iter()
+                            .any(|generic| generic.trim().eq_ignore_ascii_case(brand.trim()))
+                    }),
+            );
         }
     }
     out

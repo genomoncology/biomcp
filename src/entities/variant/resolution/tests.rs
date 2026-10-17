@@ -660,3 +660,20 @@ fn identity_comparison_is_indeterminate_for_missing_or_unlinked_annotation_evide
         }
     );
 }
+
+#[test]
+fn every_protein_spelling_refuses_invalid_residue_letters() {
+    for input in ["BRAF 600Z", "Z999Q", "p.Z999Q", "BRAF Z999Q"] {
+        assert!(
+            variant_guidance(input).is_none(),
+            "invalid residues must not become guidance"
+        );
+        let message = parse_variant_id(input)
+            .expect_err("invalid residue")
+            .to_string();
+        assert!(
+            message.contains("invalid amino acid residue 'Z'"),
+            "{input}: {message}"
+        );
+    }
+}

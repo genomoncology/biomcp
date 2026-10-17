@@ -807,7 +807,11 @@ fn ambiguous_abbreviation_error(
         "Ambiguous disease {subject} '{requested}': {reason}; \
 BioMCP refuses rather than return one disease's definition with another's genes.\n\
 Candidates:\n{leading_reading}{}{reading}{retry}",
-        abbreviation_candidate_lines(holders),
+        abbreviation_candidate_lines(holders)
+            .lines()
+            .filter(|line| line.trim() != leading_reading.trim())
+            .map(|line| format!("{line}\n"))
+            .collect::<String>(),
     ))
 }
 

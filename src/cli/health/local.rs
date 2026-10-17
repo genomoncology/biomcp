@@ -259,7 +259,7 @@ where
                 HealthRow {
                     api: "Cache dir".into(),
                     status: HealthStatus::Error,
-                    latency: err.to_string(),
+                    latency: err.code().into(),
                     affects: Some("local cache-backed lookups and downloads".into()),
                     key_configured: None,
                     local_path: None,
@@ -281,7 +281,7 @@ pub(in crate::cli::health) async fn check_cache_limits() -> ProbeOutcome {
     let config = match crate::cache::resolve_cache_config() {
         Ok(config) => config,
         Err(err) => {
-            return cache_limits_error_outcome(err.to_string());
+            return cache_limits_error_outcome(err.code().into());
         }
     };
 
@@ -295,7 +295,7 @@ pub(in crate::cli::health) async fn check_cache_limits() -> ProbeOutcome {
     .await
     {
         Ok(outcome) => outcome,
-        Err(err) => cache_limits_error_outcome(err.to_string()),
+        Err(err) => cache_limits_error_outcome(err.code().into()),
     }
 }
 
@@ -372,16 +372,24 @@ where
 {
     let config = match resolve_config() {
         Ok(config) => config,
-        Err(err) => return cache_limits_error_outcome(err.to_string()),
+        Err(err) => return cache_limits_error_outcome(err.code().into()),
     };
     let cache_path = config.cache_root.join("http");
     let snapshot = match snapshotter(&cache_path) {
         Ok(snapshot) => snapshot,
-        Err(err) => return cache_limits_error_outcome(err.to_string()),
+        Err(err) => {
+            let kind = match err {
+                crate::cache::CachePlannerError::Io { source, .. } => {
+                    format!("{:?}", source.kind())
+                }
+                crate::cache::CachePlannerError::Index { .. } => "cache_index".into(),
+            };
+            return cache_limits_error_outcome(kind);
+        }
     };
     let space = match inspect_space(&config.cache_root) {
         Ok(space) => space,
-        Err(err) => return cache_limits_error_outcome(err.to_string()),
+        Err(err) => return cache_limits_error_outcome(err.code().into()),
     };
     let evaluation = crate::cache::evaluate_cache_limits(&snapshot, &config, space);
 

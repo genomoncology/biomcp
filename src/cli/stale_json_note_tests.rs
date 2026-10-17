@@ -2,12 +2,9 @@
 //! What this file proves, exactly: the note reaches article search
 //! JSON and search-all JSON through `_meta.notes` (parsed, not
 //! grepped); the ClinGen prefetch inside `get gene` carries a stale
-//! serve's note to the markdown card; and GWAS never serves stale,
-//! even under BIOMCP_CACHE_MODE=infinite, because its client keeps
-//! NoStore unconditionally (gwas.rs records why — cache decode
-//! failures — so GWAS has no notes channel to test). Fixtures are
-//! axum servers answering 200 with a one-second freshness window,
-//! then killed so the next command serves stale from the cache.
+//! serve's note to the markdown card. Day-cached GWAS replies carry
+//! the same age note once past the provider's freshness window.
+//! Fixtures answer with a one-second freshness window, then stop.
 
 /// Answer every request with `body` as JSON, fresh-cacheable for one
 /// second: after the window, with the server gone, the cache serves
@@ -328,11 +325,25 @@ async fn a_stale_article_search_json_states_the_cache_age_in_meta_notes() {
     );
 }
 
-// GWAS search cannot carry a stale-cache note: its client sends
-// every request with `CacheMode::NoStore` (src/sources/gwas.rs —
-// always bypass persistence, recorded after cache decode failures),
-// so no stale serve exists to describe. The exclusion is recorded
-// in sdlc/issues/2026-09-27-get-json-bodies-have-no-notes-channel-for-the-stale-cache-age.md.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_day_cached_gwas_search_states_the_cache_age() {
+    const BODY: &str = r#"{"_embedded":{"associations":[{"accession_id":"GCST90002321","p_value":5e-8,"mapped_genes":["BRAF"],"reported_trait":["melanoma"],"snp_allele":[{"rs_id":"rs121913524","effect_allele":"T"}]}]},"page":{"totalElements":1}}"#;
+    let (base, server) = stale_note_fixture_server(BODY).await;
+    let _env = StaleNoteEnv::new(&base, &["BIOMCP_GWAS_BASE"]);
+    let args = ["--json", "search", "gwas", "-g", "BRAF"];
+    let fresh = run(&args).await;
+    assert!(meta_notes(&fresh).is_empty(), "{fresh}");
+    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: provider freshness wait
+    server.abort();
+    let cached = run(&args).await;
+    assert!(
+        meta_notes(&cached)
+            .iter()
+            .any(|note| note.contains("older than the provider's freshness window")),
+        "{cached}"
+    );
+}
 
 /// The search-all end-to-end stale serve (restored 2026-09-29 per
 /// Ian's refusal of the deferral): Europe PMC alone rides the
