@@ -4,11 +4,13 @@ priority: 1
 
 # 2177 — Keep fixture output out of repository scans
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 7e0ee10, accept
+
+Landed: 7e0ee10 (fast-forward: Accepted source landed inside carrier a5cfb81 with shared gate 1792261738562-92269; individual review and regression proof retained.)
 
 ## Outcome
 
