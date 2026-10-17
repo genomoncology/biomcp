@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Depends on: 2156
 
+Reviews: revision 4fceba1, accept
+
 ## Outcome
 
 Coordinator implementation brief: close exactly the nine recorded caller-visible gaps while preserving their existing clinical, identity and cache-policy decisions. The affected regressions were authored first. Draft production edits began before the remote baseline finished; those edits were parked until the baseline returned, so reproduction is not claimed to have preceded that drafting.
