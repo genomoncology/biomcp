@@ -38,3 +38,5 @@ Job 2182/1792273736408-87598 ran two real CLI regressions: PMC404/503 control pa
 PM decision needed: confirm original MED404 proof correction to unsupported MED skip plus supported PMC404/503 controls. Implementation proceeds reversibly within approved outcome.
 
 PM decision: 2026-10-17. Confirmed: skip unsupported MED route, retain empty attempt, PMC404 absence/no retry and PMC503 retries.
+
+Coordinator verification: GREEN2182/1792273900673-4176 passed:3 CLI cases,2 existing planner cases, formatting and targeted Clippy with warnings denied. Local sourcec9c728c2eb46cd0cb95616ba66d68ef0a2b810f3 matches the applied tested patch. Existing PDF failure table remains green. The entity fulltext path was unchanged. Fresh review follows.
