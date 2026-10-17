@@ -10,6 +10,7 @@ corrected shapes so drift fails loudly.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -217,9 +218,15 @@ def test_the_routine_lanes_share_one_build_job_and_run_in_parallel() -> None:
         )
 
 
-def test_ci_runs_only_when_dispatched_manually() -> None:
+def test_ci_runs_only_when_dispatched_or_called_for_a_release() -> None:
     triggers = DOC.get("on", DOC.get(True))
-    assert triggers == {"workflow_dispatch": None}
+    assert set(triggers) == {"workflow_dispatch", "workflow_call"}
+    assert triggers["workflow_dispatch"]["inputs"]["windows_only"] == {
+        "description": "Run only the Windows cache-lock regression checks",
+        "type": "boolean",
+        "default": False,
+    }
+    assert triggers["workflow_call"] == {"inputs": {"revision": {"required": True, "type": "string"}}}
 
 
 def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
@@ -235,10 +242,52 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert output.read_text(encoding="utf-8") == "docs_only=false\n"
     for jid in RUST_JOBS:
+        narrow_skip = "" if jid == "windows-contracts" else "!inputs.windows_only && "
         assert _job(jid)["if"].strip() == (
-            "github.event_name == 'workflow_dispatch' && "
-            "needs.changes.outputs.docs_only != 'true'"
-        ), f"{jid} must run for a manual dispatch on the selected revision"
+            "(github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && "
+            f"{narrow_skip}needs.changes.outputs.docs_only != 'true'"
+        ), f"{jid} must run for a full manual dispatch on the selected revision"
+    windows_runs = "\n".join(s.get("run", "") for s in _job("windows-contracts")["steps"])
+    for test in (
+        "windows_lock_contract",
+        "body_limit_epoch_lock_contention_obeys_variant_article_deadline",
+        "construction_under_a_held_epoch_lock_honors_the_deadline",
+    ):
+        assert test in windows_runs, f"Windows must run the {test} regression"
+
+
+@pytest.mark.parametrize("failed_command", [0, 1, 2])
+def test_windows_lock_proof_propagates_each_cargo_failure(
+    tmp_path: Path, failed_command: int
+) -> None:
+    step = next(
+        s
+        for s in _job("windows-contracts")["steps"]
+        if s.get("name") == "Check cache-lock contention and article-search deadlines"
+    )
+    assert step.get("shell") == "bash", "Windows proof must stop on any failed command"
+    commands = step["run"].strip().splitlines()
+    cargo = tmp_path / "cargo"
+    cargo.write_text(
+        '#!/bin/sh\ncase "$*" in *"$FAIL_TEST"*) exit 42;; esac\nexit 0\n',
+        encoding="utf-8",
+    )
+    cargo.chmod(0o755)
+    script = tmp_path / "proof.sh"
+    script.write_text(step["run"], encoding="utf-8")
+    # GitHub's explicit bash shell uses these fail-fast options on Windows too.
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+        env={
+            **os.environ,
+            "PATH": f"{tmp_path}{os.pathsep}{os.environ['PATH']}",
+            "FAIL_TEST": commands[failed_command].split()[-1],
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 42, result.stderr
 
 
 def test_the_changes_job_covers_the_whole_push() -> None:
@@ -343,7 +392,7 @@ def test_the_build_job_uploads_one_dev_build_the_lanes_download() -> None:
         "python-lane": "make test-python",
         "spec-lane": "make spec",
         "stress-lane": "make stress",
-        "full-features": "make full-feature-check",
+        "full-features": "make full-feature-check FULL_FEATURE_PROFILE=release",
     }
     for jid, gate in gates.items():
         runs = [s.get("run") for s in _job(jid)["steps"]]
@@ -363,7 +412,9 @@ def test_the_lane_setup_action_pins_match_the_workflow_environment() -> None:
 
 def test_repository_contracts_always_runs_and_tests_the_docs() -> None:
     job = _job("repository-contracts")
-    assert "if" not in job, "repository-contracts must never be skipped"
+    assert job["if"] == "${{ !inputs.windows_only }}", (
+        "repository-contracts may skip only the explicit Windows proof"
+    )
     assert "needs" not in job
     steps = job.get("steps", [])
     runs = [str(s.get("run", "")) for s in steps]
@@ -379,10 +430,12 @@ def test_the_release_checks_lane_runs_on_every_push() -> None:
     """The cheap release checks run on branches (2026-10-14
     direction): the changelog coverage branch form and the release's
     green-CI query are git, python3, gh and jq only, so the lane
-    never skips and never waits on the Rust build — docs-only pushes
-    included. The heavy release-shaped jobs stay main-only."""
+    runs for every full manual dispatch and never waits on the Rust build.
+    Only the explicit Windows proof skips it."""
     job = _job("release-checks")
-    assert "if" not in job, "release-checks must never be skipped"
+    assert job["if"] == "${{ !inputs.windows_only }}", (
+        "release-checks may skip only the explicit Windows proof"
+    )
     assert "needs" not in job, (
         "release-checks must not wait on the build job; it builds nothing"
     )
@@ -544,3 +597,16 @@ def test_the_binary_dependent_modules_carry_the_marker() -> None:
                 f"{path} drives a built binary or cargo; it needs the "
                 "needs_binary marker or the docs-only CI lane will fail it"
             )
+
+
+def test_reusable_release_qualification_does_not_require_a_live_changelog_section() -> None:
+    # Stable untagged candidates have a dated section. The caller has already
+    # checked that exact source with the release-form coverage gate; branch
+    # coverage requires a live development section and would reject it.
+    step = next(step for step in _job("release-checks")["steps"]
+                if step.get("name") == "Require the changelog to cover the branch")
+    assert step.get("if") == "inputs.revision == ''"
+    release = yaml.safe_load((WORKFLOWS / "release.yml").read_text(encoding="utf-8"))
+    assert release["jobs"]["qualification"]["needs"] == ["version-check"]
+    checks = release["jobs"]["version-check"]["steps"]
+    assert any('--revision HEAD' in step.get("run", "") for step in checks)

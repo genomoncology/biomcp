@@ -72,7 +72,7 @@ test:
 # Both lanes consume the artifacts prepared once by `make test`. Each can
 # also run independently against an existing prepared build.
 test-rust: prepare-routine-test-tmp
-	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml"
+	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml"
 
 test-python: prepare-routine-test-tmp
 	$(MAKE) test-contracts-prepared
@@ -87,8 +87,14 @@ test-contracts: prepare-routine-test-tmp prepare-test-contracts
 	$(MAKE) test-contracts-prepared
 
 test-contracts-prepared:
-	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "not release_gate and not repo_audit" $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
+	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "not release_gate and not repo_audit and not long" $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
 	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
+
+# Exhaustive cases opt in by Rust long_suite_ name or Python long marker.
+.PHONY: test-long
+test-long: prepare-test
+	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml" --profile long --no-tests=pass
+	@status=0; tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "long and not release_gate" || status=$$?; test "$$status" -eq 0 -o "$$status" -eq 5
 
 lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
@@ -133,6 +139,7 @@ release-gate-markers:
 
 release-gate: lint
 	$(MAKE) test
+	$(MAKE) test-long
 	$(MAKE) repo-audit
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 	$(MAKE) full-feature-check FULL_FEATURE_PROFILE=release

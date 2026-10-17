@@ -15,7 +15,11 @@ VERSION_LINE = re.compile(r'^version\s*=\s*"([^"]+)"', re.MULTILINE)
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tag", required=True)
+    parser.add_argument("--tag")
+    parser.add_argument("--candidate-sha")
+    parser.add_argument("--workflow-sha")
+    parser.add_argument("--rehearsal-version")
+    parser.add_argument("--container-only", action="store_true")
     parser.add_argument(
         "--repo-root", type=Path, default=Path(__file__).resolve().parents[1]
     )
@@ -36,6 +40,25 @@ def manifest_version(path: Path) -> str:
 
 def main() -> int:
     args = parse_args()
+    rehearsal = bool(args.candidate_sha or args.rehearsal_version)
+    if rehearsal:
+        if args.tag or args.container_only:
+            print("release version check failed: rehearsal conflicts with tag/container-only", file=sys.stderr)
+            return 1
+        if not args.rehearsal_version or not re.fullmatch(r"[0-9a-f]{40}", args.candidate_sha or ""):
+            print("release version check failed: rehearsal requires a full candidate SHA and stable version", file=sys.stderr)
+            return 1
+        actual = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=args.repo_root,
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        if actual != args.candidate_sha or args.workflow_sha != args.candidate_sha:
+            print("release version check failed: source and workflow must equal the candidate SHA", file=sys.stderr)
+            return 1
+        args.tag = f"v{args.rehearsal_version}"
+    if not args.tag:
+        print("release version check failed: a stable tag or rehearsal candidate is required", file=sys.stderr)
+        return 1
     match = STABLE_TAG.fullmatch(args.tag)
     if match is None:
         if re.fullmatch(r"v?[0-9]+\.[0-9]+\.[0-9]+[-.]?(?:rc|alpha|beta).*", args.tag):

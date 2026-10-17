@@ -93,7 +93,10 @@ exact-variant-literature`.
 identity projection from captured provider evidence without changing normal
 retrieval recall. `--confirmed-only` requires verification and filters the
 verified candidate pool before ranking and pagination. Retrieval aliases remain
-provenance, not observed article evidence. Confirmation requires a returned-PMID typed PubTator Gene/Variant linkage whose
+provenance, not observed article evidence. Verification reads the PubTator3 full-text
+export, so an annotation in a table or paragraph of the full text confirms the same
+way an abstract annotation does. Confirmation requires a returned-PMID typed PubTator
+Gene/Variant linkage whose
 exact HGVS and CorrespondingGene/NCBI Gene-ID facts agree, or an optional bounded
 ClinGen LDH CAid/gene/PMCID annotation with one exact text/table selector. LDH only
 observes already retrieved candidates; absent coverage is not negative evidence.

@@ -23,3 +23,7 @@ Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/
 ## `export_37887282.json`
 
 Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=37887282` on 2026-10-08 for ticket 2034. Provider-faithful capture of an article whose every human KRAS mention spells the gene "K-Ras" or "K-RAS" (NCBI Gene 3845) while its variant rows carry `gene_id`, `hgvs`, and `rsid` infons. The entity identifier spec page and the annotation aggregation tests use it to pin the official-symbol fallback that keeps spelled-gene rows on the gene-plus-protein form.
+
+## `export_fulltext_30275001.json`, `export_fulltext_32371413.json`, `export_fulltext_34480199.json`
+
+Captured from `https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=<PMID>&full=true` on 2026-10-17 for ticket 2139, one file per PMID. Byte-faithful full-text exports of the three SAMHD1 I448T papers the 0.9.2 literature probe reported unverified: the abstract-only export carries no I448T variant annotation for any of them, while the full-text export annotates the variant in `paragraph` and `table` passages. They pin two full-text provider shapes the abstract export never shows: the document is keyed by the numeric PMC id (with `pmcid` beside an agreeing `pmid`), and a variant annotation can carry a complete `CorrespondingGene` linkage with no Gene annotation anywhere in the document naming that gene. The full-text identity-verification tests depend on these shapes.

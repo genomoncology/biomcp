@@ -470,17 +470,25 @@ impl BioMcpError {
                 (status.map(|_| "http_status").unwrap_or("internal"), status)
             }
             Self::ApiJson { .. } | Self::Json(_) => ("decode", None),
+            Self::Io(_) => ("local_io", None),
             Self::SourceUnavailable { .. } | Self::SourceEndpointRetired { .. } => {
                 ("unavailable", None)
             }
             _ => ("internal", None),
+        };
+        let message = match self.underlying() {
+            Self::Io(error) => match error.raw_os_error() {
+                Some(code) => format!("local I/O failure: {:?} (os error {code})", error.kind()),
+                None => format!("local I/O failure: {:?}", error.kind()),
+            },
+            _ => format!("{class} failure"),
         };
         ExternalFailureProjection {
             provider: provider.label(),
             operation,
             class,
             status,
-            message: bounded_external_message(&format!("{class} failure")),
+            message: bounded_external_message(&message),
         }
     }
 
@@ -1081,6 +1089,30 @@ mod tests {
         assert!(!format!("{projection:?}").contains(secret));
         assert!(!format!("{projection:?}").contains("http://"));
     }
+    #[test]
+    fn external_failure_reports_local_io_kind_and_code_without_paths() {
+        let private_path = "/private/cache/token-DO-NOT-USE";
+        for error in [
+            std::io::Error::from_raw_os_error(33),
+            std::io::Error::new(std::io::ErrorKind::PermissionDenied, private_path),
+        ] {
+            let kind = format!("{:?}", error.kind());
+            let code = error.raw_os_error();
+            let projection = BioMcpError::Io(error)
+                .with_source_context(SourceContext::retry(SourceProvider::SEMANTIC_SCHOLAR))
+                .external_failure(SourceProvider::SEMANTIC_SCHOLAR, "article search");
+            assert_eq!(projection.class, "local_io");
+            assert_eq!(projection.status, None);
+            assert!(projection.message.contains(&kind));
+            if let Some(code) = code {
+                assert!(projection.message.contains(&format!("os error {code}")));
+            }
+            assert!(!projection.message.contains(private_path));
+            assert!(!projection.message.contains("token-DO-NOT-USE"));
+            assert!(projection.message.len() <= 512);
+        }
+    }
+
     #[test]
     fn external_failure_message_bound_is_utf8_safe_at_and_after_512_bytes() {
         let exact = format!("{}aa", "é".repeat(255));

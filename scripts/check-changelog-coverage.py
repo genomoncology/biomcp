@@ -57,6 +57,7 @@ def parse_args() -> argparse.Namespace:
         help="the branch form: cover tickets whose diffs change shipped behavior",
     )
     parser.add_argument("--changelog", type=Path, default=Path("CHANGELOG.md"))
+    parser.add_argument("--revision", help="untagged release candidate revision (with --tag for its version)")
     return parser.parse_args()
 
 
@@ -71,8 +72,8 @@ def version_key(tag: str) -> tuple[int, ...]:
     return tuple(int(part) for part in tag[1:].split("."))
 
 
-def previous_tag(tag: str) -> str | None:
-    tags = run_git("tag", "--merged", tag, "--sort=version:refname").splitlines()
+def previous_tag(tag: str, revision: str | None = None) -> str | None:
+    tags = run_git("tag", "--merged", revision or tag, "--sort=version:refname").splitlines()
     older = [
         candidate
         for candidate in tags
@@ -137,7 +138,16 @@ def status_token(content: str) -> str:
     return ""
 
 
-def completed_status_tickets(previous: str, tag: str) -> set[str]:
+def belongs_to_release_line(content: str | None, version: str) -> bool:
+    """A copied record for another release line is not a landing here."""
+    line = re.match(r"v(\d+)\.(\d+)", version)
+    milestone = re.search(r"^Milestone:\s*(\S+)", content or "", re.MULTILINE)
+    return line is None or milestone is None or milestone.group(1).startswith(
+        f"{line.group(1)}.{line.group(2)}"
+    )
+
+
+def completed_status_tickets(previous: str, tag: str, version: str | None = None) -> set[str]:
     names = run_git(
         "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/tickets/"
     ).splitlines()
@@ -145,8 +155,6 @@ def completed_status_tickets(previous: str, tag: str) -> set[str]:
     # tickets only. Carried tickets from another line (the 1.0
     # planning records landed mid-cycle) complete on their own line
     # and never demand a bullet here.
-    line = re.match(r"v(\d+)\.(\d+)", tag)
-    line_prefix = f"{line.group(1)}.{line.group(2)}" if line else None
     found: set[str] = set()
     for name in names:
         match = TICKET_FILE.match(name)
@@ -158,26 +166,42 @@ def completed_status_tickets(previous: str, tag: str) -> set[str]:
         # reads complete at the release.
         if status_token(content) != "complete":
             continue
-        if line_prefix is not None:
-            milestone = re.search(r"^Milestone:\s*(\S+)", content, re.MULTILINE)
-            if milestone is not None and not milestone.group(1).startswith(line_prefix):
-                continue
+        if not belongs_to_release_line(content, version or tag):
+            continue
         found.add(match.group(1))
     return found
 
 
-def merged_tickets(previous: str, tag: str) -> set[str]:
+def merged_tickets(previous: str, tag: str, version: str | None = None) -> set[str]:
     # No single source is complete: a landing can be a Land subject,
     # an old-pattern merge subject, or a record file, and a ticket can
     # close with none of them when its work lands as plain commits
     # (2010, absorbed by 1304). A record can lag a landing while a
     # subject can be rewritten or absent. Fail closed on the union,
     # one ticket once across every shape.
-    return (
+    read_ticket = tag_ticket_reader(tag)
+    records = {
+        ticket for ticket in record_tickets(previous, tag)
+        if belongs_to_release_line(read_ticket(ticket), version or tag)
+    }
+    candidates = (
         landing_subject_tickets(previous, tag)
-        | record_tickets(previous, tag)
-        | completed_status_tickets(previous, tag)
+        | records
+        | completed_status_tickets(previous, tag, version)
     )
+    release = version or tag
+    required: set[str] = set()
+    for ticket in candidates:
+        content = read_ticket(ticket)
+        milestone = re.search(r"^Milestone:\s*(\S+)", content or "", re.MULTILINE)
+        # Prior-release housekeeping can close after that release's tag.
+        # Missing or nonstandard records still demand a description.
+        if milestone is not None and STABLE_TAG.fullmatch("v" + milestone.group(1)):
+            if version_key("v" + milestone.group(1)) < version_key(release):
+                if not landed_in_milestone(ticket, release.removeprefix("v"), previous, tag):
+                    continue
+        required.add(ticket)
+    return required
 
 
 def section_text(path: Path, tag: str) -> tuple[str, str]:
@@ -469,6 +493,9 @@ def milestone_problems(
 def main() -> int:
     args = parse_args()
     if args.branch:
+        if args.revision:
+            print("--revision requires --tag", file=sys.stderr)
+            return 1
         try:
             return branch_main(args.changelog)
         except RuntimeError as error:
@@ -481,16 +508,17 @@ def main() -> int:
         )
         return 1
     try:
-        previous = previous_tag(args.tag)
+        revision = args.revision or args.tag
+        previous = previous_tag(args.tag, revision)
         if previous is None:
             print("no previous release; nothing to cover")
             return 0
-        tickets = merged_tickets(previous, args.tag)
+        tickets = merged_tickets(previous, revision, args.tag)
         label, section = section_text(args.changelog, args.tag)
         described = described_tickets(section)
         problems = milestone_problems(
-            section, args.tag.removeprefix("v"), tag_ticket_reader(args.tag),
-            previous=previous, head=args.tag,
+            section, args.tag.removeprefix("v"), tag_ticket_reader(revision),
+            previous=previous, head=revision,
         )
     except RuntimeError as error:
         print(f"changelog coverage check failed: {error}", file=sys.stderr)
