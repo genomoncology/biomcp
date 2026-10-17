@@ -12,6 +12,8 @@ Milestone: 0.9.3
 
 Reviews: revision e78f1b1, accept
 
+Reviews: revision b35a050, accept
+
 ## Outcome
 
 When Europe PMC returns an empty supplement and no other copy is listed, BioMCP looks for the file in the PMC open-data bucket and on the PMC article page, lists it when found, and says in the assets manifest when no non-empty copy exists. 2146 covers a spreadsheet; this ticket proves the fix on a PDF and a Word file too. A copy whose bytes do not match its file name's type counts as unusable, the same as an empty copy, and gets an explicit unusable-asset outcome in `assets` and `asset` instead of exit 0.
