@@ -17,3 +17,7 @@ Depends on: 2155
 - Defers: automatic repository-wide postmerge holds and landing locks belong to the existing pm follow-up. Shared role guidance is routed through the owning PM. Do not add a new evidence or queue framework.
 
 PM decision: 2026-10-17. Ian approved the existing tickets gate as the premerge check and a single coordinator waiting for the postmerge result. Declare top-level `ticketsGate` as `make landing-gate`; remove obsolete GitHub merge conditions and deprecated configuration keys that prevent the configured gate from loading. Lint includes test targets. Public repository text describes build jobs without private machine names. The coordinator records a failed or absent current-main result as a hold; only a reviewed repair or backout may land until main passes. On resume inspect current main's exact-revision job evidence before another landing. The release workflow and long-suite policy are separate work.
+
+## Reproduction
+
+On main `67c42424e`, job `1792238941539-82305` ran `pm job run 2156 67c42424e --disk 1 --memory 1 -- make -n landing-gate main-gate` and exited 2 with `No rule to make target landing-gate`. The top-level gate configuration is also absent. No intervening main repair changes either target or configuration. The inherited lint gap is evidenced by the test-code warnings caught only by the all-target full-feature command; include test targets in the routine lint entry point.
