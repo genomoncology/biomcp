@@ -20,6 +20,8 @@ Reviews: revision 50c4490, accept
 
 Reviews: revision 131aef6, accept
 
+Reviews: revision 2f7c473, accept
+
 ## Outcome
 
 A failure in the HTTP cache never makes a provider look unavailable: a cache setup, read or write failure logs a local cache warning and the request goes to the provider uncached, or keeps the provider's answer it already has.
