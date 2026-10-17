@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 1bf7489, accept
+
 ## Outcome
 
 The release-smoke explicit-binary mismatch contract reliably rejects the supplied old binary without rebuilding it or waiting on unrelated work.
