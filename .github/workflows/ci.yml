@@ -316,7 +316,7 @@ jobs:
           rust: true
           components: clippy
           cache: job
-      - run: make full-feature-check
+      - run: make full-feature-check FULL_FEATURE_PROFILE=release
 
   generated-sources:
     needs: changes
