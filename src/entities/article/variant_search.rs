@@ -32,10 +32,10 @@ use super::enrichment::{
     enrich_visible_article_search_rows_with_article_base_context,
 };
 use super::identity_verification::{
-    PUBTATOR_EXPORT_TEMPLATE_VERSION, VariantArticleIdentity, VariantArticleVerificationOptions,
-    VariantArticleVerificationPlan, canonical_content_subset, canonical_response_subset,
-    combine_identities, verification_plan, verify_captured_abstract, verify_ldh_annotation,
-    verify_pubtator,
+    PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION, VariantArticleIdentity,
+    VariantArticleVerificationOptions, VariantArticleVerificationPlan, canonical_content_subset,
+    canonical_response_subset, combine_identities, verification_plan, verify_captured_abstract,
+    verify_ldh_annotation, verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query, europepmc_escape,
@@ -4117,7 +4117,7 @@ async fn search_variant_articles_identity(
                         )
                         .await
                         {
-                            Ok(client) => client.export_biocjson(pmid).await,
+                            Ok(client) => client.export_biocjson_fulltext(pmid).await,
                             Err(error) => Err(error),
                         };
                     match response {
@@ -4331,7 +4331,7 @@ async fn search_variant_articles_identity(
         if verification.verify_identity {
             plan.verification = Some(verification_plan(
                 &context.requested,
-                PUBTATOR_EXPORT_TEMPLATE_VERSION,
+                PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION,
                 &verification_response_subsets,
                 &verification_content_subsets,
             ));

@@ -10,7 +10,8 @@ use crate::entities::variant::RequestedVariantIdentity;
 use crate::sources::pubtator::{PubTatorAnnotation, PubTatorExportResponse, PubTatorNormalizedId};
 
 pub(crate) const VERIFIER_VERSION: &str = "article-identity-v2";
-pub(crate) const PUBTATOR_EXPORT_TEMPLATE_VERSION: &str = "pubtator-export-biocjson-v1";
+pub(crate) const PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION: &str =
+    "pubtator-export-biocjson-fulltext-v1";
 const RESPONSE_SUBSET_VERSION: &str = "clinically-relevant-response-v1";
 const CONTENT_SUBSET_VERSION: &str = "clinically-relevant-content-v1";
 const MAX_ANNOTATION_ID_BYTES: usize = 256;
@@ -245,6 +246,21 @@ pub(crate) fn canonical_content_subset(identity: &VariantArticleIdentity) -> Str
     )
 }
 
+/// The evidence one observation stands for, independent of which Gene
+/// annotation named the linked gene: a full-text paper annotates the same
+/// gene dozens of times, and each extra naming is the same proof, not a new
+/// one. Collapses to one observation per linked gene, observed alias, and
+/// variant annotation.
+fn observation_evidence_key(
+    observation: &VariantArticleIdentityObservation,
+) -> (&str, &str, &str) {
+    (
+        &observation.linked_gene,
+        &observation.observed_alias,
+        &observation.allele_annotation_id,
+    )
+}
+
 pub(crate) fn verification_plan(
     requested: &RequestedVariantIdentity,
     provider_template_version: &str,
@@ -271,6 +287,14 @@ pub(crate) fn verification_plan(
 
 fn canonical_pmid(value: &str) -> Option<&str> {
     (!value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit())).then_some(value)
+}
+
+/// The numeric PMC id a full-text export keys its document by (`PMC7304353`
+/// → `7304353`); an abstract-only export keys the same paper by its PMID.
+fn pmcid_digits(value: &str) -> Option<&str> {
+    value.strip_prefix("PMC").filter(|digits| {
+        !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
+    })
 }
 
 fn bounded(value: &str, limit: usize) -> bool {
@@ -405,18 +429,34 @@ pub(crate) fn verify_pubtator(
     let mut semantic_anomaly = canonical_pmid(expected_pmid).is_none();
 
     for document in &response.documents {
-        let Some(returned_pmid) = document.id.as_deref().and_then(canonical_pmid) else {
-            semantic_anomaly = true;
-            continue;
-        };
-        if document
+        let pmid_agrees = document
             .pmid
-            .is_some_and(|pmid| pmid.to_string() != returned_pmid)
-            || returned_pmid != expected_pmid
-        {
+            .is_none_or(|pmid| pmid.to_string() == expected_pmid);
+        let pmid_confirms = document
+            .pmid
+            .is_some_and(|pmid| pmid.to_string() == expected_pmid);
+        // A full-text export keys its document by the numeric PMC id while an
+        // abstract-only export keys it by the PMID; either key names the
+        // expected paper only when the document's own pmid field agrees with
+        // the PMID being verified.
+        let document_is_expected = document
+            .id
+            .as_deref()
+            .and_then(canonical_pmid)
+            .is_some_and(|returned| {
+                (returned == expected_pmid && pmid_agrees)
+                    || (pmid_confirms
+                        && document
+                            .pmcid
+                            .as_deref()
+                            .and_then(pmcid_digits)
+                            .is_some_and(|digits| digits == returned))
+            });
+        if !document_is_expected {
             semantic_anomaly = true;
             continue;
         }
+        let returned_pmid = expected_pmid;
         let Some(gene) = requested_gene.as_deref() else {
             continue;
         };
@@ -426,6 +466,17 @@ pub(crate) fn verify_pubtator(
         for passage in &document.passages {
             semantic_anomaly |= passage.annotations.iter().any(linkage_bounds_exceeded);
         }
+        // Genes the provider names anywhere in the document. A variant
+        // annotation whose CorrespondingGene has no named Gene annotation
+        // cannot pair through the typed loop below; its passage text carries
+        // the only in-document gene naming.
+        let named_gene_ids: std::collections::HashSet<u64> = document
+            .passages
+            .iter()
+            .flat_map(|passage| passage.annotations.iter())
+            .filter_map(typed_gene)
+            .map(|(_, gene_id, _)| gene_id)
+            .collect();
         for (gene_passage_index, gene_passage) in document.passages.iter().enumerate() {
             for gene_annotation in &gene_passage.annotations {
                 let Some((gene_name, gene_id, gene_annotation_id)) = typed_gene(gene_annotation)
@@ -491,7 +542,8 @@ pub(crate) fn verify_pubtator(
                                 relation_roles: None,
                                 provenance: ProviderLinkageProvenance {
                                     source: "pubtator3",
-                                    request_template_version: PUBTATOR_EXPORT_TEMPLATE_VERSION,
+                                    request_template_version:
+                                        PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION,
                                     verifier_version: VERIFIER_VERSION,
                                     response_subset_version: RESPONSE_SUBSET_VERSION,
                                     canonical_response_subset_sha256: response_digest.clone(),
@@ -510,12 +562,80 @@ pub(crate) fn verify_pubtator(
                 }
             }
         }
+        // Full-text tables often name the gene in plain text while the
+        // provider gives the variant annotation a complete CorrespondingGene
+        // linkage and no Gene annotation for that gene anywhere in the paper.
+        // Such an annotation confirms when its own passage names the requested
+        // gene and its HGVS spells a requested alias; the coordinate fallback
+        // the typed pairing allows stays tied to a named Gene annotation.
+        for (variant_passage_index, variant_passage) in document.passages.iter().enumerate() {
+            for variant_annotation in &variant_passage.annotations {
+                let Some((observed_hgvs, variant_gene_id, tokens, variant_annotation_id)) =
+                    typed_variant(variant_annotation)
+                else {
+                    continue;
+                };
+                if named_gene_ids.contains(&variant_gene_id) {
+                    continue;
+                }
+                if !requested_aliases.contains(&normalized(observed_hgvs)) {
+                    continue;
+                }
+                let passage_text = variant_passage.text.as_deref().unwrap_or_default();
+                if !contains_token(&passage_text.to_ascii_lowercase(), gene) {
+                    continue;
+                }
+                let section = variant_passage
+                    .infons
+                    .as_ref()
+                    .and_then(|infons| infons.kind.as_deref())
+                    .unwrap_or("unknown")
+                    .to_string();
+                observations.push(VariantArticleIdentityObservation {
+                    source: "pubtator",
+                    section,
+                    locator: format!(
+                        "document:{returned_pmid}:variant-passage:{}",
+                        variant_passage_index + 1,
+                    ),
+                    linked_gene: requested.gene.clone().unwrap_or_default(),
+                    observed_alias: observed_hgvs.into(),
+                    gene_annotation_id: String::new(),
+                    allele_annotation_id: variant_annotation_id.into(),
+                    provider_relation: None,
+                    provider_linkage: Some(ProviderLinkage::Pubtator {
+                        expected_pmid: expected_pmid.into(),
+                        returned_pmid: returned_pmid.into(),
+                        gene_annotation_id: String::new(),
+                        variant_annotation_id: variant_annotation_id.into(),
+                        gene_id: variant_gene_id,
+                        observed_hgvs: observed_hgvs.into(),
+                        identifier_tokens: tokens,
+                        relation_id: None,
+                        relation_type: None,
+                        relation_roles: None,
+                        provenance: ProviderLinkageProvenance {
+                            source: "pubtator3",
+                            request_template_version: PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION,
+                            verifier_version: VERIFIER_VERSION,
+                            response_subset_version: RESPONSE_SUBSET_VERSION,
+                            canonical_response_subset_sha256: response_digest.clone(),
+                        },
+                    }),
+                    canonical_content_hash: hash(passage_text),
+                });
+            }
+        }
     }
     observations.sort_by_key(|observation| serde_json::to_string(observation).unwrap_or_default());
     observations.dedup();
+    observations.dedup_by(|left, right| observation_evidence_key(left) == observation_evidence_key(right));
     contradictions
         .sort_by_key(|observation| serde_json::to_string(observation).unwrap_or_default());
     contradictions.dedup();
+    contradictions.dedup_by(|left, right| {
+        observation_evidence_key(left) == observation_evidence_key(right)
+    });
     let status = status_for(&observations, &contradictions);
     VariantArticleIdentity {
         status,
@@ -1108,6 +1228,121 @@ mod tests {
             verify_pubtator(&requested, "1", &alternate, false).status,
             "unverified"
         );
+    }
+
+    #[test]
+    fn fulltext_export_keys_the_document_by_pmcid_and_confirms() {
+        // A full-text export keys its document by the numeric PMC id; with the
+        // pmid field agreeing it is still the expected paper.
+        let mut fulltext = response(false);
+        fulltext.documents[0].id = Some("9541484".into());
+        fulltext.documents[0].pmcid = Some("PMC9541484".into());
+        let identity = verify_pubtator(&requested(), "1", &fulltext, false);
+        assert_eq!(identity.status, "confirmed");
+        assert!(!identity.incomplete);
+    }
+
+    #[test]
+    fn fulltext_pmcid_key_without_an_agreeing_pmid_is_an_anomaly() {
+        let mut mismatched = response(false);
+        mismatched.documents[0].id = Some("9541484".into());
+        mismatched.documents[0].pmcid = Some("PMC9541484".into());
+        mismatched.documents[0].pmid = Some(2);
+        let identity = verify_pubtator(&requested(), "1", &mismatched, false);
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+
+        let mut bare_digits = response(false);
+        bare_digits.documents[0].id = Some("9541484".into());
+        let identity = verify_pubtator(&requested(), "1", &bare_digits, false);
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+    }
+
+    #[test]
+    fn unnamed_variant_gene_confirms_from_the_variant_passage_text() {
+        // The 32371413 shape: a complete CorrespondingGene linkage on the
+        // variant annotation, no Gene annotation for that gene anywhere in the
+        // document, and the gene named in plain text beside the annotation.
+        let mut unnamed = response(false);
+        unnamed.documents[0].passages[0].annotations.remove(0);
+        unnamed.documents[0].passages[0].text = Some("Trio SAMHD1-like BRAF p.V600E row".into());
+        unnamed.documents[0].passages[0].infons = Some(PubTatorInfons {
+            kind: Some("table".into()),
+        });
+        let identity = verify_pubtator(&requested(), "1", &unnamed, false);
+        assert_eq!(identity.status, "confirmed");
+        assert_eq!(identity.observations.len(), 1);
+        let observation = &identity.observations[0];
+        assert_eq!(observation.section, "table");
+        assert_eq!(observation.locator, "document:1:variant-passage:1");
+        assert_eq!(observation.linked_gene, "BRAF");
+        assert_eq!(observation.gene_annotation_id, "");
+        assert!(!identity.incomplete);
+    }
+
+    #[test]
+    fn passage_text_gene_link_requires_the_requested_gene_token() {
+        let mut other_text = response(false);
+        other_text.documents[0].passages[0].annotations.remove(0);
+        other_text.documents[0].passages[0].text = Some("captured".into());
+        let identity = verify_pubtator(&requested(), "1", &other_text, false);
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.observations.is_empty());
+        assert!(!identity.incomplete);
+    }
+
+    #[test]
+    fn passage_text_gene_link_requires_the_exact_allele_alias() {
+        let mut other_allele = response(false);
+        other_allele.documents[0].passages[0].annotations.remove(0);
+        other_allele.documents[0].passages[0].text = Some("BRAF activity described".into());
+        other_allele.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("variant infons")
+            .hgvs = Some("p.K601E".into());
+        other_allele.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("variant infons")
+            .identifier = Some("Variant:p.K601E;CorrespondingGene:673".into());
+        let identity = verify_pubtator(&requested(), "1", &other_allele, false);
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.observations.is_empty());
+        assert!(identity.contradictions.is_empty());
+    }
+
+    #[test]
+    fn repeated_gene_annotations_collapse_into_one_observation() {
+        // A full-text paper annotates the same gene in many passages; each
+        // naming is the same proof for the one variant annotation.
+        let mut repeated = response(false);
+        repeated.documents[0].passages.push(PubTatorPassage {
+            infons: Some(PubTatorInfons {
+                kind: Some("paragraph".into()),
+            }),
+            text: Some("second mention".into()),
+            annotations: vec![PubTatorAnnotation {
+                id: Some("gene-2".into()),
+                text: None,
+                infons: Some(PubTatorAnnotationInfons {
+                    kind: Some("Gene".into()),
+                    name: Some("BRAF".into()),
+                    identifier: Some("673".into()),
+                    normalized_id: Some(PubTatorNormalizedId::Number(673)),
+                    hgvs: None,
+                    gene_id: None,
+                    gene_ids: None,
+                    rsid: None,
+                    rsids: None,
+                }),
+                locations: Vec::new(),
+            }],
+        });
+        let identity = verify_pubtator(&requested(), "1", &repeated, false);
+        assert_eq!(identity.status, "confirmed");
+        assert_eq!(identity.observations.len(), 1);
     }
 
     #[test]
