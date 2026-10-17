@@ -157,11 +157,11 @@ du_bytes() {
   else du -sk "$1" | awk '{print $1 * 1024}'; fi
 }
 # gnu_time finds a GNU time on the host (Linux /usr/bin/time, gtime
-# elsewhere) or echoes nothing, and the caller times without it.
+# elsewhere) or fails so the caller uses native BSD time.
 gnu_time() {
   if /usr/bin/time --version >/dev/null 2>&1; then echo /usr/bin/time
   elif command -v gtime >/dev/null 2>&1; then command -v gtime
-  else true; fi
+  else return 1; fi
 }
 
 if want_section host; then
@@ -203,10 +203,10 @@ if want_section cold-dev-build; then
   say cold-dev-build "cold dev build of every target (routine feature set)"
   if TIME_BIN=$(gnu_time); then
     timedsh cold_dev_build \
-      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" cargo build --locked --no-default-features --all-targets --timings"
+      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" tools/with-build-identity cargo build --locked --no-default-features --all-targets --timings"
   else
     timedsh cold_dev_build \
-      'cargo build --locked --no-default-features --all-targets --timings (no GNU time on this host)'
+      '/usr/bin/time -l tools/with-build-identity cargo build --locked --no-default-features --all-targets --timings'
   fi
 fi
 
@@ -217,10 +217,10 @@ if want_section rust-edit-rebuild; then
   runsh 'touch src/render/markdown/gene.rs'
   if TIME_BIN=$(gnu_time); then
     timedsh rust_edit_rebuild \
-      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" cargo build --locked --no-default-features --all-targets"
+      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" tools/with-build-identity cargo build --locked --no-default-features --all-targets"
   else
     timedsh rust_edit_rebuild \
-      'cargo build --locked --no-default-features --all-targets (no GNU time on this host)'
+      '/usr/bin/time -l tools/with-build-identity cargo build --locked --no-default-features --all-targets'
   fi
 fi
 
@@ -231,10 +231,10 @@ if want_section doc-edit-rebuild; then
   runsh 'touch spec/entity/gene.md'
   if TIME_BIN=$(gnu_time); then
     timedsh doc_edit_rebuild \
-      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" cargo build --locked --no-default-features --all-targets"
+      "$TIME_BIN -f \"TIMEFMT WALL %e USER %U SYS %S MAXRSS_KB %M\" tools/with-build-identity cargo build --locked --no-default-features --all-targets"
   else
     timedsh doc_edit_rebuild \
-      'cargo build --locked --no-default-features --all-targets (no GNU time on this host)'
+      '/usr/bin/time -l tools/with-build-identity cargo build --locked --no-default-features --all-targets'
   fi
 fi
 
@@ -349,8 +349,16 @@ fi
 
 if want_section rust-test-census; then
   say rust-test-census "test-duration census of the routine Rust suite (from the archive make test built)"
-  timedsh rust_test_census \
-    "NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 tools/run-offline -- cargo nextest run --archive-file .cache/routine-tests.tar.zst --config-file .config/nextest.toml --message-format libtest-json-plus > $LOGD/census.jsonl 2> $LOGD/census.err || true"
+  timedsh_exit rust_test_census "$LOGD/census.exit" \
+    "NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 tools/run-offline -- cargo nextest run --archive-file .cache/routine-tests.tar.zst --config-file .config/nextest.toml --message-format libtest-json-plus > $LOGD/census.jsonl 2> $LOGD/census.err"
+  if ((!DRY_RUN)); then
+    census_status="$(<"$LOGD/census.exit")"
+    if [[ "$census_status" == "0" ]]; then
+      result rust_test_census_collection complete
+    else
+      result rust_test_census_collection "incomplete (exit $census_status)"
+    fi
+  fi
   runsh "tail -2 $LOGD/census.err || true"
   show "python3 (count tests at or over one second from the libtest-json-plus stream)"
   if ((!DRY_RUN)); then
@@ -432,15 +440,19 @@ if want_section release-build; then
   say release-build "cold release build (default features, shipped profile: thin LTO, one codegen unit, strip)"
   if TIME_BIN=$(gnu_time); then
     timedsh release_build \
-      "$TIME_BIN -v -o $LOGD/release-time.txt cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
+      "$TIME_BIN -v -o $LOGD/release-time.txt tools/with-build-identity cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
   else
     timedsh release_build \
-      "cargo build --release --locked --timings > $LOGD/release-build.log 2>&1 (no GNU time on this host; peak rss unavailable)"
+      "/usr/bin/time -l -o $LOGD/release-time.txt tools/with-build-identity cargo build --release --locked --timings > $LOGD/release-build.log 2>&1"
   fi
   runsh "grep -E 'Elapsed \\(wall clock|Maximum resident set size|User time|System time' $LOGD/release-time.txt 2>/dev/null || true"
   runsh "tail -3 $LOGD/release-build.log"
   if ((!DRY_RUN)) && [[ -f $LOGD/release-time.txt ]]; then
-    rss=$(grep -oE 'Maximum resident set size \(kbytes\): [0-9]+' "$LOGD/release-time.txt" | grep -oE '[0-9]+')
+    rss=$(grep -oE 'Maximum resident set size \(kbytes\): [0-9]+' "$LOGD/release-time.txt" | grep -oE '[0-9]+' || true)
+    if [[ -z "$rss" ]]; then
+      # BSD time reports bytes; GNU time reports KiB. Keep the raw file.
+      rss=$(awk '/maximum resident set size/ {printf "%.0f", $1 / 1024}' "$LOGD/release-time.txt")
+    fi
     result release_peak_rss_kb "${rss:-parse-failed}"
   fi
 fi
@@ -740,84 +752,112 @@ if want_section runtime; then
   # The host's real cache root follows the platform default: ~/.cache on
   # Linux, ~/Library/Caches on macOS.
   runsh 'HOST_CACHE=$(python3 -c "import sys; print(sys.argv[1] if sys.platform != \"darwin\" else sys.argv[2])" "$HOME/.cache/biomcp" "$HOME/Library/Caches/biomcp"); { find "$HOST_CACHE/http" -type f 2>/dev/null || true; } | wc -l; du -sh "$HOST_CACHE" 2>/dev/null || echo "no host cache"'
-  show "python3 (five timed runs per case; median, min, max in seconds)"
+  show "python3 (five warm/cache-off pairs; ten drug-card pairs; raw samples, median and spread in seconds)"
   if ((!DRY_RUN)); then
     RUN_SCRATCH="$PWD/$LOGD/runtime" python3 - <<'PY'
+import hashlib
+import json
 import os
 import statistics
 import subprocess
+import sys
 import time
+from pathlib import Path
 
 bin_path = os.path.abspath("target/release/biomcp")
-scratch = os.environ["RUN_SCRATCH"]
-os.makedirs(scratch, exist_ok=True)
+scratch = Path(os.environ["RUN_SCRATCH"])
+scratch.mkdir(parents=True, exist_ok=True)
 commands = {
     "get_gene_BRAF": ["get", "gene", "BRAF"],
     "get_variant_BRAF_V600E": ["get", "variant", "BRAF V600E"],
     "get_drug_imatinib": ["get", "drug", "imatinib"],
     "search_article_BRAF": ["search", "article", "-g", "BRAF", "--limit", "10"],
-    "search_all_BRAF_melanoma": ["search", "all", "--gene", "BRAF", "--disease", "melanoma", "--counts-only"],
+    "search_all_BRAF_melanoma": ["--json", "search", "all", "--gene", "BRAF", "--disease", "melanoma", "--counts-only"],
 }
+samples = []
+summary = {}
 
-def run_once(argv, cache_dir, mode):
+
+def run_once(case, argv, cache, mode, phase):
     env = dict(os.environ)
-    env["BIOMCP_CACHE_DIR"] = cache_dir
-    if mode:
-        env["BIOMCP_CACHE_MODE"] = mode
-    else:
+    env["BIOMCP_CACHE_DIR"] = str(cache)
+    if mode == "default":
         env.pop("BIOMCP_CACHE_MODE", None)
+    else:
+        env["BIOMCP_CACHE_MODE"] = mode
+    cache.mkdir(parents=True, exist_ok=True)
     start = time.perf_counter()
-    proc = subprocess.run([bin_path, *argv], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
+    timed_out = False
+    try:
+        proc = subprocess.run([bin_path, *argv], capture_output=True, env=env, timeout=180)
+        output, errors, code = proc.stdout, proc.stderr, proc.returncode
+    except subprocess.TimeoutExpired as error:
+        output, errors, code = error.stdout or b"", error.stderr or b"", None
+        timed_out = True
     elapsed = time.perf_counter() - start
-    return elapsed, proc.returncode
+    stem = f"{len(samples):04d}-{case}-{phase}-{mode}"
+    stdout_file, stderr_file = stem + ".stdout", stem + ".stderr"
+    (scratch / stdout_file).write_bytes(output)
+    (scratch / stderr_file).write_bytes(errors)
+    gwas_errors = []
+    try:
+        payload = json.loads(output)
+        gwas_errors = [section.get("error") for section in payload.get("sections", [])
+                       if section.get("entity") == "gwas"]
+    except (ValueError, AttributeError, TypeError):
+        pass
+    sample = dict(case=case, argv=argv, phase=phase, mode=mode,
+                  cache_dir=os.path.relpath(cache, scratch), elapsed_s=elapsed,
+                  exit_code=code, timed_out=timed_out, gwas_errors=gwas_errors,
+                  stdout_file=stdout_file, stderr_file=stderr_file,
+                  stdout_bytes=len(output), stdout_sha256=hashlib.sha256(output).hexdigest())
+    samples.append(sample)
+    (scratch / "samples.json").write_text(json.dumps(samples, indent=2) + "\n")
+    print(f"sample {stem}: {elapsed:.6f}s exit {code} timeout {timed_out} gwas {gwas_errors}", flush=True)
+    return sample
 
-def measure(label, argv, cache_dir, mode, runs=5):
-    values = []
-    codes = set()
-    for _ in range(runs):
-        elapsed, code = run_once(argv, cache_dir, mode)
-        values.append(elapsed)
-        codes.add(code)
-    values_s = " ".join(f"{v:.4f}" if argv == ["--version"] else f"{v:.2f}" for v in values)
-    fmt = ".4f" if argv == ["--version"] else ".2f"
-    median = statistics.median(values)
-    spread = max(values) - min(values)
-    print(f"{label}: runs {values_s} median {median:{fmt}}s spread {spread:{fmt}}s exit {sorted(codes)}")
-    print(f"RESULT runtime_{label}_median_s = {median:{fmt}}")
-    print(f"RESULT runtime_{label}_spread_s = {spread:{fmt}}")
 
-empty = os.path.join(scratch, "empty-cache")
-os.makedirs(empty, exist_ok=True)
-large = os.path.expanduser("~/.cache/biomcp" if sys.platform != "darwin" else "~/Library/Caches/biomcp")
-warm = os.path.join(scratch, "warm-cache")
-os.makedirs(warm, exist_ok=True)
+def report(label, values):
+    times = [sample["elapsed_s"] for sample in values]
+    median = statistics.median(times)
+    spread = max(times) - min(times)
+    summary[label] = dict(median_s=median, spread_s=spread,
+                          exit_codes=[sample["exit_code"] for sample in values],
+                          timeouts=sum(sample["timed_out"] for sample in values))
+    print(f"RESULT runtime_{label}_median_s = {median:.6f}")
+    print(f"RESULT runtime_{label}_spread_s = {spread:.6f}")
+    (scratch / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
-print("== biomcp --version start-up, empty cache dir ==")
-measure("version_empty_cache", ["--version"], empty, None)
-print("== biomcp --version start-up, the host's large cache ==")
-measure("version_large_cache", ["--version"], large, None)
 
-print("== prefetch (one network run per command into the warm cache dir) ==")
-for name, argv in commands.items():
-    elapsed, code = run_once(argv, warm, None)
-    print(f"prefetch {name}: {elapsed:.2f}s exit {code}")
-    print(f"RESULT runtime_prefetch_{name}_s = {elapsed:.2f}")
+large = Path.home() / ("Library/Caches/biomcp" if sys.platform == "darwin" else ".cache/biomcp")
+for label, cache in (("empty_cache", scratch / "empty-cache"), ("large_cache", large)):
+    values = [run_once("version", ["--version"], cache, "default", "measure") for _ in range(5)]
+    report("version_" + label, values)
 
-print("== output size of each command from the warm cache (one run, bytes) ==")
-for name, argv in commands.items():
-    env = dict(os.environ)
-    env["BIOMCP_CACHE_DIR"] = warm
-    env["BIOMCP_CACHE_MODE"] = "infinite"
-    proc = subprocess.run([bin_path, *argv], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env)
-    print(f"RESULT runtime_output_bytes_{name} = {len(proc.stdout)} exit {proc.returncode}")
+for case, argv in commands.items():
+    warm = scratch / "warm-cache" / case
+    run_once(case, argv, warm, "default", "prefetch")
+    pairs = {"infinite": [], "off": []}
+    for index in range(10 if case == "get_drug_imatinib" else 5):
+        pairs["infinite"].append(run_once(case, argv, warm, "infinite", "measure"))
+        # Each bypass gets its own root. It cannot migrate, clean or erase warm data.
+        off = scratch / "off-cache" / case / str(index)
+        pairs["off"].append(run_once(case, argv, off, "off", "measure"))
+    for mode, label in (("infinite", "warm"), ("off", "nocache")):
+        report(label + "_" + case, pairs[mode])
 
-print("== warm cache (BIOMCP_CACHE_MODE=infinite), five runs each ==")
-for name, argv in commands.items():
-    measure(f"warm_{name}", argv, warm, "infinite")
+# Default mode observes the day-cache rule, separately from infinite mode.
+# Drug cards include openFDA labels/counts plus uncached providers: live timing
+# alone does not prove absence of provider requests.
+for case, argv in {
+    "day_gwas_BRAF": ["--json", "search", "gwas", "-g", "BRAF"],
+    "day_openfda_drug_imatinib": ["get", "drug", "imatinib"],
+}.items():
+    warm = scratch / "day-cache" / case
+    run_once(case, argv, warm, "default", "prefetch")
+    values = [run_once(case, argv, warm, "default", "measure") for _ in range(5)]
+    report(case, values)
 
-print("== cache off (BIOMCP_CACHE_MODE=off, network), five runs each ==")
-for name, argv in commands.items():
-    measure(f"nocache_{name}", argv, warm, "off")
 PY
   fi
 fi

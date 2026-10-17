@@ -48,6 +48,7 @@
 
 ### Internal
 
+- Correct release comparisons to retain paired cache timings, raw sample results, native build measurements, and explicit failed-collection status. (2082)
 - MCP adverse-event and request-counting fixtures wait for complete HTTP headers before replying, including on macOS; adverse-event failures retain bounded provider and fixture diagnostics. (2174)
 - Wait for release-smoke fixture readiness before reporting health, and keep slow-test warnings separate from the hung-process watchdog. (2178)
 - Describe private build hosts and fixture origins by their public roles in release records without changing measurements or provider identifiers (2129).
