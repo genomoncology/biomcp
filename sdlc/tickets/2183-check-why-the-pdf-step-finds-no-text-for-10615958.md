@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 89a1dcc, accept
+
 ## Outcome
 
 PDF full-text attempts distinguish an unavailable response from actual PDF bytes with no usable text. A refused request or HTML response reports access refused or not a PDF; `open_pdf_text_unusable` is reserved for actual PDF bytes that yield no usable text.
