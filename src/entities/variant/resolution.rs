@@ -405,6 +405,9 @@ pub fn classify_variant_input(input: &str) -> VariantInputKind {
 
 pub fn variant_guidance(input: &str) -> Option<VariantGuidance> {
     let query = input.trim();
+    if invalid_protein_input(query).is_some() {
+        return None;
+    }
     let shorthand = match classify_variant_input(query) {
         VariantInputKind::Shorthand(shorthand) => shorthand,
         _ => return None,
@@ -446,18 +449,12 @@ pub fn parse_variant_id(id: &str) -> Result<VariantIdFormat, BioMcpError> {
         ));
     }
 
+    if let Some((spelling, letter)) = invalid_protein_input(id) {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "invalid amino acid residue '{letter}' in protein change '{spelling}'"
+        )));
+    }
     if let VariantInputKind::Exact(exact) = classify_variant_input(id) {
-        // The gene + substitution regex accepts any capital letter, so a
-        // change such as `BRAF Z999Q` reaches lookup carrying a letter that
-        // is not a residue. Refuse it here, naming the letter, before any
-        // source call reports it as not found.
-        if let VariantIdFormat::GeneProteinChange { change, .. } = &exact
-            && let Some(letter) = invalid_residue_letter(change)
-        {
-            return Err(BioMcpError::InvalidArgument(format!(
-                "invalid amino acid residue '{letter}' in protein change '{change}'"
-            )));
-        }
         return Ok(exact);
     }
 
@@ -558,6 +555,31 @@ fn amino_acid_one_letter(token: &str) -> Option<char> {
         "*" | "TER" | "STOP" | "X" => Some('*'),
         _ => None,
     }
+}
+
+fn invalid_protein_input(input: &str) -> Option<(&str, char)> {
+    let spelling = input.split_whitespace().last()?;
+    let compact = protein_alias_body(spelling);
+    if normalize_protein_substitution(compact).is_some() {
+        return None;
+    }
+    let start = compact.find(|c: char| c.is_ascii_digit())?;
+    let end = compact[start..]
+        .find(|c: char| !c.is_ascii_digit())
+        .map_or(compact.len(), |offset| start + offset);
+    let reference = &compact[..start];
+    let alternate = &compact[end..];
+    let residue_shape = matches!(reference.len(), 0 | 1 | 3)
+        && matches!(alternate.len(), 0 | 1 | 3)
+        && (!alternate.is_empty() || reference.len() == 1)
+        && reference
+            .chars()
+            .chain(alternate.chars())
+            .all(|c| c.is_ascii_alphabetic() || c == '*');
+    if !residue_shape {
+        return None;
+    }
+    invalid_residue_letter(compact).map(|letter| (spelling, letter))
 }
 
 /// The first letter of a protein change that `amino_acid_one_letter` refuses,

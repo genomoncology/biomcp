@@ -345,7 +345,7 @@ async fn openfda_label_identity_candidate(name: &str) -> LabelIdentityAnswer {
 /// A secondary identity resolution through openFDA's field-scoped label
 /// search: the label records the page
 /// holds vote on the drug they name. A record whose own brand equals the
-/// query owns it — only owner rows vote when any exist — and
+/// query owns it — only owner rows vote — and
 /// a vote reads as the plain ingredient the record's own ingredient list
 /// supports, so an under-the-skin pairing still resolves to the plain
 /// ingredient it names (Darzalex to daratumumab, Qlex to pembrolizumab)
@@ -360,11 +360,12 @@ async fn openfda_label_identity_candidate(name: &str) -> LabelIdentityAnswer {
 /// vote among combination votes is the brand whose labels mostly name one
 /// ingredient — Motrin's labels name ibuprofen. Anything
 /// else — several plain ingredients ("Sleep Aid"), several combinations
-/// ("Cold and Flu"), unrelated singles ("Pain Relief") — names no one
+/// ("Cold and Flu") — names no one
 /// drug: the name-miss caller refuses it as an ambiguous drug name whose
 /// candidates are the ingredients the counted records carry, while the
 /// card-keeping callers keep the card they already hold. Some label
-/// records carry no openFDA identity block at all, so this path can miss
+/// pages contain no exact brand owner, so the refusal names a search without
+/// listing unrelated ingredients. Records with no openFDA identity block can miss
 /// (a brand MyChem itself carries resolves through the MyChem record
 /// instead).
 fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIdentityAnswer {
@@ -377,9 +378,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     // One vote per record: the plain ingredient the record's own identity
     // supports, so counting votes counts records.
     let mut owner_votes: Vec<String> = Vec::new();
-    let mut page_votes: Vec<String> = Vec::new();
     let mut owner_records: Vec<LabelRecordVote> = Vec::new();
-    let mut page_records: Vec<LabelRecordVote> = Vec::new();
     for result in results {
         let Some(raw) = super::label::label_result_generic_names(result)
             .into_iter()
@@ -407,18 +406,13 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
         if owns_brand {
             owner_votes.push(plain.clone());
             owner_records.push(vote);
-        } else {
-            page_records.push(vote);
         }
-        page_votes.push(plain);
     }
-    // Only owner rows vote when any exist, and the refusal's candidates
-    // come from the same counted records that voted.
-    let (votes, counted): (&[String], &[LabelRecordVote]) = if owner_votes.is_empty() {
-        (&page_votes, &page_records)
-    } else {
-        (&owner_votes, &owner_records)
-    };
+    // A page with no exact owner cannot name candidates for the query.
+    if owner_votes.is_empty() {
+        return LabelIdentityAnswer::Ambiguous(Vec::new());
+    }
+    let (votes, counted): (&[String], &[LabelRecordVote]) = (&owner_votes, &owner_records);
     if votes.is_empty() {
         return LabelIdentityAnswer::NoAnswer;
     }
@@ -543,6 +537,12 @@ fn ambiguous_ingredient_candidates(
 /// products carry: `InvalidArgument`, a `Candidates:` list, exit 2. The
 /// Try line names the ingredient form, the one spelling that resolves.
 fn ambiguous_drug_name_error(name: &str, candidates: &[AmbiguousIngredient]) -> BioMcpError {
+    if candidates.is_empty() {
+        return BioMcpError::InvalidArgument(format!(
+            "No label record owns the exact drug name '{name}'. \
+Try `biomcp search drug -q \"{name}\"` to find a product by name."
+        ));
+    }
     let lines = candidates
         .iter()
         .map(|candidate| format!("- {}\n", candidate.name))

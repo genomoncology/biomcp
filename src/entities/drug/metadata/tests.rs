@@ -132,11 +132,21 @@ fn apply_openfda_metadata_keeps_a_resolved_typed_brand_listed() {
         Some("Tarceva"),
         "the typed brand the rescue resolved stays listed"
     );
-    // Case-insensitive dedupe keeps each labeler's first spelling, so the
-    // later "Erlotinib Hydrochloride" record and the "ERLOTINIB" alias of
-    // the first brand casefold onto spellings already listed.
+    // Generic spellings supplied as brands are excluded.
+    assert_eq!(drug.brand_names, ["Tarceva", "Erlotinib"]);
+}
+
+#[test]
+fn brand_lists_remove_generic_names_before_applying_the_cap() {
+    let mut drug = card_named("erlotinib");
+    drug.brand_names = vec!["Tarceva".into()];
+    let labels = serde_json::json!({"results":[{"openfda":{
+        "generic_name":["erlotinib"],
+        "brand_name":["erlotinib","Brand A","Brand B","Brand C","Brand D","Brand E","Tarceva"]
+    }}]});
+    apply_openfda_metadata(&mut drug, &labels);
     assert_eq!(
-        drug.brand_names[1..],
-        vec!["ERLOTINIB HYDROCHLORIDE", "Erlotinib"]
+        drug.brand_names,
+        ["Tarceva", "Brand A", "Brand B", "Brand C", "Brand D"]
     );
 }

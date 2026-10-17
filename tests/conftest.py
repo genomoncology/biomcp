@@ -28,6 +28,10 @@ def pytest_configure(config: pytest.Config) -> None:
         "release_gate: compiles the crate; only make release-gate runs it",
     )
 
+    config.addinivalue_line(
+        "markers", "repo_audit: whole-repository audit; required by make repo-audit"
+    )
+
 
 class SlowTestReporter:
     """Report complete test duration on the controller, including xdist reports."""

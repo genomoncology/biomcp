@@ -122,7 +122,7 @@ pub async fn structure(id: &str) -> Result<VariantStructureResult, BioMcpError> 
     let record = uniprot.get_record(&accession).await?;
     let (residue, residue_check) = residue_summary(&variant, &id_format, &hit, &record);
     let position = residue.position;
-    let hotspot_change = residue.requested_change.clone();
+    let hotspot_change = position.and(residue.requested_change.clone());
 
     let domains_fut = async {
         let Some(position) = position else {
@@ -441,10 +441,10 @@ fn residue_summary(
         "unresolved"
     };
     let mut residue_check = ResidueCheck::Unchecked;
-    if let (Some(selected), Some(reference)) = (
-        selected_position,
-        one_letter_reference(reference_aa.as_deref()),
-    ) {
+    if let Some((reference, selected)) = requested_normalized
+        .as_deref()
+        .and_then(super::get::requested_reference_residue)
+    {
         residue_check = check_reference_residue(record, selected, reference);
         if matches!(residue_check, ResidueCheck::Mismatch { .. }) {
             position = None;
@@ -472,14 +472,6 @@ fn residue_summary(
         },
         residue_check,
     )
-}
-
-/// The single reference amino-acid letter a normalized change names, when
-/// it names exactly one.
-fn one_letter_reference(reference_aa: Option<&str>) -> Option<char> {
-    let mut chars = reference_aa?.chars();
-    let letter = chars.next()?;
-    chars.next().is_none().then_some(letter)
 }
 
 fn requested_change(variant: &Variant, id_format: &VariantIdFormat) -> Option<String> {

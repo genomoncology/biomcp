@@ -49,23 +49,13 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert 'cargo clippy --all-targets "${routine_cargo_features[@]}" -- -D warnings' in lint
 
 
-def test_release_gate_runs_a_named_all_feature_check() -> None:
-    makefile = _read("Makefile")
-    full = _target(makefile, "full-feature-check")
-    release = _target(makefile, "release-gate")
+def test_release_specs_use_the_optimized_full_feature_binary() -> None:
+    release = _target(_read("Makefile"), "release-gate")
 
-    assert "$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features" in full
-    assert "$(CARGO_WITH_IDENTITY) test --locked --all-features --lib" in full
-    assert "sources::alphagenome::tests" in full
-    assert (
-        "$(CARGO_WITH_IDENTITY) build --release --locked --all-features --bin biomcp"
-        in full
-    )
-    assert "$(MAKE) full-feature-check" in release
     assert "ROUTINE_CARGO_FEATURES=" not in release
     assert (
         '$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"'
-        in (release)
+        in release
     )
 
 
@@ -132,13 +122,15 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
     ("target", "expected"),
     [
         ("landing-gate", ["lint", "test", "spec"]),
-        ("main-gate", ["lint", "test", "spec", "full-feature-check"]),
+        ("main-gate", ["lint", "test", "spec", "repo-audit", "full-feature-check"]),
     ],
 )
-@pytest.mark.parametrize("failed_stage", [None, "test"])
+@pytest.mark.parametrize("failed_stage", [None, "test", "repo-audit"])
 def test_landing_commands_run_ordered_checks_and_stop_on_failure(
     tmp_path: Path, target: str, expected: list[str], failed_stage: str | None
 ) -> None:
+    if failed_stage == "repo-audit" and target == "landing-gate":
+        pytest.skip("the required repository audit runs after merging")
     # Override existing leaves, not the gate recipes: exercise Make's real
     # ordering and failure propagation without compiling the product again.
     wrapper = tmp_path / "gate.mk"
@@ -147,7 +139,7 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
         + "\n".join(
             f"{stage}:\n\t@echo gate-stage:{stage}\n"
             + ("\t@exit 23\n" if stage == failed_stage else "")
-            for stage in ("lint", "test", "spec", "full-feature-check")
+            for stage in ("lint", "test", "spec", "repo-audit", "full-feature-check")
         ),
         encoding="utf-8",
     )
@@ -231,3 +223,62 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
     assert "=== Rust lane (exit " in result.stdout
     assert "=== Python lane (exit " in result.stdout
     assert "rust output" in result.stdout and "python output" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("target", "profile", "directory"),
+    [("main-gate", "dev", "debug"), ("release-gate", "release", "release")],
+)
+def test_full_feature_gates_build_and_smoke_the_selected_profile(
+    tmp_path: Path, target: str, profile: str, directory: str
+) -> None:
+    """Run the gate recipes; replace only external commands and unrelated leaves."""
+    recorder = tmp_path / "record.py"
+    recorder.write_text(
+        "import json, sys\n"
+        "print('invocation:' + json.dumps(sys.argv[1:]))\n",
+        encoding="utf-8",
+    )
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    for name in ("check-png-artifact", "run-offline"):
+        command = tools / name
+        command.write_text(
+            f"#!{sys.executable}\n"
+            "import json, sys\n"
+            f"print('invocation:' + json.dumps([{name!r}, *sys.argv[1:]]))\n",
+            encoding="utf-8",
+        )
+        command.chmod(0o755)
+    wrapper = tmp_path / "gate.mk"
+    wrapper.write_text(
+        f"include {REPO_ROOT / 'Makefile'}\n"
+        "landing-gate lint test test-long prepare-test prepare-routine-test-tmp spec repo-audit sync-python-dev:\n\t@:\n",
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            "make", "--no-print-directory", "-s", "-f", str(wrapper), target,
+            f"MAKE=make --no-print-directory -s -f {wrapper}",
+            f"CARGO_WITH_IDENTITY={sys.executable} {recorder} cargo",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    calls = [
+        json.loads(line.removeprefix("invocation:"))
+        for line in result.stdout.splitlines()
+        if line.startswith("invocation:")
+    ]
+    assert [call for call in calls if call[0] == "cargo"] == [
+        ["cargo", "clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "warnings"],
+        ["cargo", "test", "--locked", "--all-features", "--lib", "sources::alphagenome::tests"],
+        ["cargo", "build", "--locked", "--profile", profile, "--all-features", "--bin", "biomcp"],
+    ]
+    assert [call for call in calls if call[0] == "check-png-artifact"] == [
+        ["check-png-artifact", f"target/{directory}/biomcp"]
+    ]
