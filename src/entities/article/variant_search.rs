@@ -5186,11 +5186,10 @@ mod tests {
                                     status.route.as_str(),
                                     "resolution" | "canonical_equivalence"
                                 ))
-                            || (exact_tail
-                                && matches!(
-                                    status.route.as_str(),
-                                    "clingen_ldh_medium" | "clingen_ldh_direct"
-                                ));
+                            || (matches!(
+                                status.route.as_str(),
+                                "clingen_ldh_medium" | "clingen_ldh_direct"
+                            ) && (authoritative || exact_tail));
                         let healthy_zero = authoritative && status.route == "strict";
                         let healthy_zero = healthy_zero
                             || (authoritative
