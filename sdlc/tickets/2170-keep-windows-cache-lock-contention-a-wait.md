@@ -4,11 +4,13 @@ priority: 2
 
 # 2170 — Keep Windows cache-lock contention a wait, and prove it on Windows
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision fe548b1, accept
+
+Landed: cf128d3 (fast-forward: Accepted source landed inside carrier61a8b075ef075e5650dbb85f8572ee8a341803ad with shared gate1792256340018-55751; Windows before/after evidence and individual review retained. The test-only fs2 negative branch was removed after evidence was recorded.)
 
 ## Outcome
 
