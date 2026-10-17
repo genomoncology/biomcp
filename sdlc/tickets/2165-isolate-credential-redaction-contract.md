@@ -9,6 +9,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision af740ee, accept
+
 ## Outcome
 
 Coordinator implementation brief: the real annotation CLI must complete its local credential-redaction contract without unrelated randomized retry delays. Preserve all credential, source, error and action assertions and the ten-second watchdog. Idle-connection probes did not establish the suspected serial-fixture cause; do not change concurrency on that basis. Recorded request timestamps instead show four LitVar 503 attempts followed by four PubTator 503 attempts, consuming most of the watchdog in randomized middleware backoff. Use a permanent local fixture failure for this redaction-only case, and require one request per provider. Establish the new request-count regression on current main before changing the fixture. Retry behavior remains covered by its existing dedicated cases.
