@@ -4,7 +4,7 @@ priority: 2
 
 # 2173 — Set up the cached client once per process
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -17,6 +17,8 @@ Reviews: revision 2820e06, accept
 Reviews: revision de73cad, accept
 
 Reviews: revision a79fc64, accept
+
+Landed: a79fc64 (fast-forward: Accepted source is included in dependency carrier790c32a after shared gate1792267083498-22341 passed; individual review is retained and the full actual-main check follows this batch.)
 
 ## Outcome
 
