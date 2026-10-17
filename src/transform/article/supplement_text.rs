@@ -579,6 +579,8 @@ mod tests {
         include_bytes!("../../../tests/fixtures/article/supplements/method-notes.docx");
     const CDC_STI_GUIDELINE_PDF: &[u8] =
         include_bytes!("../../../tests/fixtures/article/fulltext/pdf/cdc_sti_guideline.pdf");
+    const SUPPLEMENT_NOTES_PDF: &[u8] =
+        include_bytes!("../../../tests/fixtures/article/supplements/supplement-notes.pdf");
 
     fn budget() -> SupplementTextBudget {
         SupplementTextBudget {
@@ -661,19 +663,23 @@ mod tests {
 
     #[test]
     fn pdf_extract_locates_a_page() {
-        let extraction = extract_supplement_text(SupplementFormat::Pdf, CDC_STI_GUIDELINE_PDF, &budget());
+        let extraction =
+            extract_supplement_text(SupplementFormat::Pdf, SUPPLEMENT_NOTES_PDF, &budget());
         assert!(extraction.problems.is_empty(), "{:?}", extraction.problems);
-        let block = hit(&extraction, "CDC STI guideline quality guard excerpt");
-        assert!(block.page.is_some());
+        let block = hit(&extraction, "Q61K");
+        assert_eq!(block.page, Some(2));
+        assert!(block.text.contains("NRAS"));
+        assert_eq!(extraction.blocks.len(), 3);
     }
 
     #[test]
     fn pdf_page_budget_marks_truncation() {
         let mut small = budget();
         small.max_pdf_pages = 1;
-        let extraction = extract_supplement_text(SupplementFormat::Pdf, CDC_STI_GUIDELINE_PDF, &small);
+        let extraction =
+            extract_supplement_text(SupplementFormat::Pdf, SUPPLEMENT_NOTES_PDF, &small);
         assert!(extraction.truncated);
-        assert!(extraction.blocks.len() <= 1);
+        assert_eq!(extraction.blocks.len(), 1);
     }
 
     #[test]
