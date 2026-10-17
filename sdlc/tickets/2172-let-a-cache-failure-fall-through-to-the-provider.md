@@ -17,6 +17,26 @@ A failure in the HTTP cache never makes a provider look unavailable: a cache set
 - Evidence: found by the sweep after GitHub issue 292, where every run succeeded with `--no-cache`. Client construction propagates every cache step with `?` (`src/sources/mod.rs:1374-1394` and `1463-1500`: epoch lock, shared operation lock, securing the tree, start-up clean through `src/cache/manager.rs:138` and `524-542`), so any local cache problem aborts the client and the source reports unavailable. A cache read that fails to secure the tree is an error (`src/cache/manager.rs:263-290`), and an entry that fails bincode decoding propagates through http-cache. The cache write (`src/cache/manager.rs:308-331`) propagates key-lock, write and commit errors after the provider has answered, so a full disk or a lock timeout throws away a good response.
 - Starts from: `src/cache/manager.rs`, the cached client construction in `src/sources/mod.rs`, and the cache deadline tests.
 - Keeps: deadlines, the cache's security checks on its own tree (a tree that fails them is bypassed, never trusted), cancellation safety around publication, `--no-cache`, and every existing cache hit.
-- Changes: claims `src/cache/manager.rs` `src/sources/mod.rs` `src/cache/` `CHANGELOG.md`. When cached construction fails, build the uncached client and warn once with the local cause. Treat a read failure or an undecodable entry as a miss. Return the provider's answer when the write fails, and warn.
+- Changes: claims `src/sources/tests/provider_network.rs` `src/entities/article/search/tests/deadline.rs` `tests/test_http_cache_fail_soft.py` `src/cache/manager.rs` `src/sources/mod.rs` `src/cache/` `CHANGELOG.md`. When cached construction fails, build the uncached client and warn once with the local cause. Treat a read failure or an undecodable entry as a miss. Return the provider's answer when the write fails, and warn.
 - Proof: outside-in, through `search article` and one other entity command against the recorded-reply server. On current main, a held epoch lock past the deadline, an undecodable entry and a failed write each make the source fail or report unavailable. After the change, each returns the provider's answer and logs one local cache warning naming the cause.
 - Defers: retrying Windows sharing violations on rename and remove.
+
+## Implementation brief
+
+Restated outcome at 17f4db007: an optional HTTP cache failure must not hide a working provider or discard its successful answer. Reproduce through real article and gene searches using synthetic recorded replies, covering insecure/invalid cache admission, corrupt payload and write obstruction, plus retained cache hits and no-cache behavior. Add tests/test_http_cache_fail_soft.py; product changes remain the cache manager and cached-client construction. The brief's observed propagation sites supply the initial inspection evidence; record executed red commands before implementation.
+
+Coordinator decision: cache request paths try to admit optional cache work without waiting away the provider deadline. On contention, bypass the cache and warn locally; on cache write contention/failure, keep the obtained provider response. Keep explicit cache maintenance locking and essential local-dataset locking unchanged. Preserve tree security checks, direct lock-contention mapping, and the end-to-end provider deadline. Update construction-contention proof to require prompt uncached provider fallback within that deadline, rather than a cache-construction timeout. This introduces no new cache wait duration or configuration setting.
+
+## Reproduction on current main
+
+On 17f4db007, corrected red build job 1792257293028-97204 used the normally built routine binary after applying only the test patch. The inner command was:
+
+```sh
+mkdir -p "$PWD/.cache/routine-test-tmp"
+export TMPDIR="$PWD/.cache/routine-test-tmp"
+BIOMCP_BIN="$PWD/target/debug/biomcp" uv run --no-sync pytest tests/test_http_cache_fail_soft.py -q
+```
+
+Result: six failed, one passed in 10.22 seconds. Both invalid-cache-root cases (article and gene) fail with initialization errors. The valid-integrity invalid-bincode entry and post-provider write-failure cases fail with http_middleware. Held body-limit and operation locks consume the three-second invocation deadline and return source_unavailable. The no-cache case passes without modifying the rejected cache state. An earlier preparation run's fixture mismatch was corrected before this reproduction; it is not part of the red evidence.
+
+Deadline interpretation: explicit invocation expiration or cancellation remains final; never start provider work after its deadline. Ordinary local cache errors, including local timeouts while invocation budget remains, fail soft. Keep publication cancellation safety, and report any case where an outer deadline can still discard an already-obtained answer while cache work settles.

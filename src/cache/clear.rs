@@ -260,6 +260,13 @@ pub(crate) fn try_lock_cache_maintenance(
     }
 }
 
+pub(crate) fn try_lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    let lease = register_shared(cache_root);
+    fs_lock::try_lock_shared(&file)?;
+    Ok(shared_guard(file, lease))
+}
+
 pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
     let file = operation_lock_file(cache_root)?;
     let lease = register_shared(cache_root);
@@ -306,14 +313,23 @@ fn lock_cache_key(
     cache_root: &Path,
     key: &str,
     before_lock_dir_create: &dyn Fn(&Path),
+    try_only: bool,
 ) -> io::Result<CacheKeyGuard> {
-    let shared = lock_cache_shared(cache_root)?;
+    let shared = if try_only {
+        try_lock_cache_shared(cache_root)?
+    } else {
+        lock_cache_shared(cache_root)?
+    };
     let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
     super::private::secure_managed_dir_with(&lock_dir, || before_lock_dir_create(&lock_dir))?;
     let mut options = OpenOptions::new();
     options.read(true).write(true).create(true);
     let file = super::private::open_private(&mut options, &super::key_lock_path(cache_root, key))?;
-    file.lock()?;
+    if try_only {
+        fs_lock::try_lock_exclusive(&file)?;
+    } else {
+        file.lock()?;
+    }
     Ok(CacheKeyGuard {
         _shared: shared,
         _key: exclusive_guard(file),
@@ -324,7 +340,14 @@ pub(crate) async fn lock_cache_key_async(
     cache_root: PathBuf,
     key: String,
     before_lock_dir_create: Arc<dyn Fn(&Path) + Send + Sync>,
+    try_only: bool,
 ) -> io::Result<CacheKeyGuard> {
+    if try_only {
+        if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+            deadline.ensure_time_io()?;
+        }
+        return lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref(), true);
+    }
     if let Some(deadline) = crate::sources::current_variant_article_deadline() {
         let shared = lock_cache_shared_until(&cache_root, &deadline).await?;
         let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
@@ -340,7 +363,7 @@ pub(crate) async fn lock_cache_key_async(
         });
     }
     tokio::task::spawn_blocking(move || {
-        lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref())
+        lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref(), false)
     })
     .await
     .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
@@ -459,11 +482,13 @@ mod operation_lock_tests {
                     != super::super::key_lock_path(root.path(), key_a)
             })
             .expect("key in another lock shard");
-        let operation_a = lock_cache_key(root.path(), key_a, &|_| {}).expect("first key lock");
+        let operation_a =
+            lock_cache_key(root.path(), key_a, &|_| {}, false).expect("first key lock");
         let (key_tx, key_rx) = mpsc::channel();
         let root_path = root.path().to_path_buf();
         let operation_b = std::thread::spawn(move || {
-            let guard = lock_cache_key(&root_path, &key_b, &|_| {}).expect("independent key lock");
+            let guard =
+                lock_cache_key(&root_path, &key_b, &|_| {}, false).expect("independent key lock");
             key_tx.send(()).expect("report independent acquisition");
             guard
         });

@@ -102,9 +102,15 @@ pub(crate) struct SizeAwareCacheManager {
     approx_bytes: Arc<AtomicU64>,
     eviction_running: Arc<AtomicBool>,
     services: ManagerServices,
+    try_locks: bool,
 }
 
 impl SizeAwareCacheManager {
+    pub(crate) fn for_http_requests(mut self) -> Self {
+        self.try_locks = true;
+        self
+    }
+
     pub(crate) fn new(path: PathBuf, config: ResolvedCacheConfig) -> Result<Self, BioMcpError> {
         Self::new_at(path, config, current_time_ms())
     }
@@ -254,6 +260,7 @@ impl SizeAwareCacheManager {
             approx_bytes: Arc::new(AtomicU64::new(approx_bytes)),
             eviction_running: Arc::new(AtomicBool::new(false)),
             services,
+            try_locks: false,
         }
     }
 }
@@ -302,6 +309,7 @@ impl CacheManager for SizeAwareCacheManager {
                 self.config.cache_root.clone(),
                 cache_key.clone(),
                 Arc::clone(&self.services.before_key_lock_dir_create),
+                self.try_locks,
             )
             .await?;
             super::prepare_write_paths(&self.inner.path, &cache_key)?;
@@ -372,6 +380,7 @@ impl CacheManager for SizeAwareCacheManager {
                 self.config.cache_root.clone(),
                 cache_key.to_owned(),
                 Arc::clone(&self.services.before_key_lock_dir_create),
+                self.try_locks,
             )
             .await?;
             let content_root = super::content_root(&self.inner.path);

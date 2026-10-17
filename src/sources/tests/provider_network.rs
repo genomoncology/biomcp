@@ -328,6 +328,7 @@ async fn fda_orphan_contended_key_lock_cancels_without_a_late_write() {
         root.path().to_path_buf(),
         key.clone(),
         Arc::new(|_| {}),
+        false,
     )
     .await
     .unwrap();
@@ -493,15 +494,18 @@ async fn contended_maintenance_deadline_publishes_no_partial_client_or_cache_tre
         .unwrap()
         .unwrap();
     let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
-    let error = build_http_client_with_config_deadline(
+    let _client = build_http_client_with_config_deadline(
         SharedHttpClientKind::Default,
         super::test_cache_config(root.path()),
         None,
         &deadline,
     )
     .await
-    .expect_err("client construction must expire behind maintenance");
-    assert_eq!(error.code(), "io");
+    .expect("cache contention must build an uncached client");
+    assert!(
+        !deadline.is_exhausted(),
+        "cache contention preserves provider time"
+    );
     assert!(!root.path().join("http").exists());
     assert_eq!(
         std::fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
@@ -513,6 +517,21 @@ async fn contended_maintenance_deadline_publishes_no_partial_client_or_cache_tre
             .unwrap()
             .is_some()
     );
+}
+
+#[tokio::test]
+async fn expired_invocation_cannot_build_a_cache_fallback_client() {
+    let root = TempDirGuard::new("expired-cache-fallback");
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::ZERO);
+    build_http_client_with_config_deadline(
+        SharedHttpClientKind::Default,
+        super::test_cache_config(root.path()),
+        None,
+        &deadline,
+    )
+    .await
+    .expect_err("an expired invocation must not admit a provider client");
+    assert!(!root.path().join("http").exists());
 }
 
 #[derive(Clone, Copy)]
@@ -639,18 +658,9 @@ async fn cached_test_client(
     )
 }
 
-fn assert_sanitized_cache_error(error: &reqwest_middleware::Error, root: &std::path::Path) {
-    let message = error.to_string();
-    assert!(message.contains("cache security finalization failed after successful put"));
-    assert!(!message.contains("resource"));
-    assert!(!message.contains("cached-body"));
-    assert!(!message.contains("sensitive"));
-    assert!(!message.contains(&root.display().to_string()));
-}
-
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn cached_client_post_write_failure_matrix_is_fail_closed() {
+async fn cached_client_post_write_failure_matrix_keeps_provider_answers() {
     for mode in [
         CacheOriginMode::Initial,
         CacheOriginMode::Revalidate304,
@@ -669,11 +679,17 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
             puts.store(0, Ordering::SeqCst);
         }
         armed.store(true, Ordering::SeqCst);
-        let error = client
+        let answer = client
             .get(&url)
             .send()
             .await
-            .expect_err("post-write fault must fail request");
+            .expect("post-write cache fault must keep the provider answer");
+        let expected = if matches!(mode, CacheOriginMode::Revalidate200) {
+            "replacement-sensitive-body"
+        } else {
+            "cached-body"
+        };
+        assert_eq!(answer.text().await.unwrap(), expected);
         assert_eq!(
             requests.load(Ordering::SeqCst),
             if matches!(mode, CacheOriginMode::Initial) {
@@ -688,14 +704,18 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
             validator.load(Ordering::SeqCst),
             !matches!(mode, CacheOriginMode::Initial)
         );
-        assert_sanitized_cache_error(&error, root.path());
+        assert!(
+            crate::cache::try_lock_cache_maintenance(root.path())
+                .unwrap()
+                .is_some()
+        );
         server.abort();
     }
 }
 
 #[tokio::test(start_paused = true)]
 #[serial_test::serial(source_env)]
-async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
+async fn provider_deadline_waits_for_post_publish_cache_finalization() {
     let publication_armed = Arc::new(tokio::sync::Notify::new());
     let publication_release = Arc::new(tokio::sync::Notify::new());
     let (client, url, requests, gets, puts, armed, _, _, root, server) = cached_test_client(
@@ -746,11 +766,16 @@ async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
     publication_release.notify_one();
     let result = request.await.unwrap();
 
-    let error = result.expect_err("post-write finalization must remain fail closed");
+    let answer = result.expect("post-publication cache failure keeps the provider answer");
+    assert_eq!(answer.text().await.unwrap(), "cached-body");
     assert_eq!(requests.load(Ordering::SeqCst), 1);
     assert_eq!(gets.load(Ordering::SeqCst), 1);
     assert_eq!(puts.load(Ordering::SeqCst), 1);
-    assert_sanitized_cache_error(&error, root.path());
+    assert!(
+        crate::cache::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .is_some()
+    );
     server.abort();
 }
 
@@ -860,7 +885,7 @@ mod cache_security {
     }
 
     #[test]
-    fn build_http_client_rejects_directory_symlink_inside_content_tree() {
+    fn build_http_client_bypasses_directory_symlink_inside_content_tree() {
         let root = TempDirGuard::new("http-cache-content-link");
         let cache_root = root.path().join("cache-root");
         let outside = root.path().join("outside");
@@ -874,15 +899,12 @@ mod cache_security {
         symlink(&outside, cache_root.join("http/content-v2/sha256/aa"))
             .expect("content directory symlink");
 
-        let error = match build_http_client_with_config(
+        build_http_client_with_config(
             SharedHttpClientKind::Default,
             test_cache_config(&cache_root),
             None,
-        ) {
-            Ok(_) => panic!("content directory symlink must be rejected"),
-            Err(error) => error,
-        };
-        assert!(error.to_string().contains("managed content directory"));
+        )
+        .expect("unsafe cache state must produce an uncached client");
         assert_eq!(
             std::fs::read_dir(&outside)
                 .expect("outside directory")
