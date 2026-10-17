@@ -418,12 +418,32 @@ fn autocomplete_source_identity(
     }
 }
 
+/// The gene and protein change a PubTator variant entity id carries
+/// (`@VARIANT_p.R1436Q_ABCC8_human` → `ABCC8` and `p.R1436Q`), or `None` for
+/// any other id shape. The gene is the last segment before the species
+/// suffix, so a change spelling that contains an underscore still splits
+/// correctly.
+fn variant_entity_id_gene_and_change(id: &str) -> Option<(&str, &str)> {
+    let body = id
+        .trim()
+        .strip_prefix("@VARIANT_")?
+        .strip_suffix("_human")?;
+    let split = body.rfind('_')?;
+    let change = body[..split].trim();
+    let gene = body[split + 1..].trim();
+    (!change.is_empty() && !gene.is_empty()).then_some((gene, change))
+}
+
 /// The alias a PubTator autocomplete row matched the request on, or `None`
 /// when the row is not the requested variant.
 ///
 /// When the row's normalized `db_id` carries the requested rsID the match rests
 /// on that identifier alone: the entity's display name (PubTator labels the
 /// BRAF V600E entity "p.M600E") must not reshape or veto what was asked for.
+/// The same holds for a gene-and-protein request the entity id itself carries
+/// (`@VARIANT_p.R1436Q_ABCC8_human`): the display name holds only the change,
+/// so identity comparison alone would leave the gene indeterminate and drop
+/// the one entity PubTator annotates this variant with.
 fn autocomplete_row_matches(
     row: &PubTatorAutocompleteResult,
     requested: &crate::entities::variant::RequestedVariantIdentity,
@@ -435,6 +455,21 @@ fn autocomplete_row_matches(
             .is_some_and(|wanted| rsid.eq_ignore_ascii_case(wanted))
     }) {
         return Some(rsid.to_string());
+    }
+    if let Some((gene, change)) = row
+        .id
+        .as_deref()
+        .map(str::trim)
+        .and_then(variant_entity_id_gene_and_change)
+        && requested
+            .gene
+            .as_deref()
+            .is_some_and(|wanted| gene.eq_ignore_ascii_case(wanted.trim()))
+        && requested.protein_change.as_deref().is_some_and(|wanted| {
+            crate::entities::variant::protein_changes_equivalent(change, wanted)
+        })
+    {
+        return Some(change.to_string());
     }
     match crate::entities::variant::compare_variant_identity(
         requested,
