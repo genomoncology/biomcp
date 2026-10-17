@@ -110,7 +110,9 @@ only, no product change (see Gates for the job):
 | 1792226733989-3671083 | Linux gate host | `make spec` at `6a1b8ac6a` | passed |
 | 1792226898757-77664 | macOS gate host | live probe with the fixed binary at `6a1b8ac6a` | see below |
 | CI run 39017486462 | GitHub Linux | full ci.yml at the pre-rebase tip `6a1b8ac6a` | green (every executed lane) |
-| 1792227501526-3690711 | Linux gate host | targeted nextest (the three new terminal tests and 2146's two) at the post-rebase tip `ef512ee27` | passed, 5/5 |
+| 1792227501526-3690711 | Linux gate host | targeted nextest (the three new terminal tests and 2146's two) at the first post-rebase tip `ef512ee27` | passed, 5/5 |
+| 1792229610310-3740468 | Linux gate host | targeted nextest (the healed no-entity test and the three new terminal tests) at the final tip `c58e0d059` | passed, 4/4 |
+| CI run 39021581292 | GitHub Linux | full ci.yml at the final tip `c58e0d059` | green (every executed lane) |
 | CI run 39019163347 | GitHub Linux | full ci.yml at `71674ff52` (record-only over `6a1b8ac6a`) | green |
 
 Superseded failures on the way (all understood, none open): CI 39005740828
@@ -164,19 +166,19 @@ spec-lint short-match literal; yellow 1792214563558-2790300 and
 - The pre-existing `unused import: std::fs` warning for
   `src/cache/manager.rs` still appears in nextest builds (present on main
   since `d59599c88`); clippy's lane passes.
-- Rebased onto current main `159c68610` (2131 landed mid-build) with no
-  conflicts; the branch tip is `ef512ee27` and my five asset terminal tests
-  pass there on the Linux gate host (job 1792227501526-3690711).
-- **Main's own rust-tests lane is red from 2131's new test**
+- Rebased twice as main moved mid-build: first onto `159c68610` (2131)
+  with no conflicts, then onto the healed `8988f5a31` (2140's test pins)
+  with no conflicts. The branch tip is `c58e0d059`.
+- **Main's rust-tests lane went red mid-build from 2131's new test**
   `entities::article::variant_search::tests::no_entity_annotation_run_names_the_miss_instead_of_complete_empty`
-  ("a no-entity miss is not an outage", `variant_search.rs:5433`): it fails
-  on pure main in CI (run 39015559033 at `159c68610`, lane rust-tests, and
-  the full-features lane) and on the Linux gate host three runs of three
-  (job 1792228315381-3737081 at `159c68610`). Main also shows one green CI
-  run at the same SHA, so it flakes by environment. My branch's CI at
-  `ef512ee27` (run 39019340388, including a `--failed` rerun) is red only on
-  that test — every other lane and every one of my tests is green, and the
-  same test passed in the green full CI at my pre-rebase tips. My diff does
-  not touch variant search. The landing bar (ci.yml green at the exact
-  post-rebase tip) cannot be met while main's lane carries this flake; the
-  coordinator owns that call.
+  ("a no-entity miss is not an outage", `variant_search.rs:5433`): it failed
+  on pure main in CI (run 39015559033 at `159c68610`, lanes rust-tests and
+  full-features) and on the Linux gate host three runs of three (job
+  1792228315381-3737081 at `159c68610`), while one green CI run at the same
+  SHA showed it flaked by environment. My branch's CI at the first
+  post-rebase tip `ef512ee27` (run 39019340388 plus a `--failed` rerun) was
+  red only on that test; my diff does not touch variant search. On the
+  coordinator's hold, landing waited for 2140's cure; after 2140 landed at
+  `8988f5a31` the branch rebased onto the healed main as `c58e0d059`, where
+  the test passes again (job 1792229610310-3740468) and the full ci.yml run
+  39021581292 is green.
