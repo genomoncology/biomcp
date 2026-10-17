@@ -33,7 +33,7 @@ server_pid_file="$fixture_root/server-pid"
 
 prepare_fixture_supervisor_owner
 start_fixture_supervisor "article-fulltext-source" "$cache_dir" "$fixture_root" "spec-article-fulltext-source." "$server_pid_file" \
-  python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources" "$owner_arg" 9>&- <<'PY' >"$server_log" 2>&1 &
+  python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources" "$repo_root/tests/fixtures/article/supplements" "$owner_arg" 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -49,6 +49,7 @@ import zipfile
 FIXTURE_DIR = Path(sys.argv[2])
 REQUEST_LOG = Path(sys.argv[3])
 SOURCES_DIR = Path(sys.argv[4])
+SUPPLEMENTS_DIR = Path(sys.argv[5])
 REQUEST_LOG_LOCK = threading.Lock()
 
 
@@ -588,6 +589,17 @@ def make_pdf_case_supplementary_zip():
 OA_ASSETS_TGZ = make_oa_assets_tgz()
 PMC_OA_ONLY_TGZ = make_pmc_oa_only_tgz()
 EUROPE_PMC_SUPPLEMENTARY_ZIP = make_europe_pmc_supplementary_zip()
+# Ticket 2152: the two acceptance supplements as recorded xlsx fixtures. The
+# Europe PMC archive is their only fixture route; the recorded bytes carry
+# the reported locators (Sheet1 row 2780 and ST2 row 85) in scrubbed form.
+BRCA1_SHEET1_XLSX = (SUPPLEMENTS_DIR / "30209399-brca1-sheet1.xlsx").read_bytes()
+AXIN2_ST2_XLSX = (SUPPLEMENTS_DIR / "28944238-axin2-st2.xlsx").read_bytes()
+EUROPE_PMC_BRCA1_SHEET1_ZIP = make_typed_member_supplementary_zip(
+    "supplementary-table-s1.xlsx", BRCA1_SHEET1_XLSX
+)
+EUROPE_PMC_AXIN2_ST2_ZIP = make_typed_member_supplementary_zip(
+    "supplementary-table-st2.xlsx", AXIN2_ST2_XLSX
+)
 # Ticket 2146: the two-route supplement keeps its full copy in the PMC OA
 # package while Europe PMC's archive holds a zero-byte member for the same
 # filename, and the Europe-only article's sole route replies with nothing.
@@ -856,6 +868,21 @@ ARTICLES = {
         "title": "Two-route PDF supplement fixture",
         "abstract": "Abstract text.",
         "paper_id": "paper-23",
+    },
+    # Ticket 2152: the two recorded-file acceptance examples. 30209399's
+    # supplement carries BRCA1 F1761I on Sheet1 row 2780; 28944238's carries
+    # AXIN2 P245S on ST2 row 85.
+    "30209399": {
+        "pmcid": "PMC123472",
+        "title": "Recorded supplement search acceptance article one",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-24",
+    },
+    "28944238": {
+        "pmcid": "PMC123473",
+        "title": "Recorded supplement search acceptance article two",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-25",
     },
 }
 
@@ -1604,6 +1631,14 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/PMC123471/supplementaryFiles":
             send_bytes(self, 200, EUROPE_PMC_PDF_CASE_ZIP, "application/zip")
+            return
+
+        if decoded_path == "/PMC123472/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_BRCA1_SHEET1_ZIP, "application/zip")
+            return
+
+        if decoded_path == "/PMC123473/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_AXIN2_ST2_ZIP, "application/zip")
             return
 
         if decoded_path == "/PMC123459/fullTextXML":

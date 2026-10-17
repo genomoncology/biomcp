@@ -8,7 +8,9 @@ them. In JATS XML a `<supplementary-material>` element carries a label, a
 caption, a filename, and a media type — the file itself is a separate
 binary stored beside the XML. BioMCP locates those binaries, merges the
 copies published by different providers into one list, and returns the
-bytes unchanged. It does not convert or parse them.
+bytes unchanged. It does not convert or parse them on delivery; the
+[supplement text search](#searching-supplement-text) reads them in place
+without changing what downloads return.
 
 ## Quick start
 
@@ -205,6 +207,63 @@ BioMCP does not enforce reuse terms. Review the returned license context and
 the provider's terms before redistributing a downloaded file. The durable
 inventory of provider terms is in
 [Source Licensing](../reference/source-licensing.md).
+
+## Searching supplement text
+
+```bash
+biomcp --json article supplement-search 30209399 F1761I
+```
+
+The command extracts the text of the article's xlsx, xls, csv, docx, pdf
+and zip supplements and reports every place the exact string appears. The
+match is a case-sensitive substring: BioMCP finds text, it does not
+interpret it.
+
+`<id>` accepts a PMID, a PMCID, or a DOI. Add `--asset <asset-key>` to
+search one file from the manifest instead of all of them. Output is JSON
+only.
+
+Each hit carries the file it came from, the file's `sha256` checksum, and
+an exact locator:
+
+| Format | Locator |
+| --- | --- |
+| xlsx, xls | Worksheet name and row (`Sheet1 row 2780`). |
+| csv | Row, counting the header as row 1. |
+| pdf | Page number. |
+| docx | Paragraph number. |
+| zip | The member path, plus the member's own locator. |
+
+The `context` field holds the matched row, page, or paragraph text, capped
+at 400 bytes, so a hit can be verified at its locator.
+
+### Reading the file outcomes
+
+The `files` array reports what happened to each searched file, and each
+archive member inside one:
+
+| Outcome | Meaning |
+| --- | --- |
+| `searched` | Text was extracted and searched. |
+| `empty_text` | The file parsed but holds no text, such as a scanned PDF. |
+| `unextractable` | The file could not be read; `reason` names why. |
+
+An empty `hits` list with every file `searched` means the string appears
+nowhere. A file reported `unextractable` was never searched, so its format
+and reason tell the caller what is missing.
+
+### Search limits
+
+Extraction is bounded. Beyond the retrieval limits above, text extraction
+stops at 64 MiB per file, 64 MiB per archive member, 256 MiB aggregate per
+file, 500 PDF pages, and 20 seconds per file; a file that crosses a limit
+is reported with its reason. At most 200 hits are reported, and
+`hits_truncated` says when to narrow the string.
+
+Extracted text is cached under the session cache, keyed by the source
+file's SHA-256: the same file content is not re-extracted while the cache
+stands, and changed bytes get a new key. `--no-cache` skips both read and
+write.
 
 ## Limits
 

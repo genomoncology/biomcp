@@ -25,8 +25,9 @@ OFFLINE = ROOT / "tools/run-offline"
 # after the landing rebase onto current main, and lowered by the spec lane's
 # fixture scripts and lifecycle tests that the replay server replaced.
 # Raised once more by the variant structure test sidecar, and again by one
-# path for the article CLI outage-rule test sidecar.
-MAX_PACKAGE_FILES = 1_415  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
+# path for the article CLI outage-rule test sidecar. Raised by the supplement
+# text search: two modules and four recorded supplement fixtures (2152).
+MAX_PACKAGE_FILES = 1_421  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
 # Also raised once by the pinned python version file.
 REMOVED_TRIAL_CRATE = "bio" + "data"
 

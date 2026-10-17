@@ -6,6 +6,7 @@ mod federation;
 mod html;
 mod jats;
 mod pdf;
+mod supplement_text;
 
 pub use self::anchors::{
     article_search_abstract_snippet, article_search_fallback_title, clean_abstract, clean_title,
@@ -23,6 +24,10 @@ pub(crate) use self::jats::{
     extract_citation_evidence, extract_jats_supplement_links,
 };
 pub use self::pdf::extract_text_from_pdf;
+pub(crate) use self::supplement_text::{
+    SupplementExtractionProblem, SupplementFormat, SupplementTextBlock, SupplementTextBudget,
+    SupplementTextExtraction, extract_supplement_text, supplement_format_for_filename,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ArticleSupplementLink {
