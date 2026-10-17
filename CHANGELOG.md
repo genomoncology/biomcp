@@ -39,6 +39,7 @@
 ### Internal
 
 - Keep retry fixtures on real time during loopback requests; preserve the HPO four-attempt policy and compact-command retry cancellation checks. (2167)
+- Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)

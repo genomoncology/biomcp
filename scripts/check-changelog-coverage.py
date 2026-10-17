@@ -422,15 +422,34 @@ def tag_ticket_reader(tag: str) -> Callable[[str], str | None]:
     return read
 
 
+def landed_in_milestone(
+    ticket: str, milestone: str, previous: str, head: str
+) -> bool:
+    """Keep a landed batch in its release when unfinished work moves later."""
+    log = run_git("log", "--format=%H%x09%s", f"{previous}..{head}")
+    for line in log.splitlines():
+        revision, _, subject = line.partition("\t")
+        if ticket not in subject_tickets(subject):
+            continue
+        content = tag_ticket_reader(revision)(ticket)
+        if content is not None and re.search(
+            rf"^Milestone:\s*{re.escape(milestone)}\s*$", content, re.MULTILINE
+        ):
+            return True
+    return False
+
+
 def milestone_problems(
-    section: str, milestone: str, read_ticket: Callable[[str], str | None]
+    section: str, milestone: str, read_ticket: Callable[[str], str | None],
+    *, previous: str | None = None, head: str = "HEAD",
 ) -> dict[str, str]:
     """Why each ticket a section cites is not a ticket of `milestone`.
 
     The value is NO_TICKET_FILE when no ticket file exists, NO_MILESTONE
     when the file carries no Milestone line, and the milestone the file
     carries otherwise. Only the last value proves the cited ticket
-    belongs to another release.
+    belongs to another release, unless a landing since `previous` records
+    its batch in this milestone. Missing records still fail closed.
     """
     problems: dict[str, str] = {}
     for ticket in sorted(cited_tickets(section), key=int):
@@ -442,7 +461,8 @@ def milestone_problems(
         if found is None:
             problems[ticket] = NO_MILESTONE
         elif found.group(1) != milestone:
-            problems[ticket] = found.group(1)
+            if previous is None or not landed_in_milestone(ticket, milestone, previous, head):
+                problems[ticket] = found.group(1)
     return problems
 
 
@@ -469,7 +489,8 @@ def main() -> int:
         label, section = section_text(args.changelog, args.tag)
         described = described_tickets(section)
         problems = milestone_problems(
-            section, args.tag.removeprefix("v"), tag_ticket_reader(args.tag)
+            section, args.tag.removeprefix("v"), tag_ticket_reader(args.tag),
+            previous=previous, head=args.tag,
         )
     except RuntimeError as error:
         print(f"changelog coverage check failed: {error}", file=sys.stderr)
