@@ -10,6 +10,7 @@ corrected shapes so drift fails loudly.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -252,6 +253,39 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
         "construction_under_a_held_epoch_lock_honors_the_deadline",
     ):
         assert test in windows_runs, f"Windows must run the {test} regression"
+
+
+@pytest.mark.parametrize("failed_command", [0, 1, 2])
+def test_windows_lock_proof_propagates_each_cargo_failure(
+    tmp_path: Path, failed_command: int
+) -> None:
+    step = next(
+        s for s in _job("windows-contracts")["steps"]
+        if s.get("name") == "Check cache-lock contention and article-search deadlines"
+    )
+    assert step.get("shell") == "bash", "Windows proof must stop on any failed command"
+    commands = step["run"].strip().splitlines()
+    cargo = tmp_path / "cargo"
+    cargo.write_text(
+        '#!/bin/sh\ncase "$*" in *"$FAIL_TEST"*) exit 42;; esac\nexit 0\n',
+        encoding="utf-8",
+    )
+    cargo.chmod(0o755)
+    script = tmp_path / "proof.sh"
+    script.write_text(step["run"], encoding="utf-8")
+    # GitHub's explicit bash shell uses these fail-fast options on Windows too.
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+        env={
+            **os.environ,
+            "PATH": f"{tmp_path}{os.pathsep}{os.environ['PATH']}",
+            "FAIL_TEST": commands[failed_command].split()[-1],
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 42, result.stderr
 
 
 def test_the_changes_job_covers_the_whole_push() -> None:
