@@ -31,3 +31,4 @@ The command exited 100: the existing regression failed with `a no-entity miss is
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 next: Blocked ordinary landings: the reviewed fixture repair passes targeted checks, lint and routine tests; make spec fails the pre-existing frozen ERepo runner. Repair 2157 must clear that failure before trigger shutdown 2155 can land.
