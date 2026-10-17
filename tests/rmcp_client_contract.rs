@@ -399,10 +399,26 @@ impl RequestCounterFixture {
             while !thread_stop.load(Ordering::SeqCst) {
                 match listener.accept() {
                     Ok((mut stream, _)) => {
-                        let count = thread_requests.fetch_add(1, Ordering::SeqCst) + 1;
+                        stream
+                            .set_nonblocking(false)
+                            .expect("blocking request counter connection");
                         let started = std::time::Instant::now();
                         let mut request = [0_u8; 2048];
-                        let read = stream.read(&mut request);
+                        let mut len = 0;
+                        let read = loop {
+                            match stream.read(&mut request[len..]) {
+                                Ok(0) => break Ok(len),
+                                Ok(bytes) => {
+                                    len += bytes;
+                                    if len == request.len()
+                                        || request[..len].windows(4).any(|part| part == b"\r\n\r\n")
+                                    {
+                                        break Ok(len);
+                                    }
+                                }
+                                Err(error) => break Err(error),
+                            }
+                        };
                         let read_elapsed = started.elapsed();
                         let request_line = match &read {
                             Ok(bytes) => safe_counter_request_line(&request[..*bytes]),
@@ -416,8 +432,16 @@ impl RequestCounterFixture {
                             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                             body.len()
                         );
-                        let write = stream.write_all(response.as_bytes());
-                        let write_outcome = write.map_err(|error| error.kind());
+                        let count = if headers_complete {
+                            thread_requests.fetch_add(1, Ordering::SeqCst) + 1
+                        } else {
+                            thread_requests.load(Ordering::SeqCst)
+                        };
+                        let write_outcome = headers_complete.then(|| {
+                            stream
+                                .write_all(response.as_bytes())
+                                .map_err(|error| error.kind())
+                        });
                         let mut trace = thread_trace.lock().expect("request trace");
                         if trace.len() < 32 {
                             trace.push(format!(
@@ -441,6 +465,36 @@ impl RequestCounterFixture {
             thread: Some(thread),
         })
     }
+}
+
+#[test]
+fn request_counter_waits_for_complete_request_headers() -> anyhow::Result<()> {
+    let fixture = RequestCounterFixture::start()?;
+    let address = fixture
+        .base
+        .strip_prefix("http://")
+        .expect("loopback fixture");
+    let mut stream = std::net::TcpStream::connect(address)?;
+    stream.set_read_timeout(Some(Duration::from_millis(100)))?;
+    stream.write_all(b"GET /graph/v1/paper/search HTTP/1.1\r\n")?;
+    let mut byte = [0_u8; 1];
+    let premature = stream.read(&mut byte);
+    assert!(
+        premature.as_ref().is_err_and(|error| matches!(
+            error.kind(),
+            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+        )) && fixture.requests.load(Ordering::SeqCst) == 0,
+        "fixture counted or answered incomplete headers: read={premature:?}; count={}; trace={:?}",
+        fixture.requests.load(Ordering::SeqCst),
+        fixture.trace.lock().expect("request trace")
+    );
+    stream.write_all(b"Host: fixture\r\n\r\n")?;
+    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+    let mut response = String::new();
+    stream.read_to_string(&mut response)?;
+    assert!(response.ends_with(r#"{"total":0,"data":[]}"#));
+    assert_eq!(fixture.requests.load(Ordering::SeqCst), 1);
+    Ok(())
 }
 
 // This listener also serves health probes. Log only known fixed request-line
@@ -499,6 +553,7 @@ const FAERS_REPORT_PAGE: &str = r#"{
 
 struct OpenFdaFixture {
     base: String,
+    trace: Arc<Mutex<Vec<String>>>,
     stop: Arc<AtomicBool>,
     thread: Option<thread::JoinHandle<()>>,
 }
@@ -512,17 +567,29 @@ impl OpenFdaFixture {
         let base = format!("http://{}", listener.local_addr().expect("fixture address"));
         let stop = Arc::new(AtomicBool::new(false));
         let thread_stop = Arc::clone(&stop);
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let thread_trace = Arc::clone(&trace);
         let thread = thread::spawn(move || {
             while !thread_stop.load(Ordering::SeqCst) {
                 let Ok((mut stream, _)) = listener.accept() else {
                     thread::sleep(Duration::from_millis(5));
                     continue;
                 };
+                // Accepted sockets inherit the listener's nonblocking mode on
+                // macOS. Wait for every header byte before replying.
+                stream
+                    .set_nonblocking(false)
+                    .expect("blocking OpenFDA connection");
                 let mut request = Vec::new();
                 let mut chunk = [0_u8; 1024];
+                let mut read_error = None;
                 while !request.windows(4).any(|window| window == b"\r\n\r\n") {
-                    let Ok(read) = stream.read(&mut chunk) else {
-                        break;
+                    let read = match stream.read(&mut chunk) {
+                        Ok(read) => read,
+                        Err(error) => {
+                            read_error = Some(error.kind());
+                            break;
+                        }
                     };
                     if read == 0 {
                         break;
@@ -534,15 +601,54 @@ impl OpenFdaFixture {
                     FAERS_REPORT_PAGE.len(),
                     FAERS_REPORT_PAGE
                 );
-                let _ = stream.write_all(response.as_bytes());
+                let mut trace = thread_trace.lock().expect("OpenFDA trace");
+                let write = stream
+                    .write_all(response.as_bytes())
+                    .map_err(|error| error.kind());
+                let headers_complete = request.windows(4).any(|part| part == b"\r\n\r\n");
+                if trace.len() < 8 {
+                    trace.push(format!(
+                        "request_bytes={} headers_complete={headers_complete} read_error={read_error:?} status=200 response_bytes={} write={write:?}",
+                        request.len(), response.len()
+                    ));
+                }
             }
         });
         Self {
             base,
+            trace,
             stop,
             thread: Some(thread),
         }
     }
+}
+
+#[test]
+fn openfda_fixture_waits_for_complete_request_headers() -> anyhow::Result<()> {
+    let fixture = OpenFdaFixture::start();
+    let address = fixture
+        .base
+        .strip_prefix("http://")
+        .expect("loopback fixture");
+    let mut stream = std::net::TcpStream::connect(address)?;
+    stream.set_read_timeout(Some(Duration::from_millis(100)))?;
+    stream.write_all(b"GET /drug/event.json HTTP/1.1\r\n")?;
+    let mut byte = [0_u8; 1];
+    let premature = stream.read(&mut byte);
+    assert!(
+        premature.as_ref().is_err_and(|error| matches!(
+            error.kind(),
+            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+        )),
+        "fixture answered incomplete headers: read={premature:?}; trace={:?}",
+        fixture.trace.lock().expect("OpenFDA trace")
+    );
+    stream.write_all(b"Host: fixture\r\n\r\n")?;
+    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+    let mut response = String::new();
+    stream.read_to_string(&mut response)?;
+    assert!(response.ends_with(FAERS_REPORT_PAGE));
+    Ok(())
 }
 
 impl Drop for OpenFdaFixture {
@@ -1568,8 +1674,9 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     assert_eq!(
         raw_subset.is_error,
         Some(false),
-        "{}",
-        biomcp_mcp_contract_client::first_text(&raw_subset.content)
+        "{}; fixture trace: {:?}",
+        biomcp_mcp_contract_client::first_text(&raw_subset.content),
+        fixture.trace.lock().expect("OpenFDA trace")
     );
     let raw_subset: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&raw_subset.content))?;
@@ -1595,8 +1702,9 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     assert_eq!(
         typed_subset.is_error,
         Some(false),
-        "{}",
-        biomcp_mcp_contract_client::first_text(&typed_subset.content)
+        "{}; fixture trace: {:?}",
+        biomcp_mcp_contract_client::first_text(&typed_subset.content),
+        fixture.trace.lock().expect("OpenFDA trace")
     );
     let typed_subset: serde_json::Value = serde_json::from_str(
         biomcp_mcp_contract_client::first_text(&typed_subset.content),
@@ -1619,8 +1727,9 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     assert_eq!(
         raw_full.is_error,
         Some(false),
-        "{}",
-        biomcp_mcp_contract_client::first_text(&raw_full.content)
+        "{}; fixture trace: {:?}",
+        biomcp_mcp_contract_client::first_text(&raw_full.content),
+        fixture.trace.lock().expect("OpenFDA trace")
     );
     let raw_full: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&raw_full.content))?;
@@ -1643,8 +1752,9 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     assert_eq!(
         typed_all.is_error,
         Some(false),
-        "{}",
-        biomcp_mcp_contract_client::first_text(&typed_all.content)
+        "{}; fixture trace: {:?}",
+        biomcp_mcp_contract_client::first_text(&typed_all.content),
+        fixture.trace.lock().expect("OpenFDA trace")
     );
     let typed_all: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&typed_all.content))?;
