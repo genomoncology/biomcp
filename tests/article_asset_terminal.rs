@@ -615,7 +615,7 @@ fn publisher_open_pdf_link_downloads_and_returns_its_text() {
 
     let output = successful_output(
         &fixture,
-        &["--json", "get", "article", "22663031", "fulltext", "--pdf"],
+        &["--json", "get", "article", "22663026", "fulltext", "--pdf"],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("article JSON should parse");
@@ -662,8 +662,8 @@ fn open_pdf_failures_name_the_part_that_failed() {
     for (pmid, expected_reason, outcome) in [
         ("22663019", "open_pdf_link_absent", "empty"),
         ("22663030", "open_pdf_link_unavailable", "unavailable"),
-        ("22663032", "open_pdf_link_rejected", "unavailable"),
-        ("22663033", "open_pdf_download_failed", "unavailable"),
+        ("22663027", "open_pdf_link_rejected", "unavailable"),
+        ("22663028", "open_pdf_download_failed", "unavailable"),
         ("22663014", "open_pdf_download_absent", "empty"),
         ("22663029", "open_pdf_text_unusable", "unavailable"),
     ] {

@@ -924,7 +924,7 @@ mod startup_cost {
         for index in 0..count {
             cacache::write_sync(
                 &cache_path,
-                &format!("startup-walk-key-{index}"),
+                format!("startup-walk-key-{index}"),
                 b"seed bytes",
             )
             .expect("seed cache entry");
@@ -995,7 +995,7 @@ mod startup_cost {
         let root = TempDirGuard::new("startup-cost-mode-off");
         seed_cache_entries(root.path(), 50);
         build_once(root.path());
-        cacache::write_sync(&root.path().join("http"), "post-settle-key", b"post settle")
+        cacache::write_sync(root.path().join("http"), "post-settle-key", b"post settle")
             .expect("post-settle entry");
         let cache_http = root.path().join("http");
         let files_before = count_regular_files(&cache_http);
