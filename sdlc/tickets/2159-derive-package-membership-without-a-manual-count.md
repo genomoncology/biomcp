@@ -4,7 +4,7 @@ priority: 1
 
 # 2159 — Derive package membership without a manual count
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -17,6 +17,8 @@ Reviews: revision 8f13b95, accept
 Reviews: revision 7767751, accept
 
 Reviews: revision e75e7a4, accept
+
+Landed: e75e7a4 (fast-forward: Accepted source landed inside carrier 27e59b197 with the passing shared batch gate; record this carried ticket separately without rerunning unchanged code.)
 
 ## Outcome
 

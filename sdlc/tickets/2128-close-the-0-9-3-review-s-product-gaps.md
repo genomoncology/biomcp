@@ -4,7 +4,7 @@ priority: 2
 
 # 2128 — Close the 0.9.3 review's product gaps
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -17,6 +17,8 @@ Reviews: revision 77e48fa, accept
 Reviews: revision 78e627f, accept
 
 Reviews: revision 5bf26a9, accept
+
+Landed: 5bf26a9 (fast-forward: Accepted source landed inside carrier 27e59b197 with its passing shared gate; record this carried ticket separately without rerunning unchanged code.)
 
 ## Outcome
 

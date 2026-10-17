@@ -4,11 +4,13 @@ priority: 3
 
 # 2122 — Run whole-repository audits in local qualification
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision bbab17e, accept
+
+Landed: bbab17e (fast-forward: Accepted source landed inside carrier 27e59b197 with its passing shared gate; record this carried ticket separately without rerunning unchanged code.)
 
 ## Outcome
 

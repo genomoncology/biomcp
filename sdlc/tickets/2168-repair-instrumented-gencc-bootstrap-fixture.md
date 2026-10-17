@@ -1,10 +1,12 @@
 # 2168 — repair-instrumented-gencc-bootstrap-fixture
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision e084176, accept
+
+Landed: e084176 (fast-forward: Accepted source landed inside carrier 27e59b197 with its passing shared gate; record this carried ticket separately without rerunning unchanged code.)
 
 ## Outcome
 
