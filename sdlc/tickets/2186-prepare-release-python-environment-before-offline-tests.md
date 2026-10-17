@@ -25,3 +25,7 @@ Release qualification prepares the dependencies and temporary directories each c
 - Python job 117526743616: make test-python; error Failed to spawn pytest, No such file or directory; exit 2. No Python tests ran.
 - Specification job 117526743547: make spec; build-profile.md line33 failed because routine-test-tmp did not exist for mktemp. Sixty Markdown cases and six golden cases passed, one Markdown case failed.
 - Root retains the complete job logs in temporary scratch. The rehearsal run URL is https://github.com/genomoncology/biomcp/actions/runs/39076922723 .
+
+## Progress
+
+- 2026-10-17 started
