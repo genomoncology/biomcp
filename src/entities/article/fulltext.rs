@@ -1457,21 +1457,20 @@ mod tests {
             "/tests/fixtures/article/fulltext/pdf/pmc_oa_article_pdf.pdf"
         ));
         let fixture = TestHttpFixture::spawn(|request| {
-            let (status, content_type, body): (&str, &str, &[u8]) = if request
-                .contains("/articles/PMC123456/")
-            {
-                ("200 OK", "text/html; charset=utf-8", challenge_page)
-            } else if request.contains("winner.pdf") {
-                ("200 OK", "application/pdf", fixture_pdf)
-            } else if request.contains("list-type=2") {
-                (
-                    "200 OK",
-                    "application/xml",
-                    b"<ListBucketResult></ListBucketResult>",
-                )
-            } else {
-                ("404 Not Found", "text/plain", b"not found")
-            };
+            let (status, content_type, body): (&str, &str, &[u8]) =
+                if request.contains("/articles/PMC123456/") {
+                    ("200 OK", "text/html; charset=utf-8", challenge_page)
+                } else if request.contains("winner.pdf") {
+                    ("200 OK", "application/pdf", fixture_pdf)
+                } else if request.contains("list-type=2") {
+                    (
+                        "200 OK",
+                        "application/xml",
+                        b"<ListBucketResult></ListBucketResult>",
+                    )
+                } else {
+                    ("404 Not Found", "text/plain", b"not found")
+                };
             TestHttpReply::Bytes(test_http_response(status, content_type, body))
         })
         .await;
@@ -1522,7 +1521,10 @@ mod tests {
             html_attempt.reason,
             ArticleFulltextAttemptReason::BotChallenge
         );
-        assert_eq!(html_attempt.coverage, ArticleFulltextAttemptCoverage::Unusable);
+        assert_eq!(
+            html_attempt.coverage,
+            ArticleFulltextAttemptCoverage::Unusable
+        );
         assert_eq!(
             html_attempt.outcome,
             ArticleFulltextAttemptOutcome::Unavailable
@@ -1536,8 +1538,14 @@ mod tests {
             .position(|attempt| attempt.source_kind == ArticleFulltextAttemptSourceKind::PmcHtml)
             .expect("pmc html attempt index");
         assert!(html_attempt_index < pdf_attempt_index);
-        assert_eq!(attempts[pdf_attempt_index].outcome, ArticleFulltextAttemptOutcome::Data);
-        assert_eq!(article.full_text_source.as_ref().map(|s| s.source.as_str()), Some("Semantic Scholar"));
+        assert_eq!(
+            attempts[pdf_attempt_index].outcome,
+            ArticleFulltextAttemptOutcome::Data
+        );
+        assert_eq!(
+            article.full_text_source.as_ref().map(|s| s.source.as_str()),
+            Some("Semantic Scholar")
+        );
     }
 
     #[test]
