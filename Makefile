@@ -18,7 +18,11 @@ CARGO_WITH_IDENTITY = tools/with-build-identity cargo
 ROUTINE_TEST_ARCHIVE = $(CURDIR)/.cache/routine-tests.tar.zst
 ROUTINE_TEST_TMPDIR = $(CURDIR)/.cache/routine-test-tmp
 PYTEST_BASETEMP = $(ROUTINE_TEST_TMPDIR)/pytest
-ifneq (,$(filter test test-rust test-python,$(MAKECMDGOALS)))
+# Every goal that runs the Python contract suite joins the routine
+# lane: the suite's temp-path contract holds only while TMPDIR and
+# pytest's basetemp stay in the worktree, and the offline sandbox
+# otherwise points TMPDIR at its own /tmp (2148).
+ifneq (,$(filter test test-rust test-python test-contracts test-contracts-prepared,$(MAKECMDGOALS)))
 export TMPDIR = $(ROUTINE_TEST_TMPDIR)
 export BIOMCP_ROUTINE_TEST_LANE = 1
 endif
@@ -61,7 +65,9 @@ prepare-test-contracts:
 	$(SPEC_BUILD)
 	$(MAKE) sync-python-dev
 
-test-contracts: prepare-test-contracts
+# The contract gate runs in the routine lane shape (2148): the tmp
+# dir must exist before the lane's exported TMPDIR carries the build.
+test-contracts: prepare-routine-test-tmp prepare-test-contracts
 	$(MAKE) test-contracts-prepared
 
 test-contracts-prepared:
