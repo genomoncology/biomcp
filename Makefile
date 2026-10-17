@@ -46,20 +46,33 @@ prepare-test: prepare-routine-test-tmp
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
 	$(MAKE) prepare-test-contracts
 
+# Each lane gets a bounded share of the host; callers can tune these after
+# measuring their workload. CPU discovery also works on supported non-Linux hosts.
+TEST_LANE_WORKERS ?= $(shell python3 -c 'import os; print(min(4, max(1, (os.cpu_count() or 1) // 2)))')
+NEXTEST_JOBS ?= $(TEST_LANE_WORKERS)
+NEXTEST_JOBS_ARG = -j $(NEXTEST_JOBS)
+
 test:
 	$(MAKE) prepare-test
-	$(MAKE) test-rust
-	$(MAKE) test-python
+	@set -eu; \
+	logs="$$(mktemp -d)"; rust_pid=; python_pid=; \
+	trap 'kill $$rust_pid $$python_pid 2>/dev/null || true; rm -rf "$$logs"' EXIT; \
+	trap 'exit 130' INT; trap 'exit 143' TERM; \
+	$(MAKE) test-rust >"$$logs/rust" 2>&1 & rust_pid=$$!; \
+	$(MAKE) test-python >"$$logs/python" 2>&1 & python_pid=$$!; \
+	rust_status=0; python_status=0; \
+	wait $$rust_pid || rust_status=$$?; rust_pid=; \
+	wait $$python_pid || python_status=$$?; python_pid=; \
+	printf '\n=== Rust lane (exit %s) ===\n' "$$rust_status"; cat "$$logs/rust"; \
+	printf '\n=== Python lane (exit %s) ===\n' "$$python_status"; cat "$$logs/python"; \
+	test "$$rust_status" -eq 0 && test "$$python_status" -eq 0
 
-# The two halves of `make test` (ticket 2075) so the CI lanes run
-# the Rust tests and the Python contracts in parallel against the
-# build job's artifact; a local caller reaches them through
-# `make test`, which prepares the dev build first.
+# Both lanes consume the artifacts prepared once by `make test`. Each can
+# also run independently against an existing prepared build.
 test-rust: prepare-routine-test-tmp
-	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
+	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml"
 
 test-python: prepare-routine-test-tmp
-	$(MAKE) sync-python-dev
 	$(MAKE) test-contracts-prepared
 
 prepare-test-contracts:

@@ -42,6 +42,7 @@
 - Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
 - The credential-redaction contract uses permanent local provider failures, so unrelated randomized retry delays cannot exhaust its command watchdog. (2165)
 - Article help is checked through the command line. Redundant help and test-file-layout assertions are removed; parser, label, ranking and refusal edge cases remain. (2081)
+- Run the local Rust and Python test lanes concurrently after one shared preparation, with bounded workers and separate failure output (2094).
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)
