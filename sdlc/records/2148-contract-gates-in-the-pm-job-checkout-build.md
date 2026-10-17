@@ -1,7 +1,8 @@
 # 2148 — contract gates in the pm-job checkout (build record)
 
-Branch tip `46c466aa9` pushed; stopped without landing. The gate is green
-in the pm-job checkout shape that was red at main.
+Gates green at code tip `46c466aa9`; branch tip `22f295ff9` adds only
+this record and the ticket's job ids. Stopped without landing. The gate is
+green in the pm-job checkout shape that was red at main.
 
 ## What ran (pm job, the Linux gate host, repo biomcp)
 
