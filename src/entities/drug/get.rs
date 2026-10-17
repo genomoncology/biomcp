@@ -377,9 +377,7 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
     // One vote per record: the plain ingredient the record's own identity
     // supports, so counting votes counts records.
     let mut owner_votes: Vec<String> = Vec::new();
-    let mut page_votes: Vec<String> = Vec::new();
     let mut owner_records: Vec<LabelRecordVote> = Vec::new();
-    let mut page_records: Vec<LabelRecordVote> = Vec::new();
     for result in results {
         let Some(raw) = super::label::label_result_generic_names(result)
             .into_iter()
@@ -407,18 +405,13 @@ fn label_identity_answer(query: &str, results: &[serde_json::Value]) -> LabelIde
         if owns_brand {
             owner_votes.push(plain.clone());
             owner_records.push(vote);
-        } else {
-            page_records.push(vote);
         }
-        page_votes.push(plain);
     }
-    // Only owner rows vote when any exist, and the refusal's candidates
-    // come from the same counted records that voted.
-    let (votes, counted): (&[String], &[LabelRecordVote]) = if owner_votes.is_empty() {
-        (&page_votes, &page_records)
-    } else {
-        (&owner_votes, &owner_records)
-    };
+    // A page with no exact owner cannot name candidates for the query.
+    if owner_votes.is_empty() {
+        return LabelIdentityAnswer::Ambiguous(Vec::new());
+    }
+    let (votes, counted): (&[String], &[LabelRecordVote]) = (&owner_votes, &owner_records);
     if votes.is_empty() {
         return LabelIdentityAnswer::NoAnswer;
     }
@@ -543,6 +536,12 @@ fn ambiguous_ingredient_candidates(
 /// products carry: `InvalidArgument`, a `Candidates:` list, exit 2. The
 /// Try line names the ingredient form, the one spelling that resolves.
 fn ambiguous_drug_name_error(name: &str, candidates: &[AmbiguousIngredient]) -> BioMcpError {
+    if candidates.is_empty() {
+        return BioMcpError::InvalidArgument(format!(
+            "No label record owns the exact drug name '{name}'. \
+Try `biomcp search drug -q \"{name}\"` to find a product by name."
+        ));
+    }
     let lines = candidates
         .iter()
         .map(|candidate| format!("- {}\n", candidate.name))

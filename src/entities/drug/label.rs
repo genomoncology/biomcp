@@ -589,11 +589,20 @@ pub(super) fn card_own_label_brands(
             out.extend(sparse_element_identity_names(result).0);
             continue;
         }
-        let names_card = extract_openfda_values_from_result(result, "generic_name")
-            .iter()
-            .any(|generic| label_generic_names_card(generic, card_name));
-        if names_card {
-            out.extend(extract_openfda_values_from_result(result, "brand_name"));
+        let generics: Vec<_> = extract_openfda_values_from_result(result, "generic_name")
+            .into_iter()
+            .filter(|generic| label_generic_names_card(generic, card_name))
+            .collect();
+        if !generics.is_empty() {
+            out.extend(
+                extract_openfda_values_from_result(result, "brand_name")
+                    .into_iter()
+                    .filter(|brand| {
+                        !generics
+                            .iter()
+                            .any(|generic| generic.trim().eq_ignore_ascii_case(brand.trim()))
+                    }),
+            );
         }
     }
     out
