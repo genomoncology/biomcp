@@ -320,10 +320,11 @@ def branch_main(changelog: Path) -> int:
         ),
         key=int,
     )
+    section = live_section_text(changelog)
+    described = described_tickets(section[1]) if section is not None else set()
     if not needing:
         print(f"no ticket since {previous} changed shipped behavior")
         return 0
-    section = live_section_text(changelog)
     if section is None:
         print(
             "the changelog has no Unreleased or under-way version section to "
@@ -332,7 +333,7 @@ def branch_main(changelog: Path) -> int:
         )
         return 1
     label, body = section
-    missing = sorted(set(needing) - described_tickets(body), key=int)
+    missing = sorted(set(needing) - described, key=int)
     if missing:
         print(
             f"CHANGELOG {label} is missing described bullets for tickets that "
@@ -361,6 +362,8 @@ def described_tickets(section: str) -> set[str]:
     current: list[str] = []
     for line in section.splitlines():
         bullet = re.match(r"^\s*[-*]\s+(.+)$", line)
+        if re.search(r"\(\s*[0-9]+(?:\s*(?:,|and)\s*[0-9]+)*\s*\)[ .,;]*[-*]\s+\S", line):
+            raise RuntimeError("joined changelog entries: put each bullet on its own line")
         if bullet is not None:
             if current:
                 bullets.append(" ".join(current))

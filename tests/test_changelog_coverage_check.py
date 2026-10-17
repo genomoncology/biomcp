@@ -1067,3 +1067,33 @@ def test_carried_tickets_from_another_release_line_do_not_demand_bullets() -> No
         _MODULE.run_git = original
     assert found == {"1200", "2200"}, found
     assert "2100" not in found
+
+
+@pytest.mark.parametrize("mode", ["branch", "branch-record-only", "tag"])
+@pytest.mark.parametrize("separator", ["", " ", "\n"])
+def test_checker_rejects_joined_entries_but_accepts_separate_bullets(
+    tmp_path: Path, mode: str, separator: str,
+) -> None:
+    # The first entry changes only repository checks, so ordinary branch
+    # coverage does not catch its loss when both bullets share one line.
+    entries = (
+        "- Improved repository checks. (1226)"
+        + separator
+        + "- Repaired article search. (1227)\n"
+    )
+    changelog = "# C\n\n## Unreleased\n\n### Fixes\n\n" + entries
+    if mode.startswith("branch"):
+        result = _run_branch(
+            tmp_path, changelog=changelog, ref_name="main",
+            landings={
+                "sha1": ("Land 1226: improve checks", ["tests/test_gate.py"]),
+                "sha2": ("Land 1227: repair search", ["src/search.rs"] if mode == "branch" else []),
+            },
+        )
+    else:
+        result = _run(tmp_path, changelog=changelog, subjects=["Land 1227: repair search"])
+    if separator == "\n":
+        assert result.returncode == 0, result.stderr
+    else:
+        assert result.returncode == 1, result.stdout
+        assert "joined changelog entries" in result.stderr
