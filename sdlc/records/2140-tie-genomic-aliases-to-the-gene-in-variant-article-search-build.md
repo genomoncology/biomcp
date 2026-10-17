@@ -2,9 +2,14 @@
 
 - Branch `ticket/2140-tie-genomic-aliases-to-the-gene-in-variant-article-search`
   in worktree `worktrees/biomcp-2140`, started from `origin/main` at
-  `ec4f2e309` and rebased onto `b138f6097` (three research-ticket filings, no
-  code overlap) before the first push. Final tip `829880675`; stopped without
-  landing — the coordinator lands.
+  `ec4f2e309`, rebased onto `b138f6097` (three research-ticket filings) and a
+  second time onto `2e707f75a` after the 2138, 2147 and 2148 landings moved
+  main mid-run — 2138 edits the same `variant_search.rs` and appends its own
+  capture receipts, so the rebase merges both: the fixture tests, the alias
+  fix and 2138's entity-id route coexist, and the zero-coupling digest is
+  recomputed over the merged receipts file (404 entries, 24 of them this
+  ticket's). Final tip `2d3296434`; stopped without landing — the coordinator
+  lands.
 
 ## Reproduction on main first
 
@@ -93,7 +98,10 @@ requests and ranking.
   recorded tests (0.16 s each), the updated
   `resolved_exact_aliases_include_validated_source_forms_once` (the BRAF
   genomic alias expectation becomes `BRAF chr7:g.140453136A>T`), and the new
-  `confirmed_car_genomic_aliases_travel_with_the_gene_symbol`.
+  `confirmed_car_genomic_aliases_travel_with_the_gene_symbol`. After the
+  second rebase, pm job `1792219146262-28106` at `2d3296434` passes all four
+  again plus 2138's `gene_change_search_keeps_the_pubtator_entity_and_searches_by_its_id`,
+  so the alias fix and 2138's entity-id route agree.
 - `tools/check-source-capture-receipts.py --root testdata/sources` passes with
   the 23 new entries; `tools/check-zero-coupling.py` passes with the refreshed
   digest.
@@ -104,16 +112,19 @@ requests and ranking.
   `1792207086972-2205411` at `54d952080` ran the Rust lane 4,304/4,304 passed
   (33 skipped) and failed the Python lane's quality ratchet on the un-refreshed
   receipts digest ("missing-or-renamed:testdata/sources/capture-receipts.json")
-  — fixed by the digest commit; job `1792212391095-2487834` at the final tip
-  `829880675` passed both lanes — Rust 4,304 run, 4,304 passed (33 skipped),
-  Python 1,159 passed (3 skipped), exit 0. (An intermediate identical run at
-  `6e02dd8e6`, job `1792210046801-2352099`, passed the same way.)
+  — fixed by the digest commit; job `1792212391095-2487834` at `829880675`
+  passed both lanes (Rust 4,304 run, 4,304 passed, 33 skipped; Python 1,159
+  passed, 3 skipped; exit 0). After the second rebase, job
+  `1792219229468-3415128` at the final tip `2d3296434` passed both lanes —
+  Rust 4,309 run, 4,309 passed (33 skipped; 2138's five new tests included),
+  Python 1,160 passed (3 skipped), exit 0.
 - CI on the branch: run `39001366565` at `6e02dd8e6` failed the lint gate's
   code-comment ticket-citation scan (two test comments said "Ticket 2140";
-  rewritten to state the constraint); run `39002962569` at `829880675` is green
-  in every lane (build, lint, rust-tests, python-lane, spec-lane,
-  repository-contracts, release-checks, generated-sources) — the landing bar
-  run at the code tip.
+  rewritten to state the constraint); run `39002962569` at `829880675` was
+  green in every lane (build, lint, rust-tests, python-lane, spec-lane,
+  repository-contracts, release-checks, generated-sources); after the second
+  rebase, run `39010693830` at `2d3296434` is green in every lane again — that
+  run at the exact post-rebase tip is the landing bar.
 - The macOS gate host: `cargo fmt --check` passes at the tip; `cargo clippy
   --no-default-features --all-targets -- -D warnings` reports only three
   pre-existing errors on untouched files (`src/cache/manager.rs`'s unused
