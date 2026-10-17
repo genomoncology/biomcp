@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 Reviews: revision da2a73b, accept
 
+Reviews: revision f151f0d, accept
+
 ## Outcome
 
 The release measurement reports actual executed test counts and specification pages from the current runners, including fail-fast runs, while retaining incomplete results whenever a required suite fails or is missing.
