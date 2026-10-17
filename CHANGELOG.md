@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- Fulltext replay fixtures keep their server and Unicode cache state inside ignored test output, so concurrent repository audits never scan files that fixture cleanup can remove. (2177)
 - Reject changelog entries accidentally joined onto one line before landing or release, including repository-only changes. (2158)
 - Windows cache-lock contention is checked through both lock modes and article-search deadlines. Provider warnings name local I/O kinds and OS error codes without exposing paths, and Semantic Scholar search failures retain their warning. (2170)
 - Suppress unresolved structural hotspot counts, preserve cached-answer age notes, keep drug and disease identity refusals precise, hide health error paths, validate protein residues, and handle installer paths with spaces. (2128)
