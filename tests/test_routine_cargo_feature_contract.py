@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+<<<<<<< HEAD
 import json
 import subprocess
+=======
+import os
+import subprocess
+import sys
+>>>>>>> 08da3d86f (Run prepared local test lanes concurrently with bounded workers)
 import re
 import pytest
 
@@ -128,6 +134,7 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
     assert not missing, f"missing supported test-lane documentation: {missing}"
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize(
     ("target", "expected"),
     [
@@ -174,3 +181,39 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
         assert stages == expected
     config = json.loads(_read("sdlc/pm.json"))
     assert config["ticketsGate"] == "make landing-gate"
+=======
+@pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
+def test_make_test_prepares_once_and_waits_for_both_lanes(tmp_path: Path, failed_lane: str) -> None:
+    """Exercise Make's orchestration without rebuilding product artifacts."""
+    worker = tmp_path / "lane.py"
+    worker.write_text(
+        "import os, pathlib, sys, time\n"
+        "root = pathlib.Path(sys.argv[1]); lane = sys.argv[2]\n"
+        "(root / (lane + '.started')).touch()\n"
+        "peer = 'python' if lane == 'rust' else 'rust'\n"
+        "deadline = time.monotonic() + 3\n"
+        "while not (root / (peer + '.started')).exists():\n"
+        "    if time.monotonic() > deadline: raise SystemExit('lanes did not overlap')\n"
+        "    time.sleep(.01)\n"
+        "(root / (lane + '.finished')).touch()\n"
+        "print(lane + ' output')\n"
+        "raise SystemExit(7 if os.environ['FAILED_LANE'] == lane else 0)\n"
+    )
+    overlay = tmp_path / "lanes.mk"
+    overlay.write_text(
+        "prepare-test:\n\t@echo prepare >> \"" + str(tmp_path / "prepared") + "\"\n"
+        + "test-rust:\n\t@" + sys.executable + " " + str(worker) + " " + str(tmp_path) + " rust\n"
+        + "test-python:\n\t@" + sys.executable + " " + str(worker) + " " + str(tmp_path) + " python\n"
+    )
+    command = ["make", "--no-print-directory", "-f", str(REPO_ROOT / "Makefile"), "-f", str(overlay)]
+    result = subprocess.run(
+        [*command, "test", "MAKE=" + " ".join(command)], cwd=REPO_ROOT,
+        env={**os.environ, "FAILED_LANE": failed_lane}, capture_output=True, text=True, timeout=15,
+    )
+    assert (result.returncode == 0) == (not failed_lane), result.stdout + result.stderr
+    assert (tmp_path / "prepared").read_text().splitlines() == ["prepare"]
+    assert all((tmp_path / (lane + ".finished")).exists() for lane in ("rust", "python"))
+    assert "=== Rust lane (exit " in result.stdout
+    assert "=== Python lane (exit " in result.stdout
+    assert "rust output" in result.stdout and "python output" in result.stdout
+>>>>>>> 08da3d86f (Run prepared local test lanes concurrently with bounded workers)
