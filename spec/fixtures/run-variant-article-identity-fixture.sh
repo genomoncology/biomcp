@@ -120,6 +120,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/v1/query": return send(self, 200, {"total": 0, "hits": []})
         if path.startswith("/v1/variant/"): return send(self, 404, {"error": "not found"})
         if path == "/entity/autocomplete/": return send(self, 200, [])
+        # LitVar2's autocomplete answering no entry keeps the frozen panel's
+        # candidate set unchanged while the new variant-literature route runs.
+        if path == "/variant/autocomplete/": return send(self, 200, [])
         if path == "/search/":
             text = query.get("text", [""])[0]
             found = next((gene for gene in rows if gene in text), None)
@@ -218,7 +221,7 @@ for _ in $(seq 1 100); do test -s "$ready" && break; sleep 0.05; done
 base_url="$(cat "$ready")"
 binary="${BIOMCP_BIN:-$repo_root/target/debug/biomcp}"
 export BIOMCP_CACHE_MODE=off BIOMCP_CACHE_DIR="$fixture_root/cache" BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
-export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url" BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN="$base_url"
+export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_LITVAR_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url" BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN="$base_url"
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 all="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --debug-plan --limit 1)"

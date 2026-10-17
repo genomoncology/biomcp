@@ -108,7 +108,9 @@ biomcp variant articles "BRAF p.V600E" --limit 10
 ```
 
 The default union resolves the variant once, searches compatible PubTator
-annotations and normalized exact aliases, adds validated source citations,
+annotations and normalized exact aliases, asks NCBI LitVar2 for the papers it
+links to the variant (a gene-plus-protein-change or rsID request must match
+the entry exactly), adds validated source citations,
 then merges, ranks, and paginates once. JSON preserves each paper's route,
 source, and matched-alias provenance. Use `--strategy annotation` or
 `--strategy lexical` only to diagnose route recall. If a selected provider is

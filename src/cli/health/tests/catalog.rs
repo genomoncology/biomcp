@@ -18,6 +18,7 @@ fn health_inventory_includes_all_expected_sources() {
             "Europe PMC",
             "NCBI E-utilities",
             "LitSense2",
+            "LitVar2",
             "PMC OA",
             "NCBI ID Converter",
             "ClinicalTrials.gov",

@@ -38,6 +38,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | InterPro | `https://www.ebi.ac.uk/interpro/api` | Unversioned | Public endpoint has no URL versioning model | 2026-02-15 |
 | KEGG REST | `https://rest.kegg.jp` | Unversioned | KEGG REST exposes stable operation paths without major versioning | 2026-06-11 |
 | LitSense2 | `https://www.ncbi.nlm.nih.gov/research/litsense2-api/api` | Versioned-by-product (`litsense2-api`) | Version identity is in the product namespace rather than the path suffix | 2026-04-10 |
+| LitVar2 | `https://www.ncbi.nlm.nih.gov/research/litvar2-api` | Versioned-by-product (`litvar2-api`) | Version identity is in the product namespace rather than the path suffix | 2026-10-17 |
 | MedlinePlus Search | `https://wsearch.nlm.nih.gov/ws/query` | Unversioned | NLM search endpoint is stable without URL versioning | 2026-06-11 |
 | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | Versioned (`v3`) | Version identity is in the host name | 2026-06-11 |
 | Mutalyzer | `https://mutalyzer.nl/api` | Unversioned | Public API root has no versioned path for current normalize calls | 2026-06-11 |

@@ -1371,6 +1371,59 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "litvar/README.md",
+      "classification": "authored",
+      "authored_reason": "Fixture-directory README describing the LitVar2 captures; authored prose, not a provider reply."
+    },
+    {
+      "path": "litvar/autocomplete_cdkn2a_a57v.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "LitVar2",
+        "request": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/autocomplete/?query=CDKN2A%20A57V",
+        "captured_at": "2026-10-17T02:48:53Z",
+        "sha256": "327982081e11bedd8a08df425cc3b39973d2341e119d2c371e9f2ba4939c9ef2",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2131)."
+      }
+    },
+    {
+      "path": "litvar/autocomplete_rsid_rs113488022.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "LitVar2",
+        "request": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/autocomplete/?query=rs113488022",
+        "captured_at": "2026-10-17T02:48:53Z",
+        "sha256": "fd63a3a070b54474d2f2da8222d96f573cd05dd2e37a60d0e701fa3ec3c987f8",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2131)."
+      }
+    },
+    {
+      "path": "litvar/publications_rs113488022.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "LitVar2",
+        "request": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/litvar%40rs113488022%23%23/publications",
+        "captured_at": "2026-10-17T02:48:53Z",
+        "sha256": "6efef472289aa2cefc7ecde17724dca37c913572a26991fc18dd0dc1901b6700",
+        "minimization_or_redaction": "Minimized to the first 100 pmids and first 100 pmcids of the provider's 32,227-PMID reply, keeping pmids_count as returned; original full-response SHA-256 was 385153a90b4226132e1846748e81e47e5f4b0d04a55b7d872b30af5fc4fca5ab.",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2131)."
+      }
+    },
+    {
+      "path": "litvar/publications_rs372266620.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "LitVar2",
+        "request": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/litvar%40rs372266620%23%23/publications",
+        "captured_at": "2026-10-17T02:48:53Z",
+        "sha256": "f455aac00827eca9d9c591b74beda9d589d51cd741d098e5e899d39790a2bee7",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2131)."
+      }
+    },
+    {
       "path": "monarch/association_mondo_0011996_phenotypes.json",
       "classification": "real_and_receipted",
       "receipt": {

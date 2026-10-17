@@ -92,6 +92,7 @@ sources stay out on their recorded open readings.
 | InterPro | 1 | direct_api | none | EMBL-EBI open data resource | reuse follows InterPro/EMBL-EBI resource terms and any embedded member-database obligations | <https://www.ebi.ac.uk/interpro/> |
 | KEGG | 3 | direct_api | none | custom KEGG terms; academic users may freely use the website, non-academic use requires a commercial license | do not assume commercial redistribution rights; query access does not grant a redistribution license | <https://www.kegg.jp/kegg/legal.html> |
 | LitSense2 | 1 | direct_api | none | NCBI/NLM public-domain literature service | query results are broadly reusable, but preserve article-level provenance and record rights separately | <https://www.ncbi.nlm.nih.gov/research/litsense2-api/> |
+| LitVar2 | 1 | direct_api | none | NCBI/NLM public-domain literature service; variant-literature links are free to query | query results are broadly reusable, but each paper's own reuse rights stay separate | <https://www.ncbi.nlm.nih.gov/research/litvar2-api/> |
 | MedlinePlus | 1 | direct_api | none | NLM public-information service with trademark and endorsement guidance | content is widely reusable, but preserve attribution and avoid implying MedlinePlus/NLM endorsement | <https://medlineplus.gov/about/using/> |
 | Monarch Initiative | 1 | direct_api | none | open integrated knowledge graph; underlying source licenses still matter | results can be queried openly, but downstream reuse should respect the original sources folded into Monarch | <https://monarchinitiative.org/> |
 | Mutalyzer | 1 | direct_api | none | public Mutalyzer normalization service; provider terms apply to returned validation output | preserve Mutalyzer source identity and returned HGVS/protein fields when reusing results | <https://mutalyzer.nl/> |
@@ -208,6 +209,18 @@ Reviewed on: `2026-09-27`
 - Official terms URL: <https://www.ncbi.nlm.nih.gov/research/litsense2-api/>
 - Reviewed on: `2026-04-10`
 - Notes: LitSense2 is individually selectable with `search article --source litsense2` and contributes semantic-signal metadata; it is not part of the default `--source all` federation.
+
+### LitVar2
+
+- BioMCP surfaces: `variant articles <gene> <protein change>`, `variant articles <rsID>`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public API without a key
+- License / terms summary: NCBI/NLM public-domain literature service; variant-literature links are free to query
+- Redistribution / reuse summary: query results are broadly reusable, but each paper's own reuse rights stay separate
+- Official terms URL: <https://www.ncbi.nlm.nih.gov/research/litvar2-api/>
+- Reviewed on: `2026-10-17`
+- Notes: LitVar2 joins the variant article search beside PubTator3's annotation route: an autocomplete entry must match the requested gene and protein change, or rsID, exactly, and a LitVar2 failure degrades that source only. `--disable-sources litvar2` turns it off.
 
 ### MONDO
 

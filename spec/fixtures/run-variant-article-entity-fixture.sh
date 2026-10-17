@@ -354,6 +354,12 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, [])
             return
 
+        # LitVar2's autocomplete answering no entry keeps the fixture's
+        # candidate sets unchanged while the new variant-literature route runs.
+        if parsed.path == "/variant/autocomplete/":
+            send_json(self, 200, [])
+            return
+
         if parsed.path == "/api/search" or parsed.path == "/search":
             send_json(self, 200, {"results": [], "hitCount": 0})
             return
@@ -395,6 +401,7 @@ export BIOMCP_EUROPEPMC_BASE="$base_url"
 export BIOMCP_PUBMED_BASE="$base_url/entrez/eutils"
 export BIOMCP_S2_BASE="$base_url"
 export BIOMCP_LITSENSE2_BASE="$base_url"
+export BIOMCP_LITVAR_BASE="$base_url"
 export BIOMCP_CLINGEN_CAR_BASE="$base_url"
 
 case "$scenario" in

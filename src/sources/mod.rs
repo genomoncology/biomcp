@@ -479,6 +479,7 @@ pub(crate) mod hpo;
 pub(crate) mod interpro;
 pub(crate) mod kegg;
 pub(crate) mod litsense2;
+pub(crate) mod litvar;
 pub(crate) mod medlineplus;
 pub(crate) mod monarch;
 pub(crate) mod mutalyzer;
