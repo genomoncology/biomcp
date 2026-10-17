@@ -67,6 +67,26 @@ An authoritative-refseq input's own accession coordinate alias
 (`NC_000020.11:g.…`) also stays bare — the accession anchors the query to the
 human reference, and the request may carry no gene symbol to tie to.
 
+## Carried main-repair pins
+
+The LitVar2 landing (ticket 2131) joined the variant-article union while this
+branch was in flight and left main's rust-tests lane red in two tests; both
+are healed on this branch as mechanical-consequence pins under the standing
+doctrine (a red main is fixed promptly), ruled by the coordinator on
+2026-10-17:
+
+- `no_entity_annotation_run_names_the_miss_instead_of_complete_empty` never
+  pinned the LitVar2 base, so the Annotation strategy's new LitVar2 leg hit the
+  real provider; the run now pins `BIOMCP_LITVAR_BASE` to its fixture and the
+  leg answers a healthy empty autocomplete.
+- `tests/json_error_contract::swallowed_source_failures_do_not_log_credentials`
+  pinned MyVariant and PubTator to its credential fixture and denied the rest,
+  so LitVar2 escaped to the deny proxy and the widened fan-out blew the run's
+  10 s watchdog; the run now pins `BIOMCP_LITVAR_BASE` to the same fixture
+  (503 like its pinned siblings — denied-by-config stays SKIPPED, so the
+  zero-row outage rule keeps its exit-1 teeth), and unpaces the fixture origin
+  with the recorded lanes' seam so slower runners stay inside the watchdog.
+
 ## Acceptance
 
 1. A recorded-reply test of the SAMHD1 I448T search drops the cotton paper and keeps the papers that name SAMHD1; it fails on current main.

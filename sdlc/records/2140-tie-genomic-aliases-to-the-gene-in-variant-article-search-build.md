@@ -2,14 +2,15 @@
 
 - Branch `ticket/2140-tie-genomic-aliases-to-the-gene-in-variant-article-search`
   in worktree `worktrees/biomcp-2140`, started from `origin/main` at
-  `ec4f2e309`, rebased onto `b138f6097` (three research-ticket filings) and a
-  second time onto `2e707f75a` after the 2138, 2147 and 2148 landings moved
-  main mid-run — 2138 edits the same `variant_search.rs` and appends its own
-  capture receipts, so the rebase merges both: the fixture tests, the alias
-  fix and 2138's entity-id route coexist, and the zero-coupling digest is
-  recomputed over the merged receipts file (404 entries, 24 of them this
-  ticket's). Final tip `2d3296434`; stopped without landing — the coordinator
-  lands.
+  `ec4f2e309`, rebased onto `b138f6097` (three research-ticket filings), onto
+  `2e707f75a` after the 2138, 2147 and 2148 landings, and a third time onto
+  `159c68610` after ticket 2131 landed LitVar2 into the variant-article union
+  — 2131 and 2138 both edit the same `variant_search.rs` and append their own
+  capture receipts, so the rebases merge all three: the 2140 fixture tests,
+  the alias fix, 2138's entity-id route and 2131's LitVar2 route coexist, and
+  the zero-coupling digest is recomputed over the merged receipts file (412
+  entries, 26 of them this ticket's). Final tip `f82edc2f9`; stopped without
+  landing — the coordinator lands.
 
 ## Reproduction on main first
 
@@ -62,10 +63,24 @@ leg; the tie removes the class for every leg.
 - CHANGELOG bullet under 0.9.3 Fixes.
 - `tools/zero-coupling-historical.json` carries the new
   `testdata/sources/capture-receipts.json` digest (the receipts file is
-  digest-pinned; the 23 new fixture entries changed it). `cargo package
+  digest-pinned; the new fixture entries changed it). `cargo package
   --list` stays 1,409 (measured on the gate host, pm job
   `1792206973409-76340`), so `MAX_PACKAGE_FILES` is unchanged — the fixtures
   live under the excluded `testdata/` tree.
+- After the third rebase the two recorded tests also serve the LitVar2 route
+  2131 added to the union: the SAMHD1 test replays two new byte-faithful
+  LitVar2 captures under `testdata/sources/litvar/`
+  (`autocomplete_samhd1_i448t_20261017.json`, five papers via
+  `publications_rs774964432_20261017.json`), and the CDKN2A test reuses
+  2131's own recorded `rs372266620` chain; both pin `BIOMCP_LITVAR_BASE` to
+  the fixture.
+- Two main-repair pins carried on this branch under the coordinator's ruling
+  (2131's landing left main's rust-tests lane red; details in Findings and in
+  the ticket's Carried main-repair pins section): the no-entity annotation
+  run pins `BIOMCP_LITVAR_BASE` with a healthy empty autocomplete reply, and
+  the credential-redaction live run pins `BIOMCP_LITVAR_BASE` to its fixture
+  (503 like its pinned siblings), unpaces the fixture origin, and drops its
+  retry sleeps.
 
 ## Decision recorded in the ticket
 
@@ -101,9 +116,14 @@ requests and ranking.
   `confirmed_car_genomic_aliases_travel_with_the_gene_symbol`. After the
   second rebase, pm job `1792219146262-28106` at `2d3296434` passes all four
   again plus 2138's `gene_change_search_keeps_the_pubtator_entity_and_searches_by_its_id`,
-  so the alias fix and 2138's entity-id route agree.
+  so the alias fix and 2138's entity-id route agree. After the third rebase,
+  pm job `1792224425262-6245` at `39a1fc3ef` passes both recorded tests with
+  the LitVar2 legs wired (plus 2131's own litvar tests), and pm job
+  `1792227583461-43468` at `f82edc2f9` passes the two recorded tests, the
+  pinned no-entity run, and the repaired credential-redaction run (7.1 s,
+  inside its 10 s watchdog).
 - `tools/check-source-capture-receipts.py --root testdata/sources` passes with
-  the 23 new entries; `tools/check-zero-coupling.py` passes with the refreshed
+  the new entries; `tools/check-zero-coupling.py` passes with the refreshed
   digest.
 
 ## Gates
@@ -115,16 +135,27 @@ requests and ranking.
   — fixed by the digest commit; job `1792212391095-2487834` at `829880675`
   passed both lanes (Rust 4,304 run, 4,304 passed, 33 skipped; Python 1,159
   passed, 3 skipped; exit 0). After the second rebase, job
-  `1792219229468-3415128` at the final tip `2d3296434` passed both lanes —
-  Rust 4,309 run, 4,309 passed (33 skipped; 2138's five new tests included),
-  Python 1,160 passed (3 skipped), exit 0.
+  `1792219229468-3415128` at `2d3296434` passed both lanes — Rust 4,309 run,
+  4,309 passed (33 skipped; 2138's five new tests included), Python 1,160
+  passed (3 skipped), exit 0. An interim run at `39a1fc3ef` (job
+  `1792224480291-3602159`) and one at `87df8dd8b` (job
+  `1792225447767-3660479`) straddled the third rebase: the earlier failed the
+  credential-redaction live run inherited from main, the later passed it after
+  the first pin; the final run at `f82edc2f9` (job `1792227607178-3699307`)
+  passed both lanes — Rust 4,325 run, 4,325 passed (34 skipped; 2131's litvar
+  tests included), Python 1,160 passed (3 skipped), exit 0.
 - CI on the branch: run `39001366565` at `6e02dd8e6` failed the lint gate's
   code-comment ticket-citation scan (two test comments said "Ticket 2140";
   rewritten to state the constraint); run `39002962569` at `829880675` was
-  green in every lane (build, lint, rust-tests, python-lane, spec-lane,
-  repository-contracts, release-checks, generated-sources); after the second
-  rebase, run `39010693830` at `2d3296434` is green in every lane again — that
-  run at the exact post-rebase tip is the landing bar.
+  green in every lane; after the second rebase, run `39010693830` at
+  `2d3296434` was green in every lane; after the third rebase, runs
+  `39016157944` (at `39a1fc3ef`) and `39017145415` (at `87df8dd8b`), and
+  `39018661534` (at `3d3cbe6c2`) failed the rust-tests lane on the two
+  main-inherited breaks described in Findings, each fixed on the branch; run
+  `39019428156` at the final tip `f82edc2f9` is green in every lane (build,
+  lint, rust-tests, python-lane, spec-lane, repository-contracts,
+  release-checks, generated-sources) — that run at the exact post-rebase tip
+  is the landing bar.
 - The macOS gate host: `cargo fmt --check` passes at the tip; `cargo clippy
   --no-default-features --all-targets -- -D warnings` reports only three
   pre-existing errors on untouched files (`src/cache/manager.rs`'s unused
@@ -135,6 +166,18 @@ requests and ranking.
 
 ## Findings
 
+- Ticket 2131's landing left main's CI red in the rust-tests lane (main at
+  `159c68610`, run `39015559033`; its own full-features lane fails too). Two
+  tests broke because the Annotation strategy's new LitVar2 leg escaped their
+  fixtures: `no_entity_annotation_run_names_the_miss_instead_of_complete_empty`
+  (no `BIOMCP_LITVAR_BASE` pin; CI hit the real provider, run `39016157944`)
+  and `swallowed_source_failures_do_not_log_credentials` (myvariant+pubtator
+  pinned, litvar denied through the loopback proxy; on the gate host it fails
+  the exit-code assertion at pm job `1792226138855-15222`, on CI runners it
+  blows the run's 10 s watchdog). Per the coordinator's 2026-10-17 ruling
+  both are carried on this branch as mechanical-consequence pins, so landing
+  this branch heals main; the LitVar2 semantics themselves belong to 2131's
+  lane, which should see the note in the ticket.
 - The probe's CDKN2A input spelling was never recorded; `CDKN2A A57V` resolves
   to the reported alias `chr9:g.21971188G>A` (rs372266620, c.170C>T,
   p.Ala57Val), so the tests and the reproduction use it. Noted in the ticket.
