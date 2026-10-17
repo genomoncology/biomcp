@@ -10,6 +10,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision c706103, accept
+
 ## Outcome
 
 When PMC serves a bot-challenge page in place of an article, the full-text result says a bot challenge blocked it, so users and agents know a retry may work.
