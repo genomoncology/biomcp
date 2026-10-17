@@ -6335,7 +6335,9 @@ mod tests {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             let body: &[u8] = if first_line.starts_with("GET /query") {
                 br#"{"total":1,"hits":[{"_id":"chr11:g.17417157C>T","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"],"hgvsc":["c.4309G>A"]}}]}"#
-            } else if first_line.starts_with("GET /entity/autocomplete/") {
+            } else if first_line.starts_with("GET /entity/autocomplete/")
+                || first_line.starts_with("GET /variant/autocomplete/")
+            {
                 b"[]"
             } else if first_line.starts_with("GET /search/") {
                 br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
