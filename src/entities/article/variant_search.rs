@@ -6320,7 +6320,13 @@ mod tests {
             }
         }
         let shared = find("exact_lexical", "ABCC8 R1436Q", "pubmed").expect("alias A pubmed yield");
-        assert_eq!(shared.hits_received, 2);
+        assert_eq!(
+            shared.hits_received,
+            2,
+            "alias A pubmed yield: {:?} requests {:?}",
+            plan.alias_yields,
+            requests.lock().expect("request log")
+        );
         assert_eq!(shared.hits_kept, 2);
         assert!(!shared.cut_by_cap);
         let duplicate =
