@@ -56,7 +56,6 @@ pub async fn article_supplement_search(
     needle: &str,
     asset_filter: Option<&str>,
 ) -> Result<ArticleSupplementSearch, BioMcpError> {
-    let needle = needle.trim();
     if needle.is_empty() {
         return Err(BioMcpError::InvalidArgument(
             "supplement-search requires a non-empty search string".into(),

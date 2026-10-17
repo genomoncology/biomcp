@@ -889,6 +889,12 @@ fn supplement_search_reports_an_absent_search_and_stays_json_only() {
     assert_eq!(doc["hits"].as_array().expect("hits list").len(), 0);
     assert_eq!(doc["files"][0]["outcome"], "searched");
 
+    let literal = successful_output(&fixture,
+        &["--json", "article", "supplement-search", "30209399", " F1761I"]);
+    let literal: serde_json::Value = serde_json::from_slice(&literal.stdout).unwrap();
+    assert_eq!(literal["query"], " F1761I");
+    assert!(literal["hits"].as_array().unwrap().is_empty(), "spaces are literal search text");
+
     let refused = fixture
         .biomcp_command(&["article", "supplement-search", "30209399", "F1761I"])
         .output()
