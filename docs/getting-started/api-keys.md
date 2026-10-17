@@ -96,7 +96,7 @@ biomcp --json discover diabetes
 
 ### `NCBI_API_KEY`
 
-Improves rate limits for ClinVar EFetch, PubTator, PubMed/efetch, PMC OA, and NCBI ID converter (3 → 10 req/sec).
+Improves rate limits for ClinVar EFetch, PubMed/efetch, PMC OA, and NCBI ID converter (3 → 10 req/sec). PubTator3 asks every caller for three requests a second, key or not.
 
 Create one in My NCBI: <https://www.ncbi.nlm.nih.gov/account/settings/>
 

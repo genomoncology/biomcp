@@ -10,11 +10,6 @@ Keep this file as a dated 2026 migration record plus a short completed
 line-cap absorption history. Do not use it as the steady-state architecture
 contract.
 
-Benchmark CLI ownership is fixed by
-`architecture/technical/benchmark-cli-ownership-decision.md`: the benchmark tree
-is an internal regression harness compiled under `#[cfg(test)]`, not a public
-CLI surface. Benchmark sections below describe that internal harness only.
-
 ## What the 2026 decomposition push fixed
 
 Survey ticket 309 identified four root issues:
@@ -42,28 +37,11 @@ not current oversized flat-file inventory.
 | 322 | Skill decomposition | `src/cli/skill.rs` | `src/cli/skill/{mod,assets,catalog,install}.rs` plus sidecar tests | `tests/skill_cli_structure.rs`; read-only catalog and install workflow preserved |
 | 323 | List decomposition | `src/cli/list.rs` | `src/cli/list/{mod,helpers,molecular,clinical,literature}.rs` plus sidecar tests | `tests/list_cli_structure.rs`; list/reference docs contracts preserved |
 | 324 | Article CLI test split | `src/cli/article/tests.rs` | `src/cli/article/tests/{mod,help,exact_lookup,json,filters}.rs` | `tests/article_cli_tests_structure.rs`; article CLI coverage preserved with isolated test domains |
-| 325 | Benchmark harness decomposition | `src/cli/benchmark/run.rs`, `src/cli/benchmark/score.rs` | `src/cli/benchmark/run/` and `src/cli/benchmark/score/` subtrees | `tests/benchmark_cli_structure.rs`; internal harness layout and file cap preserved |
+| 325 | Benchmark harness decomposition | `src/cli/benchmark/run.rs`, `src/cli/benchmark/score.rs` | `src/cli/benchmark/run/` and `src/cli/benchmark/score/` subtrees | internal harness layout and file cap preserved; the harness is since deleted (2073) |
 
 The current code also preserves the durable facade pattern documented in
 `cli-module-decomposition.md`: each area owns a stable `mod.rs` boundary, focused
 ownership-zone files, sidecar tests, and an area-specific structure ratchet.
-
-## Benchmark internal harness
-
-Ticket 329 decided the benchmark module is an internal/dev regression harness.
-The `src/cli/benchmark/` tree remains compiled only under `#[cfg(test)]` and is
-not wired into the production `Commands` enum. Its Clap-shaped `Run`,
-`SaveBaseline`, and `ScoreSession` subcommands exist only for in-test harness
-use; production CLI grammar is unaffected.
-
-Implications for this document:
-
-- benchmark is not part of the public CLI preservation proof matrix
-- benchmark help/output wording is not a user-facing canary
-- ticket 325 is complete as an internal harness decomposition, not pending public
-  command work
-- ticket 335 owns the follow-up runtime-wiring ratchet that prevents the
-  architecture and production binary from drifting apart again
 
 ## Absorbed line-cap inventory
 
@@ -103,10 +81,6 @@ Current shipped public-surface examples:
 - `skill` → `spec/surface/discover.md`
 - list/docs alignment → `tests/test_public_search_all_docs_contract.py` and
   `tests/test_public_skill_docs_contract.py` when relevant
-
-Do not add benchmark to that public-surface list unless a future architecture
-and build ticket deliberately ships it as a production command and updates the
-benchmark ownership decision accordingly.
 
 ## Alignment with team goals and frontier
 

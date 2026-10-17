@@ -16,8 +16,6 @@ from typing import Iterable
 
 MCP_EXAMPLE = "rmcp_streamable_http_contract"
 FILTERED_TEST_TARGETS = (
-    "article_cli_tests_structure",
-    "benchmark_cli_structure",
     "cli_line_cap_absorption",
     "health_cli_structure",
     "list_cli_structure",

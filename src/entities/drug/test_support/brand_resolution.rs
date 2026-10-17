@@ -684,7 +684,7 @@ async fn shared_name_refusal_drug(name: &str, base: &str) -> crate::error::BioMc
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn pain_relief_refuses_naming_the_drugs_that_share_the_name() {
+async fn pain_relief_refuses_without_naming_products_that_do_not_own_the_name() {
     let (base, server) = name_resolution_fixture_server(
         vec![(
             "Pain Relief".to_string(),
@@ -698,24 +698,25 @@ async fn pain_relief_refuses_naming_the_drugs_that_share_the_name() {
     )
     .await;
 
-    // The shelf name brands unrelated drugs' products, MyChem
-    // carries it on each of their records, and openFDA holds no label whose
-    // own brand is "Pain Relief". No record owns the name, and the label
-    // page's records carry unrelated single ingredients, so the name
-    // refuses as ambiguous — listing those ingredients — instead of fusing
-    // acetaminophen's identifiers with other drugs' targets.
+    // MyChem carries the shelf name on unrelated drug records, but no
+    // label in the recorded page owns the exact name. Refuse with a search
+    // suggestion instead of presenting unrelated page ingredients as owners.
     let err = shared_name_refusal_drug("Pain Relief", &base).await;
     let message = err.to_string();
     assert!(
-        message
-            .contains("Ambiguous drug name 'Pain Relief': several drug products carry this name."),
+        message.contains("No label record owns the exact drug name 'Pain Relief'."),
         "{message}"
     );
-    // These label records list no structural ingredients, so each record's
-    // own single-ingredient vote line is its candidate.
     assert!(
-        message.contains("Candidates:\n- acetaminophen\n- hexylresorcinol\n- lidocaine 4%\n"),
-        "the refusal lists the ingredients the products carry: {message}"
+        message.contains("biomcp search drug -q \"Pain Relief\""),
+        "{message}"
+    );
+    assert!(
+        !message.contains("Candidates:")
+            && !["acetaminophen", "hexylresorcinol", "lidocaine"]
+                .iter()
+                .any(|name| message.contains(name)),
+        "the refusal must not name ingredients from non-owner records: {message}"
     );
     server.abort();
 }

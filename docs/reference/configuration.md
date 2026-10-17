@@ -9,7 +9,7 @@ internal fixture overrides and release/install variables.
 |---|---|
 | `ALPHAGENOME_API_KEY` | Enables `get variant <id> predict` |
 | `DISGENET_API_KEY` | Enables gene/disease `disgenet` sections |
-| `NCBI_API_KEY` | Improves NCBI E-utilities quota for ClinVar, PubMed, PubTator, PMC OA, and ID Converter paths |
+| `NCBI_API_KEY` | Improves NCBI E-utilities quota for ClinVar, PubMed, PMC OA, and ID Converter paths; PubTator3 stays at its published three requests a second with or without the key |
 | `NCI_API_KEY` | Enables trial operations with `--source nci` |
 | `ONCOKB_TOKEN` | Enables the explicit `variant oncokb <id>` helper |
 | `OPENFDA_API_KEY` | Improves OpenFDA quota headroom |
@@ -22,7 +22,7 @@ internal fixture overrides and release/install variables.
 | Variable or file | Purpose |
 |---|---|
 | `BIOMCP_CACHE_DIR` | Overrides the BioMCP cache root |
-| `BIOMCP_CACHE_MODE` | Cache behavior; `infinite` is used for local replay/spec cache hits |
+| `BIOMCP_CACHE_MODE` | Cache behavior; `infinite` serves cached replies without expiration or revalidation, including GWAS and openFDA day-cache entries |
 | `BIOMCP_CACHE_MAX_AGE` | Optional cache age limit, as a positive integer number of seconds |
 | `BIOMCP_CACHE_MAX_SIZE` | Optional cache size limit |
 | `BIOMCP_CACHE_MIN_DISK_FREE` | Minimum free disk budget before cache eviction |

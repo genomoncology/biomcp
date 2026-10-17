@@ -1,6 +1,6 @@
 # 2167 — stabilize-hpo-retry-fixture-clock
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 

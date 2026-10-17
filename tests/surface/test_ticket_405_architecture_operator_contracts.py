@@ -13,7 +13,6 @@ CURRENT_ARCHITECTURE_DOCS = [
     "architecture/technical/request-contract-test-architecture.md",
     "architecture/technical/semantic-scholar-runtime-contract.md",
     "architecture/technical/cli-module-decomposition.md",
-    "architecture/technical/benchmark-cli-ownership-decision.md",
     "architecture/ux/cli-reference.md",
 ]
 

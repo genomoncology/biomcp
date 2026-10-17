@@ -1,5 +1,7 @@
 # AGENTS.md — BioMCP
 
+This repository is public and talks only about itself.
+
 BioMCP is a Rust CLI and MCP server with a Python docs/contract harness. The
 Rust runtime lives under `src/`; Python tests, docs checks, and executable
 contracts exercise the shipped CLI/MCP surface.
@@ -38,8 +40,8 @@ https://biomcp.org/:
   ad hoc docs. Specification pages execute prepared paths and must not invoke
   `cargo run`, `cargo build`, `cargo rustc`, `cargo test`, `cargo tree`, or
   `cargo metadata`.
-- Unit/static layers run with `make test`: Rust nextest first, then the Python
-  CLI/MCP/docs contract lane.
+- Unit/static layers run with `make test`: Rust nextest and the Python
+  CLI/MCP/docs contract lane run concurrently.
 
 ## Working
 
@@ -49,18 +51,32 @@ Run affected tests through the build job, leaving `CARGO_INCREMENTAL` unset so t
 pm job run <ticket> <revision> -- cargo nextest run --no-default-features -E 'test(...)'
 ```
 
-Run affected tests during development. Run one Rust build at a time on a build host.
+Run affected tests during development. Run one Rust build at a time within a lane. Build-job admission schedules independent lanes in parallel.
+
+tools/run-offline isolates the network only on Linux, so run any gate that must prove offline behavior on a Linux build host.
 
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
 `make spec` is the routine mustmatch contract gate. Routine gates use
 `--no-default-features` so lint, test, and spec share one small Cargo graph;
 that graph does not exercise AlphaGenome. Run `make full-feature-check` for all
-shipped features and the AlphaGenome behavior tests, and `make release-gate`
-for the release checks. `make landing-gate` runs lint, routine tests and
+shipped features and the AlphaGenome behavior tests with the development
+profile, including PNG, SVG and terminal output checks. `make release-gate`
+requires the same full-feature build and output checks with the optimized
+release profile before release-profile specifications. The final release
+rehearsal also requires optimized artifacts and their output checks. `make landing-gate` runs lint, routine tests and
 specifications in order. `make main-gate` runs that standard gate and then
-`make full-feature-check`. Routine lint includes test targets. Long, load,
+`make repo-audit` and `make full-feature-check`. The audit stage retains the
+whole-repository source, capture, coupling and CLI surface checks; routine Python
+keeps their focused malformed-input and wrapper checks. Release qualification
+also runs this required audit stage. Routine lint includes test targets. Long, load,
 coverage and release-only packaging checks stay outside per-landing gates.
+Routine test runners warn with the test identity and machine load when a case
+exceeds the threshold in their runner configuration; time alone never fails
+or terminates a test. Assertions still fail. Exhaustive Rust cases use a
+`long_suite_` test name and Python cases use `@pytest.mark.long`. Run these explicitly
+with `make test-long` at release candidate; `make release-gate` includes them.
+Live-service tests and subprocess helpers retain their existing ignored selections.
 
 ## Releases
 

@@ -2,7 +2,7 @@
 
 Status: accepted 2026-10-06 on Ian's direction. Ian can overturn any milestone, criterion, or placement.
 
-Two lines share the biomcp numbering remote. 0.9.2 is this team's active line: the 0.9 branch queue (1290 through 1306 and follow-ups) lands on main toward a 0.9.2 tag whose timing is Ian's call. 1.0 is the other team's line; its work lives in their branches, their tickets, and their repo, and this team does not touch it. With two milestones declared, every new ticket names its milestone; 0.9 tickets are the default expectation here, and any 1.0 ticket belongs to the other team's records.
+BioMCP works on the 0.9 line. 0.9.2 shipped, and 0.9.3 is the active milestone. 1.0 is paused by Ian's direction. Every new ticket names its milestone, and 0.9 tickets are the default.
 
 ## 0.9.2
 
@@ -12,16 +12,24 @@ Exit criteria: 1298 and 1294 land on a green merged-tree CI run, the yellow gate
 
 ## 0.9.3
 
-Outcome: faster building and testing, following the plan in `sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, and a setting that turns off individual sources and named groups of sources (issue #290).
+Delivers: faster building and testing, with everyday checks on the team's own build machine and GitHub used only for releases; a setting that turns off individual sources and named groups of sources (issue #290); trustworthy variant literature search, supplements and PDF full text; and Windows cache-lock contention handled as a wait (issue #292), with a cache failure never making a provider look unavailable.
 
-Exit criteria: the tag passes its first rehearsal, and issue #290 is answered with the shipped setting.
+Serves: BioMCP's ideal state that every claim names its source, that a section is never quietly empty when a source failed, and that work stays bounded.
+
+Done when: every 0.9.3 bug ticket has landed with its proof; the test and build speed tickets have landed; the final measurement compares 0.9.2 and the candidate on one build machine; a full manual release rehearsal passes on final main; and issues #290, #291 and #292 are answered with the shipped release.
 
 ## 0.9.4
 
-Outcome: BioMCP's cache lives in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely.
+Delivers: BioMCP's cache in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely; plus the test work moved out of 0.9.3: golden output tests on the replay server, the remaining fixture consumers on the replay server, owned fixture identifiers, and the tonic and prost upgrade.
 
-Exit criteria: the tag passes its first rehearsal; a long-used cache starts as fast as an empty one.
+Serves: BioMCP's ideal state that work stays bounded and that the same binary runs safely as a shell command, a local MCP server and a shared HTTP server.
+
+Done when: a long-used cache starts as fast as an empty one, the moved test work has landed, and a full release rehearsal passes.
 
 ## 1.0
 
-Owned by the other team. Tracked in their records, not here.
+Delivers: to be defined. BioMCP 1.0 is paused by Ian's direction, and this team continues on the 0.9 line.
+
+Unknown: what 1.0 delivers beyond the 0.9 line, which work already done on the 1.0 branches carries over, and when the pause ends.
+
+Break into tickets: when Ian lifts the pause, starting from a review of the 1.0 branches against the 0.9 line.

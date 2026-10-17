@@ -1,10 +1,12 @@
 # 2166 — accept-changelog-entries-for-landed-ticket-batches
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision b14228c, accept
+
+Landed: 16be3f1 (fast-forward: PM approved combined repair a79f1b3; this accepted implementation is carried by that passing-gate landing.)
 
 ## Outcome
 
