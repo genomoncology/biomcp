@@ -133,7 +133,6 @@ async fn async_main() -> std::process::ExitCode {
             biomcp_cli::cli::Commands::Mcp(biomcp_cli::cli::McpArgs { command: None })
                 | biomcp_cli::cli::Commands::Serve
                 | biomcp_cli::cli::Commands::ServeHttp(_)
-                | biomcp_cli::cli::Commands::ServeSse
         )
     {
         let outcome = biomcp_cli::cli::server_json_rejection();
@@ -173,13 +172,6 @@ async fn async_main() -> std::process::ExitCode {
                 }
             }
         }
-        biomcp_cli::cli::Commands::ServeSse => match biomcp_cli::mcp::run_sse().await {
-            Ok(()) => std::process::ExitCode::SUCCESS,
-            Err(err) => {
-                eprintln!("Error: {}", human_error(&err));
-                std::process::ExitCode::from(1)
-            }
-        },
         _ => match biomcp_cli::cli::run_outcome(cli).await {
             Ok(output) => {
                 match output.stream {

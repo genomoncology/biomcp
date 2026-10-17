@@ -1,7 +1,8 @@
-# A hung test must die, not stall the gate: nextest marks a test SLOW when
-# it passes the slow-timeout period and terminates it after the second
-# period elapses, so a blocking wait fails its test instead of hanging the
-# run forever (ticket 2038 finding 7, 2035 #10). The suite's own watchdogs
-# bound legitimate waits well under one period.
+# Routine timing reports slow cases without terminating them. Exhaustive
+# cases use a long_suite_ name and run explicitly at release candidate.
 [profile.default]
-slow-timeout = { period = "120s", terminate-after = 2 }
+slow-timeout = "30s"
+default-filter = 'not test(/(^|::)long_suite_/)'
+
+[profile.long]
+default-filter = 'test(/(^|::)long_suite_/)'

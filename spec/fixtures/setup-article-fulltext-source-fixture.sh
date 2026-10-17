@@ -1154,7 +1154,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        decoded_path = unquote(parsed.path)
+        # Keep paced discovery on its own policy prefix while other recorded
+        # providers share this listener.
+        decoded_path = unquote(parsed.path).removeprefix("/paced-s2")
         query = parse_qs(parsed.query)
 
         candidate_route = {
@@ -1895,6 +1897,12 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path.startswith("/graph/v1/paper/PMID:"):
+            # Ticket 2151: every Semantic Scholar paper lookup is logged with
+            # a timestamp so batch tests can count the discovery requests one
+            # process issued under its single in-process limiter.
+            append_request_log(
+                f"s2:paper:{decoded_path.rsplit(':', 1)[-1]}@{time.time():.6f}"
+            )
             pmid = decoded_path.rsplit(":", 1)[-1]
             article = ARTICLES.get(pmid)
             if article is None:
@@ -2159,6 +2167,10 @@ class PublisherHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        # Ticket 2151: timestamped lines let the batch PDF tests observe the
+        # in-process limiter spacing the vouched PDF downloads this origin
+        # stands in for.
+        append_request_log(f"publisher-pdf:{parsed.path}@{time.time():.6f}")
         if parsed.path == "/plosone/article/file":
             send_bytes(self, 200, PLOS_OPEN_PDF, "application/pdf")
             return

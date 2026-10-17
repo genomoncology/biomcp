@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
+import os
+import subprocess
+import sys
 import re
 import pytest
 
@@ -34,33 +38,24 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert "nextest archive --locked $(ROUTINE_CARGO_FEATURES)" in _target(
         makefile, "prepare-test"
     )
-    # The lane split cut `make test` in two so the CI lanes can
-    # run the Rust half alone; the archive run is the rust lane's recipe.
+    # Both local lanes consume the prepared archive; the Rust lane has
+    # an explicit worker budget so concurrent jobs share the machine.
     assert "nextest run --archive-file" in _target(makefile, "test-rust")
+    assert "$(NEXTEST_JOBS_ARG)" in _target(makefile, "test-rust")
     assert "--cargo-feature-arg" in runner
     assert '"${routine_cargo_features[@]}"' in runner
     assert "args.cargo_feature_arg" in preparer
     assert '"--no-default-features"' not in preparer
-    assert 'cargo clippy "${routine_cargo_features[@]}" -- -D warnings' in lint
+    assert 'cargo clippy --all-targets "${routine_cargo_features[@]}" -- -D warnings' in lint
 
 
-def test_release_gate_runs_a_named_all_feature_check() -> None:
-    makefile = _read("Makefile")
-    full = _target(makefile, "full-feature-check")
-    release = _target(makefile, "release-gate")
+def test_release_specs_use_the_optimized_full_feature_binary() -> None:
+    release = _target(_read("Makefile"), "release-gate")
 
-    assert "$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features" in full
-    assert "$(CARGO_WITH_IDENTITY) test --locked --all-features --lib" in full
-    assert "sources::alphagenome::tests" in full
-    assert (
-        "$(CARGO_WITH_IDENTITY) build --release --locked --all-features --bin biomcp"
-        in full
-    )
-    assert "$(MAKE) full-feature-check" in release
     assert "ROUTINE_CARGO_FEATURES=" not in release
     assert (
         '$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"'
-        in (release)
+        in release
     )
 
 
@@ -121,3 +116,169 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
 
     missing = [name for name, present in requirements.items() if not present]
     assert not missing, f"missing supported test-lane documentation: {missing}"
+
+
+@pytest.mark.parametrize(
+    ("target", "expected"),
+    [
+        ("landing-gate", ["lint", "test", "spec"]),
+        ("main-gate", ["lint", "test", "spec", "repo-audit", "full-feature-check"]),
+    ],
+)
+@pytest.mark.parametrize("failed_stage", [None, "test", "repo-audit"])
+def test_landing_commands_run_ordered_checks_and_stop_on_failure(
+    tmp_path: Path, target: str, expected: list[str], failed_stage: str | None
+) -> None:
+    if failed_stage == "repo-audit" and target == "landing-gate":
+        pytest.skip("the required repository audit runs after merging")
+    # Override existing leaves, not the gate recipes: exercise Make's real
+    # ordering and failure propagation without compiling the product again.
+    wrapper = tmp_path / "gate.mk"
+    wrapper.write_text(
+        f"include {REPO_ROOT / 'Makefile'}\n"
+        + "\n".join(
+            f"{stage}:\n\t@echo gate-stage:{stage}\n"
+            + ("\t@exit 23\n" if stage == failed_stage else "")
+            for stage in ("lint", "test", "spec", "repo-audit", "full-feature-check")
+        ),
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            "make", "--no-print-directory", "-s", "-j4", "-f", str(wrapper),
+            f"MAKE=make --no-print-directory -s -f {wrapper}", target,
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    stages = [
+        line.removeprefix("gate-stage:")
+        for line in result.stdout.splitlines()
+        if line.startswith("gate-stage:")
+    ]
+    if failed_stage:
+        assert result.returncode != 0
+        assert stages == expected[: expected.index(failed_stage) + 1]
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert stages == expected
+    config = json.loads(_read("sdlc/pm.json"))
+    assert config["ticketsGate"] == "make landing-gate"
+
+
+@pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
+def test_make_test_prepares_once_and_waits_for_both_lanes(
+    tmp_path: Path, failed_lane: str
+) -> None:
+    """Exercise Make's orchestration without rebuilding product artifacts."""
+    worker = tmp_path / "lane.py"
+    worker.write_text(
+        "import os, pathlib, sys, time\n"
+        "root = pathlib.Path(sys.argv[1]); lane = sys.argv[2]\n"
+        "(root / (lane + '.started')).touch()\n"
+        "peer = 'python' if lane == 'rust' else 'rust'\n"
+        "deadline = time.monotonic() + 3\n"
+        "while not (root / (peer + '.started')).exists():\n"
+        "    if time.monotonic() > deadline: raise SystemExit('lanes did not overlap')\n"
+        "    time.sleep(.01)\n"
+        "(root / (lane + '.finished')).touch()\n"
+        "print(lane + ' output')\n"
+        "raise SystemExit(7 if os.environ['FAILED_LANE'] == lane else 0)\n"
+    )
+    overlay = tmp_path / "lanes.mk"
+    overlay.write_text(
+        f'prepare-test:\n\t@echo prepare >> "{tmp_path / "prepared"}"\n'
+        f"test-rust:\n\t@{sys.executable} {worker} {tmp_path} rust\n"
+        f"test-python:\n\t@{sys.executable} {worker} {tmp_path} python\n"
+    )
+    command = [
+        "make",
+        "--no-print-directory",
+        "-f",
+        str(REPO_ROOT / "Makefile"),
+        "-f",
+        str(overlay),
+    ]
+    result = subprocess.run(
+        [
+            *command,
+            "test",
+            "ROUTINE_TEST_TMPDIR=" + str(tmp_path),
+            "MAKE=" + " ".join(command),
+        ],
+        cwd=REPO_ROOT,
+        env={**os.environ, "FAILED_LANE": failed_lane},
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert (result.returncode == 0) == (not failed_lane), result.stdout + result.stderr
+    assert (tmp_path / "prepared").read_text().splitlines() == ["prepare"]
+    assert all(
+        (tmp_path / (lane + ".finished")).exists() for lane in ("rust", "python")
+    )
+    assert not any(path.is_dir() for path in tmp_path.iterdir())
+    assert "=== Rust lane (exit " in result.stdout
+    assert "=== Python lane (exit " in result.stdout
+    assert "rust output" in result.stdout and "python output" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("target", "profile", "directory"),
+    [("main-gate", "dev", "debug"), ("release-gate", "release", "release")],
+)
+def test_full_feature_gates_build_and_smoke_the_selected_profile(
+    tmp_path: Path, target: str, profile: str, directory: str
+) -> None:
+    """Run the gate recipes; replace only external commands and unrelated leaves."""
+    recorder = tmp_path / "record.py"
+    recorder.write_text(
+        "import json, sys\n"
+        "print('invocation:' + json.dumps(sys.argv[1:]))\n",
+        encoding="utf-8",
+    )
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    for name in ("check-png-artifact", "run-offline"):
+        command = tools / name
+        command.write_text(
+            f"#!{sys.executable}\n"
+            "import json, sys\n"
+            f"print('invocation:' + json.dumps([{name!r}, *sys.argv[1:]]))\n",
+            encoding="utf-8",
+        )
+        command.chmod(0o755)
+    wrapper = tmp_path / "gate.mk"
+    wrapper.write_text(
+        f"include {REPO_ROOT / 'Makefile'}\n"
+        "landing-gate lint test test-long prepare-test prepare-routine-test-tmp spec repo-audit sync-python-dev:\n\t@:\n",
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            "make", "--no-print-directory", "-s", "-f", str(wrapper), target,
+            f"MAKE=make --no-print-directory -s -f {wrapper}",
+            f"CARGO_WITH_IDENTITY={sys.executable} {recorder} cargo",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    calls = [
+        json.loads(line.removeprefix("invocation:"))
+        for line in result.stdout.splitlines()
+        if line.startswith("invocation:")
+    ]
+    assert [call for call in calls if call[0] == "cargo"] == [
+        ["cargo", "clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "warnings"],
+        ["cargo", "test", "--locked", "--all-features", "--lib", "sources::alphagenome::tests"],
+        ["cargo", "build", "--locked", "--profile", profile, "--all-features", "--bin", "biomcp"],
+    ]
+    assert [call for call in calls if call[0] == "check-png-artifact"] == [
+        ["check-png-artifact", f"target/{directory}/biomcp"]
+    ]

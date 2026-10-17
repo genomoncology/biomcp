@@ -751,7 +751,15 @@ pub(super) async fn search_semantic_scholar_candidates(
     };
     let response = match response {
         Ok(Some(response)) => response,
-        Ok(None) | Err(_) => return Ok(semantic_scholar_unavailable_outcome(auth_mode)),
+        Ok(None) => return Ok(semantic_scholar_unavailable_outcome(auth_mode)),
+        Err(error) => {
+            crate::error::warn_external_failure(
+                &error,
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+                "article search",
+            );
+            return Ok(semantic_scholar_unavailable_outcome(auth_mode));
+        }
     };
 
     let rows = response;

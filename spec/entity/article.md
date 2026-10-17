@@ -56,6 +56,51 @@ request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article reque
 test "$(grep -Fc 'search:semanticscholar:review of "drug: safety"' "$request_log")" -eq 1
 ```
 
+## The Article Command Grammar And Help Live On The Surface
+
+The CLI grammar and its help text are the contract callers read, so the page
+pins the accepted forms, the shapes the year flags refuse, and the guidance
+the long help carries.
+
+```bash
+../../tools/biomcp-ci search article --help | mustmatch like 'When to use:
+QUERY FORMULATION:
+Tokens are not secrets
+Published after date (YYYY, YYYY-MM, or YYYY-MM-DD)
+--max-per-source <N>'
+../../tools/biomcp-ci get article --help | mustmatch like 'Allow Semantic Scholar PDF as a final fulltext fallback
+--output <FILE>
+Binary or unknown-type assets are refused when standard output is a terminal'
+```
+
+Year flags accept a four-digit year, expand to whole-year date bounds in the
+recorded query, and refuse partial years and mixes with explicit dates.
+
+```bash
+../../tools/biomcp-ci --json search article --source semanticscholar \
+  -k 'review of "drug: safety"' --year-min 2000 --year-max 2013 --limit 5 \
+  | jq -r '.query' \
+  | mustmatch like 'keyword=review of "drug: safety", date_from=2000-01-01, date_to=2013-12-31'
+../../tools/biomcp-ci --json search article --source semanticscholar \
+  -k 'review of "drug: safety"' --session grammar-loop-1 --limit 5 \
+  | jq -e '(.results | type) == "array"' | mustmatch true
+year_tmp="$(mktemp -d)"
+set +e
+../../tools/biomcp-ci search article -g BRAF --year-min 200 \
+  >"$year_tmp/partial-year.err" 2>&1
+partial_year_status=$?
+../../tools/biomcp-ci search article -g BRAF --year-min 2000 --date-from 2000-01-01 \
+  >"$year_tmp/date-mix.err" 2>&1
+date_mix_status=$?
+set -e
+test "$partial_year_status" -eq 2
+test "$date_mix_status" -eq 2
+mustmatch like "invalid value '200' for '--year-min <YYYY>': expected YYYY" \
+  <"$year_tmp/partial-year.err"
+mustmatch like "the argument '--year-min <YYYY>' cannot be used with '--date-from <DATE_FROM>'" \
+  <"$year_tmp/date-mix.err"
+```
+
 ## Deterministic Source Contracts
 
 Ticket 376 moves routine article-source proof from public upstream canaries to
@@ -711,8 +756,43 @@ before="$(wc -l <"$request_log")"
 ! ../../tools/biomcp-ci batch article 22663011 --sections '' >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 22663011 --sections tldr,,annotations >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 1 --offset 1 >/dev/null 2>&1
+! ../../tools/biomcp-ci batch gene BRAF --pdf >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --mode compact --pdf >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --pdf >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --sections tldr --pdf >/dev/null 2>&1
 after="$(wc -l <"$request_log")"
 test "$after" = "$before"
+```
+
+## Detail Batch PDF Fallback Runs Under One Limiter
+
+`--pdf` adds the provider-vouched open-PDF rung to article detail batches that
+asked for the `fulltext` section. Every paper lookup and every PDF download of
+one batch runs in a single process under the single in-process Semantic Scholar
+limiter, and each item still names the full-text source it used or the part of
+the PDF step that failed.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+../../tools/biomcp-ci --json batch article 22663011,22663026,22663028 --mode detail --sections fulltext --pdf \
+  | jq '
+      .items[0].result as $xml
+      | .items[1].result as $pdf
+      | .items[2].result as $failed
+      | ($xml.full_text_manifest.source_kind == "jats_xml")
+        and ($xml.section_outcomes.fulltext.outcome == "data")
+        and ($pdf.full_text_manifest.source_kind == "pdf")
+        and ($pdf.full_text_manifest.provider.label == "Semantic Scholar PDF")
+        and ($pdf.section_outcomes.fulltext.outcome == "data")
+        and ($failed.full_text_path == null)
+        and ($failed.full_text_coverage.attempts
+             | any(.source_kind == "pdf"
+                   and .reason == "open_pdf_download_failed"))
+        and ($failed.section_outcomes.fulltext.outcome == "unavailable")' \
+  | mustmatch 'true'
+paper_lookups="$(grep -c '^s2:paper:' "$request_log" || true)"
+test "$paper_lookups" -eq 3
 ```
 
 ## MYD88 Protein-Alias Article Precision

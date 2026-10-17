@@ -1,6 +1,8 @@
 # 2121 — Share a release cache across main pushes
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-17, Automatic main CI ends under the approved release-only policy; a cache for repeated main CI runs no longer serves this release..
 
 Milestone: 0.9.3
 

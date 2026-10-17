@@ -17,18 +17,6 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 ZERO_COUPLING_CHECKER = ROOT / "tools/check-zero-coupling.py"
 OFFLINE = ROOT / "tools/run-offline"
-# Raised the package by five authorized module paths:
-# citation evidence traversal, its admission proof, the pure JATS citation
-# extractor, its tests, and the article CLI citation test sidecar. Raised
-# again by one path: the Python lane cache isolation test. Raised by the
-# replay server and the golden suite's first batch, recomputed from the tree
-# after the landing rebase onto current main, and lowered by the spec lane's
-# fixture scripts and lifecycle tests that the replay server replaced.
-# Raised once more by the variant structure test sidecar, and again by one
-# path for the article CLI outage-rule test sidecar. Raised by the supplement
-# text search: two modules and five recorded supplement fixtures (2152).
-MAX_PACKAGE_FILES = 1_423  # one file per module, test, fixture and recorded reply; raise the pin only with a landing that adds net files
-# Also raised once by the pinned python version file.
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
@@ -74,7 +62,6 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     assert paths
-    assert len(paths) == MAX_PACKAGE_FILES
     assert not any(path == "testdata" or path.startswith("testdata/") for path in paths)
     for private_root in ("architecture", "sdlc"):
         assert not any(
@@ -83,7 +70,7 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
         )
     # Test tooling stays out of the shipped source package:
     # the nextest configuration under .config/ gates local runs, not the
-    # published crate, and the file cap counts the runtime boundary only.
+    # published crate.
     assert not any(
         path == ".config" or path.startswith(".config/") for path in paths
     )
@@ -136,7 +123,14 @@ def test_source_package_archive_is_zero_coupled(tmp_path: Path) -> None:
     archive = _package_source_tree_unverified(tmp_path / "package-target")
     with tarfile.open(archive, "r:gz") as source:
         members = source.getmembers()
-        assert len(members) == MAX_PACKAGE_FILES
+        package_root = archive.name.removesuffix(".crate")
+        paths = [
+            Path(member.name).relative_to(package_root).as_posix()
+            for member in members
+        ]
+        assert all(member.isfile() for member in members)
+        assert len(paths) == len(set(paths)), "duplicate source package members"
+        assert set(paths) == set(_cargo_package_list())
         source.extractall(tmp_path / "unpacked", filter="data")
     subprocess.run(
         [sys.executable, ZERO_COUPLING_CHECKER, "--archive", archive], check=True

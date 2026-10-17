@@ -1,33 +1,34 @@
-# 2094 — Make CI the one full check per ticket
+---
+priority: 3
+---
 
-Status: OPEN.
+# 2094 — Run the local test lanes in parallel
+
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
-Depends on: 2075
-Depends on: 2071
-Depends on: 2076
-Depends on: 2080
 Depends on: 2081
+Depends on: 2156
+
+Reviews: revision 671f8ea, accept
+
+Reviews: revision ec7d139, accept
 
 ## Outcome
 
-Ticket-branch CI has a median wall time of 11 minutes or less over the branch's own full runs, `make test` takes 200 s or less on the build host, and `AGENTS.md` tells a developer to run only the tests for what changed and leave the one full check to CI.
+`make test` prepares shared artifacts once, runs the Rust and Python lanes concurrently with readable separate output, and fails when either lane fails while preserving every retained check.
 
-## Evidence
+- Starts from: the existing implementation branch and the `prepare-test`, `test`, `test-rust` and `test-python` targets in `Makefile`.
+- Keeps: one Rust build at a time, isolated test temporary directories, retained audit coverage, compiler caches and supported build-host portability.
+- Changes: claims `tests/test_python_contract_parallelism.py` `tests/test_upstream_planning_analysis_docs.py` `Makefile` `AGENTS.md` `tests/test_routine_cargo_feature_contract.py` `CHANGELOG.md`. Retain useful local preparation and parallel execution work from the existing branch. Use portable CPU discovery and measured worker settings. Remove hosted setup-cache work and instructions assigning qualification to automatic CI.
+- Proof: through the build job, run `make test` on the pushed revision; prove preparation occurs once and either lane's failure propagates. Compare with current main on the same host and settings. Report observed time and savings without a hosted-CI target.
+- Defers: local audit scheduling to 2122; slow-test warnings to 2095; final comparison to 2082.
 
-- Ian ruled on 2026-10-14 that 25 minutes is too long even for CI, that ticket-branch CI runs the routine suite only, and that once it is at about 10 minutes CI is a ticket's one full check ([decision](../decisions/2026-10-14-delete-tests-boldly-and-split-the-suites.md)). Today a developer runs `make lint`, `make test` and `make spec` in series before landing (196 s, 640 to 646 s and 657 to 668 s in `sdlc/records/2069-0-9-3-baseline.md`), and CI runs them again.
-- 2075 runs the lanes in parallel off one build and moves the heavy jobs to `main`; 2071 and 2076 shorten the Python lane; 2080 shortens the spec lane; 2081 deletes the tests that are not one of the four kinds.
-- The work above does not reach the targets alone. In run 38545958060, canonical-gates spent 2.6 minutes on setup before any gate ran, 1.8 of them installing the gate tools; after 2075 the build job and every lane job each pay that setup, so the build job plus a lane is about 6 to 7 minutes plus the lane itself. `make test` after 2071 and 2076 still runs about 5.5 minutes on the build host by the Python lane's per-file sums (`sdlc/designs/2026-10-12-0-9-3-iteration-speed.md`, step 3), because the Rust and Python lanes run one after the other.
+PM decision: 2026-10-17. Ian replaced automatic ticket CI with local development, merged-candidate routine checks and postmerge standard/shipped-feature checks. The prior accepted review covers the former contract; review the revised branch after rebasing. Preserve any historical measurements as historical evidence, not current acceptance proof.
 
-- Starts from: CI and `make test` as they stand after 2075, 2071, 2076, 2080 and 2081; the composite setup action 2075 adds under `.github/actions/`; `AGENTS.md`, section Working.
-- Keeps: every routine check on every ticket push; the heavy jobs on `main` and the release workflow; `make test`, `make lint` and `make spec` as the commands a developer can still run.
-- Changes: claims `.github/workflows/ci.yml` `.github/actions/**` `Makefile` `tests/test_ci_workflow_contract.py` `AGENTS.md` `CHANGELOG.md`.
-  - Cache the installed gate tools (nextest, mustmatch, uv's environment, the offline sandbox packages) in the composite setup action, keyed on their pinned versions, so a lane job's setup takes under a minute.
-  - The build job restores the Rust build cache and builds only what the lanes download.
-  - `make test` runs `test-rust` and `test-python` at the same time, each writing its own output, and fails when either fails.
-  - `AGENTS.md`, Working: while working, run only the tests for what changed; push, and CI is the ticket's one full check; run `make full-feature-check` before landing when a change touches code only the all-features build compiles.
-  - If the median or `make test` still misses its target, cut the lane that sets the floor: delete tests that are not one of the four kinds, or move a release-only check to the release workflow.
-  - One Internal changelog bullet.
-- Proof: before landing, the branch's own CI run plus five reruns (`gh run rerun`), with the median wall time of the six from the Actions API at 11 minutes or less; five reruns, not ten, because reruns of one run go one after another and each costs wall time; `tools/measure-0-9-3-baseline <clone> --only make-test` on the build host at 200 s or less, against the 2069 baseline's 640 to 646 s; the `AGENTS.md` diff. Both timings fail on main today.
-- Defers: nothing.
+PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.
+
+## Rebased implementation and proof
+
+The local runner prepares once, runs retained Rust and Python lanes concurrently with separately labeled buffered output, waits for both lanes, propagates either failure and removes temporary logs. Rust workers use portable discovery capped at four; Python retains four workers. Focused Make/docs contracts passed 36 cases with Ruff. Job `1792244325098-99402` reused one unchanged prepared archive without rebuilding: serial lane execution took 223.631 seconds; concurrent execution took 137.362 seconds, an observed 38.6 percent reduction under shared load. The serial Rust run passed 4336 tests and hit the existing cancellation fixture defect; the concurrent Rust run passed all 4337. Python passed 1158 tests with eight skipped and the known moved-ticket changelog failure. Both timing samples skipped the subsequent strict documentation build after that failure, so this comparison measures test lanes and does not establish a green complete gate. Clock/socket repair 2167 and changelog repair 2166 cover the unrelated failures. Final whole-gate and actual-main checks remain required.

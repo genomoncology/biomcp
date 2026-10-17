@@ -221,6 +221,7 @@ def test_seven_variant_article_corpus_maps_each_landmark_to_receipted_decoded_ev
     } == {"car", "ldh"}
 
 
+@pytest.mark.repo_audit
 def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> (
     None
 ):

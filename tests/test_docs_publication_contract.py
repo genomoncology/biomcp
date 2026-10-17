@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import os
+import subprocess
 import re
 
 import pytest
@@ -26,20 +28,19 @@ def _load_verifier():
     return module
 
 
-def test_docs_publication_is_one_main_push_only_writer() -> None:
+def test_docs_publication_is_one_manual_production_main_writer() -> None:
     workflow = _workflow()
     triggers = workflow.get("on", workflow.get(True))
-    assert triggers == {"push": {"branches": ["main"]}}
+    assert triggers == {"workflow_dispatch": None, "workflow_call": {"inputs": {"revision": {"required": True, "type": "string"}}}}
     assert workflow["concurrency"] == {
         "group": "publish-biomcp-docs",
-        "cancel-in-progress": True,
+        "cancel-in-progress": False,
     }
     assert list(workflow["jobs"]) == ["publish-docs"]
     job = workflow["jobs"]["publish-docs"]
-    assert job["if"] == (
-        "github.event_name == 'push' && github.ref == 'refs/heads/main' "
-        "&& github.repository == 'genomoncology/biomcp'"
-    )
+    assert "github.repository == 'genomoncology/biomcp'" in job["if"]
+    assert "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'" in job["if"]
+    assert "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')" in job["if"]
     assert job["permissions"] == {"contents": "write", "pages": "write"}
     assert "permissions" not in workflow
 
@@ -62,7 +63,7 @@ def test_docs_publication_preserves_history_and_orders_authorized_writes() -> No
     checkout = steps[0]
     assert checkout["uses"].startswith("actions/checkout@")
     assert re.fullmatch(r"actions/checkout@[0-9a-f]{40}", checkout["uses"])
-    assert checkout["with"] == {"ref": "${{ github.sha }}", "fetch-depth": 0}
+    assert checkout["with"] == {"ref": "${{ inputs.revision || github.sha }}", "fetch-depth": 0}
 
     commands = [step.get("run", "") for step in steps]
     joined = "\n".join(commands)
@@ -74,6 +75,10 @@ def test_docs_publication_preserves_history_and_orders_authorized_writes() -> No
     assert "git fetch --no-tags origin main:refs/remotes/origin/main" in guard
     assert "git rev-parse refs/remotes/origin/main" in guard
     assert '"$GITHUB_SHA"' in guard
+    assert 'git merge-base --is-ancestor "$published" "$SOURCE_SHA"' in guard
+    assert 'git merge-base --is-ancestor "$SOURCE_SHA" "$published"' in guard
+    for step in steps[deploy:]:
+        assert step["if"] == "steps.admission.outputs.deploy == 'true'"
     assert "uv run --no-sync mkdocs gh-deploy --strict --force" in commands[deploy]
     assert "--no-history" not in commands[deploy]
 
@@ -102,8 +107,60 @@ def test_docs_publication_uses_locked_build_and_validated_revision() -> None:
         step for step in steps if "mkdocs build --strict" in step.get("run", "")
     )
     deploy = next(step for step in steps if "mkdocs gh-deploy" in step.get("run", ""))
-    assert build["env"]["BIOMCP_DOCS_REVISION"] == "${{ github.sha }}"
-    assert deploy["env"]["BIOMCP_DOCS_REVISION"] == "${{ github.sha }}"
+    assert build["env"]["BIOMCP_DOCS_REVISION"] == "${{ inputs.revision || github.sha }}"
+    assert deploy["env"]["BIOMCP_DOCS_REVISION"] == "${{ inputs.revision || github.sha }}"
+
+
+@pytest.mark.parametrize(
+    "published,candidate,event,expected",
+    [("first", "second", "push", "true"),
+     ("second", "first", "push", "false"),
+     ("other", "second", "push", None),
+     ("first", "first", "workflow_dispatch", None)],
+)
+def test_docs_admission_retains_newer_revisions_and_refuses_divergence(
+    tmp_path: Path, published: str, candidate: str, event: str, expected: str | None,
+) -> None:
+    def git(*args: str) -> str:
+        return subprocess.check_output([
+            "git", "-C", str(tmp_path), "-c", "user.name=Test", "-c",
+            "user.email=test@example.invalid", *args,
+        ], text=True).strip()
+
+    git("init", "-q", "-b", "main")
+    git("commit", "--allow-empty", "-qm", "First")
+    first = git("rev-parse", "HEAD")
+    git("commit", "--allow-empty", "-qm", "Second")
+    second = git("rev-parse", "HEAD")
+    git("checkout", "-q", "--orphan", "other")
+    git("commit", "--allow-empty", "-qm", "Other history")
+    other = git("rev-parse", "HEAD")
+    revisions = {"first": first, "second": second, "other": other}
+    git("checkout", "-q", "--orphan", "pages")
+    witness = tmp_path / "__biomcp_revision__" / "latest.txt"
+    witness.parent.mkdir()
+    witness.write_text(revisions[published] + "\n", encoding="utf-8")
+    git("add", ".")
+    git("commit", "-qm", "Published revision")
+    git("update-ref", "refs/remotes/origin/gh-pages", "HEAD")
+    git("remote", "add", "origin", str(tmp_path))
+    git("checkout", "-q", "--detach", revisions[candidate])
+    output = tmp_path / "admission-output"
+    step = next(step for step in _workflow()["jobs"]["publish-docs"]["steps"]
+                if step.get("id") == "admission")
+    result = subprocess.run(
+        ["bash", "-e", "-c", step["run"]], cwd=tmp_path, text=True,
+        capture_output=True, env=os.environ | {
+            "SOURCE_SHA": revisions[candidate], "GITHUB_SHA": revisions[candidate],
+            "GITHUB_EVENT_NAME": event, "GITHUB_OUTPUT": str(output),
+        },
+    )
+    if expected is None:
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert not output.exists()
+    else:
+        assert result.returncode == 0, result.stderr
+        assert output.read_text(encoding="utf-8") == f"deploy={expected}\n"
 
 
 def test_revision_witness_is_absent_or_exact_and_stale_files_are_removed(

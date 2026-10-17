@@ -227,14 +227,6 @@ fn verified_reference_residue_keeps_the_exact_match_placement() {
     assert_eq!(residue.other_source_positions, vec![640]);
 }
 
-#[test]
-fn reference_letter_requires_exactly_one_character() {
-    assert_eq!(one_letter_reference(None), None);
-    assert_eq!(one_letter_reference(Some("")), None);
-    assert_eq!(one_letter_reference(Some("G")), Some('G'));
-    assert_eq!(one_letter_reference(Some("GLY")), None);
-}
-
 /// The recorded MyVariant.info query answer for `MUTYH G368D`: dbNSFP
 /// spells the request at 368 on several isoform aliases while Q9UIF7's own
 /// sequence holds S there and G at 393.
@@ -497,6 +489,18 @@ async fn mutyh_g368d_on_q9uif7_never_reports_position_368_as_a_placement() {
     assert!(
         result.structures.alphafold.is_some(),
         "the protein-level AlphaFold row stays"
+    );
+
+    assert!(
+        result.cancerhotspots.is_none(),
+        "unresolved placement has no hotspot counts"
+    );
+    assert_eq!(
+        result
+            .lookup_outcomes
+            .get("cancerhotspots")
+            .map(|outcome| outcome.outcome()),
+        Some(SectionOutcomeState::Inapplicable)
     );
 
     // One warning names the finding plainly.

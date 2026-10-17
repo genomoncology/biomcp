@@ -25,13 +25,15 @@ def _step(steps: list[dict], needle: str) -> dict:
 def test_the_draft_release_is_created_with_the_changelog_section_as_notes() -> None:
     """Ticket 2064: v0.9.2 and v0.9.1 published with no release notes.
 
-    create-draft checks out the tag, renders the tag's changelog
-    section, and creates the draft release with those notes, so a
-    rehearsal reads the notes off the draft before it goes public.
+    create-draft checks out the validated release revision, renders its
+    changelog section, and creates the draft release with those notes
+    before publishing. An untagged rehearsal must not create a draft.
     """
     steps = _steps("create-draft")
     checkout = _step(steps, "actions/checkout@")
-    assert checkout["with"]["ref"] == "${{ inputs.tag || github.ref_name }}"
+    assert checkout["with"]["ref"] == "${{ needs.version-check.outputs.source_sha }}"
+    workflow = yaml.safe_load(RELEASE_WORKFLOW.read_text(encoding="utf-8"))
+    assert workflow["jobs"]["create-draft"]["if"] == "github.event_name == 'push'"
     render = _step(steps, "Render the release notes")
     assert "release/release_notes.py" in render["run"]
     assert "--changelog CHANGELOG.md" in render["run"]
