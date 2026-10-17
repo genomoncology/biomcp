@@ -69,13 +69,21 @@ jobs:
             args=(--candidate-sha "$CANDIDATE_SHA" --workflow-sha "$WORKFLOW_SHA" --rehearsal-version "$REHEARSAL_VERSION")
             if [ -n "$INPUT_TAG" ]; then args+=(--tag "$INPUT_TAG"); fi
             if [ "$CONTAINER_ONLY" = true ]; then args+=(--container-only); fi
-            python3 scripts/check-release-versions.py "${args[@]}" --github-output "$GITHUB_OUTPUT"
+            python3 scripts/check-release-versions.py "${args[@]}"
           else
-            python3 scripts/check-release-versions.py --tag "$TAG" --github-output "$GITHUB_OUTPUT"
+            python3 scripts/check-release-versions.py --tag "$TAG"
           fi
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Require the changelog to cover merged tickets
-        run: python3 scripts/check-changelog-coverage.py --tag "$TAG" --revision HEAD
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          if [ -n "$CANDIDATE_SHA" ]; then
+            python3 scripts/check-changelog-coverage.py --tag "$TAG" --revision HEAD
+          else
+            python3 scripts/check-changelog-coverage.py --tag "$TAG"
+          fi
 
 
   # Ticket 2125: the release-gate marker set — the packaged-crate
@@ -87,7 +95,7 @@ jobs:
   # built before the marker set passes.
   qualification:
     needs: [version-check]
-    if: inputs.container_only != true
+    if: github.event_name == 'push' || inputs.candidate_sha != ''
     permissions:
       contents: read
       actions: read
@@ -592,7 +600,7 @@ jobs:
     if: >-
       !cancelled() && !inputs.candidate_sha && needs.version-check.result == 'success' &&
       (needs.qualification.result == 'success' ||
-      (inputs.container_only == true && needs.qualification.result == 'skipped')) &&
+      (github.event_name == 'workflow_dispatch' && needs.qualification.result == 'skipped')) &&
       (needs.docs-publish.result == 'success' || needs.docs-publish.result == 'skipped')
     runs-on: ubuntu-24.04
     permissions:

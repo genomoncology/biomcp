@@ -20,7 +20,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--workflow-sha")
     parser.add_argument("--rehearsal-version")
     parser.add_argument("--container-only", action="store_true")
-    parser.add_argument("--github-output", type=Path)
     parser.add_argument(
         "--repo-root", type=Path, default=Path(__file__).resolve().parents[1]
     )
@@ -97,12 +96,6 @@ def main() -> int:
         )
         return 1
     print(f"release versions match {args.tag}; check-version-sync.sh passed")
-    if args.github_output:
-        with args.github_output.open("a", encoding="utf-8") as stream:
-            sha = subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], cwd=args.repo_root, text=True,
-            ).strip()
-            stream.write(f"source_sha={sha}\n")
     return 0
 
 

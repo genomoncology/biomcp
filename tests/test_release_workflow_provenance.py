@@ -932,7 +932,7 @@ def test_release_locked_build_assertion_catches_a_dropped_flag(tmp_path: Path) -
 # `&& !cancelled()` would re-run a publish after an upstream failure
 # and must break the contract.
 EXPECTED_JOB_IFS = {
-    "qualification": "inputs.container_only != true",
+    "qualification": "github.event_name == 'push' || inputs.candidate_sha != ''",
     "publish-assets": "github.event_name == 'push'",
     "docs-publish": "github.event_name == 'push'",
     "rehearsal-docs": "inputs.candidate_sha != ''",
@@ -1419,7 +1419,7 @@ def test_removing_each_needs_edge_breaks_the_contract(
             '            python3 scripts/check-release-versions.py --tag "$TAG" || :',
         ),
         (
-            'run: python3 scripts/check-changelog-coverage.py --tag "$TAG" --revision HEAD',
+            '            python3 scripts/check-changelog-coverage.py --tag "$TAG" --revision HEAD',
             'run: python3 scripts/check-changelog-coverage.py --tag "$TAG"; exit 0',
         ),
         (
