@@ -5689,6 +5689,10 @@ mod tests {
                 br#"{"esearchresult":{"count":"0","idlist":[]}}"#
             } else if first_line.starts_with("GET /graph/v1/paper/search") {
                 br#"{"total":0,"data":[]}"#
+            } else if first_line.starts_with("POST /graph/v1/paper/batch")
+                || first_line.starts_with("GET /graph/v1/paper/batch")
+            {
+                br#"[null,null]"#
             } else if first_line.starts_with("GET /entity/autocomplete/") {
                 b"[]"
             } else {
