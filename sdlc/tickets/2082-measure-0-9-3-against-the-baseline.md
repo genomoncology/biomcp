@@ -4,7 +4,7 @@ priority: 4
 
 # 2082 — Measure both releases under comparable conditions
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 Depends on: 2073
@@ -46,6 +46,14 @@ Reviews: revision 4160f2f, accept
 Reviews: revision ff6ce34, accept
 
 Reopened: 2026-10-17 — Refresh the measurement rows the five research fixes affect, on current main, keeping unchanged rows and their source identities.
+
+Depends on: 2179
+Depends on: 2180
+Depends on: 2181
+Depends on: 2182
+Depends on: 2183
+
+Reviews: revision dff1bfc, accept
 
 ## Outcome
 
@@ -102,3 +110,19 @@ Landing-gate RED before the selection correction:2082/1792272548440-79852 failed
 
 
 Selection correction GREEN: Sourcecc6a4b4f090511a4258bbb59e0b7cf1e6522c423 adds only the conventional module marker and its truthful fake-artifact-path comment. Job2082/1792272865499-11576 ran uv sync --extra dev --no-install-project, then uv run --no-sync pytest -q tests/test_ci_workflow_contract.py::test_the_binary_dependent_modules_carry_the_marker tests/test_measurement_summary_contract.py: all12cases passed. Ruff format/check passed on the module. No guard, measurement tool, product source, formal measurements or coverage method changed. This test-selection correction does not invalidate the recorded immutable product comparison. The accepted4160f2f6f data review remains evidence for the unchanged raw data; a fresh review checks this final delta and record before normal landing.
+
+
+Coordinator refresh scope: PM added five research findings after the comparison landed. Preserve the completed immutable old arm and all unaffected runtime rows. After the product fixes land and main passes, refresh only affected candidate build/test/spec/lint, release size/IR, source-share and coverage observations using the existing reviewed harness and collection method. Determine which runtime rows exercise changed paths before rerunning any. No new harness feature or optimization is authorized. Read the existing record and report the minimal execution plan before collection; no build or timing while current product lanes run. The supported API proof corrections and unavailable PDF evidence are not reasons to invent performance values. Final rehearsal still follows the final measurement landing.
+- 2026-10-17 next: Refresh affected candidate build, suite, size, source-share and coverage rows after the accepted five-fix batch passes actual main; preserve old arm and all unchanged runtime samples at their original revisions.
+
+Final candidate refresh authorization: The five research fixes landed in reviewed carrierbf9916b7265437367a9a50a86a6e4ca8afb317ac, with completion records through actual main518a0e689659500bec8cbc33d195a6cbd1da78b8. Its full main-gate job2156/1792275455029-64826 passed377.096seconds, including shipped-feature tests and PNG/SVG/terminal output checks. This is the tenth clean full-main check since the startup diagnostics, and sixth after the reviewed no-store correction; no recurrence was observed. Ordinary source landings remain serial with their full checks.
+
+Refresh only affected candidate rows using unchanged reviewed harnessdedbc1307e65c21c6f79bdb49025f209def074ac and immutable product518a0e689659500bec8cbc33d195a6cbd1da78b8. One fresh candidate-only collection selects existing clone/build/Rust-touch/docs-touch/preparation/test/census/spec/lint/release/size/IR sections, then one qualified coverage collection and the original source-count/export methods. No coverage preflight or new harness feature. Retain actual Python3.12.13 and Rust1.95 identities and ordinary compiler cache/linker settings. Complete build cleanup before timing; no other BioMCP build runs during collection. Shared host load remains a limitation.
+
+Preserve every old-arm result at4049666f5cce2794f16cdbdf0ded49878e5bb147 and all174 runtime observations under their original candidate234d2b32d3b5068dc27b2543d676997b75ad5baa identity. The existing runtime commands never invoke asset output, supplement search, exact variant article search, article full text or PDF extraction; do not relabel them as fresh timings of518a0e6. Dependency/advisory rows are unchanged. The collector records each selected command, exit, raw result and load. Keep the existing coverage denominator and its inline-test/standard-library/routine-feature limits; report missing or failed collections separately. The final measurement record will be reviewed before normal landing; final rehearsal follows.
+
+Candidate refresh GREEN:2082/1792275937080-64055 passed all31 sections in898.428seconds, using immutable product518a0e689 and unchanged harnessdedbc1307. The canonical2069record now contains the candidate-only raw results, per-file source counts and all3 coverage reports while retaining every old-arm/runtime observation at its original source. Routine test111.2seconds and spec24.5seconds meet200second targets; lint75.1seconds passed. Rust4364/Python1259 passed, with34/9 skips; the31.185second routine warning passed under the warning policy. Release235.4seconds, stripped binary33882992bytes. Fresh/Rust-touch build observations remain slower than the old release and shared load limits causal claims. No optimization work follows from these observations.
+
+Coverage collected all4 suites successfully once:162 integration,4202unit,1267Python and7specification pages, with their skips retained. The existing145220-line filtered denominator includes inline tests and some standard-library instrumentation: outside34.65percent, unit79.63percent, union84.69percent. Individual report tool exits remain unrecorded; wrappers returned0 and reports had no diagnostics. Primary Rust test share149989/315068=47.6053percent, with no numeric target. Source-only and Python counts remain separate. Product HEAD matched518a0e689 and tracked source stayed unchanged;21generated untracked coverage profile files remained in the product tree. They are build output, not source modifications.
+
+All raw logs, setup, source counts and safe reports were retrieved before cleanup; the safe export checksum is5d7cdc9215c485cce99e4a5c76f017154151d99840469ec0e746d589a671e32c. The complete raw metrics/reports are durable in2069; the scratch copy can be removed after review. Main95bdc07c1 changes only2082metadata relative to measured/qualified518a0e689. Merge that ruling and observer progress before ending acceptance. No code, workflow or harness changed in this refresh. Fresh review checks the numeric record and reuse boundaries; the existing source qualification remains applicable. Final untagged nonpublishing rehearsal still follows measurement landing and its actual-main check.

@@ -1,5 +1,6944 @@
 # 2069 — The 0.9.3 baseline
 
+## Candidate refresh after the research fixes, 2026-10-17
+
+This section replaces the affected candidate columns of the earlier comparison below. The old release results remain unchanged. All 174 runtime observations retain their original product identities, including candidate `234d2b32d3b5068dc27b2543d676997b75ad5baa`; they are not fresh timings of the final product. Those commands do not invoke asset output, supplement search, exact variant article search, article full text or PDF extraction. Dependency/advisory rows also remain unchanged. The complete earlier raw evidence is retained below.
+
+| Identity | Revision |
+| --- | --- |
+| Prior release v0.9.2, reused | 4049666f5cce2794f16cdbdf0ded49878e5bb147 |
+| Final measured product | 518a0e689659500bec8cbc33d195a6cbd1da78b8 |
+| Unchanged reviewed harness | dedbc1307e65c21c6f79bdb49025f209def074ac |
+
+Candidate-only collection `2082/1792275937080-64055` uses the same existing sections and source-count method after the five research fixes. Actual product main qualification `2156/1792275455029-64826` passed all shipped features and PNG/SVG/terminal checks. The collector uses a fresh product tree, Python 3.12.13, the recorded Rust/tool identities and ordinary compiler cache/linker settings. Only the existing coverage instrumentation changes those settings within its scope. No extra coverage preflight or runtime rerun occurred. The original export SHA-256 is `5d7cdc9215c485cce99e4a5c76f017154151d99840469ec0e746d589a671e32c`; the public projection below replaces local path labels and the host-role label without changing numeric results.
+
+Shared host load and one completed observation per local scenario limit interpretation. The previous old-arm platform refusals and missing old coverage remain unavailable, with no invented times or percentages. Fresh-build and Rust-touch observations remain slower than the old release; documentation-touch is faster. These observations make no strict causal speedup claim.
+
+### Refreshed local observations
+
+| Measurement | v0.9.2, retained | Final candidate |
+| --- | --- | --- |
+| Fresh development build, seconds | 51.5 | 84.0 |
+| Rust-touch rebuild, seconds | 39.3 | 55.3 |
+| Documentation-touch rebuild, seconds | 42.4 | 0.3 |
+| Artifact preparation, seconds | 68.2 | 1.0 |
+| Release build, seconds | 260.3 | 235.4 |
+| Release peak RSS, KiB | 4168064 | 4377584 |
+| Stripped binary, bytes | 32775408 | 33882992 |
+| Build folder after release, bytes | 4935225344 | 4278661120 |
+| LLVM IR lines | 6897914 | 7198389 |
+| LLVM function copies | 138788 | 143558 |
+
+| Routine command | Final seconds | Approved target | Result |
+| --- | --- | --- | --- |
+| make-test | 111.2 | 200 seconds | met |
+| make-spec | 24.5 | 200 seconds | met |
+| make-lint | 75.1 | No numeric target | Passed |
+
+Routine Rust: 4364 passed, 34 skipped. Routine Python: 1259 passed, 9 skipped in 90.88s (0:01:30). Separate Python inventory: 1276. The duration census retained 4364 Rust durations and 69 cases over one second. Slow warnings, section exits and load remain in the raw data; time alone does not fail a routine case.
+
+### Refreshed source share and coverage
+
+The primary source share uses the same nongenerated root-crate Rust source plus external Rust tests, including physical blank/comment lines. Workspace helpers, examples, benches and other languages remain outside that denominator. No numeric test-code-share target was set.
+
+| Source measure | v0.9.2, retained | Final candidate |
+| --- | --- | --- |
+| Rust test lines | 139914 | 149989 |
+| Rust denominator | 301538 | 315068 |
+| Rust test share | 46.4001% | 47.6053% |
+| Separate Python test lines | 37979 | 35858 |
+
+Coverage collection: **complete**. The existing filtered instrumented-source denominator includes inline tests and some standard-library instrumentation and covers routine features. It is not pure production-source or all-feature coverage. Full shipped-feature behavior has its separate main qualification. Individual llvm-cov report exit statuses remain unrecorded by the existing harness; wrapper statuses and report diagnostics are retained below. The final product identity matched and tracked source stayed unchanged; 21 generated untracked coverage profile files remained in its working tree.
+
+| Report | Reached lines | Denominator | Reported percentage |
+| --- | --- | --- | --- |
+| outside_in | 50315 | 145220 | 34.65% |
+| unit | 115640 | 145220 | 79.63% |
+| combined | 122983 | 145220 | 84.69% |
+
+Five groups: `{"both_lines": 42972, "incomplete_collections": 0, "outside_only_lines": 7343, "unit_only_lines": 72668, "unobserved_lines": 22237}`.
+
+All suite exits and reported case counts remain explicit in the following data. A failed or missing collection is incomplete rather than a successful percentage.
+
+### Candidate raw results and per-file source counts
+
+```json
+{
+  "harness_sha": "dedbc1307e65c21c6f79bdb49025f209def074ac",
+  "product_shas": {
+    "candidate": "518a0e689659500bec8cbc33d195a6cbd1da78b8"
+  },
+  "reused_product_shas": {
+    "old": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+    "runtime_candidate": "234d2b32d3b5068dc27b2543d676997b75ad5baa"
+  },
+  "reuse_note": "Old arm, all 174 runtime raw rows, dependency/advisory rows remain in prior public-results.json under their original immutable identities; no runtime samples collected here",
+  "environment_names": [
+    "ALPHAGENOME_API_KEY",
+    "DISGENET_API_KEY",
+    "HOME",
+    "LLVM_COV",
+    "LLVM_PROFDATA",
+    "NCI_API_KEY",
+    "PATH",
+    "S2_API_KEY",
+    "TMPDIR",
+    "UMLS_API_KEY",
+    "UV_FROZEN",
+    "UV_PYTHON"
+  ],
+  "reused_runtime_removed_environment_names": [
+    "OPENFDA_API_KEY"
+  ],
+  "host": {
+    "role": "shared macOS ARM64 build host",
+    "architecture": "arm64",
+    "os": "Darwin 25.4.0"
+  },
+  "sections": [
+    {
+      "arm": "setup",
+      "section": "tool-versions",
+      "exit_code": 0,
+      "elapsed_s": 0.1484389305114746,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "setup/sections/tool-versions.log",
+      "command": [
+        "bash5",
+        "-c",
+        "rustc -vV\ncargo --version\ncargo nextest --version\ncargo llvm-cov --version\ncargo llvm-lines --version\ncargo deny --version\nuv --version\nruff --version\nmustmatch --version\nbash5 --version\n$LLVM_COV --version"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "setup",
+      "section": "disk-and-memory",
+      "exit_code": 0,
+      "elapsed_s": 0.01328277587890625,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "setup/sections/disk-and-memory.log",
+      "command": [
+        "bash5",
+        "-c",
+        "df -k .\nvm_stat\nsysctl -n hw.memsize\nuptime"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "checkout",
+      "exit_code": 0,
+      "elapsed_s": 0.5476510524749756,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "candidate/sections/checkout.log",
+      "command": [
+        "git",
+        "worktree",
+        "add",
+        "--detach",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "518a0e689659500bec8cbc33d195a6cbd1da78b8"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "dependency-fetch",
+      "exit_code": 0,
+      "elapsed_s": 0.288236141204834,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "candidate/sections/dependency-fetch.log",
+      "command": [
+        "cargo",
+        "fetch",
+        "--locked"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "python-sync",
+      "exit_code": 0,
+      "elapsed_s": 0.320422887802124,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "candidate/sections/python-sync.log",
+      "command": [
+        "uv",
+        "sync",
+        "--frozen",
+        "--extra",
+        "dev",
+        "--no-install-project"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "measured-python-version",
+      "exit_code": 0,
+      "elapsed_s": 0.006764888763427734,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "candidate/sections/measured-python-version.log",
+      "command": [
+        "python3",
+        "--version"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "measured-toolchain",
+      "exit_code": 0,
+      "elapsed_s": 0.03645491600036621,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "candidate/sections/measured-toolchain.log",
+      "command": [
+        "bash5",
+        "-c",
+        "rustc -vV\ncargo --version\nuv --version"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "compiler-cache-before",
+      "exit_code": 0,
+      "elapsed_s": 0.0057621002197265625,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "candidate/sections/compiler-cache-before.log",
+      "command": [
+        "sccache",
+        "--show-stats"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "clone",
+      "exit_code": 0,
+      "elapsed_s": 0.28832101821899414,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "log_file": "candidate/sections/clone.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "clone"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "cold-dev-build",
+      "exit_code": 0,
+      "elapsed_s": 84.05133891105652,
+      "load_before": [
+        8.49169921875,
+        5.1455078125,
+        4.6103515625
+      ],
+      "load_after": [
+        14.802734375,
+        8.08154296875,
+        5.78857421875
+      ],
+      "log_file": "candidate/sections/cold-dev-build.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "cold-dev-build"
+      ],
+      "results": {
+        "cold_dev_build_wall_s": "84.0"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "rust-edit-rebuild",
+      "exit_code": 0,
+      "elapsed_s": 55.31953501701355,
+      "load_before": [
+        14.802734375,
+        8.08154296875,
+        5.78857421875
+      ],
+      "load_after": [
+        14.0810546875,
+        9.13037109375,
+        6.3291015625
+      ],
+      "log_file": "candidate/sections/rust-edit-rebuild.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "rust-edit-rebuild"
+      ],
+      "results": {
+        "rust_edit_rebuild_wall_s": "55.3"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "doc-edit-rebuild",
+      "exit_code": 0,
+      "elapsed_s": 0.35989880561828613,
+      "load_before": [
+        14.0810546875,
+        9.13037109375,
+        6.3291015625
+      ],
+      "load_after": [
+        14.0810546875,
+        9.13037109375,
+        6.3291015625
+      ],
+      "log_file": "candidate/sections/doc-edit-rebuild.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "doc-edit-rebuild"
+      ],
+      "results": {
+        "doc_edit_rebuild_wall_s": "0.3"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "prepare-context",
+      "exit_code": 0,
+      "elapsed_s": 1.0803780555725098,
+      "load_before": [
+        14.0810546875,
+        9.13037109375,
+        6.3291015625
+      ],
+      "load_after": [
+        14.0810546875,
+        9.13037109375,
+        6.3291015625
+      ],
+      "log_file": "candidate/sections/prepare-context.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "prepare-context"
+      ],
+      "results": {
+        "make_prepare_test_wall_s": "1.0"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "make-test",
+      "exit_code": 0,
+      "elapsed_s": 111.28650689125061,
+      "load_before": [
+        14.0810546875,
+        9.13037109375,
+        6.3291015625
+      ],
+      "load_after": [
+        8.16162109375,
+        8.7412109375,
+        6.5283203125
+      ],
+      "log_file": "candidate/sections/make-test.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "make-test"
+      ],
+      "results": {
+        "make_test_wall_s": "111.2",
+        "rust_tests_run": "4364",
+        "rust_tests_passed": "4364",
+        "rust_tests_skipped": "34",
+        "python_lane_summary": "1259 passed, 9 skipped in 90.88s (0:01:30)"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "build-folder-after-make-test",
+      "exit_code": 0,
+      "elapsed_s": 0.0749201774597168,
+      "load_before": [
+        8.16162109375,
+        8.7412109375,
+        6.5283203125
+      ],
+      "load_after": [
+        8.16162109375,
+        8.7412109375,
+        6.5283203125
+      ],
+      "log_file": "candidate/sections/build-folder-after-make-test.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "build-folder-after-make-test"
+      ],
+      "results": {
+        "build_folder_bytes_after_make_test": "2794217472"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "rust-test-census",
+      "exit_code": 0,
+      "elapsed_s": 34.944231033325195,
+      "load_before": [
+        8.16162109375,
+        8.7412109375,
+        6.5283203125
+      ],
+      "load_after": [
+        6.87841796875,
+        8.38232421875,
+        6.4873046875
+      ],
+      "log_file": "candidate/sections/rust-test-census.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "rust-test-census"
+      ],
+      "results": {
+        "rust_test_census_wall_s": "34.9",
+        "rust_test_census_collection": "complete",
+        "rust_tests_with_duration": "4364",
+        "tests_over_1s": "69",
+        "tests_over_1s_sum_s": "299.8"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "python-test-count",
+      "exit_code": 0,
+      "elapsed_s": 0.34792113304138184,
+      "load_before": [
+        6.87841796875,
+        8.38232421875,
+        6.4873046875
+      ],
+      "load_after": [
+        6.4072265625,
+        8.259765625,
+        6.455078125
+      ],
+      "log_file": "candidate/sections/python-test-count.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "python-test-count"
+      ],
+      "results": {
+        "python_collect_wall_s": "0.3",
+        "python_tests_collected": "1276"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "spec-block-census",
+      "exit_code": 0,
+      "elapsed_s": 0.04674410820007324,
+      "load_before": [
+        6.4072265625,
+        8.259765625,
+        6.455078125
+      ],
+      "load_after": [
+        6.4072265625,
+        8.259765625,
+        6.455078125
+      ],
+      "log_file": "candidate/sections/spec-block-census.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "spec-block-census"
+      ],
+      "results": {
+        "spec_pages_with_bash_blocks": "      38",
+        "spec_bash_blocks": "     488"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "make-spec",
+      "exit_code": 0,
+      "elapsed_s": 24.510534048080444,
+      "load_before": [
+        6.4072265625,
+        8.259765625,
+        6.455078125
+      ],
+      "load_after": [
+        4.6552734375,
+        7.73974609375,
+        6.3095703125
+      ],
+      "log_file": "candidate/sections/make-spec.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "make-spec"
+      ],
+      "results": {
+        "make_spec_wall_s": "24.5"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "make-lint",
+      "exit_code": 0,
+      "elapsed_s": 75.18526411056519,
+      "load_before": [
+        4.6552734375,
+        7.73974609375,
+        6.3095703125
+      ],
+      "load_after": [
+        4.06591796875,
+        7.09912109375,
+        6.19921875
+      ],
+      "log_file": "candidate/sections/make-lint.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "make-lint"
+      ],
+      "results": {
+        "make_lint_wall_s": "75.1"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "release-build",
+      "exit_code": 0,
+      "elapsed_s": 235.43276119232178,
+      "load_before": [
+        4.06591796875,
+        7.09912109375,
+        6.19921875
+      ],
+      "load_after": [
+        2.302734375,
+        4.658203125,
+        5.3603515625
+      ],
+      "log_file": "candidate/sections/release-build.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "release-build"
+      ],
+      "results": {
+        "release_build_wall_s": "235.4",
+        "release_peak_rss_kb": "4377584"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "build-folder-after-release",
+      "exit_code": 0,
+      "elapsed_s": 0.10250997543334961,
+      "load_before": [
+        2.302734375,
+        4.658203125,
+        5.3603515625
+      ],
+      "load_after": [
+        2.302734375,
+        4.658203125,
+        5.3603515625
+      ],
+      "log_file": "candidate/sections/build-folder-after-release.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "build-folder-after-release"
+      ],
+      "results": {
+        "build_folder_bytes_after_release_build": "4278661120"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "stripped-binary",
+      "exit_code": 0,
+      "elapsed_s": 0.03756904602050781,
+      "load_before": [
+        2.302734375,
+        4.658203125,
+        5.3603515625
+      ],
+      "load_after": [
+        2.302734375,
+        4.658203125,
+        5.3603515625
+      ],
+      "log_file": "candidate/sections/stripped-binary.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "stripped-binary"
+      ],
+      "results": {
+        "stripped_release_binary_bytes": "33882992"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "llvm-lines",
+      "exit_code": 0,
+      "elapsed_s": 32.3297860622406,
+      "load_before": [
+        2.302734375,
+        4.658203125,
+        5.3603515625
+      ],
+      "load_after": [
+        2.98681640625,
+        4.5556640625,
+        5.29296875
+      ],
+      "log_file": "candidate/sections/llvm-lines.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "llvm-lines"
+      ],
+      "results": {
+        "llvm_lines_wall_s": "32.2",
+        "llvm_lines_total": "7198389",
+        "llvm_function_copies": "143558"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "coverage-prepare-spec",
+      "exit_code": 0,
+      "elapsed_s": 0.39047980308532715,
+      "load_before": [
+        2.98681640625,
+        4.5556640625,
+        5.29296875
+      ],
+      "load_after": [
+        2.98681640625,
+        4.5556640625,
+        5.29296875
+      ],
+      "log_file": "candidate/sections/coverage-prepare-spec.log",
+      "command": [
+        "make",
+        "prepare-spec"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "coverage",
+      "exit_code": 0,
+      "elapsed_s": 231.90715217590332,
+      "load_before": [
+        2.98681640625,
+        4.5556640625,
+        5.29296875
+      ],
+      "load_after": [
+        4.0390625,
+        5.28466796875,
+        5.50048828125
+      ],
+      "log_file": "candidate/sections/coverage.log",
+      "command": [
+        "bash5",
+        "<harness>/tools/measure-0-9-3-baseline",
+        "<harness>/.cache/2082-final-candidate-v4/candidate/product",
+        "--only",
+        "coverage"
+      ],
+      "results": {
+        "coverage_build_wall_s": "56.6",
+        "coverage_integration_tests_wall_s": "18.8",
+        "coverage_integration_tests": "exit 0; 162 run: 162 passed, 0 failed, 0 timed out, 5 skipped",
+        "coverage_unit_tests_wall_s": "28.5",
+        "coverage_unit_tests": "exit 0; 4202 run: 4202 passed, 0 failed, 0 timed out, 29 skipped",
+        "coverage_python_lane_wall_s": "100.5",
+        "coverage_python_lane": "exit 0; 1267 passed, 0 failed, 0 errors, 9 skipped",
+        "coverage_spec_lane_wall_s": "25.4",
+        "coverage_spec_lane": "exit 0; 7 pages, 0 failed",
+        "coverage_outside_in_lines_pct": "34.65",
+        "coverage_unit_lines_pct": "79.63",
+        "coverage_combined_lines_pct": "84.69"
+      },
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "compiler-cache-after",
+      "exit_code": 0,
+      "elapsed_s": 0.00412297248840332,
+      "load_before": [
+        4.0390625,
+        5.28466796875,
+        5.50048828125
+      ],
+      "load_after": [
+        4.0390625,
+        5.28466796875,
+        5.50048828125
+      ],
+      "log_file": "candidate/sections/compiler-cache-after.log",
+      "command": [
+        "sccache",
+        "--show-stats"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "final-product-identity",
+      "exit_code": 0,
+      "elapsed_s": 0.025310993194580078,
+      "load_before": [
+        4.0390625,
+        5.28466796875,
+        5.50048828125
+      ],
+      "load_after": [
+        4.0390625,
+        5.28466796875,
+        5.50048828125
+      ],
+      "log_file": "candidate/sections/final-product-identity.log",
+      "command": [
+        "bash5",
+        "-c",
+        "git rev-parse HEAD\ngit status --porcelain"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "source-census",
+      "exit_code": 0,
+      "elapsed_s": 9.170358896255493,
+      "load_before": [
+        4.0390625,
+        5.28466796875,
+        5.50048828125
+      ],
+      "load_after": [
+        3.5712890625,
+        5.14306640625,
+        5.447265625
+      ],
+      "log_file": "candidate/sections/source-census.log",
+      "command": [
+        "/usr/bin/python3",
+        "<scratch>/biomcp-2082-candidate-source-census.py"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "candidate",
+      "section": "source-supplement",
+      "exit_code": 0,
+      "elapsed_s": 0.03564620018005371,
+      "load_before": [
+        3.5712890625,
+        5.14306640625,
+        5.447265625
+      ],
+      "load_after": [
+        3.5712890625,
+        5.14306640625,
+        5.447265625
+      ],
+      "log_file": "candidate/sections/source-supplement.log",
+      "command": [
+        "/usr/bin/python3",
+        "<scratch>/biomcp-2082-candidate-source-supplement.py"
+      ],
+      "results": {},
+      "completeness": "complete"
+    },
+    {
+      "arm": "setup",
+      "section": "closing-disk-and-memory",
+      "exit_code": 0,
+      "elapsed_s": 0.009287118911743164,
+      "load_before": [
+        3.5712890625,
+        5.14306640625,
+        5.447265625
+      ],
+      "load_after": [
+        3.5712890625,
+        5.14306640625,
+        5.447265625
+      ],
+      "log_file": "setup/sections/closing-disk-and-memory.log",
+      "command": [
+        "bash5",
+        "-c",
+        "df -k .\nvm_stat\nuptime"
+      ],
+      "results": {},
+      "completeness": "complete"
+    }
+  ],
+  "arms": {
+    "candidate": {
+      "product_sha": "518a0e689659500bec8cbc33d195a6cbd1da78b8",
+      "runtime_samples": null,
+      "runtime_summary": null,
+      "suite_exit_codes": {
+        "census.exit": "0",
+        "cov-integration.exit": "0",
+        "cov-pytest.exit": "0",
+        "cov-spec.exit": "0",
+        "cov-unit.exit": "0"
+      },
+      "source_census": {
+        "method": "Rust src/**/*.rs physical lines, including blank and comment lines; directories named generated excluded; build output outside src excluded; test-only paths plus #[cfg(test)] item spans from brace matching with literals/comments ignored; union avoids overlap; integration/Python/spec files outside src excluded; same source method both arms",
+        "scope": "Rust source under src only; not an all-language repository share",
+        "line_measure": "physical lines, including blanks/comments; nonblank share not collected",
+        "excluded_generated_files": [
+          {
+            "file": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+            "lines": 1486
+          }
+        ],
+        "total_src_rust_lines": 301904,
+        "test_only_file_lines": 98819,
+        "inline_cfg_test_lines": 38006,
+        "test_code_lines": 136825,
+        "test_code_share_pct": 45.3206979702157,
+        "numeric_share_target": null,
+        "target_verdict": "not applicable: no numeric target was set",
+        "primary_crate_rust": {
+          "method": "nongenerated src Rust physical lines plus tracked tests/**/*.rs; all external Rust test lines count as test code; src test-only/inline span counts reused unchanged",
+          "runtime_and_test_lines": 315068,
+          "test_code_lines": 149989,
+          "test_code_share_pct": 47.60527886043648,
+          "src_rust_lines": 301904,
+          "src_test_code_lines": 136825,
+          "external_test_rust_lines": 13164,
+          "external_test_rust_files": 33,
+          "numeric_target": null,
+          "target_verdict": "not applicable: no numeric target was set"
+        },
+        "python_tests": {
+          "scope": "tracked tests/**/*.py physical lines, including test support and blank/comment lines; separate count, no mixed-language share",
+          "physical_lines": 35858
+        },
+        "external_generated_exclusions": [],
+        "scope_limits": [
+          "Primary Rust metric covers only root-crate src and tests trees; workspace helper crates are excluded.",
+          "Examples, benches, root build scripts and Rust files elsewhere are excluded.",
+          "Generated directories and build output are excluded.",
+          "Python tests are counted separately; Python source elsewhere, specifications, shell and other languages are not included in a composite share.",
+          "All counts use physical lines, including blank/comment lines; no nonblank share is claimed."
+        ]
+      },
+      "raw_sample_arrays": {},
+      "coverage": {
+        "collection": "complete",
+        "suite_exit_codes": {
+          "cov-integration.exit": "0",
+          "cov-pytest.exit": "0",
+          "cov-spec.exit": "0",
+          "cov-unit.exit": "0"
+        },
+        "reported_groups": {
+          "coverage_outside_in_lines_pct": "34.65",
+          "coverage_unit_lines_pct": "79.63",
+          "coverage_combined_lines_pct": "84.69"
+        },
+        "reports": {
+          "outside_in": {
+            "denominator_lines": 145220,
+            "missed_lines": 94905,
+            "reached_lines": 50315,
+            "line_coverage_pct": "34.65%",
+            "raw_report_file": "candidate/raw/cov-report-outside_in.txt",
+            "safe_report_file": "public-coverage/candidate/cov-report-outside_in.txt",
+            "report_wrapper_exit_code": 0,
+            "llvm_cov_report_exit_code": null,
+            "report_exit_limitation": "individual llvm-cov status was not retained; final tail wrapper returned zero",
+            "diagnostic_lines": []
+          },
+          "unit": {
+            "denominator_lines": 145220,
+            "missed_lines": 29580,
+            "reached_lines": 115640,
+            "line_coverage_pct": "79.63%",
+            "raw_report_file": "candidate/raw/cov-report-unit.txt",
+            "safe_report_file": "public-coverage/candidate/cov-report-unit.txt",
+            "report_wrapper_exit_code": 0,
+            "llvm_cov_report_exit_code": null,
+            "report_exit_limitation": "individual llvm-cov status was not retained; final tail wrapper returned zero",
+            "diagnostic_lines": []
+          },
+          "combined": {
+            "denominator_lines": 145220,
+            "missed_lines": 22237,
+            "reached_lines": 122983,
+            "line_coverage_pct": "84.69%",
+            "raw_report_file": "candidate/raw/cov-report-combined.txt",
+            "safe_report_file": "public-coverage/candidate/cov-report-combined.txt",
+            "report_wrapper_exit_code": 0,
+            "llvm_cov_report_exit_code": null,
+            "report_exit_limitation": "individual llvm-cov status was not retained; final tail wrapper returned zero",
+            "diagnostic_lines": []
+          }
+        },
+        "denominator_lines": 145220,
+        "denominator_label": "existing filtered instrumented source; inline tests and some standard-library instrumentation remain; routine features only",
+        "five_groups": {
+          "outside_only_lines": 7343,
+          "unit_only_lines": 72668,
+          "both_lines": 42972,
+          "unobserved_lines": 22237,
+          "incomplete_collections": 0
+        }
+      },
+      "approved_local_targets": {
+        "make-test": {
+          "target_s": 200,
+          "measured_s": 111.2,
+          "verdict": "met"
+        },
+        "make-spec": {
+          "target_s": 200,
+          "measured_s": 24.5,
+          "verdict": "met"
+        }
+      },
+      "native_release_peak_rss": {
+        "raw_bytes": 4482646016,
+        "conversion": "BSD time raw bytes / 1024 = KiB; existing RESULT key ends in _kb"
+      },
+      "routine_slow_warnings": {
+        "threshold_s": 30,
+        "count": 1,
+        "lines": [
+          "SLOW tests/test_quality_ratchet_contract.py::test_wrapper_writes_summary_artifacts_for_pass_fixture (31.185s); load (1, 5, 15 min): 11.21, 9.17, 6.51"
+        ],
+        "old_suite_not_executed": false
+      }
+    }
+  },
+  "spec_changed_since_runtime_candidate": true,
+  "runtime_environment_names": [
+    "BIOMCP_CACHE_DIR",
+    "BIOMCP_CACHE_MODE"
+  ],
+  "tool_version_output": [
+    "rustc 1.95.0 (59807616e 2026-04-14) (Homebrew)",
+    "binary: rustc",
+    "commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860",
+    "commit-date: 2026-04-14",
+    "host: aarch64-apple-darwin",
+    "release: 1.95.0",
+    "LLVM version: 22.1.3",
+    "cargo 1.95.0 (f2d3ce0bd 2026-03-21) (Homebrew)",
+    "cargo-nextest 0.9.146 (8af696ddc 2026-09-21)",
+    "release: 0.9.146",
+    "commit-hash: 8af696ddcce8fff2962d6a5168b6d138b8616a35",
+    "commit-date: 2026-09-21",
+    "host: aarch64-apple-darwin",
+    "cargo-llvm-cov 0.9.1",
+    "cargo-llvm-lines 0.4.48",
+    "cargo-deny 0.20.2",
+    "uv 0.11.14 (Homebrew 2026-05-12 aarch64-apple-darwin)",
+    "ruff 0.13.2",
+    "mustmatch 0.1.0",
+    "GNU bash, version 5.3.0(1)-release (aarch64-apple-darwin25.4.0)",
+    "Copyright (C) 2025 Free Software Foundation, Inc.",
+    "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>",
+    "",
+    "This is free software; you are free to change and redistribute it.",
+    "There is NO WARRANTY, to the extent permitted by law.",
+    "Homebrew LLVM version 22.1.5",
+    "  Optimized build."
+  ],
+  "measured_python_versions": {
+    "candidate": "Python 3.12.13"
+  },
+  "coverage_environment_names": [
+    "LLVM_PROFILE_FILE",
+    "__CARGO_LLVM_COV_RUSTC_WRAPPER",
+    "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS",
+    "__CARGO_LLVM_COV_RUSTC_WRAPPER_CRATE_NAMES",
+    "RUSTC_WRAPPER",
+    "__CARGO_LLVM_COV_RUSTC_WRAPPER_PRE_EXISTING",
+    "CARGO_LLVM_COV",
+    "CARGO_LLVM_COV_SHOW_ENV",
+    "CARGO_LLVM_COV_TARGET_DIR",
+    "CARGO_LLVM_COV_BUILD_DIR",
+    "CARGO_INCREMENTAL",
+    "CARGO_TARGET_DIR"
+  ],
+  "comparison_limitations": [
+    "Candidate-only refresh after product fixes; previous old-arm/runtime/dependency/advisory evidence is reused separately without changing original product identities.",
+    "Shared build host; section load values retained, no controlled quiet claim or strict causal speedup claim.",
+    "Local build/gate scenarios have one completed measured attempt per product; ordinary shared compiler cache retained, no cache or linker exceptions.",
+    "Live runtime samples include providers and their variability; warm cache does not imply every provider request was cached.",
+    "Default-mode drug card combines openFDA with other providers; timing alone does not prove absence of openFDA network requests.",
+    "Old routine gates and coverage are unavailable on this host because v0.9.2 explicitly requires Linux facilities; source was not patched or host faked.",
+    "No numeric test-code-share target was set; report actual source share without met/missed verdict.",
+    "Current macOS routine wrapper reports no network sandbox; passing local gates do not prove OS-level offline isolation."
+  ],
+  "observed_one_minute_load_range": {
+    "min": 2.302734375,
+    "max": 14.802734375
+  },
+  "runtime_outer_timeout_s": 180,
+  "coverage_denominator": "Existing qualified filename filters remove test/example/bench/generated paths and named test files; inline test modules and some instrumented standard-library code remain counted; routine feature set."
+}
+```
+
+### Candidate per-file source counts
+
+The aggregate method and limits above also apply to these retained per-file counts.
+
+```json
+{
+  "files": [
+    {
+      "file": "src/build_identity.rs",
+      "lines": 24,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/citation_evidence.rs",
+      "lines": 183,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/clean.rs",
+      "lines": 717,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 503
+    },
+    {
+      "file": "src/cache/clear.rs",
+      "lines": 971,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 378
+    },
+    {
+      "file": "src/cache/config.rs",
+      "lines": 949,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 547
+    },
+    {
+      "file": "src/cache/http.rs",
+      "lines": 84,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/limits.rs",
+      "lines": 279,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 114
+    },
+    {
+      "file": "src/cache/manager/tests/stale_marker_tests.rs",
+      "lines": 124,
+      "test_only_file_lines": 124,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/manager/tests/startup_clean_tests.rs",
+      "lines": 138,
+      "test_only_file_lines": 138,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/manager/tests/startup_totals_tests.rs",
+      "lines": 109,
+      "test_only_file_lines": 109,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/manager/tests/write_security_tests.rs",
+      "lines": 722,
+      "test_only_file_lines": 722,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/manager/tests/write_security_windows_tests.rs",
+      "lines": 113,
+      "test_only_file_lines": 113,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cache/manager.rs",
+      "lines": 1300,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 668
+    },
+    {
+      "file": "src/cache/migration.rs",
+      "lines": 1176,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 595
+    },
+    {
+      "file": "src/cache/mod.rs",
+      "lines": 135,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 30
+    },
+    {
+      "file": "src/cache/planner.rs",
+      "lines": 877,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 394
+    },
+    {
+      "file": "src/cache/private.rs",
+      "lines": 869,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cache/provider_capture/unsupported.rs",
+      "lines": 25,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 17
+    },
+    {
+      "file": "src/cache/provider_capture.rs",
+      "lines": 1506,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 463
+    },
+    {
+      "file": "src/cli/adverse_event/dispatch.rs",
+      "lines": 522,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/adverse_event/mod.rs",
+      "lines": 93,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/adverse_event/plan.rs",
+      "lines": 201,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/adverse_event/tests.rs",
+      "lines": 546,
+      "test_only_file_lines": 546,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/annotations.rs",
+      "lines": 54,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/assets.rs",
+      "lines": 317,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 3
+    },
+    {
+      "file": "src/cli/article/dispatch/workflow_tests.rs",
+      "lines": 75,
+      "test_only_file_lines": 75,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/dispatch.rs",
+      "lines": 756,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 24
+    },
+    {
+      "file": "src/cli/article/export.rs",
+      "lines": 102,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/fulltext_view.rs",
+      "lines": 349,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 3
+    },
+    {
+      "file": "src/cli/article/mod.rs",
+      "lines": 541,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/article/render.rs",
+      "lines": 52,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/session/tests.rs",
+      "lines": 427,
+      "test_only_file_lines": 427,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/session.rs",
+      "lines": 370,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/cli/article/tests/citation_evidence.rs",
+      "lines": 82,
+      "test_only_file_lines": 82,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/diagnostics.rs",
+      "lines": 65,
+      "test_only_file_lines": 65,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/entities_disease_links.rs",
+      "lines": 237,
+      "test_only_file_lines": 237,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/exact_lookup.rs",
+      "lines": 446,
+      "test_only_file_lines": 446,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/filters.rs",
+      "lines": 650,
+      "test_only_file_lines": 650,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/help.rs",
+      "lines": 265,
+      "test_only_file_lines": 265,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/json.rs",
+      "lines": 699,
+      "test_only_file_lines": 699,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/mod.rs",
+      "lines": 11,
+      "test_only_file_lines": 11,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/next_commands.rs",
+      "lines": 41,
+      "test_only_file_lines": 41,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/tests/outage.rs",
+      "lines": 223,
+      "test_only_file_lines": 223,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/article/workflow.rs",
+      "lines": 96,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/author/detail.rs",
+      "lines": 28,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/author/mod.rs",
+      "lines": 121,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 76
+    },
+    {
+      "file": "src/cli/author/papers.rs",
+      "lines": 27,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/author/search.rs",
+      "lines": 38,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/cache/tests.rs",
+      "lines": 468,
+      "test_only_file_lines": 468,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/cache.rs",
+      "lines": 402,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 19
+    },
+    {
+      "file": "src/cli/cell_line/dispatch.rs",
+      "lines": 115,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/cell_line/mod.rs",
+      "lines": 85,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/chart.rs",
+      "lines": 249,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 152
+    },
+    {
+      "file": "src/cli/commands/selectors.rs",
+      "lines": 445,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/commands.rs",
+      "lines": 276,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/debug_plan.rs",
+      "lines": 35,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/diagnostic/dispatch.rs",
+      "lines": 136,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/diagnostic/mod.rs",
+      "lines": 66,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/diagnostic/tests.rs",
+      "lines": 342,
+      "test_only_file_lines": 342,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/discover.rs",
+      "lines": 570,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 431
+    },
+    {
+      "file": "src/cli/disease/dispatch.rs",
+      "lines": 381,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 32
+    },
+    {
+      "file": "src/cli/disease/mod.rs",
+      "lines": 114,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/disease/tests.rs",
+      "lines": 225,
+      "test_only_file_lines": 225,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/drug/alias_alignment_tests.rs",
+      "lines": 70,
+      "test_only_file_lines": 70,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/drug/dispatch.rs",
+      "lines": 676,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/drug/mod.rs",
+      "lines": 232,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 6
+    },
+    {
+      "file": "src/cli/drug/render.rs",
+      "lines": 303,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/drug/tests.rs",
+      "lines": 695,
+      "test_only_file_lines": 695,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/drug/workflow.rs",
+      "lines": 15,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/gene/cspec.rs",
+      "lines": 236,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/gene/dispatch.rs",
+      "lines": 175,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/gene/mod.rs",
+      "lines": 209,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 5
+    },
+    {
+      "file": "src/cli/gene/related.rs",
+      "lines": 232,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 34
+    },
+    {
+      "file": "src/cli/gwas/dispatch.rs",
+      "lines": 134,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 59
+    },
+    {
+      "file": "src/cli/gwas/mod.rs",
+      "lines": 31,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/cli/gwas/tests.rs",
+      "lines": 158,
+      "test_only_file_lines": 158,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/health/catalog.rs",
+      "lines": 548,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/health/http.rs",
+      "lines": 625,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 80
+    },
+    {
+      "file": "src/cli/health/local.rs",
+      "lines": 482,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/health/mod.rs",
+      "lines": 556,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 259
+    },
+    {
+      "file": "src/cli/health/runner.rs",
+      "lines": 443,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 20
+    },
+    {
+      "file": "src/cli/health/tests/catalog.rs",
+      "lines": 208,
+      "test_only_file_lines": 208,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/health/tests/fda.rs",
+      "lines": 156,
+      "test_only_file_lines": 156,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/health/tests/http.rs",
+      "lines": 392,
+      "test_only_file_lines": 392,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/health/tests/local.rs",
+      "lines": 691,
+      "test_only_file_lines": 691,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/health/tests/runner.rs",
+      "lines": 564,
+      "test_only_file_lines": 564,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/install.rs",
+      "lines": 388,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 110
+    },
+    {
+      "file": "src/cli/list/catalog.rs",
+      "lines": 276,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/list/clinical.rs",
+      "lines": 363,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/list/helpers.rs",
+      "lines": 157,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/list/literature.rs",
+      "lines": 217,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/list/mod.rs",
+      "lines": 102,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 5
+    },
+    {
+      "file": "src/cli/list/molecular.rs",
+      "lines": 379,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/list/tests/pages.rs",
+      "lines": 700,
+      "test_only_file_lines": 700,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/list/tests/router.rs",
+      "lines": 26,
+      "test_only_file_lines": 26,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/mcp_config.rs",
+      "lines": 186,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 84
+    },
+    {
+      "file": "src/cli/mod.rs",
+      "lines": 97,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 14
+    },
+    {
+      "file": "src/cli/outcome/mcp_chart.rs",
+      "lines": 55,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/outcome/probe_tests.rs",
+      "lines": 108,
+      "test_only_file_lines": 108,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/outcome/tests.rs",
+      "lines": 33,
+      "test_only_file_lines": 33,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/outcome.rs",
+      "lines": 685,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 6
+    },
+    {
+      "file": "src/cli/pathway/dispatch.rs",
+      "lines": 353,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/pathway/mod.rs",
+      "lines": 106,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/pathway/tests.rs",
+      "lines": 168,
+      "test_only_file_lines": 168,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/pgx/dispatch.rs",
+      "lines": 85,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/pgx/mod.rs",
+      "lines": 57,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/pgx/tests.rs",
+      "lines": 61,
+      "test_only_file_lines": 61,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/phenotype/dispatch.rs",
+      "lines": 84,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/phenotype/mod.rs",
+      "lines": 21,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/cli/phenotype/tests.rs",
+      "lines": 115,
+      "test_only_file_lines": 115,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/protein/dispatch.rs",
+      "lines": 184,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/protein/mod.rs",
+      "lines": 75,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/protein/tests.rs",
+      "lines": 137,
+      "test_only_file_lines": 137,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/response_contract.rs",
+      "lines": 633,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 272
+    },
+    {
+      "file": "src/cli/search_all/dispatch.rs",
+      "lines": 458,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all/format.rs",
+      "lines": 349,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all/links.rs",
+      "lines": 370,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all/mod.rs",
+      "lines": 296,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 7
+    },
+    {
+      "file": "src/cli/search_all/plan.rs",
+      "lines": 650,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all/tests/dispatch.rs",
+      "lines": 283,
+      "test_only_file_lines": 283,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all/tests/format.rs",
+      "lines": 290,
+      "test_only_file_lines": 290,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all/tests/links.rs",
+      "lines": 218,
+      "test_only_file_lines": 218,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all/tests/plan.rs",
+      "lines": 468,
+      "test_only_file_lines": 468,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/search_all_command.rs",
+      "lines": 161,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 123
+    },
+    {
+      "file": "src/cli/shared/search_payloads.rs",
+      "lines": 282,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/shared.rs",
+      "lines": 489,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 11
+    },
+    {
+      "file": "src/cli/skill/assets.rs",
+      "lines": 55,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/skill/atomic_swap.rs",
+      "lines": 122,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 23
+    },
+    {
+      "file": "src/cli/skill/catalog.rs",
+      "lines": 171,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/skill/install.rs",
+      "lines": 620,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/skill/mod.rs",
+      "lines": 65,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 5
+    },
+    {
+      "file": "src/cli/skill/status.rs",
+      "lines": 319,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/skill/tests/catalog.rs",
+      "lines": 391,
+      "test_only_file_lines": 391,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/skill/tests/install.rs",
+      "lines": 374,
+      "test_only_file_lines": 374,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/stale_json_note_tests.rs",
+      "lines": 539,
+      "test_only_file_lines": 539,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/study/dispatch.rs",
+      "lines": 437,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/study/mod.rs",
+      "lines": 183,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/cli/study/tests/charts.rs",
+      "lines": 412,
+      "test_only_file_lines": 412,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/study/tests/help.rs",
+      "lines": 126,
+      "test_only_file_lines": 126,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/study/tests/parsing.rs",
+      "lines": 270,
+      "test_only_file_lines": 270,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/study/tests/validation.rs",
+      "lines": 184,
+      "test_only_file_lines": 184,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/study/tests.rs",
+      "lines": 10,
+      "test_only_file_lines": 10,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/system/batch.rs",
+      "lines": 812,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 530
+    },
+    {
+      "file": "src/cli/system/dispatch.rs",
+      "lines": 680,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 45
+    },
+    {
+      "file": "src/cli/system/mod.rs",
+      "lines": 231,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/cli/system/tests/dev2_contracts.rs",
+      "lines": 307,
+      "test_only_file_lines": 307,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/system/tests/who_sync.rs",
+      "lines": 132,
+      "test_only_file_lines": 132,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/system/tests.rs",
+      "lines": 696,
+      "test_only_file_lines": 696,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/system/who_sync.rs",
+      "lines": 70,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/facade/cache.rs",
+      "lines": 214,
+      "test_only_file_lines": 214,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/facade/chart.rs",
+      "lines": 157,
+      "test_only_file_lines": 157,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/facade/help.rs",
+      "lines": 195,
+      "test_only_file_lines": 195,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/facade.rs",
+      "lines": 543,
+      "test_only_file_lines": 543,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/mod.rs",
+      "lines": 6,
+      "test_only_file_lines": 6,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_json_property/diagnostic.rs",
+      "lines": 287,
+      "test_only_file_lines": 287,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_json_property/disease_trial.rs",
+      "lines": 294,
+      "test_only_file_lines": 294,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_json_property/gene_article.rs",
+      "lines": 306,
+      "test_only_file_lines": 306,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_json_property/pathway_adverse_event.rs",
+      "lines": 298,
+      "test_only_file_lines": 298,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_json_property/protein_phenotype.rs",
+      "lines": 85,
+      "test_only_file_lines": 85,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_json_property/variant_drug.rs",
+      "lines": 152,
+      "test_only_file_lines": 152,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_json_property.rs",
+      "lines": 67,
+      "test_only_file_lines": 67,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/next_commands_validity.rs",
+      "lines": 306,
+      "test_only_file_lines": 306,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/outcome.rs",
+      "lines": 552,
+      "test_only_file_lines": 552,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/printed_card_commands.rs",
+      "lines": 595,
+      "test_only_file_lines": 595,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/tests/surface_agreement.rs",
+      "lines": 398,
+      "test_only_file_lines": 398,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/trial/count_tests.rs",
+      "lines": 117,
+      "test_only_file_lines": 117,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/trial/dispatch.rs",
+      "lines": 630,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/trial/documents.rs",
+      "lines": 188,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 78
+    },
+    {
+      "file": "src/cli/trial/mod.rs",
+      "lines": 163,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 8
+    },
+    {
+      "file": "src/cli/trial/tests.rs",
+      "lines": 689,
+      "test_only_file_lines": 689,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/trial/tests_locations.rs",
+      "lines": 650,
+      "test_only_file_lines": 650,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/trial/zero_result.rs",
+      "lines": 191,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/types.rs",
+      "lines": 421,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/update/tests.rs",
+      "lines": 365,
+      "test_only_file_lines": 365,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/update.rs",
+      "lines": 541,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 8
+    },
+    {
+      "file": "src/cli/variant/articles.rs",
+      "lines": 235,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/variant/car.rs",
+      "lines": 107,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 19
+    },
+    {
+      "file": "src/cli/variant/dispatch.rs",
+      "lines": 598,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 79
+    },
+    {
+      "file": "src/cli/variant/erepo.rs",
+      "lines": 357,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 97
+    },
+    {
+      "file": "src/cli/variant/guidance.rs",
+      "lines": 28,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/variant/mod.rs",
+      "lines": 336,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 5
+    },
+    {
+      "file": "src/cli/variant/normalization_json.rs",
+      "lines": 117,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 55
+    },
+    {
+      "file": "src/cli/variant/query.rs",
+      "lines": 585,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/variant/trial.rs",
+      "lines": 33,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/cli/worker.rs",
+      "lines": 97,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 24
+    },
+    {
+      "file": "src/entities/adverse_event/device.rs",
+      "lines": 184,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/adverse_event/sections.rs",
+      "lines": 158,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 46
+    },
+    {
+      "file": "src/entities/adverse_event.rs",
+      "lines": 2663,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 783
+    },
+    {
+      "file": "src/entities/article/assets.rs",
+      "lines": 3712,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 975
+    },
+    {
+      "file": "src/entities/article/backends/provider_unit.rs",
+      "lines": 140,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/backends/tests.rs",
+      "lines": 687,
+      "test_only_file_lines": 687,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/backends.rs",
+      "lines": 1001,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/batch/tests.rs",
+      "lines": 276,
+      "test_only_file_lines": 276,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/batch.rs",
+      "lines": 203,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 30
+    },
+    {
+      "file": "src/entities/article/candidates/tests.rs",
+      "lines": 580,
+      "test_only_file_lines": 580,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/candidates.rs",
+      "lines": 368,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/detail/tests.rs",
+      "lines": 421,
+      "test_only_file_lines": 421,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/detail.rs",
+      "lines": 849,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/enrichment/tests.rs",
+      "lines": 354,
+      "test_only_file_lines": 354,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/enrichment.rs",
+      "lines": 595,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/filters/tests.rs",
+      "lines": 335,
+      "test_only_file_lines": 335,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/filters.rs",
+      "lines": 330,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/fulltext.rs",
+      "lines": 1880,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 829
+    },
+    {
+      "file": "src/entities/article/graph/citation_evidence.rs",
+      "lines": 1278,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 19
+    },
+    {
+      "file": "src/entities/article/graph/tests/admission.rs",
+      "lines": 307,
+      "test_only_file_lines": 307,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/graph/tests/cache.rs",
+      "lines": 660,
+      "test_only_file_lines": 660,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/graph/tests.rs",
+      "lines": 2263,
+      "test_only_file_lines": 2263,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/graph.rs",
+      "lines": 503,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/identity_verification.rs",
+      "lines": 1533,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 620
+    },
+    {
+      "file": "src/entities/article/mod.rs",
+      "lines": 1515,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 324
+    },
+    {
+      "file": "src/entities/article/planner/tests.rs",
+      "lines": 460,
+      "test_only_file_lines": 460,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/planner.rs",
+      "lines": 320,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/query/tests.rs",
+      "lines": 458,
+      "test_only_file_lines": 458,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/query.rs",
+      "lines": 686,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 17
+    },
+    {
+      "file": "src/entities/article/ranking/tests/calibration/hybrid.rs",
+      "lines": 524,
+      "test_only_file_lines": 524,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/ranking/tests/calibration/rescue.rs",
+      "lines": 319,
+      "test_only_file_lines": 319,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/ranking/tests/calibration.rs",
+      "lines": 153,
+      "test_only_file_lines": 153,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/ranking/tests/directness.rs",
+      "lines": 208,
+      "test_only_file_lines": 208,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/ranking/tests/keyword.rs",
+      "lines": 82,
+      "test_only_file_lines": 82,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/ranking/tests/policy.rs",
+      "lines": 144,
+      "test_only_file_lines": 144,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/ranking/tests.rs",
+      "lines": 27,
+      "test_only_file_lines": 27,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/ranking.rs",
+      "lines": 573,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/search/deadline.rs",
+      "lines": 215,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 40
+    },
+    {
+      "file": "src/entities/article/search/status.rs",
+      "lines": 87,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search/tests/deadline.rs",
+      "lines": 663,
+      "test_only_file_lines": 663,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search/tests/finalizer.rs",
+      "lines": 89,
+      "test_only_file_lines": 89,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search/tests/integration.rs",
+      "lines": 82,
+      "test_only_file_lines": 82,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search/tests/merge.rs",
+      "lines": 449,
+      "test_only_file_lines": 449,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search/tests/relevance_paging.rs",
+      "lines": 53,
+      "test_only_file_lines": 53,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search/tests/type_capable.rs",
+      "lines": 120,
+      "test_only_file_lines": 120,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search/tests.rs",
+      "lines": 169,
+      "test_only_file_lines": 169,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/search.rs",
+      "lines": 1015,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/article/supplement_search.rs",
+      "lines": 619,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 51
+    },
+    {
+      "file": "src/entities/article/test_support.rs",
+      "lines": 224,
+      "test_only_file_lines": 224,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/article/variant_search.rs",
+      "lines": 8959,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4014
+    },
+    {
+      "file": "src/entities/author/mod.rs",
+      "lines": 618,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 179
+    },
+    {
+      "file": "src/entities/author/papers.rs",
+      "lines": 1597,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 869
+    },
+    {
+      "file": "src/entities/author/search.rs",
+      "lines": 358,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 123
+    },
+    {
+      "file": "src/entities/cell_line/chembl/tests.rs",
+      "lines": 196,
+      "test_only_file_lines": 196,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/cell_line/chembl.rs",
+      "lines": 138,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/cell_line/pharmacodb/tests.rs",
+      "lines": 243,
+      "test_only_file_lines": 243,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/cell_line/pharmacodb.rs",
+      "lines": 166,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/cell_line/tests.rs",
+      "lines": 467,
+      "test_only_file_lines": 467,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/cell_line.rs",
+      "lines": 753,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 11
+    },
+    {
+      "file": "src/entities/diagnostic/get.rs",
+      "lines": 695,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 35
+    },
+    {
+      "file": "src/entities/diagnostic/mod.rs",
+      "lines": 860,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 566
+    },
+    {
+      "file": "src/entities/diagnostic/search.rs",
+      "lines": 707,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 257
+    },
+    {
+      "file": "src/entities/discover.rs",
+      "lines": 4220,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 1477
+    },
+    {
+      "file": "src/entities/disease/article_links/tests.rs",
+      "lines": 102,
+      "test_only_file_lines": 102,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/article_links.rs",
+      "lines": 167,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/disease/associations/tests.rs",
+      "lines": 128,
+      "test_only_file_lines": 128,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/associations.rs",
+      "lines": 664,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 7
+    },
+    {
+      "file": "src/entities/disease/enrichment/tests.rs",
+      "lines": 574,
+      "test_only_file_lines": 574,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/enrichment.rs",
+      "lines": 872,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 8
+    },
+    {
+      "file": "src/entities/disease/fallback/tests.rs",
+      "lines": 455,
+      "test_only_file_lines": 455,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/fallback.rs",
+      "lines": 515,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/disease/get/tests.rs",
+      "lines": 820,
+      "test_only_file_lines": 820,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/get.rs",
+      "lines": 287,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 6
+    },
+    {
+      "file": "src/entities/disease/mod.rs",
+      "lines": 383,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/entities/disease/resolution/ambiguity.rs",
+      "lines": 226,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/resolution/tests.rs",
+      "lines": 745,
+      "test_only_file_lines": 745,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/resolution.rs",
+      "lines": 914,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/disease/search/tests.rs",
+      "lines": 703,
+      "test_only_file_lines": 703,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/search.rs",
+      "lines": 837,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 14
+    },
+    {
+      "file": "src/entities/disease/test_support.rs",
+      "lines": 98,
+      "test_only_file_lines": 98,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/disease/tests.rs",
+      "lines": 65,
+      "test_only_file_lines": 65,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/cell_lines/tests.rs",
+      "lines": 233,
+      "test_only_file_lines": 233,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/cell_lines.rs",
+      "lines": 231,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/drug/get/tests.rs",
+      "lines": 1105,
+      "test_only_file_lines": 1105,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/get.rs",
+      "lines": 1709,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 6
+    },
+    {
+      "file": "src/entities/drug/interactions.rs",
+      "lines": 482,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 103
+    },
+    {
+      "file": "src/entities/drug/label/tests/extraction.rs",
+      "lines": 262,
+      "test_only_file_lines": 262,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/label/tests/identity.rs",
+      "lines": 398,
+      "test_only_file_lines": 398,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/label/tests/summary.rs",
+      "lines": 103,
+      "test_only_file_lines": 103,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/label/tests.rs",
+      "lines": 5,
+      "test_only_file_lines": 5,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/label.rs",
+      "lines": 1349,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/entities/drug/metadata/tests.rs",
+      "lines": 152,
+      "test_only_file_lines": 152,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/metadata.rs",
+      "lines": 530,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/drug/mod.rs",
+      "lines": 717,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 31
+    },
+    {
+      "file": "src/entities/drug/query/tests.rs",
+      "lines": 137,
+      "test_only_file_lines": 137,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/query.rs",
+      "lines": 278,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/drug/search/tests/fallback.rs",
+      "lines": 242,
+      "test_only_file_lines": 242,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/search/tests/mechanism.rs",
+      "lines": 55,
+      "test_only_file_lines": 55,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/search/tests/who.rs",
+      "lines": 218,
+      "test_only_file_lines": 218,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/search/tests.rs",
+      "lines": 271,
+      "test_only_file_lines": 271,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/search.rs",
+      "lines": 999,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 46
+    },
+    {
+      "file": "src/entities/drug/targets/tests/civic.rs",
+      "lines": 99,
+      "test_only_file_lines": 99,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/targets/tests/family.rs",
+      "lines": 160,
+      "test_only_file_lines": 160,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/targets/tests/indications.rs",
+      "lines": 39,
+      "test_only_file_lines": 39,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/targets/tests.rs",
+      "lines": 8,
+      "test_only_file_lines": 8,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/targets.rs",
+      "lines": 466,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/drug/test_support/brand_resolution.rs",
+      "lines": 762,
+      "test_only_file_lines": 762,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/test_support/ingredient_resolution.rs",
+      "lines": 689,
+      "test_only_file_lines": 689,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/test_support/label_choice.rs",
+      "lines": 1288,
+      "test_only_file_lines": 1288,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/test_support/product_names.rs",
+      "lines": 638,
+      "test_only_file_lines": 638,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/drug/test_support.rs",
+      "lines": 967,
+      "test_only_file_lines": 967,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/gene/cell_lines/tests.rs",
+      "lines": 324,
+      "test_only_file_lines": 324,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/gene/cell_lines.rs",
+      "lines": 199,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/gene/clingen.rs",
+      "lines": 283,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 153
+    },
+    {
+      "file": "src/entities/gene/cspec.rs",
+      "lines": 1105,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 405
+    },
+    {
+      "file": "src/entities/gene/gencc/tests.rs",
+      "lines": 1037,
+      "test_only_file_lines": 1037,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/gene/gencc.rs",
+      "lines": 288,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 11
+    },
+    {
+      "file": "src/entities/gene.rs",
+      "lines": 3974,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 677
+    },
+    {
+      "file": "src/entities/mod.rs",
+      "lines": 84,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/pathway.rs",
+      "lines": 1300,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 409
+    },
+    {
+      "file": "src/entities/pgx/recommendation_tests.rs",
+      "lines": 179,
+      "test_only_file_lines": 179,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/pgx.rs",
+      "lines": 1139,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 157
+    },
+    {
+      "file": "src/entities/pharmacodb/tests.rs",
+      "lines": 425,
+      "test_only_file_lines": 425,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/pharmacodb.rs",
+      "lines": 366,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/protein.rs",
+      "lines": 957,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 282
+    },
+    {
+      "file": "src/entities/section_outcome.rs",
+      "lines": 480,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 159
+    },
+    {
+      "file": "src/entities/source_state_registry.rs",
+      "lines": 946,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 44
+    },
+    {
+      "file": "src/entities/study/tests/missing_root.rs",
+      "lines": 46,
+      "test_only_file_lines": 46,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/study.rs",
+      "lines": 1774,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 535
+    },
+    {
+      "file": "src/entities/trial/design.rs",
+      "lines": 943,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 45
+    },
+    {
+      "file": "src/entities/trial/documents.rs",
+      "lines": 500,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 219
+    },
+    {
+      "file": "src/entities/trial/eligibility.rs",
+      "lines": 810,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 288
+    },
+    {
+      "file": "src/entities/trial/get/tests.rs",
+      "lines": 907,
+      "test_only_file_lines": 907,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/get.rs",
+      "lines": 306,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/trial/mod.rs",
+      "lines": 860,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 159
+    },
+    {
+      "file": "src/entities/trial/search/ctgov/abbreviation_note_tests.rs",
+      "lines": 247,
+      "test_only_file_lines": 247,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/search/ctgov/tests.rs",
+      "lines": 1123,
+      "test_only_file_lines": 1123,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/search/ctgov.rs",
+      "lines": 1134,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/entities/trial/search/eligibility/keep_paths.rs",
+      "lines": 134,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/search/eligibility/tests.rs",
+      "lines": 334,
+      "test_only_file_lines": 334,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/search/eligibility.rs",
+      "lines": 438,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/entities/trial/search/essie.rs",
+      "lines": 316,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 109
+    },
+    {
+      "file": "src/entities/trial/search/mod.rs",
+      "lines": 416,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/search/nci/tests.rs",
+      "lines": 782,
+      "test_only_file_lines": 782,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/search/nci.rs",
+      "lines": 266,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/trial/search/normalization/tests.rs",
+      "lines": 211,
+      "test_only_file_lines": 211,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/trial/search/normalization.rs",
+      "lines": 235,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 12
+    },
+    {
+      "file": "src/entities/trial/test_support.rs",
+      "lines": 279,
+      "test_only_file_lines": 279,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/clinvar.rs",
+      "lines": 791,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 560
+    },
+    {
+      "file": "src/entities/variant/erepo.rs",
+      "lines": 1026,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 243
+    },
+    {
+      "file": "src/entities/variant/get/protein_change_tests.rs",
+      "lines": 1392,
+      "test_only_file_lines": 1392,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/get/tests.rs",
+      "lines": 1539,
+      "test_only_file_lines": 1539,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/get.rs",
+      "lines": 2052,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 19
+    },
+    {
+      "file": "src/entities/variant/gwas/tests.rs",
+      "lines": 479,
+      "test_only_file_lines": 479,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/gwas.rs",
+      "lines": 617,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/variant/mod.rs",
+      "lines": 743,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 4
+    },
+    {
+      "file": "src/entities/variant/normalization.rs",
+      "lines": 429,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 61
+    },
+    {
+      "file": "src/entities/variant/resolution/tests.rs",
+      "lines": 699,
+      "test_only_file_lines": 699,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/resolution.rs",
+      "lines": 1482,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/variant/search/diagnostics.rs",
+      "lines": 377,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/search/mod.rs",
+      "lines": 1113,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/variant/search/tests.rs",
+      "lines": 874,
+      "test_only_file_lines": 874,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/structure/tests.rs",
+      "lines": 595,
+      "test_only_file_lines": 595,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/entities/variant/structure.rs",
+      "lines": 518,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/entities/variant/test_support.rs",
+      "lines": 4,
+      "test_only_file_lines": 4,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/error.rs",
+      "lines": 1543,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 517
+    },
+    {
+      "file": "src/gene.rs",
+      "lines": 3,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/lib.rs",
+      "lines": 59,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 26
+    },
+    {
+      "file": "src/main.rs",
+      "lines": 229,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/catalog.rs",
+      "lines": 119,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/mod.rs",
+      "lines": 46,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/shell/http_server.rs",
+      "lines": 614,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 127
+    },
+    {
+      "file": "src/mcp/shell/modern.rs",
+      "lines": 273,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/shell/pre_session.rs",
+      "lines": 153,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/shell/tests/ticket_1120.rs",
+      "lines": 117,
+      "test_only_file_lines": 117,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/shell/trial_phase.rs",
+      "lines": 54,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 37
+    },
+    {
+      "file": "src/mcp/shell/typed_get.rs",
+      "lines": 111,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/shell/typed_get_tests.rs",
+      "lines": 975,
+      "test_only_file_lines": 975,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/mcp/shell.rs",
+      "lines": 2867,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 1073
+    },
+    {
+      "file": "src/next_command.rs",
+      "lines": 103,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 17
+    },
+    {
+      "file": "src/render/chart/bounds.rs",
+      "lines": 64,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/chart.rs",
+      "lines": 2068,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 1087
+    },
+    {
+      "file": "src/render/human.rs",
+      "lines": 535,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 293
+    },
+    {
+      "file": "src/render/json.rs",
+      "lines": 1598,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 955
+    },
+    {
+      "file": "src/render/markdown/adverse_event/tests.rs",
+      "lines": 475,
+      "test_only_file_lines": 475,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/adverse_event.rs",
+      "lines": 381,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/article/tests.rs",
+      "lines": 1351,
+      "test_only_file_lines": 1351,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/article.rs",
+      "lines": 789,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/author.rs",
+      "lines": 873,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 465
+    },
+    {
+      "file": "src/render/markdown/cell_line/tests.rs",
+      "lines": 194,
+      "test_only_file_lines": 194,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/cell_line.rs",
+      "lines": 104,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/diagnostic/tests.rs",
+      "lines": 424,
+      "test_only_file_lines": 424,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/diagnostic.rs",
+      "lines": 249,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/discovery/tests.rs",
+      "lines": 176,
+      "test_only_file_lines": 176,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/discovery.rs",
+      "lines": 184,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/disease/tests/extended.rs",
+      "lines": 260,
+      "test_only_file_lines": 260,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/disease/tests/rendering.rs",
+      "lines": 918,
+      "test_only_file_lines": 918,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/disease/tests.rs",
+      "lines": 128,
+      "test_only_file_lines": 128,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/disease.rs",
+      "lines": 406,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/drug/tests/label_sections.rs",
+      "lines": 164,
+      "test_only_file_lines": 164,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/drug/tests/label_warnings.rs",
+      "lines": 196,
+      "test_only_file_lines": 196,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/drug/tests.rs",
+      "lines": 1149,
+      "test_only_file_lines": 1149,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/drug.rs",
+      "lines": 731,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/drug_regulatory.rs",
+      "lines": 775,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 61
+    },
+    {
+      "file": "src/render/markdown/evidence/tests.rs",
+      "lines": 306,
+      "test_only_file_lines": 306,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/evidence.rs",
+      "lines": 494,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/funding.rs",
+      "lines": 85,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/gene/tests/extended.rs",
+      "lines": 414,
+      "test_only_file_lines": 414,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/gene/tests/rendering.rs",
+      "lines": 829,
+      "test_only_file_lines": 829,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/gene/tests.rs",
+      "lines": 4,
+      "test_only_file_lines": 4,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/gene.rs",
+      "lines": 131,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/mod.rs",
+      "lines": 922,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 15
+    },
+    {
+      "file": "src/render/markdown/pathway/tests.rs",
+      "lines": 77,
+      "test_only_file_lines": 77,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/pathway.rs",
+      "lines": 62,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/pgx/tests.rs",
+      "lines": 90,
+      "test_only_file_lines": 90,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/pgx.rs",
+      "lines": 78,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/pharmacodb.rs",
+      "lines": 55,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/protein/tests.rs",
+      "lines": 90,
+      "test_only_file_lines": 90,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/protein.rs",
+      "lines": 156,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/related/article_support.rs",
+      "lines": 435,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related/tests/article_search.rs",
+      "lines": 376,
+      "test_only_file_lines": 376,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related/tests/diagnostic.rs",
+      "lines": 99,
+      "test_only_file_lines": 99,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related/tests/disease.rs",
+      "lines": 468,
+      "test_only_file_lines": 468,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related/tests/drug_variant_article_trial.rs",
+      "lines": 734,
+      "test_only_file_lines": 734,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related/tests/gene_drug.rs",
+      "lines": 196,
+      "test_only_file_lines": 196,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related/tests/misc.rs",
+      "lines": 126,
+      "test_only_file_lines": 126,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related/tests.rs",
+      "lines": 8,
+      "test_only_file_lines": 8,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/related.rs",
+      "lines": 1141,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 23
+    },
+    {
+      "file": "src/render/markdown/root_tests.rs",
+      "lines": 708,
+      "test_only_file_lines": 708,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/sections/tests.rs",
+      "lines": 912,
+      "test_only_file_lines": 912,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/sections.rs",
+      "lines": 670,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/study/tests.rs",
+      "lines": 429,
+      "test_only_file_lines": 429,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/study.rs",
+      "lines": 481,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/support/tests.rs",
+      "lines": 48,
+      "test_only_file_lines": 48,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/support.rs",
+      "lines": 159,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/test_support.rs",
+      "lines": 25,
+      "test_only_file_lines": 25,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/tests.rs",
+      "lines": 5,
+      "test_only_file_lines": 5,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/trial/tests.rs",
+      "lines": 997,
+      "test_only_file_lines": 997,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/trial.rs",
+      "lines": 472,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/markdown/variant/tests.rs",
+      "lines": 1251,
+      "test_only_file_lines": 1251,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/markdown/variant.rs",
+      "lines": 705,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/render/mod.rs",
+      "lines": 7,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/provenance/adverse_event.rs",
+      "lines": 101,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/render/provenance.rs",
+      "lines": 1916,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 1025
+    },
+    {
+      "file": "src/skill_assets.rs",
+      "lines": 29,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/alphagenome/tests/construction.rs",
+      "lines": 40,
+      "test_only_file_lines": 40,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/alphagenome/tests/mod.rs",
+      "lines": 15,
+      "test_only_file_lines": 15,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/alphagenome/tests/parsing.rs",
+      "lines": 69,
+      "test_only_file_lines": 69,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/alphagenome.rs",
+      "lines": 552,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/archive_budget.rs",
+      "lines": 467,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 283
+    },
+    {
+      "file": "src/sources/ca_bundle.rs",
+      "lines": 460,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 246
+    },
+    {
+      "file": "src/sources/cancerhotspots/tests/construction.rs",
+      "lines": 33,
+      "test_only_file_lines": 33,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cancerhotspots/tests/parsing.rs",
+      "lines": 178,
+      "test_only_file_lines": 178,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cancerhotspots.rs",
+      "lines": 194,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 5
+    },
+    {
+      "file": "src/sources/cbioportal/tests/construction.rs",
+      "lines": 69,
+      "test_only_file_lines": 69,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal/tests/live.rs",
+      "lines": 14,
+      "test_only_file_lines": 14,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal/tests/parsing.rs",
+      "lines": 85,
+      "test_only_file_lines": 85,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal.rs",
+      "lines": 330,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/cbioportal_download/tests/construction.rs",
+      "lines": 81,
+      "test_only_file_lines": 81,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal_download/tests/download.rs",
+      "lines": 127,
+      "test_only_file_lines": 127,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal_download/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal_download/tests/parsing.rs",
+      "lines": 338,
+      "test_only_file_lines": 338,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal_download.rs",
+      "lines": 559,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/cbioportal_study/tests/dev2_contracts.rs",
+      "lines": 48,
+      "test_only_file_lines": 48,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cbioportal_study.rs",
+      "lines": 3195,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 974
+    },
+    {
+      "file": "src/sources/cellosaurus/tests.rs",
+      "lines": 124,
+      "test_only_file_lines": 124,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cellosaurus.rs",
+      "lines": 507,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/chembl/tests/construction.rs",
+      "lines": 78,
+      "test_only_file_lines": 78,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/chembl/tests/parsing.rs",
+      "lines": 149,
+      "test_only_file_lines": 149,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/chembl.rs",
+      "lines": 374,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 21
+    },
+    {
+      "file": "src/sources/civic/tests/construction.rs",
+      "lines": 46,
+      "test_only_file_lines": 46,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/civic/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/civic/tests/parsing.rs",
+      "lines": 120,
+      "test_only_file_lines": 120,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/civic.rs",
+      "lines": 526,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/clingen/tests/mod.rs",
+      "lines": 422,
+      "test_only_file_lines": 422,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/clingen/tests/parsing.rs",
+      "lines": 286,
+      "test_only_file_lines": 286,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/clingen.rs",
+      "lines": 812,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 36
+    },
+    {
+      "file": "src/sources/clingen_allele_registry.rs",
+      "lines": 762,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 252
+    },
+    {
+      "file": "src/sources/clingen_cspec.rs",
+      "lines": 335,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 187
+    },
+    {
+      "file": "src/sources/clingen_erepo.rs",
+      "lines": 337,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 82
+    },
+    {
+      "file": "src/sources/clingen_ldh.rs",
+      "lines": 124,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 23
+    },
+    {
+      "file": "src/sources/clinicaltrials/tests/construction.rs",
+      "lines": 266,
+      "test_only_file_lines": 266,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/clinicaltrials/tests/live.rs",
+      "lines": 18,
+      "test_only_file_lines": 18,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/clinicaltrials/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/clinicaltrials/tests/parsing.rs",
+      "lines": 469,
+      "test_only_file_lines": 469,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/clinicaltrials.rs",
+      "lines": 968,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 8
+    },
+    {
+      "file": "src/sources/complexportal/tests/construction.rs",
+      "lines": 32,
+      "test_only_file_lines": 32,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/complexportal/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/complexportal/tests/parsing.rs",
+      "lines": 89,
+      "test_only_file_lines": 89,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/complexportal.rs",
+      "lines": 237,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/cpic/tests/construction.rs",
+      "lines": 76,
+      "test_only_file_lines": 76,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cpic/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cpic/tests/parsing.rs",
+      "lines": 143,
+      "test_only_file_lines": 143,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cpic.rs",
+      "lines": 485,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 40
+    },
+    {
+      "file": "src/sources/cvx/tests/construction.rs",
+      "lines": 80,
+      "test_only_file_lines": 80,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cvx/tests/mod.rs",
+      "lines": 22,
+      "test_only_file_lines": 22,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cvx/tests/parsing.rs",
+      "lines": 212,
+      "test_only_file_lines": 212,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/cvx.rs",
+      "lines": 880,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 17
+    },
+    {
+      "file": "src/sources/dbsnp.rs",
+      "lines": 208,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ddinter/tests/construction.rs",
+      "lines": 111,
+      "test_only_file_lines": 111,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ddinter/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ddinter/tests/parsing.rs",
+      "lines": 208,
+      "test_only_file_lines": 208,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ddinter.rs",
+      "lines": 542,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/dgidb/tests/construction.rs",
+      "lines": 34,
+      "test_only_file_lines": 34,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/dgidb/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/dgidb/tests/parsing.rs",
+      "lines": 79,
+      "test_only_file_lines": 79,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/dgidb.rs",
+      "lines": 391,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/disable.rs",
+      "lines": 487,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 139
+    },
+    {
+      "file": "src/sources/disgenet/tests/construction.rs",
+      "lines": 93,
+      "test_only_file_lines": 93,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/disgenet/tests/mod.rs",
+      "lines": 154,
+      "test_only_file_lines": 154,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/disgenet/tests/parsing.rs",
+      "lines": 178,
+      "test_only_file_lines": 178,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/disgenet.rs",
+      "lines": 466,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/ema/identity.rs",
+      "lines": 264,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 11
+    },
+    {
+      "file": "src/sources/ema/tests/mod.rs",
+      "lines": 103,
+      "test_only_file_lines": 103,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ema/tests/parsing.rs",
+      "lines": 416,
+      "test_only_file_lines": 416,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ema.rs",
+      "lines": 1003,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 8
+    },
+    {
+      "file": "src/sources/enrichr/tests/construction.rs",
+      "lines": 30,
+      "test_only_file_lines": 30,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/enrichr/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/enrichr/tests/parsing.rs",
+      "lines": 45,
+      "test_only_file_lines": 45,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/enrichr.rs",
+      "lines": 239,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/europepmc/tests/construction.rs",
+      "lines": 120,
+      "test_only_file_lines": 120,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/europepmc/tests/live.rs",
+      "lines": 14,
+      "test_only_file_lines": 14,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/europepmc/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/europepmc/tests/parsing.rs",
+      "lines": 238,
+      "test_only_file_lines": 238,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/europepmc.rs",
+      "lines": 619,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/fda_orphan.rs",
+      "lines": 1042,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 346
+    },
+    {
+      "file": "src/sources/figshare/tests/construction.rs",
+      "lines": 126,
+      "test_only_file_lines": 126,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/figshare/tests/mod.rs",
+      "lines": 52,
+      "test_only_file_lines": 52,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/figshare/tests/parsing.rs",
+      "lines": 135,
+      "test_only_file_lines": 135,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/figshare.rs",
+      "lines": 515,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/gencc/model.rs",
+      "lines": 396,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 8
+    },
+    {
+      "file": "src/sources/gencc/store.rs",
+      "lines": 1211,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 8
+    },
+    {
+      "file": "src/sources/gencc/tests.rs",
+      "lines": 1188,
+      "test_only_file_lines": 1188,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gencc.rs",
+      "lines": 1021,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 237
+    },
+    {
+      "file": "src/sources/gnomad/tests/construction.rs",
+      "lines": 75,
+      "test_only_file_lines": 75,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gnomad/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gnomad/tests/parsing.rs",
+      "lines": 167,
+      "test_only_file_lines": 167,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gnomad.rs",
+      "lines": 359,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/gprofiler/tests/construction.rs",
+      "lines": 34,
+      "test_only_file_lines": 34,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gprofiler/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gprofiler/tests/parsing.rs",
+      "lines": 95,
+      "test_only_file_lines": 95,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gprofiler.rs",
+      "lines": 236,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/gtex/tests/construction.rs",
+      "lines": 39,
+      "test_only_file_lines": 39,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gtex/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gtex/tests/parsing.rs",
+      "lines": 94,
+      "test_only_file_lines": 94,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gtex.rs",
+      "lines": 280,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/gtr/tests/construction.rs",
+      "lines": 110,
+      "test_only_file_lines": 110,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gtr/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gtr/tests/parsing.rs",
+      "lines": 306,
+      "test_only_file_lines": 306,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gtr.rs",
+      "lines": 791,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 18
+    },
+    {
+      "file": "src/sources/gwas/tests/construction.rs",
+      "lines": 58,
+      "test_only_file_lines": 58,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gwas/tests/day_cache.rs",
+      "lines": 360,
+      "test_only_file_lines": 360,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gwas/tests/mod.rs",
+      "lines": 4,
+      "test_only_file_lines": 4,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gwas/tests/parsing.rs",
+      "lines": 133,
+      "test_only_file_lines": 133,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gwas/tests/retired_endpoint.rs",
+      "lines": 114,
+      "test_only_file_lines": 114,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/gwas.rs",
+      "lines": 569,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/hpa/tests/construction.rs",
+      "lines": 53,
+      "test_only_file_lines": 53,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/hpa/tests/mod.rs",
+      "lines": 42,
+      "test_only_file_lines": 42,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/hpa/tests/parsing.rs",
+      "lines": 87,
+      "test_only_file_lines": 87,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/hpa.rs",
+      "lines": 661,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/hpo/tests/construction.rs",
+      "lines": 60,
+      "test_only_file_lines": 60,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/hpo/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/hpo/tests/parsing.rs",
+      "lines": 167,
+      "test_only_file_lines": 167,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/hpo.rs",
+      "lines": 310,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 20
+    },
+    {
+      "file": "src/sources/interpro/tests/construction.rs",
+      "lines": 23,
+      "test_only_file_lines": 23,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/interpro/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/interpro/tests/parsing.rs",
+      "lines": 26,
+      "test_only_file_lines": 26,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/interpro.rs",
+      "lines": 197,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/kegg/tests/construction.rs",
+      "lines": 25,
+      "test_only_file_lines": 25,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/kegg/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/kegg/tests/parsing.rs",
+      "lines": 74,
+      "test_only_file_lines": 74,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/kegg.rs",
+      "lines": 332,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/litsense2/tests/construction.rs",
+      "lines": 71,
+      "test_only_file_lines": 71,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litsense2/tests/live.rs",
+      "lines": 14,
+      "test_only_file_lines": 14,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litsense2/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litsense2/tests/parsing.rs",
+      "lines": 107,
+      "test_only_file_lines": 107,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litsense2.rs",
+      "lines": 183,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/litvar/tests/construction.rs",
+      "lines": 56,
+      "test_only_file_lines": 56,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litvar/tests/live.rs",
+      "lines": 26,
+      "test_only_file_lines": 26,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litvar/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litvar/tests/parsing.rs",
+      "lines": 148,
+      "test_only_file_lines": 148,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/litvar.rs",
+      "lines": 215,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/medlineplus/tests/construction.rs",
+      "lines": 56,
+      "test_only_file_lines": 56,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/medlineplus/tests/mod.rs",
+      "lines": 28,
+      "test_only_file_lines": 28,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/medlineplus/tests/parsing.rs",
+      "lines": 85,
+      "test_only_file_lines": 85,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/medlineplus.rs",
+      "lines": 235,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/mod.rs",
+      "lines": 3073,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 1145
+    },
+    {
+      "file": "src/sources/monarch/tests/construction.rs",
+      "lines": 95,
+      "test_only_file_lines": 95,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/monarch/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/monarch/tests/parsing.rs",
+      "lines": 333,
+      "test_only_file_lines": 333,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/monarch.rs",
+      "lines": 748,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/mutalyzer/tests/construction.rs",
+      "lines": 38,
+      "test_only_file_lines": 38,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mutalyzer/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mutalyzer/tests/parsing.rs",
+      "lines": 109,
+      "test_only_file_lines": 109,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mutalyzer.rs",
+      "lines": 261,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/mychem/tests/construction.rs",
+      "lines": 63,
+      "test_only_file_lines": 63,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mychem/tests/live.rs",
+      "lines": 14,
+      "test_only_file_lines": 14,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mychem/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mychem/tests/parsing.rs",
+      "lines": 257,
+      "test_only_file_lines": 257,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mychem.rs",
+      "lines": 336,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/mydisease/tests/construction.rs",
+      "lines": 160,
+      "test_only_file_lines": 160,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mydisease/tests/live.rs",
+      "lines": 25,
+      "test_only_file_lines": 25,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mydisease/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mydisease/tests/parsing.rs",
+      "lines": 109,
+      "test_only_file_lines": 109,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mydisease.rs",
+      "lines": 493,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 9
+    },
+    {
+      "file": "src/sources/mygene/tests/live.rs",
+      "lines": 58,
+      "test_only_file_lines": 58,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/mygene.rs",
+      "lines": 888,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 353
+    },
+    {
+      "file": "src/sources/myvariant/filter_conflicts.rs",
+      "lines": 47,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/myvariant/filter_keys.rs",
+      "lines": 19,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/myvariant/tests/construction.rs",
+      "lines": 915,
+      "test_only_file_lines": 915,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/myvariant/tests/live.rs",
+      "lines": 87,
+      "test_only_file_lines": 87,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/myvariant/tests/mod.rs",
+      "lines": 10,
+      "test_only_file_lines": 10,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/myvariant/tests/parsing.rs",
+      "lines": 631,
+      "test_only_file_lines": 631,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/myvariant.rs",
+      "lines": 1610,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 23
+    },
+    {
+      "file": "src/sources/ncbi_efetch/tests/construction.rs",
+      "lines": 60,
+      "test_only_file_lines": 60,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_efetch/tests/live.rs",
+      "lines": 15,
+      "test_only_file_lines": 15,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_efetch/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_efetch/tests/parsing.rs",
+      "lines": 85,
+      "test_only_file_lines": 85,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_efetch.rs",
+      "lines": 1322,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 428
+    },
+    {
+      "file": "src/sources/ncbi_idconv/tests/construction.rs",
+      "lines": 64,
+      "test_only_file_lines": 64,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_idconv/tests/live.rs",
+      "lines": 13,
+      "test_only_file_lines": 13,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_idconv/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_idconv/tests/parsing.rs",
+      "lines": 76,
+      "test_only_file_lines": 76,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ncbi_idconv.rs",
+      "lines": 174,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/nci_cts/tests/construction.rs",
+      "lines": 167,
+      "test_only_file_lines": 167,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nci_cts/tests/live.rs",
+      "lines": 48,
+      "test_only_file_lines": 48,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nci_cts/tests/mod.rs",
+      "lines": 9,
+      "test_only_file_lines": 9,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nci_cts/tests/parsing.rs",
+      "lines": 247,
+      "test_only_file_lines": 247,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nci_cts.rs",
+      "lines": 672,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/nih_reporter/tests/construction.rs",
+      "lines": 75,
+      "test_only_file_lines": 75,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nih_reporter/tests/live.rs",
+      "lines": 14,
+      "test_only_file_lines": 14,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nih_reporter/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nih_reporter/tests/parsing.rs",
+      "lines": 212,
+      "test_only_file_lines": 212,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/nih_reporter.rs",
+      "lines": 353,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/ols4/tests/construction.rs",
+      "lines": 37,
+      "test_only_file_lines": 37,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ols4/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ols4/tests/parsing.rs",
+      "lines": 59,
+      "test_only_file_lines": 59,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/ols4.rs",
+      "lines": 192,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 9
+    },
+    {
+      "file": "src/sources/oncokb/tests/construction.rs",
+      "lines": 56,
+      "test_only_file_lines": 56,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/oncokb/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/oncokb/tests/parsing.rs",
+      "lines": 60,
+      "test_only_file_lines": 60,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/oncokb.rs",
+      "lines": 219,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/opencitations.rs",
+      "lines": 388,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 267
+    },
+    {
+      "file": "src/sources/openfda/tests/construction.rs",
+      "lines": 179,
+      "test_only_file_lines": 179,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/openfda/tests/day_cache.rs",
+      "lines": 320,
+      "test_only_file_lines": 320,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/openfda/tests/parsing.rs",
+      "lines": 122,
+      "test_only_file_lines": 122,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/openfda.rs",
+      "lines": 864,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 9
+    },
+    {
+      "file": "src/sources/opentargets.rs",
+      "lines": 2088,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 639
+    },
+    {
+      "file": "src/sources/orcid/tests.rs",
+      "lines": 772,
+      "test_only_file_lines": 772,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/orcid.rs",
+      "lines": 710,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/ordinary_url_policy.rs",
+      "lines": 427,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 100
+    },
+    {
+      "file": "src/sources/pharmacodb/tests/construction.rs",
+      "lines": 154,
+      "test_only_file_lines": 154,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pharmacodb/tests/limits.rs",
+      "lines": 128,
+      "test_only_file_lines": 128,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pharmacodb/tests/parsing.rs",
+      "lines": 232,
+      "test_only_file_lines": 232,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pharmacodb.rs",
+      "lines": 685,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 6
+    },
+    {
+      "file": "src/sources/pharmgkb/tests/construction.rs",
+      "lines": 68,
+      "test_only_file_lines": 68,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pharmgkb/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pharmgkb/tests/parsing.rs",
+      "lines": 123,
+      "test_only_file_lines": 123,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pharmgkb.rs",
+      "lines": 367,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 16
+    },
+    {
+      "file": "src/sources/pmc_article.rs",
+      "lines": 899,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 368
+    },
+    {
+      "file": "src/sources/pmc_oa/tests/construction.rs",
+      "lines": 37,
+      "test_only_file_lines": 37,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pmc_oa/tests/live.rs",
+      "lines": 25,
+      "test_only_file_lines": 25,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pmc_oa/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pmc_oa/tests/parsing.rs",
+      "lines": 293,
+      "test_only_file_lines": 293,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pmc_oa.rs",
+      "lines": 528,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 98
+    },
+    {
+      "file": "src/sources/provider_url_policy.rs",
+      "lines": 1118,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 395
+    },
+    {
+      "file": "src/sources/pubmed/tests/construction.rs",
+      "lines": 113,
+      "test_only_file_lines": 113,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubmed/tests/live.rs",
+      "lines": 20,
+      "test_only_file_lines": 20,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubmed/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubmed/tests/parsing.rs",
+      "lines": 493,
+      "test_only_file_lines": 493,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubmed.rs",
+      "lines": 744,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/pubtator/tests/construction.rs",
+      "lines": 126,
+      "test_only_file_lines": 126,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubtator/tests/live.rs",
+      "lines": 17,
+      "test_only_file_lines": 17,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubtator/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubtator/tests/parsing.rs",
+      "lines": 285,
+      "test_only_file_lines": 285,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/pubtator.rs",
+      "lines": 498,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/quickgo/tests/construction.rs",
+      "lines": 35,
+      "test_only_file_lines": 35,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/quickgo/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/quickgo/tests/parsing.rs",
+      "lines": 46,
+      "test_only_file_lines": 46,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/quickgo.rs",
+      "lines": 155,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/rate_limit.rs",
+      "lines": 747,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 378
+    },
+    {
+      "file": "src/sources/reactome/tests/construction.rs",
+      "lines": 61,
+      "test_only_file_lines": 61,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/reactome/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/reactome/tests/parsing.rs",
+      "lines": 61,
+      "test_only_file_lines": 61,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/reactome.rs",
+      "lines": 390,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/request_plan_transport.rs",
+      "lines": 220,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/seer/tests/construction.rs",
+      "lines": 27,
+      "test_only_file_lines": 27,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/seer/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/seer/tests/parsing.rs",
+      "lines": 198,
+      "test_only_file_lines": 198,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/seer.rs",
+      "lines": 697,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 13
+    },
+    {
+      "file": "src/sources/semantic_scholar/tests/construction.rs",
+      "lines": 633,
+      "test_only_file_lines": 633,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/semantic_scholar/tests/live.rs",
+      "lines": 14,
+      "test_only_file_lines": 14,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/semantic_scholar/tests/mod.rs",
+      "lines": 3,
+      "test_only_file_lines": 3,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/semantic_scholar/tests/parsing.rs",
+      "lines": 382,
+      "test_only_file_lines": 382,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/semantic_scholar.rs",
+      "lines": 1053,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 54
+    },
+    {
+      "file": "src/sources/string/tests/construction.rs",
+      "lines": 22,
+      "test_only_file_lines": 22,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/string/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/string/tests/parsing.rs",
+      "lines": 31,
+      "test_only_file_lines": 31,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/string.rs",
+      "lines": 109,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/tests/clingen_runtime.rs",
+      "lines": 204,
+      "test_only_file_lines": 204,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/tests/provider_network.rs",
+      "lines": 1466,
+      "test_only_file_lines": 1466,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/trust_failure_tests/mod.rs",
+      "lines": 130,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/umls/tests/construction.rs",
+      "lines": 32,
+      "test_only_file_lines": 32,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/umls/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/umls/tests/parsing.rs",
+      "lines": 105,
+      "test_only_file_lines": 105,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/umls.rs",
+      "lines": 254,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/uniprot/tests/construction.rs",
+      "lines": 74,
+      "test_only_file_lines": 74,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/uniprot/tests/mod.rs",
+      "lines": 18,
+      "test_only_file_lines": 18,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/uniprot/tests/parsing.rs",
+      "lines": 380,
+      "test_only_file_lines": 380,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/uniprot.rs",
+      "lines": 794,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/vaers/tests/construction.rs",
+      "lines": 67,
+      "test_only_file_lines": 67,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/vaers/tests/mod.rs",
+      "lines": 39,
+      "test_only_file_lines": 39,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/vaers/tests/parsing.rs",
+      "lines": 106,
+      "test_only_file_lines": 106,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/vaers.rs",
+      "lines": 465,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/variantvalidator/tests/construction.rs",
+      "lines": 44,
+      "test_only_file_lines": 44,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/variantvalidator/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/variantvalidator/tests/parsing.rs",
+      "lines": 115,
+      "test_only_file_lines": 115,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/variantvalidator.rs",
+      "lines": 275,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/who_ivd/tests/construction.rs",
+      "lines": 112,
+      "test_only_file_lines": 112,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/who_ivd/tests/mod.rs",
+      "lines": 15,
+      "test_only_file_lines": 15,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/who_ivd/tests/parsing.rs",
+      "lines": 71,
+      "test_only_file_lines": 71,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/who_ivd.rs",
+      "lines": 419,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 17
+    },
+    {
+      "file": "src/sources/who_pq/tests/construction.rs",
+      "lines": 150,
+      "test_only_file_lines": 150,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/who_pq/tests/mod.rs",
+      "lines": 38,
+      "test_only_file_lines": 38,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/who_pq/tests/parsing.rs",
+      "lines": 398,
+      "test_only_file_lines": 398,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/who_pq/tests/sync.rs",
+      "lines": 310,
+      "test_only_file_lines": 310,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/who_pq.rs",
+      "lines": 1299,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/sources/wikipathways/tests/construction.rs",
+      "lines": 40,
+      "test_only_file_lines": 40,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/wikipathways/tests/mod.rs",
+      "lines": 2,
+      "test_only_file_lines": 2,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/wikipathways/tests/parsing.rs",
+      "lines": 89,
+      "test_only_file_lines": 89,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/sources/wikipathways.rs",
+      "lines": 432,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/test_support.rs",
+      "lines": 306,
+      "test_only_file_lines": 306,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/adverse_event.rs",
+      "lines": 592,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 115
+    },
+    {
+      "file": "src/transform/article/anchors/tests.rs",
+      "lines": 31,
+      "test_only_file_lines": 31,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/anchors.rs",
+      "lines": 91,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/transform/article/annotations/tests/mutation_identity.rs",
+      "lines": 684,
+      "test_only_file_lines": 684,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/annotations/tests.rs",
+      "lines": 323,
+      "test_only_file_lines": 323,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/annotations.rs",
+      "lines": 515,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/transform/article/federation/tests.rs",
+      "lines": 420,
+      "test_only_file_lines": 420,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/federation.rs",
+      "lines": 544,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/transform/article/html.rs",
+      "lines": 566,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 206
+    },
+    {
+      "file": "src/transform/article/jats/refs/citation.rs",
+      "lines": 608,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/jats/refs.rs",
+      "lines": 546,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/jats/supplements.rs",
+      "lines": 179,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 28
+    },
+    {
+      "file": "src/transform/article/jats/tables.rs",
+      "lines": 134,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/jats/tests/citation_evidence.rs",
+      "lines": 553,
+      "test_only_file_lines": 553,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/jats/tests.rs",
+      "lines": 615,
+      "test_only_file_lines": 615,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/jats.rs",
+      "lines": 677,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/transform/article/pdf.rs",
+      "lines": 73,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 41
+    },
+    {
+      "file": "src/transform/article/supplement_text/tests.rs",
+      "lines": 291,
+      "test_only_file_lines": 291,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/article/supplement_text.rs",
+      "lines": 696,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/transform/article.rs",
+      "lines": 127,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 43
+    },
+    {
+      "file": "src/transform/disease.rs",
+      "lines": 1154,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 318
+    },
+    {
+      "file": "src/transform/drug/name_resolution_tests.rs",
+      "lines": 891,
+      "test_only_file_lines": 891,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/drug/shared_name_tests.rs",
+      "lines": 304,
+      "test_only_file_lines": 304,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/drug.rs",
+      "lines": 1699,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 450
+    },
+    {
+      "file": "src/transform/gene.rs",
+      "lines": 384,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 144
+    },
+    {
+      "file": "src/transform/mod.rs",
+      "lines": 11,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/pathway.rs",
+      "lines": 205,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 128
+    },
+    {
+      "file": "src/transform/protein.rs",
+      "lines": 216,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 151
+    },
+    {
+      "file": "src/transform/trial/tests/ticket_1107.rs",
+      "lines": 61,
+      "test_only_file_lines": 61,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/trial/tests/ticket_1111.rs",
+      "lines": 86,
+      "test_only_file_lines": 86,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/trial/tests/ticket_1114.rs",
+      "lines": 122,
+      "test_only_file_lines": 122,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/trial/tests/ticket_1115.rs",
+      "lines": 42,
+      "test_only_file_lines": 42,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/trial/tests.rs",
+      "lines": 673,
+      "test_only_file_lines": 673,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/trial.rs",
+      "lines": 459,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 3
+    },
+    {
+      "file": "src/transform/variant/tests.rs",
+      "lines": 446,
+      "test_only_file_lines": 446,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/transform/variant.rs",
+      "lines": 1264,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 2
+    },
+    {
+      "file": "src/utils/date.rs",
+      "lines": 225,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 98
+    },
+    {
+      "file": "src/utils/download.rs",
+      "lines": 474,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 241
+    },
+    {
+      "file": "src/utils/fs_lock.rs",
+      "lines": 25,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 0
+    },
+    {
+      "file": "src/utils/mod.rs",
+      "lines": 41,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 18
+    },
+    {
+      "file": "src/utils/query.rs",
+      "lines": 29,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 10
+    },
+    {
+      "file": "src/utils/serde.rs",
+      "lines": 46,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 17
+    },
+    {
+      "file": "src/utils/sync.rs",
+      "lines": 37,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 31
+    },
+    {
+      "file": "src/workflow_ladders.rs",
+      "lines": 152,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 24
+    },
+    {
+      "file": "src/xml.rs",
+      "lines": 240,
+      "test_only_file_lines": 0,
+      "inline_cfg_test_lines": 122
+    }
+  ],
+  "external_rust_test_files": [
+    {
+      "file": "tests/adverse_event_route_contract.rs",
+      "lines": 453
+    },
+    {
+      "file": "tests/article_asset_terminal.rs",
+      "lines": 1076
+    },
+    {
+      "file": "tests/article_batch_outcome.rs",
+      "lines": 1527
+    },
+    {
+      "file": "tests/article_transform_structure.rs",
+      "lines": 129
+    },
+    {
+      "file": "tests/article_usage_stderr.rs",
+      "lines": 363
+    },
+    {
+      "file": "tests/cache_clear.rs",
+      "lines": 333
+    },
+    {
+      "file": "tests/cli_global_modifiers.rs",
+      "lines": 61
+    },
+    {
+      "file": "tests/disable_sources_cli.rs",
+      "lines": 872
+    },
+    {
+      "file": "tests/fulltext_fixture_output_location.rs",
+      "lines": 43
+    },
+    {
+      "file": "tests/health_cli_structure.rs",
+      "lines": 139
+    },
+    {
+      "file": "tests/json_error_contract.rs",
+      "lines": 1156
+    },
+    {
+      "file": "tests/legacy_cache_helper_cleanup.rs",
+      "lines": 66
+    },
+    {
+      "file": "tests/list_cli_structure.rs",
+      "lines": 137
+    },
+    {
+      "file": "tests/live_smoke.rs",
+      "lines": 80
+    },
+    {
+      "file": "tests/managed_state_permissions.rs",
+      "lines": 428
+    },
+    {
+      "file": "tests/package_build_identity.rs",
+      "lines": 9
+    },
+    {
+      "file": "tests/pgx_get_paging.rs",
+      "lines": 61
+    },
+    {
+      "file": "tests/plugin_manifest.rs",
+      "lines": 53
+    },
+    {
+      "file": "tests/pty_helpers.rs",
+      "lines": 35
+    },
+    {
+      "file": "tests/rmcp_client_contract.rs",
+      "lines": 2333
+    },
+    {
+      "file": "tests/search_all_cli_structure.rs",
+      "lines": 138
+    },
+    {
+      "file": "tests/skill_cli_structure.rs",
+      "lines": 138
+    },
+    {
+      "file": "tests/tls_ca_bundle_contract.rs",
+      "lines": 814
+    },
+    {
+      "file": "tests/unit/cli/article_assets.rs",
+      "lines": 54
+    },
+    {
+      "file": "tests/unit/cli/article_fulltext.rs",
+      "lines": 91
+    },
+    {
+      "file": "tests/unit/cli/drug_json.rs",
+      "lines": 521
+    },
+    {
+      "file": "tests/unit/cli/gene.rs",
+      "lines": 179
+    },
+    {
+      "file": "tests/unit/cli/variant.rs",
+      "lines": 1489
+    },
+    {
+      "file": "tests/unit/cli/variant/articles.rs",
+      "lines": 87
+    },
+    {
+      "file": "tests/unit/cli/variant/parsing.rs",
+      "lines": 86
+    },
+    {
+      "file": "tests/unit/render/json_error.rs",
+      "lines": 36
+    },
+    {
+      "file": "tests/windows_lock_contract.rs",
+      "lines": 34
+    },
+    {
+      "file": "tests/windows_stdio_contract.rs",
+      "lines": 143
+    }
+  ],
+  "excluded_generated_files": [
+    {
+      "file": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+      "lines": 1486
+    }
+  ]
+}
+```
+
+### Candidate per-file coverage reports
+
+These are the three reports from the same collection, with their existing filters and safe path labels. Their TOTAL rows define the denominator above.
+
+#### outside_in
+
+```text
+Filename                                                                                                                                               Regions    Missed Regions     Cover   Functions  Missed Functions  Executed       Lines      Missed Lines     Cover    Branches   Missed Branches     Cover
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<comparison>/candidate/product/src/build_identity.rs                                        10                 0   100.00%           2                 0   100.00%           6                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cache/citation_evidence.rs                              177               177     0.00%          13                13     0.00%         121               121     0.00%           0                 0         -
+<comparison>/candidate/product/src/cache/clean.rs                                          676               593    12.28%          40                33    17.50%         521               420    19.39%           0                 0         -
+<comparison>/candidate/product/src/cache/clear.rs                                         1331               937    29.60%          91                58    36.26%         732               481    34.29%           0                 0         -
+<comparison>/candidate/product/src/cache/config.rs                                         884               694    21.49%          65                47    27.69%         642               499    22.27%           0                 0         -
+<comparison>/candidate/product/src/cache/http.rs                                            43                 5    88.37%           7                 2    71.43%          28                 2    92.86%           0                 0         -
+<comparison>/candidate/product/src/cache/limits.rs                                         252               201    20.24%          15                10    33.33%         167               126    24.55%           0                 0         -
+<comparison>/candidate/product/src/cache/manager.rs                                       1356               954    29.65%         110                74    32.73%         919               647    29.60%           0                 0         -
+<comparison>/candidate/product/src/cache/migration.rs                                     1563              1109    29.05%          91                51    43.96%         899               577    35.82%           0                 0         -
+<comparison>/candidate/product/src/cache/mod.rs                                             68                25    63.24%           7                 1    85.71%          47                16    65.96%           0                 0         -
+<comparison>/candidate/product/src/cache/planner.rs                                       1139               964    15.36%          68                56    17.65%         707               553    21.78%           0                 0         -
+<comparison>/candidate/product/src/cache/private.rs                                        699               337    51.79%          37                11    70.27%         380               146    61.58%           0                 0         -
+<comparison>/candidate/product/src/cache/provider_capture.rs                              1935              1600    17.31%          96                69    28.12%        1085               841    22.49%           0                 0         -
+<comparison>/candidate/product/src/cache/provider_capture/unsupported.rs                    26                26     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/adverse_event/dispatch.rs                           470               144    69.36%           9                 0   100.00%         389               136    65.04%           0                 0         -
+<comparison>/candidate/product/src/cli/adverse_event/plan.rs                               248                88    64.52%           7                 2    71.43%         171                53    69.01%           0                 0         -
+<comparison>/candidate/product/src/cli/article/annotations.rs                               69                69     0.00%           9                 9     0.00%          50                50     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/article/assets.rs                                   386                54    86.01%          29                 3    89.66%         288                53    81.60%           0                 0         -
+<comparison>/candidate/product/src/cli/article/dispatch.rs                                 855               307    64.09%          44                24    45.45%         590               206    65.08%           0                 0         -
+<comparison>/candidate/product/src/cli/article/export.rs                                   137                22    83.94%          10                 3    70.00%          95                20    78.95%           0                 0         -
+<comparison>/candidate/product/src/cli/article/fulltext_view.rs                            409               261    36.19%          29                16    44.83%         284               173    39.08%           0                 0         -
+<comparison>/candidate/product/src/cli/article/mod.rs                                      197                42    78.68%          29                13    55.17%         156                29    81.41%           0                 0         -
+<comparison>/candidate/product/src/cli/article/render.rs                                    61                 9    85.25%           2                 0   100.00%          45                 3    93.33%           0                 0         -
+<comparison>/candidate/product/src/cli/article/session.rs                                  400               372     7.00%          32                28    12.50%         291               268     7.90%           0                 0         -
+<comparison>/candidate/product/src/cli/article/workflow.rs                                  96                53    44.79%          16                 8    50.00%          89                53    40.45%           0                 0         -
+<comparison>/candidate/product/src/cli/author/detail.rs                                     20                 2    90.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/author/mod.rs                                        67                53    20.90%           4                 2    50.00%          66                54    18.18%           0                 0         -
+<comparison>/candidate/product/src/cli/author/papers.rs                                     34                 3    91.18%           2                 0   100.00%          20                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/author/search.rs                                     18                18     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/cache.rs                                            353               124    64.87%          30                19    36.67%         260                84    67.69%           0                 0         -
+<comparison>/candidate/product/src/cli/cell_line/dispatch.rs                               150               121    19.33%           8                 4    50.00%          99                74    25.25%           0                 0         -
+<comparison>/candidate/product/src/cli/chart.rs                                            220               220     0.00%          18                18     0.00%         134               134     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/commands.rs                                           4                 1    75.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/diagnostic/dispatch.rs                              157               132    15.92%           9                 6    33.33%         115                95    17.39%           0                 0         -
+<comparison>/candidate/product/src/cli/diagnostic/mod.rs                                     6                 6     0.00%           1                 1     0.00%           6                 6     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/discover.rs                                         583               573     1.72%          43                41     4.65%         414               400     3.38%           0                 0         -
+<comparison>/candidate/product/src/cli/disease/dispatch.rs                                 387               314    18.86%          14                 8    42.86%         273               213    21.98%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/dispatch.rs                                    641               514    19.81%          17                 8    52.94%         551               436    20.87%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/render.rs                                      242               209    13.64%          14                11    21.43%         226               187    17.26%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/workflow.rs                                     15                15     0.00%           1                 1     0.00%          12                12     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/cspec.rs                                       297               282     5.05%          14                12    14.29%         198               181     8.59%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/dispatch.rs                                    197                42    78.68%          12                 1    91.67%         153                31    79.74%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/related.rs                                     261               261     0.00%           4                 4     0.00%         159               159     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/gwas/dispatch.rs                                    111                65    41.44%           7                 4    42.86%          96                60    37.50%           0                 0         -
+<comparison>/candidate/product/src/cli/health/catalog.rs                                    10                 7    30.00%           3                 2    33.33%          10                 7    30.00%           0                 0         -
+<comparison>/candidate/product/src/cli/health/http.rs                                      565               505    10.62%          40                35    12.50%         440               395    10.23%           0                 0         -
+<comparison>/candidate/product/src/cli/health/local.rs                                     479               479     0.00%          36                36     0.00%         388               388     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/health/mod.rs                                       521               371    28.79%          37                25    32.43%         348               246    29.31%           0                 0         -
+<comparison>/candidate/product/src/cli/health/runner.rs                                    395               189    52.15%          30                 5    83.33%         320               135    57.81%           0                 0         -
+<comparison>/candidate/product/src/cli/install.rs                                          486               486     0.00%          24                24     0.00%         278               278     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/list/catalog.rs                                     319                86    73.04%          22                 5    77.27%         193                36    81.35%           0                 0         -
+<comparison>/candidate/product/src/cli/list/clinical.rs                                     24                20    16.67%           6                 5    16.67%         357               272    23.81%           0                 0         -
+<comparison>/candidate/product/src/cli/list/helpers.rs                                      35                21    40.00%           6                 5    16.67%         147               136     7.48%           0                 0         -
+<comparison>/candidate/product/src/cli/list/literature.rs                                   12                12     0.00%           3                 3     0.00%         215               215     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/list/mod.rs                                         133                44    66.92%           4                 0   100.00%          68                 4    94.12%           0                 0         -
+<comparison>/candidate/product/src/cli/list/molecular.rs                                    49                49     0.00%           8                 8     0.00%         368               368     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/mcp_config.rs                                       152               152     0.00%          13                13     0.00%         112               112     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/mod.rs                                                4                 0   100.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/outcome.rs                                         1029               410    60.16%          42                12    71.43%         495               157    68.28%           0                 0         -
+<comparison>/candidate/product/src/cli/outcome/mcp_chart.rs                                 51                45    11.76%           2                 0   100.00%          43                37    13.95%           0                 0         -
+<comparison>/candidate/product/src/cli/pathway/dispatch.rs                                 450               392    12.89%          15                13    13.33%         267               239    10.49%           0                 0         -
+<comparison>/candidate/product/src/cli/pgx/dispatch.rs                                     114                83    27.19%           6                 3    50.00%          75                51    32.00%           0                 0         -
+<comparison>/candidate/product/src/cli/phenotype/dispatch.rs                                81                60    25.93%           5                 2    60.00%          63                45    28.57%           0                 0         -
+<comparison>/candidate/product/src/cli/protein/dispatch.rs                                 199               140    29.65%          12                 8    33.33%         156               113    27.56%           0                 0         -
+<comparison>/candidate/product/src/cli/response_contract.rs                                446               195    56.28%          25                 8    68.00%         486               287    40.95%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/dispatch.rs                              548               227    58.58%          28                17    39.29%         375               164    56.27%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/format.rs                                500               293    41.40%          34                16    52.94%         303               174    42.57%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/links.rs                                 533               130    75.61%          25                 8    68.00%         301                64    78.74%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/mod.rs                                   232                65    71.98%          19                 5    73.68%         144                33    77.08%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/plan.rs                                  746               521    30.16%          39                24    38.46%         473               331    30.02%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all_command.rs                                94                94     0.00%           3                 3     0.00%          74                74     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/shared.rs                                           551                71    87.11%          47                 4    91.49%         387                66    82.95%           0                 0         -
+<comparison>/candidate/product/src/cli/shared/search_payloads.rs                           203                59    70.94%          20                 5    75.00%         202                61    69.80%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/assets.rs                                      69                11    84.06%           5                 1    80.00%          44                10    77.27%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/atomic_swap.rs                                 55                21    61.82%           6                 3    50.00%          33                14    57.58%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/catalog.rs                                    165                28    83.03%          13                 2    84.62%         103                19    81.55%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/install.rs                                    793               415    47.67%          45                23    48.89%         470               261    44.47%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/mod.rs                                          8                 1    87.50%           1                 0   100.00%          13                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/status.rs                                     365               103    71.78%          22                 6    72.73%         218                72    66.97%           0                 0         -
+<comparison>/candidate/product/src/cli/study/dispatch.rs                                   534               534     0.00%          10                10     0.00%         331               331     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/system/batch.rs                                     984               686    30.28%          42                23    45.24%         681               433    36.42%           0                 0         -
+<comparison>/candidate/product/src/cli/system/dispatch.rs                                  770               599    22.21%          76                47    38.16%         570               427    25.09%           0                 0         -
+<comparison>/candidate/product/src/cli/system/mod.rs                                        45                18    60.00%           5                 1    80.00%          39                12    69.23%           0                 0         -
+<comparison>/candidate/product/src/cli/system/who_sync.rs                                   61                54    11.48%           5                 3    40.00%          47                41    12.77%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/dispatch.rs                                   761               344    54.80%          57                36    36.84%         552               247    55.25%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/documents.rs                                  162                82    49.38%          14                 7    50.00%         159                95    40.25%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/zero_result.rs                                380               380     0.00%          15                15     0.00%         182               182     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/types.rs                                            159               101    36.48%          24                15    37.50%         183                98    46.45%           0                 0         -
+<comparison>/candidate/product/src/cli/update.rs                                           677               677     0.00%          50                50     0.00%         435               435     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/articles.rs                                 226                82    63.72%          17                 8    52.94%         222                71    68.02%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/car.rs                                      114                99    13.16%          13                11    15.38%          86                75    12.79%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/dispatch.rs                                 632               282    55.38%          22                 6    72.73%         467               202    56.75%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/erepo.rs                                    385               188    51.17%          18                 7    61.11%         305               164    46.23%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/guidance.rs                                  19                19     0.00%           2                 2     0.00%          21                21     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/mod.rs                                       62                16    74.19%           9                 2    77.78%          42                10    76.19%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/normalization_json.rs                       103                63    38.83%           4                 2    50.00%          81                47    41.98%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/query.rs                                    492               462     6.10%          23                22     4.35%         418               391     6.46%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/trial.rs                                     50                50     0.00%           5                 5     0.00%          33                33     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/worker.rs                                            44                24    45.45%           5                 3    40.00%          30                14    53.33%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event.rs                              2534              1903    24.90%         202               146    27.72%        1930              1378    28.60%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event/device.rs                        193                66    65.80%          13                 4    69.23%         146                37    74.66%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event/sections.rs                       85                58    31.76%           4                 1    75.00%          74                36    51.35%           0                 0         -
+<comparison>/candidate/product/src/entities/article/assets.rs                             4011              1873    53.30%         234                73    68.80%        3054              1464    52.06%           0                 0         -
+<comparison>/candidate/product/src/entities/article/backends.rs                           1194               505    57.71%          83                35    57.83%         845               358    57.63%           0                 0         -
+<comparison>/candidate/product/src/entities/article/backends/provider_unit.rs              123                19    84.55%          12                 0   100.00%         101                10    90.10%           0                 0         -
+<comparison>/candidate/product/src/entities/article/batch.rs                               247                91    63.16%          24                 9    62.50%         165                57    65.45%           0                 0         -
+<comparison>/candidate/product/src/entities/article/candidates.rs                          469               213    54.58%          39                18    53.85%         309               134    56.63%           0                 0         -
+<comparison>/candidate/product/src/entities/article/detail.rs                              928               531    42.78%          71                32    54.93%         687               367    46.58%           0                 0         -
+<comparison>/candidate/product/src/entities/article/enrichment.rs                          616               243    60.55%          36                10    72.22%         471               182    61.36%           0                 0         -
+<comparison>/candidate/product/src/entities/article/filters.rs                             339               106    68.73%          34                11    67.65%         252                68    73.02%           0                 0         -
+<comparison>/candidate/product/src/entities/article/fulltext.rs                           1521               776    48.98%         116                55    52.59%        1264               648    48.73%           0                 0         -
+<comparison>/candidate/product/src/entities/article/graph.rs                               571               417    26.97%          60                43    28.33%         455               321    29.45%           0                 0         -
+<comparison>/candidate/product/src/entities/article/graph/citation_evidence.rs            1134              1080     4.76%         114               104     8.77%         902               854     5.32%           0                 0         -
+<comparison>/candidate/product/src/entities/article/identity_verification.rs              1736              1736     0.00%         126               126     0.00%        1233              1233     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/article/mod.rs                                 492               407    17.28%          35                25    28.57%         378               303    19.84%           0                 0         -
+<comparison>/candidate/product/src/entities/article/planner.rs                             283               188    33.57%          19                12    36.84%         246               163    33.74%           0                 0         -
+<comparison>/candidate/product/src/entities/article/query.rs                               833               466    44.06%          80                51    36.25%         596               325    45.47%           0                 0         -
+<comparison>/candidate/product/src/entities/article/ranking.rs                             670               133    80.15%          59                16    72.88%         496                90    81.85%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search.rs                             1053               534    49.29%          46                15    67.39%         759               378    50.20%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search/deadline.rs                     117                68    41.88%          14                 6    57.14%         118                56    52.54%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search/status.rs                        56                27    51.79%           6                 4    33.33%          58                34    41.38%           0                 0         -
+<comparison>/candidate/product/src/entities/article/supplement_search.rs                   755               268    64.50%          47                16    65.96%         495               164    66.87%           0                 0         -
+<comparison>/candidate/product/src/entities/article/variant_search.rs                     7896              5758    27.08%         490               342    30.20%        6599              4810    27.11%           0                 0         -
+<comparison>/candidate/product/src/entities/author/mod.rs                                  532               345    35.15%          46                22    52.17%         410               268    34.63%           0                 0         -
+<comparison>/candidate/product/src/entities/author/papers.rs                              1957              1398    28.56%         112                63    43.75%        1193               790    33.78%           0                 0         -
+<comparison>/candidate/product/src/entities/author/search.rs                               252               252     0.00%          14                14     0.00%         240               240     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line.rs                                   693               581    16.16%          59                47    20.34%         476               411    13.66%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line/chembl.rs                             99                99     0.00%           9                 9     0.00%          82                82     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line/pharmacodb.rs                        120               111     7.50%           8                 6    25.00%         106                96     9.43%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/get.rs                              880               537    38.98%          73                43    41.10%         586               353    39.76%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/mod.rs                              749               705     5.87%          59                50    15.25%         555               523     5.77%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/search.rs                           823               823     0.00%          67                67     0.00%         588               588     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/discover.rs                                   4421              3740    15.40%         273               216    20.88%        3238              2702    16.55%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/article_links.rs                       191               191     0.00%          16                16     0.00%         113               113     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/associations.rs                        861               682    20.79%          63                38    39.68%         582               473    18.73%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/enrichment.rs                          997               612    38.62%          66                45    31.82%         712               444    37.64%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/fallback.rs                            584               584     0.00%          38                38     0.00%         413               413     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/get.rs                                 372               228    38.71%          22                13    40.91%         227               131    42.29%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/mod.rs                                  16                12    25.00%           2                 1    50.00%          14                11    21.43%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/resolution.rs                         1126               320    71.58%         103                21    79.61%         749               210    71.96%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/resolution/ambiguity.rs                109                48    55.96%          16                 3    81.25%          80                27    66.25%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/search.rs                              899               506    43.72%          91                59    35.16%         690               399    42.17%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/cell_lines.rs                             165               162     1.82%          10                 9    10.00%         149               146     2.01%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/get.rs                                   1711              1070    37.46%         121                61    49.59%        1238               728    41.20%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/interactions.rs                           520               514     1.15%          37                35     5.41%         342               334     2.34%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/label.rs                                 1638              1638     0.00%         164               164     0.00%        1051              1051     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/metadata.rs                               769               612    20.42%          70                55    21.43%         474               392    17.30%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/mod.rs                                    210               106    49.52%          28                11    60.71%         147                82    44.22%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/query.rs                                  300               229    23.67%          28                24    14.29%         251               178    29.08%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/search.rs                                1215              1006    17.20%         100                85    15.00%         840               679    19.17%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/targets.rs                                593               593     0.00%          44                44     0.00%         385               385     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/gene.rs                                       4592              2774    39.59%         336               196    41.67%        3069              1818    40.76%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/cell_lines.rs                             171               171     0.00%          17                17     0.00%         113               113     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/clingen.rs                                289               211    26.99%          30                18    40.00%         218               155    28.90%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/cspec.rs                                 1418              1393     1.76%          84                79     5.95%         903               884     2.10%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/gencc.rs                                  309               309     0.00%          17                17     0.00%         219               219     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/mod.rs                                          18                 0   100.00%           3                 0   100.00%          36                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/entities/pathway.rs                                    1450              1163    19.79%          93                79    15.05%         957               757    20.90%           0                 0         -
+<comparison>/candidate/product/src/entities/pgx.rs                                        1239              1092    11.86%          90                80    11.11%         853               734    13.95%           0                 0         -
+<comparison>/candidate/product/src/entities/pharmacodb.rs                                  231               217     6.06%          26                23    11.54%         181               171     5.52%           0                 0         -
+<comparison>/candidate/product/src/entities/protein.rs                                     967               808    16.44%          50                36    28.00%         688               572    16.86%           0                 0         -
+<comparison>/candidate/product/src/entities/section_outcome.rs                             402               264    34.33%          43                19    55.81%         306               174    43.14%           0                 0         -
+<comparison>/candidate/product/src/entities/source_state_registry.rs                       155                78    49.68%          16                 7    56.25%         118                65    44.92%           0                 0         -
+<comparison>/candidate/product/src/entities/study.rs                                      1770              1770     0.00%         161               161     0.00%        1325              1325     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/design.rs                                683               242    64.57%          93                20    78.49%         597               179    70.02%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/documents.rs                             621               357    42.51%          60                31    48.33%         397               217    45.34%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/eligibility.rs                           821               605    26.31%          66                44    33.33%         538               374    30.48%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/get.rs                                   314                40    87.26%          16                 1    93.75%         234                29    87.61%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/mod.rs                                   728               579    20.47%          46                29    36.96%         447               351    21.48%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/ctgov.rs                         1215               333    72.59%          76                23    69.74%         919               235    74.43%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/eligibility.rs                    515               136    73.59%          59                16    72.88%         378                92    75.66%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/eligibility/keep_paths.rs         198               198     0.00%          16                16     0.00%         101               101     0.00%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/essie.rs                          314               203    35.35%          27                17    37.04%         237               156    34.18%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/mod.rs                            405                87    78.52%          44                21    52.27%         363                74    79.61%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/nci.rs                            227               130    42.73%          18                 6    66.67%         183               107    41.53%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/normalization.rs                  286               155    45.80%          24                10    58.33%         196                95    51.53%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/clinvar.rs                             881               698    20.77%          47                28    40.43%         537               404    24.77%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/erepo.rs                              1221               433    64.54%          90                34    62.22%         813               263    67.65%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/get.rs                                1973              1275    35.38%         149               103    30.87%        1532               986    35.64%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/gwas.rs                                793               377    52.46%          84                51    39.29%         569               275    51.67%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/mod.rs                                 234                93    60.26%          18                 9    50.00%         136                52    61.76%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/normalization.rs                       334               198    40.72%          35                20    42.86%         248               150    39.52%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/resolution.rs                         1638               765    53.30%         156                70    55.13%        1134               560    50.62%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/search/diagnostics.rs                  414               377     8.94%          14                13     7.14%         306               275    10.13%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/search/mod.rs                         1196               636    46.82%          84                49    41.67%         967               460    52.43%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/structure.rs                           473               143    69.77%          38                10    73.68%         348               123    64.66%           0                 0         -
+<comparison>/candidate/product/src/error.rs                                               1265               802    36.60%          59                30    49.15%         926               596    35.64%           0                 0         -
+<comparison>/candidate/product/src/lib.rs                                                   18                18     0.00%           7                 7     0.00%          26                26     0.00%           0                 0         -
+<comparison>/candidate/product/src/main.rs                                                 225                45    80.00%          12                 3    75.00%         151                30    80.13%           0                 0         -
+<comparison>/candidate/product/src/mcp/catalog.rs                                           79                12    84.81%          10                 3    70.00%          65                10    84.62%           0                 0         -
+<comparison>/candidate/product/src/mcp/mod.rs                                               23                 2    91.30%           5                 0   100.00%          19                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell.rs                                           3295              2716    17.57%         174               135    22.41%        2077              1668    19.69%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/http_server.rs                                719               664     7.65%          73                66     9.59%         504               458     9.13%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/modern.rs                                     371               371     0.00%          23                23     0.00%         212               212     0.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/pre_session.rs                                172               111    35.47%          11                 7    36.36%         112                78    30.36%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/trial_phase.rs                                  9                 5    44.44%           2                 1    50.00%           8                 5    37.50%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/typed_get.rs                                  143                32    77.62%           9                 3    66.67%          94                24    74.47%           0                 0         -
+<comparison>/candidate/product/src/next_command.rs                                          89                15    83.15%          11                 1    90.91%          61                10    83.61%           0                 0         -
+<comparison>/candidate/product/src/render/chart.rs                                        2112              2112     0.00%          83                83     0.00%        1730              1730     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/chart/bounds.rs                                   80                80     0.00%           6                 6     0.00%          51                51     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/human.rs                                         371               241    35.04%          22                12    45.45%         256               173    32.42%           0                 0         -
+<comparison>/candidate/product/src/render/json.rs                                         1487              1288    13.38%          53                36    32.08%        1177               951    19.20%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/adverse_event.rs                        418               305    27.03%          19                14    26.32%         309               224    27.51%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/article.rs                              967               492    49.12%          49                25    48.98%         635               322    49.29%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/author.rs                               985               621    36.95%          55                29    47.27%         717               499    30.40%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/cell_line.rs                            126               126     0.00%           7                 7     0.00%          80                80     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/diagnostic.rs                           291               169    41.92%          19                11    42.11%         194               103    46.91%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/discovery.rs                            152                97    36.18%           9                 6    33.33%         124                84    32.26%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/disease.rs                              450               450     0.00%          33                33     0.00%         282               282     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/drug.rs                                 908               674    25.77%          55                41    25.45%         621               474    23.67%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/drug_regulatory.rs                      958               745    22.23%          76                63    17.11%         681               534    21.59%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/evidence.rs                             606               370    38.94%          57                36    36.84%         495               260    47.47%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/funding.rs                               91                82     9.89%          10                 8    20.00%          65                56    13.85%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/gene.rs                                 172                43    75.00%           8                 5    37.50%         101                31    69.31%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/mod.rs                                  840               274    67.38%          96                37    61.46%         655               220    66.41%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pathway.rs                               92                92     0.00%           4                 4     0.00%          46                46     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pgx.rs                                  118               118     0.00%           6                 6     0.00%          62                62     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pharmacodb.rs                            67                67     0.00%           3                 3     0.00%          39                39     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/protein.rs                              190               190     0.00%          13                13     0.00%         113               113     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/related.rs                             1595               854    46.46%         166               105    36.75%        1084               577    46.77%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/related/article_support.rs              555               236    57.48%          58                27    53.45%         368               163    55.71%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/sections.rs                             791               235    70.29%          64                12    81.25%         532               161    69.74%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/study.rs                                622               622     0.00%          25                25     0.00%         431               431     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/support.rs                              190                92    51.58%          14                 5    64.29%         121                67    44.63%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/trial.rs                                633               131    79.30%          49                 8    83.67%         402                91    77.36%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/variant.rs                              873               680    22.11%          51                46     9.80%         593               469    20.91%           0                 0         -
+<comparison>/candidate/product/src/render/provenance.rs                                   1998              1565    21.67%          76                56    26.32%        1713              1311    23.47%           0                 0         -
+<comparison>/candidate/product/src/render/provenance/adverse_event.rs                      106                46    56.60%           6                 1    83.33%          85                29    65.88%           0                 0         -
+<comparison>/candidate/product/src/skill_assets.rs                                          27                11    59.26%           5                 2    60.00%          18                 7    61.11%           0                 0         -
+<comparison>/candidate/product/src/sources/archive_budget.rs                               631               631     0.00%          20                20     0.00%         378               378     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/ca_bundle.rs                                    527               361    31.50%          30                15    50.00%         316               201    36.39%           0                 0         -
+<comparison>/candidate/product/src/sources/cancerhotspots.rs                               185               111    40.00%          19                12    36.84%         126                77    38.89%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal.rs                                   318               226    28.93%          32                18    43.75%         228               152    33.33%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal_download.rs                          572               572     0.00%          34                34     0.00%         446               446     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal_study.rs                            4088              4063     0.61%         184               181     1.63%        2463              2444     0.77%           0                 0         -
+<comparison>/candidate/product/src/sources/cellosaurus.rs                                  362               244    32.60%          49                35    28.57%         293               213    27.30%           0                 0         -
+<comparison>/candidate/product/src/sources/chembl.rs                                       289               289     0.00%          33                33     0.00%         226               226     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/civic.rs                                        288               169    41.32%          29                16    44.83%         240               144    40.00%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen.rs                                      830               614    26.02%          75                54    28.00%         618               423    31.55%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_allele_registry.rs                      911               722    20.75%          57                40    29.82%         594               453    23.74%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_cspec.rs                                406               273    32.76%          26                16    38.46%         281               201    28.47%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_erepo.rs                                374               112    70.05%          32                 7    78.12%         270                74    72.59%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_ldh.rs                                  131               131     0.00%          17                17     0.00%         101               101     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/clinicaltrials.rs                               779                99    87.29%          70                 8    88.57%         574                38    93.38%           0                 0         -
+<comparison>/candidate/product/src/sources/complexportal.rs                                182               106    41.76%          20                12    40.00%         154                89    42.21%           0                 0         -
+<comparison>/candidate/product/src/sources/cpic.rs                                         402               289    28.11%          39                27    30.77%         328               238    27.44%           0                 0         -
+<comparison>/candidate/product/src/sources/cvx.rs                                         1028               793    22.86%          88                62    29.55%         665               490    26.32%           0                 0         -
+<comparison>/candidate/product/src/sources/dbsnp.rs                                        179                15    91.62%          20                 0   100.00%         129                10    92.25%           0                 0         -
+<comparison>/candidate/product/src/sources/ddinter.rs                                      549               542     1.28%          47                45     4.26%         359               352     1.95%           0                 0         -
+<comparison>/candidate/product/src/sources/dgidb.rs                                        270               188    30.37%          23                14    39.13%         194               127    34.54%           0                 0         -
+<comparison>/candidate/product/src/sources/disable.rs                                      535               273    48.97%          55                20    63.64%         314               131    58.28%           0                 0         -
+<comparison>/candidate/product/src/sources/disgenet.rs                                     451               310    31.26%          41                26    36.59%         323               218    32.51%           0                 0         -
+<comparison>/candidate/product/src/sources/ema.rs                                         1042               471    54.80%          79                26    67.09%         684               307    55.12%           0                 0         -
+<comparison>/candidate/product/src/sources/ema/identity.rs                                 251               186    25.90%          32                25    21.88%         191               144    24.61%           0                 0         -
+<comparison>/candidate/product/src/sources/enrichr.rs                                      237                41    82.70%          21                 3    85.71%         184                34    81.52%           0                 0         -
+<comparison>/candidate/product/src/sources/europepmc.rs                                    606               185    69.47%          53                22    58.49%         464               155    66.59%           0                 0         -
+<comparison>/candidate/product/src/sources/fda_orphan.rs                                  1284               984    23.36%         103                72    30.10%         819               602    26.50%           0                 0         -
+<comparison>/candidate/product/src/sources/figshare.rs                                     507               507     0.00%          50                50     0.00%         370               370     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc.rs                                       1416              1332     5.93%         107                95    11.21%         802               747     6.86%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc/model.rs                                  529               529     0.00%          35                35     0.00%         288               288     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc/store.rs                                 1845              1732     6.12%          88                80     9.09%         752               712     5.32%           0                 0         -
+<comparison>/candidate/product/src/sources/gnomad.rs                                       268               205    23.51%          24                19    20.83%         200               151    24.50%           0                 0         -
+<comparison>/candidate/product/src/sources/gprofiler.rs                                    194                52    73.20%          18                 3    83.33%         147                33    77.55%           0                 0         -
+<comparison>/candidate/product/src/sources/gtex.rs                                         275               167    39.27%          29                15    48.28%         188               108    42.55%           0                 0         -
+<comparison>/candidate/product/src/sources/gtr.rs                                          913               329    63.96%          81                28    65.43%         623               244    60.83%           0                 0         -
+<comparison>/candidate/product/src/sources/gwas.rs                                         363               163    55.10%          32                10    68.75%         286               122    57.34%           0                 0         -
+<comparison>/candidate/product/src/sources/hpa.rs                                          663               591    10.86%          71                64     9.86%         472               422    10.59%           0                 0         -
+<comparison>/candidate/product/src/sources/hpo.rs                                          342               201    41.23%          34                19    44.12%         244               141    42.21%           0                 0         -
+<comparison>/candidate/product/src/sources/interpro.rs                                     147                90    38.78%          15                 9    40.00%         111                57    48.65%           0                 0         -
+<comparison>/candidate/product/src/sources/kegg.rs                                         441               266    39.68%          31                18    41.94%         256               150    41.41%           0                 0         -
+<comparison>/candidate/product/src/sources/litsense2.rs                                    134                59    55.97%          16                 7    56.25%         111                52    53.15%           0                 0         -
+<comparison>/candidate/product/src/sources/litvar.rs                                       186               126    32.26%          22                15    31.82%         139                92    33.81%           0                 0         -
+<comparison>/candidate/product/src/sources/medlineplus.rs                                  244               168    31.15%          21                13    38.10%         177               116    34.46%           0                 0         -
+<comparison>/candidate/product/src/sources/mod.rs                                         2743              1460    46.77%         281               132    53.02%        2035              1040    48.89%           0                 0         -
+<comparison>/candidate/product/src/sources/monarch.rs                                      679               534    21.35%          53                38    28.30%         515               390    24.27%           0                 0         -
+<comparison>/candidate/product/src/sources/mutalyzer.rs                                    276                90    67.39%          30                15    50.00%         216                68    68.52%           0                 0         -
+<comparison>/candidate/product/src/sources/mychem.rs                                       181                62    65.75%          18                 6    66.67%         124                35    71.77%           0                 0         -
+<comparison>/candidate/product/src/sources/mydisease.rs                                    384               194    49.48%          30                17    43.33%         297               160    46.13%           0                 0         -
+<comparison>/candidate/product/src/sources/mygene.rs                                      1003               732    27.02%          84                53    36.90%         579               389    32.82%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant.rs                                   1315               859    34.68%         121                86    28.93%         949               580    38.88%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant/filter_conflicts.rs                    77                33    57.14%           4                 0   100.00%          40                11    72.50%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant/filter_keys.rs                         31                12    61.29%           1                 0   100.00%          18                 8    55.56%           0                 0         -
+<comparison>/candidate/product/src/sources/ncbi_efetch.rs                                 1853              1669     9.93%         120               103    14.17%        1067               928    13.03%           0                 0         -
+<comparison>/candidate/product/src/sources/ncbi_idconv.rs                                  160                57    64.38%          19                 6    68.42%         113                41    63.72%           0                 0         -
+<comparison>/candidate/product/src/sources/nci_cts.rs                                      844               204    75.83%          58                10    82.76%         520                95    81.73%           0                 0         -
+<comparison>/candidate/product/src/sources/nih_reporter.rs                                 275               163    40.73%          31                18    41.94%         201               115    42.79%           0                 0         -
+<comparison>/candidate/product/src/sources/ols4.rs                                         123                15    87.80%          12                 2    83.33%          82                11    86.59%           0                 0         -
+<comparison>/candidate/product/src/sources/oncokb.rs                                       204                31    84.80%          22                 3    86.36%         145                23    84.14%           0                 0         -
+<comparison>/candidate/product/src/sources/opencitations.rs                                383               383     0.00%          25                25     0.00%         242               242     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/openfda.rs                                      598               340    43.14%          54                26    51.85%         489               269    44.99%           0                 0         -
+<comparison>/candidate/product/src/sources/opentargets.rs                                 1822              1503    17.51%         137               106    22.63%        1238              1010    18.42%           0                 0         -
+<comparison>/candidate/product/src/sources/orcid.rs                                        695               148    78.71%          65                14    78.46%         467               100    78.59%           0                 0         -
+<comparison>/candidate/product/src/sources/ordinary_url_policy.rs                          409               153    62.59%          42                14    66.67%         304               116    61.84%           0                 0         -
+<comparison>/candidate/product/src/sources/pharmacodb.rs                                   469               469     0.00%          50                50     0.00%         327               327     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/pharmgkb.rs                                     343               343     0.00%          37                37     0.00%         299               299     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/pmc_article.rs                                 1057               693    34.44%          71                34    52.11%         663               415    37.41%           0                 0         -
+<comparison>/candidate/product/src/sources/pmc_oa.rs                                       654               219    66.51%          60                24    60.00%         450               135    70.00%           0                 0         -
+<comparison>/candidate/product/src/sources/provider_url_policy.rs                         1305               746    42.84%          86                43    50.00%         875               473    45.94%           0                 0         -
+<comparison>/candidate/product/src/sources/pubmed.rs                                       819               506    38.22%          83                57    31.33%         582               360    38.14%           0                 0         -
+<comparison>/candidate/product/src/sources/pubtator.rs                                     368               173    52.99%          30                13    56.67%         247               115    53.44%           0                 0         -
+<comparison>/candidate/product/src/sources/quickgo.rs                                      123                55    55.28%          14                 6    57.14%          94                35    62.77%           0                 0         -
+<comparison>/candidate/product/src/sources/rate_limit.rs                                   771               523    32.17%          62                36    41.94%         503               317    36.98%           0                 0         -
+<comparison>/candidate/product/src/sources/reactome.rs                                     368               237    35.60%          45                31    31.11%         259               161    37.84%           0                 0         -
+<comparison>/candidate/product/src/sources/seer.rs                                         654               586    10.40%          55                46    16.36%         453               399    11.92%           0                 0         -
+<comparison>/candidate/product/src/sources/semantic_scholar.rs                             891               392    56.00%          82                35    57.32%         718               323    55.01%           0                 0         -
+<comparison>/candidate/product/src/sources/string.rs                                        85                12    85.88%           9                 1    88.89%          70                 8    88.57%           0                 0         -
+<comparison>/candidate/product/src/sources/trust_failure_tests/mod.rs                       87                87     0.00%          11                11     0.00%          83                83     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/umls.rs                                         213               115    46.01%          20                11    45.00%         158                80    49.37%           0                 0         -
+<comparison>/candidate/product/src/sources/uniprot.rs                                      869               585    32.68%          90                54    40.00%         581               390    32.87%           0                 0         -
+<comparison>/candidate/product/src/sources/vaers.rs                                        469               469     0.00%          52                52     0.00%         359               359     0.00%           0                 0         -
+<comparison>/candidate/product/src/sources/variantvalidator.rs                             291               151    48.11%          30                18    40.00%         228               106    53.51%           0                 0         -
+<comparison>/candidate/product/src/sources/who_ivd.rs                                      477               318    33.33%          48                28    41.67%         322               205    36.34%           0                 0         -
+<comparison>/candidate/product/src/sources/who_pq.rs                                      1392               365    73.78%         115                31    73.04%         980               259    73.57%           0                 0         -
+<comparison>/candidate/product/src/sources/wikipathways.rs                                 464               220    52.59%          50                26    48.00%         316               137    56.65%           0                 0         -
+<comparison>/candidate/product/src/transform/adverse_event.rs                              769               472    38.62%          68                49    27.94%         527               326    38.14%           0                 0         -
+<comparison>/candidate/product/src/transform/article.rs                                     41                19    53.66%           2                 1    50.00%          45                30    33.33%           0                 0         -
+<comparison>/candidate/product/src/transform/article/anchors.rs                            100                13    87.00%          12                 2    83.33%          66                10    84.85%           0                 0         -
+<comparison>/candidate/product/src/transform/article/annotations.rs                        533               434    18.57%          41                37     9.76%         373               308    17.43%           0                 0         -
+<comparison>/candidate/product/src/transform/article/federation.rs                         784               300    61.73%          76                30    60.53%         515               178    65.44%           0                 0         -
+<comparison>/candidate/product/src/transform/article/html.rs                               643               643     0.00%          43                43     0.00%         422               422     0.00%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats.rs                               952               307    67.75%          72                11    84.72%         545               168    69.17%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/refs.rs                          825               699    15.27%          54                40    25.93%         449               374    16.70%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/refs/citation.rs                 687               687     0.00%          49                49     0.00%         453               453     0.00%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/supplements.rs                   222                52    76.58%          20                 2    90.00%         155                34    78.06%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/tables.rs                        205                13    93.66%          17                 2    88.24%         109                 6    94.50%           0                 0         -
+<comparison>/candidate/product/src/transform/article/pdf.rs                                 64                36    43.75%           6                 4    33.33%          46                30    34.78%           0                 0         -
+<comparison>/candidate/product/src/transform/article/supplement_text.rs                    685               543    20.73%          26                16    38.46%         506               395    21.94%           0                 0         -
+<comparison>/candidate/product/src/transform/disease.rs                                   1565               987    36.93%         115                72    37.39%         995               593    40.40%           0                 0         -
+<comparison>/candidate/product/src/transform/drug.rs                                      2163               953    55.94%         188                63    66.49%        1343               577    57.04%           0                 0         -
+<comparison>/candidate/product/src/transform/gene.rs                                       569               242    57.47%          38                 9    76.32%         318               115    63.84%           0                 0         -
+<comparison>/candidate/product/src/transform/pathway.rs                                    207               192     7.25%          14                11    21.43%         166               145    12.65%           0                 0         -
+<comparison>/candidate/product/src/transform/protein.rs                                    220               179    18.64%          17                16     5.88%         192               160    16.67%           0                 0         -
+<comparison>/candidate/product/src/transform/trial.rs                                      720               276    61.67%         100                24    76.00%         478               152    68.20%           0                 0         -
+<comparison>/candidate/product/src/transform/variant.rs                                   1630               255    84.36%         171                27    84.21%        1149               145    87.38%           0                 0         -
+<comparison>/candidate/product/src/utils/date.rs                                           257               137    46.69%          22                14    36.36%         164                90    45.12%           0                 0         -
+<comparison>/candidate/product/src/utils/download.rs                                       626               461    26.36%          47                28    40.43%         379               276    27.18%           0                 0         -
+<comparison>/candidate/product/src/utils/fs_lock.rs                                         17                 2    88.24%           3                 0   100.00%          11                 1    90.91%           0                 0         -
+<comparison>/candidate/product/src/utils/mod.rs                                             29                29     0.00%           3                 3     0.00%          17                17     0.00%           0                 0         -
+<comparison>/candidate/product/src/utils/query.rs                                           24                 6    75.00%           2                 1    50.00%          15                 4    73.33%           0                 0         -
+<comparison>/candidate/product/src/utils/serde.rs                                           48                29    39.58%           4                 1    75.00%          23                11    52.17%           0                 0         -
+<comparison>/candidate/product/src/utils/sync.rs                                            50                46     8.00%           4                 3    25.00%          24                21    12.50%           0                 0         -
+<comparison>/candidate/product/src/workflow_ladders.rs                                     106                51    51.89%           7                 3    57.14%          82                43    47.56%           0                 0         -
+<comparison>/candidate/product/src/xml.rs                                                  246               151    38.62%          17                14    17.65%         162                94    41.98%           0                 0         -
+<rust-stdlib>/std/src/sys/thread_local/native/mod.rs                                                          7                 0   100.00%           2                 0   100.00%           6                 0   100.00%           0                 0         -
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                                                                                                                                                   206150            137561    33.27%       15198              9322    38.66%      145220             94905    34.65%           0                 0         -
+```
+
+#### unit
+
+```text
+Filename                                                                                                                                               Regions    Missed Regions     Cover   Functions  Missed Functions  Executed       Lines      Missed Lines     Cover    Branches   Missed Branches     Cover
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<comparison>/candidate/product/src/build_identity.rs                                        10                 4    60.00%           2                 1    50.00%           6                 3    50.00%           0                 0         -
+<comparison>/candidate/product/src/cache/citation_evidence.rs                              177                12    93.22%          13                 0   100.00%         121                 5    95.87%           0                 0         -
+<comparison>/candidate/product/src/cache/clean.rs                                          676                46    93.20%          40                 4    90.00%         521                19    96.35%           0                 0         -
+<comparison>/candidate/product/src/cache/clear.rs                                         1331               139    89.56%          91                 5    94.51%         732                66    90.98%           0                 0         -
+<comparison>/candidate/product/src/cache/config.rs                                         884                17    98.08%          65                 1    98.46%         642                12    98.13%           0                 0         -
+<comparison>/candidate/product/src/cache/http.rs                                            43                 1    97.67%           7                 0   100.00%          28                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cache/limits.rs                                         252                20    92.06%          15                 2    86.67%         167                21    87.43%           0                 0         -
+<comparison>/candidate/product/src/cache/manager.rs                                       1356               126    90.71%         110                12    89.09%         919                67    92.71%           0                 0         -
+<comparison>/candidate/product/src/cache/migration.rs                                     1563               178    88.61%          91                 4    95.60%         899                78    91.32%           0                 0         -
+<comparison>/candidate/product/src/cache/mod.rs                                             68                 1    98.53%           7                 0   100.00%          47                 1    97.87%           0                 0         -
+<comparison>/candidate/product/src/cache/planner.rs                                       1139                70    93.85%          68                 8    88.24%         707                46    93.49%           0                 0         -
+<comparison>/candidate/product/src/cache/private.rs                                        699                54    92.27%          37                 4    89.19%         380                18    95.26%           0                 0         -
+<comparison>/candidate/product/src/cache/provider_capture.rs                              1935               190    90.18%          96                 5    94.79%        1085                55    94.93%           0                 0         -
+<comparison>/candidate/product/src/cache/provider_capture/unsupported.rs                    26                 0   100.00%           2                 0   100.00%          12                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/adverse_event/dispatch.rs                           470               437     7.02%           9                 7    22.22%         389               355     8.74%           0                 0         -
+<comparison>/candidate/product/src/cli/adverse_event/plan.rs                               248                 4    98.39%           7                 0   100.00%         171                 4    97.66%           0                 0         -
+<comparison>/candidate/product/src/cli/article/annotations.rs                               69                 2    97.10%           9                 0   100.00%          50                 1    98.00%           0                 0         -
+<comparison>/candidate/product/src/cli/article/assets.rs                                   386               282    26.94%          29                13    55.17%         288               202    29.86%           0                 0         -
+<comparison>/candidate/product/src/cli/article/dispatch.rs                                 855               330    61.40%          44                13    70.45%         590               192    67.46%           0                 0         -
+<comparison>/candidate/product/src/cli/article/export.rs                                   137               137     0.00%          10                10     0.00%          95                95     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/article/fulltext_view.rs                            409               227    44.50%          29                15    48.28%         284               154    45.77%           0                 0         -
+<comparison>/candidate/product/src/cli/article/mod.rs                                      197                12    93.91%          29                 8    72.41%         156                10    93.59%           0                 0         -
+<comparison>/candidate/product/src/cli/article/render.rs                                    61                 9    85.25%           2                 0   100.00%          45                 3    93.33%           0                 0         -
+<comparison>/candidate/product/src/cli/article/session.rs                                  400                38    90.50%          32                 3    90.62%         291                23    92.10%           0                 0         -
+<comparison>/candidate/product/src/cli/article/workflow.rs                                  96                 4    95.83%          16                 0   100.00%          89                10    88.76%           0                 0         -
+<comparison>/candidate/product/src/cli/author/detail.rs                                     20                14    30.00%           3                 2    33.33%          17                 9    47.06%           0                 0         -
+<comparison>/candidate/product/src/cli/author/mod.rs                                        67                15    77.61%           4                 2    50.00%          66                13    80.30%           0                 0         -
+<comparison>/candidate/product/src/cli/author/papers.rs                                     34                34     0.00%           2                 2     0.00%          20                20     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/author/search.rs                                     18                18     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/cache.rs                                            353               199    43.63%          30                16    46.67%         260               122    53.08%           0                 0         -
+<comparison>/candidate/product/src/cli/cell_line/dispatch.rs                               150               150     0.00%           8                 8     0.00%          99                99     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/chart.rs                                            220                13    94.09%          18                 2    88.89%         134                 4    97.01%           0                 0         -
+<comparison>/candidate/product/src/cli/commands.rs                                           4                 4     0.00%           1                 1     0.00%           3                 3     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/diagnostic/dispatch.rs                              157                81    48.41%           9                 4    55.56%         115                48    58.26%           0                 0         -
+<comparison>/candidate/product/src/cli/diagnostic/mod.rs                                     6                 2    66.67%           1                 0   100.00%           6                 2    66.67%           0                 0         -
+<comparison>/candidate/product/src/cli/discover.rs                                         583                47    91.94%          43                 5    88.37%         414                25    93.96%           0                 0         -
+<comparison>/candidate/product/src/cli/disease/dispatch.rs                                 387               203    47.55%          14                 2    85.71%         273               123    54.95%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/dispatch.rs                                    641               510    20.44%          17                 8    52.94%         551               427    22.50%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/render.rs                                      242                30    87.60%          14                 3    78.57%         226                29    87.17%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/workflow.rs                                     15                15     0.00%           1                 1     0.00%          12                12     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/cspec.rs                                       297               297     0.00%          14                14     0.00%         198               198     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/dispatch.rs                                    197               133    32.49%          12                 5    58.33%         153                92    39.87%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/related.rs                                     261               215    17.62%           4                 2    50.00%         159               125    21.38%           0                 0         -
+<comparison>/candidate/product/src/cli/gwas/dispatch.rs                                    111                13    88.29%           7                 0   100.00%          96                 7    92.71%           0                 0         -
+<comparison>/candidate/product/src/cli/health/catalog.rs                                    10                 0   100.00%           3                 0   100.00%          10                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/health/http.rs                                      565               281    50.27%          40                19    52.50%         440               207    52.95%           0                 0         -
+<comparison>/candidate/product/src/cli/health/local.rs                                     479               164    65.76%          36                12    66.67%         388                92    76.29%           0                 0         -
+<comparison>/candidate/product/src/cli/health/mod.rs                                       521                92    82.34%          37                 4    89.19%         348                54    84.48%           0                 0         -
+<comparison>/candidate/product/src/cli/health/runner.rs                                    395               269    31.90%          30                17    43.33%         320               188    41.25%           0                 0         -
+<comparison>/candidate/product/src/cli/install.rs                                          486                57    88.27%          24                 3    87.50%         278                26    90.65%           0                 0         -
+<comparison>/candidate/product/src/cli/list/catalog.rs                                     319                56    82.45%          22                 3    86.36%         193                26    86.53%           0                 0         -
+<comparison>/candidate/product/src/cli/list/clinical.rs                                     24                 0   100.00%           6                 0   100.00%         357                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/list/helpers.rs                                      35                 5    85.71%           6                 1    83.33%         147                 5    96.60%           0                 0         -
+<comparison>/candidate/product/src/cli/list/literature.rs                                   12                 4    66.67%           3                 1    66.67%         215                21    90.23%           0                 0         -
+<comparison>/candidate/product/src/cli/list/mod.rs                                         133                10    92.48%           4                 0   100.00%          68                 1    98.53%           0                 0         -
+<comparison>/candidate/product/src/cli/list/molecular.rs                                    49                13    73.47%           8                 3    62.50%         368                95    74.18%           0                 0         -
+<comparison>/candidate/product/src/cli/mcp_config.rs                                       152                12    92.11%          13                 0   100.00%         112                 1    99.11%           0                 0         -
+<comparison>/candidate/product/src/cli/mod.rs                                                4                 0   100.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/outcome.rs                                         1029               590    42.66%          42                 9    78.57%         495               228    53.94%           0                 0         -
+<comparison>/candidate/product/src/cli/outcome/mcp_chart.rs                                 51                27    47.06%           2                 0   100.00%          43                23    46.51%           0                 0         -
+<comparison>/candidate/product/src/cli/pathway/dispatch.rs                                 450               390    13.33%          15                 9    40.00%         267               214    19.85%           0                 0         -
+<comparison>/candidate/product/src/cli/pgx/dispatch.rs                                     114                92    19.30%           6                 4    33.33%          75                52    30.67%           0                 0         -
+<comparison>/candidate/product/src/cli/phenotype/dispatch.rs                                81                60    25.93%           5                 3    40.00%          63                42    33.33%           0                 0         -
+<comparison>/candidate/product/src/cli/protein/dispatch.rs                                 199               142    28.64%          12                 8    33.33%         156               103    33.97%           0                 0         -
+<comparison>/candidate/product/src/cli/response_contract.rs                                446                49    89.01%          25                 1    96.00%         486                43    91.15%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/dispatch.rs                              548               432    21.17%          28                17    39.29%         375               283    24.53%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/format.rs                                500               218    56.40%          34                 8    76.47%         303               116    61.72%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/links.rs                                 533               315    40.90%          25                14    44.00%         301               177    41.20%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/mod.rs                                   232                51    78.02%          19                 3    84.21%         144                25    82.64%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/plan.rs                                  746               229    69.30%          39                 6    84.62%         473               119    74.84%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all_command.rs                                94                 3    96.81%           3                 0   100.00%          74                 3    95.95%           0                 0         -
+<comparison>/candidate/product/src/cli/shared.rs                                           551               128    76.77%          47                 8    82.98%         387                69    82.17%           0                 0         -
+<comparison>/candidate/product/src/cli/shared/search_payloads.rs                           203                42    79.31%          20                 2    90.00%         202                42    79.21%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/assets.rs                                      69                11    84.06%           5                 1    80.00%          44                10    77.27%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/atomic_swap.rs                                 55                 7    87.27%           6                 1    83.33%          33                 2    93.94%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/catalog.rs                                    165                 7    95.76%          13                 0   100.00%         103                 2    98.06%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/install.rs                                    793               248    68.73%          45                10    77.78%         470               140    70.21%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/mod.rs                                          8                 8     0.00%           1                 1     0.00%          13                13     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/status.rs                                     365                78    78.63%          22                 5    77.27%         218                60    72.48%           0                 0         -
+<comparison>/candidate/product/src/cli/study/dispatch.rs                                   534               332    37.83%          10                 0   100.00%         331               171    48.34%           0                 0         -
+<comparison>/candidate/product/src/cli/system/batch.rs                                     984                82    91.67%          42                 4    90.48%         681                55    91.92%           0                 0         -
+<comparison>/candidate/product/src/cli/system/dispatch.rs                                  770               565    26.62%          76                55    27.63%         570               416    27.02%           0                 0         -
+<comparison>/candidate/product/src/cli/system/mod.rs                                        45                35    22.22%           5                 4    20.00%          39                29    25.64%           0                 0         -
+<comparison>/candidate/product/src/cli/system/who_sync.rs                                   61                12    80.33%           5                 2    60.00%          47                 8    82.98%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/dispatch.rs                                   761               226    70.30%          57                22    61.40%         552               133    75.91%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/documents.rs                                  162                46    71.60%          14                 3    78.57%         159                31    80.50%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/zero_result.rs                                380                96    74.74%          15                 1    93.33%         182                44    75.82%           0                 0         -
+<comparison>/candidate/product/src/cli/types.rs                                            159                44    72.33%          24                 9    62.50%         183                51    72.13%           0                 0         -
+<comparison>/candidate/product/src/cli/update.rs                                           677               320    52.73%          50                25    50.00%         435               202    53.56%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/articles.rs                                 226               214     5.31%          17                15    11.76%         222               198    10.81%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/car.rs                                      114                68    40.35%          13                 9    30.77%          86                56    34.88%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/dispatch.rs                                 632               196    68.99%          22                 1    95.45%         467               120    74.30%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/erepo.rs                                    385               228    40.78%          18                11    38.89%         305               157    48.52%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/guidance.rs                                  19                13    31.58%           2                 1    50.00%          21                13    38.10%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/mod.rs                                       62                 3    95.16%           9                 1    88.89%          42                 1    97.62%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/normalization_json.rs                       103                 8    92.23%           4                 0   100.00%          81                 4    95.06%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/query.rs                                    492                25    94.92%          23                 0   100.00%         418                36    91.39%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/trial.rs                                     50                50     0.00%           5                 5     0.00%          33                33     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/worker.rs                                            44                 4    90.91%           5                 0   100.00%          30                 2    93.33%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event.rs                              2534               852    66.38%         202                76    62.38%        1930               617    68.03%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event/device.rs                        193                48    75.13%          13                 4    69.23%         146                33    77.40%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event/sections.rs                       85                 0   100.00%           4                 0   100.00%          74                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/entities/article/assets.rs                             4011              1244    68.99%         234                46    80.34%        3054               939    69.25%           0                 0         -
+<comparison>/candidate/product/src/entities/article/backends.rs                           1194               206    82.75%          83                14    83.13%         845               145    82.84%           0                 0         -
+<comparison>/candidate/product/src/entities/article/backends/provider_unit.rs              123                 8    93.50%          12                 0   100.00%         101                 4    96.04%           0                 0         -
+<comparison>/candidate/product/src/entities/article/batch.rs                               247                78    68.42%          24                 5    79.17%         165                40    75.76%           0                 0         -
+<comparison>/candidate/product/src/entities/article/candidates.rs                          469                39    91.68%          39                 6    84.62%         309                15    95.15%           0                 0         -
+<comparison>/candidate/product/src/entities/article/detail.rs                              928               291    68.64%          71                 9    87.32%         687               177    74.24%           0                 0         -
+<comparison>/candidate/product/src/entities/article/enrichment.rs                          616               107    82.63%          36                 4    88.89%         471                83    82.38%           0                 0         -
+<comparison>/candidate/product/src/entities/article/filters.rs                             339                17    94.99%          34                 1    97.06%         252                10    96.03%           0                 0         -
+<comparison>/candidate/product/src/entities/article/fulltext.rs                           1521               373    75.48%         116                16    86.21%        1264               308    75.63%           0                 0         -
+<comparison>/candidate/product/src/entities/article/graph.rs                               571               364    36.25%          60                36    40.00%         455               248    45.49%           0                 0         -
+<comparison>/candidate/product/src/entities/article/graph/citation_evidence.rs            1134                83    92.68%         114                16    85.96%         902                49    94.57%           0                 0         -
+<comparison>/candidate/product/src/entities/article/identity_verification.rs              1736               116    93.32%         126                10    92.06%        1233                61    95.05%           0                 0         -
+<comparison>/candidate/product/src/entities/article/mod.rs                                 492                13    97.36%          35                 0   100.00%         378                10    97.35%           0                 0         -
+<comparison>/candidate/product/src/entities/article/planner.rs                             283                24    91.52%          19                 1    94.74%         246                21    91.46%           0                 0         -
+<comparison>/candidate/product/src/entities/article/query.rs                               833               128    84.63%          80                15    81.25%         596                72    87.92%           0                 0         -
+<comparison>/candidate/product/src/entities/article/ranking.rs                             670                19    97.16%          59                 2    96.61%         496                 9    98.19%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search.rs                             1053               348    66.95%          46                11    76.09%         759               234    69.17%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search/deadline.rs                     117                 7    94.02%          14                 1    92.86%         118                 6    94.92%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search/status.rs                        56                 2    96.43%           6                 0   100.00%          58                 2    96.55%           0                 0         -
+<comparison>/candidate/product/src/entities/article/supplement_search.rs                   755               559    25.96%          47                34    27.66%         495               361    27.07%           0                 0         -
+<comparison>/candidate/product/src/entities/article/variant_search.rs                     7896               686    91.31%         490                37    92.45%        6599               558    91.54%           0                 0         -
+<comparison>/candidate/product/src/entities/author/mod.rs                                  532                97    81.77%          46                11    76.09%         410                81    80.24%           0                 0         -
+<comparison>/candidate/product/src/entities/author/papers.rs                              1957               182    90.70%         112                 8    92.86%        1193                95    92.04%           0                 0         -
+<comparison>/candidate/product/src/entities/author/search.rs                               252                36    85.71%          14                 2    85.71%         240                31    87.08%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line.rs                                   693               325    53.10%          59                20    66.10%         476               200    57.98%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line/chembl.rs                             99                33    66.67%           9                 2    77.78%          82                15    81.71%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line/pharmacodb.rs                        120                95    20.83%           8                 6    25.00%         106                84    20.75%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/get.rs                              880               382    56.59%          73                33    54.79%         586               225    61.60%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/mod.rs                              749                16    97.86%          59                 5    91.53%         555                10    98.20%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/search.rs                           823                86    89.55%          67                 3    95.52%         588                52    91.16%           0                 0         -
+<comparison>/candidate/product/src/entities/discover.rs                                   4421               435    90.16%         273                17    93.77%        3238               271    91.63%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/article_links.rs                       191                13    93.19%          16                 0   100.00%         113                 8    92.92%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/associations.rs                        861               571    33.68%          63                37    41.27%         582               386    33.68%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/enrichment.rs                          997               598    40.02%          66                35    46.97%         712               389    45.37%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/fallback.rs                            584               131    77.57%          38                 5    86.84%         413                89    78.45%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/get.rs                                 372               116    68.82%          22                 3    86.36%         227                63    72.25%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/mod.rs                                  16                 2    87.50%           2                 0   100.00%          14                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/resolution.rs                         1126                59    94.76%         103                 7    93.20%         749                32    95.73%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/resolution/ambiguity.rs                109                 6    94.50%          16                 0   100.00%          80                 2    97.50%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/search.rs                              899               252    71.97%          91                32    64.84%         690               185    73.19%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/cell_lines.rs                             165               131    20.61%          10                 7    30.00%         149               113    24.16%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/get.rs                                   1711               370    78.38%         121                24    80.17%        1238               258    79.16%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/interactions.rs                           520               127    75.58%          37                 8    78.38%         342                79    76.90%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/label.rs                                 1638                80    95.12%         164                 3    98.17%        1051                45    95.72%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/metadata.rs                               769               143    81.40%          70                15    78.57%         474                95    79.96%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/mod.rs                                    210                22    89.52%          28                 2    92.86%         147                14    90.48%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/query.rs                                  300               121    59.67%          28                13    53.57%         251               102    59.36%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/search.rs                                1215               507    58.27%         100                33    67.00%         840               334    60.24%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/targets.rs                                593               130    78.08%          44                 4    90.91%         385                81    78.96%           0                 0         -
+<comparison>/candidate/product/src/entities/gene.rs                                       4592              2570    44.03%         336               190    43.45%        3069              1647    46.33%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/cell_lines.rs                             171               120    29.82%          17                10    41.18%         113                74    34.51%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/clingen.rs                                289                44    84.78%          30                 4    86.67%         218                26    88.07%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/cspec.rs                                 1418               326    77.01%          84                27    67.86%         903               189    79.07%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/gencc.rs                                  309                90    70.87%          17                 4    76.47%         219                44    79.91%           0                 0         -
+<comparison>/candidate/product/src/entities/mod.rs                                          18                 6    66.67%           3                 1    66.67%          36                13    63.89%           0                 0         -
+<comparison>/candidate/product/src/entities/pathway.rs                                    1450               410    71.72%          93                14    84.95%         957               255    73.35%           0                 0         -
+<comparison>/candidate/product/src/entities/pgx.rs                                        1239               682    44.96%          90                45    50.00%         853               460    46.07%           0                 0         -
+<comparison>/candidate/product/src/entities/pharmacodb.rs                                  231                 9    96.10%          26                 2    92.31%         181                 5    97.24%           0                 0         -
+<comparison>/candidate/product/src/entities/protein.rs                                     967               454    53.05%          50                20    60.00%         688               310    54.94%           0                 0         -
+<comparison>/candidate/product/src/entities/section_outcome.rs                             402                 9    97.76%          43                 0   100.00%         306                 2    99.35%           0                 0         -
+<comparison>/candidate/product/src/entities/source_state_registry.rs                       155                22    85.81%          16                 5    68.75%         118                37    68.64%           0                 0         -
+<comparison>/candidate/product/src/entities/study.rs                                      1770               354    80.00%         161                36    77.64%        1325               235    82.26%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/design.rs                                683                39    94.29%          93                 4    95.70%         597                19    96.82%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/documents.rs                             621               140    77.46%          60                15    75.00%         397                92    76.83%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/eligibility.rs                           821                55    93.30%          66                11    83.33%         538                42    92.19%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/get.rs                                   314                22    92.99%          16                 0   100.00%         234                15    93.59%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/mod.rs                                   728                29    96.02%          46                 4    91.30%         447                13    97.09%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/ctgov.rs                         1215               441    63.70%          76                15    80.26%         919               273    70.29%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/eligibility.rs                    515                44    91.46%          59                 2    96.61%         378                22    94.18%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/eligibility/keep_paths.rs         198                 3    98.48%          16                 0   100.00%         101                 2    98.02%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/essie.rs                          314                38    87.90%          27                 5    81.48%         237                27    88.61%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/mod.rs                            405                28    93.09%          44                 2    95.45%         363                20    94.49%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/nci.rs                            227                24    89.43%          18                 0   100.00%         183                22    87.98%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/normalization.rs                  286                23    91.96%          24                 2    91.67%         196                22    88.78%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/clinvar.rs                             881                18    97.96%          47                 2    95.74%         537                 7    98.70%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/erepo.rs                              1221               137    88.78%          90                14    84.44%         813                92    88.68%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/get.rs                                1973               448    77.29%         149                21    85.91%        1532               326    78.72%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/gwas.rs                                793               319    59.77%          84                45    46.43%         569               234    58.88%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/mod.rs                                 234                20    91.45%          18                 0   100.00%         136                10    92.65%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/normalization.rs                       334                99    70.36%          35                 7    80.00%         248                69    72.18%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/resolution.rs                         1638               107    93.47%         156                 6    96.15%        1134                90    92.06%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/search/diagnostics.rs                  414               293    29.23%          14                 9    35.71%         306               200    34.64%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/search/mod.rs                         1196               303    74.67%          84                25    70.24%         967               212    78.08%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/structure.rs                           473                60    87.32%          38                 4    89.47%         348                37    89.37%           0                 0         -
+<comparison>/candidate/product/src/error.rs                                               1265               220    82.61%          59                 4    93.22%         926               117    87.37%           0                 0         -
+<comparison>/candidate/product/src/lib.rs                                                   18                 0   100.00%           7                 0   100.00%          26                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/main.rs                                                 225               225     0.00%          12                12     0.00%         151               151     0.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/catalog.rs                                           79                49    37.97%          10                 8    20.00%          65                42    35.38%           0                 0         -
+<comparison>/candidate/product/src/mcp/mod.rs                                               23                23     0.00%           5                 5     0.00%          19                19     0.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell.rs                                           3295               735    77.69%         174                54    68.97%        2077               502    75.83%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/http_server.rs                                719               345    52.02%          73                33    54.79%         504               235    53.37%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/modern.rs                                     371               371     0.00%          23                23     0.00%         212               212     0.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/pre_session.rs                                172               172     0.00%          11                11     0.00%         112               112     0.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/trial_phase.rs                                  9                 0   100.00%           2                 0   100.00%           8                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/typed_get.rs                                  143                 3    97.90%           9                 0   100.00%          94                 2    97.87%           0                 0         -
+<comparison>/candidate/product/src/next_command.rs                                          89                 0   100.00%          11                 0   100.00%          61                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/render/chart.rs                                        2112               310    85.32%          83                 5    93.98%        1730               198    88.55%           0                 0         -
+<comparison>/candidate/product/src/render/chart/bounds.rs                                   80                10    87.50%           6                 1    83.33%          51                 9    82.35%           0                 0         -
+<comparison>/candidate/product/src/render/human.rs                                         371                 1    99.73%          22                 0   100.00%         256                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/render/json.rs                                         1487                38    97.44%          53                 0   100.00%        1177                21    98.22%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/adverse_event.rs                        418                38    90.91%          19                 0   100.00%         309                20    93.53%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/article.rs                              967               167    82.73%          49                 5    89.80%         635                85    86.61%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/author.rs                               985               149    84.87%          55                 9    83.64%         717                98    86.33%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/cell_line.rs                            126                 8    93.65%           7                 0   100.00%          80                 3    96.25%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/diagnostic.rs                           291                14    95.19%          19                 1    94.74%         194                 7    96.39%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/discovery.rs                            152                16    89.47%           9                 0   100.00%         124                 7    94.35%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/disease.rs                              450                24    94.67%          33                 2    93.94%         282                13    95.39%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/drug.rs                                 908               169    81.39%          55                17    69.09%         621                96    84.54%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/drug_regulatory.rs                      958               212    77.87%          76                37    51.32%         681               158    76.80%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/evidence.rs                             606                53    91.25%          57                 3    94.74%         495                28    94.34%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/funding.rs                               91                11    87.91%          10                 2    80.00%          65                 4    93.85%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/gene.rs                                 172                 9    94.77%           8                 0   100.00%         101                 3    97.03%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/mod.rs                                  840               107    87.26%          96                12    87.50%         655                97    85.19%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pathway.rs                               92                19    79.35%           4                 2    50.00%          46                 5    89.13%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pgx.rs                                  118                20    83.05%           6                 1    83.33%          62                12    80.65%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pharmacodb.rs                            67                67     0.00%           3                 3     0.00%          39                39     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/protein.rs                              190                29    84.74%          13                 2    84.62%         113                19    83.19%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/related.rs                             1595               264    83.45%         166                28    83.13%        1084               181    83.30%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/related/article_support.rs              555                26    95.32%          58                 3    94.83%         368                14    96.20%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/sections.rs                             791                54    93.17%          64                 1    98.44%         532                32    93.98%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/study.rs                                622                76    87.78%          25                 4    84.00%         431                55    87.24%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/support.rs                              190                40    78.95%          14                 2    85.71%         121                30    75.21%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/trial.rs                                633                22    96.52%          49                 0   100.00%         402                 9    97.76%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/variant.rs                              873               136    84.42%          51                 4    92.16%         593                77    87.02%           0                 0         -
+<comparison>/candidate/product/src/render/provenance.rs                                   1998               172    91.39%          76                 3    96.05%        1713                96    94.40%           0                 0         -
+<comparison>/candidate/product/src/render/provenance/adverse_event.rs                      106                28    73.58%           6                 1    83.33%          85                19    77.65%           0                 0         -
+<comparison>/candidate/product/src/skill_assets.rs                                          27                11    59.26%           5                 2    60.00%          18                 7    61.11%           0                 0         -
+<comparison>/candidate/product/src/sources/archive_budget.rs                               631                43    93.19%          20                 0   100.00%         378                13    96.56%           0                 0         -
+<comparison>/candidate/product/src/sources/ca_bundle.rs                                    527                60    88.61%          30                 7    76.67%         316                43    86.39%           0                 0         -
+<comparison>/candidate/product/src/sources/cancerhotspots.rs                               185                12    93.51%          19                 1    94.74%         126                 6    95.24%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal.rs                                   318               197    38.05%          32                15    53.12%         228               126    44.74%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal_download.rs                          572               215    62.41%          34                11    67.65%         446               168    62.33%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal_study.rs                            4088               336    91.78%         184                14    92.39%        2463               213    91.35%           0                 0         -
+<comparison>/candidate/product/src/sources/cellosaurus.rs                                  362               179    50.55%          49                27    44.90%         293               151    48.46%           0                 0         -
+<comparison>/candidate/product/src/sources/chembl.rs                                       289                75    74.05%          33                 9    72.73%         226                40    82.30%           0                 0         -
+<comparison>/candidate/product/src/sources/civic.rs                                        288                25    91.32%          29                 3    89.66%         240                24    90.00%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen.rs                                      830                61    92.65%          75                 9    88.00%         618                67    89.16%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_allele_registry.rs                      911               209    77.06%          57                16    71.93%         594               144    75.76%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_cspec.rs                                406                42    89.66%          26                 1    96.15%         281                21    92.53%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_erepo.rs                                374                55    85.29%          32                 4    87.50%         270                46    82.96%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_ldh.rs                                  131                23    82.44%          17                 4    76.47%         101                16    84.16%           0                 0         -
+<comparison>/candidate/product/src/sources/clinicaltrials.rs                               779                45    94.22%          70                 3    95.71%         574                 9    98.43%           0                 0         -
+<comparison>/candidate/product/src/sources/complexportal.rs                                182                80    56.04%          20                 8    60.00%         154                53    65.58%           0                 0         -
+<comparison>/candidate/product/src/sources/cpic.rs                                         402               104    74.13%          39                12    69.23%         328                80    75.61%           0                 0         -
+<comparison>/candidate/product/src/sources/cvx.rs                                         1028               351    65.86%          88                30    65.91%         665               218    67.22%           0                 0         -
+<comparison>/candidate/product/src/sources/dbsnp.rs                                        179                14    92.18%          20                 0   100.00%         129                 9    93.02%           0                 0         -
+<comparison>/candidate/product/src/sources/ddinter.rs                                      549               235    57.19%          47                17    63.83%         359               146    59.33%           0                 0         -
+<comparison>/candidate/product/src/sources/dgidb.rs                                        270                74    72.59%          23                 7    69.57%         194                51    73.71%           0                 0         -
+<comparison>/candidate/product/src/sources/disable.rs                                      535                95    82.24%          55                 8    85.45%         314                63    79.94%           0                 0         -
+<comparison>/candidate/product/src/sources/disgenet.rs                                     451               191    57.65%          41                15    63.41%         323               107    66.87%           0                 0         -
+<comparison>/candidate/product/src/sources/ema.rs                                         1042               332    68.14%          79                21    73.42%         684               208    69.59%           0                 0         -
+<comparison>/candidate/product/src/sources/ema/identity.rs                                 251                 3    98.80%          32                 0   100.00%         191                 2    98.95%           0                 0         -
+<comparison>/candidate/product/src/sources/enrichr.rs                                      237               173    27.00%          21                17    19.05%         184               128    30.43%           0                 0         -
+<comparison>/candidate/product/src/sources/europepmc.rs                                    606               104    82.84%          53                15    71.70%         464                79    82.97%           0                 0         -
+<comparison>/candidate/product/src/sources/fda_orphan.rs                                  1284                35    97.27%         103                 3    97.09%         819                21    97.44%           0                 0         -
+<comparison>/candidate/product/src/sources/figshare.rs                                     507               124    75.54%          50                12    76.00%         370                86    76.76%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc.rs                                       1416               206    85.45%         107                13    87.85%         802                70    91.27%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc/model.rs                                  529                39    92.63%          35                 1    97.14%         288                11    96.18%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc/store.rs                                 1845               214    88.40%          88                 6    93.18%         752                44    94.15%           0                 0         -
+<comparison>/candidate/product/src/sources/gnomad.rs                                       268                69    74.25%          24                 6    75.00%         200                38    81.00%           0                 0         -
+<comparison>/candidate/product/src/sources/gprofiler.rs                                    194               117    39.69%          18                10    44.44%         147                77    47.62%           0                 0         -
+<comparison>/candidate/product/src/sources/gtex.rs                                         275               112    59.27%          29                14    51.72%         188                69    63.30%           0                 0         -
+<comparison>/candidate/product/src/sources/gtr.rs                                          913               341    62.65%          81                32    60.49%         623               242    61.16%           0                 0         -
+<comparison>/candidate/product/src/sources/gwas.rs                                         363                46    87.33%          32                 1    96.88%         286                34    88.11%           0                 0         -
+<comparison>/candidate/product/src/sources/hpa.rs                                          663               240    63.80%          71                23    67.61%         472               154    67.37%           0                 0         -
+<comparison>/candidate/product/src/sources/hpo.rs                                          342               103    69.88%          34                11    67.65%         244                68    72.13%           0                 0         -
+<comparison>/candidate/product/src/sources/interpro.rs                                     147                22    85.03%          15                 2    86.67%         111                16    85.59%           0                 0         -
+<comparison>/candidate/product/src/sources/kegg.rs                                         441               145    67.12%          31                14    54.84%         256                82    67.97%           0                 0         -
+<comparison>/candidate/product/src/sources/litsense2.rs                                    134                66    50.75%          16                 8    50.00%         111                51    54.05%           0                 0         -
+<comparison>/candidate/product/src/sources/litvar.rs                                       186                 6    96.77%          22                 0   100.00%         139                 3    97.84%           0                 0         -
+<comparison>/candidate/product/src/sources/medlineplus.rs                                  244                36    85.25%          21                 3    85.71%         177                26    85.31%           0                 0         -
+<comparison>/candidate/product/src/sources/mod.rs                                         2743               185    93.26%         281                 7    97.51%        2035               100    95.09%           0                 0         -
+<comparison>/candidate/product/src/sources/monarch.rs                                      679               181    73.34%          53                18    66.04%         515               140    72.82%           0                 0         -
+<comparison>/candidate/product/src/sources/mutalyzer.rs                                    276                37    86.59%          30                 6    80.00%         216                23    89.35%           0                 0         -
+<comparison>/candidate/product/src/sources/mychem.rs                                       181                15    91.71%          18                 1    94.44%         124                 8    93.55%           0                 0         -
+<comparison>/candidate/product/src/sources/mydisease.rs                                    384                23    94.01%          30                 0   100.00%         297                13    95.62%           0                 0         -
+<comparison>/candidate/product/src/sources/mygene.rs                                      1003                70    93.02%          84                 3    96.43%         579                25    95.68%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant.rs                                   1315               226    82.81%         121                38    68.60%         949               145    84.72%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant/filter_conflicts.rs                    77                 0   100.00%           4                 0   100.00%          40                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant/filter_keys.rs                         31                 1    96.77%           1                 0   100.00%          18                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/sources/ncbi_efetch.rs                                 1853                84    95.47%         120                 2    98.33%        1067                35    96.72%           0                 0         -
+<comparison>/candidate/product/src/sources/ncbi_idconv.rs                                  160                33    79.38%          19                 4    78.95%         113                19    83.19%           0                 0         -
+<comparison>/candidate/product/src/sources/nci_cts.rs                                      844                71    91.59%          58                 1    98.28%         520                11    97.88%           0                 0         -
+<comparison>/candidate/product/src/sources/nih_reporter.rs                                 275                80    70.91%          31                10    67.74%         201                51    74.63%           0                 0         -
+<comparison>/candidate/product/src/sources/ols4.rs                                         123                10    91.87%          12                 1    91.67%          82                 5    93.90%           0                 0         -
+<comparison>/candidate/product/src/sources/oncokb.rs                                       204               131    35.78%          22                17    22.73%         145                90    37.93%           0                 0         -
+<comparison>/candidate/product/src/sources/opencitations.rs                                383                10    97.39%          25                 0   100.00%         242                 2    99.17%           0                 0         -
+<comparison>/candidate/product/src/sources/openfda.rs                                      598               128    78.60%          54                12    77.78%         489                86    82.41%           0                 0         -
+<comparison>/candidate/product/src/sources/opentargets.rs                                 1822               255    86.00%         137                25    81.75%        1238               199    83.93%           0                 0         -
+<comparison>/candidate/product/src/sources/orcid.rs                                        695                68    90.22%          65                 5    92.31%         467                37    92.08%           0                 0         -
+<comparison>/candidate/product/src/sources/ordinary_url_policy.rs                          409                32    92.18%          42                 6    85.71%         304                19    93.75%           0                 0         -
+<comparison>/candidate/product/src/sources/pharmacodb.rs                                   469               161    65.67%          50                18    64.00%         327                95    70.95%           0                 0         -
+<comparison>/candidate/product/src/sources/pharmgkb.rs                                     343               119    65.31%          37                14    62.16%         299                81    72.91%           0                 0         -
+<comparison>/candidate/product/src/sources/pmc_article.rs                                 1057                93    91.20%          71                 6    91.55%         663                63    90.50%           0                 0         -
+<comparison>/candidate/product/src/sources/pmc_oa.rs                                       654               247    62.23%          60                26    56.67%         450               156    65.33%           0                 0         -
+<comparison>/candidate/product/src/sources/provider_url_policy.rs                         1305               180    86.21%          86                18    79.07%         875                91    89.60%           0                 0         -
+<comparison>/candidate/product/src/sources/pubmed.rs                                       819               111    86.45%          83                10    87.95%         582                68    88.32%           0                 0         -
+<comparison>/candidate/product/src/sources/pubtator.rs                                     368                25    93.21%          30                 0   100.00%         247                13    94.74%           0                 0         -
+<comparison>/candidate/product/src/sources/quickgo.rs                                      123                76    38.21%          14                 9    35.71%          94                54    42.55%           0                 0         -
+<comparison>/candidate/product/src/sources/rate_limit.rs                                   771                 8    98.96%          62                 0   100.00%         503                 3    99.40%           0                 0         -
+<comparison>/candidate/product/src/sources/reactome.rs                                     368               220    40.22%          45                29    35.56%         259               148    42.86%           0                 0         -
+<comparison>/candidate/product/src/sources/seer.rs                                         654               228    65.14%          55                23    58.18%         453               155    65.78%           0                 0         -
+<comparison>/candidate/product/src/sources/semantic_scholar.rs                             891               147    83.50%          82                14    82.93%         718               100    86.07%           0                 0         -
+<comparison>/candidate/product/src/sources/string.rs                                        85                57    32.94%           9                 7    22.22%          70                44    37.14%           0                 0         -
+<comparison>/candidate/product/src/sources/trust_failure_tests/mod.rs                       87                 0   100.00%          11                 0   100.00%          83                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/sources/umls.rs                                         213                64    69.95%          20                 7    65.00%         158                37    76.58%           0                 0         -
+<comparison>/candidate/product/src/sources/uniprot.rs                                      869               145    83.31%          90                13    85.56%         581                95    83.65%           0                 0         -
+<comparison>/candidate/product/src/sources/vaers.rs                                        469               211    55.01%          52                27    48.08%         359               165    54.04%           0                 0         -
+<comparison>/candidate/product/src/sources/variantvalidator.rs                             291                38    86.94%          30                 5    83.33%         228                24    89.47%           0                 0         -
+<comparison>/candidate/product/src/sources/who_ivd.rs                                      477               241    49.48%          48                23    52.08%         322               147    54.35%           0                 0         -
+<comparison>/candidate/product/src/sources/who_pq.rs                                      1392               239    82.83%         115                24    79.13%         980               179    81.73%           0                 0         -
+<comparison>/candidate/product/src/sources/wikipathways.rs                                 464               179    61.42%          50                20    60.00%         316               106    66.46%           0                 0         -
+<comparison>/candidate/product/src/transform/adverse_event.rs                              769               442    42.52%          68                44    35.29%         527               274    48.01%           0                 0         -
+<comparison>/candidate/product/src/transform/article.rs                                     41                 0   100.00%           2                 0   100.00%          45                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/transform/article/anchors.rs                            100                 2    98.00%          12                 0   100.00%          66                 3    95.45%           0                 0         -
+<comparison>/candidate/product/src/transform/article/annotations.rs                        533                19    96.44%          41                 3    92.68%         373                13    96.51%           0                 0         -
+<comparison>/candidate/product/src/transform/article/federation.rs                         784                77    90.18%          76                 8    89.47%         515                36    93.01%           0                 0         -
+<comparison>/candidate/product/src/transform/article/html.rs                               643                32    95.02%          43                 2    95.35%         422                19    95.50%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats.rs                               952                80    91.60%          72                 2    97.22%         545                41    92.48%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/refs.rs                          825               280    66.06%          54                11    79.63%         449               129    71.27%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/refs/citation.rs                 687                33    95.20%          49                 1    97.96%         453                24    94.70%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/supplements.rs                   222                10    95.50%          20                 1    95.00%         155                 4    97.42%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/tables.rs                        205                 6    97.07%          17                 0   100.00%         109                 2    98.17%           0                 0         -
+<comparison>/candidate/product/src/transform/article/pdf.rs                                 64                 9    85.94%           6                 2    66.67%          46                 5    89.13%           0                 0         -
+<comparison>/candidate/product/src/transform/article/supplement_text.rs                    685               204    70.22%          26                 6    76.92%         506               160    68.38%           0                 0         -
+<comparison>/candidate/product/src/transform/disease.rs                                   1565               169    89.20%         115                11    90.43%         995                82    91.76%           0                 0         -
+<comparison>/candidate/product/src/transform/drug.rs                                      2163               117    94.59%         188                11    94.15%        1343                62    95.38%           0                 0         -
+<comparison>/candidate/product/src/transform/gene.rs                                       569                78    86.29%          38                 3    92.11%         318                39    87.74%           0                 0         -
+<comparison>/candidate/product/src/transform/pathway.rs                                    207                 0   100.00%          14                 0   100.00%         166                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/transform/protein.rs                                    220                 2    99.09%          17                 1    94.12%         192                 1    99.48%           0                 0         -
+<comparison>/candidate/product/src/transform/trial.rs                                      720                23    96.81%         100                 0   100.00%         478                11    97.70%           0                 0         -
+<comparison>/candidate/product/src/transform/variant.rs                                   1630               130    92.02%         171                13    92.40%        1149                65    94.34%           0                 0         -
+<comparison>/candidate/product/src/utils/date.rs                                           257                12    95.33%          22                 3    86.36%         164                 8    95.12%           0                 0         -
+<comparison>/candidate/product/src/utils/download.rs                                       626                92    85.30%          47                 2    95.74%         379                50    86.81%           0                 0         -
+<comparison>/candidate/product/src/utils/fs_lock.rs                                         17                 2    88.24%           3                 0   100.00%          11                 1    90.91%           0                 0         -
+<comparison>/candidate/product/src/utils/mod.rs                                             29                 0   100.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/utils/query.rs                                           24                 0   100.00%           2                 0   100.00%          15                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/utils/serde.rs                                           48                 0   100.00%           4                 0   100.00%          23                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/utils/sync.rs                                            50                 0   100.00%           4                 0   100.00%          24                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/workflow_ladders.rs                                     106                18    83.02%           7                 1    85.71%          82                25    69.51%           0                 0         -
+<comparison>/candidate/product/src/xml.rs                                                  246                 5    97.97%          17                 0   100.00%         162                 1    99.38%           0                 0         -
+<rust-stdlib>/std/src/sys/thread_local/native/mod.rs                                                          7                 0   100.00%           2                 0   100.00%           6                 0   100.00%           0                 0         -
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                                                                                                                                                   206150             45422    77.97%       15198              3072    79.79%      145220             29580    79.63%           0                 0         -
+```
+
+#### combined
+
+```text
+Filename                                                                                                                                               Regions    Missed Regions     Cover   Functions  Missed Functions  Executed       Lines      Missed Lines     Cover    Branches   Missed Branches     Cover
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<comparison>/candidate/product/src/build_identity.rs                                        10                 0   100.00%           2                 0   100.00%           6                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cache/citation_evidence.rs                              177                12    93.22%          13                 0   100.00%         121                 5    95.87%           0                 0         -
+<comparison>/candidate/product/src/cache/clean.rs                                          676                46    93.20%          40                 4    90.00%         521                19    96.35%           0                 0         -
+<comparison>/candidate/product/src/cache/clear.rs                                         1331               139    89.56%          91                 5    94.51%         732                66    90.98%           0                 0         -
+<comparison>/candidate/product/src/cache/config.rs                                         884                16    98.19%          65                 1    98.46%         642                10    98.44%           0                 0         -
+<comparison>/candidate/product/src/cache/http.rs                                            43                 0   100.00%           7                 0   100.00%          28                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cache/limits.rs                                         252                20    92.06%          15                 2    86.67%         167                21    87.43%           0                 0         -
+<comparison>/candidate/product/src/cache/manager.rs                                       1356               123    90.93%         110                12    89.09%         919                67    92.71%           0                 0         -
+<comparison>/candidate/product/src/cache/migration.rs                                     1563               176    88.74%          91                 3    96.70%         899                77    91.43%           0                 0         -
+<comparison>/candidate/product/src/cache/mod.rs                                             68                 1    98.53%           7                 0   100.00%          47                 1    97.87%           0                 0         -
+<comparison>/candidate/product/src/cache/planner.rs                                       1139                70    93.85%          68                 8    88.24%         707                46    93.49%           0                 0         -
+<comparison>/candidate/product/src/cache/private.rs                                        699                54    92.27%          37                 4    89.19%         380                18    95.26%           0                 0         -
+<comparison>/candidate/product/src/cache/provider_capture.rs                              1935               190    90.18%          96                 5    94.79%        1085                55    94.93%           0                 0         -
+<comparison>/candidate/product/src/cache/provider_capture/unsupported.rs                    26                 0   100.00%           2                 0   100.00%          12                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/adverse_event/dispatch.rs                           470               144    69.36%           9                 0   100.00%         389               133    65.81%           0                 0         -
+<comparison>/candidate/product/src/cli/adverse_event/plan.rs                               248                 4    98.39%           7                 0   100.00%         171                 4    97.66%           0                 0         -
+<comparison>/candidate/product/src/cli/article/annotations.rs                               69                 2    97.10%           9                 0   100.00%          50                 1    98.00%           0                 0         -
+<comparison>/candidate/product/src/cli/article/assets.rs                                   386                47    87.82%          29                 1    96.55%         288                39    86.46%           0                 0         -
+<comparison>/candidate/product/src/cli/article/dispatch.rs                                 855               153    82.11%          44                 8    81.82%         590                82    86.10%           0                 0         -
+<comparison>/candidate/product/src/cli/article/export.rs                                   137                22    83.94%          10                 3    70.00%          95                20    78.95%           0                 0         -
+<comparison>/candidate/product/src/cli/article/fulltext_view.rs                            409               107    73.84%          29                 7    75.86%         284                70    75.35%           0                 0         -
+<comparison>/candidate/product/src/cli/article/mod.rs                                      197                11    94.42%          29                 7    75.86%         156                 9    94.23%           0                 0         -
+<comparison>/candidate/product/src/cli/article/render.rs                                    61                 9    85.25%           2                 0   100.00%          45                 3    93.33%           0                 0         -
+<comparison>/candidate/product/src/cli/article/session.rs                                  400                38    90.50%          32                 3    90.62%         291                23    92.10%           0                 0         -
+<comparison>/candidate/product/src/cli/article/workflow.rs                                  96                 4    95.83%          16                 0   100.00%          89                10    88.76%           0                 0         -
+<comparison>/candidate/product/src/cli/author/detail.rs                                     20                 2    90.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/author/mod.rs                                        67                 1    98.51%           4                 0   100.00%          66                 1    98.48%           0                 0         -
+<comparison>/candidate/product/src/cli/author/papers.rs                                     34                 3    91.18%           2                 0   100.00%          20                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/author/search.rs                                     18                18     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/cache.rs                                            353                73    79.32%          30                11    63.33%         260                40    84.62%           0                 0         -
+<comparison>/candidate/product/src/cli/cell_line/dispatch.rs                               150               121    19.33%           8                 4    50.00%          99                74    25.25%           0                 0         -
+<comparison>/candidate/product/src/cli/chart.rs                                            220                13    94.09%          18                 2    88.89%         134                 4    97.01%           0                 0         -
+<comparison>/candidate/product/src/cli/commands.rs                                           4                 1    75.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/diagnostic/dispatch.rs                              157                62    60.51%           9                 2    77.78%         115                37    67.83%           0                 0         -
+<comparison>/candidate/product/src/cli/diagnostic/mod.rs                                     6                 2    66.67%           1                 0   100.00%           6                 2    66.67%           0                 0         -
+<comparison>/candidate/product/src/cli/discover.rs                                         583                47    91.94%          43                 5    88.37%         414                25    93.96%           0                 0         -
+<comparison>/candidate/product/src/cli/disease/dispatch.rs                                 387               203    47.55%          14                 2    85.71%         273               123    54.95%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/dispatch.rs                                    641               490    23.56%          17                 6    64.71%         551               408    25.95%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/render.rs                                      242                30    87.60%          14                 3    78.57%         226                29    87.17%           0                 0         -
+<comparison>/candidate/product/src/cli/drug/workflow.rs                                     15                15     0.00%           1                 1     0.00%          12                12     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/cspec.rs                                       297               282     5.05%          14                12    14.29%         198               181     8.59%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/dispatch.rs                                    197                42    78.68%          12                 1    91.67%         153                31    79.74%           0                 0         -
+<comparison>/candidate/product/src/cli/gene/related.rs                                     261               215    17.62%           4                 2    50.00%         159               125    21.38%           0                 0         -
+<comparison>/candidate/product/src/cli/gwas/dispatch.rs                                    111                13    88.29%           7                 0   100.00%          96                 7    92.71%           0                 0         -
+<comparison>/candidate/product/src/cli/health/catalog.rs                                    10                 0   100.00%           3                 0   100.00%          10                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/health/http.rs                                      565               270    52.21%          40                17    57.50%         440               198    55.00%           0                 0         -
+<comparison>/candidate/product/src/cli/health/local.rs                                     479               164    65.76%          36                12    66.67%         388                92    76.29%           0                 0         -
+<comparison>/candidate/product/src/cli/health/mod.rs                                       521                60    88.48%          37                 0   100.00%         348                31    91.09%           0                 0         -
+<comparison>/candidate/product/src/cli/health/runner.rs                                    395               155    60.76%          30                 3    90.00%         320                98    69.38%           0                 0         -
+<comparison>/candidate/product/src/cli/install.rs                                          486                57    88.27%          24                 3    87.50%         278                26    90.65%           0                 0         -
+<comparison>/candidate/product/src/cli/list/catalog.rs                                     319                54    83.07%          22                 3    86.36%         193                26    86.53%           0                 0         -
+<comparison>/candidate/product/src/cli/list/clinical.rs                                     24                 0   100.00%           6                 0   100.00%         357                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/list/helpers.rs                                      35                 5    85.71%           6                 1    83.33%         147                 5    96.60%           0                 0         -
+<comparison>/candidate/product/src/cli/list/literature.rs                                   12                 4    66.67%           3                 1    66.67%         215                21    90.23%           0                 0         -
+<comparison>/candidate/product/src/cli/list/mod.rs                                         133                10    92.48%           4                 0   100.00%          68                 1    98.53%           0                 0         -
+<comparison>/candidate/product/src/cli/list/molecular.rs                                    49                13    73.47%           8                 3    62.50%         368                95    74.18%           0                 0         -
+<comparison>/candidate/product/src/cli/mcp_config.rs                                       152                12    92.11%          13                 0   100.00%         112                 1    99.11%           0                 0         -
+<comparison>/candidate/product/src/cli/mod.rs                                                4                 0   100.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/outcome.rs                                         1029               363    64.72%          42                 5    88.10%         495               125    74.75%           0                 0         -
+<comparison>/candidate/product/src/cli/outcome/mcp_chart.rs                                 51                27    47.06%           2                 0   100.00%          43                23    46.51%           0                 0         -
+<comparison>/candidate/product/src/cli/pathway/dispatch.rs                                 450               358    20.44%          15                 9    40.00%         267               204    23.60%           0                 0         -
+<comparison>/candidate/product/src/cli/pgx/dispatch.rs                                     114                65    42.98%           6                 2    66.67%          75                33    56.00%           0                 0         -
+<comparison>/candidate/product/src/cli/phenotype/dispatch.rs                                81                45    44.44%           5                 1    80.00%          63                29    53.97%           0                 0         -
+<comparison>/candidate/product/src/cli/protein/dispatch.rs                                 199               123    38.19%          12                 6    50.00%         156                92    41.03%           0                 0         -
+<comparison>/candidate/product/src/cli/response_contract.rs                                446                33    92.60%          25                 0   100.00%         486                35    92.80%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/dispatch.rs                              548               190    65.33%          28                14    50.00%         375               136    63.73%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/format.rs                                500               150    70.00%          34                 7    79.41%         303                86    71.62%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/links.rs                                 533               126    76.36%          25                 6    76.00%         301                62    79.40%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/mod.rs                                   232                44    81.03%          19                 3    84.21%         144                18    87.50%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all/plan.rs                                  746               229    69.30%          39                 6    84.62%         473               119    74.84%           0                 0         -
+<comparison>/candidate/product/src/cli/search_all_command.rs                                94                 3    96.81%           3                 0   100.00%          74                 3    95.95%           0                 0         -
+<comparison>/candidate/product/src/cli/shared.rs                                           551                19    96.55%          47                 1    97.87%         387                12    96.90%           0                 0         -
+<comparison>/candidate/product/src/cli/shared/search_payloads.rs                           203                42    79.31%          20                 2    90.00%         202                41    79.70%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/assets.rs                                      69                11    84.06%           5                 1    80.00%          44                10    77.27%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/atomic_swap.rs                                 55                 7    87.27%           6                 1    83.33%          33                 2    93.94%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/catalog.rs                                    165                 7    95.76%          13                 0   100.00%         103                 2    98.06%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/install.rs                                    793               220    72.26%          45                 7    84.44%         470               122    74.04%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/mod.rs                                          8                 1    87.50%           1                 0   100.00%          13                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/cli/skill/status.rs                                     365                78    78.63%          22                 5    77.27%         218                60    72.48%           0                 0         -
+<comparison>/candidate/product/src/cli/study/dispatch.rs                                   534               332    37.83%          10                 0   100.00%         331               171    48.34%           0                 0         -
+<comparison>/candidate/product/src/cli/system/batch.rs                                     984                29    97.05%          42                 3    92.86%         681                12    98.24%           0                 0         -
+<comparison>/candidate/product/src/cli/system/dispatch.rs                                  770               454    41.04%          76                37    51.32%         570               332    41.75%           0                 0         -
+<comparison>/candidate/product/src/cli/system/mod.rs                                        45                18    60.00%           5                 1    80.00%          39                12    69.23%           0                 0         -
+<comparison>/candidate/product/src/cli/system/who_sync.rs                                   61                 5    91.80%           5                 0   100.00%          47                 2    95.74%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/dispatch.rs                                   761               176    76.87%          57                20    64.91%         552               108    80.43%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/documents.rs                                  162                17    89.51%          14                 2    85.71%         159                19    88.05%           0                 0         -
+<comparison>/candidate/product/src/cli/trial/zero_result.rs                                380                96    74.74%          15                 1    93.33%         182                44    75.82%           0                 0         -
+<comparison>/candidate/product/src/cli/types.rs                                            159                26    83.65%          24                 6    75.00%         183                26    85.79%           0                 0         -
+<comparison>/candidate/product/src/cli/update.rs                                           677               320    52.73%          50                25    50.00%         435               202    53.56%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/articles.rs                                 226                82    63.72%          17                 8    52.94%         222                71    68.02%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/car.rs                                      114                53    53.51%          13                 7    46.15%          86                45    47.67%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/dispatch.rs                                 632               137    78.32%          22                 1    95.45%         467                75    83.94%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/erepo.rs                                    385                96    75.06%          18                 3    83.33%         305                75    75.41%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/guidance.rs                                  19                13    31.58%           2                 1    50.00%          21                13    38.10%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/mod.rs                                       62                 3    95.16%           9                 1    88.89%          42                 1    97.62%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/normalization_json.rs                       103                 3    97.09%           4                 0   100.00%          81                 2    97.53%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/query.rs                                    492                25    94.92%          23                 0   100.00%         418                36    91.39%           0                 0         -
+<comparison>/candidate/product/src/cli/variant/trial.rs                                     50                50     0.00%           5                 5     0.00%          33                33     0.00%           0                 0         -
+<comparison>/candidate/product/src/cli/worker.rs                                            44                 4    90.91%           5                 0   100.00%          30                 2    93.33%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event.rs                              2534               611    75.89%         202                50    75.25%        1930               419    78.29%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event/device.rs                        193                23    88.08%          13                 1    92.31%         146                11    92.47%           0                 0         -
+<comparison>/candidate/product/src/entities/adverse_event/sections.rs                       85                 0   100.00%           4                 0   100.00%          74                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/entities/article/assets.rs                             4011               571    85.76%         234                16    93.16%        3054               452    85.20%           0                 0         -
+<comparison>/candidate/product/src/entities/article/backends.rs                           1194               178    85.09%          83                10    87.95%         845               127    84.97%           0                 0         -
+<comparison>/candidate/product/src/entities/article/backends/provider_unit.rs              123                 8    93.50%          12                 0   100.00%         101                 4    96.04%           0                 0         -
+<comparison>/candidate/product/src/entities/article/batch.rs                               247                65    73.68%          24                 5    79.17%         165                34    79.39%           0                 0         -
+<comparison>/candidate/product/src/entities/article/candidates.rs                          469                39    91.68%          39                 6    84.62%         309                15    95.15%           0                 0         -
+<comparison>/candidate/product/src/entities/article/detail.rs                              928               248    73.28%          71                 8    88.73%         687               154    77.58%           0                 0         -
+<comparison>/candidate/product/src/entities/article/enrichment.rs                          616               107    82.63%          36                 4    88.89%         471                83    82.38%           0                 0         -
+<comparison>/candidate/product/src/entities/article/filters.rs                             339                17    94.99%          34                 1    97.06%         252                10    96.03%           0                 0         -
+<comparison>/candidate/product/src/entities/article/fulltext.rs                           1521               245    83.89%         116                 9    92.24%        1264               192    84.81%           0                 0         -
+<comparison>/candidate/product/src/entities/article/graph.rs                               571               317    44.48%          60                32    46.67%         455               217    52.31%           0                 0         -
+<comparison>/candidate/product/src/entities/article/graph/citation_evidence.rs            1134                83    92.68%         114                16    85.96%         902                49    94.57%           0                 0         -
+<comparison>/candidate/product/src/entities/article/identity_verification.rs              1736               116    93.32%         126                10    92.06%        1233                61    95.05%           0                 0         -
+<comparison>/candidate/product/src/entities/article/mod.rs                                 492                13    97.36%          35                 0   100.00%         378                10    97.35%           0                 0         -
+<comparison>/candidate/product/src/entities/article/planner.rs                             283                24    91.52%          19                 1    94.74%         246                21    91.46%           0                 0         -
+<comparison>/candidate/product/src/entities/article/query.rs                               833               117    85.95%          80                11    86.25%         596                67    88.76%           0                 0         -
+<comparison>/candidate/product/src/entities/article/ranking.rs                             670                18    97.31%          59                 2    96.61%         496                 8    98.39%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search.rs                             1053               286    72.84%          46                 9    80.43%         759               195    74.31%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search/deadline.rs                     117                 7    94.02%          14                 1    92.86%         118                 6    94.92%           0                 0         -
+<comparison>/candidate/product/src/entities/article/search/status.rs                        56                 2    96.43%           6                 0   100.00%          58                 2    96.55%           0                 0         -
+<comparison>/candidate/product/src/entities/article/supplement_search.rs                   755               170    77.48%          47                12    74.47%         495               105    78.79%           0                 0         -
+<comparison>/candidate/product/src/entities/article/variant_search.rs                     7896               673    91.48%         490                34    93.06%        6599               534    91.91%           0                 0         -
+<comparison>/candidate/product/src/entities/author/mod.rs                                  532                38    92.86%          46                 4    91.30%         410                23    94.39%           0                 0         -
+<comparison>/candidate/product/src/entities/author/papers.rs                              1957               125    93.61%         112                 5    95.54%        1193                48    95.98%           0                 0         -
+<comparison>/candidate/product/src/entities/author/search.rs                               252                36    85.71%          14                 2    85.71%         240                31    87.08%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line.rs                                   693               240    65.37%          59                12    79.66%         476               156    67.23%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line/chembl.rs                             99                33    66.67%           9                 2    77.78%          82                15    81.71%           0                 0         -
+<comparison>/candidate/product/src/entities/cell_line/pharmacodb.rs                        120                86    28.33%           8                 4    50.00%         106                74    30.19%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/get.rs                              880               228    74.09%          73                19    73.97%         586               130    77.82%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/mod.rs                              749                16    97.86%          59                 5    91.53%         555                10    98.20%           0                 0         -
+<comparison>/candidate/product/src/entities/diagnostic/search.rs                           823                86    89.55%          67                 3    95.52%         588                52    91.16%           0                 0         -
+<comparison>/candidate/product/src/entities/discover.rs                                   4421               432    90.23%         273                17    93.77%        3238               269    91.69%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/article_links.rs                       191                13    93.19%          16                 0   100.00%         113                 8    92.92%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/associations.rs                        861               489    43.21%          63                22    65.08%         582               339    41.75%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/enrichment.rs                          997               391    60.78%          66                27    59.09%         712               282    60.39%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/fallback.rs                            584               131    77.57%          38                 5    86.84%         413                89    78.45%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/get.rs                                 372               116    68.82%          22                 3    86.36%         227                63    72.25%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/mod.rs                                  16                 2    87.50%           2                 0   100.00%          14                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/resolution.rs                         1126                55    95.12%         103                 6    94.17%         749                30    95.99%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/resolution/ambiguity.rs                109                 6    94.50%          16                 0   100.00%          80                 2    97.50%           0                 0         -
+<comparison>/candidate/product/src/entities/disease/search.rs                              899               216    75.97%          91                27    70.33%         690               160    76.81%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/cell_lines.rs                             165               131    20.61%          10                 7    30.00%         149               113    24.16%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/get.rs                                   1711               279    83.69%         121                13    89.26%        1238               191    84.57%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/interactions.rs                           520               121    76.73%          37                 6    83.78%         342                71    79.24%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/label.rs                                 1638                80    95.12%         164                 3    98.17%        1051                45    95.72%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/metadata.rs                               769               139    81.92%          70                13    81.43%         474                93    80.38%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/mod.rs                                    210                15    92.86%          28                 1    96.43%         147                11    92.52%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/query.rs                                  300               121    59.67%          28                13    53.57%         251               102    59.36%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/search.rs                                1215               448    63.13%         100                30    70.00%         840               295    64.88%           0                 0         -
+<comparison>/candidate/product/src/entities/drug/targets.rs                                593               130    78.08%          44                 4    90.91%         385                81    78.96%           0                 0         -
+<comparison>/candidate/product/src/entities/gene.rs                                       4592              1587    65.44%         336               127    62.20%        3069              1030    66.44%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/cell_lines.rs                             171               120    29.82%          17                10    41.18%         113                74    34.51%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/clingen.rs                                289                44    84.78%          30                 4    86.67%         218                26    88.07%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/cspec.rs                                 1418               301    78.77%          84                22    73.81%         903               170    81.17%           0                 0         -
+<comparison>/candidate/product/src/entities/gene/gencc.rs                                  309                90    70.87%          17                 4    76.47%         219                44    79.91%           0                 0         -
+<comparison>/candidate/product/src/entities/mod.rs                                          18                 0   100.00%           3                 0   100.00%          36                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/entities/pathway.rs                                    1450               311    78.55%          93                11    88.17%         957               193    79.83%           0                 0         -
+<comparison>/candidate/product/src/entities/pgx.rs                                        1239               589    52.46%          90                40    55.56%         853               395    53.69%           0                 0         -
+<comparison>/candidate/product/src/entities/pharmacodb.rs                                  231                 9    96.10%          26                 2    92.31%         181                 5    97.24%           0                 0         -
+<comparison>/candidate/product/src/entities/protein.rs                                     967               361    62.67%          50                13    74.00%         688               240    65.12%           0                 0         -
+<comparison>/candidate/product/src/entities/section_outcome.rs                             402                 9    97.76%          43                 0   100.00%         306                 2    99.35%           0                 0         -
+<comparison>/candidate/product/src/entities/source_state_registry.rs                       155                22    85.81%          16                 5    68.75%         118                37    68.64%           0                 0         -
+<comparison>/candidate/product/src/entities/study.rs                                      1770               354    80.00%         161                36    77.64%        1325               235    82.26%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/design.rs                                683                39    94.29%          93                 4    95.70%         597                19    96.82%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/documents.rs                             621                43    93.08%          60                 4    93.33%         397                35    91.18%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/eligibility.rs                           821                55    93.30%          66                11    83.33%         538                42    92.19%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/get.rs                                   314                22    92.99%          16                 0   100.00%         234                15    93.59%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/mod.rs                                   728                29    96.02%          46                 4    91.30%         447                13    97.09%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/ctgov.rs                         1215               175    85.60%          76                 7    90.79%         919               122    86.72%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/eligibility.rs                    515                32    93.79%          59                 0   100.00%         378                18    95.24%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/eligibility/keep_paths.rs         198                 3    98.48%          16                 0   100.00%         101                 2    98.02%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/essie.rs                          314                38    87.90%          27                 5    81.48%         237                27    88.61%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/mod.rs                            405                27    93.33%          44                 2    95.45%         363                20    94.49%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/nci.rs                            227                24    89.43%          18                 0   100.00%         183                22    87.98%           0                 0         -
+<comparison>/candidate/product/src/entities/trial/search/normalization.rs                  286                14    95.10%          24                 0   100.00%         196                16    91.84%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/clinvar.rs                             881                15    98.30%          47                 1    97.87%         537                 6    98.88%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/erepo.rs                              1221                80    93.45%          90                 9    90.00%         813                62    92.37%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/get.rs                                1973               396    79.93%         149                16    89.26%        1532               290    81.07%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/gwas.rs                                793               315    60.28%          84                45    46.43%         569               232    59.23%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/mod.rs                                 234                19    91.88%          18                 0   100.00%         136                 9    93.38%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/normalization.rs                       334                71    78.74%          35                 7    80.00%         248                51    79.44%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/resolution.rs                         1638               102    93.77%         156                 6    96.15%        1134                85    92.50%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/search/diagnostics.rs                  414               293    29.23%          14                 9    35.71%         306               200    34.64%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/search/mod.rs                         1196               269    77.51%          84                19    77.38%         967               155    83.97%           0                 0         -
+<comparison>/candidate/product/src/entities/variant/structure.rs                           473                60    87.32%          38                 4    89.47%         348                37    89.37%           0                 0         -
+<comparison>/candidate/product/src/error.rs                                               1265               220    82.61%          59                 4    93.22%         926               117    87.37%           0                 0         -
+<comparison>/candidate/product/src/lib.rs                                                   18                 0   100.00%           7                 0   100.00%          26                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/main.rs                                                 225                45    80.00%          12                 3    75.00%         151                30    80.13%           0                 0         -
+<comparison>/candidate/product/src/mcp/catalog.rs                                           79                12    84.81%          10                 3    70.00%          65                10    84.62%           0                 0         -
+<comparison>/candidate/product/src/mcp/mod.rs                                               23                 2    91.30%           5                 0   100.00%          19                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell.rs                                           3295               658    80.03%         174                45    74.14%        2077               445    78.57%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/http_server.rs                                719               326    54.66%          73                31    57.53%         504               221    56.15%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/modern.rs                                     371               371     0.00%          23                23     0.00%         212               212     0.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/pre_session.rs                                172               111    35.47%          11                 7    36.36%         112                78    30.36%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/trial_phase.rs                                  9                 0   100.00%           2                 0   100.00%           8                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/mcp/shell/typed_get.rs                                  143                 3    97.90%           9                 0   100.00%          94                 2    97.87%           0                 0         -
+<comparison>/candidate/product/src/next_command.rs                                          89                 0   100.00%          11                 0   100.00%          61                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/render/chart.rs                                        2112               310    85.32%          83                 5    93.98%        1730               198    88.55%           0                 0         -
+<comparison>/candidate/product/src/render/chart/bounds.rs                                   80                10    87.50%           6                 1    83.33%          51                 9    82.35%           0                 0         -
+<comparison>/candidate/product/src/render/human.rs                                         371                 1    99.73%          22                 0   100.00%         256                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/render/json.rs                                         1487                37    97.51%          53                 0   100.00%        1177                20    98.30%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/adverse_event.rs                        418                38    90.91%          19                 0   100.00%         309                20    93.53%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/article.rs                              967               167    82.73%          49                 5    89.80%         635                85    86.61%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/author.rs                               985               149    84.87%          55                 9    83.64%         717                98    86.33%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/cell_line.rs                            126                 8    93.65%           7                 0   100.00%          80                 3    96.25%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/diagnostic.rs                           291                14    95.19%          19                 1    94.74%         194                 7    96.39%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/discovery.rs                            152                12    92.11%           9                 0   100.00%         124                 4    96.77%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/disease.rs                              450                24    94.67%          33                 2    93.94%         282                13    95.39%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/drug.rs                                 908               168    81.50%          55                16    70.91%         621                95    84.70%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/drug_regulatory.rs                      958               212    77.87%          76                37    51.32%         681               158    76.80%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/evidence.rs                             606                53    91.25%          57                 3    94.74%         495                28    94.34%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/funding.rs                               91                11    87.91%          10                 2    80.00%          65                 4    93.85%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/gene.rs                                 172                 9    94.77%           8                 0   100.00%         101                 3    97.03%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/mod.rs                                  840                74    91.19%          96                 5    94.79%         655                67    89.77%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pathway.rs                               92                19    79.35%           4                 2    50.00%          46                 5    89.13%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pgx.rs                                  118                20    83.05%           6                 1    83.33%          62                12    80.65%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/pharmacodb.rs                            67                67     0.00%           3                 3     0.00%          39                39     0.00%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/protein.rs                              190                29    84.74%          13                 2    84.62%         113                19    83.19%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/related.rs                             1595               167    89.53%         166                16    90.36%        1084               116    89.30%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/related/article_support.rs              555                26    95.32%          58                 3    94.83%         368                14    96.20%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/sections.rs                             791                54    93.17%          64                 1    98.44%         532                32    93.98%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/study.rs                                622                76    87.78%          25                 4    84.00%         431                55    87.24%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/support.rs                              190                40    78.95%          14                 2    85.71%         121                30    75.21%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/trial.rs                                633                20    96.84%          49                 0   100.00%         402                 7    98.26%           0                 0         -
+<comparison>/candidate/product/src/render/markdown/variant.rs                              873               136    84.42%          51                 4    92.16%         593                77    87.02%           0                 0         -
+<comparison>/candidate/product/src/render/provenance.rs                                   1998               168    91.59%          76                 2    97.37%        1713                92    94.63%           0                 0         -
+<comparison>/candidate/product/src/render/provenance/adverse_event.rs                      106                22    79.25%           6                 0   100.00%          85                11    87.06%           0                 0         -
+<comparison>/candidate/product/src/skill_assets.rs                                          27                11    59.26%           5                 2    60.00%          18                 7    61.11%           0                 0         -
+<comparison>/candidate/product/src/sources/archive_budget.rs                               631                43    93.19%          20                 0   100.00%         378                13    96.56%           0                 0         -
+<comparison>/candidate/product/src/sources/ca_bundle.rs                                    527                40    92.41%          30                 4    86.67%         316                30    90.51%           0                 0         -
+<comparison>/candidate/product/src/sources/cancerhotspots.rs                               185                11    94.05%          19                 1    94.74%         126                 6    95.24%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal.rs                                   318               196    38.36%          32                15    53.12%         228               126    44.74%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal_download.rs                          572               215    62.41%          34                11    67.65%         446               168    62.33%           0                 0         -
+<comparison>/candidate/product/src/sources/cbioportal_study.rs                            4088               336    91.78%         184                14    92.39%        2463               213    91.35%           0                 0         -
+<comparison>/candidate/product/src/sources/cellosaurus.rs                                  362               106    70.72%          49                16    67.35%         293               104    64.51%           0                 0         -
+<comparison>/candidate/product/src/sources/chembl.rs                                       289                75    74.05%          33                 9    72.73%         226                40    82.30%           0                 0         -
+<comparison>/candidate/product/src/sources/civic.rs                                        288                12    95.83%          29                 0   100.00%         240                12    95.00%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen.rs                                      830                60    92.77%          75                 9    88.00%         618                67    89.16%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_allele_registry.rs                      911               118    87.05%          57                 7    87.72%         594                90    84.85%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_cspec.rs                                406                31    92.36%          26                 1    96.15%         281                14    95.02%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_erepo.rs                                374                29    92.25%          32                 2    93.75%         270                21    92.22%           0                 0         -
+<comparison>/candidate/product/src/sources/clingen_ldh.rs                                  131                23    82.44%          17                 4    76.47%         101                16    84.16%           0                 0         -
+<comparison>/candidate/product/src/sources/clinicaltrials.rs                               779                38    95.12%          70                 2    97.14%         574                 6    98.95%           0                 0         -
+<comparison>/candidate/product/src/sources/complexportal.rs                                182                25    86.26%          20                 2    90.00%         154                15    90.26%           0                 0         -
+<comparison>/candidate/product/src/sources/cpic.rs                                         402                80    80.10%          39                 8    79.49%         328                62    81.10%           0                 0         -
+<comparison>/candidate/product/src/sources/cvx.rs                                         1028               228    77.82%          88                22    75.00%         665               127    80.90%           0                 0         -
+<comparison>/candidate/product/src/sources/dbsnp.rs                                        179                13    92.74%          20                 0   100.00%         129                 9    93.02%           0                 0         -
+<comparison>/candidate/product/src/sources/ddinter.rs                                      549               228    58.47%          47                15    68.09%         359               139    61.28%           0                 0         -
+<comparison>/candidate/product/src/sources/dgidb.rs                                        270                23    91.48%          23                 1    95.65%         194                15    92.27%           0                 0         -
+<comparison>/candidate/product/src/sources/disable.rs                                      535                19    96.45%          55                 0   100.00%         314                12    96.18%           0                 0         -
+<comparison>/candidate/product/src/sources/disgenet.rs                                     451               120    73.39%          41                 7    82.93%         323                61    81.11%           0                 0         -
+<comparison>/candidate/product/src/sources/ema.rs                                         1042               153    85.32%          79                 8    89.87%         684                97    85.82%           0                 0         -
+<comparison>/candidate/product/src/sources/ema/identity.rs                                 251                 3    98.80%          32                 0   100.00%         191                 2    98.95%           0                 0         -
+<comparison>/candidate/product/src/sources/enrichr.rs                                      237                32    86.50%          21                 3    85.71%         184                21    88.59%           0                 0         -
+<comparison>/candidate/product/src/sources/europepmc.rs                                    606                84    86.14%          53                13    75.47%         464                62    86.64%           0                 0         -
+<comparison>/candidate/product/src/sources/fda_orphan.rs                                  1284                35    97.27%         103                 3    97.09%         819                21    97.44%           0                 0         -
+<comparison>/candidate/product/src/sources/figshare.rs                                     507               124    75.54%          50                12    76.00%         370                86    76.76%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc.rs                                       1416               204    85.59%         107                12    88.79%         802                68    91.52%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc/model.rs                                  529                39    92.63%          35                 1    97.14%         288                11    96.18%           0                 0         -
+<comparison>/candidate/product/src/sources/gencc/store.rs                                 1845               214    88.40%          88                 6    93.18%         752                44    94.15%           0                 0         -
+<comparison>/candidate/product/src/sources/gnomad.rs                                       268                68    74.63%          24                 6    75.00%         200                38    81.00%           0                 0         -
+<comparison>/candidate/product/src/sources/gprofiler.rs                                    194                36    81.44%          18                 1    94.44%         147                13    91.16%           0                 0         -
+<comparison>/candidate/product/src/sources/gtex.rs                                         275                42    84.73%          29                 4    86.21%         188                18    90.43%           0                 0         -
+<comparison>/candidate/product/src/sources/gtr.rs                                          913               201    77.98%          81                14    82.72%         623               133    78.65%           0                 0         -
+<comparison>/candidate/product/src/sources/gwas.rs                                         363                45    87.60%          32                 1    96.88%         286                34    88.11%           0                 0         -
+<comparison>/candidate/product/src/sources/hpa.rs                                          663               200    69.83%          71                20    71.83%         472               128    72.88%           0                 0         -
+<comparison>/candidate/product/src/sources/hpo.rs                                          342               102    70.18%          34                11    67.65%         244                68    72.13%           0                 0         -
+<comparison>/candidate/product/src/sources/interpro.rs                                     147                20    86.39%          15                 2    86.67%         111                12    89.19%           0                 0         -
+<comparison>/candidate/product/src/sources/kegg.rs                                         441                74    83.22%          31                 7    77.42%         256                36    85.94%           0                 0         -
+<comparison>/candidate/product/src/sources/litsense2.rs                                    134                 9    93.28%          16                 0   100.00%         111                 4    96.40%           0                 0         -
+<comparison>/candidate/product/src/sources/litvar.rs                                       186                 6    96.77%          22                 0   100.00%         139                 3    97.84%           0                 0         -
+<comparison>/candidate/product/src/sources/medlineplus.rs                                  244                35    85.66%          21                 3    85.71%         177                26    85.31%           0                 0         -
+<comparison>/candidate/product/src/sources/mod.rs                                         2743               152    94.46%         281                 5    98.22%        2035                79    96.12%           0                 0         -
+<comparison>/candidate/product/src/sources/monarch.rs                                      679               100    85.27%          53                 8    84.91%         515                70    86.41%           0                 0         -
+<comparison>/candidate/product/src/sources/mutalyzer.rs                                    276                34    87.68%          30                 5    83.33%         216                22    89.81%           0                 0         -
+<comparison>/candidate/product/src/sources/mychem.rs                                       181                14    92.27%          18                 1    94.44%         124                 8    93.55%           0                 0         -
+<comparison>/candidate/product/src/sources/mydisease.rs                                    384                22    94.27%          30                 0   100.00%         297                13    95.62%           0                 0         -
+<comparison>/candidate/product/src/sources/mygene.rs                                      1003                68    93.22%          84                 3    96.43%         579                25    95.68%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant.rs                                   1315               223    83.04%         121                38    68.60%         949               145    84.72%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant/filter_conflicts.rs                    77                 0   100.00%           4                 0   100.00%          40                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/sources/myvariant/filter_keys.rs                         31                 1    96.77%           1                 0   100.00%          18                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/sources/ncbi_efetch.rs                                 1853                83    95.52%         120                 2    98.33%        1067                35    96.72%           0                 0         -
+<comparison>/candidate/product/src/sources/ncbi_idconv.rs                                  160                32    80.00%          19                 4    78.95%         113                19    83.19%           0                 0         -
+<comparison>/candidate/product/src/sources/nci_cts.rs                                      844                70    91.71%          58                 1    98.28%         520                11    97.88%           0                 0         -
+<comparison>/candidate/product/src/sources/nih_reporter.rs                                 275                22    92.00%          31                 3    90.32%         201                12    94.03%           0                 0         -
+<comparison>/candidate/product/src/sources/ols4.rs                                         123                 9    92.68%          12                 1    91.67%          82                 5    93.90%           0                 0         -
+<comparison>/candidate/product/src/sources/oncokb.rs                                       204                23    88.73%          22                 3    86.36%         145                14    90.34%           0                 0         -
+<comparison>/candidate/product/src/sources/opencitations.rs                                383                10    97.39%          25                 0   100.00%         242                 2    99.17%           0                 0         -
+<comparison>/candidate/product/src/sources/openfda.rs                                      598                57    90.47%          54                 3    94.44%         489                38    92.23%           0                 0         -
+<comparison>/candidate/product/src/sources/opentargets.rs                                 1822               220    87.93%         137                20    85.40%        1238               174    85.95%           0                 0         -
+<comparison>/candidate/product/src/sources/orcid.rs                                        695                53    92.37%          65                 4    93.85%         467                28    94.00%           0                 0         -
+<comparison>/candidate/product/src/sources/ordinary_url_policy.rs                          409                32    92.18%          42                 6    85.71%         304                19    93.75%           0                 0         -
+<comparison>/candidate/product/src/sources/pharmacodb.rs                                   469               161    65.67%          50                18    64.00%         327                95    70.95%           0                 0         -
+<comparison>/candidate/product/src/sources/pharmgkb.rs                                     343               119    65.31%          37                14    62.16%         299                81    72.91%           0                 0         -
+<comparison>/candidate/product/src/sources/pmc_article.rs                                 1057                93    91.20%          71                 6    91.55%         663                62    90.65%           0                 0         -
+<comparison>/candidate/product/src/sources/pmc_oa.rs                                       654               111    83.03%          60                17    71.67%         450                59    86.89%           0                 0         -
+<comparison>/candidate/product/src/sources/provider_url_policy.rs                         1305               138    89.43%          86                16    81.40%         875                66    92.46%           0                 0         -
+<comparison>/candidate/product/src/sources/pubmed.rs                                       819               110    86.57%          83                10    87.95%         582                68    88.32%           0                 0         -
+<comparison>/candidate/product/src/sources/pubtator.rs                                     368                24    93.48%          30                 0   100.00%         247                13    94.74%           0                 0         -
+<comparison>/candidate/product/src/sources/quickgo.rs                                      123                30    75.61%          14                 3    78.57%          94                15    84.04%           0                 0         -
+<comparison>/candidate/product/src/sources/rate_limit.rs                                   771                 7    99.09%          62                 0   100.00%         503                 2    99.60%           0                 0         -
+<comparison>/candidate/product/src/sources/reactome.rs                                     368               171    53.53%          45                23    48.89%         259               111    57.14%           0                 0         -
+<comparison>/candidate/product/src/sources/seer.rs                                         654               174    73.39%          55                17    69.09%         453               121    73.29%           0                 0         -
+<comparison>/candidate/product/src/sources/semantic_scholar.rs                             891               117    86.87%          82                11    86.59%         718                74    89.69%           0                 0         -
+<comparison>/candidate/product/src/sources/string.rs                                        85                11    87.06%           9                 1    88.89%          70                 5    92.86%           0                 0         -
+<comparison>/candidate/product/src/sources/trust_failure_tests/mod.rs                       87                 0   100.00%          11                 0   100.00%          83                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/sources/umls.rs                                         213                63    70.42%          20                 7    65.00%         158                37    76.58%           0                 0         -
+<comparison>/candidate/product/src/sources/uniprot.rs                                      869               144    83.43%          90                13    85.56%         581                95    83.65%           0                 0         -
+<comparison>/candidate/product/src/sources/vaers.rs                                        469               211    55.01%          52                27    48.08%         359               165    54.04%           0                 0         -
+<comparison>/candidate/product/src/sources/variantvalidator.rs                             291                37    87.29%          30                 5    83.33%         228                24    89.47%           0                 0         -
+<comparison>/candidate/product/src/sources/who_ivd.rs                                      477               127    73.38%          48                10    79.17%         322                67    79.19%           0                 0         -
+<comparison>/candidate/product/src/sources/who_pq.rs                                      1392               218    84.34%         115                22    80.87%         980               169    82.76%           0                 0         -
+<comparison>/candidate/product/src/sources/wikipathways.rs                                 464               107    76.94%          50                11    78.00%         316                53    83.23%           0                 0         -
+<comparison>/candidate/product/src/transform/adverse_event.rs                              769               323    58.00%          68                35    48.53%         527               197    62.62%           0                 0         -
+<comparison>/candidate/product/src/transform/article.rs                                     41                 0   100.00%           2                 0   100.00%          45                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/transform/article/anchors.rs                            100                 2    98.00%          12                 0   100.00%          66                 3    95.45%           0                 0         -
+<comparison>/candidate/product/src/transform/article/annotations.rs                        533                19    96.44%          41                 3    92.68%         373                13    96.51%           0                 0         -
+<comparison>/candidate/product/src/transform/article/federation.rs                         784                73    90.69%          76                 6    92.11%         515                34    93.40%           0                 0         -
+<comparison>/candidate/product/src/transform/article/html.rs                               643                32    95.02%          43                 2    95.35%         422                19    95.50%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats.rs                               952                80    91.60%          72                 2    97.22%         545                41    92.48%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/refs.rs                          825               280    66.06%          54                11    79.63%         449               129    71.27%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/refs/citation.rs                 687                33    95.20%          49                 1    97.96%         453                24    94.70%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/supplements.rs                   222                 8    96.40%          20                 0   100.00%         155                 3    98.06%           0                 0         -
+<comparison>/candidate/product/src/transform/article/jats/tables.rs                        205                 6    97.07%          17                 0   100.00%         109                 2    98.17%           0                 0         -
+<comparison>/candidate/product/src/transform/article/pdf.rs                                 64                 9    85.94%           6                 2    66.67%          46                 5    89.13%           0                 0         -
+<comparison>/candidate/product/src/transform/article/supplement_text.rs                    685               204    70.22%          26                 6    76.92%         506               160    68.38%           0                 0         -
+<comparison>/candidate/product/src/transform/disease.rs                                   1565               166    89.39%         115                10    91.30%         995                81    91.86%           0                 0         -
+<comparison>/candidate/product/src/transform/drug.rs                                      2163               114    94.73%         188                10    94.68%        1343                61    95.46%           0                 0         -
+<comparison>/candidate/product/src/transform/gene.rs                                       569                31    94.55%          38                 0   100.00%         318                10    96.86%           0                 0         -
+<comparison>/candidate/product/src/transform/pathway.rs                                    207                 0   100.00%          14                 0   100.00%         166                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/transform/protein.rs                                    220                 2    99.09%          17                 1    94.12%         192                 1    99.48%           0                 0         -
+<comparison>/candidate/product/src/transform/trial.rs                                      720                23    96.81%         100                 0   100.00%         478                11    97.70%           0                 0         -
+<comparison>/candidate/product/src/transform/variant.rs                                   1630               122    92.52%         171                10    94.15%        1149                61    94.69%           0                 0         -
+<comparison>/candidate/product/src/utils/date.rs                                           257                12    95.33%          22                 3    86.36%         164                 8    95.12%           0                 0         -
+<comparison>/candidate/product/src/utils/download.rs                                       626                86    86.26%          47                 2    95.74%         379                45    88.13%           0                 0         -
+<comparison>/candidate/product/src/utils/fs_lock.rs                                         17                 2    88.24%           3                 0   100.00%          11                 1    90.91%           0                 0         -
+<comparison>/candidate/product/src/utils/mod.rs                                             29                 0   100.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/utils/query.rs                                           24                 0   100.00%           2                 0   100.00%          15                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/utils/serde.rs                                           48                 0   100.00%           4                 0   100.00%          23                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/utils/sync.rs                                            50                 0   100.00%           4                 0   100.00%          24                 0   100.00%           0                 0         -
+<comparison>/candidate/product/src/workflow_ladders.rs                                     106                18    83.02%           7                 1    85.71%          82                25    69.51%           0                 0         -
+<comparison>/candidate/product/src/xml.rs                                                  246                 5    97.97%          17                 0   100.00%         162                 1    99.38%           0                 0         -
+<rust-stdlib>/std/src/sys/thread_local/native/mod.rs                                                          7                 0   100.00%           2                 0   100.00%           6                 0   100.00%           0                 0         -
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                                                                                                                                                   206150             34707    83.16%       15198              2248    85.21%      145220             22237    84.69%           0                 0         -
+```
+
+## Earlier comparison and raw evidence
+
+The following comparison retains the original product identities and raw observations. The refreshed candidate rows above supersede its affected candidate columns.
+
 ## Final same-host comparison, 2026-10-17
 
 This comparison supersedes every earlier before/after column below. Both immutable product revisions used the same reviewed harness, verified toolchain, workloads and cache policy on one shared macOS ARM64 build host. It is not a controlled quiet-host experiment. Other builds were observed; one-minute load ranged from 3.97 to 14.29. Build and gate scenarios have one completed sample per revision. Live timings include provider variability. Faster and slower observations are retained without causal speedup claims.
