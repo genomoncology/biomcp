@@ -4,11 +4,13 @@ priority: 2
 
 # 2182 — Report no Europe PMC full text without a source failure
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision ecdba16, accept
+
+Landed: ecdba16 (fast-forward: Accepted work reached main in reviewed combined research-fix landing bf9916b; completion records this source batch without another source change.)
 
 ## Outcome
 
