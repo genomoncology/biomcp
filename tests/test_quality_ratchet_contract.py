@@ -262,6 +262,7 @@ def _append_orphan_health_entry(health_file: Path) -> None:
     health_file.write_text(updated, encoding="utf-8")
 
 
+@pytest.mark.repo_audit
 def test_mcp_allowlist_audit_passes_for_repo() -> None:
     result = _run_python_script(MCP_SCRIPT, "--json")
 
@@ -382,6 +383,7 @@ def test_mcp_description_policy_rejects_legacy_update_marker_only(
     assert payload["description_policy_ok"] is False
 
 
+@pytest.mark.repo_audit
 def test_dead_code_allowance_audit_passes_for_repo() -> None:
     ratchet = _load_ratchet_module()
 
@@ -618,6 +620,7 @@ def test_full_rust_audits_share_one_source_snapshot(
     assert mask_calls == len(snapshot.sources) == 1
 
 
+@pytest.mark.repo_audit
 def test_source_registry_audit_passes_for_repo() -> None:
     result = _run_python_script(SOURCE_SCRIPT, "--json")
 
@@ -728,38 +731,41 @@ def test_wrapper_can_run_only_the_named_spec_lint_audit(tmp_path: Path) -> None:
     assert "mcp_allowlist" not in summary
 
 
+def _run_renderer_audit(root: Path, output_dir: Path) -> subprocess.CompletedProcess[str]:
+    return _run_python_script(
+        RATCHET_TOOL,
+        "--root-dir",
+        str(root),
+        "--output-dir",
+        str(output_dir),
+        "--spec-glob",
+        str(root / "spec/**/*.md"),
+        "--cli-file",
+        str(REPO_ROOT / "src/cli/mod.rs"),
+        "--shell-file",
+        str(REPO_ROOT / "src/mcp/shell.rs"),
+        "--catalog-file",
+        str(REPO_ROOT / "src/mcp/catalog.rs"),
+        "--sources-dir",
+        str(REPO_ROOT / "src/sources"),
+        "--sources-mod",
+        str(REPO_ROOT / "src/sources/mod.rs"),
+        "--health-file",
+        str(REPO_ROOT / "src/cli/health/catalog.rs"),
+        "--audit",
+        "renderer_next_command_source",
+    )
+
+
+@pytest.mark.repo_audit
+def test_renderer_next_command_source_audit_passes_for_repo(tmp_path: Path) -> None:
+    result = _run_renderer_audit(REPO_ROOT, tmp_path / "clean-output")
+    assert result.returncode == 0, result.stderr
+
+
 def test_renderer_next_command_source_audit_rejects_pre_1069_pattern(
     tmp_path: Path,
 ) -> None:
-    def run_audit(root: Path, output_dir: Path) -> subprocess.CompletedProcess[str]:
-        return _run_python_script(
-            RATCHET_TOOL,
-            "--root-dir",
-            str(root),
-            "--output-dir",
-            str(output_dir),
-            "--spec-glob",
-            str(root / "spec/**/*.md"),
-            "--cli-file",
-            str(REPO_ROOT / "src/cli/mod.rs"),
-            "--shell-file",
-            str(REPO_ROOT / "src/mcp/shell.rs"),
-            "--catalog-file",
-            str(REPO_ROOT / "src/mcp/catalog.rs"),
-            "--sources-dir",
-            str(REPO_ROOT / "src/sources"),
-            "--sources-mod",
-            str(REPO_ROOT / "src/sources/mod.rs"),
-            "--health-file",
-            str(REPO_ROOT / "src/cli/health/catalog.rs"),
-            "--audit",
-            "renderer_next_command_source",
-        )
-
-    clean_output = tmp_path / "clean-output"
-    clean_result = run_audit(REPO_ROOT, clean_output)
-    assert clean_result.returncode == 0, clean_result.stderr
-
     fixture_root = tmp_path / "pre-1069"
     author = fixture_root / "src/render/markdown/author.rs"
     author.parent.mkdir(parents=True)
@@ -768,7 +774,7 @@ def test_renderer_next_command_source_audit_rejects_pre_1069_pattern(
     )
 
     fixture_output = tmp_path / "fixture-output"
-    fixture_result = run_audit(fixture_root, fixture_output)
+    fixture_result = _run_renderer_audit(fixture_root, fixture_output)
     assert fixture_result.returncode == 1, fixture_result.stderr
     payload = json.loads(
         (fixture_output / "quality-ratchet-renderer-next-command-source.json").read_text()

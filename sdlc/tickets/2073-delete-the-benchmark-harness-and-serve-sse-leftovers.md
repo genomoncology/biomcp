@@ -21,3 +21,5 @@ Depends on: 2159
 - Defers: unrelated test-only code to 2081.
 
 PM decision: 2026-10-17. Reuse the existing implementation; rebase and review its actual merged result. Do not restore obsolete exact package-count edits after 2159.
+
+PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.

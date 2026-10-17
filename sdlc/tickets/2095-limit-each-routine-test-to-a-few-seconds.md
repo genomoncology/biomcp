@@ -7,9 +7,8 @@ priority: 3
 Status: OPEN.
 
 Milestone: 0.9.3
-
-Depends on: 2081
 Depends on: 2094
+
 Depends on: 2156
 
 ## Outcome
@@ -23,3 +22,5 @@ A routine Rust or Python test exceeding thirty seconds emits a warning identifyi
 - Defers: exhaustive execution to the release candidate and changes to covered behavior.
 
 PM decision: 2026-10-17. Ian confirmed warning-only routine timing and a separate long suite. The dependency on 2094 serializes edits to shared runner files; it does not reinstate a hosted CI gate.
+
+PM decision: 2026-10-17. This ticket waits on 2094 only to serialize edits to shared runner files.

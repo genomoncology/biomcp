@@ -4,9 +4,13 @@ priority: 3
 
 # 2122 — Run whole-repository audits in local qualification
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision bbab17e, accept
+
+Landed: bbab17e (fast-forward: Accepted source landed inside carrier 27e59b197 with its passing shared gate; record this carried ticket separately without rerunning unchanged code.)
 
 ## Outcome
 
@@ -16,9 +20,18 @@ Depends on: 2094
 Depends on: 2156
 
 - Starts from: whole-tree checks in `tests/test_quality_ratchet_contract.py`, `tests/test_capture_receipts.py`, `tests/test_zero_coupling_ratchet.py`, `tests/test_cli_surface_contract_ratchet.py`, shared pytest setup and Makefile selections.
+- Additional reviewed runner-contract claim: `tests/test_routine_cargo_feature_contract.py`.
 - Keeps: meaningful audits and their failing exit codes; focused malformed-input and wrapper-behavior tests stay routine using small fixtures.
 - Changes: claims `tests/test_quality_ratchet_contract.py` `tests/test_capture_receipts.py` `tests/test_zero_coupling_ratchet.py` `tests/test_cli_surface_contract_ratchet.py` `tests/conftest.py` `Makefile` `AGENTS.md` `CHANGELOG.md`. Mark actual whole-tree checks rather than moving the old six-test list wholesale. Connect their explicit command to required postmerge qualification. Name runner-contract files before editing them. Keep release-only long audits in candidate qualification and run them when covered behavior changes.
 - Proof: through the build job, display routine and audit selections, show each retained audit runs in its declared required stage, and plant an audit violation that makes that stage fail. Compare routine timing on matching host settings.
 - Defers: long audit execution to the declared long-suite policy.
 
 PM decision: 2026-10-17. Manual hosted repository-contract jobs cannot replace required local coverage. This work follows the parallel local runner and does not depend on the withdrawn automatic-main cache work.
+
+PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.
+
+## Progress
+
+- 2026-10-17 started
+- 2026-10-17 next: Batch members: 2159, 2149, 2168, 2128, 2122 and 2171. Shared landing gate: job 1792250897357-93113, candidate ea4161cc814ad034634ffd249e67b475e77e38dc. Required preceding main check 1792249698624-96397 passed. Gate is running; each ticket keeps its individual review and landing commit.
+- 2026-10-17 next: Batch members: 2159, 2149, 2168, 2128, 2122 and 2171. Shared configured landing gate PASSED: job 1792251400030-83132, candidate c264da2a525c2c6e5a424693d55dfab0f59fadf4, 240.3 seconds. This replaces the earlier failed batch attempts. Preceding full main check 1792249698624-96397 passed. Land each reviewed member through pm, then run one full check on final batch main.

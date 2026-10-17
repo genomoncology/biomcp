@@ -25,6 +25,10 @@ def pytest_configure(config: pytest.Config) -> None:
         "release_gate: compiles the crate; only make release-gate runs it",
     )
 
+    config.addinivalue_line(
+        "markers", "repo_audit: whole-repository audit; required by make repo-audit"
+    )
+
 
 @pytest.fixture(autouse=True)
 def own_http_cache_dir(

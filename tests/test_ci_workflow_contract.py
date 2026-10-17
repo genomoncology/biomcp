@@ -343,7 +343,7 @@ def test_the_build_job_uploads_one_dev_build_the_lanes_download() -> None:
         "python-lane": "make test-python",
         "spec-lane": "make spec",
         "stress-lane": "make stress",
-        "full-features": "make full-feature-check",
+        "full-features": "make full-feature-check FULL_FEATURE_PROFILE=release",
     }
     for jid, gate in gates.items():
         runs = [s.get("run") for s in _job(jid)["steps"]]

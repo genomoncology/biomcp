@@ -88,7 +88,7 @@ const CLINICAL_ABBREVIATION_READINGS: &[ClinicalAbbreviationReading] = &[
     },
 ];
 
-fn clinical_reading(requested: &str) -> Option<ClinicalAbbreviationReading> {
+pub(super) fn clinical_reading(requested: &str) -> Option<ClinicalAbbreviationReading> {
     let requested = requested.trim();
     CLINICAL_ABBREVIATION_READINGS
         .iter()

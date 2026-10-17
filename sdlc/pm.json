@@ -2,8 +2,7 @@
   "statusMappings": {
     "resolved": "closed"
   },
-  "landedProofFromTicketNumber": 1293,
-  "recordNaming": "ticket",
+  "ticketsGate": "make landing-gate",
   "acceptedRecords": [
     "1142-open-an-exact-author-record-and-claimed-works-by-orcid.md",
     "1143-return-an-opt-in-rich-page-of-papers-for-an-exact-author.md",
