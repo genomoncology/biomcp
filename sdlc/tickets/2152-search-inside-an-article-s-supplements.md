@@ -100,3 +100,7 @@ Before product edits, current-main build job `1792241016358-72714` on `078ce756d
 1. Recorded-file tests find both acceptance examples at the stated locators.
 2. A test with an unreadable file reports it with format and reason.
 3. The changelog carries a bullet for this ticket.
+
+## Integration review
+
+Fresh review accepts dc3a756a4b614641370097a34d1c56cce9d5c579 merged with main beb08a9f3. Supplement parser, search and owned behavioral tests are unchanged. Retain main’s package-membership test without the retired manual file count; preserve stable metadata, batch PDF and actual limiter proof, typed MCP behavior, HTTP diagnostics and current cache behavior. The isolated cache candidate is not restored. Reuse parser/CLI job 1792242191704-62560, empty-ZIP check 1792242437128-73123, OOXML format fix 4f0612e03 and correctness green 1792243006443-85094 (31 cases and formatting). That historical compiler-wrapper exception supports correctness only; the merged landing gate still uses the normal configured wrapper. Land separately to unblock the dependent final public-text cleanup while the cache dependency decision remains pending.
