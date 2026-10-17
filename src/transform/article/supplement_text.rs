@@ -134,7 +134,9 @@ pub fn extract_supplement_text(
 }
 
 fn extract_with_budget(
-    format: SupplementFormat, bytes: &[u8], budget: &SupplementTextBudget,
+    format: SupplementFormat,
+    bytes: &[u8],
+    budget: &SupplementTextBudget,
     spend: &mut ArchiveBudget,
 ) -> SupplementTextExtraction {
     let mut extraction = SupplementTextExtraction::default();
@@ -170,11 +172,27 @@ fn extract_workbook(
 ) {
     if format == SupplementFormat::Xlsx {
         if let Err(reason) = admit_package(bytes, budget, spend) {
-            extraction.problems.push(SupplementExtractionProblem::unread(None, format.as_str(), if reason.starts_with("package could") { format!("workbook could not be opened: {reason}") } else { reason }));
+            extraction
+                .problems
+                .push(SupplementExtractionProblem::unread(
+                    None,
+                    format.as_str(),
+                    if reason.starts_with("package could") {
+                        format!("workbook could not be opened: {reason}")
+                    } else {
+                        reason
+                    },
+                ));
             return;
         }
     } else if let Err(reason) = spend.admit(bytes.len() as u64, budget) {
-        extraction.problems.push(SupplementExtractionProblem::unread(None, format.as_str(), reason.into()));
+        extraction
+            .problems
+            .push(SupplementExtractionProblem::unread(
+                None,
+                format.as_str(),
+                reason.into(),
+            ));
         return;
     }
     let cursor = Cursor::new(bytes);
@@ -270,9 +288,16 @@ fn extract_csv(bytes: &[u8], extraction: &mut SupplementTextExtraction) {
     }
 }
 
-fn extract_docx(bytes: &[u8], budget: &SupplementTextBudget, spend: &mut ArchiveBudget, extraction: &mut SupplementTextExtraction) {
+fn extract_docx(
+    bytes: &[u8],
+    budget: &SupplementTextBudget,
+    spend: &mut ArchiveBudget,
+    extraction: &mut SupplementTextExtraction,
+) {
     if let Err(reason) = admit_package(bytes, budget, spend) {
-        extraction.problems.push(SupplementExtractionProblem::unread(None, "docx", reason));
+        extraction
+            .problems
+            .push(SupplementExtractionProblem::unread(None, "docx", reason));
         return;
     }
     let mut archive = match zip::ZipArchive::new(Cursor::new(bytes)) {
@@ -291,7 +316,11 @@ fn extract_docx(bytes: &[u8], budget: &SupplementTextBudget, spend: &mut Archive
     let mut document = Vec::new();
     match archive.by_name("word/document.xml") {
         Ok(mut file) => {
-            if let Err(error) = file.by_ref().take(budget.max_member_bytes.saturating_add(1)).read_to_end(&mut document) {
+            if let Err(error) = file
+                .by_ref()
+                .take(budget.max_member_bytes.saturating_add(1))
+                .read_to_end(&mut document)
+            {
                 extraction
                     .problems
                     .push(SupplementExtractionProblem::unread(
@@ -432,11 +461,17 @@ impl ArchiveBudget {
 
 // Inspect every package member before parsers allocate decompressed XML. The
 // same ledger travels through nested ZIPs, workbooks and document packages.
-fn admit_package(bytes: &[u8], budget: &SupplementTextBudget, spend: &mut ArchiveBudget) -> Result<(), String> {
+fn admit_package(
+    bytes: &[u8],
+    budget: &SupplementTextBudget,
+    spend: &mut ArchiveBudget,
+) -> Result<(), String> {
     let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
         .map_err(|error| format!("package could not be opened: {error}"))?;
     for index in 0..archive.len() {
-        let file = archive.by_index(index).map_err(|error| format!("package member could not be opened: {error}"))?;
+        let file = archive
+            .by_index(index)
+            .map_err(|error| format!("package member could not be opened: {error}"))?;
         spend.admit(file.size(), budget).map_err(str::to_owned)?;
     }
     Ok(())
@@ -818,7 +853,9 @@ mod tests {
 
     fn archive_bytes(name: &str, bytes: &[u8]) -> Vec<u8> {
         let mut archive = zip::ZipWriter::new(Cursor::new(Vec::new()));
-        archive.start_file(name, zip::write::SimpleFileOptions::default()).unwrap();
+        archive
+            .start_file(name, zip::write::SimpleFileOptions::default())
+            .unwrap();
         archive.write_all(bytes).unwrap();
         archive.finish().unwrap().into_inner()
     }
@@ -831,16 +868,33 @@ mod tests {
         let mut small = budget();
         small.max_aggregate_bytes = inner.len() as u64 + 999;
         let extraction = extract_supplement_text(SupplementFormat::Zip, &outer, &small);
-        assert!(extraction.problems.iter().any(|p| p.reason == "extraction size limit exceeded"),
-            "nested members share their source budget: {:?}", extraction.problems);
-        for (format, bytes) in [(SupplementFormat::Docx, METHOD_NOTES_DOCX),
-                                (SupplementFormat::Xlsx, BRCA1_SHEET1_XLSX)] {
+        assert!(
+            extraction
+                .problems
+                .iter()
+                .any(|p| p.reason == "extraction size limit exceeded"),
+            "nested members share their source budget: {:?}",
+            extraction.problems
+        );
+        for (format, bytes) in [
+            (SupplementFormat::Docx, METHOD_NOTES_DOCX),
+            (SupplementFormat::Xlsx, BRCA1_SHEET1_XLSX),
+        ] {
             small.max_member_bytes = 16;
             small.max_aggregate_bytes = 32;
             let extraction = extract_supplement_text(format, bytes, &small);
-            assert!(extraction.blocks.is_empty(), "oversized package must not be parsed: {format:?}");
-            assert!(extraction.problems.iter().any(|p| p.reason.contains("extraction size limit")),
-                "package bytes obey the same limits: {:?}", extraction.problems);
+            assert!(
+                extraction.blocks.is_empty(),
+                "oversized package must not be parsed: {format:?}"
+            );
+            assert!(
+                extraction
+                    .problems
+                    .iter()
+                    .any(|p| p.reason.contains("extraction size limit")),
+                "package bytes obey the same limits: {:?}",
+                extraction.problems
+            );
         }
     }
 
@@ -853,7 +907,12 @@ mod tests {
         limits.archive_depth = 1;
         let extraction = extract_supplement_text(SupplementFormat::Zip, &source, &limits);
         assert!(extraction.blocks.is_empty());
-        assert!(extraction.problems.iter().any(|p| p.reason.contains("extraction depth")));
+        assert!(
+            extraction
+                .problems
+                .iter()
+                .any(|p| p.reason.contains("extraction depth"))
+        );
     }
 
     #[test]

@@ -288,7 +288,9 @@ fn truncate_chars(text: &str, limit: usize) -> String {
         return text.to_string();
     }
     let mut end = limit.saturating_sub("…".len());
-    while !text.is_char_boundary(end) { end -= 1; }
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
     format!("{}…", &text[..end])
 }
 
@@ -302,17 +304,29 @@ pub fn supplement_text_worker() -> Option<std::process::ExitCode> {
     if args.next().as_deref() != Some("__supplement-text-worker") {
         return None;
     }
-    let format = args.next().and_then(|name| supplement_format_for_filename(&format!("worker.{name}")));
-    let Some(format) = format else { return Some(std::process::ExitCode::FAILURE); };
+    let format = args
+        .next()
+        .and_then(|name| supplement_format_for_filename(&format!("worker.{name}")));
+    let Some(format) = format else {
+        return Some(std::process::ExitCode::FAILURE);
+    };
     let mut bytes = Vec::new();
-    if std::io::stdin().take(SUPPLEMENT_SEARCH_MAX_FILE_BYTES as u64 + 1).read_to_end(&mut bytes).is_err()
-        || bytes.len() > SUPPLEMENT_SEARCH_MAX_FILE_BYTES {
+    if std::io::stdin()
+        .take(SUPPLEMENT_SEARCH_MAX_FILE_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)
+        .is_err()
+        || bytes.len() > SUPPLEMENT_SEARCH_MAX_FILE_BYTES
+    {
         return Some(std::process::ExitCode::FAILURE);
     }
     let extraction = extract_supplement_text(format, &bytes, &SUPPLEMENT_SEARCH_BUDGET);
-    Some(if serde_json::to_writer(std::io::stdout().lock(), &extraction).is_ok() {
-        std::process::ExitCode::SUCCESS
-    } else { std::process::ExitCode::FAILURE })
+    Some(
+        if serde_json::to_writer(std::io::stdout().lock(), &extraction).is_ok() {
+            std::process::ExitCode::SUCCESS
+        } else {
+            std::process::ExitCode::FAILURE
+        },
+    )
 }
 
 async fn run_extraction_worker(
@@ -322,26 +336,47 @@ async fn run_extraction_worker(
 ) -> Result<SupplementTextExtraction, String> {
     use std::process::Stdio;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
-    let mut child = command.stdin(Stdio::piped()).stdout(Stdio::piped())
-        .stderr(Stdio::null()).kill_on_drop(true).spawn().map_err(|error| format!("extraction worker failed: {error}"))?;
-    let mut input = child.stdin.take().ok_or("extraction worker input unavailable")?;
-    let output = child.stdout.take().ok_or("extraction worker output unavailable")?;
+    let mut child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .kill_on_drop(true)
+        .spawn()
+        .map_err(|error| format!("extraction worker failed: {error}"))?;
+    let mut input = child
+        .stdin
+        .take()
+        .ok_or("extraction worker input unavailable")?;
+    let output = child
+        .stdout
+        .take()
+        .ok_or("extraction worker output unavailable")?;
     let exchange = async {
-        let send = async { input.write_all(bytes).await?; input.shutdown().await };
+        let send = async {
+            input.write_all(bytes).await?;
+            input.shutdown().await
+        };
         let receive = async {
             let mut result = Vec::new();
             // JSON escaping can expand each extracted byte to six bytes.
-            output.take(SUPPLEMENT_SEARCH_BUDGET.max_aggregate_bytes * 6 + 1)
-                .read_to_end(&mut result).await?;
+            output
+                .take(SUPPLEMENT_SEARCH_BUDGET.max_aggregate_bytes * 6 + 1)
+                .read_to_end(&mut result)
+                .await?;
             Ok::<_, std::io::Error>(result)
         };
         let (sent, received, status) = tokio::join!(send, receive, child.wait());
         sent.map_err(|error| format!("extraction worker input failed: {error}"))?;
-        let result = received.map_err(|error| format!("extraction worker output failed: {error}"))?;
-        if !status.map_err(|error| format!("extraction worker failed: {error}"))?.success() {
+        let result =
+            received.map_err(|error| format!("extraction worker output failed: {error}"))?;
+        if !status
+            .map_err(|error| format!("extraction worker failed: {error}"))?
+            .success()
+        {
             return Err("extraction worker failed".to_string());
         }
-        serde_json::from_slice(&result).map_err(|error| format!("extraction worker returned invalid output: {error}"))
+        serde_json::from_slice(&result)
+            .map_err(|error| format!("extraction worker returned invalid output: {error}"))
     };
     match tokio::time::timeout(timeout, exchange).await {
         Ok(result) => result,
@@ -363,10 +398,16 @@ async fn supplement_text_for_bytes(
     bytes: &[u8],
 ) -> SupplementTextExtraction {
     let Some(format) = format else {
-        return SupplementExtractionProblem::unread(None, "other", "unsupported format".to_string()).into_extraction();
+        return SupplementExtractionProblem::unread(
+            None,
+            "other",
+            "unsupported format".to_string(),
+        )
+        .into_extraction();
     };
     if !crate::sources::is_no_cache_enabled()
-        && let Some(extraction) = read_cached_supplement_text(sha256, format).await {
+        && let Some(extraction) = read_cached_supplement_text(sha256, format).await
+    {
         return extraction;
     }
     let result = match std::env::current_exe() {
@@ -377,7 +418,9 @@ async fn supplement_text_for_bytes(
         }
         Err(error) => Err(format!("extraction worker unavailable: {error}")),
     };
-    let extraction = result.unwrap_or_else(|reason| SupplementExtractionProblem::unread(None, format.as_str(), reason).into_extraction());
+    let extraction = result.unwrap_or_else(|reason| {
+        SupplementExtractionProblem::unread(None, format.as_str(), reason).into_extraction()
+    });
     if !extraction_timed_out(&extraction) && !crate::sources::is_no_cache_enabled() {
         write_cached_supplement_text(sha256, format, &extraction).await;
     }
@@ -400,7 +443,10 @@ fn supplement_text_cache_path(sha256: &str) -> Result<std::path::PathBuf, BioMcp
         .join(format!("{sha256}.json")))
 }
 
-async fn read_cached_supplement_text(sha256: &str, format: SupplementFormat) -> Option<SupplementTextExtraction> {
+async fn read_cached_supplement_text(
+    sha256: &str,
+    format: SupplementFormat,
+) -> Option<SupplementTextExtraction> {
     let path = supplement_text_cache_path(sha256).ok()?;
     let metadata = match tokio::fs::symlink_metadata(&path).await {
         Ok(metadata) => metadata,
@@ -446,7 +492,11 @@ async fn read_cached_supplement_text(sha256: &str, format: SupplementFormat) -> 
     Some(cached.extraction)
 }
 
-async fn write_cached_supplement_text(sha256: &str, format: SupplementFormat, extraction: &SupplementTextExtraction) {
+async fn write_cached_supplement_text(
+    sha256: &str,
+    format: SupplementFormat,
+    extraction: &SupplementTextExtraction,
+) {
     let cached = CachedSupplementText {
         schema: SUPPLEMENT_TEXT_CACHE_SCHEMA,
         format: format.as_str().to_owned(),
@@ -486,12 +536,16 @@ mod tests {
         let mut command = tokio::process::Command::new("sh");
         command.args(["-c", "echo $$ > \"$1\"; exec sleep 30", "worker"]);
         command.arg(&pid_file);
-        let result = run_extraction_worker(command, b"", std::time::Duration::from_millis(250)).await;
+        let result =
+            run_extraction_worker(command, b"", std::time::Duration::from_millis(250)).await;
         assert_eq!(result.unwrap_err(), "extraction time limit exceeded");
         let pid = std::fs::read_to_string(pid_file).expect("worker started before timeout");
-        let alive = std::process::Command::new("kill").args(["-0", pid.trim()])
-            .stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().unwrap();
+        let alive = std::process::Command::new("kill")
+            .args(["-0", pid.trim()])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .unwrap();
         assert!(!alive.success(), "timed out extraction worker must be gone");
     }
-
 }
