@@ -4,7 +4,7 @@ priority: 4
 
 # 2082 — Measure both releases under comparable conditions
 
-Status: COMPLETE.
+Status: OPEN.
 
 Milestone: 0.9.3
 Depends on: 2073
@@ -44,6 +44,8 @@ Depends on: 2177
 Reviews: revision 4160f2f, accept
 
 Reviews: revision ff6ce34, accept
+
+Reopened: 2026-10-17 — Refresh the measurement rows the five research fixes affect, on current main, keeping unchanged rows and their source identities.
 
 ## Outcome
 
