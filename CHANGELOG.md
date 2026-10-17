@@ -53,6 +53,7 @@
 
 ### Internal
 
+- Prepare Python dependencies before the independent offline contract lane, and give the routine feature probe its own temporary directory in clean release checkouts. (2186)
 - Correct release comparisons to retain paired cache timings, raw sample results, native build measurements, and explicit failed-collection status. (2082)
 - MCP adverse-event and request-counting fixtures wait for complete HTTP headers before replying, including on macOS; adverse-event failures retain bounded provider and fixture diagnostics. (2174)
 - Wait for release-smoke fixture readiness before reporting health, and keep slow-test warnings separate from the hung-process watchdog. (2178)

@@ -29,11 +29,15 @@ silently restores the default client.
 This is a claim about the targets' own defaults, so the probe clears every
 build variable an outer gate may have overridden. The release gate keeps this
 routine graph intact, then adds a separate named full-feature proof.
+The dry run still executes recursive Make recipes, so this probe supplies an
+existing private temporary directory without relying on a previous test run.
 
 ```bash
+probe_tmp="$(mktemp -d /tmp/biomcp-build-profile.XXXXXX)"
+trap 'rm -rf "$probe_tmp"' EXIT
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
     -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \
-  make -C ../.. -n test | mustmatch like 'cargo nextest archive --locked --no-default-features
+  make -C ../.. -n test ROUTINE_TEST_TMPDIR="$probe_tmp" | mustmatch like 'cargo nextest archive --locked --no-default-features
 cargo nextest run --archive-file'
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
     -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \

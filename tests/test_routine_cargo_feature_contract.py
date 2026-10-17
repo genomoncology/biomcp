@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import re
+import shutil
 import pytest
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
@@ -22,6 +23,32 @@ def _target(makefile: str, name: str) -> str:
     match = re.search(rf"(?ms)^{re.escape(name)}:.*?(?=^[A-Za-z][^\n]*:|\Z)", makefile)
     assert match is not None, f"missing Make target {name}"
     return match.group(0)
+
+
+def test_routine_feature_probe_runs_without_a_prepared_checkout(tmp_path: Path) -> None:
+    shutil.copy2(REPO_ROOT / "Makefile", tmp_path / "Makefile")
+    spec_dir = tmp_path / "spec" / "surface"
+    spec_dir.mkdir(parents=True)
+    section = _read("spec/surface/build-profile.md").split(
+        "## Routine gates select the smaller feature set", 1
+    )[1]
+    block = section.split("```bash\n", 1)[1].split("```", 1)[0]
+    # Execute the spec's first command, leaving its mustmatch assertions below
+    # at this boundary so the fixture needs neither product builds nor tools.
+    command = block.split("| mustmatch like", 1)[0]
+    routine_tmp = tmp_path / ".cache" / "routine-test-tmp"
+    env = {key: value for key, value in os.environ.items()
+           if key not in ("MAKEFLAGS", "MAKEOVERRIDES")}
+    env["TMPDIR"] = str(routine_tmp)
+    result = subprocess.run(
+        ["bash", "-eu", "-c", command], cwd=spec_dir, env=env,
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "cargo nextest archive --locked --no-default-features" in result.stdout
+    assert "cargo nextest run --archive-file" in result.stdout
+    assert str(routine_tmp) not in result.stdout
+    assert not routine_tmp.exists()
 
 
 def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:

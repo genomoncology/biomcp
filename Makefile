@@ -74,7 +74,7 @@ test:
 test-rust: prepare-routine-test-tmp
 	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml"
 
-test-python: prepare-routine-test-tmp
+test-python: prepare-routine-test-tmp sync-python-dev
 	$(MAKE) test-contracts-prepared
 
 prepare-test-contracts:
