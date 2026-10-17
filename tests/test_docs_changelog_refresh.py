@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import subprocess
 from pathlib import Path
 import pytest
 
@@ -546,7 +547,36 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         assert "\n- " in _markdown_section_block(changelog, header)
 
 
-def test_dev_cycle_section_carries_its_own_tickets() -> None:
+@pytest.fixture
+def changelog_history(tmp_path: Path) -> Path:
+    """Keep the historical ownership input local, even in a partial checkout."""
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(tmp_path), "-c", "user.name=Test", "-c",
+             "user.email=test@example.invalid", "-c", "commit.gpgsign=false", *args],
+            check=True, capture_output=True,
+        )
+
+    git("init", "-q")
+    git("commit", "--allow-empty", "-qm", "Previous release")
+    git("tag", "v0.9.2")
+    # Historical ownership from commit a1d49933525bada2ff1bb1c0de4e760e035256f2,
+    # sdlc/tickets/2079-add-a-replay-server-and-golden-output-tests.md,
+    # blob 8003da3ef6f9dee29c38ba780fe91c0b6c7f2267. Retain only the field
+    # the gate reads; current ticket contents still come from the real checkout.
+    tickets = tmp_path / "sdlc" / "tickets"
+    tickets.mkdir(parents=True)
+    (tickets / "2079-add-a-replay-server-and-golden-output-tests.md").write_text(
+        "Milestone: 0.9.3\n", encoding="utf-8"
+    )
+    git("add", ".")
+    git("commit", "-qm", "Land 2079: add the first replay and golden batch")
+    return tmp_path
+
+
+def test_dev_cycle_section_carries_its_own_tickets(
+    changelog_history: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The undated dev-cycle section sits ahead of the last released
     heading and keeps a shape every branch only appends to: the three
     named subsections stay in place even when empty, every bullet
@@ -592,6 +622,7 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
             f"a blank line splits the dev-cycle bullet list between: "
             f"{before[:60]} and {after[:60]}"
         )
+    monkeypatch.chdir(changelog_history)
     gate = _coverage_gate()
     problems = gate.milestone_problems(
         block, DEV_CYCLE_VERSION, _ticket_file_content, previous=gate.latest_tag()
