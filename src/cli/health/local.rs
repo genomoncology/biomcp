@@ -295,7 +295,14 @@ pub(in crate::cli::health) async fn check_cache_limits() -> ProbeOutcome {
     .await
     {
         Ok(outcome) => outcome,
-        Err(err) => cache_limits_error_outcome(err.code().into()),
+        Err(err) => cache_limits_error_outcome(
+            if err.is_cancelled() {
+                "task_cancelled"
+            } else {
+                "task_panicked"
+            }
+            .into(),
+        ),
     }
 }
 

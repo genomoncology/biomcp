@@ -677,3 +677,13 @@ fn every_protein_spelling_refuses_invalid_residue_letters() {
         );
     }
 }
+
+#[test]
+fn a_gene_name_alone_is_not_reported_as_an_invalid_amino_acid() {
+    for input in ["BRCA1", "BCR1"] {
+        let message = parse_variant_id(input)
+            .expect_err("a gene alone is not an exact variant")
+            .to_string();
+        assert!(!message.contains("invalid amino acid"), "{message}");
+    }
+}

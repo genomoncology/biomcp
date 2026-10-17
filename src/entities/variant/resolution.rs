@@ -560,15 +560,23 @@ fn amino_acid_one_letter(token: &str) -> Option<char> {
 fn invalid_protein_input(input: &str) -> Option<(&str, char)> {
     let spelling = input.split_whitespace().last()?;
     let compact = protein_alias_body(spelling);
-    if compact.chars().any(|c| c.is_ascii_digit())
-        && compact
+    let start = compact.find(|c: char| c.is_ascii_digit())?;
+    let end = compact[start..]
+        .find(|c: char| !c.is_ascii_digit())
+        .map_or(compact.len(), |offset| start + offset);
+    let reference = &compact[..start];
+    let alternate = &compact[end..];
+    let residue_shape = matches!(reference.len(), 0 | 1 | 3)
+        && matches!(alternate.len(), 0 | 1 | 3)
+        && (!alternate.is_empty() || reference.len() == 1)
+        && reference
             .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '*')
-    {
-        invalid_residue_letter(compact).map(|letter| (spelling, letter))
-    } else {
-        None
+            .chain(alternate.chars())
+            .all(|c| c.is_ascii_alphabetic() || c == '*');
+    if !residue_shape {
+        return None;
     }
+    invalid_residue_letter(compact).map(|letter| (spelling, letter))
 }
 
 /// The first letter of a protein change that `amino_acid_one_letter` refuses,
