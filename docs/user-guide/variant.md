@@ -414,8 +414,8 @@ length of `candidates`. It retains visible, deduplicated receipts first, then
 fills remaining capacity in observation order. Use `--strategy annotation` or
 `--strategy lexical` to diagnose one exact route. `--strategy exact NAME`
 searches the caller's string alone: no resolution, no alias expansion, one
-phrase-quoted query per source (PubMed and Europe PMC as title/abstract
-phrases, Semantic Scholar through its bulk phrase endpoint, PubTator as
+phrase-quoted query per source (PubMed as a title/abstract phrase, Europe PMC
+across full text, Semantic Scholar through its bulk phrase endpoint, PubTator as
 search text), and the per-alias yield table in `--debug-plan` reports each
 alias's hits received, hits kept after merging, and whether the 25-result
 cap cut each source's list. Ambiguous or unresolved input

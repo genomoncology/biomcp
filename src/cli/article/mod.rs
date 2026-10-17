@@ -423,7 +423,7 @@ See also: biomcp list article")]
         #[arg(long)]
         fulltext: bool,
     },
-    /// Search the text of an article's supplements for an exact string
+    /// Search supplement text for literal text or a protein substitution
     #[command(after_help = "\\
 EXAMPLES:
   biomcp --json article supplement-search 30209399 F1761I
@@ -434,12 +434,13 @@ Extracts the text of the article's xlsx, xls, csv, docx, pdf and zip
 supplements and reports each hit with an exact locator: worksheet and row for
 spreadsheets, page for PDFs, paragraph for documents, member path inside
 archives, plus the source file's checksum. Files that cannot be extracted are
-reported with format and reason. Text match only; BioMCP interprets nothing.
+reported with format and reason. Protein substitutions also match their one-letter,
+three-letter and p. name forms. Other text uses case-sensitive substring matching.
 See also: biomcp list article")]
     SupplementSearch {
         /// PMID (e.g., 30209399), PMCID, or DOI
         id: String,
-        /// Exact text to find (case-sensitive substring)
+        /// Literal text or a protein substitution in one-letter, three-letter or p. form
         needle: String,
         /// Restrict the search to one asset by asset key or file name
         #[arg(long)]

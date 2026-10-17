@@ -70,6 +70,11 @@ async fn create_unique_sibling_temp(
             "Invalid output path (no parent directory)".into(),
         ));
     };
+    let dir = if dir.as_os_str().is_empty() {
+        Path::new(".")
+    } else {
+        dir
+    };
     if managed {
         crate::cache::secure_managed_tree(dir, true, None)?;
     } else if !dir.is_dir() {

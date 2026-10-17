@@ -215,9 +215,10 @@ biomcp --json article supplement-search 30209399 F1761I
 ```
 
 The command extracts the text of the article's xlsx, xls, csv, docx, pdf
-and zip supplements and reports every place the exact string appears. The
-match is a case-sensitive substring: BioMCP finds text, it does not
-interpret it.
+and zip supplements and reports each match. Protein substitutions match
+their one-letter, three-letter and `p.` name forms, so `P245S`, `Pro245Ser`
+and `p.Pro245Ser` find the same change. Other text uses case-sensitive
+substring matching.
 
 `<id>` accepts a PMID, a PMCID, or a DOI. Add `--asset <asset-key>` to
 search one file from the manifest instead of all of them. Output is JSON
