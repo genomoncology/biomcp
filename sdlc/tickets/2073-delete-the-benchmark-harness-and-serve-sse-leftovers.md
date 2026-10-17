@@ -4,13 +4,15 @@ priority: 3
 
 # 2073 — Delete the benchmark harness and serve-sse leftovers
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 64b0582, accept
 
 Reviews: revision 4428b4e, accept
+
+Landed: 4428b4e (fast-forward: Accepted source landed inside carrier 61a8b075ef075e5650dbb85f8572ee8a341803ad with shared gate1792256340018-55751; individual review retained and actual-main full check follows the batch.)
 
 ## Outcome
 
