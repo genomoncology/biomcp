@@ -2318,6 +2318,53 @@ async fn litvar_candidates(
     Ok((candidates, incomplete, succeeded))
 }
 
+/// One LitVar2 route pass: the route's rows, its interim statuses, and
+/// whether it counted as a succeeded or failed route. The route only runs
+/// for the union and annotation strategies with a provider identity that
+/// was not contradicted.
+async fn litvar_route_outcome(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    strategy: VariantArticleStrategy,
+    execution: &VariantArticleExecutionContext,
+) -> (
+    Vec<ArticleCandidate>,
+    Vec<VariantArticleSourceStatus>,
+    bool,
+    bool,
+) {
+    if !matches!(
+        context.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Contradictory
+    ) && matches!(
+        strategy,
+        VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
+    ) {
+        return match litvar_candidates(input, context, execution).await {
+            Ok((rows, incomplete, succeeded)) => {
+                let calls = execution.events();
+                (
+                    rows,
+                    provider_statuses_for_route("litvar_variant", &calls),
+                    succeeded,
+                    incomplete || !succeeded,
+                )
+            }
+            Err(_) => (
+                Vec::new(),
+                vec![status(
+                    "litvar_variant",
+                    "litvar",
+                    VariantArticleSourceStatusKind::Unavailable,
+                )],
+                false,
+                true,
+            ),
+        };
+    }
+    (Vec::new(), Vec::new(), false, false)
+}
+
 async fn lexical_candidates(
     aliases: Vec<String>,
     alias_budget_stopped: bool,
@@ -3227,31 +3274,12 @@ async fn search_variant_articles_identity(
     // exact match, so it runs beside the other routes whenever the provider
     // identity was not contradicted — including an unresolved request,
     // where PubTator's annotation route cannot run yet.
-    if !matches!(
-        context.resolution.provider_validation.status,
-        VariantProviderValidationStatus::Contradictory
-    ) && matches!(
-        strategy,
-        VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
-    ) {
-        match litvar_candidates(input, &context, &execution).await {
-            Ok((rows, incomplete, succeeded)) => {
-                candidates.extend(rows);
-                let calls = execution.events();
-                statuses.extend(provider_statuses_for_route("litvar_variant", &calls));
-                succeeded_routes += usize::from(succeeded);
-                failed_routes += usize::from(incomplete || !succeeded);
-            }
-            Err(_) => {
-                statuses.push(status(
-                    "litvar_variant",
-                    "litvar",
-                    VariantArticleSourceStatusKind::Unavailable,
-                ));
-                failed_routes += 1;
-            }
-        }
-    }
+    let (litvar_rows, litvar_statuses, litvar_succeeded, litvar_failed) =
+        litvar_route_outcome(input, &context, strategy, &execution).await;
+    candidates.extend(litvar_rows);
+    statuses.extend(litvar_statuses);
+    succeeded_routes += usize::from(litvar_succeeded);
+    failed_routes += usize::from(litvar_failed);
 
     if !resolved {
         match strategy {
@@ -5413,9 +5441,9 @@ mod tests {
                 br#"{"esearchresult":{"count":"0","idlist":[]}}"#
             } else if first_line.starts_with("GET /graph/v1/paper/search") {
                 br#"{"total":0,"data":[]}"#
-            } else if first_line.starts_with("GET /entity/autocomplete/") {
-                b"[]"
-            } else if first_line.starts_with("GET /variant/autocomplete/") {
+            } else if first_line.starts_with("GET /entity/autocomplete/")
+                || first_line.starts_with("GET /variant/autocomplete/")
+            {
                 b"[]"
             } else {
                 return TestHttpReply::Bytes(test_http_response(
