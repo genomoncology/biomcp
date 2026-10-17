@@ -140,6 +140,24 @@ def test_failed_cache_write_keeps_the_provider_answer(provider):
     assert_answer(run(GENE), "write")
 
 
+@pytest.mark.parametrize("fault", ["integrity", "missing"])
+def test_unreadable_cached_content_refetches_with_a_safe_warning(provider, fault):
+    run, cache, _, replay = provider
+    first = run(GENE)
+    assert first.returncode == 0, first.stderr
+    blobs = [path for path in (cache / "http/content-v2").rglob("*") if path.is_file()]
+    assert len(blobs) == 1
+    if fault == "integrity":
+        blobs[0].write_bytes(b"corrupt cache content")
+    else:
+        blobs[0].unlink()
+    before = replay.request_log_line_count()
+    result = run(GENE)
+    assert_answer(result, "read")
+    assert str(cache) not in result.stderr
+    assert replay.request_log_line_count() == before + 1
+
+
 def test_no_cache_ignores_an_invalid_cache_tree_without_warning(provider):
     run, cache, _, _ = provider
     (cache / "http").write_bytes(b"not a directory")

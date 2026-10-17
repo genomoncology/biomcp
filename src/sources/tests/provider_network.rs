@@ -684,6 +684,10 @@ async fn cached_client_post_write_failure_matrix_keeps_provider_answers() {
             .send()
             .await
             .expect("post-write cache fault must keep the provider answer");
+        assert!(
+            !answer.headers().contains_key("x-biomcp-cache-stale-age"),
+            "successful provider revalidation must not be reported as a stale serve"
+        );
         let expected = if matches!(mode, CacheOriginMode::Revalidate200) {
             "replacement-sensitive-body"
         } else {

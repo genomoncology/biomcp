@@ -54,9 +54,10 @@ impl CacheManager for HttpCacheManager {
     async fn put(
         &self,
         key: String,
-        response: HttpResponse,
+        mut response: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
+        super::manager::strip_stale_serve_marker(&mut response);
         let answer = response.clone();
         let publication = crate::sources::current_cache_publication_state();
         match self.0.put(key, response, policy).await {
