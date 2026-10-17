@@ -16,3 +16,9 @@ The exact variant-name strategy searches full text wherever a source supports it
 - Keeps: one exact name per query, per-alias and per-source yield in `alias_yields`, and PubMed's title and abstract phrase search, since PubMed has no full-text field.
 - Changes: claims `src/entities/article/variant_search.rs`, its tests and recorded replies, `CHANGELOG.md`. Search Europe PMC by the exact phrase across full text, not `TITLE_ABS`, and report it under its own query key.
 - Proof: recorded replies show `BRCA1 F1761I` finding 10811118 through the exact strategy; current main finds none. Alias yields stay per source.
+
+Coordinator outcome before code: Search Europe PMC full text for one exact variant-name phrase, retaining PubMed title/abstract search and per-source query/yield attribution. Before product edits, reproduce on current main through the build job and report the exact command/output, proposed implementation/test files and the outside-in failing proof. Root records that evidence and scope before implementation. Developers write no ticket or status records.
+
+## Progress
+
+- 2026-10-17 started
