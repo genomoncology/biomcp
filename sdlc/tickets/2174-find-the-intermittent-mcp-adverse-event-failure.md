@@ -18,5 +18,5 @@ The intermittent failure of `raw_and_typed_mcp_preserve_adverse_event_subset_and
 - Starts from: the next failure's error reply, captured by 91f4afc46's diagnostics, and the gate logs.
 - Keeps: the contract the test checks.
 - Changes: claims `tests/rmcp_client_contract.rs` and whatever source file the named cause points to, plus `CHANGELOG.md` if behavior changes.
-- Proof: name the cause from a captured error reply, or reproduce it by running the test repeatedly through one build job on the M5 within the three-job limit. Show the failure before the fix and its absence across the same number of repeats after. If 2172 lands first and fifty repeats show no failure, record that finding and close.
+- Proof: name the cause from a captured error reply, or reproduce it by running the test repeatedly through one build job on the build host within its configured job limit. Show the failure before the fix and its absence across the same number of repeats after. If 2172 lands first and fifty repeats show no failure, record that finding and close.
 - Defers: nothing. This ticket gets no fourth gate rerun as a substitute for a cause.
