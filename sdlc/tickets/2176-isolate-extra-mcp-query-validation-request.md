@@ -30,3 +30,7 @@ Focused investigation did not reproduce the extra request. Traced real MCP job 1
 ## Diagnostic slice
 
 Concurrent routine Rust job 1792255057254-3297 on the accepted startup repair plus request diagnostics passed 4335 tests with 34 skips and passed targeted compiler lint. The previously failing MCP case passed. Request count, response bytes, validation boundaries, result equality and retry behavior remain unchanged. The trace stores at most 32 fixed classifications and bounded numeric transport outcomes, without arbitrary query values, headers or error text. Fresh review accepted source b11c5c923 without changes or repeated checks. This is a diagnostic-only partial slice: the extra-request cause remains unknown and the original repair outcome is not complete. Keep the ticket open for recurrence while normal source qualification continues.
+
+## Progress
+
+- 2026-10-17 started
