@@ -6,6 +6,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WRAPPER_SCRIPT = REPO_ROOT / "tools" / "check-quality-ratchet.sh"
 EXCEPTION_REGISTRY = REPO_ROOT / "tools" / "cli-surface-contract-exceptions.json"
@@ -21,6 +23,7 @@ def _load_quality_ratchet_module():
     return module
 
 
+@pytest.mark.repo_audit
 def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None:
     output_dir = tmp_path / "ratchet-output"
     env = os.environ.copy()

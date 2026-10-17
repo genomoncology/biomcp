@@ -132,7 +132,7 @@ fn serve_http_rejects_port_zero() {
     );
 }
 
-#[tokio::test(start_paused = true)]
+#[tokio::test]
 #[serial_test::serial(source_env)]
 async fn dropping_canonical_compact_command_cancels_provider_retry() {
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
@@ -286,6 +286,9 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
     drop(command);
     assert!(middleware_dropped.upgrade().is_none());
     assert_eq!(active_connections.load(Ordering::SeqCst), 0);
+    // Exchange real socket traffic on real time. Only advance the clock
+    // after cancellation, when no request can race an I/O timeout.
+    tokio::time::pause();
     tokio::time::advance(Duration::from_secs(30)).await;
     for _ in 0..10 {
         tokio::task::yield_now().await;

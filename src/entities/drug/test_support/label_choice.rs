@@ -1033,17 +1033,17 @@ async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
     )
     .await;
 
-    // The identity fallback still resolves the brand
-    // to the plain ingredient the Faspro pairing names, and the label
-    // choice takes the plain intravenous DARZALEX record. openFDA's
-    // field-scoped search reaches only the Faspro pairing — the plain
-    // record's openfda block is empty — so the elements escalation must
-    // rank the sparse record's own element identity (brand DARZALEX,
-    // ingredient daratumumab) over the unconfirmed pairing fallback. The
-    // card's brands include Darzalex itself, read off the element line.
+    // The brand's own NDC row names daratumumab but carries no DrugBank
+    // identifier. The field-scoped label search returns only Darzalex
+    // Faspro, which does not own the exact name and cannot enrich the card.
+    // The elements escalation still selects the plain DARZALEX record
+    // and reads its brand from the element line.
     let drug = name_resolution_fixture_drug(&base, "Darzalex").await;
     assert_eq!(drug.name, "daratumumab");
-    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09331"));
+    assert_eq!(
+        drug.drugbank_id, None,
+        "a non-owner Faspro label cannot supply the card's identity"
+    );
     assert_label_data_with_set_id(&drug, "a4d0efe9-5e54-467e-9eb4-56fa7d53b60b");
     assert!(
         drug.brand_names

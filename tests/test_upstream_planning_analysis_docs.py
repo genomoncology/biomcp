@@ -1184,29 +1184,11 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "XDG_CONFIG_HOME" not in makefile
     assert "BIOMCP_CACHE_DIR" not in makefile
     assert "RUST_LOG=error" not in makefile
-    assert re.search(
-        r"^test:\n"
-        r"\t\$\(MAKE\) prepare-test\n"
-        r"\t\$\(MAKE\) test-rust\n"
-        r"\t\$\(MAKE\) test-python$",
-        makefile,
-        flags=re.MULTILINE,
-    )
-    # The two lane halves CI runs in parallel are real targets,
-    # so `make test` stays the developer's one command.
-    assert re.search(
-        r"^test-rust: prepare-routine-test-tmp\n"
-        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"$',
-        makefile,
-        flags=re.MULTILINE,
-    )
-    assert re.search(
-        r"^test-python: prepare-routine-test-tmp\n"
-        r"\t\$\(MAKE\) sync-python-dev\n"
-        r"\t\$\(MAKE\) test-contracts-prepared$",
-        makefile,
-        flags=re.MULTILINE,
-    )
+    # The runner's concurrency and failure behavior belong to the executable
+    # Make contract in test_routine_cargo_feature_contract.py.
+    assert "test:\n\t$(MAKE) prepare-test" in makefile
+    assert "test-rust: prepare-routine-test-tmp" in makefile
+    assert "test-python: prepare-routine-test-tmp" in makefile
     assert not re.search(r"^check:", makefile, flags=re.MULTILINE)
     assert re.search(
         r"^\[profile\.release\]\n"
@@ -1243,8 +1225,9 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^release-gate: lint\n"
         r"\t\$\(MAKE\) test\n"
+        r"\t\$\(MAKE\) repo-audit\n"
         r'\ttools/run-offline -- env BIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -m release_gate -v \$\(PYTEST_XDIST_ARGS\)\n'
-        r"\t\$\(MAKE\) full-feature-check\n"
+        r"\t\$\(MAKE\) full-feature-check FULL_FEATURE_PROFILE=release\n"
         r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
         makefile,
         flags=re.MULTILINE,

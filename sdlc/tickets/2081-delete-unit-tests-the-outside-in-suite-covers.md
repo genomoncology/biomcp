@@ -4,9 +4,21 @@ priority: 3
 
 # 2081 — Delete every test that is not one of the four kinds
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision e65830a, accept
+
+Reviews: revision 9fa3573, accept
+
+Reviews: revision 48d9168, accept
+
+Reviews: revision 61d1cfb, accept
+
+Reviews: revision f3359f7, accept
+
+Reviews: revision 3e05883, accept
 
 ## Outcome
 
@@ -16,7 +28,7 @@ Depends on: 2156
 
 - Starts from: existing reviewed deletion batches and their outside-in replacements. Preserve their work rather than restarting it.
 - Keeps: caller behavior and refusal regressions, parser/resolver edge cases, stress-filter targets, search all, update and uninstall. Do not delete the only test of a required behavior.
-- Changes: claims `CHANGELOG.md`. Before each batch, name its actual files and avoid active product claims. Remove redundant tests and their unused test-only items. Remove avoidable waits with clocks, signals or bounded fixtures; remove sleep allowances when their final legitimate use disappears.
+- Changes: claims `spec/surface/cli.md` `scripts/run-specs.sh` `scripts/prepare-spec-artifacts.py` `tests/golden/spec/test_cleanup_cli_behaviors.py` `CHANGELOG.md`. Before each batch, name its actual files and avoid active product claims. Remove redundant tests and their unused test-only items. Remove avoidable waits with clocks, signals or bounded fixtures; remove sleep allowances when their final legitimate use disappears.
 - Proof: each batch names the removed claims and their surviving outside-in tests, reports counts/compile time/routine duration and coverage without a new coverage threshold, and passes the routine merged-candidate gate through the build job. The existing article CLI and drug-label deletion branch must execute its replacements in an active lane before landing: adding claims only to omitted spec pages does not qualify. Cover update/check/uninstall through a staged local release before deleting their owning tests.
 - Defers: runner warning behavior to 2095; extra golden recordings to 2079; broad fixture restructuring to the next release.
 

@@ -1490,7 +1490,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
         "biomcp get adverse-event 1001 reactions reactions guidance guidance",
     )
     .await?;
-    assert_eq!(raw_subset.is_error, Some(false));
+    assert_eq!(
+        raw_subset.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&raw_subset.content)
+    );
     let raw_subset: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&raw_subset.content))?;
 
@@ -1512,7 +1517,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
             ),
         )
         .await?;
-    assert_eq!(typed_subset.is_error, Some(false));
+    assert_eq!(
+        typed_subset.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&typed_subset.content)
+    );
     let typed_subset: serde_json::Value = serde_json::from_str(
         biomcp_mcp_contract_client::first_text(&typed_subset.content),
     )?;
@@ -1531,7 +1541,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     let raw_full =
         biomcp_mcp_contract_client::call_biomcp_json(&client, "biomcp get adverse-event 1003")
             .await?;
-    assert_eq!(raw_full.is_error, Some(false));
+    assert_eq!(
+        raw_full.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&raw_full.content)
+    );
     let raw_full: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&raw_full.content))?;
 
@@ -1550,7 +1565,12 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
             ),
         )
         .await?;
-    assert_eq!(typed_all.is_error, Some(false));
+    assert_eq!(
+        typed_all.is_error,
+        Some(false),
+        "{}",
+        biomcp_mcp_contract_client::first_text(&typed_all.content)
+    );
     let typed_all: serde_json::Value =
         serde_json::from_str(biomcp_mcp_contract_client::first_text(&typed_all.content))?;
     assert_eq!(typed_all, raw_full);
