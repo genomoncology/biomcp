@@ -12,7 +12,7 @@ Priority: 1.
 
 ## Changes
 
-- src/sources/gencc/tests.rs
+- src/entities/gene/gencc/tests.rs
 - CHANGELOG.md
 
 ## Implementation brief
