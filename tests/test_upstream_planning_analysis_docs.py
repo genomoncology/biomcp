@@ -1306,7 +1306,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         assert "run_markdown_specs" in runner
     assert "PY_PATHS" in runner and "run_python_contracts" in runner
     assert re.search(
-        r"^test-contracts: prepare-test-contracts\n"
+        r"^test-contracts: prepare-routine-test-tmp prepare-test-contracts\n"
         r"\t\$\(MAKE\) test-contracts-prepared$",
         makefile,
         flags=re.MULTILINE,

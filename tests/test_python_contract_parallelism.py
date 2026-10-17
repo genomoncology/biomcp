@@ -39,3 +39,25 @@ def test_python_contract_worker_count_has_a_one_worker_override() -> None:
     ).stdout
 
     assert "pytest tests/ -v -n 1 --dist loadfile" in dry_run
+
+
+def test_contract_gate_keeps_temporary_paths_in_the_worktree() -> None:
+    # The suite's temp-path contract asserts that TMPDIR and pytest's
+    # basetemp live inside the worktree; the offline sandbox points
+    # TMPDIR at its own /tmp, so the gate itself must carry the
+    # routine lane's redirection into the worktree (2148).
+    dry_run = subprocess.run(
+        ["make", "-n", "test-contracts", "PYTEST_WORKERS=1"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+
+    pytest_line = next(
+        line for line in dry_run.splitlines() if "pytest tests/" in line
+    )
+    assert 'TMPDIR="' in pytest_line
+    assert ".cache/routine-test-tmp" in pytest_line
+    assert '--basetemp "' in pytest_line
+    assert ".cache/routine-test-tmp/pytest" in pytest_line
