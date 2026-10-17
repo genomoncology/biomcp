@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 457c2c6, accept
+
 ## Outcome
 
 An annotation search whose entity and variant autocomplete replies are both empty reports the existing no-entity miss without a fixture HTTP error, and the shared handler passes test-target lint.
