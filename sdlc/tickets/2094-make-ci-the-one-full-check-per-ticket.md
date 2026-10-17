@@ -11,10 +11,6 @@ Milestone: 0.9.3
 Depends on: 2081
 Depends on: 2156
 
-Reviews: revision f013bfc, accept
-
-Reviews: revision f013bfc, accept
-
 ## Outcome
 
 `make test` prepares shared artifacts once, runs the Rust and Python lanes concurrently with readable separate output, and fails when either lane fails while preserving every retained check.
