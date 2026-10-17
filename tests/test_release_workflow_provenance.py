@@ -355,7 +355,7 @@ ALLOWED_STEP_IFS = {
     # The container smoke was re-pinned again 2026-10-10:
     # the tag now rides in with -e TAG.
 PINNED_STEPS: dict[tuple[str, str], str] = {
-    ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "435261111ae8c13c6efd4c0122d30af2df68e5cbc57a7e92ccd1568897ae4024",
+    ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "17795dceef610a9d0dbdf4d93fa227a7c453b77ebd72a7cc057d592d711bff57",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
     ("pypi-build", "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c"): "e5cf6427d1b42e2b776f2589adc36320874f109751f02494b68ee9068c79b0d5",
     ("pypi-build", "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b"): "4e605dbe89d4dcacdf70d170853634c9f4c518e1a41f5d2c5e2bd27cf4c89e7c",
@@ -368,12 +368,12 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
     ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "aa05d59785ad1869b7a0dd819d3040b1a87092e6cbe0e0c7d40a8518856b6ebd",
     ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
-    ("docs-live", "Check out the gate helper"): "afce43fafcab696d9cef03f29b0c43b6c9849baf126b749e198bdb9d83555430",
-    ("docs-live", "Resolve the tag commit"): "b52e25a4026bed9172a0eff4b90f6a706ec984875307d7e89f9d450878a96e44",
+    ("docs-live", "Check out the gate helper"): "ff29379fee6ad185b41206f3cd927d55f6c99711dafe8c11de48998ec8e64373",
+    ("docs-live", "Resolve the tag commit"): "b9e7731ec89c65f683eb9045aa898fcb7091e0c718f75c1f6ca29bc49d615255",
     ("docs-live", "Require the live documentation revision to equal or descend from the tag"): "d8e88f95d2e890e14d314242bcce698767ddd834b4ccbab56469d5fd684eb54d",
-    ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "3ffb87228f0c77aecb87c34ee83d661a80bff50e397e911e917de5891db2a5fb",
-    ("version-check", "Require the tag and committed versions to agree"): "8bdcc74fd872a7a77d8341bd5049e3a3845a89825f02875f4258e5d665243b8b",
-    ("version-check", "Require the changelog to cover merged tickets"): "8dcf47fdb31ff44771a511058fa05d8e17d1a551744dcc1e8631fa7f8979118e",
+    ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "20b8f03bdcde7c6e9713aa4c8aefe129de93e2dcc00e902f2b22cf8589b63a9f",
+    ("version-check", "Require the tag and committed versions to agree"): "57fd2a89d6752ec8dcee41588b0490af6600fc47d009ba6fc1dc36e2f4c2590d",
+    ("version-check", "Require the changelog to cover merged tickets"): "7d6c854e119ddbe0d13abeb01c6bf19b07b2859627f9ae9de647b3eb7c91943d",
     # The marker-set job's run steps are pinned like the pipeline
     # jobs' — the fetch feeds the offline compile and the make
     # target is the marker selection itself.
