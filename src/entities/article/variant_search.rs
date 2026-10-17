@@ -239,6 +239,7 @@ pub(crate) struct VariantArticleExecutionContext {
     route_unit_plans: Arc<Mutex<BTreeMap<(String, String), RouteUnitPlan>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
+    pubtator_variant_queries: Arc<Mutex<BTreeSet<String>>>,
     ldh_medium: Arc<AtomicUsize>,
     ldh_direct: Arc<AtomicUsize>,
 }
@@ -279,6 +280,7 @@ impl VariantArticleExecutionContext {
             route_unit_plans: Arc::new(Mutex::new(BTreeMap::new())),
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
+            pubtator_variant_queries: Arc::new(Mutex::new(BTreeSet::new())),
             ldh_medium: Arc::new(AtomicUsize::new(0)),
             ldh_direct: Arc::new(AtomicUsize::new(0)),
         }
@@ -788,6 +790,44 @@ impl VariantArticleExecutionContext {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .get(query_alias)
             .cloned()
+    }
+
+    /// The entity-id queries the pubtator_variant route ran, in sorted order,
+    /// for the debug plan; the route searches by entity id, never by bare
+    /// text aliases.
+    fn record_pubtator_variant_query(&self, entity_id: &str) {
+        self.pubtator_variant_queries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(entity_id.to_string());
+    }
+
+    fn pubtator_variant_queries(&self) -> Vec<String> {
+        self.pubtator_variant_queries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .cloned()
+            .collect()
+    }
+
+    /// PubTator autocomplete answered but returned no variant entity for the
+    /// request: the annotation route cannot search by entity id. The degraded
+    /// ledger event with this reason code keeps the run incomplete and lets the
+    /// terminal status say why instead of reporting a silently complete empty
+    /// page.
+    fn record_pubtator_variant_no_entity(&self) {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(VariantArticleCallEvent {
+                route: "pubtator_variant".into(),
+                source: "pubtator".into(),
+                status: "degraded".into(),
+                latency_ms: 0,
+                pages: 0,
+                reason_code: Some("no_variant_entity"),
+            });
     }
 }
 
@@ -1865,11 +1905,20 @@ async fn annotation_candidates(
     };
     let mut candidates = Vec::new();
     let mut incomplete = false;
-    let mut succeeded = tokens.is_empty();
+    let mut succeeded = false;
+    if tokens.is_empty() {
+        // Autocomplete answered (the unit already committed) but returned no
+        // matching variant entity, so this route has no entity id to search
+        // by. Report the miss instead of a silently complete empty search;
+        // bare text queries stay out of this route.
+        execution.record_pubtator_variant_no_entity();
+        return Ok((Vec::new(), true, false, false));
+    }
     for _ in &tokens {
         execution.add_route_unit("pubtator_variant", "pubtator");
     }
     for token in tokens {
+        execution.record_pubtator_variant_query(&token.entity_id);
         let mut filters = article_filters();
         filters.variant = Some(ArticleVariantIntent {
             original: input.to_string(),
@@ -2440,22 +2489,11 @@ fn plan_queries(
             .or_else(|| Some(input.to_string()))
             .into_iter()
             .collect(),
-        "pubtator_variant" if context.requested.is_authoritative_refseq() => {
-            vec![input.trim().to_string()]
-        }
-        _ => {
-            let aliases = combined_normalized_aliases(context);
-            aliases
-                .genomic_ids
-                .into_iter()
-                .chain(aliases.rsids)
-                .chain(aliases.protein_changes)
-                .chain(aliases.coding_changes)
-                .chain(std::iter::once(input.to_string()))
-                .filter(|query| !query.trim().is_empty())
-                .take(MAX_EXACT_ALIASES)
-                .collect()
-        }
+        // The pubtator_variant route searches PubTator by the variant entity
+        // id autocomplete returns; the debug plan carries the entity-id
+        // queries the route ran, never bare text aliases.
+        "pubtator_variant" => Vec::new(),
+        _ => Vec::new(),
     }
 }
 
@@ -2699,7 +2737,11 @@ fn build_debug_plan(
     let routes = route_names
         .into_iter()
         .map(|route| {
-            let queries = plan_queries(input, context, route, canonical_aliases);
+            let queries = if route == "pubtator_variant" {
+                execution.pubtator_variant_queries()
+            } else {
+                plan_queries(input, context, route, canonical_aliases)
+            };
             let mut grouped = BTreeMap::<String, Vec<&VariantArticleCallEvent>>::new();
             for event in events.iter().filter(|event| event.route == route) {
                 grouped.entry(event.source.clone()).or_default().push(event);
@@ -3448,6 +3490,16 @@ async fn search_variant_articles_identity(
                 .find(|prior| prior.route == status.route && prior.source == status.source)
         {
             status.detail.clone_from(&prior.detail);
+        }
+        // The entity-id route names its miss in plain words; the ledger keeps
+        // the status, work counts, and reason codes.
+        if status.route == "pubtator_variant"
+            && status.source == "pubtator"
+            && status.reason_codes.contains(&"no_variant_entity")
+        {
+            status.detail = Some(
+                "PubTator autocomplete returned no variant entity for this request".into(),
+            );
         }
     }
     let runtime_incomplete = source_statuses_incomplete(&statuses);

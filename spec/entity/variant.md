@@ -1122,7 +1122,10 @@ A complete versioned RefSeq chromosome identity and explicit assembly is an exac
 caller assertion even when MyVariant has no matching row. Both decomposed fields
 and genomic HGVS canonicalize to the same public identity shape; exact literature
 routes retain the literal transcript, coding, and genomic aliases without
-inventing chromosome coordinates or provider confirmation.
+inventing chromosome coordinates or provider confirmation. The annotation route
+still asks PubTator for a variant entity; when autocomplete holds none for the
+RefSeq spelling the run names that miss in its source status and keeps
+`complete: false`, because the entity route could not cover the variant.
 
 ```bash run id=variant-article-refseq-not-found exit=0
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-json
@@ -1154,8 +1157,8 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
           "contradictory_field": null
         }
       },
-      "complete": true,
-      "truncated": false,
+      "complete": false,
+      "truncated": true,
       "source_citation": {
         "status": "skipped",
         "detail": "no compatible MyVariant record"
@@ -1197,8 +1200,8 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
           "contradictory_field": null
         }
       },
-      "complete": true,
-      "truncated": false,
+      "complete": false,
+      "truncated": true,
       "source_citation": {
         "status": "skipped",
         "detail": "no compatible MyVariant record"
