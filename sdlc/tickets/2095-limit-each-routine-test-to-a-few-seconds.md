@@ -8,6 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.3
 Depends on: 2094
+Depends on: 2159
 
 Depends on: 2156
 
@@ -27,3 +28,5 @@ A routine Rust or Python test exceeding thirty seconds emits a warning identifyi
 PM decision: 2026-10-17. Ian confirmed warning-only routine timing and a separate long suite. The dependency on 2094 serializes edits to shared runner files; it does not reinstate a hosted CI gate.
 
 PM decision: 2026-10-17. This ticket waits on 2094 only to serialize edits to shared runner files.
+
+Coordinator dependency correction: the warning implementation adds a reporting tool and its contract module. The existing exact package-count check would reject those legitimate files, so the already accepted derived-membership fix 2159 must land before this change. Its source check remains enforced; no temporary counter update is needed.
