@@ -16,7 +16,10 @@ def main() -> int:
         for line in process.stdout:
             print(line, end="", flush=True)
             if re.match(r"\s*SLOW\s+\[", line):
-                load = ", ".join(f"{value:.2f}" for value in os.getloadavg())
+                try:
+                    load = ", ".join(f"{value:.2f}" for value in os.getloadavg())
+                except (AttributeError, OSError):
+                    load = "unavailable"
                 print(f"WARNING slow test; load (1, 5, 15 min): {load}", flush=True)
         return process.wait()
 

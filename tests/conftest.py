@@ -46,7 +46,10 @@ class SlowTestReporter:
         threshold = float(self.config.getini("slow_test_warning_seconds"))
         terminal = self.config.pluginmanager.get_plugin("terminalreporter")
         if threshold > 0 and duration > threshold and terminal is not None:
-            load = ", ".join(f"{value:.2f}" for value in os.getloadavg())
+            try:
+                load = ", ".join(f"{value:.2f}" for value in os.getloadavg())
+            except (AttributeError, OSError):
+                load = "unavailable"
             terminal.write_line(
                 f"SLOW {report.nodeid} ({duration:.3f}s); load (1, 5, 15 min): {load}",
                 yellow=True,

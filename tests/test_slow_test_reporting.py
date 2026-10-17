@@ -11,12 +11,21 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.parametrize("load_available", [False, True])
 @pytest.mark.parametrize("workers", [0, 2])
 @pytest.mark.parametrize("fails", [False, True])
 def test_python_slow_warning_preserves_test_result(
-    tmp_path: Path, workers: int, fails: bool
+    tmp_path: Path, workers: int, fails: bool, load_available: bool
 ) -> None:
-    (tmp_path / "conftest.py").write_text((ROOT / "tests/conftest.py").read_text())
+    conftest = (ROOT / "tests/conftest.py").read_text()
+    if not load_available:
+        conftest += (
+            "\ndef pytest_sessionstart(session):\n"
+            "    def unavailable():\n"
+            "        raise OSError(\"load unavailable\")\n"
+            "    os.getloadavg = unavailable\n"
+        )
+    (tmp_path / "conftest.py").write_text(conftest)
     (tmp_path / "pytest.ini").write_text(
         "[pytest]\nslow_test_warning_seconds = 0.01\n"
     )
@@ -37,6 +46,8 @@ def test_python_slow_warning_preserves_test_result(
     assert result.returncode == int(fails), result.stdout + result.stderr
     assert "SLOW test_case.py::test_slow_case" in result.stdout
     assert "load (1, 5, 15 min):" in result.stdout
+    if not load_available:
+        assert "load (1, 5, 15 min): unavailable" in result.stdout
 
 
 @pytest.mark.parametrize("exit_code", [0, 1])
