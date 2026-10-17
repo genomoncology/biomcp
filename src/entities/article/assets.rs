@@ -330,6 +330,25 @@ fn article_asset_bytes_from_resolution(
             coverage,
         ));
     }
+    // Several routes refused the same file name: answer with the refusal that
+    // explains the file best, so a caller holding the bare name still learns
+    // why nothing downloaded instead of a bare not-found.
+    let mut strongest = None;
+    for coverage in &matches {
+        let stronger = strongest.is_none_or(|current: &ArticleAssetNamedCoverage| {
+            named_outcome_priority(coverage.outcome) > named_outcome_priority(current.outcome)
+        });
+        if stronger {
+            strongest = Some(coverage);
+        }
+    }
+    if let Some(coverage) = strongest {
+        return Err(article_asset_not_retrievable(
+            requested_id,
+            resolved.manifest.pmcid.as_deref(),
+            coverage,
+        ));
+    }
     Err(article_asset_not_found(requested_id, wanted))
 }
 
@@ -1331,7 +1350,12 @@ fn finish_resolution(
         .iter()
         .map(|asset| asset.canonical_identity.clone())
         .collect::<BTreeSet<_>>();
-    let mut pending = BTreeMap::<String, PendingCoverage>::new();
+    // Coverage folds per identity within one source document: the linked
+    // article-page route and the bucket route can name the same file (they
+    // share a canonical identity so a delivered copy merges), but their
+    // refusals stay separate rows so one route's outcome never hides the
+    // other's reason.
+    let mut pending = BTreeMap::<(String, ArticleAssetSourceDocument), PendingCoverage>::new();
     for mut observation in nonretrievable {
         if successful_identities.contains(&observation.canonical_identity) {
             continue;
@@ -1339,7 +1363,8 @@ fn finish_resolution(
         observation.row.discovery_routes.sort();
         observation.row.discovery_routes.dedup();
         let identity = observation.canonical_identity.clone();
-        match pending.entry(identity) {
+        let source_document = observation.row.source_document;
+        match pending.entry((identity, source_document)) {
             std::collections::btree_map::Entry::Vacant(entry) => {
                 entry.insert(observation);
             }
@@ -1390,7 +1415,7 @@ fn finish_resolution(
         });
 
     let mut coverage = finalize_retrievable_coverage(retrievable_observations, &assets);
-    coverage.extend(pending.into_iter().map(|(identity, mut coverage)| {
+    coverage.extend(pending.into_iter().map(|((identity, _), mut coverage)| {
         if coverage.row.asset_key.is_none() {
             coverage.row.asset_key =
                 Some(format!("unavailable-{}", sha256_hex(identity.as_bytes())));
@@ -1510,7 +1535,7 @@ fn merge_entry_facts(primary: &mut ArticleAssetEntry, other: &ArticleAssetEntry)
 fn assign_asset_keys(
     requested_id: &str,
     assets: &mut [ResolvedAsset],
-    pending: &mut BTreeMap<String, PendingCoverage>,
+    pending: &mut BTreeMap<(String, ArticleAssetSourceDocument), PendingCoverage>,
 ) {
     // A download route that was refused — zero bytes, or bytes that do not
     // match the file name's type — carried a listed asset key before this
@@ -3259,7 +3284,10 @@ mod tests {
             ArticleAssetSourceDocument::PmcOaArchive,
         )];
         let mut pending = BTreeMap::from([(
-            europe_identity.clone(),
+            (
+                europe_identity.clone(),
+                ArticleAssetSourceDocument::EuropePmcZip,
+            ),
             refused_download_coverage(
                 europe_identity.clone(),
                 ArticleFulltextProvider {
@@ -3325,7 +3353,7 @@ mod tests {
         let filename = "NIHMS1501644-supplement-1.xlsx";
         let identity = format!("europe-pmc:PMC6181778:{filename}");
         let mut pending = BTreeMap::from([(
-            identity.clone(),
+            (identity.clone(), ArticleAssetSourceDocument::EuropePmcZip),
             refused_download_coverage(
                 identity,
                 ArticleFulltextProvider {
@@ -3376,7 +3404,10 @@ mod tests {
         };
         let mut pending = BTreeMap::from([
             (
-                pmc_identity.clone(),
+                (
+                    pmc_identity.clone(),
+                    ArticleAssetSourceDocument::PmcOaArchive,
+                ),
                 refused_download_coverage(
                     pmc_identity.clone(),
                     provider(),
@@ -3386,7 +3417,10 @@ mod tests {
                 ),
             ),
             (
-                europe_identity.clone(),
+                (
+                    europe_identity.clone(),
+                    ArticleAssetSourceDocument::EuropePmcZip,
+                ),
                 refused_download_coverage(
                     europe_identity.clone(),
                     europe_provider,
@@ -3430,6 +3464,69 @@ mod tests {
         assert_eq!(error.code(), "article_asset_not_retrievable");
         assert!(error.to_string().contains("unusable_asset"));
         assert!(!error.to_string().contains("empty_response"));
+    }
+
+    #[test]
+    fn a_bare_name_with_several_refused_routes_names_the_strongest_reason() {
+        // The Europe-only empty supplement after the article-page fallback:
+        // the empty reply explains the file better than the page's absence,
+        // so the bare name keeps the empty-response refusal instead of
+        // collapsing to a bare not-found.
+        let filename = "NIHMS1501644-supplement-1.xlsx";
+        let europe_identity = format!("europe-pmc:PMC6181778:{filename}");
+        let linked_identity = format!("pmc:PMC6181778:{filename}");
+        let mut pending = BTreeMap::from([
+            (
+                (
+                    europe_identity.clone(),
+                    ArticleAssetSourceDocument::EuropePmcZip,
+                ),
+                refused_download_coverage(
+                    europe_identity,
+                    ArticleFulltextProvider {
+                        label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+                        source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+                    },
+                    ArticleAssetSourceDocument::EuropePmcZip,
+                    filename,
+                    ArticleAssetNamedOutcome::EmptyResponse,
+                ),
+            ),
+            (
+                (linked_identity.clone(), ArticleAssetSourceDocument::PmcHtml),
+                PendingCoverage {
+                    canonical_identity: linked_identity,
+                    row: ArticleAssetNamedCoverage {
+                        filename: filename.to_string(),
+                        asset_key: None,
+                        label: None,
+                        media_type: None,
+                        provider: linked_provider(),
+                        source_document: ArticleAssetSourceDocument::PmcHtml,
+                        outcome: ArticleAssetNamedOutcome::HealthyAbsent,
+                        handle: None,
+                        discovery_routes: Vec::new(),
+                    },
+                    refused_download: false,
+                },
+            ),
+        ]);
+        assign_asset_keys("22663025", &mut Vec::new(), &mut pending);
+        let resolved = finish_resolution(
+            "22663025",
+            &sample_article(),
+            Some("PMC6181778"),
+            Vec::new(),
+            pending.into_values().collect(),
+            0,
+            false,
+            Vec::new(),
+        )
+        .unwrap();
+        let error = article_asset_bytes_from_resolution("22663025", filename, resolved)
+            .expect_err("the strongest refusal must answer the bare name");
+        assert_eq!(error.code(), "article_asset_not_retrievable");
+        assert!(error.to_string().contains("empty_response"));
     }
 
     #[test]
