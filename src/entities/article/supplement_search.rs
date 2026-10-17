@@ -255,7 +255,11 @@ fn file_outcome_rows(
         ));
     }
     if rows.is_empty() {
-        rows.push(row(None, ArticleSupplementSearchFileOutcome::EmptyText, None));
+        rows.push(row(
+            None,
+            ArticleSupplementSearchFileOutcome::EmptyText,
+            None,
+        ));
     }
     rows
 }
@@ -562,7 +566,9 @@ mod tests {
         })).unwrap();
         let rows = file_outcome_rows(&asset, &SupplementTextExtraction::default());
         assert_eq!(rows.len(), 1, "a readable empty archive must not disappear");
-        assert_eq!(rows[0].outcome, ArticleSupplementSearchFileOutcome::EmptyText);
+        assert_eq!(
+            rows[0].outcome,
+            ArticleSupplementSearchFileOutcome::EmptyText
+        );
     }
-
 }
