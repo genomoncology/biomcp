@@ -245,6 +245,148 @@ fn article_asset_out_preserves_its_name_and_bytes() {
     );
 }
 
+fn two_route_fixture_bytes() -> &'static [u8] {
+    b"scrubbed two-route supplement XLSX fixture bytes\n"
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn empty_supplement_reply_fails_the_download_and_writes_no_file() {
+    let fixture = ArticleFixture::start();
+    let destination = fixture.root.join("empty-supplement.xlsx");
+    let output = fixture
+        .biomcp_command(&[
+            "get",
+            "article",
+            "22663025",
+            "asset",
+            "NIHMS1501644-supplement-1.xlsx",
+            "--output",
+            destination
+                .to_str()
+                .expect("destination path should be UTF-8"),
+        ])
+        .output()
+        .expect("empty-route asset command should run");
+    assert!(
+        !output.status.success(),
+        "a zero-byte asset reply must fail the download\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("article_asset_not_retrievable"),
+        "refusal should name the failed retrieval:\n{stderr}"
+    );
+    assert!(
+        stderr.contains("empty_response"),
+        "refusal should name the empty response:\n{stderr}"
+    );
+    assert!(
+        !destination.exists(),
+        "a failed download must write no output file"
+    );
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn two_route_supplement_prefers_bytes_and_marks_the_empty_alternative() {
+    let fixture = ArticleFixture::start();
+    let filename = "NIHMS1501643-supplement-2.xlsx";
+
+    let manifest = successful_output(
+        &fixture,
+        &["--json", "get", "article", "22663024", "assets"],
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&manifest.stdout).expect("asset manifest should be JSON");
+    let assets = doc["assets"].as_array().expect("assets should be a list");
+    let listed = assets
+        .iter()
+        .filter(|asset| asset["filename"] == filename)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        listed.len(),
+        1,
+        "only the route that returned bytes may list the supplement"
+    );
+    assert_eq!(listed[0]["provider"]["source"], "PMC OA");
+    assert_eq!(
+        listed[0]["size_bytes"],
+        serde_json::json!(two_route_fixture_bytes().len())
+    );
+
+    let empty_rows = doc["coverage"]
+        .as_array()
+        .expect("coverage should be a list")
+        .iter()
+        .filter(|row| row["filename"] == filename)
+        .collect::<Vec<_>>();
+    assert_eq!(empty_rows.len(), 1, "the empty alternative stays marked");
+    assert_eq!(empty_rows[0]["outcome"], "empty_response");
+    assert_eq!(empty_rows[0]["provider"]["source"], "Europe PMC");
+    let empty_key = empty_rows[0]["asset_key"]
+        .as_str()
+        .expect("the marked alternative keeps a stable key")
+        .to_string();
+    assert!(
+        empty_key.starts_with("europe-pmc-")
+            && empty_key.ends_with("--NIHMS1501643-supplement-2.xlsx"),
+        "unexpected empty-route key: {empty_key}"
+    );
+
+    let destination = fixture.root.join("full-supplement.xlsx");
+    successful_output(
+        &fixture,
+        &[
+            "get",
+            "article",
+            "22663024",
+            "asset",
+            filename,
+            "--output",
+            destination
+                .to_str()
+                .expect("destination path should be UTF-8"),
+        ],
+    );
+    assert_eq!(
+        fs::read(&destination).expect("the full copy should download"),
+        two_route_fixture_bytes()
+    );
+
+    let refused = fixture.root.join("refused-supplement.xlsx");
+    let output = fixture
+        .biomcp_command(&[
+            "get",
+            "article",
+            "22663024",
+            "asset",
+            &empty_key,
+            "--output",
+            refused.to_str().expect("destination path should be UTF-8"),
+        ])
+        .output()
+        .expect("empty-route asset command should run");
+    assert!(
+        !output.status.success(),
+        "the empty route must refuse instead of writing a zero-byte file\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("empty_response"),
+        "refusal should name the empty response:\n{stderr}"
+    );
+    assert!(
+        !refused.exists(),
+        "the refused route must write no output file"
+    );
+}
+
 #[test]
 #[serial_test::serial(article_output_fixture)]
 fn article_fulltext_without_out_keeps_the_managed_cache_path() {

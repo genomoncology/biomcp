@@ -6,9 +6,11 @@ deps: []
 
 # 2146: Refuse an empty supplement download
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision bb6b990, accept
 
 ## Outcome
 

@@ -450,6 +450,24 @@ PMC_OA_ONLY_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
   </body>
 </article>"""
 
+# Ticket 2146: the two-route article's package XML declares no supplement
+# links, so the XLSX is only reachable through the PMC OA package member and
+# Europe PMC's supplementary archive.
+TWO_ROUTE_PACKAGE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+  <front>
+    <article-meta>
+      <title-group><article-title>Two-route supplement winner</article-title></title-group>
+      <abstract><p>Two-route abstract text.</p></abstract>
+    </article-meta>
+  </front>
+  <body>
+    <sec>
+      <title>Two-route results</title>
+      <p>Two-route package XML body text with fixture-only provenance.</p>
+    </sec>
+  </body>
+</article>"""
+
 ABSTRACT_ONLY_XML = """<article>
   <!-- SENSITIVE-ABSTRACT-SOURCE-BODY signed.example.invalid token=secret -->
   <front>
@@ -530,9 +548,29 @@ def make_europe_pmc_supplementary_zip():
     return out.getvalue()
 
 
+def make_empty_member_supplementary_zip(name):
+    # Ticket 2146: scrubbed from the observed PMC6181777 supplementaryFiles
+    # archive shape, whose only member is a genuinely zero-length entry
+    # (declared file size 0) while the PMC OA package holds the real file.
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(name, b"")
+    return out.getvalue()
+
+
 OA_ASSETS_TGZ = make_oa_assets_tgz()
 PMC_OA_ONLY_TGZ = make_pmc_oa_only_tgz()
 EUROPE_PMC_SUPPLEMENTARY_ZIP = make_europe_pmc_supplementary_zip()
+# Ticket 2146: the two-route supplement keeps its full copy in the PMC OA
+# package while Europe PMC's archive holds a zero-byte member for the same
+# filename, and the Europe-only article's sole route replies with nothing.
+TWO_ROUTE_SUPPLEMENT_XLSX = b"scrubbed two-route supplement XLSX fixture bytes\n"
+EUROPE_PMC_TWO_ROUTE_EMPTY_ZIP = make_empty_member_supplementary_zip(
+    "NIHMS1501643-supplement-2.xlsx"
+)
+EUROPE_PMC_ONLY_EMPTY_ZIP = make_empty_member_supplementary_zip(
+    "NIHMS1501644-supplement-1.xlsx"
+)
 
 
 ARTICLES = {
@@ -657,6 +695,18 @@ ARTICLES = {
         "title": "PMC proof-of-work linked supplement fixture",
         "abstract": "Abstract text.",
         "paper_id": "paper-13",
+    },
+    "22663024": {
+        "pmcid": "PMC123467",
+        "title": "Two-route supplement winner",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-14",
+    },
+    "22663025": {
+        "pmcid": "PMC123468",
+        "title": "Empty-route supplement fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-15",
     },
 }
 
@@ -1387,6 +1437,14 @@ class Handler(BaseHTTPRequestHandler):
             send_bytes(self, 200, EUROPE_PMC_SUPPLEMENTARY_ZIP, "application/zip")
             return
 
+        if decoded_path == "/PMC123467/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_TWO_ROUTE_EMPTY_ZIP, "application/zip")
+            return
+
+        if decoded_path == "/PMC123468/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_ONLY_EMPTY_ZIP, "application/zip")
+            return
+
         if decoded_path == "/PMC123459/fullTextXML":
             append_request_log("fulltext:xml:europepmc-pmc")
             send_text(self, 404, "not found", "text/plain")
@@ -1435,7 +1493,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path in {"/PMC6329583/fullTextXML", "/30311380/fullTextXML", "/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/PMC123466/fullTextXML", "/PMC6172658/fullTextXML", "/PMC6172659/fullTextXML", "/PMC6695558/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML", "/22663023/fullTextXML"}:
+        if decoded_path in {"/PMC6329583/fullTextXML", "/30311380/fullTextXML", "/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/PMC123466/fullTextXML", "/PMC123467/fullTextXML", "/PMC123468/fullTextXML", "/PMC6172658/fullTextXML", "/PMC6172659/fullTextXML", "/PMC6695558/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML", "/22663023/fullTextXML"}:
             send_text(self, 404, "not found", "text/plain")
             return
 
@@ -1504,9 +1562,25 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") in (["PMC123457."], ["PMC123458."], ["PMC123459."], ["PMC123462."], ["PMC123463."], ["PMC123464."], ["PMC123465."], ["PMC123466."]):
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") in (["PMC123457."], ["PMC123458."], ["PMC123459."], ["PMC123462."], ["PMC123463."], ["PMC123464."], ["PMC123465."], ["PMC123466."], ["PMC123468."]):
             append_request_log("fulltext:xml:pmc-oa-archive")
             send_text(self, 200, "<ListBucketResult></ListBucketResult>", "application/xml")
+            return
+
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC123467."]:
+            send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123467.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
+            return
+
+        if decoded_path == "/PMC123467.1/PMC123467.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123467", "version": 1, "is_retracted": False, "license_code": "CC BY", "xml_url": "s3://pmc-oa-opendata/PMC123467.1/PMC123467.1.xml", "media_urls": ["s3://pmc-oa-opendata/PMC123467.1/NIHMS1501643-supplement-2.xlsx"]}), "application/json")
+            return
+
+        if decoded_path == "/PMC123467.1/PMC123467.1.xml":
+            send_text(self, 200, TWO_ROUTE_PACKAGE_XML, "application/xml")
+            return
+
+        if decoded_path == "/PMC123467.1/NIHMS1501643-supplement-2.xlsx":
+            send_bytes(self, 200, TWO_ROUTE_SUPPLEMENT_XLSX, "application/octet-stream")
             return
 
         if decoded_path == "/articles/PMC123457/":
@@ -1521,7 +1595,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path in {"/articles/PMC123459/", "/articles/PMC123462/", "/articles/PMC123463/"}:
+        if decoded_path in {"/articles/PMC123459/", "/articles/PMC123462/", "/articles/PMC123463/", "/articles/PMC123467/", "/articles/PMC123468/"}:
             append_request_log("fulltext:html:pmc")
             send_text(self, 404, "not found", "text/plain")
             return

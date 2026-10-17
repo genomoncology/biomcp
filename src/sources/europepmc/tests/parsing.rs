@@ -159,6 +159,22 @@ fn supplementary_zip_preserves_normalized_names_and_exact_bytes() {
 }
 
 #[test]
+fn supplementary_zip_keeps_zero_byte_members_for_upstream_classification() {
+    // Europe PMC stores genuinely zero-length members for some supplements
+    // (PMC6181777's NIHMS1501643-supplement-2.xlsx); the parser keeps the
+    // member so asset resolution can mark the route as an empty response
+    // instead of failing the whole package.
+    let bytes = zip_bytes(&[("NIHMS1501643-supplement-2.xlsx", b"")], &[]);
+    let package = parse_supplementary_zip(&bytes).unwrap();
+    assert_eq!(package.entries.len(), 1);
+    assert_eq!(
+        package.entries[0].filename,
+        "NIHMS1501643-supplement-2.xlsx"
+    );
+    assert!(package.entries[0].bytes.is_empty());
+}
+
+#[test]
 fn supplementary_zip_rejects_unsafe_and_duplicate_names() {
     for name in [
         "../asset.txt",
