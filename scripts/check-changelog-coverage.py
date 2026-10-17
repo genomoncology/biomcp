@@ -320,10 +320,11 @@ def branch_main(changelog: Path) -> int:
         ),
         key=int,
     )
+    section = live_section_text(changelog)
+    described = described_tickets(section[1]) if section is not None else set()
     if not needing:
         print(f"no ticket since {previous} changed shipped behavior")
         return 0
-    section = live_section_text(changelog)
     if section is None:
         print(
             "the changelog has no Unreleased or under-way version section to "
@@ -332,7 +333,7 @@ def branch_main(changelog: Path) -> int:
         )
         return 1
     label, body = section
-    missing = sorted(set(needing) - described_tickets(body), key=int)
+    missing = sorted(set(needing) - described, key=int)
     if missing:
         print(
             f"CHANGELOG {label} is missing described bullets for tickets that "
@@ -359,8 +360,25 @@ def described_tickets(section: str) -> set[str]:
     found: set[str] = set()
     bullets: list[str] = []
     current: list[str] = []
+    fence = ""
+    ticket_group = r"\(\s*[0-9]+(?:\s*(?:,|and)\s*[0-9]+)*\s*\)"
+    joined = re.compile(ticket_group + r"[ .,;]*[-*]\s+\S.*" + ticket_group + r"[ .,;]*$")
     for line in section.splitlines():
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+        in_code = bool(fence)
+        if marker is not None:
+            token, tail = marker.groups()
+            if not fence:
+                fence = token
+            elif token[0] == fence[0] and len(token) >= len(fence) and not tail.strip():
+                fence = ""
+            in_code = True
         bullet = re.match(r"^\s*[-*]\s+(.+)$", line)
+        # Literal Markdown examples are not entries. Require both closing
+        # ticket groups so a numbered value followed by a dash stays prose.
+        visible = re.sub(r"(`+).*?\1", "", line)
+        if not in_code and (bullet is not None or current) and joined.search(visible):
+            raise RuntimeError("joined changelog entries: put each bullet on its own line")
         if bullet is not None:
             if current:
                 bullets.append(" ".join(current))
