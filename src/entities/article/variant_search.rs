@@ -5406,12 +5406,18 @@ mod tests {
         // A resolved variant whose PubTator autocomplete answer holds no
         // variant entity must say so: the route degrades with a plain-words
         // status, the page keeps complete false, and the run stays exit zero
-        // instead of reporting a silently complete empty result.
+        // instead of reporting a silently complete empty result. The run also
+        // pins the LitVar2 base to the fixture: the annotation strategy has
+        // consulted LitVar2 since it joined the union, an empty autocomplete
+        // is that source's healthy zero-row answer, and without the pin the
+        // test would depend on the real provider's rate limits.
         let fixture = TestHttpFixture::spawn(move |request| {
             let first_line = request.lines().next().unwrap_or_default().to_string();
             let body: &[u8] = if first_line.starts_with("GET /query") {
                 br#"{"total":1,"hits":[{"_id":"chr11:g.17417157C>T","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"],"hgvsc":["c.4309G>A"]}}]}"#
             } else if first_line.starts_with("GET /entity/autocomplete/") {
+                b"[]"
+            } else if first_line.starts_with("GET /variant/autocomplete/") {
                 b"[]"
             } else if first_line.starts_with("GET /search/") {
                 br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
@@ -5443,6 +5449,7 @@ mod tests {
             format!("{}/entrez/eutils", fixture.base),
         );
         env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
 
         let outcome = search_variant_articles_with_deadline(
             "ABCC8 R1436Q",
