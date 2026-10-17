@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 6477ba6, accept
+
 ## Outcome
 
 Release qualification prepares the dependencies and temporary directories each canonical command needs in a clean checkout before it enters offline execution. Keep local reuse and the existing gates intact.
