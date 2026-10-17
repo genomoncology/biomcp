@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision bbab17e, accept
+
 ## Outcome
 
 Retained whole-repository audits run in an explicit required local qualification stage, while routine Python tests avoid redundant whole-tree scans and retain focused behavior checks.
