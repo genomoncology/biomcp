@@ -4,7 +4,9 @@ priority: 3
 
 # 2123 — Report coverage overlap and collection completeness
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-17, The coverage overlap report serves no 0.9.3 or later outcome; the final measurement uses the existing coverage groups..
 
 Milestone: 0.9.4
 

@@ -7,6 +7,10 @@ priority: 4
 Status: OPEN.
 
 Milestone: 0.9.3
+Depends on: 2073
+Depends on: 2081
+Depends on: 2094
+Depends on: 2122
 
 Depends on: 2088
 Depends on: 2095
@@ -38,4 +42,4 @@ Fresh v0.9.2 and release-candidate measurements run on the same build machine wi
 
 PM decision: 2026-10-17. Measure both versions on one build machine. This ticket lands last; the final rehearsal follows all landings, avoiding a self-referential requirement to commit proof for its own final commit.
 
-PM decision: 2026-10-17. Tests, tooling and dependency work moved to 0.9.4, so this ticket no longer waits on them, and coverage uses the existing groups. Report the test-code share as measured.
+PM decision: 2026-10-17. Coverage uses the existing groups. The test deletion, parallel lanes and audit move land before this measurement.

@@ -6,7 +6,7 @@ priority: 3
 
 Status: OPEN.
 
-Milestone: 0.9.4
+Milestone: 0.9.3
 
 Depends on: 2081
 Depends on: 2156
@@ -23,4 +23,4 @@ Depends on: 2156
 
 PM decision: 2026-10-17. Ian replaced automatic ticket CI with local development, merged-candidate routine checks and postmerge standard/shipped-feature checks. The prior accepted review covers the former contract; review the revised branch after rebasing. Preserve any historical measurements as historical evidence, not current acceptance proof.
 
-PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every bug is fixed; this ticket improves tests, tooling or dependencies and fixes no user-facing bug. Rebase onto main before resuming; earlier reviews cover the old base only.
+PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.

@@ -6,7 +6,7 @@ priority: 3
 
 Status: OPEN.
 
-Milestone: 0.9.4
+Milestone: 0.9.3
 
 ## Outcome
 
@@ -22,4 +22,4 @@ Depends on: 2159
 
 PM decision: 2026-10-17. Reuse the existing implementation; rebase and review its actual merged result. Do not restore obsolete exact package-count edits after 2159.
 
-PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every bug is fixed; this ticket improves tests, tooling or dependencies and fixes no user-facing bug. Rebase onto main before resuming; earlier reviews cover the old base only.
+PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.
