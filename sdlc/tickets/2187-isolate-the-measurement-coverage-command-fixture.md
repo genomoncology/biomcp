@@ -25,3 +25,12 @@ The existing measurement coverage command fixture must exercise its controlled C
 ## Progress
 
 - 2026-10-17 started
+
+## Repair and checks
+
+Restated outcome: both existing coverage contract cases select their controlled Cargo and wrapper commands regardless of host tool installation, while retaining environment-restoration and incomplete-collection assertions. The fixture owns its isolated home and puts its fake commands in that home's Cargo command directory, which the real harness deliberately prefixes. Only the existing fixture and changelog changed; the measurement harness did not.
+
+- The first focused attempt1792280038524-95933 stopped before tests because its job checkout lacked pytest. No contract result was claimed. The successful run prepared dependencies offline with `make sync-python-dev` before direct pytest.
+- Job1792280073398-97025 at published basee1aafa815 plus controlled patches: the command-precedence RED placed a failing controlled host Cargo ahead of the old fake location; both existing cases failed with that marker. Final GREEN placed the fixture commands under its isolated home, and both cases passed. Ruff lint/format, whitespace and the existing quality ratchet passed.
+- Tested final patch SHA2565bb2f9f86b013ce448c2afc63a6897ec65031ea7415567fbd9a7e731ac1b46c9 equals the committed diff e1aafa815..7900c7cef75a756b910ae7c9a14729435803ba4d; coordinator checked the equality and job result.
+- Source root cause is test dependence on the host command directory. Existing actual coverage and runtime measurements retain their source/harness identities and remain applicable; no actual measurement was rerun or relabelled. A focused offline Linux check is required before the next full rehearsal.
