@@ -28,6 +28,7 @@ The disable-source HTTP contract reliably starts its isolated server and proves 
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 landed 38610b46596bf9099e58203a2442c6e5714a0562; next: The reviewed startup repair and diagnostic slice passed shared gate1792255317711-24775; full actual-main check runs now. Keep open for recurrence; runtime startup delay remains unexplained.
 
 ## Investigation result
 
