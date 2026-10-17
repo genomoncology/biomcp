@@ -15,3 +15,13 @@ The frozen ERepo executable specification passes through the routine build job o
 - Defers: historical failure analysis and broad fixture restructuring. This ticket only clears the concrete main check failure.
 
 PM decision: 2026-10-17. Ian approved main repairs before trigger shutdown. This is a reviewed recovery lane while ordinary landings are held. No new clinical or biological interpretation is authorized; if the failure requires a source-fact decision, report it for clinical review.
+
+## Reproduction
+
+On current main `67c42424e`, job `1792239239603-16935` ran the following and exited 1 after successful artifact preparation:
+
+```sh
+pm job run 2157 67c42424ea7df9e42e3631e212be8e4eefe437b1 -- bash -c 'make prepare-spec && source .cache/spec-artifacts.env && export BIOMCP_BIN BIOMCP_TEST_RETRY_SLEEP_OFF=1 && "$HOME/.local/bin/mustmatch" test spec/entity/clingen-erepo.md --lang bash --timeout 180'
+```
+
+Both existing ERepo blocks failed because `clingen-erepo-frozen` exited 1. Diagnostic job `1792239294142-21205` ran the prepared runner with `bash -x` and confirmed `head: illegal byte count -- -1` while reading `missing_gene.stdout`, before either source-fact assertion. Replace the three negative-byte-count calls with portable byte handling; retain the exact JSON and trailing-newline checks.
