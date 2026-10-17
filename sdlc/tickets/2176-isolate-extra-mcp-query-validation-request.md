@@ -44,6 +44,7 @@ Concurrent routine Rust job 1792255057254-3297 on the accepted startup repair pl
 - 2026-10-17 next: Full main check2156/1792263241297-93944 passed at22b4cecd2 after the request-counting cache-policy correction. Four clean full checks preceded the stale-note recurrence and one clean full check follows its reviewed fix. Keep observing through cache changes and final rehearsal; original extra-request cause remains unconfirmed.
 - 2026-10-17 next: Six full main checks passed since diagnostics: four before the stale-note recurrence and two after the reviewed no-store correction, latest54fb25e in2156/1792266562026-19174. Cache batch2172+2173 now landed62cefadf9 and its full check runs. Original extra-request cause remains unconfirmed; observe cache changes and final rehearsal.
 - 2026-10-17 next: Seven full main checks passed since diagnostics: four before the stale-note recurrence and three after the reviewed no-store correction. Latest62cefadf9 in2156/1792267362041-77812 includes2172+2173 cache changes. Original extra-request cause remains unconfirmed; no new recurrence. Observe through final rehearsal.
+- 2026-10-17 next: Eight full main checks passed since diagnostics: four before the stale-note recurrence and four after the reviewed no-store correction. Latest234d2b32d in2156/1792269541418-30247 includes the cache changes and TCP fixture repair. Original extra-request cause remains unconfirmed; no new recurrence of that failure. Observe through final rehearsal.
 
 ## Recurrence after four clean full checks
 
