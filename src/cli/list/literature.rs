@@ -49,6 +49,7 @@ raw bytes
 - `article authors <id>` - provider-exact Semantic Scholar authors for a PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
 - `article entities <pmid> [--limit <N>] [--full]` - annotated entities with identifiers and next commands; `--full` adds passage positions in JSON
 - `batch article <id1,id2,...> [--mode compact|detail] [--sections <s1,s2,...>]` - multi-article lookup; detail is the default and compact accepts up to 20 IDs
+- `batch article <ids> --mode detail --sections fulltext --pdf` - run the Semantic Scholar open-PDF fallback for many papers in one process under the one in-process limiter
 - `article citations <id> --limit <N>` - citation graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)
 - `article references <id> --limit <N>` - reference graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)
 - `article recommendations <id> [<id>...] [--negative <id>...] --limit <N>` - related papers (optional auth; shared pool without `S2_API_KEY`)
@@ -152,6 +153,7 @@ Worked examples:
 - `get article <id> asset <asset-key>` streams the exact advertised bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.
 - `--pdf` requires the `fulltext` section and is rejected for other article requests.
+- `batch article --mode detail --sections fulltext --pdf` takes the same fallback for many papers in one process, and each item reports the full-text source it used or the named PDF-step failure.
 - On the default `search article --source all` route, `-a/--author` limits candidate search to Europe PMC + compatible PubMed; stricter filters may narrow further, and incapable explicit sources reject `--author` instead of treating it as free text.
 - Other compatible default searches remain broader PubTator3 + Europe PMC + PubMed + Semantic Scholar federation.
 - Add provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, and other free-text concepts; use `--author` or `--journal` instead of provider field syntax. Use `--source semanticscholar` or `--source litsense2` explicitly when you want one of those sources alone.

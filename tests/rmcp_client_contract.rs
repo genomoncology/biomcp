@@ -2152,3 +2152,69 @@ async fn mcp_server_description_lists_disabled_sources() -> anyhow::Result<()> {
     client.cancel().await?;
     result
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn typed_article_get_accepts_pdf_fulltext_over_stdio() -> anyhow::Result<()> {
+    let harness = harness();
+    let fixture = provision_article_fulltext_fixture(&harness.repo_root)?;
+    let env = article_fulltext_fixture_env(&fixture);
+    let client = harness.spawn_stdio_client(&env).await?;
+    let result = async {
+        assert_initialize_and_tools(&client, env!("CARGO_MANIFEST_DIR")).await?;
+        for (id, expected_source, expected_reason) in [
+            ("22663026", Some("pdf"), None),
+            ("22663028", None, Some("open_pdf_download_failed")),
+        ] {
+            let call = client
+                .peer()
+                .call_tool(
+                    CallToolRequestParams::new("get").with_arguments(
+                        [
+                            ("entity".to_string(), json!("article")),
+                            ("id".to_string(), json!(id)),
+                            ("sections".to_string(), json!(["fulltext"])),
+                            ("pdf".to_string(), json!(true)),
+                            ("json".to_string(), json!(true)),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    ),
+                )
+                .await?;
+            assert_eq!(call.is_error, Some(false), "typed get for {id} failed");
+            let text = biomcp_mcp_contract_client::first_text(&call.content);
+            let doc: serde_json::Value = serde_json::from_str(text).unwrap_or_else(|error| {
+                panic!("typed get {id} JSON should parse: {error}\n{text}")
+            });
+            match expected_source {
+                Some(source_kind) => {
+                    assert_eq!(doc["full_text_manifest"]["source_kind"], json!(source_kind));
+                    assert_eq!(doc["full_text_available"], json!(true));
+                    assert_eq!(
+                        doc["section_outcomes"]["fulltext"],
+                        json!({"outcome": "data", "sources": ["Semantic Scholar"]})
+                    );
+                }
+                None => {
+                    assert_eq!(doc["full_text_path"], serde_json::Value::Null);
+                    let attempt = doc["full_text_coverage"]["attempts"]
+                        .as_array()
+                        .expect("attempts should be a list")
+                        .iter()
+                        .find(|attempt| attempt["source_kind"] == "pdf")
+                        .unwrap_or_else(|| panic!("no pdf attempt recorded: {doc}"));
+                    assert_eq!(attempt["reason"], json!(expected_reason));
+                    assert_eq!(
+                        doc["section_outcomes"]["fulltext"]["outcome"],
+                        json!("unavailable")
+                    );
+                }
+            }
+        }
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
+
+    client.cancel().await?;
+    result
+}

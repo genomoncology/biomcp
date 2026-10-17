@@ -930,3 +930,46 @@ async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() 
 
     server.abort();
 }
+
+#[test]
+fn typed_article_get_maps_the_pdf_option_to_the_cli_flag() {
+    let args = get_args(TypedGet(json!({
+        "entity": "article",
+        "id": "22663011",
+        "sections": ["fulltext"],
+        "pdf": true
+    })))
+    .expect("article pdf option should map");
+    assert_eq!(
+        args,
+        ["biomcp", "get", "article", "22663011", "fulltext", "--pdf"]
+    );
+
+    let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
+    assert_eq!(schema["properties"]["pdf"]["type"], json!("boolean"));
+    assert_eq!(schema["properties"]["pdf"]["default"], json!(false));
+
+    // The option is article-only: every other entity keeps rejecting it
+    // before any provider work.
+    let error = get_args(TypedGet(json!({
+        "entity": "gene",
+        "id": "BRAF",
+        "pdf": true
+    })))
+    .expect_err("pdf stays article-only");
+    assert!(error.to_string().contains("unknown gene get field: pdf"));
+
+    // The underlying fulltext-section rule surfaces through the mapped CLI
+    // command instead of a typed-layer duplicate.
+    let mapped = get_args(TypedGet(json!({
+        "entity": "article",
+        "id": "22663011",
+        "sections": ["tldr"],
+        "pdf": true
+    })))
+    .expect("mapping succeeds before section validation");
+    assert_eq!(
+        mapped,
+        ["biomcp", "get", "article", "22663011", "tldr", "--pdf"]
+    );
+}
