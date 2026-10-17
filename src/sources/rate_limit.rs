@@ -627,9 +627,9 @@ mod tests {
     }
 
     #[test]
-    fn pubtator_interval_uses_key_aware_values() {
+    fn pubtator_interval_stays_at_three_per_second_with_or_without_the_key() {
         assert_eq!(pubtator_min_interval(false), Duration::from_millis(334));
-        assert_eq!(pubtator_min_interval(true), Duration::from_millis(100));
+        assert_eq!(pubtator_min_interval(true), Duration::from_millis(334));
     }
 
     #[test]
