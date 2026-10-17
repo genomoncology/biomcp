@@ -5913,6 +5913,14 @@ mod tests {
             "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_strict_i448t_empty_20261017.json"
         ));
         const S2_EMPTY: &[u8] = br#"{"total":0,"data":[]}"#;
+        const LITVAR_AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/autocomplete_samhd1_i448t_20261017.json"
+        ));
+        const LITVAR_PUBLICATIONS: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/publications_rs774964432_20261017.json"
+        ));
 
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
@@ -5925,6 +5933,12 @@ mod tests {
             let json = |body: &[u8]| {
                 TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
             };
+            if first_line.starts_with("GET /variant/autocomplete/") {
+                return json(LITVAR_AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /variant/get/") {
+                return json(LITVAR_PUBLICATIONS);
+            }
             if first_line.starts_with("GET /query") {
                 return json(MYVARIANT_QUERY);
             }
@@ -5982,6 +5996,7 @@ mod tests {
             format!("{}/entrez/eutils", fixture.base),
         );
         env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
         env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
 
         let outcome = search_variant_articles_with_deadline(
@@ -6106,6 +6121,14 @@ mod tests {
             "/testdata/sources/variant_articles_2140/pubmed/esearch_samhd1_strict_i448t_empty_20261017.json"
         ));
         const S2_EMPTY: &[u8] = br#"{"total":0,"data":[]}"#;
+        const LITVAR_AUTOCOMPLETE: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/autocomplete_cdkn2a_a57v.json"
+        ));
+        const LITVAR_PUBLICATIONS: &[u8] = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/litvar/publications_rs372266620.json"
+        ));
 
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
@@ -6118,6 +6141,12 @@ mod tests {
             let json = |body: &[u8]| {
                 TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
             };
+            if first_line.starts_with("GET /variant/autocomplete/") {
+                return json(LITVAR_AUTOCOMPLETE);
+            }
+            if first_line.starts_with("GET /variant/get/") {
+                return json(LITVAR_PUBLICATIONS);
+            }
             if first_line.starts_with("GET /query") {
                 return json(MYVARIANT_QUERY);
             }
@@ -6181,6 +6210,7 @@ mod tests {
             format!("{}/entrez/eutils", fixture.base),
         );
         env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_LITVAR_BASE", &fixture.base);
         env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
 
         let outcome = search_variant_articles_with_deadline(

@@ -15,3 +15,11 @@ Captured from `https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/lit
 ## `publications_rs113488022.json`
 
 Minimized capture from `https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/litvar%40rs113488022%23%23/publications` on 2026-10-17 for ticket 2131. The full reply carries 32,227 `pmids` and 26,421 `pmcids` (641,714 bytes); the committed bytes keep the first 100 of each list and the provider's `pmids_count`, and the receipt records the original full-response SHA-256. The fixture pins the large-list shape without committing the full payload.
+
+## `autocomplete_samhd1_i448t_20261017.json`
+
+Captured from `https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/autocomplete/?query=SAMHD1%20I448T` on 2026-10-17 for ticket 2140. Provider-faithful capture of the one variant entry the query returns: `_id` `litvar@rs774964432##`, `gene` `["SAMHD1"]`, `name`/`hgvs` `p.I448T`, `pmids_count` 5. The genomic-alias tie tests depend on this shape.
+
+## `publications_rs774964432_20261017.json`
+
+Captured from `https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/litvar%40rs774964432%23%23/publications` on 2026-10-17 for ticket 2140. The five papers LitVar2 links to rs774964432 (27397505, 28229507, 34480199, 32371413, 30275001) with their PMCIDs.
