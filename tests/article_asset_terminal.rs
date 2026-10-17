@@ -117,8 +117,40 @@ fn binary_article_assets_protect_terminals_and_preserve_files() {
     );
     assert_eq!(piped.stdout, expected);
 
-    let destination = fixture.root.join("supplement.docx");
-    let output = fixture
+    for destination in [
+        fixture.root.join("supplement.docx"),
+        PathBuf::from("./explicit.pdf"),
+        PathBuf::from("bare.pdf"),
+    ] {
+        let output = fixture
+            .biomcp_command(&[
+                "get",
+                "article",
+                "22663011",
+                "asset",
+                "traces-s1.csv",
+                "--output",
+                destination
+                    .to_str()
+                    .expect("destination path should be UTF-8"),
+            ])
+            .current_dir(&fixture.root)
+            .output()
+            .expect("file-destination asset command should run");
+        assert!(
+            output.status.success(),
+            "file destination {} should succeed\nstdout:\n{}\nstderr:\n{}",
+            destination.display(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(
+            fs::read(fixture.root.join(destination)).expect("destination should exist"),
+            expected
+        );
+    }
+
+    let missing = fixture
         .biomcp_command(&[
             "get",
             "article",
@@ -126,22 +158,19 @@ fn binary_article_assets_protect_terminals_and_preserve_files() {
             "asset",
             "traces-s1.csv",
             "--output",
-            destination
-                .to_str()
-                .expect("destination path should be UTF-8"),
+            "missing/bare.pdf",
         ])
+        .current_dir(&fixture.root)
         .output()
-        .expect("file-destination asset command should run");
+        .expect("missing-directory asset command should run");
+    assert!(!missing.status.success());
     assert!(
-        output.status.success(),
-        "file destination should succeed\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        String::from_utf8_lossy(&missing.stderr)
+            .contains("Output directory does not exist: missing"),
+        "a real missing directory should still be refused: {:?}",
+        missing
     );
-    assert_eq!(
-        fs::read(destination).expect("destination should exist"),
-        expected
-    );
+    assert!(!fixture.root.join("missing").exists());
 }
 
 fn successful_output(fixture: &ArticleFixture, args: &[&str]) -> std::process::Output {
@@ -653,6 +682,36 @@ fn publisher_open_pdf_link_downloads_and_returns_its_text() {
 
 #[test]
 #[serial_test::serial(article_output_fixture)]
+fn open_pdf_responses_distinguish_unavailable_bytes_from_unusable_text() {
+    let fixture = ArticleFixture::start();
+    for (pmid, reason, coverage) in [
+        ("22663041", "open_pdf_download_failed", "unavailable"),
+        ("22663042", "open_pdf_download_failed", "unavailable"),
+        ("22663043", "open_pdf_download_failed", "unavailable"),
+        ("22663044", "open_pdf_text_unusable", "unusable"),
+    ] {
+        let output = successful_output(
+            &fixture,
+            &["--json", "get", "article", pmid, "fulltext", "--pdf"],
+        );
+        let doc: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("article JSON should parse");
+        let attempt = article_fulltext_pdf_attempt(&doc);
+        assert_eq!(
+            attempt["reason"], reason,
+            "wrong PDF response reason for {pmid}: {doc}"
+        );
+        assert_eq!(
+            attempt["coverage"], coverage,
+            "wrong PDF coverage for {pmid}"
+        );
+        assert_eq!(attempt["outcome"], "unavailable");
+        assert_eq!(doc["full_text_path"], serde_json::Value::Null);
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
 fn open_pdf_failures_name_the_part_that_failed() {
     let fixture = ArticleFixture::start();
 
@@ -694,6 +753,78 @@ fn open_pdf_failures_name_the_part_that_failed() {
             "wrong pdf-step outcome for {pmid}"
         );
         assert_eq!(doc["full_text_path"], serde_json::Value::Null);
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn article_without_a_pmc_record_reports_no_fulltext_without_an_invalid_xml_request() {
+    let fixture = ArticleFixture::start();
+    let output = successful_output(
+        &fixture,
+        &["--json", "get", "article", "22663030", "fulltext"],
+    );
+    let doc: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(
+        doc["section_outcomes"]["fulltext"]["outcome"], "empty",
+        "{doc}"
+    );
+    assert_eq!(doc["full_text_coverage"]["coverage"], "none");
+    assert!(
+        doc["full_text_coverage"]["attempts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|attempt| attempt["outcome"] == "empty" && attempt["reason"] == "no_content")
+    );
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("sources failed"));
+    let requests = fs::read_to_string(fixture.root.join("request-log.txt")).unwrap();
+    assert!(!requests.contains("fulltext:xml:"), "{requests}");
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn article_fulltext_xml_absence_does_not_retry_but_an_outage_does() {
+    let fixture = ArticleFixture::start();
+    for (pmid, expected_outcome, request, retries) in [
+        ("22663014", "empty", "fulltext:xml:europepmc-pmc", false),
+        (
+            "22663019",
+            "unavailable",
+            "fulltext:xml:europepmc-pmc-outage",
+            true,
+        ),
+    ] {
+        let output = successful_output(&fixture, &["--json", "get", "article", pmid, "fulltext"]);
+        let doc: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(
+            doc["section_outcomes"]["fulltext"]["outcome"], expected_outcome,
+            "{doc}"
+        );
+        let attempts = doc["full_text_coverage"]["attempts"].as_array().unwrap();
+        let attempt = attempts
+            .iter()
+            .find(|attempt| attempt["provider"]["label"] == "Europe PMC XML")
+            .unwrap();
+        assert_eq!(attempt["outcome"], expected_outcome);
+        assert_eq!(
+            attempt["reason"],
+            if retries {
+                "source_unavailable"
+            } else {
+                "no_content"
+            }
+        );
+        let requests = fs::read_to_string(fixture.root.join("request-log.txt")).unwrap();
+        let count = requests.lines().filter(|line| *line == request).count();
+        if retries {
+            assert!(
+                count > 1,
+                "outage must retain transient retries: {requests}"
+            );
+        } else {
+            assert_eq!(count, 1, "absence must not retry: {requests}");
+        }
     }
 }
 
@@ -822,30 +953,26 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
     let unicode: serde_json::Value = serde_json::from_slice(&unicode.stdout).unwrap();
     assert!(unicode["hits"][0]["context"].as_str().unwrap().len() <= 400);
 
-    let search = successful_output(
-        &fixture,
-        &[
-            "--json",
-            "article",
-            "supplement-search",
-            "28944238",
-            "P245S",
-        ],
-    );
-    let doc: serde_json::Value =
-        serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
-    let hits = doc["hits"].as_array().expect("hits should be a list");
-    assert_eq!(hits.len(), 1, "one acceptance hit is expected: {doc}");
-    assert_eq!(hits[0]["worksheet"], "ST2");
-    assert_eq!(hits[0]["row"], serde_json::json!(85));
-    assert_eq!(hits[0]["locator"], "ST2 row 85");
-    assert!(
-        hits[0]["context"]
-            .as_str()
-            .expect("context should be text")
-            .contains("AXIN2"),
-        "the hit context should carry the matched row text"
-    );
+    for needle in ["P245S", "Pro245Ser", "p.Pro245Ser"] {
+        let search = successful_output(
+            &fixture,
+            &["--json", "article", "supplement-search", "28944238", needle],
+        );
+        let doc: serde_json::Value =
+            serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
+        let hits = doc["hits"].as_array().expect("hits should be a list");
+        assert_eq!(doc["query"], needle);
+        assert_eq!(
+            hits.len(),
+            1,
+            "one acceptance hit is expected for {needle}: {doc}"
+        );
+        assert_eq!(hits[0]["worksheet"], "ST2");
+        assert_eq!(hits[0]["row"], serde_json::json!(85));
+        assert_eq!(hits[0]["locator"], "ST2 row 85");
+        let context = hits[0]["context"].as_str().expect("context should be text");
+        assert!(context.contains("AXIN2") && context.contains("p.Pro245Ser"));
+    }
 }
 
 #[test]

@@ -74,16 +74,17 @@ fn legacy_request_plan_keeps_article_contract_shape() {
 }
 
 #[test]
-fn full_text_xml_plan_builds_id_endpoint_and_normalizes_pmc() {
-    let plan = EuropePmcClient::full_text_xml_plan("MED", "22663011")
-        .unwrap()
-        .expect("plan");
-    assert_eq!(plan.method, HttpMethod::Get);
-    assert_eq!(plan.path, "22663011/fullTextXML");
+fn full_text_xml_plan_builds_supported_pmc_endpoint() {
+    assert!(
+        EuropePmcClient::full_text_xml_plan("MED", "22663011")
+            .unwrap()
+            .is_none()
+    );
 
     let plan = EuropePmcClient::full_text_xml_plan("PMC", "123")
         .unwrap()
         .expect("plan");
+    assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "PMC123/fullTextXML");
 }
 

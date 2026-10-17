@@ -3082,20 +3082,21 @@ fn plan_queries(
 /// the name phrase-quoted in each provider's own syntax, with no alias
 /// expansion. Semantic Scholar's bulk endpoint matches phrases natively and
 /// PubTator's search takes free text, so those two carry the bare name while
-/// PubMed and Europe PMC wrap the name in their title/abstract phrase forms.
+/// PubMed uses its title/abstract phrase form; Europe PMC searches the phrase
+/// across all indexed fields, including full text.
 fn exact_name_query_plans(name: &str) -> Vec<ProviderVariantQueryPlan> {
     let name = name.trim();
     let pubmed_phrase = format!(
         "\"{}\"[Title/Abstract]",
         name.replace('\\', "\\\\").replace('"', "\\\"")
     );
-    let europepmc_phrase = format!("TITLE_ABS:\"{}\"", europepmc_escape(name));
+    let europepmc_phrase = format!("\"{}\"", europepmc_escape(name));
     [
         ("pubmed", pubmed_phrase, "pubmed-title-abstract-phrase-v1"),
         (
             "europepmc",
             europepmc_phrase,
-            "europepmc-title-abstract-phrase-v1",
+            "europepmc-fulltext-phrase-v1",
         ),
         ("pubtator", name.to_string(), "pubtator-text-v1"),
         (
@@ -6029,8 +6030,8 @@ mod tests {
             .and_then(|line| query_param(line, "query"))
             .unwrap_or_else(|| panic!("europepmc search ran: {logged:?}"));
         assert_eq!(
-            europepmc_query, "TITLE_ABS:\"BRAF V600E\"",
-            "europepmc received the name as one title/abstract phrase: {logged:?}"
+            europepmc_query, "\"BRAF V600E\"",
+            "europepmc received the name as one full-text phrase: {logged:?}"
         );
         let pubtator_text = logged
             .iter()

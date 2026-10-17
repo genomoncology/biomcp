@@ -45,7 +45,7 @@ fn xlsx_extract_locates_a_row_on_sheet1() {
 fn xlsx_extract_locates_a_named_worksheet_row() {
     let extraction = extract_supplement_text(SupplementFormat::Xlsx, AXIN2_ST2_XLSX, &budget());
     assert!(extraction.problems.is_empty(), "{:?}", extraction.problems);
-    let block = hit(&extraction, "P245S");
+    let block = hit(&extraction, "p.Pro245Ser\t");
     assert_eq!(block.worksheet.as_deref(), Some("ST2"));
     assert_eq!(block.row, Some(85));
     assert!(block.text.contains("AXIN2"));
@@ -56,7 +56,7 @@ fn xlsx_extract_locates_a_named_worksheet_row() {
             .iter()
             .filter(|block| block.worksheet.as_deref() == Some("ST1")
                 || block.worksheet.as_deref() == Some("ST3"))
-            .filter(|block| block.text.contains("P245S"))
+            .filter(|block| block.text.contains("p.Pro245Ser\t"))
             .count(),
         0
     );

@@ -46,7 +46,7 @@ struct CachedSupplementText {
     extraction: SupplementTextExtraction,
 }
 
-/// Searches an article's supplement text for an exact substring.
+/// Searches supplement text for a literal or a defined protein substitution name.
 ///
 /// `asset_filter` restricts the search to one manifest asset by asset key or
 /// unambiguous file name; without it every retrievable supplement with a
@@ -103,6 +103,7 @@ pub async fn article_supplement_search(
             .collect(),
     };
 
+    let protein_names = protein_search_names(needle);
     let mut files = Vec::new();
     let mut hits = Vec::new();
     let mut hits_truncated = false;
@@ -151,7 +152,7 @@ pub async fn article_supplement_search(
         }
         files.extend(file_outcome_rows(asset, &extraction));
         for block in &extraction.blocks {
-            if !block.text.contains(needle) {
+            if !supplement_text_matches(&block.text, needle, protein_names.as_deref()) {
                 continue;
             }
             if hits.len() >= SUPPLEMENT_SEARCH_HIT_LIMIT {
@@ -185,6 +186,44 @@ pub async fn article_supplement_search(
         files,
         hits,
         hits_truncated,
+    })
+}
+
+// Keep ordinary text literal. Only standalone substitution names use the
+// variant module's existing residue mappings; accession aliases are excluded.
+fn protein_search_names(needle: &str) -> Option<Vec<String>> {
+    if needle.chars().any(char::is_whitespace) || needle.contains(':') {
+        return None;
+    }
+    let compact = crate::entities::variant::normalize_protein_substitution(needle)?;
+    let reference = compact.chars().next()?;
+    let alternate = compact.chars().last()?;
+    let position = &compact[1..compact.len() - 1];
+    let reference = crate::entities::variant::amino_acid_three_letter(reference)?;
+    let alternate = crate::entities::variant::amino_acid_three_letter(alternate)?;
+    let three_letter = format!("{reference}{position}{alternate}");
+    Some(vec![
+        needle.to_string(),
+        compact.clone(),
+        format!("p.{compact}"),
+        three_letter.clone(),
+        format!("p.{three_letter}"),
+    ])
+}
+
+fn supplement_text_matches(text: &str, needle: &str, names: Option<&[String]>) -> bool {
+    let Some(names) = names else {
+        return text.contains(needle);
+    };
+    let is_name_char = |c: char| c.is_ascii_alphanumeric() || c == '_';
+    names.iter().any(|name| {
+        text.match_indices(name).any(|(start, matched)| {
+            !text[..start].chars().next_back().is_some_and(is_name_char)
+                && !text[start + matched.len()..]
+                    .chars()
+                    .next()
+                    .is_some_and(is_name_char)
+        })
     })
 }
 
