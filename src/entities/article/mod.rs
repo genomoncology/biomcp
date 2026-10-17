@@ -344,6 +344,9 @@ pub enum ArticleFulltextCacheState {
     Bypass,
 }
 
+/// Why one full-text attempt ended. The `open_pdf_*` reasons are recorded
+/// only by the PDF step and name the part that failed: obtaining the
+/// open-PDF link, downloading it, or extracting its text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ArticleFulltextAttemptReason {
@@ -354,6 +357,12 @@ pub enum ArticleFulltextAttemptReason {
     UnusableContent,
     BotChallenge,
     SourceUnavailable,
+    OpenPdfLinkUnavailable,
+    OpenPdfLinkAbsent,
+    OpenPdfLinkRejected,
+    OpenPdfDownloadFailed,
+    OpenPdfDownloadAbsent,
+    OpenPdfTextUnusable,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

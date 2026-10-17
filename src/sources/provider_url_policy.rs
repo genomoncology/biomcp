@@ -93,14 +93,28 @@ impl AllowedOrigin {
     }
 }
 
+/// How a policy decides which origins may answer a provider-returned URL.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+enum OriginRule {
+    /// Only allowlisted origins may answer.
+    #[default]
+    Allowlist,
+    /// The provider vouched for the whole URL, so any origin may answer;
+    /// every transport guard still applies (HTTPS default-port DNS names,
+    /// no credentials, validated DNS answers, redirects revalidated by the
+    /// same rules).
+    ProviderVouchedUrl,
+}
+
 /// One reusable owner for provider URL, redirect, DNS, and credential-origin policy.
 #[derive(Clone, Debug)]
 pub(crate) struct ProviderUrlPolicy {
     source: &'static str,
     provider: SourceProvider,
+    origin_rule: OriginRule,
     allowed_origins: Vec<AllowedOrigin>,
     credential_origins: Vec<AllowedOrigin>,
-    unsafe_test_origin: Option<AllowedOrigin>,
+    unsafe_test_origins: Vec<AllowedOrigin>,
     pmc_linked_numeric_id: Option<String>,
 }
 
@@ -119,9 +133,10 @@ impl ProviderUrlPolicy {
         let policy = Self {
             source: "Semantic Scholar",
             provider: SourceProvider::SEMANTIC_SCHOLAR,
+            origin_rule: OriginRule::Allowlist,
             allowed_origins,
             credential_origins: vec![canonical],
-            unsafe_test_origin: unsafe_test_origin(),
+            unsafe_test_origins: unsafe_test_origins(),
             pmc_linked_numeric_id: None,
         };
         policy.validate_url(base)?;
@@ -148,21 +163,41 @@ impl ProviderUrlPolicy {
         let policy = Self {
             source: "ORCID",
             provider: SourceProvider::ORCID,
+            origin_rule: OriginRule::Allowlist,
             allowed_origins,
             credential_origins: vec![canonical],
             // The exact loopback test origin selected through the shared
             // fixture signal may serve plain HTTP and receive credentials;
             // every other origin stays HTTPS and canonical-only.
-            unsafe_test_origin: unsafe_test_origin(),
+            unsafe_test_origins: unsafe_test_origins(),
             pmc_linked_numeric_id: None,
         };
         policy.validate_url(base)?;
         Ok(policy)
     }
 
-    /// Policy for PDF URLs returned in Semantic Scholar payloads.
+    /// Policy for PDF URLs returned in Semantic Scholar payloads. Semantic
+    /// Scholar lists publisher-hosted open PDFs, so no host allowlist can
+    /// hold them: the URL is provider-vouched and every HTTPS default-port
+    /// DNS-name origin may answer, with every transport guard kept (no
+    /// credentials, validated DNS answers, redirects revalidated by these
+    /// same rules). An exact-loopback fixture origin may stand in for the
+    /// publisher so recorded replies stay offline.
     pub(crate) fn semantic_scholar_pdf() -> Result<Self, BioMcpError> {
-        Self::for_consumer(ProviderUrlConsumer::SemanticScholarPdf, None)
+        let fixture = s2_pdf_fixture_origin()?;
+        let mut policy = Self::for_consumer(ProviderUrlConsumer::SemanticScholarPdf, None)?;
+        policy.origin_rule = OriginRule::ProviderVouchedUrl;
+        if let Some(url) = fixture.as_ref() {
+            let origin = AllowedOrigin::from_url(url)
+                .ok_or_else(|| policy_error("fixture URL has no valid origin"))?;
+            if !policy.allowed_origins.contains(&origin) {
+                policy.allowed_origins.push(origin.clone());
+            }
+            if !policy.unsafe_test_origins.contains(&origin) {
+                policy.unsafe_test_origins.push(origin);
+            }
+        }
+        Ok(policy)
     }
 
     /// Policy for the read-only ClinGen Allele Registry API. A fixture base override
@@ -178,10 +213,10 @@ impl ProviderUrlPolicy {
         let policy = Self {
             source: "ClinGen Allele Registry",
             provider: SourceProvider::CLINGEN_CAR,
+            origin_rule: OriginRule::Allowlist,
             allowed_origins,
             credential_origins: Vec::new(),
-            unsafe_test_origin: unsafe_test_origin()
-                .or_else(|| selected_loopback_test_origin(base)),
+            unsafe_test_origins: unsafe_test_origins_or_base(base),
             pmc_linked_numeric_id: None,
         };
         policy.validate_url(base)?;
@@ -194,22 +229,27 @@ impl ProviderUrlPolicy {
         let fixture = std::env::var("BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN")
             .ok()
             .and_then(|value| Url::parse(&value).ok());
-        let unsafe_test_origin = fixture.as_ref().and_then(selected_loopback_test_origin);
-        if fixture.is_some() && unsafe_test_origin.is_none() {
+        let fixture_origin = fixture.as_ref().and_then(selected_loopback_test_origin);
+        if fixture.is_some() && fixture_origin.is_none() {
             return Err(policy_error(
                 "ClinGen LDH fixture origin must be exact loopback",
             ));
         }
         let mut allowed_origins = vec![canonical];
-        if let Some(origin) = unsafe_test_origin.as_ref() {
-            allowed_origins.push(origin.clone());
-        }
+        let unsafe_test_origins = match fixture_origin.as_ref() {
+            Some(origin) => {
+                allowed_origins.push(origin.clone());
+                vec![origin.clone()]
+            }
+            None => Vec::new(),
+        };
         Ok(Self {
             source: "ClinGen LDH",
             provider: SourceProvider::CLINGEN_LDH,
+            origin_rule: OriginRule::Allowlist,
             allowed_origins,
             credential_origins: Vec::new(),
-            unsafe_test_origin,
+            unsafe_test_origins,
             pmc_linked_numeric_id: None,
         })
     }
@@ -221,23 +261,28 @@ impl ProviderUrlPolicy {
             .iter()
             .map(|origin| AllowedOrigin::parse(origin))
             .collect::<Result<Vec<_>, _>>()?;
-        let unsafe_test_origin = fixture_origin
+        let selected = fixture_origin
             .as_ref()
             .and_then(selected_loopback_test_origin);
-        if fixture_origin.is_some() && unsafe_test_origin.is_none() {
+        if fixture_origin.is_some() && selected.is_none() {
             return Err(policy_error("CSpec fixture origin must be exact loopback"));
         }
-        if let Some(origin) = unsafe_test_origin.as_ref()
-            && !allowed_origins.contains(origin)
-        {
-            allowed_origins.push(origin.clone());
-        }
+        let unsafe_test_origins = match selected.as_ref() {
+            Some(origin) => {
+                if !allowed_origins.contains(origin) {
+                    allowed_origins.push(origin.clone());
+                }
+                vec![origin.clone()]
+            }
+            None => Vec::new(),
+        };
         Ok(Self {
             source: "ClinGen CSpec",
             provider: SourceProvider::CLINGEN_CSPEC,
+            origin_rule: OriginRule::Allowlist,
             allowed_origins,
             credential_origins: Vec::new(),
-            unsafe_test_origin,
+            unsafe_test_origins,
             pmc_linked_numeric_id: None,
         })
     }
@@ -295,11 +340,18 @@ impl ProviderUrlPolicy {
         let policy = Self {
             source,
             provider,
+            origin_rule: OriginRule::Allowlist,
             allowed_origins,
             credential_origins: Vec::new(),
-            unsafe_test_origin: selected_origin
-                .and_then(selected_loopback_test_origin)
-                .or_else(unsafe_test_origin),
+            unsafe_test_origins: {
+                let mut origins = unsafe_test_origins();
+                if let Some(selected) = selected_origin.and_then(selected_loopback_test_origin)
+                    && !origins.contains(&selected)
+                {
+                    origins.push(selected);
+                }
+                origins
+            },
             pmc_linked_numeric_id: None,
         };
         if let Some(url) = selected_origin {
@@ -332,7 +384,7 @@ impl ProviderUrlPolicy {
         if !policy.allowed_origins.contains(&fixture) {
             policy.allowed_origins.push(fixture.clone());
         }
-        policy.unsafe_test_origin = Some(fixture);
+        policy.unsafe_test_origins = vec![fixture];
         Ok(policy)
     }
 
@@ -342,12 +394,28 @@ impl ProviderUrlPolicy {
         }
         let origin = AllowedOrigin::from_url(url)
             .ok_or_else(|| self.error("URL has no valid host or port"))?;
-        let unsafe_fixture = self.unsafe_test_origin.as_ref() == Some(&origin);
+        let unsafe_fixture = self.unsafe_test_origins.contains(&origin);
         if url.scheme() != "https" && !unsafe_fixture {
             return Err(self.error("non-HTTPS scheme is forbidden"));
         }
-        if !self.allowed_origins.contains(&origin) && !unsafe_fixture {
-            return Err(self.error("origin is not allowlisted"));
+        if !unsafe_fixture && url.port().is_some() {
+            return Err(self.error("non-default port is forbidden"));
+        }
+        match self.origin_rule {
+            OriginRule::Allowlist => {
+                if !self.allowed_origins.contains(&origin) && !unsafe_fixture {
+                    return Err(self.error("origin is not allowlisted"));
+                }
+            }
+            OriginRule::ProviderVouchedUrl => {
+                if !unsafe_fixture
+                    && url
+                        .host_str()
+                        .is_some_and(|host| parse_ip_literal(host).is_some())
+                {
+                    return Err(self.error("IP-literal host is forbidden"));
+                }
+            }
         }
         if !unsafe_fixture && let Some(ip) = url.host_str().and_then(parse_ip_literal) {
             self.validate_addresses(std::iter::once(ip))?;
@@ -365,9 +433,9 @@ impl ProviderUrlPolicy {
             .iter()
             .any(|origin| origin.matches(url))
             || self
-                .unsafe_test_origin
-                .as_ref()
-                .is_some_and(|origin| origin.matches(url))
+                .unsafe_test_origins
+                .iter()
+                .any(|origin| origin.matches(url))
     }
 
     pub(crate) fn redirect_policy(&self) -> reqwest::redirect::Policy {
@@ -426,9 +494,9 @@ impl Resolve for ProviderUrlPolicy {
                 .map_err(|_| resolver_error())?
                 .collect::<Vec<_>>();
             let unsafe_fixture_host = policy
-                .unsafe_test_origin
-                .as_ref()
-                .is_some_and(|origin| origin.host == host.to_ascii_lowercase());
+                .unsafe_test_origins
+                .iter()
+                .any(|origin| origin.host == host.to_ascii_lowercase());
             if !unsafe_fixture_host {
                 policy
                     .validate_addresses(resolved.iter().map(|address| address.ip()))
@@ -519,7 +587,9 @@ fn hex_value(value: u8) -> Option<u8> {
 }
 
 fn is_unsafe_fixture_url(url: &Url) -> bool {
-    unsafe_test_origin().is_some_and(|origin| origin.matches(url))
+    unsafe_test_origins()
+        .iter()
+        .any(|origin| origin.matches(url))
 }
 
 fn policy_error(class: &str) -> BioMcpError {
@@ -550,11 +620,46 @@ pub(crate) fn cspec_fixture_origin() -> Result<Option<Url>, BioMcpError> {
         .transpose()
 }
 
+/// The exact-loopback origin that stands in for the publisher when the
+/// Semantic Scholar PDF step runs against recorded replies.
+fn s2_pdf_fixture_origin() -> Result<Option<Url>, BioMcpError> {
+    std::env::var("BIOMCP_S2_PDF_FIXTURE_ORIGIN")
+        .ok()
+        .map(|raw| {
+            let url = Url::parse(raw.trim())
+                .map_err(|_| policy_error("invalid Semantic Scholar PDF fixture origin"))?;
+            if !is_exact_loopback_origin(&url) {
+                return Err(policy_error(
+                    "Semantic Scholar PDF fixture origin must be exact loopback",
+                ));
+            }
+            Ok(url)
+        })
+        .transpose()
+}
+
 fn is_exact_loopback_origin(url: &Url) -> bool {
     selected_loopback_test_origin(url).is_some()
         && url.path() == "/"
         && url.query().is_none()
         && url.fragment().is_none()
+}
+
+fn unsafe_test_origins() -> Vec<AllowedOrigin> {
+    unsafe_test_origin().into_iter().collect()
+}
+
+/// The shared fixture signal's origin, or the given base's exact loopback
+/// origin when no signal is set (a base override selects the request origin
+/// only while no other fixture signal stands).
+fn unsafe_test_origins_or_base(base: &Url) -> Vec<AllowedOrigin> {
+    let mut origins = unsafe_test_origins();
+    if origins.is_empty()
+        && let Some(origin) = selected_loopback_test_origin(base)
+    {
+        origins.push(origin);
+    }
+    origins
 }
 
 fn unsafe_test_origin() -> Option<AllowedOrigin> {
@@ -640,23 +745,25 @@ mod tests {
         ProviderUrlPolicy {
             source: "test provider",
             provider: SourceProvider::SEMANTIC_SCHOLAR,
+            origin_rule: OriginRule::Allowlist,
             allowed_origins: vec![
                 AllowedOrigin::parse("https://pdfs.semanticscholar.org").unwrap(),
             ],
             credential_origins: Vec::new(),
-            unsafe_test_origin: None,
+            unsafe_test_origins: Vec::new(),
             pmc_linked_numeric_id: None,
         }
     }
 
     #[test]
-    fn rejects_scheme_credentials_port_and_off_origin_without_echoing_url() {
+    fn rejects_scheme_credentials_port_and_ip_literals_without_echoing_url() {
         let policy = pdf_policy();
         for raw in [
             "http://pdfs.semanticscholar.org/paper.pdf",
             "https://user:secret@pdfs.semanticscholar.org/paper.pdf",
             "https://pdfs.semanticscholar.org:444/paper.pdf",
             "https://example.test/private-token/paper.pdf",
+            "https://93.184.216.34/private-token/paper.pdf",
         ] {
             let error = policy.validate_url(&Url::parse(raw).unwrap()).unwrap_err();
             let message = error.to_string();
@@ -665,6 +772,38 @@ mod tests {
             assert!(!message.contains(raw));
             assert!(!message.contains("secret"));
             assert!(!message.contains("private-token"));
+        }
+    }
+
+    #[test]
+    fn provider_vouched_pdf_policy_accepts_publisher_hosts_and_keeps_transport_guards() {
+        let policy = ProviderUrlPolicy::semantic_scholar_pdf().unwrap();
+        // A publisher-hosted open PDF (the reported 2142 shape: Semantic
+        // Scholar lists the link, the host is any HTTPS DNS name).
+        for raw in [
+            "https://diabetesjournals.org/diabetes/article-pdf/49/1/114/364646/example.pdf",
+            "https://journals.plos.org/plosbiology/article/file?id=10.1371/journal.pbio.3000076",
+        ] {
+            assert!(
+                policy.validate_url(&Url::parse(raw).unwrap()).is_ok(),
+                "rejected publisher PDF link {raw}"
+            );
+        }
+        for raw in [
+            "http://diabetesjournals.org/paper.pdf",
+            "https://user:secret@diabetesjournals.org/paper.pdf",
+            "https://diabetesjournals.org:8443/paper.pdf",
+            "https://127.0.0.1/paper.pdf",
+            "https://10.0.0.1/paper.pdf",
+        ] {
+            let error = policy
+                .validate_url(&Url::parse(raw).unwrap())
+                .expect_err("transport guard must reject this URL");
+            let message = error.to_string();
+            assert!(
+                !message.contains("secret"),
+                "diagnostic echoed the URL: {message}"
+            );
         }
     }
 
@@ -760,9 +899,10 @@ mod tests {
             let policy = ProviderUrlPolicy {
                 source: "test provider",
                 provider: SourceProvider::SEMANTIC_SCHOLAR,
+                origin_rule: OriginRule::Allowlist,
                 allowed_origins: vec![AllowedOrigin::from_url(&url).unwrap()],
                 credential_origins: Vec::new(),
-                unsafe_test_origin: None,
+                unsafe_test_origins: Vec::new(),
                 pmc_linked_numeric_id: None,
             };
             assert!(policy.validate_url(&url).is_err(), "accepted {raw}");

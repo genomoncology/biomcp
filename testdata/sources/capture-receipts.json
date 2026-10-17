@@ -3202,6 +3202,18 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "plos/pone-0342026-printable.pdf",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PLOS",
+        "request": "https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0342026&type=printable",
+        "captured_at": "2026-10-16T23:58:00Z",
+        "sha256": "e0893cc403d56bfca4a6f2d926207a70fb49825c02a78113819e0f97b26d08e3",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization; the paper (PMID 41615898, DOI 10.1371/journal.pone.0342026) is CC BY, and the URL is the open PDF Semantic Scholar lists for it."
+      }
+    },
+    {
       "path": "pmc_article/pmc3040717-supplementary-tables-pow.html",
       "classification": "real_and_receipted",
       "receipt": {

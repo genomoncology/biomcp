@@ -59,6 +59,9 @@ enum FulltextStepOutcome<T> {
     Unusable(BioMcpError),
     BotChallenge(BioMcpError),
     Failed(BioMcpError),
+    /// The step refused before any network contact (an outbound-policy or
+    /// client refusal), so the failure belongs to the link, not the download.
+    Refused(BioMcpError),
 }
 
 pub(super) enum PdfDiscoveryAttempt {
@@ -390,11 +393,11 @@ fn classify_html_fetch(
 async fn try_resolve_pdf(raw_pdf_url: &str, _requested_id: &str) -> FulltextStepOutcome<String> {
     let (url, policy) = match validated_pdf_url(raw_pdf_url) {
         Ok(validated) => validated,
-        Err(err) => return FulltextStepOutcome::Failed(err),
+        Err(err) => return FulltextStepOutcome::Refused(err),
     };
     let client = match crate::sources::provider_url_client("semantic-scholar", &policy) {
         Ok(client) => client,
-        Err(err) => return FulltextStepOutcome::Failed(err),
+        Err(err) => return FulltextStepOutcome::Refused(err),
     };
     resolve_pdf_url_with_client(&client, url).await
 }
@@ -407,7 +410,7 @@ async fn pdf_with_client(
 ) -> FulltextStepOutcome<String> {
     let url = match validated_pdf_url(raw_pdf_url) {
         Ok((url, _)) => url,
-        Err(err) => return FulltextStepOutcome::Failed(err),
+        Err(err) => return FulltextStepOutcome::Refused(err),
     };
     resolve_pdf_url_with_client(client, url).await
 }
@@ -918,6 +921,20 @@ pub(super) async fn resolve_fulltext(
                 );
                 state.record_failure(err);
             }
+            // The HTML step contacts its configured base directly, so a
+            // pre-contact refusal is unreachable; if one ever appears it is
+            // an unavailable source, same as a failed request.
+            FulltextStepOutcome::Refused(err) => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::PmcHtml,
+                    ArticleFulltextAttemptCoverage::Unavailable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    resolution.cache_state,
+                    ArticleFulltextAttemptReason::SourceUnavailable,
+                );
+                state.record_failure(err);
+            }
         }
     }
 
@@ -931,7 +948,7 @@ pub(super) async fn resolve_fulltext(
                 ArticleFulltextAttemptCoverage::None,
                 ArticleFulltextAttemptOutcome::Empty,
                 ArticleFulltextCacheState::Bypass,
-                ArticleFulltextAttemptReason::NoContent,
+                ArticleFulltextAttemptReason::OpenPdfLinkAbsent,
             );
             state.record_empty("Semantic Scholar");
         }
@@ -942,7 +959,7 @@ pub(super) async fn resolve_fulltext(
                 ArticleFulltextAttemptCoverage::Unavailable,
                 ArticleFulltextAttemptOutcome::Unavailable,
                 ArticleFulltextCacheState::Bypass,
-                ArticleFulltextAttemptReason::SourceUnavailable,
+                ArticleFulltextAttemptReason::OpenPdfLinkUnavailable,
             );
             state.record_failure(err);
         }
@@ -995,7 +1012,7 @@ pub(super) async fn resolve_fulltext(
                     ArticleFulltextAttemptCoverage::None,
                     ArticleFulltextAttemptOutcome::Empty,
                     ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::NoContent,
+                    ArticleFulltextAttemptReason::OpenPdfDownloadAbsent,
                 );
                 state.record_empty("Semantic Scholar");
             }
@@ -1006,7 +1023,7 @@ pub(super) async fn resolve_fulltext(
                     ArticleFulltextAttemptCoverage::Unusable,
                     ArticleFulltextAttemptOutcome::Unavailable,
                     ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::UnusableContent,
+                    ArticleFulltextAttemptReason::OpenPdfTextUnusable,
                 );
                 state.record_failure(err);
             }
@@ -1028,7 +1045,18 @@ pub(super) async fn resolve_fulltext(
                     ArticleFulltextAttemptCoverage::Unavailable,
                     ArticleFulltextAttemptOutcome::Unavailable,
                     ArticleFulltextCacheState::Bypass,
-                    ArticleFulltextAttemptReason::SourceUnavailable,
+                    ArticleFulltextAttemptReason::OpenPdfDownloadFailed,
+                );
+                state.record_failure(err);
+            }
+            FulltextStepOutcome::Refused(err) => {
+                state.record_attempt(
+                    &pdf_source,
+                    ArticleFulltextAttemptSourceKind::Pdf,
+                    ArticleFulltextAttemptCoverage::Unavailable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::OpenPdfLinkRejected,
                 );
                 state.record_failure(err);
             }
@@ -1080,7 +1108,8 @@ mod tests {
         match outcome {
             FulltextStepOutcome::Failed(err)
             | FulltextStepOutcome::Unusable(err)
-            | FulltextStepOutcome::BotChallenge(err) => err,
+            | FulltextStepOutcome::BotChallenge(err)
+            | FulltextStepOutcome::Refused(err) => err,
             FulltextStepOutcome::Data(_) | FulltextStepOutcome::Empty => {
                 panic!("attempt should be classified as failure")
             }
@@ -1248,10 +1277,12 @@ mod tests {
             "http://127.0.0.1:9/private-token.pdf",
             "https://user:secret@pdfs.semanticscholar.org/paper.pdf",
             "https://pdfs.semanticscholar.org:444/paper.pdf",
-            "https://example.test/private-token.pdf",
+            "https://example.test:8443/private-token.pdf",
+            "https://127.0.0.1/private-token.pdf",
+            "https://10.9.8.7/private-token.pdf",
         ] {
-            let FulltextStepOutcome::Failed(error) = try_resolve_pdf(raw, "PMID:1").await else {
-                panic!("unsafe PDF URL should fail before contact: {raw}");
+            let FulltextStepOutcome::Refused(error) = try_resolve_pdf(raw, "PMID:1").await else {
+                panic!("unsafe PDF URL should be refused before contact: {raw}");
             };
             let message = error.to_string();
             assert!(message.contains("Semantic Scholar"));
@@ -1259,6 +1290,22 @@ mod tests {
             assert!(!message.contains(raw));
             assert!(!message.contains("secret"));
             assert!(!message.contains("private-token"));
+        }
+    }
+
+    #[tokio::test]
+    async fn semantic_scholar_pdf_policy_accepts_publisher_hosts_before_contact() {
+        // The 2142 shape: Semantic Scholar lists the open PDF at the
+        // publisher's own host, and validation must pass it through to the
+        // download instead of refusing the origin.
+        for raw in [
+            "https://diabetesjournals.org/diabetes/article-pdf/49/1/114/364646/example.pdf",
+            "https://journals.plos.org/plosbiology/article/file?id=10.1371/example.pdf",
+        ] {
+            assert!(
+                validated_pdf_url(raw).is_ok(),
+                "publisher PDF link should pass validation: {raw}"
+            );
         }
     }
 

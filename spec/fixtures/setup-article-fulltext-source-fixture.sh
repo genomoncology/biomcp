@@ -237,6 +237,12 @@ HTML_FALLBACK = (
 PDF_FALLBACK = (
     FIXTURE_DIR / "pdf" / "pmc_oa_article_pdf.pdf"
 ).read_bytes()
+# Ticket 2142: the captured open-access PLOS PDF (receipt in
+# testdata/sources/capture-receipts.json). Semantic Scholar lists this
+# publisher URL as the paper's open PDF, and the second listener below
+# stands in for the publisher origin so the download replays offline.
+PLOS_OPEN_PDF = source_bytes("plos/pone-0342026-printable.pdf")
+INVALID_OPEN_PDF = b"%PDF-1.4\nnot a parsable document\n%%EOF\n"
 FIGSHARE_SUPPLEMENT = b"%PDF-1.4\nFigshare supplemental fixture bytes\n%%EOF\n"
 FIGSHARE_TABLE_S1 = b"PK\x03\x04\nS1 workbook fixture bytes\n"
 FIGSHARE_TABLE_S2 = b"PK\x03\x04\nS2 workbook fixture bytes\n"
@@ -707,6 +713,36 @@ ARTICLES = {
         "title": "Empty-route supplement fixture",
         "abstract": "Abstract text.",
         "paper_id": "paper-15",
+    },
+    "22663026": {
+        "pmcid": None,
+        "title": "Publisher open PDF fallback winner",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-16",
+    },
+    "22663027": {
+        "pmcid": None,
+        "title": "Open PDF link refused fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-17",
+    },
+    "22663028": {
+        "pmcid": None,
+        "title": "Open PDF download failure fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-18",
+    },
+    "22663029": {
+        "pmcid": None,
+        "title": "Open PDF text extraction failure fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-19",
+    },
+    "22663030": {
+        "pmcid": None,
+        "title": "Open PDF link unavailable fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-20",
     },
 }
 
@@ -1403,7 +1439,7 @@ class Handler(BaseHTTPRequestHandler):
         if (
             decoded_path == "/"
             and query.get("idtype") == ["pmid"]
-            and query.get("ids") in (["22663015"], ["22663017"], ["40001006"], ["40001007"])
+            and query.get("ids") in (["22663015"], ["22663017"], ["40001006"], ["40001007"], ["22663026"], ["22663027"], ["22663028"], ["22663029"], ["22663030"])
         ):
             send_json(self, 200, {"records": [{"pmid": int(query.get("ids")[0])}]})
             return
@@ -1488,7 +1524,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, ABSTRACT_ONLY_XML, "application/xml")
             return
 
-        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML", "/22663020/fullTextXML", "/22663021/fullTextXML", "/22663022/fullTextXML"}:
+        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML", "/22663020/fullTextXML", "/22663021/fullTextXML", "/22663022/fullTextXML", "/22663026/fullTextXML", "/22663027/fullTextXML", "/22663028/fullTextXML", "/22663029/fullTextXML", "/22663030/fullTextXML"}:
             append_request_log("fulltext:xml:europepmc-med")
             send_text(self, 404, "not found", "text/plain")
             return
@@ -1612,7 +1648,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/graph/v1/paper/PMID:22663012":
+        if decoded_path == "/graph/v1/paper/PMID:22663012" or decoded_path == "/graph/v1/paper/PMID:22663030":
             send_json(self, 503, {"error": "fixture Semantic Scholar outage"})
             return
 
@@ -1670,6 +1706,34 @@ class Handler(BaseHTTPRequestHandler):
             if pmid == "22663022":
                 payload["openAccessPdf"] = {
                     "url": f"http://127.0.0.1:{self.server.server_port}/pdf/22663022.pdf?token=secret",
+                    "status": "GREEN",
+                    "license": "CC BY",
+                }
+            # Ticket 2142: the open PDF lives at the publisher origin the
+            # second listener stands in for (22663026 succeeds; 22663028 and
+            # 22663029 fail in the download and extraction parts; 22663027's
+            # link is refused before contact without echoing the URL).
+            if pmid == "22663026":
+                payload["openAccessPdf"] = {
+                    "url": f"http://127.0.0.1:{PUBLISHER_PORT}/plosone/article/file?id=10.1371/journal.pone.0342026",
+                    "status": "GREEN",
+                    "license": "CC BY 4.0",
+                }
+            if pmid == "22663027":
+                payload["openAccessPdf"] = {
+                    "url": "http://user:secret@127.0.0.1:1/refused.pdf",
+                    "status": "GREEN",
+                    "license": "CC BY",
+                }
+            if pmid == "22663028":
+                payload["openAccessPdf"] = {
+                    "url": f"http://127.0.0.1:{PUBLISHER_PORT}/publisher/unreachable.pdf",
+                    "status": "GREEN",
+                    "license": "CC BY",
+                }
+            if pmid == "22663029":
+                payload["openAccessPdf"] = {
+                    "url": f"http://127.0.0.1:{PUBLISHER_PORT}/publisher/broken.pdf",
                     "status": "GREEN",
                     "license": "CC BY",
                 }
@@ -1848,7 +1912,37 @@ class Handler(BaseHTTPRequestHandler):
 
 
 ready_path = Path(sys.argv[1])
+
+
+class PublisherHandler(BaseHTTPRequestHandler):
+    """Stands in for the publisher origin Semantic Scholar listed (2142):
+    it serves the captured open-access PDF and the download and extraction
+    failure replies."""
+
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/plosone/article/file":
+            send_bytes(self, 200, PLOS_OPEN_PDF, "application/pdf")
+            return
+        if parsed.path == "/publisher/unreachable.pdf":
+            send_text(self, 500, "publisher unavailable", "text/plain")
+            return
+        if parsed.path == "/publisher/broken.pdf":
+            send_bytes(self, 200, INVALID_OPEN_PDF, "application/pdf")
+            return
+        send_json(self, 404, {"error": "not found"})
+
+    def log_message(self, format, *args):
+        return
+
+
 server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+publisher = ThreadingHTTPServer(("127.0.0.1", 0), PublisherHandler)
+PUBLISHER_PORT = publisher.server_port
+threading.Thread(target=publisher.serve_forever, daemon=True).start()
+ready_path.parent.joinpath("publisher-url").write_text(
+    f"http://127.0.0.1:{PUBLISHER_PORT}\n", encoding="utf-8"
+)
 ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
@@ -1878,6 +1972,8 @@ done
 
 test -s "$ready_file"
 base_url="$(cat "$ready_file")"
+publisher_url="$(cat "$fixture_root/publisher-url")"
+test -n "$publisher_url"
 
 printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url" >"$env_file"
 printf 'export BIOMCP_CACHE_DIR=%q\n' "$fixture_root/cache" >>"$env_file"
@@ -1900,6 +1996,7 @@ printf 'unset NCBI_API_KEY\n' >>"$env_file"
 printf 'unset S2_API_KEY\n' >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
+printf 'export BIOMCP_S2_PDF_FIXTURE_ORIGIN=%q\n' "$publisher_url" >>"$env_file"
 
 trap - EXIT
 bash "$ownership_helper" write "$workspace_root" "article-fulltext-source" "$fixture_root" "$server_pid" "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE" "$owner_arg" >/dev/null
