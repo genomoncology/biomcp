@@ -26,7 +26,7 @@ def test_release_candidate_coverage_needs_no_created_tag(tmp_path: Path) -> None
     git("tag", "v0.9.0")
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text(
-        "## 0.9.1\n\n- Qualify the release candidate without creating a tag. (2161)\n",
+        "## 0.9.1 — 2026-10-17\n\n- Qualify the release candidate without creating a tag. (2161)\n",
         encoding="utf-8",
     )
     git("add", ".")

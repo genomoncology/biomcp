@@ -544,3 +544,16 @@ def test_the_binary_dependent_modules_carry_the_marker() -> None:
                 f"{path} drives a built binary or cargo; it needs the "
                 "needs_binary marker or the docs-only CI lane will fail it"
             )
+
+
+def test_reusable_release_qualification_does_not_require_a_live_changelog_section() -> None:
+    # Stable untagged candidates have a dated section. The caller has already
+    # checked that exact source with the release-form coverage gate; branch
+    # coverage requires a live development section and would reject it.
+    step = next(step for step in _job("release-checks")["steps"]
+                if step.get("name") == "Require the changelog to cover the branch")
+    assert step.get("if") == "inputs.revision == ''"
+    release = yaml.safe_load((WORKFLOWS / "release.yml").read_text(encoding="utf-8"))
+    assert release["jobs"]["qualification"]["needs"] == ["version-check"]
+    checks = release["jobs"]["version-check"]["steps"]
+    assert any('--revision HEAD' in step.get("run", "") for step in checks)
