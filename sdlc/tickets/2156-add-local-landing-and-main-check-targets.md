@@ -20,4 +20,6 @@ PM decision: 2026-10-17. Ian approved the existing tickets gate as the premerge 
 
 ## Reproduction
 
+PM decision needed: route the approved process into the shared coordinator, developer and reviewer skills. Replace GitHub CI landing requirements with the existing build-job quick gate, sole lander, postmerge complete main check and failure hold. Keep long/load checks at the candidate or affected behavior and routine elapsed-time warnings with load. Same-team mail attempts were rejected by the installed tool, so this request follows the PM's temporary ticket-line instruction.
+
 On main `67c42424e`, job `1792238941539-82305` ran `pm job run 2156 67c42424e --disk 1 --memory 1 -- make -n landing-gate main-gate` and exited 2 with `No rule to make target landing-gate`. The top-level gate configuration is also absent. No intervening main repair changes either target or configuration. The inherited lint gap is evidenced by the test-code warnings caught only by the all-target full-feature command; include test targets in the routine lint entry point.
