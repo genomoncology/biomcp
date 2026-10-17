@@ -812,7 +812,12 @@ message so failed symbols are not mistaken for confident empty evidence.
 
 Batch accepts up to 20 article IDs in compact mode and up to 10 IDs in article
 detail mode or for any other entity. Each call must use a single entity type.
-Named sections are entity-dependent. Adverse-event batches do not support `--sections`; use individual `get adverse-event` calls for FAERS report sections.
+Named sections are entity-dependent. Article batch sections are annotations,
+fulltext, indexing, tldr and all; `assets` and `asset <asset-key>` are refused
+before any request, and asset lists and downloads need
+`biomcp get article <id> assets`. A requested section comes back with data or
+a section outcome saying why it is missing, and no unrequested section
+appears. Adverse-event batches do not support `--sections`; use individual `get adverse-event` calls for FAERS report sections.
 `--source <ctgov|nci>` is available only for trial batches; trials default to
 `ctgov`, and other entities reject the flag before provider work.
 

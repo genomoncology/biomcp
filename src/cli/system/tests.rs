@@ -553,6 +553,7 @@ fn batch_help_includes_examples_and_limits() {
     assert!(help.contains("biomcp batch variant \"BRAF V600E\",\"KRAS G12D\" --json"));
     assert!(help.contains("Article compact mode accepts up to 20 IDs"));
     assert!(help.contains("Each call must use a single entity type."));
+    assert!(help.contains("Article batch sections: annotations, fulltext, indexing, tldr, all",));
     assert!(help.contains("See also: biomcp list batch"));
 }
 

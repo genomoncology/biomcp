@@ -1032,6 +1032,108 @@ fn canonical_normalization_and_byte_boundary_are_route_specific() {
 }
 
 #[test]
+fn batch_article_detail_refuses_assets_sections_before_any_request() {
+    let fixture = provision_article_fulltext_fixture(env!("CARGO_MANIFEST_DIR"))
+        .expect("provision article fixture");
+    assert!(!fixture.cache_dir.exists());
+    let request_bytes_before = std::fs::read(&fixture.request_log).expect("fixture request log");
+    for (mode_flag, sections) in [
+        (vec!["--mode", "detail"], "fulltext,assets"),
+        (vec!["--mode", "detail"], "assets"),
+        (vec!["--mode", "detail"], "asset,traces-s1.csv"),
+        (Vec::new(), "fulltext,assets"),
+    ] {
+        let mut args = vec!["--json".to_string(), "batch".into(), "article".into()];
+        args.extend(mode_flag.iter().map(|flag| (*flag).to_string()));
+        args.extend([
+            "22663011".to_string(),
+            "--sections".to_string(),
+            sections.to_string(),
+        ]);
+        let output = run_preflight_sentinel(&fixture, &args);
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "sections={sections:?}, stdout={}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        assert!(output.stderr.is_empty(), "sections={sections:?}");
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            stdout.contains("Article batch does not support")
+                && stdout.contains("annotations, fulltext, indexing, tldr, all"),
+            "sections={sections:?}, stdout={stdout}"
+        );
+        assert!(!fixture.cache_dir.exists(), "sections={sections:?}");
+        assert_eq!(
+            std::fs::read(&fixture.request_log).expect("fixture request log"),
+            request_bytes_before,
+            "assets refusal reached a provider request for {sections:?}"
+        );
+    }
+}
+
+#[test]
+fn batch_article_detail_returns_no_tldr_section_unless_asked_for() {
+    let fixture = provision_article_fulltext_fixture(env!("CARGO_MANIFEST_DIR"))
+        .expect("provision article fixture");
+    let run_sections = |sections: &str| {
+        run_fixture(
+            &fixture,
+            &[
+                "--json",
+                "batch",
+                "article",
+                "22663011",
+                "--mode",
+                "detail",
+                "--sections",
+                sections,
+            ],
+        )
+    };
+
+    let fulltext_only = run_sections("fulltext");
+    assert_eq!(fulltext_only.status.code(), Some(0));
+    assert!(fulltext_only.stderr.is_empty());
+    let value: serde_json::Value = serde_json::from_slice(&fulltext_only.stdout).unwrap();
+    let result = &value["items"][0]["result"];
+    assert_eq!(result["section_outcomes"]["fulltext"]["outcome"], "data");
+    assert_eq!(
+        result["section_outcomes"]["tldr"]["outcome"],
+        "not_requested",
+        "unrequested tldr outcome leaked: {}",
+        serde_json::to_string_pretty(result).unwrap()
+    );
+    let section_keys: Vec<&str> = result["_meta"]["section_sources"]
+        .as_array()
+        .expect("section sources")
+        .iter()
+        .map(|source| source["key"].as_str().expect("key"))
+        .collect();
+    assert!(
+        !section_keys.contains(&"tldr"),
+        "unrequested tldr row in _meta.section_sources: {section_keys:?}"
+    );
+    assert!(result.get("semantic_scholar").is_none());
+
+    let with_tldr = run_sections("fulltext,tldr");
+    assert_eq!(with_tldr.status.code(), Some(0));
+    assert!(with_tldr.stderr.is_empty());
+    let value: serde_json::Value = serde_json::from_slice(&with_tldr.stdout).unwrap();
+    let result = &value["items"][0]["result"];
+    assert_eq!(result["section_outcomes"]["tldr"]["outcome"], "data");
+    let section_keys: Vec<&str> = result["_meta"]["section_sources"]
+        .as_array()
+        .expect("section sources")
+        .iter()
+        .map(|source| source["key"].as_str().expect("key"))
+        .collect();
+    assert!(section_keys.contains(&"tldr"), "keys={section_keys:?}");
+    assert!(result["semantic_scholar"]["tldr"].is_string());
+}
+
+#[test]
 fn rejected_batch_matrix_never_reaches_real_cli_client_cache_fs_or_item_work() {
     let fixture = provision_article_fulltext_fixture(env!("CARGO_MANIFEST_DIR"))
         .expect("provision article fixture");

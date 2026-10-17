@@ -662,6 +662,35 @@ unavailable when the provider fails.
   | mustmatch 'true'
 ```
 
+## Detail Batch Reports Only Requested Sections
+
+Article detail batch sections are annotations, fulltext, indexing, tldr and
+all. The `assets` and `asset <asset-key>` sections are refused in preflight
+naming the supported sections, because asset keys and download destinations
+are per-article; `biomcp get article <id> assets` serves them. A requested
+section returns data or a section outcome saying why it is missing, and a
+request that did not ask for `tldr` carries no tldr outcome or provenance
+row. The same rule covers `get article` section requests through the shared
+detail path.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+before="$(wc -l <"$request_log")"
+{ set +e; ../../tools/biomcp-ci --json batch article 22663011 --mode detail --sections fulltext,assets 2>/dev/null; status=$?; set -e; test "$status" -eq 2; } | mustmatch like 'Article batch does not support the "assets" section
+annotations, fulltext, indexing, tldr, all'
+../../tools/biomcp-ci --json batch article 22663011 --mode detail --sections fulltext \
+  | jq '
+      .items[0].result as $r
+      | ($r.section_outcomes.fulltext.outcome == "data")
+        and ($r.section_outcomes.tldr.outcome == "not_requested")
+        and (($r._meta.section_sources | any(.key == "tldr")) | not)
+        and ($r | has("semantic_scholar") | not)' \
+  | mustmatch 'true'
+after="$(wc -l <"$request_log")"
+test "$after" = "$before"
+```
+
 ## Article Batch Preflight Starts No Provider Work
 
 <!-- mustmatch-lint: skip -->
@@ -677,6 +706,8 @@ before="$(wc -l <"$request_log")"
 ! ../../tools/biomcp-ci batch gene BRAF --mode detail >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article "$(printf 'x%.0s' $(seq 1 513))" >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 22663011 --sections unknown >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --sections assets >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --sections asset,traces-s1.csv >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 22663011 --sections '' >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 22663011 --sections tldr,,annotations >/dev/null 2>&1
 ! ../../tools/biomcp-ci batch article 1 --offset 1 >/dev/null 2>&1
