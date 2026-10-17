@@ -17,3 +17,4 @@ The release-smoke explicit-binary mismatch contract reliably rejects the supplie
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 next: Repair the explicit smoke subprocess to follow warning-at30seconds policy with a generous hung-process watchdog; preserve mismatch/no-rebuild checks, identify the concrete fixture wait, then land this main repair first.
