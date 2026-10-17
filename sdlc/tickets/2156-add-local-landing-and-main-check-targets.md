@@ -14,7 +14,7 @@ Depends on: 2155
 
 - Starts from: `Makefile` routine and full-feature targets, `bin/lint`, the top-level gate configuration in `sdlc/pm.json`, `AGENTS.md`, and existing gate contracts.
 - Keeps: routine gates share the no-default-feature build graph; executable specifications and strict docs remain covered; long, load, coverage and release-only packaging checks stay outside per-landing targets; the existing pm merged-candidate gate and pass reuse remain authoritative.
-- Changes: claims `Makefile` `bin/lint` `sdlc/pm.json` `AGENTS.md` `tests/test_routine_cargo_feature_contract.py` `tests/test_offline_gate_contract.py` `CHANGELOG.md`.
+- Changes: claims `sdlc/plan.md` `Makefile` `bin/lint` `sdlc/pm.json` `AGENTS.md` `tests/test_routine_cargo_feature_contract.py` `tests/test_offline_gate_contract.py` `CHANGELOG.md`.
 - Proof: establish current main lacks the named landing/main targets and the configured tickets gate; extend the existing outside-facing command contracts so they fail before implementation. `make landing-gate` runs lint, routine tests and routine specifications; `make main-gate` runs those standard checks and the shipped-feature checks; neither selects release-only tests. A deliberately lint-invalid test target must fail the routine lint command. Exercise the new pm gate through one real landing and run the main target on its actual pushed merge revision.
 - Defers: automatic repository-wide postmerge holds and landing locks belong to the existing pm follow-up. Shared role guidance is routed through the owning PM. Do not add a new evidence or queue framework.
 
