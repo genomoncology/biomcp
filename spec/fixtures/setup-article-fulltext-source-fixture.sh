@@ -241,7 +241,7 @@ PDF_FALLBACK = (
 # testdata/sources/capture-receipts.json). Semantic Scholar lists this
 # publisher URL as the paper's open PDF, and the second listener below
 # stands in for the publisher origin so the download replays offline.
-PLOS_OPEN_PDF = source_bytes("plos/pbio-3000076-printable.pdf")
+PLOS_OPEN_PDF = source_bytes("plos/pone-0342026-printable.pdf")
 INVALID_OPEN_PDF = b"%PDF-1.4\nnot a parsable document\n%%EOF\n"
 FIGSHARE_SUPPLEMENT = b"%PDF-1.4\nFigshare supplemental fixture bytes\n%%EOF\n"
 FIGSHARE_TABLE_S1 = b"PK\x03\x04\nS1 workbook fixture bytes\n"
@@ -737,6 +737,12 @@ ARTICLES = {
         "title": "Open PDF text extraction failure fixture",
         "abstract": "Abstract text.",
         "paper_id": "paper-19",
+    },
+    "22663030": {
+        "pmcid": None,
+        "title": "Open PDF link unavailable fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-20",
     },
 }
 
@@ -1433,7 +1439,7 @@ class Handler(BaseHTTPRequestHandler):
         if (
             decoded_path == "/"
             and query.get("idtype") == ["pmid"]
-            and query.get("ids") in (["22663015"], ["22663017"], ["40001006"], ["40001007"], ["22663026"], ["22663027"], ["22663028"], ["22663029"])
+            and query.get("ids") in (["22663015"], ["22663017"], ["40001006"], ["40001007"], ["22663026"], ["22663027"], ["22663028"], ["22663029"], ["22663030"])
         ):
             send_json(self, 200, {"records": [{"pmid": int(query.get("ids")[0])}]})
             return
@@ -1518,7 +1524,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, ABSTRACT_ONLY_XML, "application/xml")
             return
 
-        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML", "/22663020/fullTextXML", "/22663021/fullTextXML", "/22663022/fullTextXML", "/22663026/fullTextXML", "/22663027/fullTextXML", "/22663028/fullTextXML", "/22663029/fullTextXML"}:
+        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML", "/22663020/fullTextXML", "/22663021/fullTextXML", "/22663022/fullTextXML", "/22663026/fullTextXML", "/22663027/fullTextXML", "/22663028/fullTextXML", "/22663029/fullTextXML", "/22663030/fullTextXML"}:
             append_request_log("fulltext:xml:europepmc-med")
             send_text(self, 404, "not found", "text/plain")
             return
@@ -1642,7 +1648,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/graph/v1/paper/PMID:22663012":
+        if decoded_path == "/graph/v1/paper/PMID:22663012" or decoded_path == "/graph/v1/paper/PMID:22663030":
             send_json(self, 503, {"error": "fixture Semantic Scholar outage"})
             return
 
@@ -1709,7 +1715,7 @@ class Handler(BaseHTTPRequestHandler):
             # link is refused before contact without echoing the URL).
             if pmid == "22663026":
                 payload["openAccessPdf"] = {
-                    "url": f"http://127.0.0.1:{PUBLISHER_PORT}/plosbiology/article/file?id=10.1371/journal.pbio.3000076",
+                    "url": f"http://127.0.0.1:{PUBLISHER_PORT}/plosone/article/file?id=10.1371/journal.pone.0342026",
                     "status": "GREEN",
                     "license": "CC BY 4.0",
                 }
@@ -1915,7 +1921,7 @@ class PublisherHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path == "/plosbiology/article/file":
+        if parsed.path == "/plosone/article/file":
             send_bytes(self, 200, PLOS_OPEN_PDF, "application/pdf")
             return
         if parsed.path == "/publisher/unreachable.pdf":

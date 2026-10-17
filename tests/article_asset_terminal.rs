@@ -429,13 +429,14 @@ fn publisher_open_pdf_link_downloads_and_returns_its_text() {
     let text = fs::read_to_string(saved).expect("captured PDF text should be saved");
     let lower = text.to_lowercase();
     assert!(
-        lower.contains("plateaus"),
+        lower.contains("controller"),
         "saved text lost the paper title"
     );
     assert!(
-        lower.contains("newman"),
-        "saved text lost the response target"
+        lower.contains("investment"),
+        "saved text lost the paper title"
     );
+    assert!(lower.contains("qin"), "saved text lost the author byline");
 }
 
 #[test]
@@ -444,10 +445,11 @@ fn open_pdf_failures_name_the_part_that_failed() {
     let fixture = ArticleFixture::start();
 
     // Each recorded shape names its failed part instead of a bare
-    // source_unavailable/no_content.
+    // source_unavailable/no_content. 22663030 has no full-text winner, so
+    // the PDF step runs and its link could not even be asked for.
     for (pmid, expected_reason, outcome) in [
         ("22663019", "open_pdf_link_absent", "empty"),
-        ("22663012", "open_pdf_link_unavailable", "unavailable"),
+        ("22663030", "open_pdf_link_unavailable", "unavailable"),
         ("22663027", "open_pdf_link_rejected", "unavailable"),
         ("22663028", "open_pdf_download_failed", "unavailable"),
         ("22663014", "open_pdf_download_absent", "empty"),
