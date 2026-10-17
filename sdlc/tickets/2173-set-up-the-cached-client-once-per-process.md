@@ -16,6 +16,8 @@ Reviews: revision 2820e06, accept
 
 Reviews: revision de73cad, accept
 
+Reviews: revision a79fc64, accept
+
 ## Outcome
 
 Parallel sources in one process share one cache setup: the cached client is built once per process, the per-call provider clients reuse it, and a source holding a shared cache lease makes maintenance in the same process wait within its deadline instead of failing.
