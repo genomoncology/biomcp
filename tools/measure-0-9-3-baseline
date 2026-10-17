@@ -66,6 +66,11 @@ cd "$CLONE"
 CLONE="$(pwd)"
 LOGD=".cache/measure"
 mkdir -p "$LOGD"
+# Keep temporary fixtures inside the checkout, as the routine gates do.
+# Store security checks deliberately reject symlink components in paths.
+mkdir -p "$LOGD/tmp"
+chmod 700 "$LOGD/tmp"
+export TMPDIR="$(cd "$LOGD/tmp" && pwd -P)"
 
 say() { printf '\n### %s — %s\n' "$1" "$2"; }
 result() { printf 'RESULT %s = %s\n' "$1" "$2"; }
