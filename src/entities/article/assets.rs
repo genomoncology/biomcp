@@ -39,7 +39,9 @@ const PRIMARY_ASSET_SOURCE_BUDGET: std::time::Duration = std::time::Duration::fr
 const OPTIONAL_ASSET_SOURCE_BUDGET: std::time::Duration = std::time::Duration::from_secs(10);
 const ASSET_MANIFEST_CACHE_TTL_SECS: u64 = 5 * 60;
 const ASSET_MANIFEST_CACHE_MAX_BYTES: usize = 4 * 1024 * 1024;
-const ASSET_MANIFEST_CACHE_SCHEMA: u8 = 2;
+// 3: wrong-type routes are refused and the bucket fallback adds copies that
+// 0.9.2/0.9.3-era entries still advertise as retrievable.
+const ASSET_MANIFEST_CACHE_SCHEMA: u8 = 3;
 
 enum SourceAttempt<T> {
     Success(T),
@@ -118,11 +120,12 @@ struct ResolvedAsset {
 struct PendingCoverage {
     canonical_identity: String,
     row: ArticleAssetNamedCoverage,
-    // A download route that answered with zero bytes keeps the asset-key form
+    // A download route that was refused — it answered with zero bytes or with
+    // bytes that do not match the file name's type — keeps the asset-key form
     // it would have carried as a listed asset, so a key learned from an older
-    // manifest still reaches the empty-response refusal instead of a bare
-    // not-found, and the filename keeps counting toward collision keys.
-    zero_byte_download: bool,
+    // manifest still reaches the refusal instead of a bare not-found, and the
+    // filename keeps counting toward collision keys.
+    refused_download: bool,
 }
 
 struct RetrievableCoverageObservation {
@@ -366,6 +369,10 @@ async fn resolve_article_assets(
     let mut assets = Vec::<ResolvedAsset>::new();
     let mut candidates = Vec::<LinkedCandidate>::new();
     let mut nonretrievable = Vec::<PendingCoverage>::new();
+    // Supplement file names an official archive route listed without delivering
+    // a usable copy: after the primary observations, the remaining official
+    // routes are checked for each of them (ticket 2150).
+    let mut undelivered_supplements = BTreeSet::<String>::new();
     let mut complex_tables = 0usize;
     let mut source_attempts = Vec::new();
 
@@ -466,12 +473,25 @@ async fn resolve_article_assets(
                             package_relative_path(&entry.filename, package_root),
                         );
                         if entry.bytes.is_empty() {
-                            nonretrievable.push(empty_download_coverage(
+                            nonretrievable.push(refused_download_coverage(
                                 identity,
                                 provider(),
                                 ArticleAssetSourceDocument::PmcOaArchive,
                                 &entry.filename,
+                                ArticleAssetNamedOutcome::EmptyResponse,
                             ));
+                            undelivered_supplements.insert(entry.filename.clone());
+                            continue;
+                        }
+                        if !asset_bytes_match_filename(&entry.filename, &entry.bytes) {
+                            nonretrievable.push(refused_download_coverage(
+                                identity,
+                                provider(),
+                                ArticleAssetSourceDocument::PmcOaArchive,
+                                &entry.filename,
+                                ArticleAssetNamedOutcome::UnusableAsset,
+                            ));
+                            undelivered_supplements.insert(entry.filename.clone());
                             continue;
                         }
                         let mut public = asset_entry(
@@ -490,6 +510,18 @@ async fn resolve_article_assets(
                             bytes: entry.bytes.clone(),
                         });
                     }
+                } else {
+                    // The package download failed, so every media object the
+                    // retained manifest lists went undelivered whole — one
+                    // oversized or broken object refuses the entire package the
+                    // way a 46 MiB supplement does on PMC6168352.
+                    undelivered_supplements.extend(
+                        observation
+                            .manifest
+                            .media_urls
+                            .iter()
+                            .filter_map(|url| crate::sources::pmc_oa::media_object_filename(url)),
+                    );
                 }
                 Some(observation.manifest)
             }
@@ -526,7 +558,7 @@ async fn resolve_article_assets(
                 for entry in &observation.package.entries {
                     let identity = package_identity("europe-pmc", pmcid, &entry.filename);
                     if entry.bytes.is_empty() {
-                        nonretrievable.push(empty_download_coverage(
+                        nonretrievable.push(refused_download_coverage(
                             identity,
                             ArticleFulltextProvider {
                                 label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
@@ -534,7 +566,23 @@ async fn resolve_article_assets(
                             },
                             ArticleAssetSourceDocument::EuropePmcZip,
                             &entry.filename,
+                            ArticleAssetNamedOutcome::EmptyResponse,
                         ));
+                        undelivered_supplements.insert(entry.filename.clone());
+                        continue;
+                    }
+                    if !asset_bytes_match_filename(&entry.filename, &entry.bytes) {
+                        nonretrievable.push(refused_download_coverage(
+                            identity,
+                            ArticleFulltextProvider {
+                                label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+                                source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+                            },
+                            ArticleAssetSourceDocument::EuropePmcZip,
+                            &entry.filename,
+                            ArticleAssetNamedOutcome::UnusableAsset,
+                        ));
+                        undelivered_supplements.insert(entry.filename.clone());
                         continue;
                     }
                     let mut public =
@@ -608,6 +656,23 @@ async fn resolve_article_assets(
             SourceAttempt::Failed => any_failed = true,
             SourceAttempt::TimedOut => any_failed = true,
         }
+
+        // A supplement the archive routes listed without delivering a usable
+        // copy gets the remaining official routes: the PMC open-data bucket
+        // object the retained manifest names, then the PMC article page's
+        // file route when no declared link already covers it (ticket 2150).
+        supplement_fallback(
+            requested_id,
+            &article,
+            pmcid,
+            retained_pmc_manifest.as_ref(),
+            std::mem::take(&mut undelivered_supplements),
+            &mut assets,
+            &mut nonretrievable,
+            &mut candidates,
+            &mut any_failed,
+        )
+        .await;
 
         if !candidates.is_empty() {
             let linked = tokio::time::timeout(
@@ -714,7 +779,7 @@ async fn resolve_linked_candidates(
             nonretrievable.extend(candidates.into_iter().map(|candidate| PendingCoverage {
                 canonical_identity: rejected_identity(&candidate),
                 row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
-                zero_byte_download: false,
+                refused_download: false,
             }));
             return;
         }
@@ -741,7 +806,7 @@ async fn resolve_linked_candidates(
         nonretrievable.push(PendingCoverage {
             canonical_identity: identity,
             row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
-            zero_byte_download: false,
+            refused_download: false,
         });
     }
 
@@ -751,7 +816,7 @@ async fn resolve_linked_candidates(
             nonretrievable.push(PendingCoverage {
                 canonical_identity: identity,
                 row: named_coverage(&candidate, ArticleAssetNamedOutcome::UnsupportedOrigin),
-                zero_byte_download: false,
+                refused_download: false,
             });
             continue;
         };
@@ -795,7 +860,7 @@ async fn resolve_linked_candidates(
                 nonretrievable.push(PendingCoverage {
                     canonical_identity: identity,
                     row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
-                    zero_byte_download: false,
+                    refused_download: false,
                 });
             }
             break;
@@ -825,7 +890,16 @@ async fn resolve_linked_candidates(
                     nonretrievable.push(PendingCoverage {
                         canonical_identity: identity,
                         row: named_coverage(&candidate, ArticleAssetNamedOutcome::EmptyResponse),
-                        zero_byte_download: true,
+                        refused_download: true,
+                    });
+                }
+                PmcLinkedFetch::Bytes { bytes, .. }
+                    if !asset_bytes_match_filename(&candidate.filename, &bytes) =>
+                {
+                    nonretrievable.push(PendingCoverage {
+                        canonical_identity: identity,
+                        row: named_coverage(&candidate, ArticleAssetNamedOutcome::UnusableAsset),
+                        refused_download: true,
                     });
                 }
                 PmcLinkedFetch::Bytes { bytes, media_type }
@@ -885,18 +959,18 @@ async fn resolve_linked_candidates(
                             &candidate,
                             ArticleAssetNamedOutcome::SourceUnavailable,
                         ),
-                        zero_byte_download: false,
+                        refused_download: false,
                     });
                 }
                 PmcLinkedFetch::ProofOfWork => nonretrievable.push(PendingCoverage {
                     canonical_identity: identity,
                     row: named_coverage(&candidate, ArticleAssetNamedOutcome::PmcProofOfWork),
-                    zero_byte_download: false,
+                    refused_download: false,
                 }),
                 PmcLinkedFetch::HealthyAbsent => nonretrievable.push(PendingCoverage {
                     canonical_identity: identity,
                     row: named_coverage(&candidate, ArticleAssetNamedOutcome::HealthyAbsent),
-                    zero_byte_download: false,
+                    refused_download: false,
                 }),
                 PmcLinkedFetch::AccessOrLicenceDenied => nonretrievable.push(PendingCoverage {
                     canonical_identity: identity,
@@ -904,7 +978,7 @@ async fn resolve_linked_candidates(
                         &candidate,
                         ArticleAssetNamedOutcome::AccessOrLicenceDenied,
                     ),
-                    zero_byte_download: false,
+                    refused_download: false,
                 }),
             }
         }
@@ -913,6 +987,194 @@ async fn resolve_linked_candidates(
 
 fn split_candidate_overflow<T>(values: &mut Vec<T>, limit: usize) -> Vec<T> {
     values.split_off(values.len().min(limit))
+}
+
+const ASSET_FALLBACK_SOURCE_BUDGET: std::time::Duration = std::time::Duration::from_secs(30);
+// Mirrors the package route's aggregate allowance: per-file retries together
+// may not spend more than one package download would have.
+const FALLBACK_AGGREGATE_LIMIT: usize = 64 * 1024 * 1024;
+
+/// Consult the remaining official routes for supplements the archive routes
+/// listed without delivering a usable copy: the PMC open-data bucket object
+/// the retained manifest names, then the PMC article page's file route when no
+/// declared link already covers the file name (ticket 2150).
+#[allow(clippy::too_many_arguments)]
+async fn supplement_fallback(
+    requested_id: &str,
+    article: &Article,
+    pmcid: &str,
+    manifest: Option<&PmcOaArchiveManifest>,
+    undelivered: BTreeSet<String>,
+    assets: &mut Vec<ResolvedAsset>,
+    nonretrievable: &mut Vec<PendingCoverage>,
+    candidates: &mut Vec<LinkedCandidate>,
+    any_failed: &mut bool,
+) {
+    if undelivered.is_empty() {
+        return;
+    }
+    let mut wanted = undelivered
+        .iter()
+        .filter(|name| {
+            !assets
+                .iter()
+                .any(|asset| asset.entry.filename == name.as_str())
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    if wanted.is_empty() {
+        return;
+    }
+
+    if let Some(manifest) = manifest {
+        let observed = assets
+            .iter()
+            .map(|asset| asset.canonical_identity.as_str())
+            .chain(
+                nonretrievable
+                    .iter()
+                    .map(|pending| pending.canonical_identity.as_str()),
+            )
+            .collect::<BTreeSet<_>>();
+        if let Ok(client) = PmcOaClient::new() {
+            let route = ArticleAssetDiscoveryRoute {
+                provider: provider(),
+                source_document: ArticleAssetSourceDocument::PmcOaArchive,
+            };
+            let reuse = reuse(manifest, article);
+            let provenance = provenance(manifest, article);
+            let deadline = tokio::time::Instant::now() + ASSET_FALLBACK_SOURCE_BUDGET;
+            let mut aggregate = 0usize;
+            for name in wanted.iter() {
+                let identity = package_identity("pmc", pmcid, name);
+                // The bucket route already answered for this file when the
+                // package delivered or refused its member; the same bytes are
+                // not fetched twice.
+                if observed.contains(identity.as_str()) {
+                    continue;
+                }
+                let Some(object_url) = manifest.media_urls.iter().find(|url| {
+                    crate::sources::pmc_oa::media_object_filename(url).as_deref()
+                        == Some(name.as_str())
+                }) else {
+                    continue;
+                };
+                let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
+                if remaining.is_zero() {
+                    *any_failed = true;
+                    nonretrievable.push(fallback_unavailable_coverage(identity, name, &route));
+                    continue;
+                }
+                match tokio::time::timeout(remaining, client.object_bytes(object_url)).await {
+                    Ok(Ok(bytes)) if bytes.is_empty() => {
+                        nonretrievable.push(refused_download_coverage(
+                            identity,
+                            provider(),
+                            ArticleAssetSourceDocument::PmcOaArchive,
+                            name,
+                            ArticleAssetNamedOutcome::EmptyResponse,
+                        ));
+                    }
+                    Ok(Ok(bytes)) if !asset_bytes_match_filename(name, &bytes) => {
+                        nonretrievable.push(refused_download_coverage(
+                            identity,
+                            provider(),
+                            ArticleAssetSourceDocument::PmcOaArchive,
+                            name,
+                            ArticleAssetNamedOutcome::UnusableAsset,
+                        ));
+                    }
+                    Ok(Ok(bytes))
+                        if aggregate.saturating_add(bytes.len()) <= FALLBACK_AGGREGATE_LIMIT =>
+                    {
+                        aggregate += bytes.len();
+                        let member = PmcOaArchiveEntry {
+                            filename: name.clone(),
+                            is_xml: false,
+                            bytes,
+                        };
+                        let mut public = asset_entry(
+                            requested_id,
+                            &member,
+                            &JatsFacts::default(),
+                            &route.provider,
+                            &reuse,
+                            &provenance,
+                        );
+                        public.asset_key = sha256_hex(identity.as_bytes());
+                        assets.push(ResolvedAsset {
+                            canonical_identity: identity,
+                            precedence: 0,
+                            entry: public,
+                            bytes: member.bytes,
+                        });
+                    }
+                    // A body over the fallback allowance is as undeliverable
+                    // as a failed fetch.
+                    Ok(Ok(_)) => {
+                        *any_failed = true;
+                        nonretrievable.push(fallback_unavailable_coverage(identity, name, &route));
+                    }
+                    Ok(Err(_)) | Err(_) => {
+                        *any_failed = true;
+                        nonretrievable.push(fallback_unavailable_coverage(identity, name, &route));
+                    }
+                }
+            }
+        } else {
+            *any_failed = true;
+        }
+    }
+
+    // The article page's own file route is the last official copy to check;
+    // a declared JATS or page link already covers files the page listed.
+    let declared = candidates
+        .iter()
+        .map(|candidate| candidate.filename.as_str())
+        .collect::<BTreeSet<_>>();
+    wanted.retain(|name| {
+        !declared.contains(name.as_str())
+            && !assets
+                .iter()
+                .any(|asset| asset.entry.filename == name.as_str())
+    });
+    for name in wanted {
+        candidates.push(LinkedCandidate {
+            href: name.clone(),
+            filename: name.clone(),
+            label: None,
+            caption: None,
+            media_type: None,
+            route: ArticleAssetDiscoveryRoute {
+                provider: linked_provider(),
+                source_document: ArticleAssetSourceDocument::PmcHtml,
+            },
+            additional_routes: Vec::new(),
+            relative_to_bin: true,
+        });
+    }
+}
+
+fn fallback_unavailable_coverage(
+    canonical_identity: String,
+    filename: &str,
+    route: &ArticleAssetDiscoveryRoute,
+) -> PendingCoverage {
+    PendingCoverage {
+        canonical_identity,
+        row: ArticleAssetNamedCoverage {
+            filename: filename.to_string(),
+            asset_key: None,
+            label: None,
+            media_type: None,
+            provider: route.provider.clone(),
+            source_document: route.source_document,
+            outcome: ArticleAssetNamedOutcome::SourceUnavailable,
+            handle: None,
+            discovery_routes: vec![route.clone()],
+        },
+        refused_download: false,
+    }
 }
 
 fn linked_aggregate_accepts(current: usize, next: usize) -> bool {
@@ -1019,12 +1281,17 @@ fn named_coverage(
     }
 }
 
-fn empty_download_coverage(
+fn refused_download_coverage(
     canonical_identity: String,
     provider: ArticleFulltextProvider,
     source_document: ArticleAssetSourceDocument,
     filename: &str,
+    outcome: ArticleAssetNamedOutcome,
 ) -> PendingCoverage {
+    debug_assert!(matches!(
+        outcome,
+        ArticleAssetNamedOutcome::EmptyResponse | ArticleAssetNamedOutcome::UnusableAsset
+    ));
     PendingCoverage {
         canonical_identity,
         row: ArticleAssetNamedCoverage {
@@ -1034,14 +1301,14 @@ fn empty_download_coverage(
             media_type: None,
             provider: provider.clone(),
             source_document,
-            outcome: ArticleAssetNamedOutcome::EmptyResponse,
+            outcome,
             handle: None,
             discovery_routes: vec![ArticleAssetDiscoveryRoute {
                 provider,
                 source_document,
             }],
         },
-        zero_byte_download: true,
+        refused_download: true,
     }
 }
 
@@ -1093,7 +1360,7 @@ fn finish_resolution(
                 if existing.row.media_type.is_none() {
                     existing.row.media_type = observation.row.media_type;
                 }
-                existing.zero_byte_download |= observation.zero_byte_download;
+                existing.refused_download |= observation.refused_download;
             }
         }
     }
@@ -1243,17 +1510,18 @@ fn assign_asset_keys(
     assets: &mut [ResolvedAsset],
     pending: &mut BTreeMap<String, PendingCoverage>,
 ) {
-    // A download route that returned zero bytes carried a listed asset key
-    // before this resolution refused it, so its filename keeps counting toward
-    // collision keys and its coverage row keeps the same key form: keys stay
-    // stable across the marking, and a key learned from an older manifest
-    // still names the empty-response refusal instead of a bare not-found.
+    // A download route that was refused — zero bytes, or bytes that do not
+    // match the file name's type — carried a listed asset key before this
+    // resolution refused it, so its filename keeps counting toward collision
+    // keys and its coverage row keeps the same key form: keys stay stable
+    // across the marking, and a key learned from an older manifest still
+    // names the refusal instead of a bare not-found.
     let mut counts = BTreeMap::new();
     for asset in assets.iter() {
         *counts.entry(asset.entry.filename.clone()).or_insert(0usize) += 1;
     }
     for coverage in pending.values() {
-        if coverage.zero_byte_download {
+        if coverage.refused_download {
             *counts
                 .entry(coverage.row.filename.clone())
                 .or_insert(0usize) += 1;
@@ -1274,7 +1542,7 @@ fn assign_asset_keys(
         asset.entry.handle = article_asset_command(requested_id, &asset.entry.asset_key);
     }
     for (identity, coverage) in pending.iter_mut() {
-        if !coverage.zero_byte_download {
+        if !coverage.refused_download {
             continue;
         }
         let filename = coverage.row.filename.clone();
@@ -1414,10 +1682,10 @@ fn named_outcome_priority(outcome: ArticleAssetNamedOutcome) -> u8 {
     match outcome {
         ArticleAssetNamedOutcome::Retrievable => 7,
         ArticleAssetNamedOutcome::PmcProofOfWork => 6,
-        // A real empty reply explains the route's behavior better than a
-        // transport failure, so it outranks SourceUnavailable when one
-        // filename collects both observations.
-        ArticleAssetNamedOutcome::EmptyResponse => 5,
+        // A real reply explains the route's behavior better than a transport
+        // failure, so an empty or wrong-type reply outranks SourceUnavailable
+        // when one filename collects both observations.
+        ArticleAssetNamedOutcome::EmptyResponse | ArticleAssetNamedOutcome::UnusableAsset => 5,
         ArticleAssetNamedOutcome::SourceUnavailable => 4,
         ArticleAssetNamedOutcome::AccessOrLicenceDenied => 3,
         ArticleAssetNamedOutcome::UnsupportedOrigin => 2,
@@ -1592,6 +1860,7 @@ fn article_asset_not_retrievable(
         ArticleAssetNamedOutcome::UnsupportedOrigin => "unsupported_origin",
         ArticleAssetNamedOutcome::SourceUnavailable => "source_unavailable",
         ArticleAssetNamedOutcome::EmptyResponse => "empty_response",
+        ArticleAssetNamedOutcome::UnusableAsset => "unusable_asset",
         ArticleAssetNamedOutcome::Retrievable => "internal",
     };
     let article = pmcid
@@ -1867,12 +2136,22 @@ async fn observe_figshare_assets(
             }
             named_files += 1;
             match client.download_file(file).await {
-                Ok(bytes) if bytes.is_empty() => nonretrievable.push(empty_download_coverage(
+                Ok(bytes) if bytes.is_empty() => nonretrievable.push(refused_download_coverage(
                     identity,
                     provider.clone(),
                     ArticleAssetSourceDocument::Figshare,
                     &file.filename,
+                    ArticleAssetNamedOutcome::EmptyResponse,
                 )),
+                Ok(bytes) if !asset_bytes_match_filename(&file.filename, &bytes) => {
+                    nonretrievable.push(refused_download_coverage(
+                        identity,
+                        provider.clone(),
+                        ArticleAssetSourceDocument::Figshare,
+                        &file.filename,
+                        ArticleAssetNamedOutcome::UnusableAsset,
+                    ))
+                }
                 Ok(bytes) => {
                     let mut entry = figshare_asset_entry(
                         requested_id,
@@ -1905,7 +2184,7 @@ async fn observe_figshare_assets(
                             handle: None,
                             discovery_routes: vec![route.clone()],
                         },
-                        zero_byte_download: false,
+                        refused_download: false,
                     });
                 }
             }
@@ -2038,9 +2317,11 @@ fn build_europe_pmc_manifest(
     let mut assets = package
         .entries
         .iter()
-        // A zero-length member is marked in coverage as an empty response,
-        // never advertised as a retrievable file.
-        .filter(|entry| !entry.bytes.is_empty())
+        // A zero-length or wrong-type member is marked in coverage as a
+        // refused download, never advertised as a retrievable file.
+        .filter(|entry| {
+            !entry.bytes.is_empty() && asset_bytes_match_filename(&entry.filename, &entry.bytes)
+        })
         .map(|entry| europe_pmc_asset_entry(requested_id, entry, &provider, &reuse, &provenance))
         .collect::<Vec<_>>();
     assets.sort_by(|left, right| left.filename.cmp(&right.filename));
@@ -2128,7 +2409,14 @@ fn build_assets_manifest(
     let mut assets = package
         .entries
         .iter()
-        .filter(|entry| !entry.is_xml && !entry.bytes.is_empty())
+        // A zero-length or wrong-type member is marked in coverage as a
+        // refused download during full resolution, and never advertised as a
+        // retrievable file on this summary surface either.
+        .filter(|entry| {
+            !entry.is_xml
+                && !entry.bytes.is_empty()
+                && asset_bytes_match_filename(&entry.filename, &entry.bytes)
+        })
         .map(|entry| asset_entry(requested_id, entry, &facts, &provider, &reuse, &provenance))
         .collect::<Vec<_>>();
     assets.sort_by(|a, b| a.filename.cmp(&b.filename));
@@ -2294,6 +2582,38 @@ fn filename_kind(filename: &str) -> &'static str {
         return "supplementary-file";
     }
     "other"
+}
+
+/// Leading bytes a file name's extension commits a download to. A route that
+/// answers with different bytes — a vendor HTML page under a `.docx` name,
+/// observed on pgen.1009231.s004.docx — is delivering the wrong file, so the
+/// copy is unusable the way an empty copy is. Extensions with no committed
+/// signature (CSV, text, XML) accept any bytes; callers check an empty body
+/// before this, so a known type with no bytes reads as a mismatch.
+fn asset_bytes_match_filename(filename: &str, bytes: &[u8]) -> bool {
+    let Some((_, extension)) = filename.to_ascii_lowercase().rsplit_once('.') else {
+        return true;
+    };
+    let starts = |magic: &[u8]| bytes.starts_with(magic);
+    match extension {
+        "pdf" => bytes
+            .windows(5)
+            .take(1024)
+            .any(|window| window == b"%PDF-"),
+        "docx" | "xlsx" | "pptx" | "zip" | "odt" | "ods" | "odp" | "epub" | "jar" => {
+            starts(b"PK")
+        }
+        "doc" | "xls" | "ppt" => starts(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]),
+        "gz" | "tgz" => starts(&[0x1F, 0x8B]),
+        "png" => starts(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]),
+        "jpg" | "jpeg" => starts(&[0xFF, 0xD8, 0xFF]),
+        "gif" => starts(b"GIF87a") || starts(b"GIF89a"),
+        "tif" | "tiff" => starts(b"II*\0") || starts(b"MM\0*"),
+        "bmp" => starts(b"BM"),
+        "7z" => starts(b"7z\xBC\xAF\x27\x1C"),
+        "rar" => starts(b"Rar!\x1A\x07"),
+        _ => true,
+    }
 }
 
 fn jats_facts(entries: &[PmcOaArchiveEntry]) -> JatsFacts {
@@ -2757,7 +3077,7 @@ mod tests {
 
     #[test]
     fn europe_pmc_manifest_retains_pmc_license_source_and_exact_member_facts() {
-        let bytes = b"exact supplementary bytes".to_vec();
+        let bytes = b"PK\x03\x04exact supplementary bytes".to_vec();
         let package = EuropePmcSupplementaryPackage {
             entries: vec![EuropePmcSupplementaryEntry {
                 filename: "supplement.docx".to_string(),
@@ -2943,7 +3263,7 @@ mod tests {
         )];
         let mut pending = BTreeMap::from([(
             europe_identity.clone(),
-            empty_download_coverage(
+            refused_download_coverage(
                 europe_identity.clone(),
                 ArticleFulltextProvider {
                     label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
@@ -2951,6 +3271,7 @@ mod tests {
                 },
                 ArticleAssetSourceDocument::EuropePmcZip,
                 filename,
+                ArticleAssetNamedOutcome::EmptyResponse,
             ),
         )]);
         assign_asset_keys("30209399", &mut assets, &mut pending);
@@ -3008,7 +3329,7 @@ mod tests {
         let identity = format!("europe-pmc:PMC6181778:{filename}");
         let mut pending = BTreeMap::from([(
             identity.clone(),
-            empty_download_coverage(
+            refused_download_coverage(
                 identity,
                 ArticleFulltextProvider {
                     label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
@@ -3016,6 +3337,7 @@ mod tests {
                 },
                 ArticleAssetSourceDocument::EuropePmcZip,
                 filename,
+                ArticleAssetNamedOutcome::EmptyResponse,
             ),
         )]);
         assign_asset_keys("30209399", &mut Vec::new(), &mut pending);
@@ -3042,6 +3364,130 @@ mod tests {
             .expect_err("an empty reply is a failed download");
         assert_eq!(error.code(), "article_asset_not_retrievable");
         assert!(error.to_string().contains("empty_response"));
+    }
+
+    #[test]
+    fn wrong_type_bytes_keep_stable_collision_keys_and_refuse_with_unusable_asset() {
+        // The observed wrong-type shape (pgen.1009231.s004.docx): a vendor
+        // HTML page under a .docx name, with the real file nowhere.
+        let filename = "pgen.1009231.s004.docx";
+        let pmc_identity = format!("pmc:PMC7787686:{filename}");
+        let europe_identity = format!("europe-pmc:PMC7787686:{filename}");
+        let europe_provider = ArticleFulltextProvider {
+            label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+            source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+        };
+        let mut pending = BTreeMap::from([
+            (
+                pmc_identity.clone(),
+                refused_download_coverage(
+                    pmc_identity.clone(),
+                    provider(),
+                    ArticleAssetSourceDocument::PmcOaArchive,
+                    filename,
+                    ArticleAssetNamedOutcome::UnusableAsset,
+                ),
+            ),
+            (
+                europe_identity.clone(),
+                refused_download_coverage(
+                    europe_identity.clone(),
+                    europe_provider,
+                    ArticleAssetSourceDocument::EuropePmcZip,
+                    filename,
+                    ArticleAssetNamedOutcome::UnusableAsset,
+                ),
+            ),
+        ]);
+        assign_asset_keys("33332384", &mut Vec::new(), &mut pending);
+
+        // Each wrong-type route keeps the collision key it would have carried
+        // as a listed asset, so a key learned from an older manifest reaches
+        // the refusal instead of a bare not-found.
+        let europe_key = format!(
+            "europe-pmc-{}--{filename}",
+            sha256_hex(europe_identity.as_bytes())
+        );
+        let europe_row = pending
+            .values()
+            .find(|row| row.row.outcome == ArticleAssetNamedOutcome::UnusableAsset)
+            .expect("the wrong-type route stays marked");
+        assert_eq!(
+            europe_row.row.asset_key.as_deref(),
+            Some(europe_key.as_str())
+        );
+
+        let resolved = finish_resolution(
+            "33332384",
+            &sample_article(),
+            Some("PMC7787686"),
+            Vec::new(),
+            pending.into_values().collect(),
+            0,
+            false,
+            Vec::new(),
+        )
+        .unwrap();
+        let error = article_asset_bytes_from_resolution("33332384", &europe_key, resolved)
+            .expect_err("wrong-type bytes are a failed download");
+        assert_eq!(error.code(), "article_asset_not_retrievable");
+        assert!(error.to_string().contains("unusable_asset"));
+        assert!(!error.to_string().contains("empty_response"));
+    }
+
+    #[test]
+    fn asset_bytes_match_filename_pins_the_committed_leading_bytes() {
+        // Extensions with a committed signature refuse bytes that do not
+        // carry it; the observed wrong-type shape is HTML under a .docx name.
+        for (filename, bytes) in [
+            ("supplement.pdf", b"%PDF-1.4\nscrubbed fixture body\n".as_slice()),
+            (
+                "supplement.docx",
+                b"PK\x03\x14\x00\x06\x00scrubbed docx fixture bytes\n",
+            ),
+            ("supplement.xlsx", b"PK\x05\x06scrubbed xlsx fixture bytes\n"),
+            ("supplement.zip", b"PK\x07\x08scrubbed zip fixture bytes\n"),
+            ("legacy-supplement.doc", &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1][..]),
+            ("archive.tgz", &[0x1F, 0x8B, 0x08][..]),
+            ("figure.png", &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A][..]),
+            ("figure.gif", b"GIF89a\x01\x00"),
+            ("figure.jpg", &[0xFF, 0xD8, 0xFF, 0xE0][..]),
+        ] {
+            assert!(
+                asset_bytes_match_filename(filename, bytes),
+                "{filename} must accept its committed leading bytes"
+            );
+        }
+        for (filename, bytes) in [
+            (
+                "pgen.1009231.s004.docx",
+                b"<!DOCTYPE html>\n<html lang=\"en-US\"><body>vendor page</body></html>\n",
+            ),
+            (
+                "NIHMS1501645-supplement-2.docx",
+                b"\n\n<!DOCTYPE html><head></head>",
+            ),
+            ("pone.0153788.s001.pdf", b"PK\x03\x04not a pdf"),
+            ("supplement.xlsx", b"%PDF-1.7 not a workbook"),
+        ] {
+            assert!(
+                !asset_bytes_match_filename(filename, bytes),
+                "{filename} must refuse bytes of another type"
+            );
+        }
+        // A PDF header may sit inside the first kilobyte, text formats commit
+        // to nothing, and a file name with no extension commits to nothing.
+        assert!(asset_bytes_match_filename(
+            "supplement.pdf",
+            b"junk-before-header\n%PDF-1.4\nbody"
+        ));
+        assert!(asset_bytes_match_filename("table.csv", b"a,b\n1,2\n"));
+        assert!(asset_bytes_match_filename("article.nxml", b"<?xml version=\"1.0\"?>"));
+        assert!(asset_bytes_match_filename("page.html", b"<!DOCTYPE html>"));
+        assert!(asset_bytes_match_filename("README", b"anything at all"));
+        // Known types with no bytes at all are a mismatch; callers classify
+        // that case as the empty response first.
+        assert!(!asset_bytes_match_filename("supplement.docx", b""));
     }
 
     #[test]

@@ -1275,6 +1275,49 @@ mustmatch like "article_asset_not_retrievable
 ../../tools/biomcp-ci get article 22663024 asset NIHMS1501643-supplement-2.xlsx | mustmatch like "scrubbed two-route supplement XLSX fixture bytes"
 ```
 
+## An Empty Europe PMC Supplement Is Found In The PMC Open-Data Bucket
+
+A supplement whose only listed copy is Europe PMC's (observed on PMC6168352:
+NIHMS1501645-supplement-2.docx) is looked up by file name in the PMC
+open-data bucket and on the PMC article page. The fixture article 22663026
+reproduces the shape: Europe PMC's archive holds a zero-byte member, and the
+package download fails because one media object exceeds the per-object
+budget, so the bucket object the manifest names is fetched per file.
+
+```bash run id=bucket-fallback-finds-copy
+../../tools/biomcp-ci --json get article 22663026 assets | jq '(.assets | length == 1 and .[0].filename == "NIHMS1501645-supplement-2.docx" and .[0].provider.source == "PMC OA" and .[0].size_bytes > 0) and (.coverage | any(.filename == "NIHMS1501645-supplement-2.docx" and .outcome == "empty_response" and .provider.source == "Europe PMC"))' | mustmatch 'true'
+../../tools/biomcp-ci get article 22663026 asset NIHMS1501645-supplement-2.docx | mustmatch like "scrubbed Word supplement DOCX fixture bytes"
+```
+
+## A Zero-Byte PDF Member Does Not Block The Full Package Copy
+
+The same two-route preference holds when the supplement is a PDF (observed
+on PMC4858276: pone.0153788.s001.pdf). The fixture article 22663028 keeps
+Europe PMC's zero-length PDF member beside a figure with bytes while the PMC
+OA package holds the real file.
+
+```bash run id=pdf-two-route-prefers-pmc-oa
+../../tools/biomcp-ci --json get article 22663028 assets | jq '(.assets | any(.filename == "pone.0153788.s001.pdf" and .provider.source == "PMC OA" and .size_bytes > 0)) and (.coverage | any(.filename == "pone.0153788.s001.pdf" and .outcome == "empty_response" and .provider.source == "Europe PMC"))' | mustmatch 'true'
+../../tools/biomcp-ci get article 22663028 asset pone.0153788.s001.pdf | mustmatch like "%PDF-1.4"
+```
+
+## Bytes That Do Not Match The File Name's Type Are A Failed Download
+
+A route that answers a supplement request with a vendor page — observed on
+PMC7787686, where a `.docx` name returns HTML from both the PMC OA package
+and Europe PMC's archive — is refused with its own outcome instead of being
+delivered as the file. The fixture article 22663027 reproduces the shape.
+
+```bash run id=wrong-type-asset-refusal-human exit=1
+output="$(../../tools/biomcp-ci --json get article 22663027 assets)"
+echo "$output" | jq -e '(.assets | all(.filename != "pgen.1009231.s004.docx")) and (.coverage | any(.filename == "pgen.1009231.s004.docx" and .outcome == "unusable_asset" and .provider.source == "Europe PMC" and .handle != null))' >/dev/null
+key="$(echo "$output" | jq -r '.coverage[] | select(.filename == "pgen.1009231.s004.docx" and .provider.source == "Europe PMC") | .asset_key')"
+refusal="$(../../tools/biomcp-ci get article 22663027 asset "$key" --output wrong-type.docx 2>&1)"
+test ! -e wrong-type.docx
+mustmatch like "article_asset_not_retrievable
+(unusable_asset)" <<<"$refusal"
+```
+
 ## Non-PMC Figshare Assets Manifest
 
 When an article has no PMC OA package but Semantic Scholar points at a supported

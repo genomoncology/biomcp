@@ -246,7 +246,7 @@ fn article_asset_out_preserves_its_name_and_bytes() {
 }
 
 fn two_route_fixture_bytes() -> &'static [u8] {
-    b"scrubbed two-route supplement XLSX fixture bytes\n"
+    b"PK\x03\x04\nscrubbed two-route supplement XLSX fixture bytes\n"
 }
 
 fn word_case_fixture_bytes() -> &'static [u8] {

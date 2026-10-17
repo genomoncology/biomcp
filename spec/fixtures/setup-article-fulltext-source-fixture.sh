@@ -549,7 +549,7 @@ def make_europe_pmc_supplementary_zip():
     with zipfile.ZipFile(out, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(
             "41408_2024_1068_MOESM1_ESM.docx",
-            b"scrubbed Europe PMC supplementary DOCX fixture bytes\n",
+            b"PK\x03\x04\nscrubbed Europe PMC supplementary DOCX fixture bytes\n",
         )
     return out.getvalue()
 
@@ -591,7 +591,7 @@ EUROPE_PMC_SUPPLEMENTARY_ZIP = make_europe_pmc_supplementary_zip()
 # Ticket 2146: the two-route supplement keeps its full copy in the PMC OA
 # package while Europe PMC's archive holds a zero-byte member for the same
 # filename, and the Europe-only article's sole route replies with nothing.
-TWO_ROUTE_SUPPLEMENT_XLSX = b"scrubbed two-route supplement XLSX fixture bytes\n"
+TWO_ROUTE_SUPPLEMENT_XLSX = b"PK\x03\x04\nscrubbed two-route supplement XLSX fixture bytes\n"
 EUROPE_PMC_TWO_ROUTE_EMPTY_ZIP = make_empty_member_supplementary_zip(
     "NIHMS1501643-supplement-2.xlsx"
 )

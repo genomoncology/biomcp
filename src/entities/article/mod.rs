@@ -476,6 +476,7 @@ pub enum ArticleAssetNamedOutcome {
     UnsupportedOrigin,
     SourceUnavailable,
     EmptyResponse,
+    UnusableAsset,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
