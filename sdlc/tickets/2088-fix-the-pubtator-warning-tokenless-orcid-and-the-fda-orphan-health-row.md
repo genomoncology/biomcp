@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Reviews: revision 5caba37, accept
 
+Reviews: revision 20b5ef5, accept
+
 ## Outcome
 
 Coordinator implementation brief: preserve the adopted fixes and the recorded decisions. Successful article fallback suppresses warnings; total fallback failure still warns. Public ORCID requests omit Authorization unless a token is configured. FDA redirects remain blocked and are named in health output. Current-main job `1792241031845-74738` on `078ce756d` overlaid only existing regression tests and exited 100: both the FDA redirect-row case and ordinary successful-fallback case failed; the latter showed an unwanted WARN. Add the missing variant-fallback and total-failure cases to the existing behavior table, preserving the declared claims.
