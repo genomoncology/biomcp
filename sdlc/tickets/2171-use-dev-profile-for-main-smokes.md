@@ -28,3 +28,4 @@ The developer will make main build and smoke the full feature set with the devel
 
 - 2026-10-17 started
 - 2026-10-17 next: Source review prepared at 54bf2c3cd after integrating accepted batch 2159, 2149, 2168, 2128 and 2122 with current main. Reviewer fixed audit-stage harness integration without changing the required audit. Required red at ef4bb2526 and green at final candidate remain unexecuted because build-host authentication is refused. No final accept or landing is claimed.
+- 2026-10-17 next: Review accepted b72ad5dda. M5 red 1792249759100-57543 proves old main chooses optimized profile; green 1792249770832-17639 passes 39 affected contracts with one intentional skip. That job later hit a lint-driver path mistake; corrected lint 1792249787439-89343 passes without repeating tests. Batch landing gate is running for 2159, 2149, 2168, 2128, 2122 and 2171; required current-main full check runs separately before landing.
