@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::future::Future;
+use std::path::Path;
 use std::sync::OnceLock;
 use std::time::Duration;
 
@@ -1236,6 +1237,24 @@ pub(crate) fn with_response_body_limit(
     })
 }
 
+fn apply_migration_non_fatal<M, W>(
+    cache_root: &Path,
+    migrate: M,
+    warn_fn: W,
+) -> Option<crate::cache::MigrationOutcome>
+where
+    M: FnOnce(&Path) -> std::io::Result<crate::cache::MigrationOutcome>,
+    W: FnOnce(&std::io::Error),
+{
+    match migrate(cache_root) {
+        Ok(outcome) => Some(outcome),
+        Err(err) => {
+            warn_fn(&err);
+            None
+        }
+    }
+}
+
 /// A retry strategy that refuses to retry TLS trust failures.
 /// reqwest-retry's default marks every connect-layer error
 /// transient, but a rejected certificate is deterministic:
@@ -1288,24 +1307,11 @@ impl reqwest_retry::RetryableStrategy for NoTrustFailureStrategy {
     }
 }
 
-fn resolve_http_cache_config() -> Result<Option<crate::cache::ResolvedCacheConfig>, BioMcpError> {
-    match crate::cache::resolve_cache_config() {
-        Ok(config) => Ok(Some(config)),
-        Err(error @ BioMcpError::Io(_)) => {
-            crate::cache::warn_local_http_cache("initialization", &error);
-            Ok(None)
-        }
-        Err(error) => Err(error),
-    }
-}
-
 fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware, BioMcpError> {
     if cache_is_bypassed() {
         return build_uncached_http_client(kind, None);
     }
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(kind, None);
-    };
+    let config = crate::cache::resolve_cache_config()?;
     build_http_client_with_config(kind, config, None)
 }
 pub(crate) fn build_uncached_http_client(
@@ -1363,28 +1369,29 @@ where
         crate::cache::ResolvedCacheConfig,
     ) -> Result<crate::cache::SizeAwareCacheManager, BioMcpError>,
 {
-    let manager = (|| {
-        let cache_root = config.cache_root.clone();
-        let content_root = crate::cache::content_root(&cache_root.join("http"));
-        crate::cache::secure_managed_tree(&cache_root, false, Some(&content_root))?;
-        let migration = crate::cache::try_migrate_http_cache(&cache_root)?;
-        crate::cache::try_ensure_body_limited_cache_epoch(
-            &cache_root,
-            matches!(migration, crate::cache::MigrationOutcome::Renamed),
-        )?;
-        let startup_repair = crate::cache::try_lock_cache_shared(&cache_root)?;
-        let cache_path = cache_root.join("http");
-        crate::cache::ensure_http_tree_secured(&cache_path, &content_root)?;
-        drop(startup_repair);
-        make_manager(cache_path, config)
-    })();
-    let manager = match manager {
-        Ok(manager) => manager,
-        Err(error) => {
-            crate::cache::warn_local_http_cache("initialization", &error);
-            return build_uncached_http_client(kind, provider_policy);
-        }
-    };
+    let cache_root = config.cache_root.clone();
+    let content_root = crate::cache::content_root(&cache_root.join("http"));
+    crate::cache::secure_managed_tree(&cache_root, false, Some(&content_root))?;
+    let migration = apply_migration_non_fatal(
+        &cache_root,
+        crate::cache::migrate_http_cache,
+        |err| {
+            warn!(
+                cache_root = %cache_root.display(),
+                "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
+            );
+        },
+    );
+    crate::cache::ensure_body_limited_cache_epoch(
+        &cache_root,
+        matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
+    )?;
+    let startup_repair = crate::cache::lock_cache_shared(&cache_root)?;
+    let cache_path = cache_root.join("http");
+    crate::cache::ensure_http_tree_secured(&cache_path, &content_root)?;
+    drop(startup_repair);
+
+    let manager = make_manager(cache_path, config)?;
     finish_cached_http_client(kind, provider_policy, manager)
 }
 
@@ -1422,7 +1429,7 @@ pub(crate) fn finish_cached_http_client(
     let builder = builder.with(rate_limit::RateLimitMiddleware::provider_pool());
     let builder = builder.with(Cache(HttpCache {
         mode: CacheMode::Default,
-        manager: crate::cache::HttpCacheManager(manager.for_http_requests()),
+        manager,
         options: cache_options,
     }));
     let builder = builder.with(RetryTransientMiddleware::new_with_policy_and_strategy(
@@ -1450,36 +1457,46 @@ async fn build_http_client_with_config_deadline(
     if deadline.is_exhausted() {
         return Err(variant_article_deadline_error());
     }
-    let manager = async {
-        let cache_root = config.cache_root.clone();
-        let cache_path = cache_root.join("http");
-        let content_root = crate::cache::content_root(&cache_path);
-        crate::cache::secure_managed_tree_until(&cache_root, false, Some(&content_root), deadline)?;
-        deadline.ensure_time_io()?;
-        let migration = crate::cache::try_migrate_http_cache(&cache_root)?;
-        deadline.ensure_time_io()?;
-        crate::cache::try_ensure_body_limited_cache_epoch_until(
-            &cache_root,
-            matches!(migration, crate::cache::MigrationOutcome::Renamed),
-            deadline,
-        )
-        .await?;
-        let startup_repair = crate::cache::try_lock_cache_shared(&cache_root)?;
-        crate::cache::ensure_http_tree_secured_until(&cache_path, &content_root, deadline)?;
-        drop(startup_repair);
-        crate::cache::SizeAwareCacheManager::new_with_deadline(cache_path, config, deadline).await
+    let cache_root = config.cache_root.clone();
+    let cache_path = cache_root.join("http");
+    let content_root = crate::cache::content_root(&cache_path);
+    crate::cache::secure_managed_tree_until(&cache_root, false, Some(&content_root), deadline)?;
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
     }
-    .await;
-    let manager = match manager {
-        Ok(manager) => manager,
-        Err(error) => {
-            if deadline.is_exhausted() {
-                return Err(variant_article_deadline_error());
-            }
-            crate::cache::warn_local_http_cache("initialization", &error);
-            return build_uncached_http_client(kind, provider_policy);
+    let migration = match crate::cache::migrate_http_cache_with_deadline(&cache_root, deadline)
+        .await
+    {
+        Ok(outcome) => Some(outcome),
+        Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+            return Err(BioMcpError::Io(error));
+        }
+        Err(err) => {
+            warn!(
+                cache_root = %cache_root.display(),
+                "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
+            );
+            None
         }
     };
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
+    }
+    crate::cache::ensure_body_limited_cache_epoch_until(
+        &cache_root,
+        matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
+        deadline,
+    )
+    .await?;
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
+    }
+    let startup_repair = crate::cache::lock_cache_shared_until(&cache_root, deadline).await?;
+    crate::cache::ensure_http_tree_secured_until(&cache_path, &content_root, deadline)?;
+    drop(startup_repair);
+    let manager =
+        crate::cache::SizeAwareCacheManager::new_with_deadline(cache_path, config, deadline)
+            .await?;
     let client = finish_cached_http_client(kind, provider_policy, manager)?;
     if deadline.is_exhausted() {
         return Err(variant_article_deadline_error());
@@ -1625,10 +1642,7 @@ pub(crate) async fn shared_client_with_deadline(
             .then_some(client)
             .ok_or_else(variant_article_deadline_error);
     }
-    deadline.ensure_time_io()?;
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(SharedHttpClientKind::Default, None);
-    };
+    let config = crate::cache::resolve_cache_config()?;
     let client = build_http_client_with_config_deadline(
         SharedHttpClientKind::Default,
         config,
@@ -1664,9 +1678,7 @@ pub(crate) fn semantic_scholar_provider_client(
     if cache_is_bypassed() {
         return build_uncached_http_client(kind, Some(policy));
     }
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(kind, Some(policy));
-    };
+    let config = crate::cache::resolve_cache_config()?;
     let client = build_http_client_with_config(kind, config, Some(policy))?;
     ensure_variant_article_time()?;
     Ok(client)
@@ -1687,11 +1699,13 @@ pub(crate) async fn semantic_scholar_provider_client_with_deadline(
     if cache_is_bypassed() {
         return build_uncached_http_client(kind, Some(policy));
     }
-    deadline.ensure_time_io()?;
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(kind, Some(policy));
-    };
-    build_http_client_with_config_deadline(kind, config, Some(policy), deadline).await
+    build_http_client_with_config_deadline(
+        kind,
+        crate::cache::resolve_cache_config()?,
+        Some(policy),
+        deadline,
+    )
+    .await
 }
 
 /// Obtains a policy-scoped client for one source (`source_id` is its
@@ -1705,9 +1719,7 @@ pub(crate) fn provider_url_client(
     if is_no_cache_enabled() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
-    };
+    let config = crate::cache::resolve_cache_config()?;
     let client =
         build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))?;
     ensure_variant_article_time()?;
@@ -1725,9 +1737,7 @@ pub(crate) fn operator_provider_url_client(
     if cache_is_bypassed() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
-    };
+    let config = crate::cache::resolve_cache_config()?;
     let client =
         build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))?;
     ensure_variant_article_time()?;
@@ -1743,13 +1753,9 @@ pub(crate) async fn provider_url_client_with_deadline(
     if cache_is_bypassed() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }
-    deadline.ensure_time_io()?;
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
-    };
     build_http_client_with_config_deadline(
         SharedHttpClientKind::Default,
-        config,
+        crate::cache::resolve_cache_config()?,
         Some(policy),
         deadline,
     )
@@ -2151,6 +2157,7 @@ mod tests {
     use super::*;
     use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
     use crate::test_support::TempDirGuard;
+    use std::path::Path;
     use std::sync::{
         Arc, Mutex,
         atomic::{AtomicUsize, Ordering},
@@ -2877,7 +2884,17 @@ mod tests {
         assert_eq!(resp.status(), reqwest::StatusCode::OK);
         assert_eq!(attempts.load(Ordering::SeqCst), 2);
     }
-
+    #[test]
+    fn apply_migration_non_fatal_warns_and_continues_on_error() {
+        let mut warned = Vec::new();
+        let outcome = apply_migration_non_fatal(
+            Path::new("/unused"),
+            |_| Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied)),
+            |err| warned.push(err.kind()),
+        );
+        assert!(outcome.is_none());
+        assert_eq!(warned, vec![std::io::ErrorKind::PermissionDenied]);
+    }
     #[test]
     fn build_http_client_migrates_then_clears_pre_limit_legacy_cache() {
         let root = TempDirGuard::new("http-cache-migration");

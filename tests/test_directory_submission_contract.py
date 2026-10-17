@@ -46,11 +46,10 @@ def test_manifest_matches_directory_bundle_contract() -> None:
     assert manifest["manifest_version"] == "0.3"
     assert manifest["name"] == "biomcp"
     assert manifest["display_name"] == "BioMCP"
-    # The directory bundle publishes the released version; the package
-    # metadata carries the development candidate between releases (2132).
-    assert cargo["package"]["version"] == "0.9.3-dev"
-    assert pyproject["project"]["version"] == "0.9.3.dev0"
-    assert manifest["version"] == "0.9.2"
+    assert cargo["package"]["name"] == pyproject["project"]["name"] == "biomcp-cli"
+    # The shared check enforces package/manifest identity in both stable
+    # and development states, including the Python development mapping.
+    subprocess.run(["bash", "scripts/check-version-sync.sh"], cwd=REPO_ROOT, check=True)
     assert manifest["privacy_policies"] == ["https://biomcp.org/policies/"]
     assert "tools_generated" not in manifest
 
@@ -344,7 +343,9 @@ def test_policies_page_covers_directory_privacy_requirements() -> None:
     assert "clinical" in lowered
 
 
-def test_release_workflow_uses_committed_registry_metadata_without_rewriting_it() -> None:
+def test_release_workflow_uses_committed_registry_metadata_without_rewriting_it() -> (
+    None
+):
     release = _read(".github/workflows/release.yml")
     operator_docs = _read("docs/reference/mcp-server.md")
 

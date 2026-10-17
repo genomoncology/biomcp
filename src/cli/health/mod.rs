@@ -549,6 +549,7 @@ mod tests {
     }
 
     mod catalog;
+    mod fda;
     mod http;
     mod local;
     mod runner;

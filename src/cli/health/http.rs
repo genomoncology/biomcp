@@ -83,6 +83,16 @@ fn api_error_latency(start: Instant, err: &BioMcpError) -> String {
     }
 }
 
+/// The FDA orphan row names the redirect it got: the FDA site answers
+/// scripted clients with a redirect, BioMCP does not follow it, and the
+/// row says so instead of reporting a generic status error.
+pub(in crate::cli::health) fn fda_orphan_blocked_latency(start: &Instant, code: u16) -> String {
+    format!(
+        "{}ms (HTTP {code}, blocked: the FDA site redirects scripted clients)",
+        start.elapsed().as_millis()
+    )
+}
+
 pub(in crate::cli::health) async fn send_request(
     api: &str,
     affects: Option<&'static str>,
@@ -243,10 +253,11 @@ pub(in crate::cli::health) async fn check_auth_get(
     .await
 }
 
-/// Health row: the ORCID token validator decides before any
-/// network work. Missing or ASCII-space-only tokens exclude the row; an
-/// invalid nonblank token is an error with zero GETs; a valid token performs
-/// exactly one bearer GET.
+/// Health row: the ORCID token validator decides before any network work
+/// for a set token. An invalid nonblank token is an error with zero GETs;
+/// a valid token performs exactly one bearer GET; with no token the probe
+/// reads the public endpoint unauthenticated, because the public API
+/// serves the same reads and the row names the shared anonymous pool.
 pub(in crate::cli::health) async fn check_orcid_get(
     client: reqwest::Client,
     api: &str,
@@ -255,13 +266,12 @@ pub(in crate::cli::health) async fn check_orcid_get(
     affects: Option<&'static str>,
 ) -> ProbeOutcome {
     match crate::sources::orcid::OrcidClient::credential_state() {
-        "excluded" => excluded_outcome(api, env_var, affects),
         "error" => {
             let mut row = health_row(api, HealthStatus::Error, "n/a".into(), affects, Some(true));
             row.required_env_var = Some(env_var.to_string());
             outcome(row, ProbeClass::Error)
         }
-        _ => {
+        "configured" => {
             let token = std::env::var(env_var).unwrap_or_default();
             let token = token.trim_matches(' ');
             send_request(
@@ -274,6 +284,32 @@ pub(in crate::cli::health) async fn check_orcid_get(
                 Some(true),
             )
             .await
+        }
+        _ => {
+            let start = Instant::now();
+            let request = client
+                .get(probe_url(url))
+                .header("Accept", "application/vnd.orcid+json");
+            match request.send().await {
+                Ok(response) => optional_auth_status_outcome(
+                    api,
+                    response.status(),
+                    start.elapsed().as_millis(),
+                    Some(false),
+                    env_var,
+                    affects,
+                ),
+                Err(err) => outcome(
+                    health_row(
+                        api,
+                        HealthStatus::Error,
+                        transport_error_latency(start, &err),
+                        affects,
+                        Some(false),
+                    ),
+                    ProbeClass::Error,
+                ),
+            }
         }
     }
 }
