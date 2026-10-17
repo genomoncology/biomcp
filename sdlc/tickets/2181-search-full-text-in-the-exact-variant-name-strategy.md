@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 428ecb0, accept
+
 ## Outcome
 
 The exact variant-name strategy searches full text wherever a source supports it, so a variant named only in a paper's body or tables is found.
