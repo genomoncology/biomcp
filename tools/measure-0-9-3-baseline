@@ -70,7 +70,8 @@ mkdir -p "$LOGD"
 # Store security checks deliberately reject symlink components in paths.
 mkdir -p "$LOGD/tmp"
 chmod 700 "$LOGD/tmp"
-export TMPDIR="$(cd "$LOGD/tmp" && pwd -P)"
+TMPDIR="$(cd "$LOGD/tmp" && pwd -P)"
+export TMPDIR
 
 say() { printf '\n### %s — %s\n' "$1" "$2"; }
 result() { printf 'RESULT %s = %s\n' "$1" "$2"; }
