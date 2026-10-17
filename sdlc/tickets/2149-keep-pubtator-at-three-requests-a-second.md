@@ -81,3 +81,4 @@ Primary source rechecked 2026-10-17: <https://www.ncbi.nlm.nih.gov/research/pubt
 
 - 2026-10-17 started
 - 2026-10-17 next: Batch members: 2159, 2149, 2168, 2128, 2122 and 2171. Shared landing gate: job 1792250897357-93113, candidate ea4161cc814ad034634ffd249e67b475e77e38dc. Required preceding main check 1792249698624-96397 passed. Gate is running; each ticket keeps its individual review and landing commit.
+- 2026-10-17 next: Batch members: 2159, 2149, 2168, 2128, 2122 and 2171. Shared configured landing gate PASSED: job 1792251400030-83132, candidate c264da2a525c2c6e5a424693d55dfab0f59fadf4, 240.3 seconds. This replaces the earlier failed batch attempts. Preceding full main check 1792249698624-96397 passed. Land each reviewed member through pm, then run one full check on final batch main.
