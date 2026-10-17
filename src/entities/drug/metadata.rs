@@ -182,7 +182,7 @@ pub(super) fn apply_openfda_metadata(drug: &mut Drug, label_response: &serde_jso
     let mut merged: Vec<String> = Vec::new();
     for name in brand_names {
         let trimmed = name.trim();
-        if trimmed.is_empty() {
+        if trimmed.is_empty() || trimmed.eq_ignore_ascii_case(&drug.name) {
             continue;
         }
         let key = trimmed.to_ascii_lowercase();
@@ -194,9 +194,7 @@ pub(super) fn apply_openfda_metadata(drug: &mut Drug, label_response: &serde_jso
             break;
         }
     }
-    if !merged.is_empty() {
-        drug.brand_names = merged;
-    }
+    drug.brand_names = merged;
 
     let mut routes = extract_openfda_values(label_response, "route")
         .into_iter()
