@@ -57,6 +57,7 @@ enum FulltextStepOutcome<T> {
     Data(T),
     Empty,
     Unusable(BioMcpError),
+    BotChallenge(BioMcpError),
     Failed(BioMcpError),
 }
 
@@ -377,6 +378,7 @@ fn classify_html_fetch(
         }
         PmcHtmlFetchOutcome::Empty => FulltextStepOutcome::Empty,
         PmcHtmlFetchOutcome::Unusable(err) => FulltextStepOutcome::Unusable(err),
+        PmcHtmlFetchOutcome::BotChallenge(err) => FulltextStepOutcome::BotChallenge(err),
         PmcHtmlFetchOutcome::Failed(err) => FulltextStepOutcome::Failed(err),
     };
     HtmlResolution {
@@ -894,6 +896,17 @@ pub(super) async fn resolve_fulltext(
                 );
                 state.record_failure(err);
             }
+            FulltextStepOutcome::BotChallenge(err) => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::PmcHtml,
+                    ArticleFulltextAttemptCoverage::Unusable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    resolution.cache_state,
+                    ArticleFulltextAttemptReason::BotChallenge,
+                );
+                state.record_failure(err);
+            }
             FulltextStepOutcome::Failed(err) => {
                 state.record_attempt(
                     &source,
@@ -997,6 +1010,17 @@ pub(super) async fn resolve_fulltext(
                 );
                 state.record_failure(err);
             }
+            FulltextStepOutcome::BotChallenge(err) => {
+                state.record_attempt(
+                    &pdf_source,
+                    ArticleFulltextAttemptSourceKind::Pdf,
+                    ArticleFulltextAttemptCoverage::Unusable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::BotChallenge,
+                );
+                state.record_failure(err);
+            }
             FulltextStepOutcome::Failed(err) => {
                 state.record_attempt(
                     &pdf_source,
@@ -1054,7 +1078,9 @@ mod tests {
 
     fn failed<T>(outcome: FulltextStepOutcome<T>) -> BioMcpError {
         match outcome {
-            FulltextStepOutcome::Failed(err) | FulltextStepOutcome::Unusable(err) => err,
+            FulltextStepOutcome::Failed(err)
+            | FulltextStepOutcome::Unusable(err)
+            | FulltextStepOutcome::BotChallenge(err) => err,
             FulltextStepOutcome::Data(_) | FulltextStepOutcome::Empty => {
                 panic!("attempt should be classified as failure")
             }
@@ -1417,6 +1443,109 @@ mod tests {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &invalid_pdf.base);
         failed(pdf_with_client(&client, &format!("{}/invalid.pdf", invalid_pdf.base), "1").await);
         drop(invalid_pdf);
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn pmc_bot_challenge_page_names_its_reason_and_keeps_the_pdf_ladder_running() {
+        let challenge_page = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/pmc_article/pmc-bot-challenge.html"
+        ));
+        let fixture_pdf = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/article/fulltext/pdf/pmc_oa_article_pdf.pdf"
+        ));
+        let fixture = TestHttpFixture::spawn(|request| {
+            let (status, content_type, body): (&str, &str, &[u8]) =
+                if request.contains("/articles/PMC123456/") {
+                    ("200 OK", "text/html; charset=utf-8", challenge_page)
+                } else if request.contains("winner.pdf") {
+                    ("200 OK", "application/pdf", fixture_pdf)
+                } else if request.contains("list-type=2") {
+                    (
+                        "200 OK",
+                        "application/xml",
+                        b"<ListBucketResult></ListBucketResult>",
+                    )
+                } else {
+                    ("404 Not Found", "text/plain", b"not found")
+                };
+            TestHttpReply::Bytes(test_http_response(status, content_type, body))
+        })
+        .await;
+        let mut env = TestEnv::new();
+        let cache = TempDirGuard::new("article-fulltext-pmc-bot-challenge");
+        for key in [
+            "BIOMCP_TEST_UNPACED_ORIGIN",
+            "BIOMCP_EUROPEPMC_BASE",
+            "BIOMCP_PUBMED_BASE",
+            "BIOMCP_PMC_OA_BASE",
+            crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV,
+        ] {
+            env.set(key, &fixture.base);
+        }
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+
+        let mut article = article_for_fulltext();
+        article.semantic_scholar = Some(ArticleSemanticScholar {
+            paper_id: Some("paper-bot-challenge".into()),
+            tldr: None,
+            citation_count: None,
+            influential_citation_count: None,
+            reference_count: None,
+            is_open_access: Some(true),
+            open_access_pdf: Some(ArticleSemanticScholarPdf {
+                url: format!("{}/pdf/winner.pdf", fixture.base),
+                status: Some("GREEN".into()),
+                license: Some("CC BY".into()),
+            }),
+        });
+        let pdf_discovery = pdf_discovery_attempt(&article, true, Ok(()));
+        resolve_fulltext(&mut article, "22663011", pdf_discovery)
+            .await
+            .expect("pdf ladder keeps running after the challenge page");
+
+        let attempts = &article
+            .full_text_coverage
+            .as_ref()
+            .expect("coverage attempts")
+            .attempts;
+        let html_attempt = attempts
+            .iter()
+            .find(|attempt| attempt.source_kind == ArticleFulltextAttemptSourceKind::PmcHtml)
+            .expect("pmc html attempt");
+        let serialized = serde_json::to_value(html_attempt).expect("serialized attempt");
+        assert_eq!(serialized["reason"], "bot_challenge");
+        assert_eq!(
+            html_attempt.reason,
+            ArticleFulltextAttemptReason::BotChallenge
+        );
+        assert_eq!(
+            html_attempt.coverage,
+            ArticleFulltextAttemptCoverage::Unusable
+        );
+        assert_eq!(
+            html_attempt.outcome,
+            ArticleFulltextAttemptOutcome::Unavailable
+        );
+        let pdf_attempt_index = attempts
+            .iter()
+            .position(|attempt| attempt.source_kind == ArticleFulltextAttemptSourceKind::Pdf)
+            .expect("pdf attempt still ran");
+        let html_attempt_index = attempts
+            .iter()
+            .position(|attempt| attempt.source_kind == ArticleFulltextAttemptSourceKind::PmcHtml)
+            .expect("pmc html attempt index");
+        assert!(html_attempt_index < pdf_attempt_index);
+        assert_eq!(
+            attempts[pdf_attempt_index].outcome,
+            ArticleFulltextAttemptOutcome::Data
+        );
+        assert_eq!(
+            article.full_text_source.as_ref().map(|s| s.source.as_str()),
+            Some("Semantic Scholar")
+        );
     }
 
     #[test]

@@ -28,6 +28,7 @@ pub(crate) enum PmcHtmlFetchOutcome {
     Data { html: String, url: Url },
     Empty,
     Unusable(BioMcpError),
+    BotChallenge(BioMcpError),
     Failed(BioMcpError),
 }
 
@@ -243,6 +244,15 @@ fn is_pmc_proof_of_work(bytes: &[u8]) -> bool {
     })
 }
 
+// PMC sometimes answers the article page with a bot-challenge interstitial
+// instead of the article. The recorded page carries both markers in its
+// title ("Checking your browser - reCAPTCHA"); requiring both keeps an
+// article that merely mentions either word from matching.
+fn html_is_bot_challenge(html: &str) -> bool {
+    let lowered = html.to_ascii_lowercase();
+    lowered.contains("checking your browser") && lowered.contains("recaptcha")
+}
+
 fn classify_linked_status(status: StatusCode) -> Option<PmcLinkedFetch> {
     match status {
         StatusCode::NOT_FOUND | StatusCode::NO_CONTENT => Some(PmcLinkedFetch::HealthyAbsent),
@@ -338,10 +348,25 @@ pub(crate) async fn fetch_html_with_client(
         }
     };
     match String::from_utf8(bytes.to_vec()) {
-        Ok(html) => PmcHtmlFetch {
-            outcome: PmcHtmlFetchOutcome::Data { html, url },
-            cache_state,
-        },
+        Ok(html) => {
+            if html_is_bot_challenge(&html) {
+                return PmcHtmlFetch {
+                    outcome: PmcHtmlFetchOutcome::BotChallenge(
+                        BioMcpError::Api {
+                            api: ARTICLE_FULLTEXT_API.to_string(),
+                            message: "PMC served a bot challenge instead of the article page; retrying may work"
+                                .to_string(),
+                        }
+                        .with_source_context(SourceContext::retry(SourceProvider::PMC_OPEN_ACCESS)),
+                    ),
+                    cache_state,
+                };
+            }
+            PmcHtmlFetch {
+                outcome: PmcHtmlFetchOutcome::Data { html, url },
+                cache_state,
+            }
+        }
         Err(_) => PmcHtmlFetch {
             outcome: PmcHtmlFetchOutcome::Unusable(
                 BioMcpError::Api {
@@ -359,7 +384,9 @@ pub(crate) async fn html(pmcid: &str) -> Result<Option<String>, BioMcpError> {
     match fetch_html(pmcid, pmcid).await.outcome {
         PmcHtmlFetchOutcome::Data { html, .. } => Ok(Some(html)),
         PmcHtmlFetchOutcome::Empty => Ok(None),
-        PmcHtmlFetchOutcome::Unusable(err) | PmcHtmlFetchOutcome::Failed(err) => Err(err),
+        PmcHtmlFetchOutcome::Unusable(err)
+        | PmcHtmlFetchOutcome::BotChallenge(err)
+        | PmcHtmlFetchOutcome::Failed(err) => Err(err),
     }
 }
 
@@ -615,6 +642,24 @@ mod tests {
         assert!(is_pmc_proof_of_work(b"prefix CLOUDPMC-VIEWER-POW suffix"));
         assert!(is_pmc_proof_of_work(b"prefix pow_challenge suffix"));
         assert!(!is_pmc_proof_of_work(b"ordinary binary content"));
+    }
+
+    #[test]
+    fn bot_challenge_markers_need_both_recorded_title_words() {
+        let challenge_page = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/pmc_article/pmc-bot-challenge.html"
+        ));
+        assert!(html_is_bot_challenge(challenge_page));
+        assert!(html_is_bot_challenge(
+            "<html><head><TITLE>CHECKING YOUR BROWSER - RECAPTCHA</TITLE></head></html>"
+        ));
+        assert!(!html_is_bot_challenge(
+            "<main><article><p>A review of browser plugins and recaptcha research.</p></article></main>"
+        ));
+        assert!(!html_is_bot_challenge(
+            "<main><article><p>Checking your browser history for symptoms.</p></article></main>"
+        ));
     }
 
     #[tokio::test]
