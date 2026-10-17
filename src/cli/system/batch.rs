@@ -75,6 +75,16 @@ pub(crate) fn validate_batch_args(args: &BatchArgs) -> Result<(), crate::error::
             "--mode is only supported for article batches".into(),
         ));
     }
+    if entity != "article" && args.pdf {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--pdf is only supported for article batches".into(),
+        ));
+    }
+    if entity == "article" && args.pdf && args.mode == Some(ArticleBatchMode::Compact) {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--pdf is not supported for compact article batches".into(),
+        ));
+    }
     if entity == "article"
         && args.mode == Some(ArticleBatchMode::Compact)
         && args.sections.is_some()
@@ -88,6 +98,25 @@ pub(crate) fn validate_batch_args(args: &BatchArgs) -> Result<(), crate::error::
         && let Some(sections) = args.sections.as_deref()
     {
         validate_article_batch_sections(sections)?;
+    }
+    if entity == "article"
+        && args.pdf
+        && args.mode != Some(ArticleBatchMode::Compact)
+        && !args
+            .sections
+            .as_deref()
+            .unwrap_or_default()
+            .split(',')
+            .map(str::trim)
+            .any(|section| matches!(section.to_ascii_lowercase().as_str(), "fulltext" | "all"))
+    {
+        // The shared detail path refuses --pdf without the fulltext section;
+        // preflight mirrors it so the refusal happens before any provider
+        // request, like every other batch argument check.
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--pdf requires the fulltext section (example: biomcp batch article 22663011,22663012 --mode detail --sections fulltext --pdf)"
+                .into(),
+        ));
     }
     Ok(())
 }
@@ -273,12 +302,23 @@ mod tests {
         mode: Option<ArticleBatchMode>,
         sections: Option<&str>,
     ) -> BatchArgs {
+        args_with_pdf(entity, ids, mode, sections, false)
+    }
+
+    fn args_with_pdf(
+        entity: &str,
+        ids: String,
+        mode: Option<ArticleBatchMode>,
+        sections: Option<&str>,
+        pdf: bool,
+    ) -> BatchArgs {
         BatchArgs {
             entity: entity.into(),
             ids,
             mode,
             sections: sections.map(str::to_string),
             source: None,
+            pdf,
         }
     }
 
@@ -325,6 +365,24 @@ mod tests {
         ])
         .expect_err("unsupported modes must fail in clap");
         assert!(error.to_string().contains("invalid value 'summary'"));
+
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "batch",
+            "article",
+            "22663011,24200969",
+            "--mode",
+            "detail",
+            "--sections",
+            "fulltext",
+            "--pdf",
+        ])
+        .expect("article batch --pdf should parse");
+        let Commands::Batch(parsed) = cli.command else {
+            panic!("expected batch command")
+        };
+        assert!(parsed.pdf);
+        assert_eq!(parsed.sections.as_deref(), Some("fulltext"));
     }
 
     #[test]
@@ -406,6 +464,63 @@ mod tests {
             Some("tldr,tldr,annotations"),
         ))
         .expect("duplicate known sections retain ordinary article semantics");
+
+        // --pdf rides only on article detail batches that asked for fulltext.
+        for entity in ["gene", "variant", "trial"] {
+            let value = args_with_pdf(entity, "one".into(), None, None, true);
+            assert!(
+                validate_batch_args(&value)
+                    .expect_err("pdf is article-only")
+                    .to_string()
+                    .contains("--pdf is only supported for article batches")
+            );
+        }
+        assert!(
+            validate_batch_args(&args_with_pdf(
+                "article",
+                "one".into(),
+                Some(ArticleBatchMode::Compact),
+                None,
+                true,
+            ))
+            .expect_err("compact refuses pdf")
+            .to_string()
+            .contains("--pdf is not supported for compact article batches")
+        );
+        for sections in [None, Some("tldr"), Some("tldr,indexing")] {
+            let value = args_with_pdf(
+                "article",
+                "one".into(),
+                Some(ArticleBatchMode::Detail),
+                sections,
+                true,
+            );
+            assert!(
+                validate_batch_args(&value)
+                    .expect_err("pdf needs the fulltext section")
+                    .to_string()
+                    .contains("--pdf requires the fulltext section"),
+                "sections={sections:?}"
+            );
+        }
+        for sections in ["fulltext", "FULLTEXT", "fulltext,tldr", "all"] {
+            validate_batch_args(&args_with_pdf(
+                "article",
+                "one".into(),
+                Some(ArticleBatchMode::Detail),
+                Some(sections),
+                true,
+            ))
+            .unwrap_or_else(|error| panic!("pdf accepts {sections:?}: {error}"));
+            validate_batch_args(&args_with_pdf(
+                "article",
+                "one".into(),
+                None,
+                Some(sections),
+                true,
+            ))
+            .unwrap_or_else(|error| panic!("pdf accepts default detail {sections:?}: {error}"));
+        }
 
         for (count, mode, accepted) in [
             (1, None, true),

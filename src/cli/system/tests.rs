@@ -554,6 +554,12 @@ fn batch_help_includes_examples_and_limits() {
     assert!(help.contains("Article compact mode accepts up to 20 IDs"));
     assert!(help.contains("Each call must use a single entity type."));
     assert!(help.contains("Article batch sections: annotations, fulltext, indexing, tldr, all",));
+    assert!(help.contains(
+        "`--pdf` adds the Semantic Scholar open-PDF fulltext fallback; article detail batches only"
+    ));
+    assert!(help.contains(
+        "biomcp batch article 22663011,24200969 --mode detail --sections fulltext --pdf"
+    ));
     assert!(help.contains("See also: biomcp list batch"));
 }
 

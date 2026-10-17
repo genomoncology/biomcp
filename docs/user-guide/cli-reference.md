@@ -24,8 +24,8 @@ biomcp get <entity> <id> [section...]
 ```
 
 Section names are positional trailing arguments after `<id>`. `get article`
-also accepts the named `--pdf` modifier, but only together with the `fulltext`
-section.
+and article detail batches also accept the named `--pdf` modifier, but only
+together with the `fulltext` section.
 
 ## Evidence metadata
 
@@ -583,6 +583,7 @@ biomcp --json get article <id> assets
 biomcp get article <id> asset <asset-key>
 biomcp get article 22663011 tldr
 biomcp batch article 22663011,24200969 --mode compact
+biomcp batch article 22663011,24200969 --mode detail --sections fulltext --pdf
 ```
 
 Article detail and batch return every author supplied by the selected source in
@@ -620,8 +621,10 @@ helpers. Without it, those same paths use the shared unauthenticated pool at
 For article full text, the default ladder is XML -> PMC HTML. A rung wins only
 when its JATS/HTML structure contains article-body content; abstract-only and
 metadata-only responses remain healthy partials and later rungs continue. Add
-`--pdf` only to `get article <id> fulltext` when you want Semantic Scholar
-open-access PDF as the final fallback after XML and HTML do not provide a body.
+`--pdf` to `get article <id> fulltext` or to `batch article <ids> --mode detail
+--sections fulltext` when you want Semantic Scholar open-access PDF as the final
+fallback after XML and HTML do not provide a body; the batch keeps every paper
+under the one in-process Semantic Scholar limiter.
 Requested full-text JSON adds `full_text_coverage` with final
 `full_text`/`abstract_only`/`metadata_only`/`none`/`unavailable` coverage and
 ordered sanitized attempts (provider, source kind, coverage, outcome, cache

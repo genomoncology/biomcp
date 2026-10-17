@@ -27,6 +27,9 @@ pub struct ArticleFulltextFixture {
     workspace: tempfile::TempDir,
     repo_root: PathBuf,
     pub base_url: String,
+    /// The second listener standing in for the publisher origin Semantic
+    /// Scholar vouches open PDF links against.
+    pub publisher_url: String,
     pub cache_dir: PathBuf,
     pub request_log: PathBuf,
 }
@@ -942,21 +945,31 @@ pub fn provision_article_fulltext_fixture(
     let base_url = std::fs::read_to_string(fixture_root.join("base-url"))?
         .trim()
         .to_string();
+    let publisher_url = std::fs::read_to_string(fixture_root.join("publisher-url"))?
+        .trim()
+        .to_string();
     let cache_dir = workspace.path().join("cache path naïve 🧬");
     Ok(ArticleFulltextFixture {
         workspace,
         repo_root,
         base_url,
+        publisher_url,
         cache_dir,
         request_log: fixture_root.join("request-log.txt"),
     })
 }
 
 pub fn article_fulltext_fixture_env(fixture: &ArticleFulltextFixture) -> Vec<EnvVar> {
-    let mut env = vec![(
-        "BIOMCP_CACHE_DIR",
-        fixture.cache_dir.to_string_lossy().into_owned(),
-    )];
+    let mut env = vec![
+        (
+            "BIOMCP_CACHE_DIR",
+            fixture.cache_dir.to_string_lossy().into_owned(),
+        ),
+        (
+            "BIOMCP_S2_PDF_FIXTURE_ORIGIN",
+            fixture.publisher_url.clone(),
+        ),
+    ];
     for name in [
         "BIOMCP_TEST_UNPACED_ORIGIN",
         "BIOMCP_PUBTATOR_BASE",

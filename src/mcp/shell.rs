@@ -1130,6 +1130,11 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         }
         args.push(section);
     }
+    if entity == "article" && object.get("pdf").and_then(Value::as_bool) == Some(true) {
+        // The fulltext-section rule stays with the shared detail path the
+        // mapped command runs through, so CLI and MCP report it identically.
+        args.push("--pdf".into());
+    }
     if object.get("json").and_then(Value::as_bool) == Some(true) {
         args = args_with_json(args);
     }
@@ -2187,7 +2192,9 @@ mod tests {
         get_keys.sort_unstable();
         assert_eq!(
             get_keys,
-            vec!["assembly", "entity", "id", "json", "sections", "source"]
+            vec![
+                "assembly", "entity", "id", "json", "pdf", "sections", "source"
+            ]
         );
         assert_eq!(get["required"], json!(["entity", "id"]));
         // The sections items enum unions every entity's sections, and the
