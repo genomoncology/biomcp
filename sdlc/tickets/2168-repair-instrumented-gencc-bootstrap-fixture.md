@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 4f7538d, accept
+
 ## Outcome
 
 The GenCC bootstrap durability test runs reliably under the required instrumented coverage configuration, preserving fail-closed behavior and every injected-fsync assertion.
