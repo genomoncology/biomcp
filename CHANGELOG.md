@@ -40,6 +40,7 @@
 
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
+- Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)
 - The no-entity annotation regression returns an empty reply for both PubTator and LitVar2 autocomplete through one shared fixture handler, so an empty LitVar2 match stays a healthy zero-row answer and the test no longer mistakes a missing fixture route for an outage. (2154)
 - The frozen ERepo specification removes its final output byte with Python instead of a GNU-only `head` option, so its exact Markdown assertions also run on macOS. (2157)
 - CI and documentation publication run only when started manually; branch pushes, main pushes and pull requests start neither workflow. Manual CI runs exercise every check on the selected revision, and manual documentation publication keeps its production-main revision guard. Release tag triggers and publication safeguards are unchanged. (2155)

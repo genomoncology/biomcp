@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
+import subprocess
 import re
 import pytest
 
@@ -41,7 +43,7 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert '"${routine_cargo_features[@]}"' in runner
     assert "args.cargo_feature_arg" in preparer
     assert '"--no-default-features"' not in preparer
-    assert 'cargo clippy "${routine_cargo_features[@]}" -- -D warnings' in lint
+    assert 'cargo clippy --all-targets "${routine_cargo_features[@]}" -- -D warnings' in lint
 
 
 def test_release_gate_runs_a_named_all_feature_check() -> None:
@@ -121,3 +123,51 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
 
     missing = [name for name, present in requirements.items() if not present]
     assert not missing, f"missing supported test-lane documentation: {missing}"
+
+
+@pytest.mark.parametrize(
+    ("target", "expected"),
+    [
+        ("landing-gate", ["lint", "test", "spec"]),
+        ("main-gate", ["lint", "test", "spec", "full-feature-check"]),
+    ],
+)
+@pytest.mark.parametrize("failed_stage", [None, "test"])
+def test_landing_commands_run_ordered_checks_and_stop_on_failure(
+    tmp_path: Path, target: str, expected: list[str], failed_stage: str | None
+) -> None:
+    # Override existing leaves, not the gate recipes: exercise Make's real
+    # ordering and failure propagation without compiling the product again.
+    wrapper = tmp_path / "gate.mk"
+    wrapper.write_text(
+        f"include {REPO_ROOT / 'Makefile'}\n"
+        + "\n".join(
+            f"{stage}:\n\t@echo gate-stage:{stage}\n"
+            + ("\t@exit 23\n" if stage == failed_stage else "")
+            for stage in ("lint", "test", "spec", "full-feature-check")
+        ),
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            "make", "--no-print-directory", "-s", "-j4", "-f", str(wrapper),
+            f"MAKE=make --no-print-directory -s -f {wrapper}", target,
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    stages = [
+        line.removeprefix("gate-stage:")
+        for line in result.stdout.splitlines()
+        if line.startswith("gate-stage:")
+    ]
+    if failed_stage:
+        assert result.returncode != 0
+        assert stages == expected[: expected.index(failed_stage) + 1]
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert stages == expected
+    config = json.loads(_read("sdlc/pm.json"))
+    assert config["ticketsGate"] == "make landing-gate"

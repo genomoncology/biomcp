@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
+.PHONY: landing-gate main-gate
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
@@ -78,6 +79,18 @@ lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
 		PATH="$$tool_dir:$$PATH" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-quality-ratchet.sh
+
+# Keep commands in recipes so even make -j preserves the landing order.
+# The existing landing gate runs on the merge candidate; main adds the
+# shipped-feature build and behavior checks before the next landing.
+landing-gate:
+	$(MAKE) lint
+	$(MAKE) test
+	$(MAKE) spec
+
+main-gate:
+	$(MAKE) landing-gate
+	$(MAKE) full-feature-check
 
 full-feature-check:
 	$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features -- -D warnings
