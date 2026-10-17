@@ -122,6 +122,7 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
     assert second.returncode == 0, second.stderr
     second_payload = json.loads(second.stdout)
     assert second_payload.get("results", second_payload.get("sections")) == first_payload.get("results", first_payload.get("sections"))
+    assert "local HTTP cache" not in first.stderr + second.stderr, (first.stderr, second.stderr)
     cached_keys = {
         entry["key"] for entry in replay.request_log_entries()[:before]
         if entry["status"] == 200 and entry["key"].startswith(("GET /europepmc/", "GET /mygene/"))
@@ -129,7 +130,6 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
     assert cached_keys, "cold search must contact the cacheable providers"
     repeated = {entry["key"] for entry in replay.request_log_entries(since=before)}
     assert not cached_keys & repeated, "identical search must reuse cached provider answers"
-    assert "local HTTP cache" not in first.stderr + second.stderr
 
 def test_undecodable_cache_entry_refetches_then_keeps_cache_hits(provider):
     run, cache, _, replay = provider

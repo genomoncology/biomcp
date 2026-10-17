@@ -156,8 +156,8 @@ def test_every_touched_production_builder_applies_the_operator_ca_bundle() -> No
     # The inventory above counts constructions; this pins that every builder
     # this ticket touched routes through the shared CA-bundle helper so an
     # operator-supplied private root is trusted without disabling verification.
-    # src/sources/mod.rs carries the two shared-pool builders (cached and
-    # uncached) and is counted here, not skipped.
+    # src/sources/mod.rs routes cached and uncached shared pools through
+    # finish_http_client, which applies the bundle to their one transport factory.
     for relative, calls in {
         "src/sources/ordinary_url_policy.rs": {
             "ca_bundle::configure(": 2,
@@ -171,8 +171,17 @@ def test_every_touched_production_builder_applies_the_operator_ca_bundle() -> No
         "src/cli/health/runner.rs": {"ca_bundle::build_client(": 1},
         "src/sources/orcid.rs": {"ca_bundle::build(": 1},
         "src/sources/clingen_cspec.rs": {"ca_bundle::build(": 1},
-        "src/sources/mod.rs": {"ca_bundle::build(": 2},
+        "src/sources/mod.rs": {"ca_bundle::build(": 1},
     }.items():
         text = production_text(ROOT / relative)
         for call, expected in calls.items():
             assert text.count(call) == expected, (relative, call)
+
+    shared = production_text(ROOT / "src/sources/mod.rs")
+    uncached = shared.split("pub(crate) fn build_uncached_http_client(", 1)[1].split("#[cfg(test)]", 1)[0]
+    process_pool = shared.split("fn shared_http_clients()", 1)[1].split("#[derive(Default)]", 1)[0]
+    provider_pool = shared.split("fn derived_provider_client(", 1)[1].split("async fn derived_provider_client_with_deadline(", 1)[0]
+    factory = shared.split("fn finish_http_client(", 1)[1].split("#[cfg(test)]", 1)[0]
+    for entry in (uncached, process_pool, provider_pool):
+        assert "finish_http_client(" in entry
+    assert "ca_bundle::build(base_client, bundle)?" in factory
