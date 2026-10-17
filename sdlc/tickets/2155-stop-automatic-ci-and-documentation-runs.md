@@ -6,6 +6,8 @@ Milestone: 0.9.3
 
 Reviews: revision e4979de, accept
 
+Reviews: revision d33bcec, accept
+
 ## Outcome
 
 Branch pushes, main pushes and pull requests start neither CI nor documentation publication; manual runs remain usable and tag-triggered releases remain unchanged.
