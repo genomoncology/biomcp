@@ -30,3 +30,5 @@ Depends on: 2159
 - Defers: bypassing the FDA block.
 
 PM decision: 2026-10-14, retained 2026-10-17. Successful fallback logs at debug; only total failure warns. Send Bearer only when a token is set and otherwise use the public author API. Name FDA's scripted-client redirect without trying to evade it. Reuse the latest pushed implementation, not a stale local tip; serialize the capture/inventory edits after 2139.
+
+Integration review accepted 955d8d524 against main 17f4db007: the accepted product code, captures and tests are unchanged, preserving health deduplication, typed identity, warning policy, audits and build profiles. Reuse the 69-Rust/77-Python provider proof 1792247602292-74303 and header regression 1792241788131-11817. The next candidate carries accepted 2120 coverage isolation, 2158 joined-entry validation and 2164 stable metadata; their merges required no implementation conflict. Each retains its review. One combined landing gate and an actual-main full check remain required.
