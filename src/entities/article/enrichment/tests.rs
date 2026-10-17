@@ -177,3 +177,178 @@ async fn empty_enrichment_plan_makes_no_provider_requests() {
     enrich_and_finalize_article_candidates(rows, 1, 0, None, &empty_filters(), &[]).await;
     assert_eq!(hits.load(Ordering::SeqCst), 0);
 }
+
+/// Capture every event whose `operation` names the visible-row fallback,
+/// with its level, from one thread-default subscriber covering the body,
+/// and hand back the body's own output beside them.
+async fn capture_visible_fallback_events<T>(
+    body: impl std::future::Future<Output = T>,
+) -> (T, Vec<(tracing::Level, String)>) {
+    use std::sync::{Arc, Mutex};
+    use tracing::Event;
+    use tracing::field::{Field, Visit};
+    use tracing_subscriber::layer::{Context, SubscriberExt};
+    use tracing_subscriber::{Layer, Registry};
+
+    type Captured = Arc<Mutex<Vec<(tracing::Level, String)>>>;
+    #[derive(Clone, Default)]
+    struct Capture {
+        events: Captured,
+    }
+    #[derive(Default)]
+    struct Operation(String);
+    impl Visit for Operation {
+        fn record_str(&mut self, field: &Field, value: &str) {
+            if field.name() == "operation" {
+                self.0 = value.to_string();
+            }
+        }
+        fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+            if field.name() == "operation" {
+                self.0 = format!("{value:?}");
+            }
+        }
+    }
+    impl<S: tracing::Subscriber> Layer<S> for Capture {
+        fn on_event(&self, event: &Event<'_>, _ctx: Context<'_, S>) {
+            let mut operation = Operation::default();
+            event.record(&mut operation);
+            if operation.0 == "visible article metadata fallback" {
+                self.events
+                    .lock()
+                    .expect("visible fallback capture")
+                    .push((*event.metadata().level(), operation.0));
+            }
+        }
+    }
+
+    let capture = Capture::default();
+    let events = Arc::clone(&capture.events);
+    let subscriber = Registry::default().with(capture);
+    let _guard = tracing::subscriber::set_default(subscriber);
+    let output = body.await;
+    let events = events.lock().expect("visible fallback capture").clone();
+    (output, events)
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test]
+async fn metadata_fallback_warns_only_when_no_source_covers_the_row() {
+    for variant in [false, true] {
+        for covered in [true, false] {
+            check_metadata_fallback(variant, covered).await;
+        }
+    }
+}
+
+async fn check_metadata_fallback(variant: bool, covered: bool) {
+    // The trigger this ticket names, confirmed: PubTator answers 200 with
+    // an empty PubTator3 array for a PMID the search itself returned, so
+    // the resolve fails without the HTTP 400/404 lag fallback and the row
+    // used to warn. Europe PMC still holds the row, so the fallback works:
+    // the failure logs at debug and stderr stays empty of warnings.
+    use crate::entities::SearchPage;
+    use std::sync::{Arc, Mutex};
+
+    let europepmc_search = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/europepmc/search_pmid_20516115.json"
+    ));
+    let requests = Arc::new(Mutex::new(Vec::<String>::new()));
+    let logged = requests.clone();
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let target = request
+            .split_whitespace()
+            .nth(1)
+            .unwrap_or_default()
+            .to_string();
+        logged.lock().unwrap().push(target.clone());
+        if target.starts_with("/publications/export/biocjson") {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"PubTator3":[]}"#,
+            ))
+        } else if target.starts_with("/search") {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                if covered {
+                    europepmc_search.as_bytes()
+                } else {
+                    br#"{"hitCount":0,"resultList":{"result":[]}}"#
+                },
+            ))
+        } else {
+            TestHttpReply::Bytes(test_http_response(
+                "404 Not Found",
+                "application/json",
+                b"{}",
+            ))
+        }
+    })
+    .await;
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("article-pubtator-empty");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+
+    let page = SearchPage {
+        results: vec![row_with(
+            "20516115",
+            ArticleSource::PubMed,
+            Some("2010-05-27"),
+            None,
+            None,
+        )],
+        total: Some(1),
+        next_page_token: None,
+        upstream_total: None,
+        partial_note: None,
+    };
+    let (rows, events) = capture_visible_fallback_events(async {
+        if variant {
+            let mut rows = page.results;
+            let execution = super::super::variant_search::VariantArticleExecutionContext::single();
+            enrich_visible_article_search_rows_with_article_base_context(
+                &mut rows,
+                Some(&execution),
+            )
+            .await;
+            rows
+        } else {
+            enrich_visible_article_search_page(page, &[ArticleSource::PubTator])
+                .await
+                .page
+                .results
+        }
+    })
+    .await;
+    let warns: Vec<_> = events
+        .iter()
+        .filter(|(level, _)| *level == tracing::Level::WARN)
+        .cloned()
+        .collect();
+    assert_eq!(
+        warns.is_empty(),
+        covered,
+        "variant={variant}, covered={covered}: {events:?}"
+    );
+    if covered {
+        assert!(
+            events
+                .iter()
+                .any(|(level, _)| *level == tracing::Level::DEBUG),
+            "a covered failure logs at debug: {events:?}"
+        );
+    }
+    assert_eq!(rows[0].citation_count, covered.then_some(133));
+    let requests = requests.lock().unwrap().clone();
+    assert!(
+        requests
+            .iter()
+            .any(|target| target.starts_with("/search?query=EXT_ID%3A20516115")),
+        "Europe PMC is consulted (the colon arrives percent-encoded): {requests:?}"
+    );
+}

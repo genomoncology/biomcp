@@ -13,6 +13,7 @@ use super::http::check_alphagenome_connect;
 use super::http::{
     check_auth_get, check_auth_post_json, check_auth_query_param, check_gencc_head, check_get,
     check_optional_auth_get, check_orcid_get, check_post_json, check_vaers_query, configured_key,
+    fda_orphan_blocked_latency,
 };
 use super::local::{
     check_cache_dir, check_cache_limits, check_cvx_local_data, check_ddinter_local_data,
@@ -153,7 +154,7 @@ pub(in crate::cli::health) async fn probe_source(
         ProbeKind::FdaOrphan => {
             let started = std::time::Instant::now();
             match crate::sources::fda_orphan::health_probe(client).await {
-                Ok(()) => outcome(
+                crate::sources::fda_orphan::FdaOrphanHealth::Ok => outcome(
                     health_row(
                         source.api,
                         HealthStatus::Ok,
@@ -163,7 +164,17 @@ pub(in crate::cli::health) async fn probe_source(
                     ),
                     ProbeClass::Healthy,
                 ),
-                Err(_) => outcome(
+                crate::sources::fda_orphan::FdaOrphanHealth::Redirect(code) => outcome(
+                    health_row(
+                        source.api,
+                        HealthStatus::Error,
+                        fda_orphan_blocked_latency(&started, code),
+                        source.affects,
+                        None,
+                    ),
+                    ProbeClass::Error,
+                ),
+                crate::sources::fda_orphan::FdaOrphanHealth::Failed => outcome(
                     health_row(
                         source.api,
                         HealthStatus::Error,

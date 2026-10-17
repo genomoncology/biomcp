@@ -602,14 +602,30 @@ if want_section coverage; then
   }
 
   COVT="target/llvm-cov-target"
+  # cov_build_env_keys names every key the coverage build environment
+  # exports, so the lanes that never compile anything can strip exactly
+  # those keys again before they run.
+  COV_BUILD_ENV_KEYS=()
+  declare -A COV_BUILD_ENV_RESTORE=()
+  remember_cov_env() {
+    local key="$1"
+    if [[ ! ${COV_BUILD_ENV_RESTORE[$key]+saved} ]]; then
+      COV_BUILD_ENV_RESTORE[$key]="$(declare -p "$key" 2>/dev/null || printf 'unset %q' "$key")"
+    fi
+  }
   runsh 'cargo llvm-cov clean --workspace'
   show 'eval each line of "cargo llvm-cov show-env" as an export; CARGO_TARGET_DIR=target/llvm-cov-target; LLVM_PROFILE_FILE per suite'
   if ((!DRY_RUN)); then
     while IFS= read -r line; do
+      remember_cov_env "${line%%=*}"
       eval "export $line"
+      COV_BUILD_ENV_KEYS+=("${line%%=*}")
     done < <(cargo llvm-cov show-env 2>/dev/null | grep -E '^[A-Z_]+=')
+    remember_cov_env CARGO_INCREMENTAL
+    remember_cov_env CARGO_TARGET_DIR
     export CARGO_INCREMENTAL=0
     export CARGO_TARGET_DIR="$PWD/$COVT"
+    COV_BUILD_ENV_KEYS+=(CARGO_INCREMENTAL CARGO_TARGET_DIR)
     mkdir -p "$CARGO_TARGET_DIR"
   fi
   timedsh coverage_build \
@@ -623,6 +639,23 @@ if want_section coverage; then
   if ((!DRY_RUN)); then
     record_cov_suite integration_tests nextest "$LOGD/cov-integration.exit" "$LOGD/cov-integration.log"
   fi
+  export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/unit-%8m.profraw"
+  timedsh_exit coverage_unit_tests "$LOGD/cov-unit.exit" \
+    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(lib) | kind(bin)' > $LOGD/cov-unit.log 2>&1"
+  runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-unit.log | tail -1 || true"
+  if ((!DRY_RUN)); then
+    record_cov_suite unit_tests nextest "$LOGD/cov-unit.exit" "$LOGD/cov-unit.log"
+  fi
+  # Driver suites consume prepared instrumented binaries, while nested
+  # Cargo checks need the caller's ordinary compiler/cache/linker settings.
+  # Restore each previous value, or unset keys introduced by show-env.
+  show "restore ${COV_BUILD_ENV_KEYS[*]:-<every show-env key, CARGO_INCREMENTAL, CARGO_TARGET_DIR>}"
+  if ((!DRY_RUN)); then
+    for key in "${!COV_BUILD_ENV_RESTORE[@]}"; do
+      eval "${COV_BUILD_ENV_RESTORE[$key]}"
+    done
+  fi
+  export LLVM_PROFILE_FILE="$PWD/$COVT/out-%8m.profraw"
   timedsh_exit coverage_python_lane "$LOGD/cov-pytest.exit" \
     "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1"
   runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/cov-pytest.log | tail -2 || true"
@@ -644,13 +677,6 @@ cat .cache/spec-artifacts.env"
   runsh "tail -4 $LOGD/cov-spec.log || true"
   if ((!DRY_RUN)); then
     record_cov_suite spec_lane spec "$LOGD/cov-spec.exit" "$LOGD/cov-spec.log"
-  fi
-  export LLVM_PROFILE_FILE="$CARGO_TARGET_DIR/unit-%8m.profraw"
-  timedsh_exit coverage_unit_tests "$LOGD/cov-unit.exit" \
-    "tools/run-offline -- cargo nextest run --locked --no-default-features -E 'kind(lib) | kind(bin)' > $LOGD/cov-unit.log 2>&1"
-  runsh "grep -E 'Summary \\[|tests? run:' $LOGD/cov-unit.log | tail -1 || true"
-  if ((!DRY_RUN)); then
-    record_cov_suite unit_tests nextest "$LOGD/cov-unit.exit" "$LOGD/cov-unit.log"
   fi
   # Reports: report merges every profraw under target/llvm-cov-target, so
   # the set not being reported moves aside first. Test code leaves the
@@ -681,7 +707,9 @@ cat .cache/spec-artifacts.env"
     # its own, but only while no show-env export pins its search: the eval'd
     # CARGO_LLVM_COV_TARGET_DIR (printed before CARGO_TARGET_DIR was set, so
     # it names the plain target directory, which holds no profraws at its
-    # top level) pins it, so all four are unset for the report only.
+    # top level) pins it. Driver suites already restored the caller's
+    # environment; these report-only removals prevent any caller pins
+    # from redirecting profile discovery.
     runsh "env -u CARGO_TARGET_DIR -u CARGO_LLVM_COV -u CARGO_LLVM_COV_SHOW_ENV -u CARGO_LLVM_COV_TARGET_DIR cargo llvm-cov report --ignore-filename-regex '$COV_REGEX' > $LOGD/cov-report-${report_set//-/_}.txt 2>&1; tail -4 $LOGD/cov-report-${report_set//-/_}.txt"
     if ((!DRY_RUN)); then
       incomplete=""

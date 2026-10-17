@@ -4349,6 +4349,35 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
       }
+    },
+    {
+      "path": "orcid/README.md",
+      "classification": "authored",
+      "authored_reason": "Repository-authored fixture provenance and derivation inventory."
+    },
+    {
+      "path": "orcid/person_0000-0002-4299-3018.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ORCID",
+        "request": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/person",
+        "captured_at": "2026-10-15T21:40:00Z",
+        "sha256": "f344c8f20a9ebda2b29cbcefa80ad62e178472eee07a8ac6b224bbdfe06f26fa",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 person response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
+      }
+    },
+    {
+      "path": "orcid/works_0000-0002-4299-3018.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ORCID",
+        "request": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/works",
+        "captured_at": "2026-10-15T21:40:00Z",
+        "sha256": "278059c2159eb3cffa6e0925703c79184fe01ab2e8aa3bebc8ea63c27f8afc9a",
+        "minimization_or_redaction": "none; the full 380-group reply is committed byte-faithful",
+        "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 works response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
+      }
     }
   ],
   "fixture_key_contract": {

@@ -148,6 +148,9 @@ class _RecordingHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         query = parse_qs(parsed.query)
         self.server.requests.append((parsed.path, query))  # type: ignore[attr-defined]
+        self.server.authorizations.append(  # type: ignore[attr-defined]
+            self.headers.get("Authorization") or "none"
+        )
         if parsed.path == "/graph/v1/author/1716151/papers":
             body = json.dumps(PAPERS_BODY).encode("utf-8")
             content_type = "application/json"
@@ -192,6 +195,7 @@ class _FixtureServer:
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), _RecordingHandler)
         self._server.daemon_threads = True
         self._server.requests = []  # type: ignore[attr-defined]
+        self._server.authorizations = []  # type: ignore[attr-defined]
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
         import urllib.request
@@ -214,6 +218,14 @@ class _FixtureServer:
     @property
     def requests(self) -> list[tuple[str, dict[str, list[str]]]]:
         return list(self._server.requests)  # type: ignore[attr-defined]
+
+    @property
+    def authorizations(self) -> list[str]:
+        return list(self._server.authorizations)  # type: ignore[attr-defined]
+
+    def clear_recorded(self) -> None:
+        self._server.requests.clear()  # type: ignore[attr-defined]
+        self._server.authorizations.clear()  # type: ignore[attr-defined]
 
     def close(self) -> None:
         self._server.shutdown()
@@ -657,24 +669,31 @@ def test_orcid_works_markdown_matches_raw_mcp_byte_for_byte(fixture: _FixtureSer
 def test_orcid_credential_states_flow_identically_through_every_surface(
     fixture: _FixtureServer,
 ) -> None:
-    """Ticket 1142: absent, invalid-format, and rejected credentials produce
-    the frozen sanitized errors through human CLI, JSON CLI, raw MCP, and
-    typed detail, with zero provider requests for the client-side states and
-    exactly one person GET for the rejected state."""
+    """Ticket 2088 plus ticket 1142's frozen errors: with no token both
+    ORCID commands succeed against the public endpoint and send no
+    Authorization header; an invalid-format token and a rejected token
+    produce the frozen sanitized errors through human CLI, JSON CLI, raw
+    MCP, and typed detail, with zero provider requests for the client-side
+    state and exactly one person GET for the rejected state."""
     surfaces: dict[str, str] = {}
     json_surfaces: dict[str, str] = {}
 
-    # Absent token: the client-side guard rejects before any request.
+    # No token at all: the public API serves the read, so `get author` and
+    # `author papers` succeed tokenless without any Authorization header.
+    fixture.clear_recorded()
     missing = _run_orcid_cli(["get", "author", f"orcid:{ORCID_ID}"], fixture.base, token=None)
-    assert missing.returncode == 1, missing.stderr
-    assert "API key required: ORCID requires ORCID_ACCESS_TOKEN" in missing.stderr, missing.stderr
-    missing_json = _run_orcid_cli(
-        ["--json", "get", "author", f"orcid:{ORCID_ID}"], fixture.base, token=None
+    assert missing.returncode == 0, missing.stderr
+    assert "Josiah Carberry" in missing.stdout, missing.stdout
+    missing_papers = _run_orcid_cli(
+        ["--json", "author", "papers", f"orcid:{ORCID_ID}", "--limit", "1"],
+        fixture.base,
+        token=None,
     )
-    assert missing_json.returncode == 1, missing_json.stderr
-    assert '"code": "api_key_required"' in missing_json.stdout, missing_json.stdout
-    surfaces["missing"] = missing.stderr
-    json_surfaces["missing"] = missing_json.stdout
+    assert missing_papers.returncode == 0, missing_papers.stderr
+    paths = _orcid_paths(fixture)
+    assert paths.count(f"/{ORCID_ID}/person") == 1, fixture.requests
+    assert paths.count(f"/{ORCID_ID}/works") == 1, fixture.requests
+    assert fixture.authorizations == ["none", "none"], fixture.authorizations
 
     # Invalid-format token: 5000 visible ASCII bytes exceeds the 4096 bound.
     invalid = _run_orcid_cli(
@@ -700,7 +719,7 @@ def test_orcid_credential_states_flow_identically_through_every_surface(
     json_surfaces["invalid"] = invalid_json.stdout
 
     # Rejected token: one person GET, then the frozen sanitized rejection.
-    fixture.requests.clear()
+    fixture.clear_recorded()
     rejected = _run_orcid_cli(
         ["get", "author", f"orcid:{ORCID_ID}"], fixture.base, token="rejected-fixture-token"
     )
@@ -761,7 +780,7 @@ def test_orcid_credential_states_flow_identically_through_every_surface(
         raw.close()
 
     # No credential-state output leaks provider bodies, URLs, or the token.
-    for surface in (surfaces["missing"], surfaces["invalid"], surfaces["rejected"]):
+    for surface in (surfaces["invalid"], surfaces["rejected"]):
         assert "rejected-fixture-token" not in surface
         assert "http://" not in surface
 
@@ -823,7 +842,7 @@ def test_orcid_full_flag_is_rejected_across_cli_mcp_and_request_logs(
 ) -> None:
     """Ticket 1142: `--full` on an ORCID ID is a static rejection on every
     surface, with zero provider requests of any kind."""
-    fixture.requests.clear()
+    fixture.clear_recorded()
     cli = _run_orcid_cli(
         ["author", "papers", f"orcid:{ORCID_ID}", "--full", "--limit", "1"], fixture.base
     )

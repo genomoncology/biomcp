@@ -1,7 +1,9 @@
 //! Bounded ORCID v3.0 Public API client for exact author records: the
-//! authenticated `GET /<id>/person` and `GET /<id>/works` reads. Credentials
-//! are a pre-issued public-read bearer token in `ORCID_ACCESS_TOKEN`; no
-//! OAuth, refresh, persistence, or formatting of the token anywhere.
+//! `GET /<id>/person` and `GET /<id>/works` reads. The public API serves
+//! both without any credential; a pre-issued public-read bearer token in
+//! `ORCID_ACCESS_TOKEN` is optional and moves calls onto a dedicated rate
+//! limit. No OAuth, refresh, persistence, or formatting of the token
+//! anywhere.
 
 use crate::error::{BioMcpError, SourceContext, SourceProvider};
 use crate::sources::{RequestBuilderSourceContextExt, RequestPlan};
@@ -77,12 +79,7 @@ fn classify_token(raw: Option<String>) -> OrcidToken {
 
 fn credential_error(token: &OrcidToken) -> Option<BioMcpError> {
     match token {
-        OrcidToken::Valid(_) => None,
-        OrcidToken::Missing => Some(BioMcpError::ApiKeyRequired {
-            api: "ORCID".into(),
-            env_var: ORCID_TOKEN_ENV.into(),
-            docs_url: ORCID_DOCS_URL.into(),
-        }),
+        OrcidToken::Valid(_) | OrcidToken::Missing => None,
         OrcidToken::Invalid => Some(BioMcpError::ApiCredentialInvalid {
             api: "ORCID".into(),
             env_var: ORCID_TOKEN_ENV.into(),
@@ -168,9 +165,11 @@ impl OrcidClient {
     }
 
     /// The credential states for health reporting: same validator, zero I/O.
+    /// A missing token is not an exclusion: the public API serves the same
+    /// reads without it, so that state reports `tokenless`.
     pub(crate) fn credential_state() -> &'static str {
         match classify_token(std::env::var(ORCID_TOKEN_ENV).ok()) {
-            OrcidToken::Missing => "excluded",
+            OrcidToken::Missing => "tokenless",
             OrcidToken::Invalid => "error",
             OrcidToken::Valid(_) => "configured",
         }
@@ -217,8 +216,10 @@ impl OrcidClient {
         if let Some(error) = credential_error(&self.credential) {
             return Err(error);
         }
-        let OrcidToken::Valid(token) = &self.credential else {
-            unreachable!("credential_error returned None above");
+        // A missing token stays tokenless: the public API serves the read.
+        let token = match &self.credential {
+            OrcidToken::Valid(token) => Some(token.as_str()),
+            _ => None,
         };
         let _permit = tokio::time::timeout_at(deadline, permits().acquire())
             .await
@@ -231,7 +232,7 @@ impl OrcidClient {
     async fn attempt_loop(
         &self,
         request: &OrcidRequest,
-        token: &str,
+        token: Option<&str>,
         body_limit: usize,
         deadline: Instant,
     ) -> Result<Vec<u8>, BioMcpError> {
@@ -293,11 +294,18 @@ impl OrcidClient {
         }
     }
 
-    async fn one_attempt(&self, request: &OrcidRequest, token: &str, body_limit: usize) -> Attempt {
+    async fn one_attempt(
+        &self,
+        request: &OrcidRequest,
+        token: Option<&str>,
+        body_limit: usize,
+    ) -> Attempt {
         let plan = request.plan();
-        let req = crate::sources::request_from_plan(&self.client, self.base.as_ref(), &plan)
-            .header("Authorization", format!("Bearer {token}"))
-            .header("Cache-Control", "no-store");
+        let mut req = crate::sources::request_from_plan(&self.client, self.base.as_ref(), &plan);
+        if let Some(token) = token {
+            req = req.header("Authorization", format!("Bearer {token}"));
+        }
+        let req = req.header("Cache-Control", "no-store");
         // The policy middleware rejects a declared Content-Length above the
         // feature body cap before any bytes are read, so an oversized person
         // or works body fails the pre-read check instead of streaming first.
