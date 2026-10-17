@@ -37,8 +37,8 @@
 - An explicit `--assembly` on `get variant` constrains the lookup to that build: `--assembly hg38 'chr7:g.140453136A>T'` reports not found when GRCh38 holds no record instead of answering MyVariant's GRCh37 record, a flag that contradicts a coordinate prefix refuses naming both builds, and `BIOMCP_DEFAULT_ASSEMBLY` keeps ordering the dual-build search for a bare coordinate without ever constraining it. (2112)
 
 ### Internal
-- Report executed test counts and current specification page totals in release measurements; keep absent suite summaries incomplete (2169).
 
+- Report executed test counts and current specification page totals in release measurements; keep absent suite summaries incomplete (2169).
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)
