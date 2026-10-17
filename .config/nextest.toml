@@ -1,8 +1,8 @@
 # Routine timing reports slow cases without terminating them. Exhaustive
-# cases use a long_ name and run explicitly at release candidate.
+# cases use a long_suite_ name and run explicitly at release candidate.
 [profile.default]
 slow-timeout = "30s"
-default-filter = 'not test(/(^|::)long_/)'
+default-filter = 'not test(/(^|::)long_suite_/)'
 
 [profile.long]
-default-filter = 'test(/(^|::)long_/)'
+default-filter = 'test(/(^|::)long_suite_/)'

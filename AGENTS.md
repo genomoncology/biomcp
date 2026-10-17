@@ -64,7 +64,7 @@ coverage and release-only packaging checks stay outside per-landing gates.
 Routine test runners warn with the test identity and machine load when a case
 exceeds the threshold in their runner configuration; time alone never fails
 or terminates a test. Assertions still fail. Exhaustive Rust cases use a
-`long_` test name and Python cases use `@pytest.mark.long`. Run these explicitly
+`long_suite_` test name and Python cases use `@pytest.mark.long`. Run these explicitly
 with `make test-long` at release candidate; `make release-gate` includes them.
 Live-service tests and subprocess helpers retain their existing ignored selections.
 

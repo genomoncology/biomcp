@@ -68,3 +68,38 @@ def test_nextest_load_reporting_preserves_runner_exit(exit_code: int) -> None:
     assert result.returncode == exit_code
     assert "probe test_slow_case" in result.stdout
     assert "load (1, 5, 15 min):" in result.stdout
+
+
+def test_nextest_reporter_preserves_child_signal() -> None:
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "tools/report-slow-tests.py"),
+         sys.executable, "-c", "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"],
+        capture_output=True, text=True, timeout=10,
+    )
+    assert result.returncode == 143, result.stdout + result.stderr
+
+
+def test_nextest_reporter_forwards_termination_and_reaps_runner() -> None:
+    import signal
+
+    child_pid = None
+    with subprocess.Popen(
+        [sys.executable, str(ROOT / "tools/report-slow-tests.py"),
+         sys.executable, "-c",
+         "import os, time; print(os.getpid(), flush=True); time.sleep(20)"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    ) as process:
+        try:
+            assert process.stdout is not None
+            child_pid = int(process.stdout.readline())
+            process.send_signal(signal.SIGTERM)
+            stdout, stderr = process.communicate(timeout=3)
+            assert process.returncode == 143, stdout + stderr
+            with pytest.raises(ProcessLookupError):
+                os.kill(child_pid, 0)
+        finally:
+            if child_pid is not None:
+                try:
+                    os.kill(child_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
