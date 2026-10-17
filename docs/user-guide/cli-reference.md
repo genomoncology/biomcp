@@ -861,7 +861,8 @@ biomcp variant normalize all NM_000248.3:c.135del
 biomcp variant normalize all 'NM_004448.2:c.829G>T'
 ```
 
-`variant articles` defaults to a bounded union of exact annotation, normalized
+`variant articles` defaults to a bounded union of exact annotation, LitVar2
+variant-literature, normalized
 alias, and source-citation routes. It merges route provenance before ranking and
 applies pagination once. The `annotation` and `lexical` strategies isolate one
 exact route for diagnosis; unresolved default results are explicitly
