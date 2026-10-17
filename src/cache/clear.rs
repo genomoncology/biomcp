@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, ErrorKind};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock, Weak};
 
 use crate::error::BioMcpError;
 use crate::utils::fs_lock;
@@ -100,6 +100,8 @@ const CACHE_OPERATION_LOCK: &str = ".biomcp-operation.lock";
 pub(super) const BODY_LIMIT_CACHE_MARKER: &[u8] = b"bounded-response-body-v1\n";
 type LeaseMap = HashMap<PathBuf, usize>;
 static SHARED_LEASES: OnceLock<(Mutex<LeaseMap>, Condvar)> = OnceLock::new();
+type KeyMutexMap = HashMap<PathBuf, Weak<tokio::sync::Mutex<()>>>;
+static KEY_MUTEXES: OnceLock<Mutex<KeyMutexMap>> = OnceLock::new();
 
 pub(super) fn epoch_state(
     cache_root: &Path,
@@ -144,6 +146,8 @@ impl Drop for SharedLease {
 pub(crate) struct CacheKeyGuard {
     _shared: CacheOperationGuard,
     _key: CacheOperationGuard,
+    // Fields drop in order: release the file lock before admitting a local writer.
+    _local: Option<tokio::sync::OwnedMutexGuard<()>>,
 }
 
 fn shared_leases() -> &'static (Mutex<LeaseMap>, Condvar) {
@@ -163,7 +167,7 @@ fn register_shared(root: &Path) -> SharedLease {
 }
 
 fn unregister_shared(root: &Path) {
-    let mut leases = crate::utils::sync::recover_poison(shared_leases().0.lock());
+    let mut leases = lease_registry();
     if let Some(count) = leases.get_mut(root) {
         *count -= 1;
         if *count == 0 {
@@ -190,7 +194,7 @@ fn local_shared_upgrade_error() -> io::Error {
 fn try_exclusive_without_local_shared(cache_root: &Path, file: &File) -> io::Result<bool> {
     let leases = lease_registry();
     if leases.get(cache_root).copied().unwrap_or_default() > 0 {
-        return Err(local_shared_upgrade_error());
+        return Ok(false);
     }
     match fs_lock::try_lock_exclusive(file) {
         Ok(()) => Ok(true),
@@ -260,6 +264,13 @@ pub(crate) fn try_lock_cache_maintenance(
     }
 }
 
+pub(crate) fn try_lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    let lease = register_shared(cache_root);
+    fs_lock::try_lock_shared(&file)?;
+    Ok(shared_guard(file, lease))
+}
+
 pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
     let file = operation_lock_file(cache_root)?;
     let lease = register_shared(cache_root);
@@ -302,21 +313,60 @@ fn exclusive_guard(file: File) -> CacheOperationGuard {
     }
 }
 
+fn local_key_mutex(path: PathBuf) -> Arc<tokio::sync::Mutex<()>> {
+    let mut keys = crate::utils::sync::recover_poison(
+        KEY_MUTEXES
+            .get_or_init(|| Mutex::new(HashMap::new()))
+            .lock(),
+    );
+    keys.retain(|_, mutex| mutex.strong_count() > 0);
+    if let Some(mutex) = keys.get(&path).and_then(Weak::upgrade) {
+        return mutex;
+    }
+    let mutex = Arc::new(tokio::sync::Mutex::new(()));
+    keys.insert(path, Arc::downgrade(&mutex));
+    mutex
+}
+
+async fn lock_local_key(path: PathBuf) -> io::Result<tokio::sync::OwnedMutexGuard<()>> {
+    let acquire = local_key_mutex(path).lock_owned();
+    if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+        deadline.ensure_time_io()?;
+        let guard = deadline.run(acquire).await.map_err(|_| {
+            io::Error::new(io::ErrorKind::TimedOut, "cache key lock deadline exceeded")
+        })?;
+        deadline.ensure_time_io()?;
+        Ok(guard)
+    } else {
+        Ok(acquire.await)
+    }
+}
+
 fn lock_cache_key(
     cache_root: &Path,
     key: &str,
     before_lock_dir_create: &dyn Fn(&Path),
+    try_only: bool,
 ) -> io::Result<CacheKeyGuard> {
-    let shared = lock_cache_shared(cache_root)?;
+    let shared = if try_only {
+        try_lock_cache_shared(cache_root)?
+    } else {
+        lock_cache_shared(cache_root)?
+    };
     let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
     super::private::secure_managed_dir_with(&lock_dir, || before_lock_dir_create(&lock_dir))?;
     let mut options = OpenOptions::new();
     options.read(true).write(true).create(true);
     let file = super::private::open_private(&mut options, &super::key_lock_path(cache_root, key))?;
-    file.lock()?;
+    if try_only {
+        fs_lock::try_lock_exclusive(&file)?;
+    } else {
+        file.lock()?;
+    }
     Ok(CacheKeyGuard {
         _shared: shared,
         _key: exclusive_guard(file),
+        _local: None,
     })
 }
 
@@ -324,7 +374,17 @@ pub(crate) async fn lock_cache_key_async(
     cache_root: PathBuf,
     key: String,
     before_lock_dir_create: Arc<dyn Fn(&Path) + Send + Sync>,
+    try_only: bool,
 ) -> io::Result<CacheKeyGuard> {
+    let local = lock_local_key(super::key_lock_path(&cache_root, &key)).await?;
+    if try_only {
+        if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+            deadline.ensure_time_io()?;
+        }
+        let mut guard = lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref(), true)?;
+        guard._local = Some(local);
+        return Ok(guard);
+    }
     if let Some(deadline) = crate::sources::current_variant_article_deadline() {
         let shared = lock_cache_shared_until(&cache_root, &deadline).await?;
         let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
@@ -337,10 +397,13 @@ pub(crate) async fn lock_cache_key_async(
         return Ok(CacheKeyGuard {
             _shared: shared,
             _key: key_guard,
+            _local: Some(local),
         });
     }
     tokio::task::spawn_blocking(move || {
-        lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref())
+        let mut guard = lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref(), false)?;
+        guard._local = Some(local);
+        Ok(guard)
     })
     .await
     .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
@@ -375,6 +438,32 @@ pub(crate) async fn lock_cache_maintenance_until(
         match try_exclusive_without_local_shared(cache_root, &file)? {
             true => return Ok(exclusive_guard(file)),
             false => wait(deadline).await?,
+        }
+    }
+}
+
+/// Wait for this process's source leases, then try the external lock once.
+pub(crate) async fn try_lock_cache_maintenance_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<Option<CacheOperationGuard>> {
+    deadline.ensure_time_io()?;
+    let file = operation_lock_file(cache_root)?;
+    loop {
+        deadline.ensure_time_io()?;
+        let attempt = {
+            let leases = lease_registry();
+            if leases.get(cache_root).copied().unwrap_or_default() > 0 {
+                None
+            } else {
+                Some(fs_lock::try_lock_exclusive(&file))
+            }
+        };
+        match attempt {
+            None => wait(deadline).await?,
+            Some(Ok(())) => return Ok(Some(exclusive_guard(file))),
+            Some(Err(error)) if error.kind() == io::ErrorKind::WouldBlock => return Ok(None),
+            Some(Err(error)) => return Err(error),
         }
     }
 }
@@ -459,11 +548,13 @@ mod operation_lock_tests {
                     != super::super::key_lock_path(root.path(), key_a)
             })
             .expect("key in another lock shard");
-        let operation_a = lock_cache_key(root.path(), key_a, &|_| {}).expect("first key lock");
+        let operation_a =
+            lock_cache_key(root.path(), key_a, &|_| {}, false).expect("first key lock");
         let (key_tx, key_rx) = mpsc::channel();
         let root_path = root.path().to_path_buf();
         let operation_b = std::thread::spawn(move || {
-            let guard = lock_cache_key(&root_path, &key_b, &|_| {}).expect("independent key lock");
+            let guard =
+                lock_cache_key(&root_path, &key_b, &|_| {}, false).expect("independent key lock");
             key_tx.send(()).expect("report independent acquisition");
             guard
         });
@@ -488,6 +579,118 @@ mod operation_lock_tests {
         drop(second);
         drop(lock_cache_maintenance(root.path()).expect("maintenance after shared release"));
         drop(lock_cache_shared(root.path()).expect("shared lease after maintenance release"));
+    }
+
+    #[tokio::test]
+    async fn colliding_http_cache_keys_wait_for_the_local_writer() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let key_a = "local-writer-a";
+        let key_b = (0..10_000)
+            .map(|candidate| format!("local-writer-{candidate}"))
+            .find(|candidate| {
+                super::super::key_lock_path(root.path(), candidate)
+                    == super::super::key_lock_path(root.path(), key_a)
+            })
+            .expect("different key in the same lock shard");
+        let acquire = |key: String| {
+            lock_cache_key_async(root.path().to_path_buf(), key, Arc::new(|_| {}), true)
+        };
+        let first = acquire(key_a.to_owned()).await.expect("first HTTP writer");
+        let independent = (0..10_000)
+            .map(|candidate| format!("independent-writer-{candidate}"))
+            .find(|candidate| {
+                super::super::key_lock_path(root.path(), candidate)
+                    != super::super::key_lock_path(root.path(), key_a)
+            })
+            .expect("key in a different lock shard");
+        let independent = acquire(independent);
+        tokio::pin!(independent);
+        assert!(
+            futures::poll!(&mut independent).is_ready(),
+            "another shard must remain available while a local writer holds this shard"
+        );
+        let second = acquire(key_b);
+        tokio::pin!(second);
+        assert!(
+            futures::poll!(&mut second).is_pending(),
+            "a local shard collision must wait instead of dropping the write"
+        );
+        drop(first);
+        drop(second.await.expect("HTTP writer after local release"));
+    }
+
+    #[tokio::test]
+    async fn local_key_wait_honors_expiry_and_cancellation_without_retaining_the_shard() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let acquire = || {
+            lock_cache_key_async(
+                root.path().to_path_buf(),
+                "held-key".to_owned(),
+                Arc::new(|_| {}),
+                true,
+            )
+        };
+        let held = acquire().await.expect("first HTTP writer");
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(20));
+        let result = crate::sources::with_variant_article_deadline(deadline, acquire()).await;
+        assert_eq!(
+            result.err().expect("local wait expires").kind(),
+            io::ErrorKind::TimedOut
+        );
+        let mut cancelled = Box::pin(acquire());
+        assert!(futures::poll!(&mut cancelled).is_pending());
+        drop(cancelled);
+        drop(held);
+        drop(
+            acquire()
+                .await
+                .expect("expired and cancelled waits release the shard"),
+        );
+
+        // A file lock without a local permit represents contention from another process.
+        let external =
+            lock_cache_key(root.path(), "held-key", &|_| {}, false).expect("external file lock");
+        let mut attempt = Box::pin(acquire());
+        match futures::poll!(&mut attempt) {
+            std::task::Poll::Ready(Err(error)) => {
+                assert_eq!(error.kind(), io::ErrorKind::WouldBlock)
+            }
+            _ => panic!("external HTTP contention must bypass the cache immediately"),
+        }
+        drop(external);
+    }
+
+    #[tokio::test]
+    async fn local_shared_lease_delays_maintenance_until_release_within_deadline() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let shared = lock_cache_shared(root.path()).expect("shared source lease");
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(1));
+        let maintenance = lock_cache_maintenance_until(root.path(), &deadline);
+        tokio::pin!(maintenance);
+        assert!(
+            futures::poll!(&mut maintenance).is_pending(),
+            "maintenance must wait for the local source"
+        );
+        drop(shared);
+        drop(maintenance.await.expect("maintenance after source release"));
+    }
+
+    #[tokio::test]
+    async fn local_shared_lease_maintenance_wait_expires_without_retaining_locks() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let shared = lock_cache_shared(root.path()).expect("shared source lease");
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(20));
+        let error = match lock_cache_maintenance_until(root.path(), &deadline).await {
+            Ok(_) => panic!("held source lease must exhaust maintenance deadline"),
+            Err(error) => error,
+        };
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        drop(shared);
+        drop(
+            try_lock_cache_maintenance(root.path())
+                .unwrap()
+                .expect("no retained maintenance lock"),
+        );
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

@@ -328,6 +328,7 @@ async fn fda_orphan_contended_key_lock_cancels_without_a_late_write() {
         root.path().to_path_buf(),
         key.clone(),
         Arc::new(|_| {}),
+        false,
     )
     .await
     .unwrap();
@@ -493,15 +494,18 @@ async fn contended_maintenance_deadline_publishes_no_partial_client_or_cache_tre
         .unwrap()
         .unwrap();
     let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
-    let error = build_http_client_with_config_deadline(
+    let _client = build_http_client_with_config_deadline(
         SharedHttpClientKind::Default,
         super::test_cache_config(root.path()),
         None,
         &deadline,
     )
     .await
-    .expect_err("client construction must expire behind maintenance");
-    assert_eq!(error.code(), "io");
+    .expect("cache contention must build an uncached client");
+    assert!(
+        !deadline.is_exhausted(),
+        "cache contention preserves provider time"
+    );
     assert!(!root.path().join("http").exists());
     assert_eq!(
         std::fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
@@ -513,6 +517,273 @@ async fn contended_maintenance_deadline_publishes_no_partial_client_or_cache_tre
             .unwrap()
             .is_some()
     );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn parallel_sources_share_one_cache_construction_and_epoch_acquisition() {
+    let root = TempDirGuard::new("parallel-shared-cache");
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
+        ("BIOMCP_CACHE_MODE", None),
+    ]);
+    super::super::reset_shared_http_client_for_tests();
+    let counts = Arc::new([AtomicUsize::new(0), AtomicUsize::new(0)]);
+    *super::super::CACHE_SETUP_OBSERVER.write().unwrap() =
+        Some((root.path().to_path_buf(), Arc::clone(&counts)));
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(3));
+    let results = futures::future::join_all(
+        (0..8).map(|_| super::super::shared_client_with_deadline("europe-pmc", &deadline)),
+    )
+    .await;
+    let policy = provider_url_policy::ProviderUrlPolicy::semantic_scholar_api(
+        &reqwest::Url::parse("https://api.semanticscholar.org").unwrap(),
+    )
+    .unwrap();
+    for authenticated in [true, false] {
+        super::super::semantic_scholar_provider_client("semantic-scholar", &policy, authenticated)
+            .unwrap();
+        super::super::semantic_scholar_provider_client_with_deadline(
+            "semantic-scholar",
+            &policy,
+            authenticated,
+            &deadline,
+        )
+        .await
+        .unwrap();
+    }
+    super::super::provider_url_client("semantic-scholar", &policy).unwrap();
+    super::super::provider_url_client_with_deadline("semantic-scholar", &policy, &deadline)
+        .await
+        .unwrap();
+    super::super::operator_provider_url_client(&policy).unwrap();
+    *super::super::CACHE_SETUP_OBSERVER.write().unwrap() = None;
+    super::super::reset_shared_http_client_for_tests();
+    for result in results {
+        result.expect("parallel source client");
+    }
+    assert_eq!(
+        counts[0].load(Ordering::SeqCst),
+        1,
+        "one cache construction for parallel sources"
+    );
+    assert_eq!(
+        counts[1].load(Ordering::SeqCst),
+        1,
+        "one successful epoch-lock acquisition for parallel sources"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_later_invocation_retries_cache_setup_after_a_failed_expired_invocation() {
+    let root = TempDirGuard::new("retry-shared-cache-setup");
+    let cache_root = root.path().join("cache");
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_CACHE_DIR", Some(cache_root.to_str().unwrap())),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
+        ("BIOMCP_CACHE_MODE", None),
+    ]);
+    super::super::reset_shared_http_client_for_tests();
+    std::fs::write(&cache_root, b"temporary obstruction").unwrap();
+    let first = VariantArticleDeadline::from_now(std::time::Duration::from_millis(100));
+    super::super::shared_client_with_deadline("europe-pmc", &first)
+        .await
+        .expect("cache setup failure leaves provider available");
+    tokio::time::sleep(first.remaining()).await;
+    assert!(first.is_exhausted());
+    std::fs::remove_file(&cache_root).unwrap();
+    let later = VariantArticleDeadline::from_now(std::time::Duration::from_secs(3));
+    super::super::shared_client_with_deadline("europe-pmc", &later)
+        .await
+        .expect("later invocation gets a cached client");
+    assert!(
+        cache_root.join("http/.tree-secured-v1").is_file(),
+        "later invocation retries setup without retaining the first deadline"
+    );
+    super::super::reset_shared_http_client_for_tests();
+}
+
+#[tokio::test]
+async fn legacy_cache_upgrade_waits_for_local_source_lease() {
+    let root = TempDirGuard::new("legacy-local-source-lease");
+    std::fs::create_dir_all(root.path().join("http-cacache")).unwrap();
+    std::fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
+    let shared = crate::cache::lock_cache_shared(root.path()).unwrap();
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
+    let construction = build_http_client_with_config_deadline(
+        SharedHttpClientKind::Default,
+        super::test_cache_config(root.path()),
+        None,
+        &deadline,
+    );
+    tokio::pin!(construction);
+    assert!(
+        futures::poll!(&mut construction).is_pending(),
+        "legacy upgrade must wait for the local source"
+    );
+    drop(shared);
+    construction
+        .await
+        .expect("cached client after local source release");
+    assert!(root.path().join(".body-limit-cache-v1").is_file());
+    assert!(!root.path().join("http-cacache").exists());
+}
+
+#[tokio::test]
+async fn expired_invocation_cannot_build_a_cache_fallback_client() {
+    let root = TempDirGuard::new("expired-cache-fallback");
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::ZERO);
+    build_http_client_with_config_deadline(
+        SharedHttpClientKind::Default,
+        super::test_cache_config(root.path()),
+        None,
+        &deadline,
+    )
+    .await
+    .expect_err("an expired invocation must not admit a provider client");
+    assert!(!root.path().join("http").exists());
+}
+
+#[tokio::test(start_paused = true)]
+#[serial_test::serial(source_env)]
+async fn lazy_cache_initialization_settles_before_deadline_releases_its_locks() {
+    let root = TempDirGuard::new("lazy-cache-settlement");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let origin =
+        reqwest::Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
+    let policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
+        provider_url_policy::ProviderUrlConsumer::GithubRelease,
+        &origin,
+    )
+    .unwrap();
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
+        ("BIOMCP_CACHE_MODE", None),
+        (
+            "BIOMCP_TEST_UNPACED_ORIGIN",
+            Some(origin.as_str().trim_end_matches('/')),
+        ),
+    ]);
+    super::super::reset_shared_http_client_for_tests();
+    let entered = Arc::new(tokio::sync::Notify::new());
+    let release = Arc::new(tokio::sync::Notify::new());
+    *super::super::CACHE_EPOCH_MUTATION_PAUSE.write().unwrap() = Some((
+        root.path().to_path_buf(),
+        Arc::clone(&entered),
+        Arc::clone(&release),
+    ));
+    let client = super::super::operator_provider_url_client(&policy).unwrap();
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+    // Keep virtual time still while Tokio's real filesystem workers settle.
+    let driving = Arc::new(AtomicBool::new(true));
+    let driver = tokio::spawn({
+        let driving = Arc::clone(&driving);
+        async move {
+            while driving.load(Ordering::SeqCst) {
+                tokio::task::yield_now().await;
+            }
+        }
+    });
+    let request = with_variant_article_deadline(deadline.clone(), async {
+        client
+            .get(origin.clone())
+            .send_with_source_context(crate::error::SourceContext::narrow(
+                crate::error::SourceProvider::OLS4,
+            ))
+            .await
+    });
+    tokio::pin!(request);
+    tokio::select! {
+        () = entered.notified() => {}
+        result = &mut request => panic!("request finished before initialization pause: {result:?}"),
+    }
+    driving.store(false, Ordering::SeqCst);
+    driver.await.unwrap();
+    assert!(
+        crate::cache::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .is_none()
+    );
+    tokio::time::advance(std::time::Duration::from_secs(11)).await;
+    let pending = futures::poll!(&mut request).is_pending();
+    let held = crate::cache::try_lock_cache_maintenance(root.path())
+        .unwrap()
+        .is_none();
+    release.notify_one();
+    assert!(
+        pending,
+        "deadline must wait for admitted cache initialization to settle"
+    );
+    let result = request.await;
+    assert!(
+        held,
+        "initialization must retain its maintenance lock until settlement"
+    );
+    result.expect_err("expired initialization cannot return a provider answer");
+    assert!(
+        super::super::shared_http_clients()
+            .unwrap()
+            .cache
+            .ready
+            .get()
+            .is_none()
+    );
+    {
+        let acceptance = listener.accept();
+        tokio::pin!(acceptance);
+        assert!(
+            futures::poll!(&mut acceptance).is_pending(),
+            "expired initialization must not contact the provider"
+        );
+    }
+    assert!(
+        crate::cache::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .is_some()
+    );
+
+    // A retry may finish setup, but its subsequent transport still expires.
+    let later = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+    driving.store(true, Ordering::SeqCst);
+    let driver = tokio::spawn({
+        let driving = Arc::clone(&driving);
+        async move {
+            while driving.load(Ordering::SeqCst) {
+                tokio::task::yield_now().await;
+            }
+        }
+    });
+    let retry = with_variant_article_deadline(later.clone(), async {
+        client
+            .get(origin.clone())
+            .send_with_source_context(crate::error::SourceContext::narrow(
+                crate::error::SourceProvider::OLS4,
+            ))
+            .await
+    });
+    tokio::pin!(retry);
+    let (_connection, _) = tokio::select! {
+        accepted = listener.accept() => accepted.unwrap(),
+        result = &mut retry => panic!("retry finished before provider accepted: {result:?}"),
+    };
+    driving.store(false, Ordering::SeqCst);
+    driver.await.unwrap();
+    assert!(
+        super::super::shared_http_clients()
+            .unwrap()
+            .cache
+            .ready
+            .get()
+            .is_some()
+    );
+    tokio::time::advance(std::time::Duration::from_secs(11)).await;
+    retry
+        .await
+        .expect_err("successful cache setup must preserve the transport deadline");
+    super::super::reset_shared_http_client_for_tests();
 }
 
 #[derive(Clone, Copy)]
@@ -639,18 +910,9 @@ async fn cached_test_client(
     )
 }
 
-fn assert_sanitized_cache_error(error: &reqwest_middleware::Error, root: &std::path::Path) {
-    let message = error.to_string();
-    assert!(message.contains("cache security finalization failed after successful put"));
-    assert!(!message.contains("resource"));
-    assert!(!message.contains("cached-body"));
-    assert!(!message.contains("sensitive"));
-    assert!(!message.contains(&root.display().to_string()));
-}
-
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn cached_client_post_write_failure_matrix_is_fail_closed() {
+async fn cached_client_post_write_failure_matrix_keeps_provider_answers() {
     for mode in [
         CacheOriginMode::Initial,
         CacheOriginMode::Revalidate304,
@@ -669,11 +931,21 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
             puts.store(0, Ordering::SeqCst);
         }
         armed.store(true, Ordering::SeqCst);
-        let error = client
+        let answer = client
             .get(&url)
             .send()
             .await
-            .expect_err("post-write fault must fail request");
+            .expect("post-write cache fault must keep the provider answer");
+        assert!(
+            !answer.headers().contains_key("x-biomcp-cache-stale-age"),
+            "successful provider revalidation must not be reported as a stale serve"
+        );
+        let expected = if matches!(mode, CacheOriginMode::Revalidate200) {
+            "replacement-sensitive-body"
+        } else {
+            "cached-body"
+        };
+        assert_eq!(answer.text().await.unwrap(), expected);
         assert_eq!(
             requests.load(Ordering::SeqCst),
             if matches!(mode, CacheOriginMode::Initial) {
@@ -688,14 +960,18 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
             validator.load(Ordering::SeqCst),
             !matches!(mode, CacheOriginMode::Initial)
         );
-        assert_sanitized_cache_error(&error, root.path());
+        assert!(
+            crate::cache::try_lock_cache_maintenance(root.path())
+                .unwrap()
+                .is_some()
+        );
         server.abort();
     }
 }
 
 #[tokio::test(start_paused = true)]
 #[serial_test::serial(source_env)]
-async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
+async fn provider_deadline_waits_for_post_publish_cache_finalization() {
     let publication_armed = Arc::new(tokio::sync::Notify::new());
     let publication_release = Arc::new(tokio::sync::Notify::new());
     let (client, url, requests, gets, puts, armed, _, _, root, server) = cached_test_client(
@@ -746,11 +1022,16 @@ async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
     publication_release.notify_one();
     let result = request.await.unwrap();
 
-    let error = result.expect_err("post-write finalization must remain fail closed");
+    let answer = result.expect("post-publication cache failure keeps the provider answer");
+    assert_eq!(answer.text().await.unwrap(), "cached-body");
     assert_eq!(requests.load(Ordering::SeqCst), 1);
     assert_eq!(gets.load(Ordering::SeqCst), 1);
     assert_eq!(puts.load(Ordering::SeqCst), 1);
-    assert_sanitized_cache_error(&error, root.path());
+    assert!(
+        crate::cache::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .is_some()
+    );
     server.abort();
 }
 
@@ -860,7 +1141,7 @@ mod cache_security {
     }
 
     #[test]
-    fn build_http_client_rejects_directory_symlink_inside_content_tree() {
+    fn build_http_client_bypasses_directory_symlink_inside_content_tree() {
         let root = TempDirGuard::new("http-cache-content-link");
         let cache_root = root.path().join("cache-root");
         let outside = root.path().join("outside");
@@ -874,15 +1155,12 @@ mod cache_security {
         symlink(&outside, cache_root.join("http/content-v2/sha256/aa"))
             .expect("content directory symlink");
 
-        let error = match build_http_client_with_config(
+        build_http_client_with_config(
             SharedHttpClientKind::Default,
             test_cache_config(&cache_root),
             None,
-        ) {
-            Ok(_) => panic!("content directory symlink must be rejected"),
-            Err(error) => error,
-        };
-        assert!(error.to_string().contains("managed content directory"));
+        )
+        .expect("unsafe cache state must produce an uncached client");
         assert_eq!(
             std::fs::read_dir(&outside)
                 .expect("outside directory")

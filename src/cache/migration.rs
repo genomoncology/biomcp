@@ -74,6 +74,7 @@ fn directory_exists(path: &Path, label: &str) -> Result<bool, io::Error> {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn migrate_http_cache(cache_root: &Path) -> Result<MigrationOutcome, io::Error> {
     let old = cache_root.join("http-cacache");
     if !directory_exists(&old, "legacy cache path")? {
@@ -83,6 +84,56 @@ pub(crate) fn migrate_http_cache(cache_root: &Path) -> Result<MigrationOutcome, 
     migrate_http_cache_locked(cache_root)
 }
 
+pub(crate) fn try_migrate_http_cache(cache_root: &Path) -> io::Result<MigrationOutcome> {
+    if !directory_exists(&cache_root.join("http-cacache"), "legacy cache path")? {
+        return Ok(MigrationOutcome::SkippedOldMissing);
+    }
+    let _maintenance = super::try_lock_cache_maintenance(cache_root)?
+        .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?;
+    migrate_http_cache_locked(cache_root)
+}
+
+pub(crate) async fn try_migrate_http_cache_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<MigrationOutcome> {
+    deadline.ensure_time_io()?;
+    if !directory_exists(&cache_root.join("http-cacache"), "legacy cache path")? {
+        return Ok(MigrationOutcome::SkippedOldMissing);
+    }
+    let _maintenance = super::try_lock_cache_maintenance_until(cache_root, deadline)
+        .await?
+        .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?;
+    deadline.ensure_time_io()?;
+    let result = migrate_http_cache_locked(cache_root);
+    deadline.ensure_time_io()?;
+    result
+}
+
+pub(crate) fn try_ensure_body_limited_cache_epoch(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+) -> io::Result<()> {
+    fs::create_dir_all(cache_root)?;
+    let lock = open_epoch_lock(cache_root)?;
+    fs_lock::try_lock_exclusive(&lock)?;
+    #[cfg(test)]
+    crate::sources::observe_cache_setup(cache_root, true);
+    if epoch_state(cache_root, legacy_cache_was_renamed)? == EpochState::Current {
+        return lock.unlock();
+    }
+    let maintenance = super::try_lock_cache_maintenance(cache_root)?
+        .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?;
+    ensure_body_limited_cache_epoch_locked_with_guard(
+        cache_root,
+        legacy_cache_was_renamed,
+        lock,
+        maintenance,
+        &mut |_, _| Ok(()),
+    )
+}
+
+#[cfg(test)]
 pub(crate) async fn migrate_http_cache_with_deadline(
     cache_root: &Path,
     deadline: &crate::sources::VariantArticleDeadline,
@@ -146,11 +197,36 @@ where
     )
 }
 
+#[cfg(test)]
 pub(crate) async fn ensure_body_limited_cache_epoch_until(
     cache_root: &Path,
     legacy_cache_was_renamed: bool,
     deadline: &crate::sources::VariantArticleDeadline,
 ) -> Result<(), io::Error> {
+    ensure_body_limited_cache_epoch_until_with(
+        cache_root,
+        legacy_cache_was_renamed,
+        deadline,
+        false,
+    )
+    .await
+}
+
+pub(crate) async fn try_ensure_body_limited_cache_epoch_until(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<()> {
+    ensure_body_limited_cache_epoch_until_with(cache_root, legacy_cache_was_renamed, deadline, true)
+        .await
+}
+
+async fn ensure_body_limited_cache_epoch_until_with(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+    deadline: &crate::sources::VariantArticleDeadline,
+    try_only: bool,
+) -> io::Result<()> {
     deadline_io(deadline, tokio::fs::create_dir_all(cache_root)).await?;
     let lock_root = cache_root.to_path_buf();
     let lock = deadline_blocking_io(deadline, move |cancelled| {
@@ -163,7 +239,7 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
     loop {
         match fs_lock::try_lock_exclusive(&lock) {
             Ok(()) => break,
-            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock && !try_only => {
                 // sleep reason: deadline-bounded retry poll for the epoch lock
                 #[allow(clippy::disallowed_methods)]
                 deadline
@@ -179,6 +255,8 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
             Err(error) => return Err(error),
         }
     }
+    #[cfg(test)]
+    crate::sources::observe_cache_setup(cache_root, true);
     let current_root = cache_root.to_path_buf();
     let state = deadline_blocking_io(deadline, move |cancelled| {
         if cancelled.load(Ordering::Acquire) {
@@ -190,7 +268,13 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
     if state == EpochState::Current {
         return lock.unlock();
     }
-    let maintenance = super::lock_cache_maintenance_until(cache_root, deadline).await?;
+    let maintenance = if try_only {
+        super::try_lock_cache_maintenance_until(cache_root, deadline)
+            .await?
+            .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?
+    } else {
+        super::lock_cache_maintenance_until(cache_root, deadline).await?
+    };
     deadline.ensure_time_io()?;
     ensure_body_limited_cache_epoch_async(
         cache_root,
@@ -198,7 +282,10 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
         maintenance,
         state,
         deadline,
-        |_| async {},
+        |_| async {
+            #[cfg(test)]
+            crate::sources::observe_cache_epoch_mutation(cache_root).await;
+        },
     )
     .await
 }

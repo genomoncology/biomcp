@@ -13,8 +13,10 @@
 
 ### Fixes
 
+- Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
 - Fulltext replay fixtures keep their server and Unicode cache state inside ignored test output, so concurrent repository audits never scan files that fixture cleanup can remove. (2177)
 - Reject changelog entries accidentally joined onto one line before landing or release, including repository-only changes. (2158)
+- Local HTTP cache failures keep provider searches working: initialization and lock contention bypass the cache, unreadable or undecodable entries refetch, and failed cache writes retain the provider answer. A local warning names the failing cache operation without exposing paths or request details; invocation deadlines and cache security checks still apply. (2172)
 - Windows cache-lock contention is checked through both lock modes and article-search deadlines. Provider warnings name local I/O kinds and OS error codes without exposing paths, and Semantic Scholar search failures retain their warning. (2170)
 - Suppress unresolved structural hotspot counts, preserve cached-answer age notes, keep drug and disease identity refusals precise, hide health error paths, validate protein residues, and handle installer paths with spaces. (2128)
 - `variant articles --strategy annotation` searches PubTator by the variant entity id autocomplete returns when the request spells a gene and a protein change: `variant articles "ABCC8 R1436Q" --strategy annotation` keeps the `@VARIANT_p.R1436Q_ABCC8_human` entity — its display name carries only the change `p.R1436Q`, which is why the entity was dropped and the debug plan showed bare queries such as `R1436Q` — and returns the seven papers PubTator annotates with that variant, where the run returned no results with `complete: true`; a run whose autocomplete reply holds no variant entity now says so in its source status with `complete: false` and exit 0 instead of a silently complete empty page, and the debug plan lists the entity-id queries the route ran. (2138)
@@ -46,6 +48,7 @@
 
 ### Internal
 
+- MCP adverse-event contract failures include the provider error reply for diagnosis. (2174)
 - Wait for release-smoke fixture readiness before reporting health, and keep slow-test warnings separate from the hung-process watchdog. (2178)
 - Describe private build hosts and fixture origins by their public roles in release records without changing measurements or provider identifiers (2129).
 - Prepare consistent stable release metadata for the final measurements and nonpublishing rehearsal. (2164)

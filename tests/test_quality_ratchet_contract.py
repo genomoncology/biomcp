@@ -1343,15 +1343,17 @@ def test_wrapper_accepts_section_when_one_of_multiple_bash_blocks_has_mustmatch(
     assert summary["lint"]["finding_count"] == 0
 
 
+@pytest.mark.parametrize("cache_attachment", [".with(Cache(()))", ".with_arc(cache)"])
 def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     tmp_path: Path,
+    cache_attachment: str,
 ) -> None:
     ratchet = _load_ratchet_module()
     sources = tmp_path / "src/sources"
     sources.mkdir(parents=True)
     (sources / "mod.rs").write_text(
         "ensure_body_limited_cache_epoch(cache_root)\n"
-        "ClientBuilder::new(base_client).with(Cache(())\n"
+        f"ClientBuilder::new(base_client){cache_attachment}\n"
         ".with(ResponseBodyLimitMiddleware {})\n",
         encoding="utf-8",
     )
@@ -1411,7 +1413,7 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
 
     (sources / "mod.rs").write_text(
         ".with(ResponseBodyLimitMiddleware {})\n"
-        "ClientBuilder::new(base_client).with(Cache(())\n",
+        f"ClientBuilder::new(base_client){cache_attachment}\n",
         encoding="utf-8",
     )
     (sources / "cbioportal_download.rs").write_text(

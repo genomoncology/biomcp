@@ -2008,7 +2008,11 @@ def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
     shared = production_text("mod.rs")
     migration = shared.find("ensure_body_limited_cache_epoch")
     client = shared.find("ClientBuilder::new(base_client)")
-    cache = shared.find(".with(Cache(", max(client, 0))
+    cache_attachments = (
+        shared.find(".with(Cache(", max(client, 0)),
+        shared.find(".with_arc(cache)", max(client, 0)),
+    )
+    cache = min((offset for offset in cache_attachments if offset >= 0), default=-1)
     limiter = shared.find(".with(ResponseBodyLimitMiddleware", max(cache, 0))
     if migration < 0 or client < 0 or cache < 0 or migration > client or client > cache:
         findings.append(

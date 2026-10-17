@@ -9,9 +9,9 @@ use async_trait::async_trait;
 use http_cache::{CacheManager, HttpResponse};
 use http_cache_reqwest::CACacheManager;
 use http_cache_semantics::CachePolicy;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
-use tracing::{debug, warn};
+use tracing::debug;
 
 use super::{
     CleanOptions, FilesystemSpace, ResolvedCacheConfig, evaluate_cache_limits, execute_cache_clean,
@@ -29,6 +29,12 @@ type CacheAsyncObserverFn =
 type BeforeKeyLockDirCreateFn = dyn Fn(&Path) + Send + Sync;
 const POST_WRITE_FINALIZATION_ERROR: &str =
     "cache security finalization failed after successful put";
+
+#[derive(Deserialize, Serialize)]
+struct StoredResponse<R, P> {
+    response: R,
+    policy: P,
+}
 
 /// Marker header stamped on a cached response served past its freshness
 /// window (see `SizeAwareCacheManager::get`). The header survives only on
@@ -81,7 +87,7 @@ fn day_cache_entry_expired(policy: &CachePolicy) -> bool {
 /// Strip the stale-serve marker. Called on every `put` path — both the
 /// revalidated cached response and a fresh 200 — so the stored entry and
 /// the served response never carry a marker a later serve would misread.
-fn strip_stale_serve_marker(response: &mut HttpResponse) {
+pub(super) fn strip_stale_serve_marker(response: &mut HttpResponse) {
     response.headers.remove(STALE_SERVE_AGE_HEADER);
 }
 
@@ -102,9 +108,15 @@ pub(crate) struct SizeAwareCacheManager {
     approx_bytes: Arc<AtomicU64>,
     eviction_running: Arc<AtomicBool>,
     services: ManagerServices,
+    try_locks: bool,
 }
 
 impl SizeAwareCacheManager {
+    pub(crate) fn for_http_requests(mut self) -> Self {
+        self.try_locks = true;
+        self
+    }
+
     pub(crate) fn new(path: PathBuf, config: ResolvedCacheConfig) -> Result<Self, BioMcpError> {
         Self::new_at(path, config, current_time_ms())
     }
@@ -240,10 +252,7 @@ impl SizeAwareCacheManager {
         let approx_bytes = match (services.estimate_cache_bytes)(&path) {
             Ok(bytes) => bytes,
             Err(err) => {
-                warn!(
-                    cache_path = %path.display(),
-                    "fast cache size estimate failed; seeding size tracker to 0: {err}"
-                );
+                super::warn_local_http_cache("initialization", &err);
                 0
             }
         };
@@ -254,6 +263,7 @@ impl SizeAwareCacheManager {
             approx_bytes: Arc::new(AtomicU64::new(approx_bytes)),
             eviction_running: Arc::new(AtomicBool::new(false)),
             services,
+            try_locks: false,
         }
     }
 }
@@ -268,15 +278,23 @@ impl CacheManager for SizeAwareCacheManager {
             (self.services.observe_get)(&self.inner.path, cache_key);
             let content_root = super::content_root(&self.inner.path);
             super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
-            let stored = self.inner.get(cache_key).await;
-            if let Ok(Some((mut response, policy))) = stored {
-                if day_cache_entry_expired(&policy) {
-                    return Ok(None);
-                }
-                stamp_stale_serve_marker(&mut response, &policy);
-                return Ok(Some((response, policy)));
+            // The library manager masks every content read error as a miss.
+            // Keep ordinary absent entries quiet, but let actual read and
+            // integrity failures reach the optional HTTP adapter's warning.
+            let bytes = match cacache::read(&self.inner.path, cache_key).await {
+                Ok(bytes) => bytes,
+                Err(cacache::Error::EntryNotFound(..)) => return Ok(None),
+                Err(error) => return Err(error.into()),
+            };
+            let StoredResponse {
+                mut response,
+                policy,
+            }: StoredResponse<HttpResponse, CachePolicy> = bincode::deserialize(&bytes)?;
+            if day_cache_entry_expired(&policy) {
+                return Ok(None);
             }
-            stored
+            stamp_stale_serve_marker(&mut response, &policy);
+            Ok(Some((response, policy)))
         };
         run_with_variant_article_deadline(operation).await
     }
@@ -292,20 +310,16 @@ impl CacheManager for SizeAwareCacheManager {
         strip_stale_serve_marker(&mut res);
         // Cancellation is safe only until CACache atomically publishes the entry.
         let safe_return = crate::sources::current_cache_publication_state().unwrap_or_default();
-        #[derive(Serialize)]
-        struct Store<'a> {
-            response: &'a HttpResponse,
-            policy: &'a CachePolicy,
-        }
         let pre_commit = async {
             let _operation = super::lock_cache_key_async(
                 self.config.cache_root.clone(),
                 cache_key.clone(),
                 Arc::clone(&self.services.before_key_lock_dir_create),
+                self.try_locks,
             )
             .await?;
             super::prepare_write_paths(&self.inner.path, &cache_key)?;
-            let bytes = bincode::serialize(&Store {
+            let bytes = bincode::serialize(&StoredResponse {
                 response: &res,
                 policy: &policy,
             })?;
@@ -339,10 +353,7 @@ impl CacheManager for SizeAwareCacheManager {
                     .min_disk_free
                     .is_violated(space.available_bytes, space.total_bytes),
                 Err(err) => {
-                    warn!(
-                        cache_root = %self.config.cache_root.display(),
-                        "cache filesystem inspection failed after put; skipping disk-pressure trigger: {err}"
-                    );
+                    super::warn_local_http_cache("write", &err);
                     false
                 }
             };
@@ -372,6 +383,7 @@ impl CacheManager for SizeAwareCacheManager {
                 self.config.cache_root.clone(),
                 cache_key.to_owned(),
                 Arc::clone(&self.services.before_key_lock_dir_create),
+                self.try_locks,
             )
             .await?;
             let content_root = super::content_root(&self.inner.path);
@@ -419,10 +431,7 @@ fn estimate_cache_bytes_fast(path: &Path) -> io::Result<u64> {
     }
     let total = sum_content_tree_bytes(path)?;
     if let Err(err) = write_content_totals_marker(path, total) {
-        warn!(
-            cache_path = %path.display(),
-            "writing cache size totals marker failed: {err}"
-        );
+        super::warn_local_http_cache("initialization", &err);
     }
     Ok(total)
 }
@@ -545,18 +554,12 @@ fn refresh_content_totals_marker(cache_path: &Path) {
     let usage = match snapshot_cache(cache_path) {
         Ok(snapshot) => summarize_cache_usage(&snapshot),
         Err(err) => {
-            warn!(
-                cache_path = %cache_path.display(),
-                "cache size totals refresh failed after maintenance: {err}"
-            );
+            super::warn_local_http_cache("initialization", &err);
             return;
         }
     };
     if let Err(err) = write_content_totals_marker(cache_path, usage.referenced_blob_bytes) {
-        warn!(
-            cache_path = %cache_path.display(),
-            "writing cache size totals marker failed after maintenance: {err}"
-        );
+        super::warn_local_http_cache("initialization", &err);
     }
 }
 
@@ -610,7 +613,6 @@ fn spawn_eviction_task(
         }
 
         let _reset_flag = ResetFlag(Arc::clone(&eviction_running));
-        let warn_path = cache_path.clone();
         let result = tokio::task::spawn_blocking(move || {
             run_eviction_cycle(&cache_path, &config, approx_bytes.as_ref())
         })
@@ -618,14 +620,8 @@ fn spawn_eviction_task(
 
         match result {
             Ok(Ok(())) => {}
-            Ok(Err(err)) => warn!(
-                cache_path = %warn_path.display(),
-                "cache eviction cycle failed: {err}"
-            ),
-            Err(err) => warn!(
-                cache_path = %warn_path.display(),
-                "cache eviction task join failed: {err}"
-            ),
+            Ok(Err(err)) => super::warn_local_http_cache("maintenance", &err),
+            Err(err) => super::warn_local_http_cache("maintenance", &err),
         }
     });
 }
@@ -690,11 +686,7 @@ where
     )?;
 
     if !report.errors.is_empty() {
-        warn!(
-            cache_path = %cache_path.display(),
-            errors = report.errors.len(),
-            "cache eviction completed with cleanup errors"
-        );
+        super::warn_local_http_cache("maintenance", &io::Error::other("cache cleanup incomplete"));
     }
 
     let snapshot_after =
@@ -725,10 +717,7 @@ where
 /// exact without another walk.
 fn persist_content_totals(cache_path: &Path, total_bytes: u64) {
     if let Err(err) = write_content_totals_marker(cache_path, total_bytes) {
-        warn!(
-            cache_path = %cache_path.display(),
-            "writing cache size totals marker failed after eviction: {err}"
-        );
+        super::warn_local_http_cache("maintenance", &err);
     }
 }
 
@@ -832,6 +821,7 @@ mod tests {
     struct CapturedEvent {
         level: tracing::Level,
         message: String,
+        fields: HashMap<String, String>,
     }
 
     #[derive(Clone, Default)]
@@ -852,6 +842,7 @@ mod tests {
                 .push(CapturedEvent {
                     level: *event.metadata().level(),
                     message: visitor.message.unwrap_or_default(),
+                    fields: visitor.fields,
                 });
         }
     }
@@ -859,12 +850,16 @@ mod tests {
     #[derive(Default)]
     struct MessageVisitor {
         message: Option<String>,
+        fields: HashMap<String, String>,
     }
 
     impl Visit for MessageVisitor {
         fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
             if field.name() == "message" {
                 self.message = Some(format!("{value:?}"));
+            } else {
+                self.fields
+                    .insert(field.name().to_owned(), format!("{value:?}"));
             }
         }
     }
@@ -1112,12 +1107,26 @@ mod tests {
     #[test]
     fn run_eviction_cycle_logs_cleanup_errors_at_warn() {
         let events = captured_eviction_events(25, vec!["simulated cleanup failure".to_string()]);
-        let message = "cache eviction completed with cleanup errors";
+        let warnings: Vec<_> = events
+            .iter()
+            .filter(|event| event.level == tracing::Level::WARN)
+            .collect();
+        assert_eq!(warnings.len(), 1, "one cache warning: {events:?}");
+        let warning = warnings[0];
+        assert_eq!(
+            warning
+                .fields
+                .keys()
+                .map(String::as_str)
+                .collect::<std::collections::HashSet<_>>(),
+            std::collections::HashSet::from(["operation", "category", "io_kind", "os_code"]),
+            "cache warnings must not include paths or raw errors: {warning:?}"
+        );
+        assert_eq!(warning.fields["operation"], "\"maintenance\"");
         assert!(
-            events
-                .iter()
-                .any(|event| event.level == tracing::Level::WARN && event.message.contains(message)),
-            "expected cleanup errors to warn; captured events: {events:?}"
+            warning
+                .message
+                .contains("local HTTP cache maintenance failed; continuing")
         );
     }
 
