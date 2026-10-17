@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision fe548b1, accept
+
 ## Outcome
 
 On Windows, a contended cache lock waits for its deadline instead of failing at once with os error 33, a Windows regression test proves the contention mapping on a Windows runner, and a provider warning caused by a local I/O failure names the I/O kind and OS error code.
