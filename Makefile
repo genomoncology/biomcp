@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
-.PHONY: landing-gate main-gate
+.PHONY: landing-gate main-gate repo-audit
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
@@ -85,7 +85,7 @@ test-contracts: prepare-routine-test-tmp prepare-test-contracts
 	$(MAKE) test-contracts-prepared
 
 test-contracts-prepared:
-	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "not release_gate" $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
+	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "not release_gate and not repo_audit" $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
 	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
@@ -103,7 +103,11 @@ landing-gate:
 
 main-gate:
 	$(MAKE) landing-gate
+	$(MAKE) repo-audit
 	$(MAKE) full-feature-check
+
+repo-audit: sync-python-dev
+	tools/run-offline -- uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "repo_audit and not release_gate"
 
 full-feature-check:
 	$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features -- -D warnings
@@ -121,11 +125,13 @@ png-artifact-smoke: build
 # selection after the full suite with the dev build's binary on
 # BIOMCP_BIN.
 release-gate-markers:
+	$(MAKE) repo-audit
 	$(MAKE) sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 
 release-gate: lint
 	$(MAKE) test
+	$(MAKE) repo-audit
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 	$(MAKE) full-feature-check
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"

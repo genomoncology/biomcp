@@ -132,13 +132,15 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
     ("target", "expected"),
     [
         ("landing-gate", ["lint", "test", "spec"]),
-        ("main-gate", ["lint", "test", "spec", "full-feature-check"]),
+        ("main-gate", ["lint", "test", "spec", "repo-audit", "full-feature-check"]),
     ],
 )
-@pytest.mark.parametrize("failed_stage", [None, "test"])
+@pytest.mark.parametrize("failed_stage", [None, "test", "repo-audit"])
 def test_landing_commands_run_ordered_checks_and_stop_on_failure(
     tmp_path: Path, target: str, expected: list[str], failed_stage: str | None
 ) -> None:
+    if failed_stage == "repo-audit" and target == "landing-gate":
+        pytest.skip("the required repository audit runs after merging")
     # Override existing leaves, not the gate recipes: exercise Make's real
     # ordering and failure propagation without compiling the product again.
     wrapper = tmp_path / "gate.mk"
@@ -147,7 +149,7 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
         + "\n".join(
             f"{stage}:\n\t@echo gate-stage:{stage}\n"
             + ("\t@exit 23\n" if stage == failed_stage else "")
-            for stage in ("lint", "test", "spec", "full-feature-check")
+            for stage in ("lint", "test", "spec", "repo-audit", "full-feature-check")
         ),
         encoding="utf-8",
     )

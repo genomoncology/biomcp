@@ -45,6 +45,7 @@
 - Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
 - The credential-redaction contract uses permanent local provider failures, so unrelated randomized retry delays cannot exhaust its command watchdog. (2165)
 - Article help is checked through the command line. Redundant help and test-file-layout assertions are removed; parser, label, ranking and refusal edge cases remain. (2081)
+- Run retained whole-repository audits in required postmerge and release qualification, while routine Python tests keep focused malformed-input and wrapper checks. (2122)
 - Run the local Rust and Python test lanes concurrently after one shared preparation, with bounded workers and separate failure output (2094).
 - Source package checks compare archive membership with Cargo's declared package list instead of maintaining a parallel file count, so legitimate source additions preserve the runtime boundary without a counter edit. (2159)
 - Measurement suites use a private temporary directory inside the checkout, so inherited temporary-directory aliases cannot invalidate store-security fixtures. (2168)

@@ -59,7 +59,10 @@ that graph does not exercise AlphaGenome. Run `make full-feature-check` for all
 shipped features and the AlphaGenome behavior tests, and `make release-gate`
 for the release checks. `make landing-gate` runs lint, routine tests and
 specifications in order. `make main-gate` runs that standard gate and then
-`make full-feature-check`. Routine lint includes test targets. Long, load,
+`make repo-audit` and `make full-feature-check`. The audit stage retains the
+whole-repository source, capture, coupling and CLI surface checks; routine Python
+keeps their focused malformed-input and wrapper checks. Release qualification
+also runs this required audit stage. Routine lint includes test targets. Long, load,
 coverage and release-only packaging checks stay outside per-landing gates.
 
 ## Releases
