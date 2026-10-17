@@ -861,7 +861,7 @@
     {
       "path": "clinicaltrials/case-13-location-contacts.json",
       "classification": "authored",
-      "authored_reason": "Authored provider-shaped fixture copied byte-identically from MIT-licensed BioData clinical-trial parity case 13; recording equivalent person-bearing site-contact values is unsuitable for the public repository. The verified SHA-256 is f1c6e779e842ca3a1f1dae52264ba6e2015b205624ad32a96370a75d934d9e2e. Authorship does not exempt its keys from ClinicalTrials.gov schema attestation."
+      "authored_reason": "Authored provider-shaped fixture copied byte-identically from an MIT-licensed clinical-trial parity fixture (case 13); recording equivalent person-bearing site-contact values is unsuitable for the public repository. The verified SHA-256 is f1c6e779e842ca3a1f1dae52264ba6e2015b205624ad32a96370a75d934d9e2e. Authorship does not exempt its keys from ClinicalTrials.gov schema attestation."
     },
     {
       "path": "clinicaltrials/search.json",

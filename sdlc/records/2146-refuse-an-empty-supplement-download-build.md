@@ -67,7 +67,7 @@ download.
 
 ## Red on main
 
-Job `1792189610534-1839260` (yellow) ran the new tests at `cdeddfce7` =
+Job `1792189610534-1839260` (Linux check host) ran the new tests at `cdeddfce7` =
 origin/main `48366958c` + tests/fixture only, no product change:
 
 - `empty_supplement_reply_fails_the_download_and_writes_no_file` FAILED —
@@ -80,14 +80,14 @@ origin/main `48366958c` + tests/fixture only, no product change:
 
 | Job | Machine | Command | Verdict |
 | --- | --- | --- | --- |
-| 1792190865208-1915650 | yellow | targeted nextest: the five new tests | passed, 5/5 |
-| 1792191220555-1920355 | yellow | `make test` at `aeb31fbb9` | passed |
-| 1792191787467-1963604 | yellow | `make lint` at `71aff3567` | passed |
-| 1792191793549-1964706 | yellow | `make spec` at `71aff3567` | passed |
+| 1792190865208-1915650 | Linux check host | targeted nextest: the five new tests | passed, 5/5 |
+| 1792191220555-1920355 | Linux check host | `make test` at `aeb31fbb9` | passed |
+| 1792191787467-1963604 | Linux check host | `make lint` at `71aff3567` | passed |
+| 1792191793549-1964706 | Linux check host | `make spec` at `71aff3567` | passed |
 | CI run 38979280962 | GitHub Linux | full ci.yml at `71aff3567` | green (all executed lanes) |
-| 1792192449179-24743 | m5 | live probe at `71aff3567` | see below |
+| 1792192449179-24743 | macOS build host | live probe at `71aff3567` | see below |
 
-### Live probe (read-only public GETs, M5, job 1792192449179-24743)
+### Live probe (read-only public GETs, macOS build host, job 1792192449179-24743)
 
 - The ticket's exact reported command now exits 1, writes no file, and says:
   `article_asset_not_retrievable: 'NIHMS1501643-supplement-2.xlsx' cannot be
@@ -98,10 +98,10 @@ origin/main `48366958c` + tests/fixture only, no product change:
 
 ## Findings
 
-- `make lint` cannot run on the m5 yet: no Darwin-arm64 archive for the
+- `make lint` cannot run on the macOS build host yet: no Darwin-arm64 archive for the
   pinned ShellCheck 0.10.0 / actionlint 1.7.12. The lint gate for this
-  ticket ran on yellow (the machine that has the pinned tools) and in CI.
-  Whoever owns the m5 gate-host setup should install those two tools.
+  ticket ran on the Linux check host (the machine that has the pinned tools) and in CI.
+  Whoever owns the macOS build host gate-host setup should install those two tools.
 - `cargo nextest` emits a pre-existing `unused import: std::fs` warning for
   `src/cache/manager.rs:746` (present on main since `d59599c88`, shadowed
   import in the tests module). Not touched by this ticket; clippy's lint

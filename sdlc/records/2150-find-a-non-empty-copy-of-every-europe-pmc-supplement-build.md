@@ -122,7 +122,7 @@ Superseded failures on the way (all understood, none open): CI 39005740828
 and 39010671915 were compile errors fixed before the next push; CI 39006024620
 and 39009800755 caught the two real defects below (both fixed in
 `1f65999b6`/`326ab7fd1` and re-proven by the 8/8 run); CI 39012916822 was a
-spec-lint short-match literal; yellow 1792214563558-2790300 and
+spec-lint short-match literal; Linux check host 1792214563558-2790300 and
 1792219137243-3407725 ran stale tips and failed the same fixed defects.
 
 ### Live probe at the tip (read-only public GETs, job 1792226898757-77664)

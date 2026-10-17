@@ -12,12 +12,12 @@ Milestone: 1.0
 
 ## Evidence
 
-- Filed 2026-10-15 from lanes 2004 and 2006: every 1.0 lane's acceptance names `make lint`, `make test`, and `make spec` on the gate host, and all three fail on M5 for pre-existing reasons proven at the base tip e2dff0a46, before any lane's diff.
+- Filed 2026-10-15 from lanes 2004 and 2006: every 1.0 lane's acceptance names `make lint`, `make test`, and `make spec` on the gate host, and all three fail on the macOS build host for pre-existing reasons proven at the base tip e2dff0a46, before any lane's diff.
 - Cause 1 (lint): `tools/bootstrap-lint-tools` ships no Darwin-arm64 archive and exits before any check runs, so `make lint` cannot start.
 - Cause 2 (spec): `scripts/run-specs.sh:7` and `scripts/fixture-supervisor.sh:9` read `/proc` unconditionally, so `make spec`, `spec-static`, and the parallel-isolation pytest lane are Linux-only and cannot run on a macOS gate host.
-- Cause 5 (spec): the fixture scripts need bash >= 4.2 (`[[ -v ]]`); M5 ships bash 3.2, so the spec page run cannot execute there (lane 2003 evidence).
-- Cause 4 (test): `tools/run-offline` refuses macOS by design, so `make test` cannot run as-is on M5; lanes run the underlying gate commands unsandboxed instead.
-- Cause 3 (environment, needs an owner decision): `website/prepare` pins Node v22.22.3 while M5 carries only v26; either M5 installs a v22 toolchain or the pin moves — not decidable by a lane.
+- Cause 5 (spec): the fixture scripts need bash >= 4.2 (`[[ -v ]]`); the macOS build host ships bash 3.2, so the spec page run cannot execute there (lane 2003 evidence).
+- Cause 4 (test): `tools/run-offline` refuses macOS by design, so `make test` cannot run as-is on the macOS build host; lanes run the underlying gate commands unsandboxed instead.
+- Cause 3 (environment, needs an owner decision): `website/prepare` pins Node v22.22.3 while the macOS build host carries only v26; either the macOS build host installs a v22 toolchain or the pin moves — not decidable by a lane.
 
 ## Work
 
@@ -25,7 +25,7 @@ Fix causes 1 and 2 as code: the lint bootstrap gains a Darwin-arm64 case; the sp
 
 ## Acceptance
 
-1. On M5, `make lint`, `make test`, and `make spec` each run to their own verdicts (pass or real findings) at the 1.0 line tip, in one pm job, with no step exiting on a missing platform.
+1. On macOS build host, `make lint`, `make test`, and `make spec` each run to their own verdicts (pass or real findings) at the 1.0 line tip, in one pm job, with no step exiting on a missing platform.
 
 ## Ruling 2026-10-15: Node pin and the offline sandbox on macOS
 
