@@ -11,7 +11,8 @@ use std::time::Instant;
 use crate::entities::variant::{
     CarNormalizationItem, CarNormalizationStatus, NormalizedVariantAliases,
     RequestedVariantIdentity, VariantArticleResolution, VariantArticleResolutionContext,
-    VariantIdFormat, VariantProviderValidationStatus, VariantResolutionStatus,
+    VariantIdFormat, VariantProviderValidation, VariantProviderValidationStatus,
+    VariantResolutionStatus,
 };
 use crate::error::BioMcpError;
 use clap::ValueEnum;
@@ -37,7 +38,7 @@ use super::identity_verification::{
     verify_pubtator,
 };
 use super::query::{
-    build_europepmc_variant_strict_query, build_pubmed_variant_strict_query,
+    build_europepmc_variant_strict_query, build_pubmed_variant_strict_query, europepmc_escape,
     resolve_variant_entity_tokens,
 };
 use super::search::{
@@ -59,6 +60,7 @@ pub enum VariantArticleStrategy {
     Union,
     Annotation,
     Lexical,
+    Exact,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -212,6 +214,20 @@ struct VariantArticleCallEvent {
     reason_code: Option<&'static str>,
 }
 
+/// One alias's yield from one source, as the route observed it before the
+/// candidate pool merged rows: what the source returned, whether the
+/// 25-result fetch cap cut that list, and — filled once merging settles —
+/// how many of those rows still hold a provenance fact in the final pool.
+#[derive(Debug, Clone)]
+struct VariantAliasYieldRecord {
+    route: String,
+    alias: String,
+    source: String,
+    hits_received: usize,
+    cut_by_cap: bool,
+    hits_kept: usize,
+}
+
 #[derive(Debug)]
 struct VariantArticleWorkAllocation {
     identity_verification_reserved: AtomicUsize,
@@ -240,6 +256,7 @@ pub(crate) struct VariantArticleExecutionContext {
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
     pubtator_variant_queries: Arc<Mutex<BTreeSet<String>>>,
+    alias_yields: Arc<Mutex<Vec<VariantAliasYieldRecord>>>,
     ldh_medium: Arc<AtomicUsize>,
     ldh_direct: Arc<AtomicUsize>,
 }
@@ -281,6 +298,7 @@ impl VariantArticleExecutionContext {
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
             pubtator_variant_queries: Arc::new(Mutex::new(BTreeSet::new())),
+            alias_yields: Arc::new(Mutex::new(Vec::new())),
             ldh_medium: Arc::new(AtomicUsize::new(0)),
             ldh_direct: Arc::new(AtomicUsize::new(0)),
         }
@@ -811,6 +829,69 @@ impl VariantArticleExecutionContext {
             .collect()
     }
 
+    fn record_alias_yield(
+        &self,
+        route: &str,
+        alias: &str,
+        source: &str,
+        hits_received: usize,
+        cut_by_cap: bool,
+    ) {
+        self.alias_yields
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(VariantAliasYieldRecord {
+                route: route.to_string(),
+                alias: alias.to_string(),
+                source: source.to_string(),
+                hits_received,
+                cut_by_cap,
+                hits_kept: 0,
+            });
+    }
+
+    /// Fill each recorded yield's kept count from the merged candidate pool:
+    /// a row's alias fact survives merging into another candidate's
+    /// provenance, so kept counts the merged candidates still carrying a
+    /// fact for this route, alias, and source.
+    fn finalize_alias_yields(&self, candidates: &[ArticleCandidate]) {
+        let mut records = self
+            .alias_yields
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        for record in records.iter_mut() {
+            record.hits_kept = candidates
+                .iter()
+                .filter(|candidate| {
+                    candidate.variant_provenance.iter().any(|fact| {
+                        fact.route == record.route
+                            && fact.source == record.source
+                            && fact.query_aliases.iter().any(|alias| alias == &record.alias)
+                    })
+                })
+                .count();
+        }
+        records.sort_by(|left, right| {
+            (&left.route, &left.alias, &left.source).cmp(&(&right.route, &right.alias, &right.source))
+        });
+    }
+
+    fn alias_yields(&self) -> Vec<VariantArticleAliasYield> {
+        self.alias_yields
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .map(|record| VariantArticleAliasYield {
+                route: record.route.clone(),
+                alias: record.alias.clone(),
+                source: record.source.clone(),
+                hits_received: record.hits_received,
+                hits_kept: record.hits_kept,
+                cut_by_cap: record.cut_by_cap,
+            })
+            .collect()
+    }
+
     /// PubTator autocomplete answered but returned no variant entity for the
     /// request: the annotation route cannot search by entity id. The degraded
     /// ledger event with this reason code keeps the run incomplete and lets the
@@ -963,6 +1044,20 @@ pub struct VariantArticleCandidateTrace {
     pub candidates: Vec<VariantArticleCandidateTraceRecord>,
 }
 
+/// One alias's yield from one source in a `--debug-plan`: rows the source
+/// returned for that alias, rows still carrying that alias's provenance
+/// fact after the merged pool settles, and whether the alias's 25-result
+/// fetch cap cut the source's list.
+#[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleAliasYield {
+    pub route: String,
+    pub alias: String,
+    pub source: String,
+    pub hits_received: usize,
+    pub hits_kept: usize,
+    pub cut_by_cap: bool,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleDebugPlan {
     pub normalized_aliases: NormalizedVariantAliases,
@@ -975,6 +1070,8 @@ pub struct VariantArticleDebugPlan {
     pub truncated: bool,
     pub stopped_routes: Vec<String>,
     pub next: VariantArticleNextPlan,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub alias_yields: Vec<VariantArticleAliasYield>,
     pub candidate_trace: VariantArticleCandidateTrace,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub verification: Option<VariantArticleVerificationPlan>,
@@ -1180,6 +1277,9 @@ fn strategy_route_skeleton(
         VariantArticleStrategy::Lexical => {
             rows.extend(federated.map(|source| ("strict", source)));
             rows.extend(federated.map(|source| ("exact_lexical", source)));
+        }
+        VariantArticleStrategy::Exact => {
+            rows.extend(federated.map(|source| ("exact_name", source)));
         }
     }
     rows.extend([
@@ -1646,6 +1746,48 @@ fn canonical_equivalence(
     }
 }
 
+/// The resolution context the exact-name strategy runs with: no provider
+/// resolution happened, so nothing is resolved, nothing is validated, and
+/// every discovery decision rests on the caller's string alone.
+fn unresolved_exact_context(requested: RequestedVariantIdentity) -> VariantArticleResolutionContext {
+    VariantArticleResolutionContext {
+        requested,
+        resolution: VariantArticleResolution {
+            status: VariantResolutionStatus::Unresolved,
+            normalized_aliases: NormalizedVariantAliases::default(),
+            exhaustive: false,
+            basis: None,
+            provider_validation: VariantProviderValidation {
+                source: "myvariant".into(),
+                status: VariantProviderValidationStatus::NotAttempted,
+                matched_alias: None,
+                contradictory_field: None,
+            },
+        },
+        source_id: None,
+        source_identity: None,
+        source_hit: None,
+        fallback_source_identities: Vec::new(),
+        available: true,
+    }
+}
+
+/// The equivalence observation the exact-name strategy reports instead of
+/// asking ClinGen CAR: not attempted, not part of completeness, and never
+/// serialized in the response.
+fn unattempted_canonical_equivalence() -> CanonicalEquivalence {
+    CanonicalEquivalence {
+        status: "not_attempted".into(),
+        caid: None,
+        exhaustive: false,
+        complete: true,
+        applicable_identity_count: 0,
+        observations: Vec::new(),
+        message: "the exact-name strategy does not check canonical equivalence".into(),
+        aliases: Vec::new(),
+    }
+}
+
 pub(crate) async fn resolve_canonical_equivalence(
     requested: &RequestedVariantIdentity,
     execution: &VariantArticleExecutionContext,
@@ -2055,6 +2197,41 @@ async fn federated_alias_candidates(
             );
         succeeded |= alias_succeeded;
         alias_failed |= !alias_succeeded;
+        // Record the alias's yield per source before the route pool cap can
+        // drop rows, so received counts name what each source returned for
+        // this alias and the cut flag names the 25-result cap or a truncated
+        // page.
+        let mut received_by_source = BTreeMap::<&str, usize>::new();
+        for row in &federated.rows {
+            let sources = if row.matched_sources.is_empty() {
+                std::slice::from_ref(&row.source)
+            } else {
+                row.matched_sources.as_slice()
+            };
+            for source in sources {
+                *received_by_source
+                    .entry(source_name(*source))
+                    .or_insert(0) += 1;
+            }
+        }
+        let attempted_sources = [
+            ArticleSource::PubTator,
+            ArticleSource::EuropePmc,
+            ArticleSource::PubMed,
+            ArticleSource::SemanticScholar,
+        ];
+        for source in attempted_sources {
+            execution.record_alias_yield(
+                route,
+                &alias,
+                source_name(source),
+                received_by_source
+                    .get(source_name(source))
+                    .copied()
+                    .unwrap_or(0),
+                federated.truncated_sources.contains(&source),
+            );
+        }
         for row in federated.rows {
             if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
                 break;
@@ -2132,7 +2309,13 @@ async fn strict_provider_candidates(
                 Some(&plan.query),
             )
             .await
-            .map(|partial| (partial.page.results, partial.degradation.is_some())),
+            .map(|partial| {
+                (
+                    partial.page.results,
+                    partial.degradation.is_some(),
+                    partial.page.total,
+                )
+            }),
             "europepmc" => search_europepmc_page_with_context(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -2142,7 +2325,13 @@ async fn strict_provider_candidates(
                 Some(&plan.query),
             )
             .await
-            .map(|partial| (partial.page.results, partial.degradation.is_some())),
+            .map(|partial| {
+                (
+                    partial.page.results,
+                    partial.degradation.is_some(),
+                    partial.page.total,
+                )
+            }),
             "semanticscholar" => search_semantic_scholar_candidates(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -2161,7 +2350,7 @@ async fn strict_provider_candidates(
                         message: "strict search unavailable".into(),
                     })
                 } else {
-                    Ok((outcome.rows, false))
+                    Ok((outcome.rows, false, None))
                 }
             }),
             "pubtator" => {
@@ -2199,10 +2388,16 @@ async fn strict_provider_candidates(
                             )
                         }
                         .await
-                        .map(|partial| (partial.page.results, partial.degradation.is_some())),
+                        .map(|partial| {
+                            (
+                                partial.page.results,
+                                partial.degradation.is_some(),
+                                partial.page.total,
+                            )
+                        }),
                         None => {
                             unit.record("ok", 1);
-                            Ok((Vec::new(), false))
+                            Ok((Vec::new(), false, None))
                         }
                     },
                     Err(error) => {
@@ -2214,7 +2409,7 @@ async fn strict_provider_candidates(
             _ => continue,
         };
         match rows {
-            Ok((rows, degraded)) if !execution.route_stopped("strict") || stopped_before => {
+            Ok((rows, degraded, total)) if !execution.route_stopped("strict") || stopped_before => {
                 // A degraded strict leg kept rows a mid-flight failure
                 // truncated: the route still succeeded, but it is incomplete
                 //.
@@ -2222,6 +2417,16 @@ async fn strict_provider_candidates(
                     incomplete = true;
                 }
                 succeeded = true;
+                let cut = degraded
+                    || total.is_some_and(|total| total > rows.len())
+                    || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
+                execution.record_alias_yield(
+                    "strict",
+                    &plan.query_alias,
+                    &plan.provider,
+                    rows.len(),
+                    cut,
+                );
                 candidates.extend(rows.into_iter().map(|row| {
                     candidate_with_provenance(
                         row,
@@ -2382,6 +2587,139 @@ async fn litvar_route_outcome(
         };
     }
     (false, false)
+}
+
+/// The exact-name route: one phrase-quoted query per source for the caller's
+/// string, no resolution and no alias expansion. Each source's yield is
+/// recorded for the debug plan beside the usual route status.
+async fn exact_name_candidates(
+    name: &str,
+    execution: &VariantArticleExecutionContext,
+) -> (
+    Vec<ArticleCandidate>,
+    bool,
+    bool,
+    Vec<VariantArticleSourceStatus>,
+) {
+    let filters = article_filters();
+    let plans = exact_name_query_plans(name);
+    let mut candidates = Vec::new();
+    let mut incomplete = false;
+    let mut succeeded = false;
+    for plan in plans {
+        if execution.route_stopped("exact_name") {
+            incomplete = true;
+            break;
+        }
+        let rows = match plan.provider.as_str() {
+            "pubmed" => search_pubmed_page_with_context(
+                &filters,
+                LEXICAL_ALIAS_FETCH_LIMIT,
+                0,
+                Some(execution),
+                "exact_name",
+                Some(&plan.query),
+            )
+            .await
+            .map(|partial| {
+                (
+                    partial.page.results,
+                    partial.degradation.is_some(),
+                    partial.page.total,
+                )
+            }),
+            "europepmc" => search_europepmc_page_with_context(
+                &filters,
+                LEXICAL_ALIAS_FETCH_LIMIT,
+                0,
+                Some(execution),
+                "exact_name",
+                Some(&plan.query),
+            )
+            .await
+            .map(|partial| {
+                (
+                    partial.page.results,
+                    partial.degradation.is_some(),
+                    partial.page.total,
+                )
+            }),
+            "pubtator" => search_pubtator_page_with_context(
+                &filters,
+                LEXICAL_ALIAS_FETCH_LIMIT,
+                0,
+                Some(execution),
+                "exact_name",
+                Some(&plan.query),
+            )
+            .await
+            .map(|partial| {
+                (
+                    partial.page.results,
+                    partial.degradation.is_some(),
+                    partial.page.total,
+                )
+            }),
+            "semanticscholar" => search_semantic_scholar_candidates(
+                &filters,
+                LEXICAL_ALIAS_FETCH_LIMIT,
+                Some(execution),
+                "exact_name",
+                Some(&plan.query),
+            )
+            .await
+            .and_then(|outcome| {
+                if matches!(
+                    outcome.status.status,
+                    Some(ArticleSourceAvailability::Unavailable)
+                ) {
+                    Err(BioMcpError::Api {
+                        api: "semantic-scholar".into(),
+                        message: "exact-name search unavailable".into(),
+                    })
+                } else {
+                    Ok((outcome.rows, false, None))
+                }
+            }),
+            _ => continue,
+        };
+        match rows {
+            Ok((rows, degraded, total)) if !execution.route_stopped("exact_name") => {
+                if degraded {
+                    incomplete = true;
+                }
+                succeeded = true;
+                let cut = degraded
+                    || total.is_some_and(|total| total > rows.len())
+                    || (total.is_none() && rows.len() >= LEXICAL_ALIAS_FETCH_LIMIT);
+                execution.record_alias_yield(
+                    "exact_name",
+                    &plan.query_alias,
+                    &plan.provider,
+                    rows.len(),
+                    cut,
+                );
+                candidates.extend(rows.into_iter().map(|row| {
+                    candidate_with_provenance(
+                        row,
+                        "exact_name",
+                        &plan.provider,
+                        vec![plan.query_alias.clone()],
+                    )
+                }));
+            }
+            Ok(_) | Err(_) if execution.route_stopped("exact_name") => {
+                incomplete = true;
+                break;
+            }
+            Ok(_) | Err(_) => {
+                incomplete = true;
+            }
+        }
+    }
+    let calls = execution.events();
+    let statuses = provider_statuses_for_route("exact_name", &calls);
+    (candidates, incomplete, succeeded, statuses)
 }
 
 async fn lexical_candidates(
@@ -2679,6 +3017,7 @@ fn plan_queries(
         // The route resolves its own variant through the LitVar2
         // autocomplete, so its query is the request itself.
         "litvar_variant" => vec![input.trim().to_string()],
+        "exact_name" => vec![input.trim().to_string()],
         _ => {
             let aliases = combined_normalized_aliases(context);
             aliases
@@ -2695,12 +3034,52 @@ fn plan_queries(
     }
 }
 
+/// The exact-name route's four provider queries for one caller string:
+/// the name phrase-quoted in each provider's own syntax, with no alias
+/// expansion. Semantic Scholar's bulk endpoint matches phrases natively and
+/// PubTator's search takes free text, so those two carry the bare name while
+/// PubMed and Europe PMC wrap the name in their title/abstract phrase forms.
+fn exact_name_query_plans(name: &str) -> Vec<ProviderVariantQueryPlan> {
+    let name = name.trim();
+    let pubmed_phrase = format!(
+        "\"{}\"[Title/Abstract]",
+        name.replace('\\', "\\\\").replace('"', "\\\"")
+    );
+    let europepmc_phrase = format!("TITLE_ABS:\"{}\"", europepmc_escape(name));
+    [
+        ("pubmed", pubmed_phrase, "pubmed-title-abstract-phrase-v1"),
+        (
+            "europepmc",
+            europepmc_phrase,
+            "europepmc-title-abstract-phrase-v1",
+        ),
+        ("pubtator", name.to_string(), "pubtator-text-v1"),
+        (
+            "semanticscholar",
+            name.to_string(),
+            "semantic-scholar-bulk-phrase-v1",
+        ),
+    ]
+    .into_iter()
+    .map(|(provider, query, version)| ProviderVariantQueryPlan {
+        provider: provider.into(),
+        route: "exact_name".into(),
+        query_alias: name.to_string(),
+        query,
+        query_template_version: version.into(),
+    })
+    .collect()
+}
+
 fn provider_variant_query_plan_with_aliases(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
     exact_aliases: &[String],
 ) -> Vec<ProviderVariantQueryPlan> {
+    if strategy == VariantArticleStrategy::Exact {
+        return exact_name_query_plans(input);
+    }
     let gene = context
         .requested
         .gene
@@ -2803,6 +3182,17 @@ fn materialize_discovery_route_plans(
             "exact_lexical",
             source,
             exact_applicable.then_some(exact_aliases.len()),
+        );
+    }
+
+    // The exact-name route runs one phrase-quoted query per source and never
+    // resolves the variant, so its applicability rests on the strategy alone.
+    let exact_name_applicable = strategy == VariantArticleStrategy::Exact;
+    for source in federated {
+        execution.set_route_unit_plan(
+            "exact_name",
+            source,
+            exact_name_applicable.then_some(1),
         );
     }
 
@@ -2911,7 +3301,9 @@ fn build_debug_plan(
     let route_names: Vec<&str> = if contradictory {
         match strategy {
             VariantArticleStrategy::Union => vec!["best_effort_free_text"],
-            VariantArticleStrategy::Annotation | VariantArticleStrategy::Lexical => Vec::new(),
+            VariantArticleStrategy::Annotation
+            | VariantArticleStrategy::Lexical
+            | VariantArticleStrategy::Exact => Vec::new(),
         }
     } else if !resolved {
         match strategy {
@@ -2928,6 +3320,7 @@ fn build_debug_plan(
                 vec!["pubtator_variant", "litvar_variant"]
             }
             VariantArticleStrategy::Lexical => vec!["exact_lexical"],
+            VariantArticleStrategy::Exact => vec!["exact_name"],
         }
     } else {
         match strategy {
@@ -2944,6 +3337,7 @@ fn build_debug_plan(
                 vec!["pubtator_variant", "litvar_variant"]
             }
             VariantArticleStrategy::Lexical => vec!["strict", "exact_lexical"],
+            VariantArticleStrategy::Exact => vec!["exact_name"],
         }
     };
     let events = execution.events();
@@ -3051,6 +3445,7 @@ fn build_debug_plan(
         truncated: state.truncated,
         stopped_routes: execution.stopped_routes(),
         next: state.next,
+        alias_yields: execution.alias_yields(),
         candidate_trace: VariantArticleCandidateTrace {
             schema_version: "variant-article-candidate-trace-v2",
             observed_total,
@@ -3124,18 +3519,28 @@ async fn search_variant_articles_with_deadline(
     verification: VariantArticleVerificationOptions,
     deadline_limit: std::time::Duration,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
-    // Article search resolves identity through aliases a bare ClinVar
-    // VariationID does not carry; refuse it instead of returning an empty
-    // resolution.
-    if let crate::entities::variant::VariantInputKind::Exact(VariantIdFormat::ClinvarVariationId(
-        _,
-    )) = crate::entities::variant::classify_variant_input(input)
+    // The exact-name strategy searches the caller's string verbatim: no
+    // resolution happens, so the resolver's variant-format refusals do not
+    // apply and any non-empty name is searchable.
+    if strategy == VariantArticleStrategy::Exact {
+        if input.trim().is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "--strategy exact requires a non-empty variant name".into(),
+            ));
+        }
+    } else if let crate::entities::variant::VariantInputKind::Exact(
+        VariantIdFormat::ClinvarVariationId(_),
+    ) = crate::entities::variant::classify_variant_input(input)
     {
         return Err(BioMcpError::InvalidArgument(format!(
             "Unrecognized variant format for article search: '{input}'. Pass a gene+protein change, transcript HGVS, rsID, or genomic HGVS; use `biomcp get variant {input}` for the ClinVar VariationID."
         )));
     }
-    let requested = RequestedVariantIdentity::from_variant_input(input)?;
+    let requested = if strategy == VariantArticleStrategy::Exact {
+        RequestedVariantIdentity::from_variant_input(input).unwrap_or_default()
+    } else {
+        RequestedVariantIdentity::from_variant_input(input)?
+    };
     if limit == 0 || limit > 50 {
         return Err(BioMcpError::InvalidArgument(
             "--limit must be between 1 and 50".to_string(),
@@ -3271,15 +3676,40 @@ async fn search_variant_articles_identity(
             "--limit must be between 1 and 50".to_string(),
         ));
     }
+    if strategy == VariantArticleStrategy::Exact && input.trim().is_empty() {
+        return Err(BioMcpError::InvalidArgument(
+            "--strategy exact requires a non-empty variant name".to_string(),
+        ));
+    }
     let route_skeleton = strategy_route_skeleton(strategy, verification.verify_identity);
     execution.initialize_route_unit_plans(&route_skeleton, &requested);
-    let mut context =
-        crate::entities::variant::resolve_article_variant_identity(requested, input, &execution)
-            .await?;
-    context.resolution.normalized_aliases = combined_normalized_aliases(&context);
-    let canonical_equivalence = resolve_canonical_equivalence(&context.requested, &execution).await;
+    // The exact-name strategy never resolves the variant and never checks
+    // canonical equivalence; mark both skeleton routes inapplicable so the
+    // ledger cannot claim provider work that was never attempted.
+    if strategy == VariantArticleStrategy::Exact {
+        execution.set_route_unit_plan("resolution", "myvariant", None);
+        execution.set_route_unit_plan("canonical_equivalence", "clingen_car", None);
+    }
+    let mut context = if strategy == VariantArticleStrategy::Exact {
+        unresolved_exact_context(requested)
+    } else {
+        let mut resolved_context =
+            crate::entities::variant::resolve_article_variant_identity(requested, input, &execution)
+                .await?;
+        resolved_context.resolution.normalized_aliases = combined_normalized_aliases(&resolved_context);
+        resolved_context
+    };
+    let canonical_equivalence = if strategy == VariantArticleStrategy::Exact {
+        unattempted_canonical_equivalence()
+    } else {
+        resolve_canonical_equivalence(&context.requested, &execution).await
+    };
     let (selected_exact_aliases, selected_exact_aliases_truncated) =
-        exact_aliases_with_equivalence(&context, &canonical_equivalence);
+        if strategy == VariantArticleStrategy::Exact {
+            (vec![input.trim().to_string()], false)
+        } else {
+            exact_aliases_with_equivalence(&context, &canonical_equivalence)
+        };
     if context.available {
         materialize_discovery_route_plans(
             input,
@@ -3310,12 +3740,24 @@ async fn search_variant_articles_identity(
     let events = execution.events();
     let mut statuses = provider_statuses_for_route("resolution", &events);
     let canonical_statuses = provider_statuses_for_route("canonical_equivalence", &events);
+    if strategy == VariantArticleStrategy::Exact {
+        statuses.push(status_with_detail(
+            "resolution",
+            "myvariant",
+            VariantArticleSourceStatusKind::Skipped,
+            Some("the exact-name strategy does not resolve the variant"),
+        ));
+    }
     if canonical_statuses.is_empty() {
         let mut inapplicable = status_with_detail(
             "canonical_equivalence",
             "clingen_car",
             VariantArticleSourceStatusKind::Skipped,
-            Some("caller identity has no applicable canonical query"),
+            Some(if strategy == VariantArticleStrategy::Exact {
+                "the exact-name strategy does not check canonical equivalence"
+            } else {
+                "caller identity has no applicable canonical query"
+            }),
         );
         inapplicable.reason_codes = vec!["identity_inapplicable"];
         statuses.push(inapplicable);
@@ -3376,6 +3818,9 @@ async fn search_variant_articles_identity(
                         ))
                     }
                     VariantProviderValidationStatus::Confirmed => {}
+                    // Only the exact-name strategy leaves validation
+                    // unattempted, and it never reaches this union arm.
+                    VariantProviderValidationStatus::NotAttempted => {}
                 }
                 if !matches!(
                     context.resolution.provider_validation.status,
@@ -3440,6 +3885,14 @@ async fn search_variant_articles_identity(
                     ));
                 }
                 succeeded_routes += 1;
+            }
+            VariantArticleStrategy::Exact => {
+                let (rows, incomplete, succeeded, route_statuses) =
+                    exact_name_candidates(input, &execution).await;
+                candidates.extend(rows);
+                statuses.extend(route_statuses);
+                succeeded_routes += usize::from(succeeded);
+                failed_routes += usize::from(incomplete || !succeeded);
             }
         }
     } else {
@@ -3549,6 +4002,9 @@ async fn search_variant_articles_identity(
                     failed_routes += 1;
                 }
                 VariantProviderValidationStatus::Contradictory => {}
+                // Only the exact-name strategy leaves validation unattempted,
+                // and it never reaches this resolved union arm.
+                VariantProviderValidationStatus::NotAttempted => {}
             }
         }
     }
@@ -3565,6 +4021,9 @@ async fn search_variant_articles_identity(
             trace.after_dedup = true;
         }
     }
+    // With the merged pool settled, each recorded alias yield can name how
+    // many of its received rows still carry provenance in the final pool.
+    execution.finalize_alias_yields(&candidates);
     let mut filtered_candidate_trace = Vec::new();
     let mut verification_response_subsets = Vec::new();
     let mut verification_content_subsets = Vec::new();
@@ -3803,7 +4262,9 @@ async fn search_variant_articles_identity(
     let hard_error =
         rows.is_empty() && (!failed_sources.is_empty() || execution.deadline.is_exhausted());
     statuses.sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
-    let retrieval_path = if !resolved {
+    let retrieval_path = if strategy == VariantArticleStrategy::Exact {
+        "exact-name phrase search"
+    } else if !resolved {
         VARIANT_FALLBACK_RETRIEVAL_PATH
     } else if strategy == VariantArticleStrategy::Annotation {
         VARIANT_ENTITY_RETRIEVAL_PATH
@@ -3844,11 +4305,12 @@ async fn search_variant_articles_identity(
         plan
     });
     let outage_message = variant_article_outage_message(&statuses);
+    let canonical_equivalence = (strategy != VariantArticleStrategy::Exact).then_some(canonical_equivalence);
     Ok(VariantArticleOutcome {
         response: VariantArticleResponse {
             requested_variant: context.requested,
             resolution: context.resolution,
-            canonical_equivalence: Some(canonical_equivalence),
+            canonical_equivalence,
             strategy,
             complete,
             truncated,
@@ -4134,6 +4596,7 @@ fn empty_debug_plan(
             offset,
             cursor: None,
         },
+        alias_yields: Vec::new(),
         candidate_trace: VariantArticleCandidateTrace {
             schema_version: "variant-article-candidate-trace-v2",
             observed_total: 0,
@@ -5397,6 +5860,380 @@ mod tests {
             logged.iter().any(|line| line.starts_with("GET /search/")
                 && line.contains("VARIANT_p.R1436Q_ABCC8_human")),
             "the search ran by the entity id: {logged:?}"
+        );
+    }
+
+    /// Percent-decode one query parameter from a recorded request line so
+    /// assertions can read the exact query BioMCP sent instead of guessing
+    /// the encoder's punctuation.
+    fn query_param(line: &str, key: &str) -> Option<String> {
+        let path = line.split_whitespace().nth(1)?;
+        let prefix = format!("{key}=");
+        let value = path
+            .split('&')
+            .find_map(|pair| pair.strip_prefix(prefix.as_str()))?;
+        let mut decoded = String::with_capacity(value.len());
+        let mut bytes = value.bytes();
+        while let Some(byte) = bytes.next() {
+            match byte {
+                b'+' => decoded.push(' '),
+                b'%' => {
+                    let hex = [bytes.next()?, bytes.next()?];
+                    let byte = u8::from_str_radix(std::str::from_utf8(&hex).ok()?, 16).ok()?;
+                    decoded.push(byte as char);
+                }
+                other => decoded.push(other as char),
+            }
+        }
+        Some(decoded)
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn exact_mode_sends_one_phrase_quoted_query_per_source_without_resolution() {
+        // The exact strategy must search the caller's string alone: one
+        // phrase-quoted query per source in that provider's own syntax, and
+        // no MyVariant resolution, no ClinGen CAR check, no PubTator
+        // autocomplete, and no alias beyond the name itself.
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            let body: &[u8] = if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                br#"{"esearchresult":{"count":"2","idlist":["30001","30002"]}}"#
+            } else if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
+                br#"{"result":{"uids":["30001","30002"],"30001":{"uid":"30001","title":"BRAF V600E exact paper one","sortpubdate":"2026/01/02 00:00","pubdate":"2026 Jan 2","fulljournalname":"Fixture Journal","source":"Fixture Journal"},"30002":{"uid":"30002","title":"BRAF V600E exact paper two","sortpubdate":"2026/01/03 00:00","pubdate":"2026 Jan 3","fulljournalname":"Fixture Journal","source":"Fixture Journal"}}}"#
+            } else if first_line.starts_with("GET /search?") {
+                br#"{"hitCount":1,"resultList":{"result":[{"id":"30003","pmid":"30003","title":"BRAF V600E europe phrase paper","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#
+            } else if first_line.starts_with("GET /search/") {
+                br#"{"results":[{"_id":"30004","pmid":"30004","title":"BRAF V600E pubtator phrase paper","journal":"Fixture Journal","date":"2026-01-04"}],"count":1,"total_pages":1,"current":1,"page_size":25}"#
+            } else if first_line.starts_with("GET /graph/v1/paper/search/bulk") {
+                br#"{"total":1,"data":[{"paperId":"fixture-exact-s2","externalIds":{"PubMed":"30005"},"title":"BRAF V600E bulk phrase paper","year":2026}]}"#
+            } else if first_line.starts_with("POST /graph/v1/paper/batch")
+                || first_line.starts_with("GET /graph/v1/paper/batch")
+            {
+                br#"[null,null,null,null,null,null,null,null,null,null]"#
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("exact-name-route");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+
+        let outcome = search_variant_articles_with_deadline(
+            "BRAF V600E",
+            VariantArticleStrategy::Exact,
+            5,
+            0,
+            true,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(30),
+        )
+        .await
+        .expect("exact-name outcome");
+
+        assert!(!outcome.hard_error, "rows came back from the exact name");
+        let logged = requests.lock().expect("request log").clone();
+        let pubmed_term = logged
+            .iter()
+            .find(|line| line.starts_with("GET /entrez/eutils/esearch.fcgi"))
+            .and_then(|line| query_param(line, "term"))
+            .expect("pubmed esearch ran");
+        assert_eq!(
+            pubmed_term, "\"BRAF V600E\"[Title/Abstract]",
+            "pubmed received the name as one title/abstract phrase: {logged:?}"
+        );
+        let europepmc_query = logged
+            .iter()
+            .find(|line| line.starts_with("GET /search?"))
+            .and_then(|line| query_param(line, "query"))
+            .expect("europepmc search ran");
+        assert_eq!(
+            europepmc_query, "TITLE_ABS:\"BRAF V600E\"",
+            "europepmc received the name as one title/abstract phrase: {logged:?}"
+        );
+        let pubtator_text = logged
+            .iter()
+            .find(|line| line.starts_with("GET /search/"))
+            .and_then(|line| query_param(line, "text"))
+            .expect("pubtator search ran");
+        assert_eq!(
+            pubtator_text, "BRAF V600E",
+            "pubtator received the bare name as search text: {logged:?}"
+        );
+        let s2_query = logged
+            .iter()
+            .find(|line| line.starts_with("GET /graph/v1/paper/search/bulk"))
+            .and_then(|line| query_param(line, "query"))
+            .expect("semantic scholar bulk search ran");
+        assert_eq!(
+            s2_query, "BRAF V600E",
+            "semantic scholar received the name on its bulk phrase endpoint: {logged:?}"
+        );
+        assert!(
+            !logged.iter().any(|line| line.starts_with("GET /query")),
+            "no myvariant resolution request: {logged:?}"
+        );
+        assert!(
+            !logged.iter().any(|line| line.contains("autocomplete")),
+            "no pubtator autocomplete request: {logged:?}"
+        );
+        assert!(
+            !logged
+                .iter()
+                .any(|line| line.starts_with("GET /allele") || line.starts_with("POST /alleles")),
+            "no clingen CAR request: {logged:?}"
+        );
+
+        let response = &outcome.response;
+        assert_eq!(response.strategy, VariantArticleStrategy::Exact);
+        assert_eq!(response.retrieval_path, "exact-name phrase search");
+        assert_eq!(
+            response.resolution.status,
+            VariantResolutionStatus::Unresolved
+        );
+        assert_eq!(
+            response.resolution.provider_validation.status,
+            VariantProviderValidationStatus::NotAttempted
+        );
+        assert!(
+            response.canonical_equivalence.is_none(),
+            "the exact strategy reports no canonical equivalence check"
+        );
+        let reached = response
+            .source_status
+            .iter()
+            .filter(|status| status.route == "exact_name")
+            .map(|status| (status.source.as_str(), status.status))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            reached,
+            vec![
+                ("europepmc", VariantArticleSourceStatusKind::Ok),
+                ("pubmed", VariantArticleSourceStatusKind::Ok),
+                ("pubtator", VariantArticleSourceStatusKind::Ok),
+                ("semanticscholar", VariantArticleSourceStatusKind::Ok),
+            ],
+            "the exact-name route reports reaching every source"
+        );
+        assert!(!response.results.is_empty());
+        for row in &response.results {
+            for fact in &row.provenance {
+                assert_eq!(fact.route, "exact_name");
+                assert_eq!(fact.query_aliases, vec!["BRAF V600E".to_string()]);
+                assert_eq!(fact.matched_alias.as_deref(), Some("BRAF V600E"));
+            }
+        }
+        let plan = response.debug_plan.as_ref().expect("debug plan requested");
+        let exact_yield = plan
+            .alias_yields
+            .iter()
+            .find(|yields| yields.source == "pubmed")
+            .expect("the exact name reports its pubmed yield");
+        assert_eq!(exact_yield.route, "exact_name");
+        assert_eq!(exact_yield.alias, "BRAF V600E");
+        assert_eq!(exact_yield.hits_received, 2);
+        assert_eq!(exact_yield.hits_kept, 2);
+        assert!(!exact_yield.cut_by_cap);
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn debug_plan_reports_yield_per_alias_per_source_with_cut_lists() {
+        // A two-alias lexical search must attribute yield per alias and per
+        // source: rows each source returned for each alias, rows kept after
+        // merging, and whether the 25-result cap cut each source's list.
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            let decoded = |key: &str| query_param(&first_line, key).unwrap_or_default();
+            let body: &[u8] = if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
+                let term = decoded("term");
+                if term.contains("p.R1436Q") && term.contains("[Title/Abstract]") {
+                    br#"{"esearchresult":{"count":"0","idlist":[]}}"#
+                } else if term.contains("[Title/Abstract]") {
+                    br#"{"esearchresult":{"count":"1","idlist":["50001"]}}"#
+                } else if term.contains("p.R1436Q") {
+                    br#"{"esearchresult":{"count":"1","idlist":["40001"]}}"#
+                } else {
+                    br#"{"esearchresult":{"count":"2","idlist":["40001","40002"]}}"#
+                }
+            } else if first_line.starts_with("GET /entrez/eutils/esummary.fcgi") {
+                br#"{"result":{"uids":["40001","40002","50001"],"40001":{"uid":"40001","title":"ABCC8 R1436Q shared paper","sortpubdate":"2026/01/02 00:00","pubdate":"2026 Jan 2","fulljournalname":"Fixture Journal","source":"Fixture Journal"},"40002":{"uid":"40002","title":"ABCC8 R1436Q second paper","sortpubdate":"2026/01/03 00:00","pubdate":"2026 Jan 3","fulljournalname":"Fixture Journal","source":"Fixture Journal"},"50001":{"uid":"50001","title":"ABCC8 R1436Q strict paper","sortpubdate":"2026/01/04 00:00","pubdate":"2026 Jan 4","fulljournalname":"Fixture Journal","source":"Fixture Journal"}}}"#
+            } else if first_line.starts_with("GET /search?") {
+                let query = decoded("query");
+                if query.starts_with("TITLE_ABS:") && query.contains("p.R1436Q") {
+                    br#"{"hitCount":0,"resultList":{"result":[]}}"#
+                } else if query.starts_with("TITLE_ABS:") {
+                    br#"{"hitCount":1,"resultList":{"result":[{"id":"50003","pmid":"50003","title":"ABCC8 R1436Q strict europe paper","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-05","authorString":"Fixture Author"}]}}"#
+                } else if query.contains("p.R1436Q") {
+                    br#"{"hitCount":3,"resultList":{"result":[{"id":"40007","pmid":"40007","title":"ABCC8 p.R1436Q europe paper","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-06","authorString":"Fixture Author"}]}}"#
+                } else {
+                    br#"{"hitCount":1,"resultList":{"result":[{"id":"40006","pmid":"40006","title":"ABCC8 R1436Q europe paper","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-07","authorString":"Fixture Author"}]}}"#
+                }
+            } else if first_line.starts_with("GET /search/") {
+                if decoded("text").contains("p.R1436Q") {
+                    br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25}"#
+                } else {
+                    br#"{"results":[{"_id":"40003","pmid":"40003","title":"ABCC8 R1436Q pubtator paper","journal":"Fixture Journal","date":"2026-01-08"}],"count":1,"total_pages":1,"current":1,"page_size":25}"#
+                }
+            } else if first_line.starts_with("GET /entity/autocomplete/") {
+                b"[]"
+            } else if first_line.starts_with("GET /graph/v1/paper/search/bulk") {
+                if decoded("query").contains("p.R1436Q") {
+                    br#"{"total":0,"data":[]}"#
+                } else {
+                    br#"{"total":1,"data":[{"paperId":"fixture-yield-bulk","externalIds":{"PubMed":"50002"},"title":"ABCC8 R1436Q bulk strict paper","year":2026}]}"#
+                }
+            } else if first_line.starts_with("GET /graph/v1/paper/search") {
+                if decoded("query").contains("p.R1436Q") {
+                    br#"{"total":1,"data":[{"paperId":"fixture-yield-b","externalIds":{"PubMed":"40004"},"title":"ABCC8 p.R1436Q shared s2 paper","year":2026}]}"#
+                } else {
+                    br#"{"total":2,"data":[{"paperId":"fixture-yield-a1","externalIds":{"PubMed":"40004"},"title":"ABCC8 R1436Q shared s2 paper","year":2026},{"paperId":"fixture-yield-a2","externalIds":{"PubMed":"40005"},"title":"ABCC8 R1436Q second s2 paper","year":2026}]}"#
+                }
+            } else if first_line.starts_with("POST /graph/v1/paper/batch")
+                || first_line.starts_with("GET /graph/v1/paper/batch")
+            {
+                br#"[null,null,null,null,null,null,null,null,null,null]"#
+            } else if first_line.starts_with("GET /publications/export/biocjson") {
+                br#"{"documents":[]}"#
+            } else {
+                return TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "application/json",
+                    b"{}",
+                ));
+            };
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("yield-per-alias");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+
+        let requested = RequestedVariantIdentity::from_variant_input("ABCC8 R1436Q")
+            .expect("requested identity");
+        let mut context = resolved_context();
+        context.requested = requested.clone();
+        context.source_id = None;
+        context.source_identity = Some(SourceVariantIdentity {
+            genomic_id: String::new(),
+            genome_build: "unknown".into(),
+            genes: vec!["ABCC8".into()],
+            protein_changes: vec!["p.R1436Q".into()],
+            coding_changes: Vec::new(),
+            rsids: Vec::new(),
+        });
+        context.resolution.normalized_aliases = combined_normalized_aliases(&context);
+        let aliases = exact_aliases(&context).0;
+        assert_eq!(
+            aliases,
+            vec!["ABCC8 R1436Q".to_string(), "ABCC8 p.R1436Q".to_string()],
+            "the fixture context must select exactly two aliases"
+        );
+
+        let execution = VariantArticleExecutionContext::single();
+        let outcome = search_variant_articles_identity(
+            "ABCC8 R1436Q",
+            requested,
+            VariantArticleStrategy::Lexical,
+            50,
+            0,
+            true,
+            VariantArticleVerificationOptions::default(),
+            execution,
+        )
+        .await
+        .expect("lexical outcome");
+
+        let plan = outcome
+            .response
+            .debug_plan
+            .as_ref()
+            .expect("debug plan requested");
+        let find = |route: &str, alias: &str, source: &str| {
+            plan.alias_yields
+                .iter()
+                .find(|yields| {
+                    yields.route == route && yields.alias == alias && yields.source == source
+                })
+        };
+        for alias in ["ABCC8 R1436Q", "ABCC8 p.R1436Q"] {
+            for source in ["pubmed", "europepmc", "pubtator", "semanticscholar"] {
+                assert!(
+                    find("exact_lexical", alias, source).is_some(),
+                    "alias {alias} reports its {source} yield"
+                );
+            }
+        }
+        let shared = find("exact_lexical", "ABCC8 R1436Q", "pubmed")
+            .expect("alias A pubmed yield");
+        assert_eq!(shared.hits_received, 2);
+        assert_eq!(shared.hits_kept, 2);
+        assert!(!shared.cut_by_cap);
+        let duplicate = find("exact_lexical", "ABCC8 p.R1436Q", "pubmed")
+            .expect("alias B pubmed yield");
+        assert_eq!(duplicate.hits_received, 1);
+        assert_eq!(
+            duplicate.hits_kept, 1,
+            "alias B's fact survives on the merged row"
+        );
+        let cut = find("exact_lexical", "ABCC8 p.R1436Q", "europepmc")
+            .expect("alias B europepmc yield");
+        assert_eq!(cut.hits_received, 1);
+        assert!(
+            cut.cut_by_cap,
+            "hitCount 3 with one delivered row marks the cut list"
+        );
+        let strict = find("strict", "ABCC8 R1436Q", "pubmed")
+            .expect("strict route pubmed yield");
+        assert_eq!(strict.hits_received, 1);
+        assert_eq!(strict.hits_kept, 1);
+        let shared_count = outcome
+            .response
+            .results
+            .iter()
+            .filter(|row| row.pmid == "40001")
+            .count();
+        assert_eq!(
+            shared_count, 1,
+            "the shared paper appears once after merging while both aliases keep their yield attribution"
+        );
+        let serialized = serde_json::to_value(&outcome.response).expect("serialize response");
+        let yields = &serialized["debug_plan"]["alias_yields"];
+        assert_eq!(
+            yields[0]["route"], "exact_lexical",
+            "yields serialize in deterministic route order"
         );
     }
 

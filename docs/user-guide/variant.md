@@ -412,7 +412,13 @@ candidate-route observation. Candidate trace v2 reports `observed_total`,
 `dropped`, and computed `bounded`; `observed_total - dropped` always equals the
 length of `candidates`. It retains visible, deduplicated receipts first, then
 fills remaining capacity in observation order. Use `--strategy annotation` or
-`--strategy lexical` to diagnose one exact route. Ambiguous or unresolved input
+`--strategy lexical` to diagnose one exact route. `--strategy exact NAME`
+searches the caller's string alone: no resolution, no alias expansion, one
+phrase-quoted query per source (PubMed and Europe PMC as title/abstract
+phrases, Semantic Scholar through its bulk phrase endpoint, PubTator as
+search text), and the per-alias yield table in `--debug-plan` reports each
+alias's hits received, hits kept after merging, and whether the 25-result
+cap cut each source's list. Ambiguous or unresolved input
 still runs strict literal requests unless provider validation contradicts the
 request; discovery rows remain labeled `best_effort_free_text`.
 

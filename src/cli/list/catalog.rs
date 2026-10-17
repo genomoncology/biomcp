@@ -219,7 +219,7 @@ fn placeholder_type(name: &str) -> &'static str {
         "symbol" => "gene_symbol",
         "study_id" => "study_identifier",
         "genes" => "comma_separated_gene_symbols",
-        "strategy" => "enum:union|annotation|lexical",
+        "strategy" => "enum:union|annotation|exact|lexical",
         "number_or_slug" => "skill_identifier",
         "service" => "enum:all|mutalyzer|variantvalidator",
         "transcript_hgvs" => "transcript_hgvs",
