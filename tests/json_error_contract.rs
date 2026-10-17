@@ -264,11 +264,7 @@ fn serve_credential_redaction_request(
             r#"{"error":"fixture outage"}"#,
             "400 Bad Request",
         ),
-        "/variant/autocomplete/" => (
-            "litvar",
-            r#"{"error":"fixture outage"}"#,
-            "400 Bad Request",
-        ),
+        "/variant/autocomplete/" => ("litvar", r#"{"error":"fixture outage"}"#, "400 Bad Request"),
         _ => {
             return Err(format!(
                 "credential fixture received unexpected path {path}"
