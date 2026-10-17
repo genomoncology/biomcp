@@ -13,6 +13,8 @@ Reviews: revision 238ed5f, accept
 
 Reviews: revision 0d18634, accept
 
+Reviews: revision 6afc858, accept
+
 ## Outcome
 
 PubTator requests obey the documented three-per-second budget with or without an NCBI key; the keyed ten-per-second budget remains with E-utilities.
