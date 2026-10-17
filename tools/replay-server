@@ -82,8 +82,12 @@ ORIGIN_SUBSTITUTION_ROUTES = {
 }
 
 # Overrides that are not provider endpoints. The health probe hook belongs to
-# the health command's own fixture contract; nothing here routes it.
-EXCLUDED_OVERRIDES = frozenset({"BIOMCP_HEALTH_PROBE_BASE"})
+# the health command's own fixture contract and the Semantic Scholar PDF
+# fixture origin is an allowlist entry the article fixture exports; neither
+# routes a request through the replay server.
+EXCLUDED_OVERRIDES = frozenset(
+    {"BIOMCP_HEALTH_PROBE_BASE", "BIOMCP_S2_PDF_FIXTURE_ORIGIN"}
+)
 
 CONST_STRING_RE = re.compile(r'const\s+([A-Z0-9_]+)\s*:\s*&\s*str\s*=\s*"([^"\n]+)"')
 

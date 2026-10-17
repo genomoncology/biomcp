@@ -26,7 +26,9 @@ CASES_DIR = Path(__file__).resolve().parent / "cases"
 BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
 OVERRIDE_NAME_RE = re.compile(r'"(BIOMCP_[A-Z0-9_]+)"')
 OVERRIDE_SUFFIXES = ("_BASE", "_BASE_URL", "_FIXTURE_ORIGIN", "_URL")
-NON_PROVIDER_OVERRIDES = frozenset({"BIOMCP_HEALTH_PROBE_BASE"})
+NON_PROVIDER_OVERRIDES = frozenset(
+    {"BIOMCP_HEALTH_PROBE_BASE", "BIOMCP_S2_PDF_FIXTURE_ORIGIN"}
+)
 RECORD_PASSES = 3
 RECORD_TIMEOUT_SECONDS = 600.0
 # search-all JSON embeds the command's own wall time. A golden file pins the

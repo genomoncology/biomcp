@@ -68,8 +68,10 @@ link validation: no request was sent, and the refusal was recorded as
 
 ## Red on main
 
-Job `«red-job»` (the Linux gate host) ran the two new terminal tests at
-`a2c6f5750` = origin/main + fixture/tests/docs only, no product change:
+Job `1792207718537-2221558` (the Linux gate host) ran the two new terminal tests at
+`a2c6f5750` = origin/main + fixture/tests/docs only, no product change (`0 passed, 2
+failed`; the job's own exit line read 0 only because the shell pipeline
+swallowed nextest's status, so later gates run with `pipefail`):
 `publisher_open_pdf_link_downloads_and_returns_its_text` FAILED (on main the
 publisher-origin link is refused, `reason: "source_unavailable"`, no manifest,
 no saved text) and `open_pdf_failures_name_the_part_that_failed` FAILED (none
@@ -77,13 +79,34 @@ of the six part-naming reasons exist on main).
 
 ## Green evidence
 
+Final tip `d34868ba4` ("Capture a readable open PDF and move the outage case to
+a no-winner paper"; the two earlier branch tips `69c4263cb` and `3cfd2199c`
+carried a first capture whose text layer the production extractor cannot read
+and an outage case whose paper has a PMC HTML winner, so the PDF step never
+ran — both caught by CI's rust lane and fixed in the final tip):
+
 | Job | Machine | Command | Verdict |
 | --- | --- | --- | --- |
-| «fill» | «host» | targeted nextest: the new tests | «fill» |
-| «fill» | «host» | `make test` at «tip» | «fill» |
-| «fill» | «host» | `make spec` at «tip» | «fill» |
-| «fill» | «host» | `make lint` at «tip» | «fill» |
-| CI run «fill» | GitHub Linux | full ci.yml at «tip» | «fill» |
+| 1792213118704-3620 | the macOS gate host | scratch diagnostic: candidate PDF through the real CLI | clean text, capture swapped |
+| 1792213389724-11900 | the macOS gate host | `make lint` at `d34868ba4` | passed |
+| 1792213392668-12436 | the macOS gate host | `make spec` at `d34868ba4` | 59 passed; the only 2 failures are the pre-existing clingen-erepo page (below) |
+| 1792212451039-54350 | the macOS gate host | `make spec` at plain main `b138f6097` | same 2 clingen-erepo failures — pre-existing, not this ticket |
+| «yellow-targeted» | the Linux gate host | targeted nextest: the new tests at `d34868ba4` | «fill» |
+| «yellow-test» | the Linux gate host | `make test` at `d34868ba4` | «fill» |
+| CI run 39004824318 | GitHub Linux | full ci.yml at `d34868ba4` | «fill» |
+
+### Live probe (read-only public GETs, the macOS gate host, job 1792213938177-72006, `d34868ba4`)
+
+- The ticket's exact command `biomcp --json --no-cache get article 10615958
+  fulltext --pdf` exits 0 and the PDF attempt now records
+  `{"reason": "open_pdf_text_unusable", "coverage": "unusable"}`: the
+  diabetesjournals.org link is downloaded instead of refused, and the
+  publisher's gated bytes are named as an extraction failure instead of a
+  false `source_unavailable` (Semantic Scholar lists that PDF with status
+  CLOSED).
+- `get article 41615898 fulltext --pdf` (the captured correction paper) returns
+  full text through the earlier JATS rung with its text saved — the ladder
+  order is unchanged.
 
 ## Seams for 2151 (batch PDF full text)
 
@@ -108,6 +131,17 @@ of the six part-naming reasons exist on main).
 
 ## Findings
 
+- `make spec` fails its clingen-erepo page on the macOS gate host at plain main
+  (`b138f6097`, job `1792212451039-54350`) exactly as at this ticket's tip: a
+  pre-existing gate-host breakage, not this change (CI's Linux spec lane passes
+  the page). Whoever owns the macOS gate host should look at
+  `run-clingen-erepo-fixture.sh` there.
+- The first capture (PLOS Biology pbio.3000076, byte-identical in the PMC OA
+  package) carries a text layer the production extractor (unpdf) cannot map —
+  its words arrive as glyph-index fragments. The landed capture (PLOS ONE
+  pone.0342026, also byte-identical to its PMC OA package copy) extracts
+  cleanly. Publisher PDF quality varies; `open_pdf_text_unusable` is the
+  honest answer for unreadable files.
 - The 0.9.2 probe's 5 `no_content` cases are honest absences that were badly
   named: with this change a paper with no listed open PDF reports
   `open_pdf_link_absent` and a 404/204 download reports
