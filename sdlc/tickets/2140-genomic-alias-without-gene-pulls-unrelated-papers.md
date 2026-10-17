@@ -49,6 +49,24 @@ use it. Provider counts drift daily (17+6 vs the probe's 28; 3+8 vs 19); the def
 unchanged. PubMed tokenizes the bare coordinate to `"chr20"[All Fields] AND "G"[All
 Fields]`, so any paper naming the chromosome matches.
 
+## Decision (the Work item's pick)
+
+Send genomic aliases with the gene symbol (the first option). The strict route
+already ANDs the gene with every alias in its provider queries
+(`("SAMHD1"[Title/Abstract] AND "chr20:g.35533834A>G"[Title/Abstract])`), so
+the exact-lexical route sending the same coordinate bare was the one gap; tying
+it the same way leaves one rule everywhere instead of a second matcher. A
+post-hoc "the paper also names the gene" filter cannot run reliably at
+candidate stage, where several providers return title-only rows (abstracts are
+hydrated later for the visible page), and the off-topic rows would still consume
+provider requests and ranking. Recorded 2026-10-17.
+
+Scope: rsIDs and transcript/protein aliases stay bare — each names the variant
+uniquely, so a paper citing it is about the variant regardless of gene mention.
+An authoritative-refseq input's own accession coordinate alias
+(`NC_000020.11:g.…`) also stays bare — the accession anchors the query to the
+human reference, and the request may carry no gene symbol to tie to.
+
 ## Acceptance
 
 1. A recorded-reply test of the SAMHD1 I448T search drops the cotton paper and keeps the papers that name SAMHD1; it fails on current main.
