@@ -768,14 +768,6 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in ux
     )
     assert (
-        "biomcp serve-sse             → removed compatibility command; use `biomcp serve-http`"
-        not in ux
-    )
-    assert (
-        "Compatibility note: `biomcp serve-sse` remains available only as a hidden "
-        "compatibility command that points users to `biomcp serve-http`." in ux
-    )
-    assert (
         "JSON is the default script contract for query commands, with a documented "
         "typed `cache_path` object for `biomcp cache path`. `biomcp cache stats`, "
         "`biomcp cache clean`, and `biomcp cache clear` support `--json` on "
@@ -1120,7 +1112,10 @@ def test_manual_qualification_remains_separate_from_protected_release() -> None:
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
     ci_workflow = yaml.safe_load(ci)
     ci_triggers = ci_workflow.get("on", ci_workflow.get(True))
-    assert set(ci_triggers) == {"workflow_dispatch"}
+    assert set(ci_triggers) == {"workflow_dispatch", "workflow_call"}
+    qualification = yaml.safe_load(release)["jobs"]["qualification"]
+    assert qualification["uses"] == "./.github/workflows/ci.yml"
+    assert qualification["with"]["revision"] == "${{ needs.version-check.outputs.source_sha }}"
     # One build job prepares the dev build; the lanes each run one
     # Make target, so CI copies no smaller command list.
     for job, command in (
@@ -1184,29 +1179,11 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "XDG_CONFIG_HOME" not in makefile
     assert "BIOMCP_CACHE_DIR" not in makefile
     assert "RUST_LOG=error" not in makefile
-    assert re.search(
-        r"^test:\n"
-        r"\t\$\(MAKE\) prepare-test\n"
-        r"\t\$\(MAKE\) test-rust\n"
-        r"\t\$\(MAKE\) test-python$",
-        makefile,
-        flags=re.MULTILINE,
-    )
-    # The two lane halves CI runs in parallel are real targets,
-    # so `make test` stays the developer's one command.
-    assert re.search(
-        r"^test-rust: prepare-routine-test-tmp\n"
-        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)" --config-file "\$\(CURDIR\)/\.config/nextest\.toml"$',
-        makefile,
-        flags=re.MULTILINE,
-    )
-    assert re.search(
-        r"^test-python: prepare-routine-test-tmp\n"
-        r"\t\$\(MAKE\) sync-python-dev\n"
-        r"\t\$\(MAKE\) test-contracts-prepared$",
-        makefile,
-        flags=re.MULTILINE,
-    )
+    # The runner's concurrency and failure behavior belong to the executable
+    # Make contract in test_routine_cargo_feature_contract.py.
+    assert "test:\n\t$(MAKE) prepare-test" in makefile
+    assert "test-rust: prepare-routine-test-tmp" in makefile
+    assert "test-python: prepare-routine-test-tmp" in makefile
     assert not re.search(r"^check:", makefile, flags=re.MULTILINE)
     assert re.search(
         r"^\[profile\.release\]\n"
@@ -1243,8 +1220,10 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^release-gate: lint\n"
         r"\t\$\(MAKE\) test\n"
+        r"\t\$\(MAKE\) test-long\n"
+        r"\t\$\(MAKE\) repo-audit\n"
         r'\ttools/run-offline -- env BIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -m release_gate -v \$\(PYTEST_XDIST_ARGS\)\n'
-        r"\t\$\(MAKE\) full-feature-check\n"
+        r"\t\$\(MAKE\) full-feature-check FULL_FEATURE_PROFILE=release\n"
         r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
         makefile,
         flags=re.MULTILINE,

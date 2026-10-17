@@ -839,7 +839,6 @@ biomcp batch variant "BRAF V600E","KRAS G12D" --json
 - Loopback binds accept local Host headers by default. Non-loopback binds require `--allowed-hosts`; `--unsafe-allow-any-host` explicitly disables only that check and adds no authentication or encryption. Each allowlist entry is an exact hostname or IP address with an optional port; IPv6 entries with ports use brackets, such as `[::1]:8080`.
 - Streamable HTTP clients connect to `/mcp`.
 - Probe routes: `/health`, `/readyz`, and `/`.
-- `biomcp serve-sse` remains available only as a hidden compatibility command that points users back to `biomcp serve-http`.
 
 See also: `docs/reference/mcp-server.md`.
 

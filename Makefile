@@ -1,11 +1,13 @@
 SHELL := /bin/bash
 
 .PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate release-gate-markers run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev test-rust test-python stress
-.PHONY: landing-gate main-gate
+.PHONY: landing-gate main-gate repo-audit
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 
 SPEC_PROFILE ?= dev
+FULL_FEATURE_PROFILE ?= dev
+FULL_FEATURE_BIN = target/$(if $(filter dev,$(FULL_FEATURE_PROFILE)),debug,$(FULL_FEATURE_PROFILE))/biomcp
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
 PYTEST_WORKERS ?= 4
@@ -46,20 +48,33 @@ prepare-test: prepare-routine-test-tmp
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
 	$(MAKE) prepare-test-contracts
 
+# Each lane gets a bounded share of the host; callers can tune these after
+# measuring their workload. CPU discovery also works on supported non-Linux hosts.
+TEST_LANE_WORKERS ?= $(shell python3 -c 'import os; print(min(4, max(1, (os.cpu_count() or 1) // 2)))')
+NEXTEST_JOBS ?= $(TEST_LANE_WORKERS)
+NEXTEST_JOBS_ARG = -j $(NEXTEST_JOBS)
+
 test:
 	$(MAKE) prepare-test
-	$(MAKE) test-rust
-	$(MAKE) test-python
+	@set -eu; \
+	logs="$$(mktemp -d)"; rust_pid=; python_pid=; \
+	trap 'kill $$rust_pid $$python_pid 2>/dev/null || true; rm -rf "$$logs"' EXIT; \
+	trap 'exit 130' INT; trap 'exit 143' TERM; \
+	$(MAKE) test-rust >"$$logs/rust" 2>&1 & rust_pid=$$!; \
+	$(MAKE) test-python >"$$logs/python" 2>&1 & python_pid=$$!; \
+	rust_status=0; python_status=0; \
+	wait $$rust_pid || rust_status=$$?; rust_pid=; \
+	wait $$python_pid || python_status=$$?; python_pid=; \
+	printf '\n=== Rust lane (exit %s) ===\n' "$$rust_status"; cat "$$logs/rust"; \
+	printf '\n=== Python lane (exit %s) ===\n' "$$python_status"; cat "$$logs/python"; \
+	test "$$rust_status" -eq 0 && test "$$python_status" -eq 0
 
-# The two halves of `make test` (ticket 2075) so the CI lanes run
-# the Rust tests and the Python contracts in parallel against the
-# build job's artifact; a local caller reaches them through
-# `make test`, which prepares the dev build first.
+# Both lanes consume the artifacts prepared once by `make test`. Each can
+# also run independently against an existing prepared build.
 test-rust: prepare-routine-test-tmp
-	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
+	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml"
 
 test-python: prepare-routine-test-tmp
-	$(MAKE) sync-python-dev
 	$(MAKE) test-contracts-prepared
 
 prepare-test-contracts:
@@ -72,8 +87,14 @@ test-contracts: prepare-routine-test-tmp prepare-test-contracts
 	$(MAKE) test-contracts-prepared
 
 test-contracts-prepared:
-	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "not release_gate" $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
+	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "not release_gate and not repo_audit and not long" $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
 	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
+
+# Exhaustive cases opt in by Rust long_suite_ name or Python long marker.
+.PHONY: test-long
+test-long: prepare-test
+	tools/run-offline -- python3 tools/report-slow-tests.py cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" $(NEXTEST_JOBS_ARG) --config-file "$(CURDIR)/.config/nextest.toml" --profile long --no-tests=pass
+	@status=0; tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "long and not release_gate" || status=$$?; test "$$status" -eq 0 -o "$$status" -eq 5
 
 lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
@@ -90,13 +111,17 @@ landing-gate:
 
 main-gate:
 	$(MAKE) landing-gate
+	$(MAKE) repo-audit
 	$(MAKE) full-feature-check
+
+repo-audit: sync-python-dev
+	tools/run-offline -- uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) -m "repo_audit and not release_gate"
 
 full-feature-check:
 	$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features -- -D warnings
 	$(CARGO_WITH_IDENTITY) test --locked --all-features --lib sources::alphagenome::tests
-	$(CARGO_WITH_IDENTITY) build --release --locked --all-features --bin biomcp
-	tools/check-png-artifact target/release/biomcp
+	$(CARGO_WITH_IDENTITY) build --locked --profile $(FULL_FEATURE_PROFILE) --all-features --bin biomcp
+	tools/check-png-artifact $(FULL_FEATURE_BIN)
 
 png-artifact-smoke: build
 	tools/check-png-artifact target/release/biomcp
@@ -108,13 +133,16 @@ png-artifact-smoke: build
 # selection after the full suite with the dev build's binary on
 # BIOMCP_BIN.
 release-gate-markers:
+	$(MAKE) repo-audit
 	$(MAKE) sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 
 release-gate: lint
 	$(MAKE) test
+	$(MAKE) test-long
+	$(MAKE) repo-audit
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
-	$(MAKE) full-feature-check
+	$(MAKE) full-feature-check FULL_FEATURE_PROFILE=release
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 
 check-quality-ratchet:

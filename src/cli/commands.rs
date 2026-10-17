@@ -177,12 +177,6 @@ EXAMPLES:
         long_about = "Run the MCP Streamable HTTP server at /mcp.\n\nThis is the canonical remote/server deployment mode.\nHealth routes: GET /health, GET /readyz, GET /."
     )]
     ServeHttp(system::ServeHttpArgs),
-    #[command(
-        hide = true,
-        about = "removed legacy SSE compatibility command; use `serve-http`",
-        long_about = "removed legacy SSE compatibility command.\n\ndeprecated users should run `biomcp serve-http` and connect remote clients to `/mcp` instead."
-    )]
-    ServeSse,
     /// BioMCP skill overview and installer for agents
     #[command(after_help = "\
 EXAMPLES:
