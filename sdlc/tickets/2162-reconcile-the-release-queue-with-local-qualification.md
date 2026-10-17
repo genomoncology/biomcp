@@ -14,7 +14,7 @@ Reviews: revision 751d7ea, accept
 
 Every open 0.9.3 ticket has a current, observable contract, correct prerequisites and priority under the approved local qualification and untagged rehearsal process.
 
-Depends on: 2156
+PM decision: land this record-only queue reconciliation before 2155 and 2156 so pm immediately shows the approved queue. Runtime gates belong to the implementation tickets.
 
 - Starts from: the four independent readiness reviews of nineteen open release tickets against current source and existing implementation branches.
 - Keeps: recorded product decisions, existing useful branch implementations, historical evidence, paused work and review independence. A prior acceptance does not cover a rewritten outcome.
