@@ -347,6 +347,7 @@ jobs:
         with:
           python-version: 3.12.3
       - name: Check cache-lock contention and article-search deadlines
+        shell: bash
         run: |
           cargo test --locked --no-default-features --test windows_lock_contract
           cargo test --locked --no-default-features --lib body_limit_epoch_lock_contention_obeys_variant_article_deadline

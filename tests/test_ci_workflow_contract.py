@@ -260,7 +260,8 @@ def test_windows_lock_proof_propagates_each_cargo_failure(
     tmp_path: Path, failed_command: int
 ) -> None:
     step = next(
-        s for s in _job("windows-contracts")["steps"]
+        s
+        for s in _job("windows-contracts")["steps"]
         if s.get("name") == "Check cache-lock contention and article-search deadlines"
     )
     assert step.get("shell") == "bash", "Windows proof must stop on any failed command"
