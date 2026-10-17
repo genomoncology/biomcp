@@ -13,6 +13,8 @@ Priority: 1.
 ## Changes
 
 - tests/test_docs_changelog_refresh.py
+- scripts/check-changelog-coverage.py
+- tests/test_changelog_coverage_check.py
 - CHANGELOG.md
 
 ## Implementation brief
