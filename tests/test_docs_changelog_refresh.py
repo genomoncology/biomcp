@@ -554,7 +554,8 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
     heading and keeps a shape every branch only appends to: the three
     named subsections stay in place even when empty, every bullet
     closes with its ticket number, every cited ticket is filed
-    for this milestone, no bullet appears twice, and no blank line
+    for this milestone or has a batch landed in it, no bullet appears twice,
+    and no blank line
     splits a list, so a branch's changelog change is its own
     bullet alone and a landing merge touches no other line."""
     changelog = _read("CHANGELOG.md")
@@ -594,8 +595,9 @@ def test_dev_cycle_section_carries_its_own_tickets() -> None:
             f"a blank line splits the dev-cycle bullet list between: "
             f"{before[:60]} and {after[:60]}"
         )
-    problems = _coverage_gate().milestone_problems(
-        block, DEV_CYCLE_VERSION, _ticket_file_content
+    gate = _coverage_gate()
+    problems = gate.milestone_problems(
+        block, DEV_CYCLE_VERSION, _ticket_file_content, previous=gate.latest_tag()
     )
     assert not problems, (
         f"tickets cited outside milestone {DEV_CYCLE_VERSION}: {problems}"

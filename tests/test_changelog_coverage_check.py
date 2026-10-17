@@ -683,6 +683,52 @@ def test_milestone_problems_names_each_kind_of_wrong_ticket() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ("landed_milestone", "references", "exit_code"),
+    [("0.9.3", "1234", 0), ("0.9.4", "1234", 1),
+     ("0.9.3", "1234 and 1235", 1)],
+)
+def test_release_keeps_only_batches_landed_for_its_milestone(
+    tmp_path: Path, landed_milestone: str, references: str, exit_code: int
+) -> None:
+    def git(*args: str) -> None:
+        subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "test")
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-qm", "Previous release")
+    git("tag", "v0.9.2")
+    tickets = tmp_path / "sdlc" / "tickets"
+    tickets.mkdir(parents=True)
+    landed = tickets / "1234-batches.md"
+    landed.write_text(f"Status: OPEN.\nMilestone: {landed_milestone}\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-qm", "Land 1234: finish the first batch")
+    landed.write_text("Status: OPEN.\nMilestone: 0.9.4\n", encoding="utf-8")
+    (tickets / "1235-future.md").write_text(
+        "Status: OPEN.\nMilestone: 0.9.4\n", encoding="utf-8"
+    )
+    changelog.write_text(
+        f"# Changelog\n\n## 0.9.3 — 2026-10-17\n\n- Landed the first batch. ({references})\n",
+        encoding="utf-8",
+    )
+    git("add", "-A")
+    git("commit", "-qm", "Move unfinished work to the next release")
+    git("tag", "v0.9.3")
+    result = subprocess.run(
+        [sys.executable, str(CHECK), "--tag", "v0.9.3"],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+    assert result.returncode == exit_code, result.stdout + result.stderr
+    if exit_code:
+        expected = "1235" if "1235" in references else "1234"
+        assert f"{expected} (0.9.4)" in result.stderr
+
+
 def test_cited_ticket_of_another_milestone_fails_the_tag_run(
     tmp_path: Path,
 ) -> None:

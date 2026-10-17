@@ -37,6 +37,7 @@
 - An explicit `--assembly` on `get variant` constrains the lookup to that build: `--assembly hg38 'chr7:g.140453136A>T'` reports not found when GRCh38 holds no record instead of answering MyVariant's GRCh37 record, a flag that contradicts a coordinate prefix refuses naming both builds, and `BIOMCP_DEFAULT_ASSEMBLY` keeps ordering the dual-build search for a bare coordinate without ever constraining it. (2112)
 
 ### Internal
+- Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
 
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
