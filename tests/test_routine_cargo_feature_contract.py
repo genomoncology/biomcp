@@ -183,7 +183,9 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
     assert config["ticketsGate"] == "make landing-gate"
 =======
 @pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
-def test_make_test_prepares_once_and_waits_for_both_lanes(tmp_path: Path, failed_lane: str) -> None:
+def test_make_test_prepares_once_and_waits_for_both_lanes(
+    tmp_path: Path, failed_lane: str
+) -> None:
     """Exercise Make's orchestration without rebuilding product artifacts."""
     worker = tmp_path / "lane.py"
     worker.write_text(
@@ -201,18 +203,31 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(tmp_path: Path, failed
     )
     overlay = tmp_path / "lanes.mk"
     overlay.write_text(
-        "prepare-test:\n\t@echo prepare >> \"" + str(tmp_path / "prepared") + "\"\n"
-        + "test-rust:\n\t@" + sys.executable + " " + str(worker) + " " + str(tmp_path) + " rust\n"
-        + "test-python:\n\t@" + sys.executable + " " + str(worker) + " " + str(tmp_path) + " python\n"
+        f'prepare-test:\n\t@echo prepare >> "{tmp_path / "prepared"}"\n'
+        f"test-rust:\n\t@{sys.executable} {worker} {tmp_path} rust\n"
+        f"test-python:\n\t@{sys.executable} {worker} {tmp_path} python\n"
     )
-    command = ["make", "--no-print-directory", "-f", str(REPO_ROOT / "Makefile"), "-f", str(overlay)]
+    command = [
+        "make",
+        "--no-print-directory",
+        "-f",
+        str(REPO_ROOT / "Makefile"),
+        "-f",
+        str(overlay),
+    ]
     result = subprocess.run(
-        [*command, "test", "MAKE=" + " ".join(command)], cwd=REPO_ROOT,
-        env={**os.environ, "FAILED_LANE": failed_lane}, capture_output=True, text=True, timeout=15,
+        [*command, "test", "MAKE=" + " ".join(command)],
+        cwd=REPO_ROOT,
+        env={**os.environ, "FAILED_LANE": failed_lane},
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     assert (result.returncode == 0) == (not failed_lane), result.stdout + result.stderr
     assert (tmp_path / "prepared").read_text().splitlines() == ["prepare"]
-    assert all((tmp_path / (lane + ".finished")).exists() for lane in ("rust", "python"))
+    assert all(
+        (tmp_path / (lane + ".finished")).exists() for lane in ("rust", "python")
+    )
     assert "=== Rust lane (exit " in result.stdout
     assert "=== Python lane (exit " in result.stdout
     assert "rust output" in result.stdout and "python output" in result.stdout
