@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-<<<<<<< HEAD
 import json
-import subprocess
-=======
 import os
 import subprocess
 import sys
->>>>>>> 08da3d86f (Run prepared local test lanes concurrently with bounded workers)
 import re
 import pytest
 
@@ -132,7 +128,6 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
     assert not missing, f"missing supported test-lane documentation: {missing}"
 
 
-<<<<<<< HEAD
 @pytest.mark.parametrize(
     ("target", "expected"),
     [
@@ -179,7 +174,8 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
         assert stages == expected
     config = json.loads(_read("sdlc/pm.json"))
     assert config["ticketsGate"] == "make landing-gate"
-=======
+
+
 @pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
 def test_make_test_prepares_once_and_waits_for_both_lanes(
     tmp_path: Path, failed_lane: str
@@ -235,4 +231,3 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
     assert "=== Rust lane (exit " in result.stdout
     assert "=== Python lane (exit " in result.stdout
     assert "rust output" in result.stdout and "python output" in result.stdout
->>>>>>> 08da3d86f (Run prepared local test lanes concurrently with bounded workers)
