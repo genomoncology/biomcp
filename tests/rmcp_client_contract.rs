@@ -2100,7 +2100,7 @@ async fn typed_article_get_accepts_pdf_fulltext_over_stdio() -> anyhow::Result<(
                     let attempt = doc["full_text_coverage"]["attempts"]
                         .as_array()
                         .expect("attempts should be a list")
-                        .into_iter()
+                        .iter()
                         .find(|attempt| attempt["source_kind"] == "pdf")
                         .unwrap_or_else(|| panic!("no pdf attempt recorded: {doc}"));
                     assert_eq!(attempt["reason"], json!(expected_reason));

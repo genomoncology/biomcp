@@ -1517,7 +1517,7 @@ fn batch_article_detail_pdf_names_the_fulltext_source_each_article_used() {
     let row = pdf_winner["_meta"]["section_sources"]
         .as_array()
         .expect("section_sources should be a list")
-        .into_iter()
+        .iter()
         .find(|row| row["key"] == "fulltext")
         .expect("fulltext provenance row");
     assert_eq!(
