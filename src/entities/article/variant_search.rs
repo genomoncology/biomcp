@@ -5169,28 +5169,38 @@ mod tests {
                     assert_eq!(actual, expected, "incomplete {strategy:?} route ledger");
                     for status in &outcome.response.source_status {
                         let authoritative = car_units == 2;
+                        // The exact-name strategy skips resolution, so a
+                        // zero-deadline run still reaches the empty-candidate
+                        // tail: enrichment and identity rows carry zero-work
+                        // plans (Ok) while the LDH rows stay inapplicable
+                        // (Skipped).
+                        let exact_tail = strategy == VariantArticleStrategy::Exact;
                         let skipped = (status.route == "canonical_equivalence" && car_units == 0)
                             || (authoritative
                                 && matches!(
                                     status.route.as_str(),
                                     "best_effort_free_text" | "source_citation"
                                 ))
-                            || (strategy == VariantArticleStrategy::Exact
+                            || (exact_tail
                                 && matches!(
                                     status.route.as_str(),
                                     "resolution" | "canonical_equivalence"
+                                ))
+                            || (exact_tail
+                                && matches!(
+                                    status.route.as_str(),
+                                    "clingen_ldh_medium" | "clingen_ldh_direct"
                                 ));
                         let healthy_zero = authoritative && status.route == "strict";
-                        let late_zero = authoritative
-                            && (status.route == "enrichment"
-                                || status.route == "identity_verification");
-                        let late_skipped = authoritative
-                            && matches!(
-                                status.route.as_str(),
-                                "clingen_ldh_medium" | "clingen_ldh_direct"
-                            );
-                        let skipped = skipped || late_skipped;
-                        let healthy_zero = healthy_zero || late_zero;
+                        let healthy_zero = healthy_zero
+                            || (authoritative
+                                && (status.route == "enrichment"
+                                    || status.route == "identity_verification"))
+                            || (exact_tail
+                                && matches!(
+                                    status.route.as_str(),
+                                    "enrichment" | "identity_verification"
+                                ));
                         let planned = if skipped || healthy_zero {
                             0
                         } else if status.route == "canonical_equivalence" {
