@@ -866,13 +866,20 @@ impl VariantArticleExecutionContext {
                     candidate.variant_provenance.iter().any(|fact| {
                         fact.route == record.route
                             && fact.source == record.source
-                            && fact.query_aliases.iter().any(|alias| alias == &record.alias)
+                            && fact
+                                .query_aliases
+                                .iter()
+                                .any(|alias| alias == &record.alias)
                     })
                 })
                 .count();
         }
         records.sort_by(|left, right| {
-            (&left.route, &left.alias, &left.source).cmp(&(&right.route, &right.alias, &right.source))
+            (&left.route, &left.alias, &left.source).cmp(&(
+                &right.route,
+                &right.alias,
+                &right.source,
+            ))
         });
     }
 
@@ -1749,7 +1756,126 @@ fn canonical_equivalence(
 /// The resolution context the exact-name strategy runs with: no provider
 /// resolution happened, so nothing is resolved, nothing is validated, and
 /// every discovery decision rests on the caller's string alone.
-fn unresolved_exact_context(requested: RequestedVariantIdentity) -> VariantArticleResolutionContext {
+/// The hard-error outcome a run whose variant resolution is unavailable
+/// returns: no provider discovery ran, so the page is empty, incomplete, and
+/// names the outage.
+#[allow(clippy::too_many_arguments)]
+fn resolution_unavailable_outcome(
+    context: VariantArticleResolutionContext,
+    canonical_equivalence: CanonicalEquivalence,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    include_debug_plan: bool,
+    execution: &VariantArticleExecutionContext,
+) -> VariantArticleOutcome {
+    let events = execution.events();
+    let mut source_status = terminal_reconciled_statuses(execution, &events);
+    if source_status.is_empty() {
+        source_status.push(status(
+            "resolution",
+            "myvariant",
+            VariantArticleSourceStatusKind::Unavailable,
+        ));
+    }
+    // Preserve legacy failure priority while ordering any additionally
+    // materialized terminal routes deterministically.
+    source_status.sort_by_key(|status| {
+        (
+            status.route != "resolution",
+            status.route.clone(),
+            status.source.clone(),
+        )
+    });
+    let debug_plan = include_debug_plan.then(|| {
+        let mut plan =
+            empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
+        plan.budgets.item = execution.item_work();
+        plan.budgets.request = execution.request_work();
+        plan.deadline = execution.deadline_plan();
+        plan
+    });
+    let outage_message = variant_article_outage_message(&source_status);
+    VariantArticleOutcome {
+        response: VariantArticleResponse {
+            requested_variant: context.requested,
+            resolution: context.resolution,
+            canonical_equivalence: Some(canonical_equivalence),
+            strategy,
+            complete: false,
+            truncated: true,
+            pagination: VariantArticlePagination {
+                offset,
+                limit,
+                returned: 0,
+                total: None,
+                has_more: true,
+                next_page_token: None,
+            },
+            source_status,
+            retrieval_path: "variant resolution unavailable",
+            results: Vec::new(),
+            error: Some(VariantArticleItemError {
+                code: if execution.deadline.is_exhausted() {
+                    "deadline_exceeded"
+                } else {
+                    "source_unavailable"
+                },
+                message: if execution.deadline.is_exhausted() {
+                    "the variant article invocation deadline expired before a usable result was available".into()
+                } else {
+                    outage_message
+                },
+            }),
+            debug_plan,
+        },
+        hard_error: true,
+    }
+}
+
+/// Resolve the search context, canonical equivalence, and selected exact
+/// aliases for one invocation. The exact-name strategy skips every provider
+/// resolution step and carries the caller's string as its only alias.
+async fn resolve_search_context(
+    input: &str,
+    requested: RequestedVariantIdentity,
+    strategy: VariantArticleStrategy,
+    execution: &VariantArticleExecutionContext,
+) -> Result<
+    (
+        VariantArticleResolutionContext,
+        CanonicalEquivalence,
+        Vec<String>,
+        bool,
+    ),
+    BioMcpError,
+> {
+    let context = if strategy == VariantArticleStrategy::Exact {
+        unresolved_exact_context(requested)
+    } else {
+        let mut resolved_context =
+            crate::entities::variant::resolve_article_variant_identity(requested, input, execution)
+                .await?;
+        resolved_context.resolution.normalized_aliases =
+            combined_normalized_aliases(&resolved_context);
+        resolved_context
+    };
+    let canonical_equivalence = if strategy == VariantArticleStrategy::Exact {
+        unattempted_canonical_equivalence()
+    } else {
+        resolve_canonical_equivalence(&context.requested, execution).await
+    };
+    let (aliases, truncated) = if strategy == VariantArticleStrategy::Exact {
+        (vec![input.trim().to_string()], false)
+    } else {
+        exact_aliases_with_equivalence(&context, &canonical_equivalence)
+    };
+    Ok((context, canonical_equivalence, aliases, truncated))
+}
+
+fn unresolved_exact_context(
+    requested: RequestedVariantIdentity,
+) -> VariantArticleResolutionContext {
     VariantArticleResolutionContext {
         requested,
         resolution: VariantArticleResolution {
@@ -2209,9 +2335,7 @@ async fn federated_alias_candidates(
                 row.matched_sources.as_slice()
             };
             for source in sources {
-                *received_by_source
-                    .entry(source_name(*source))
-                    .or_insert(0) += 1;
+                *received_by_source.entry(source_name(*source)).or_insert(0) += 1;
             }
         }
         let attempted_sources = [
@@ -3189,11 +3313,7 @@ fn materialize_discovery_route_plans(
     // resolves the variant, so its applicability rests on the strategy alone.
     let exact_name_applicable = strategy == VariantArticleStrategy::Exact;
     for source in federated {
-        execution.set_route_unit_plan(
-            "exact_name",
-            source,
-            exact_name_applicable.then_some(1),
-        );
+        execution.set_route_unit_plan("exact_name", source, exact_name_applicable.then_some(1));
     }
 
     let fallback_applicable = strategy == VariantArticleStrategy::Union && !resolved;
@@ -3661,6 +3781,42 @@ fn resolution_unavailable_outcome(
 }
 
 #[allow(clippy::too_many_arguments)]
+/// The resolution and canonical-equivalence status rows an invocation
+/// starts from: real provider rows when the resolver ran, plain-words
+/// skipped rows when the exact-name strategy skipped both.
+fn resolution_status_rows(
+    strategy: VariantArticleStrategy,
+    events: &[VariantArticleCallEvent],
+) -> Vec<VariantArticleSourceStatus> {
+    let mut statuses = provider_statuses_for_route("resolution", events);
+    let canonical_statuses = provider_statuses_for_route("canonical_equivalence", events);
+    if strategy == VariantArticleStrategy::Exact {
+        statuses.push(status_with_detail(
+            "resolution",
+            "myvariant",
+            VariantArticleSourceStatusKind::Skipped,
+            Some("the exact-name strategy does not resolve the variant"),
+        ));
+    }
+    if canonical_statuses.is_empty() {
+        let mut inapplicable = status_with_detail(
+            "canonical_equivalence",
+            "clingen_car",
+            VariantArticleSourceStatusKind::Skipped,
+            Some(if strategy == VariantArticleStrategy::Exact {
+                "the exact-name strategy does not check canonical equivalence"
+            } else {
+                "caller identity has no applicable canonical query"
+            }),
+        );
+        inapplicable.reason_codes = vec!["identity_inapplicable"];
+        statuses.push(inapplicable);
+    } else {
+        statuses.extend(canonical_statuses);
+    }
+    statuses
+}
+
 async fn search_variant_articles_identity(
     input: &str,
     requested: RequestedVariantIdentity,
@@ -3690,26 +3846,8 @@ async fn search_variant_articles_identity(
         execution.set_route_unit_plan("resolution", "myvariant", None);
         execution.set_route_unit_plan("canonical_equivalence", "clingen_car", None);
     }
-    let mut context = if strategy == VariantArticleStrategy::Exact {
-        unresolved_exact_context(requested)
-    } else {
-        let mut resolved_context =
-            crate::entities::variant::resolve_article_variant_identity(requested, input, &execution)
-                .await?;
-        resolved_context.resolution.normalized_aliases = combined_normalized_aliases(&resolved_context);
-        resolved_context
-    };
-    let canonical_equivalence = if strategy == VariantArticleStrategy::Exact {
-        unattempted_canonical_equivalence()
-    } else {
-        resolve_canonical_equivalence(&context.requested, &execution).await
-    };
-    let (selected_exact_aliases, selected_exact_aliases_truncated) =
-        if strategy == VariantArticleStrategy::Exact {
-            (vec![input.trim().to_string()], false)
-        } else {
-            exact_aliases_with_equivalence(&context, &canonical_equivalence)
-        };
+    let (context, canonical_equivalence, selected_exact_aliases, selected_exact_aliases_truncated) =
+        resolve_search_context(input, requested, strategy, &execution).await?;
     if context.available {
         materialize_discovery_route_plans(
             input,
@@ -3738,32 +3876,7 @@ async fn search_variant_articles_identity(
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
     let mut candidates = Vec::new();
     let events = execution.events();
-    let mut statuses = provider_statuses_for_route("resolution", &events);
-    let canonical_statuses = provider_statuses_for_route("canonical_equivalence", &events);
-    if strategy == VariantArticleStrategy::Exact {
-        statuses.push(status_with_detail(
-            "resolution",
-            "myvariant",
-            VariantArticleSourceStatusKind::Skipped,
-            Some("the exact-name strategy does not resolve the variant"),
-        ));
-    }
-    if canonical_statuses.is_empty() {
-        let mut inapplicable = status_with_detail(
-            "canonical_equivalence",
-            "clingen_car",
-            VariantArticleSourceStatusKind::Skipped,
-            Some(if strategy == VariantArticleStrategy::Exact {
-                "the exact-name strategy does not check canonical equivalence"
-            } else {
-                "caller identity has no applicable canonical query"
-            }),
-        );
-        inapplicable.reason_codes = vec!["identity_inapplicable"];
-        statuses.push(inapplicable);
-    } else {
-        statuses.extend(canonical_statuses);
-    }
+    let mut statuses = resolution_status_rows(strategy, &events);
     let mut succeeded_routes = 0usize;
     let mut failed_routes = 0usize;
 
@@ -4305,7 +4418,8 @@ async fn search_variant_articles_identity(
         plan
     });
     let outage_message = variant_article_outage_message(&statuses);
-    let canonical_equivalence = (strategy != VariantArticleStrategy::Exact).then_some(canonical_equivalence);
+    let canonical_equivalence =
+        (strategy != VariantArticleStrategy::Exact).then_some(canonical_equivalence);
     Ok(VariantArticleOutcome {
         response: VariantArticleResponse {
             requested_variant: context.requested,
@@ -5051,6 +5165,7 @@ mod tests {
                 VariantArticleStrategy::Union,
                 VariantArticleStrategy::Annotation,
                 VariantArticleStrategy::Lexical,
+                VariantArticleStrategy::Exact,
             ] {
                 for verify_identity in [false, true] {
                     let deadline =
@@ -5103,6 +5218,9 @@ mod tests {
                             expected.extend(federated.map(|source| ("strict", source)));
                             expected.extend(federated.map(|source| ("exact_lexical", source)));
                         }
+                        VariantArticleStrategy::Exact => {
+                            expected.extend(federated.map(|source| ("exact_name", source)));
+                        }
                     }
                     expected.extend([
                         ("enrichment", "semanticscholar"),
@@ -5131,6 +5249,11 @@ mod tests {
                                 && matches!(
                                     status.route.as_str(),
                                     "best_effort_free_text" | "source_citation"
+                                ))
+                            || (strategy == VariantArticleStrategy::Exact
+                                && matches!(
+                                    status.route.as_str(),
+                                    "resolution" | "canonical_equivalence"
                                 ));
                         let healthy_zero = authoritative && status.route == "strict";
                         let late_zero = authoritative
@@ -6182,11 +6305,9 @@ mod tests {
             .as_ref()
             .expect("debug plan requested");
         let find = |route: &str, alias: &str, source: &str| {
-            plan.alias_yields
-                .iter()
-                .find(|yields| {
-                    yields.route == route && yields.alias == alias && yields.source == source
-                })
+            plan.alias_yields.iter().find(|yields| {
+                yields.route == route && yields.alias == alias && yields.source == source
+            })
         };
         for alias in ["ABCC8 R1436Q", "ABCC8 p.R1436Q"] {
             for source in ["pubmed", "europepmc", "pubtator", "semanticscholar"] {
@@ -6196,34 +6317,32 @@ mod tests {
                 );
             }
         }
-        let shared = find("exact_lexical", "ABCC8 R1436Q", "pubmed")
-            .expect("alias A pubmed yield");
+        let shared = find("exact_lexical", "ABCC8 R1436Q", "pubmed").expect("alias A pubmed yield");
         assert_eq!(shared.hits_received, 2);
         assert_eq!(shared.hits_kept, 2);
         assert!(!shared.cut_by_cap);
-        let duplicate = find("exact_lexical", "ABCC8 p.R1436Q", "pubmed")
-            .expect("alias B pubmed yield");
+        let duplicate =
+            find("exact_lexical", "ABCC8 p.R1436Q", "pubmed").expect("alias B pubmed yield");
         assert_eq!(duplicate.hits_received, 1);
         assert_eq!(
             duplicate.hits_kept, 1,
             "alias B's fact survives on the merged row"
         );
-        let cut = find("exact_lexical", "ABCC8 p.R1436Q", "europepmc")
-            .expect("alias B europepmc yield");
+        let cut =
+            find("exact_lexical", "ABCC8 p.R1436Q", "europepmc").expect("alias B europepmc yield");
         assert_eq!(cut.hits_received, 1);
         assert!(
             cut.cut_by_cap,
             "hitCount 3 with one delivered row marks the cut list"
         );
-        let strict = find("strict", "ABCC8 R1436Q", "pubmed")
-            .expect("strict route pubmed yield");
+        let strict = find("strict", "ABCC8 R1436Q", "pubmed").expect("strict route pubmed yield");
         assert_eq!(strict.hits_received, 1);
         assert_eq!(strict.hits_kept, 1);
         let shared_count = outcome
             .response
             .results
             .iter()
-            .filter(|row| row.pmid == "40001")
+            .filter(|row| row.article.pmid == "40001")
             .count();
         assert_eq!(
             shared_count, 1,
