@@ -8,6 +8,7 @@
 use std::io::{Cursor, Read};
 
 use calamine::{Data, Reader, open_workbook_auto_from_rs};
+use serde::{Deserialize, Serialize};
 
 /// A single extractable supplement format, decided by file extension.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -35,7 +36,8 @@ impl SupplementFormat {
 
 /// Returns the extractable supplement format a file name names, if any.
 pub fn supplement_format_for_filename(filename: &str) -> Option<SupplementFormat> {
-    let extension = filename.to_ascii_lowercase().rsplit_once('.')?.1;
+    let lower = filename.to_ascii_lowercase();
+    let extension = lower.rsplit_once('.')?.1;
     match extension {
         "xlsx" => Some(SupplementFormat::Xlsx),
         "xls" => Some(SupplementFormat::Xls),
@@ -427,7 +429,9 @@ fn extract_archive(
             Some(path) => path.to_string_lossy().into_owned(),
             None => {
                 extraction.problems.push(SupplementExtractionProblem::unread(
-                    Some(file.name().to_string()),
+                    Some(file.name().ok().map(|name| name.into_owned()).unwrap_or_else(|| {
+                        String::from_utf8_lossy(file.name_raw()).into_owned()
+                    })),
                     "zip",
                     "archive member name is not a safe path".to_string(),
                     ));
@@ -524,8 +528,8 @@ fn extract_member(
     budget: &SupplementTextBudget,
     extraction: &mut SupplementTextExtraction,
 ) {
-    let mut nested = SupplementTextExtraction::default();
-    extract_supplement_text(format, bytes, budget, &mut nested);
+    let nested = extract_supplement_text(format, bytes, budget);
+    let member_textless = nested.blocks.is_empty() && nested.problems.is_empty();
     for mut block in nested.blocks {
         block.member = Some(member.to_string());
         extraction.blocks.push(block);
@@ -534,7 +538,7 @@ fn extract_member(
         problem.member = Some(member.to_string());
         extraction.problems.push(problem);
     }
-    if nested.blocks.is_empty() && nested.problems.is_empty() {
+    if member_textless {
         // The member read fine but holds no text: report it so a member that
         // searched empty stays distinguishable from one never attempted.
         extraction.problems.push(SupplementExtractionProblem {
@@ -578,7 +582,10 @@ mod tests {
         }
     }
 
-    fn hit(extraction: &SupplementTextExtraction, needle: &str) -> &SupplementTextBlock {
+    fn hit<'a>(
+        extraction: &'a SupplementTextExtraction,
+        needle: &str,
+    ) -> &'a SupplementTextBlock {
         extraction
             .blocks
             .iter()

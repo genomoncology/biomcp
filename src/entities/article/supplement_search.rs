@@ -74,7 +74,7 @@ pub async fn article_supplement_search(
     let selected: Vec<&ArticleAssetEntry> = match asset_filter {
         Some(wanted) => {
             let wanted = wanted.trim();
-            match super::assets::select_manifest_asset(manifest, wanted) {
+            match super::assets::select_manifest_asset(&manifest.assets, wanted) {
                 Some(asset) => vec![asset],
                 // A key no retrievable asset answers reaches the same typed
                 // refusal or not-found error the raw `asset` download gives.
@@ -116,7 +116,10 @@ pub async fn article_supplement_search(
                 asset_key: asset.asset_key.clone(),
                 filename: asset.filename.clone(),
                 member: None,
-                format: format.map(|format| format.as_str()).unwrap_or("other"),
+                format: format
+                    .map(|format| format.as_str())
+                    .unwrap_or("other")
+                    .to_string(),
                 sha256: asset.sha256.clone(),
                 outcome: ArticleSupplementSearchFileOutcome::Unextractable,
                 truncated: false,
@@ -133,7 +136,7 @@ pub async fn article_supplement_search(
                 asset_key: asset.asset_key.clone(),
                 filename: asset.filename.clone(),
                 member: None,
-                format: problem.format,
+                format: problem.format.to_string(),
                 sha256: asset.sha256.clone(),
                 outcome: if problem.empty_text {
                     ArticleSupplementSearchFileOutcome::EmptyText
@@ -158,7 +161,10 @@ pub async fn article_supplement_search(
                 asset_key: asset.asset_key.clone(),
                 filename: asset.filename.clone(),
                 member: block.member.clone(),
-                format: format.map(|format| format.as_str()).unwrap_or("other"),
+                format: format
+                    .map(|format| format.as_str())
+                    .unwrap_or("other")
+                    .to_string(),
                 sha256: asset.sha256.clone(),
                 worksheet: block.worksheet.clone(),
                 row: block.row,
@@ -192,14 +198,15 @@ fn file_outcome_rows(
     let mut row = |member: Option<String>,
                    outcome: ArticleSupplementSearchFileOutcome,
                    reason: Option<String>| {
+        let member_format = match &member {
+            Some(member) => member_leaf_format(member).unwrap_or(format),
+            None => format,
+        };
         ArticleSupplementSearchFile {
             asset_key: asset.asset_key.clone(),
             filename: asset.filename.clone(),
             member,
-            format: match &member {
-                Some(member) => member_leaf_format(member).unwrap_or(format),
-                None => format,
-            },
+            format: member_format.to_string(),
             sha256: asset.sha256.clone(),
             outcome,
             truncated: extraction.truncated,

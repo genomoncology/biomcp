@@ -741,7 +741,8 @@ fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
                 | ArticleCommand::CitationEvidence { .. }
                 | ArticleCommand::Citations { .. }
                 | ArticleCommand::References { .. }
-                | ArticleCommand::Recommendations { .. },
+                | ArticleCommand::Recommendations { .. }
+                | ArticleCommand::SupplementSearch { .. },
         }
         | Commands::Gene {
             cmd:

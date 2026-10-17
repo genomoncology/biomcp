@@ -427,7 +427,7 @@ pub struct ArticleSupplementSearchFile {
     pub filename: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub member: Option<String>,
-    pub format: &'static str,
+    pub format: String,
     pub sha256: String,
     pub outcome: ArticleSupplementSearchFileOutcome,
     #[serde(default, skip_serializing_if = "is_false")]
@@ -442,7 +442,7 @@ pub struct ArticleSupplementSearchHit {
     pub filename: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub member: Option<String>,
-    pub format: &'static str,
+    pub format: String,
     pub sha256: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub worksheet: Option<String>,
