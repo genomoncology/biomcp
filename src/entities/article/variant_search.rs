@@ -3497,9 +3497,8 @@ async fn search_variant_articles_identity(
             && status.source == "pubtator"
             && status.reason_codes.contains(&"no_variant_entity")
         {
-            status.detail = Some(
-                "PubTator autocomplete returned no variant entity for this request".into(),
-            );
+            status.detail =
+                Some("PubTator autocomplete returned no variant entity for this request".into());
         }
     }
     let runtime_incomplete = source_statuses_incomplete(&statuses);
@@ -5064,9 +5063,8 @@ mod tests {
         // holds just p.R1436Q — so a gene-and-protein request must keep that
         // entity and search by its id, returning PubTator's seven annotated
         // papers where the run used to report zero results as complete.
-        const AUTOCOMPLETE: &[u8] = include_bytes!(
-            "../../../testdata/sources/pubtator/autocomplete_abcc8_r1436q.json",
-        );
+        const AUTOCOMPLETE: &[u8] =
+            include_bytes!("../../../testdata/sources/pubtator/autocomplete_abcc8_r1436q.json",);
         const SEARCH: &[u8] =
             include_bytes!("../../../testdata/sources/pubtator/search_variant_abcc8_r1436q.json");
         let requests = Arc::new(Mutex::new(Vec::new()));
@@ -5625,13 +5623,15 @@ mod tests {
         );
         // The pubtator_variant route searches by entity id only; the plan
         // carries no bare text query for it, RefSeq literal included.
-        assert!(plan_queries(
-            "NC_000011.10:g.108248927T>G",
-            &context,
-            "pubtator_variant",
-            &[],
-        )
-        .is_empty());
+        assert!(
+            plan_queries(
+                "NC_000011.10:g.108248927T>G",
+                &context,
+                "pubtator_variant",
+                &[],
+            )
+            .is_empty()
+        );
 
         context.resolution.status = VariantResolutionStatus::Unresolved;
         context.resolution.basis = None;
