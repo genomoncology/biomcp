@@ -10,7 +10,7 @@ The frozen ERepo executable specification passes through the routine build job o
 
 - Starts from: `spec/entity/clingen-erepo.md` and its frozen runner. Job `1792238883286-80627` on the reviewed autocomplete repair passed lint and the routine tests, then failed both ERepo blocks at lines 24 and 28 with runner `clingen-erepo-frozen` exiting 1. The autocomplete repair does not modify this page or runner.
 - Keeps: frozen provider facts, explicit failure propagation, typed MCP behavior, and all other routine specifications. Do not weaken assertions to manufacture a pass.
-- Changes: claims `spec/entity/clingen-erepo.md` `CHANGELOG.md`. Investigate the actual runner and report exact additional files before editing implementation; the coordinator narrows this claim before code changes.
+- Changes: claims `spec/fixtures/run-clingen-erepo-fixture.sh` `CHANGELOG.md`. The runner contains three GNU-only `head -c -1` calls; inventory and replace that class with portable behavior while preserving every emitted JSON array. The executable spec's assertions stay unchanged.
 - Proof: reproduce the two existing executable-spec failures on current main through the build job before editing; record the exact command and output. Repair their identified cause, run the affected spec page, then the routine merged-candidate checks. Existing failed executable contracts provide the regression coverage; add a focused contract only if needed to preserve the fix.
 - Defers: historical failure analysis and broad fixture restructuring. This ticket only clears the concrete main check failure.
 
