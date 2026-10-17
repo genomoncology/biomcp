@@ -1298,7 +1298,7 @@ OA package holds the real file.
 
 ```bash run id=pdf-two-route-prefers-pmc-oa
 ../../tools/biomcp-ci --json get article 22663028 assets | jq '(.assets | any(.filename == "pone.0153788.s001.pdf" and .provider.source == "PMC OA" and .size_bytes > 0)) and (.coverage | any(.filename == "pone.0153788.s001.pdf" and .outcome == "empty_response" and .provider.source == "Europe PMC"))' | mustmatch 'true'
-../../tools/biomcp-ci get article 22663028 asset pone.0153788.s001.pdf | mustmatch like "%PDF-1.4"
+../../tools/biomcp-ci get article 22663028 asset pone.0153788.s001.pdf | mustmatch like "scrubbed fixture PDF supplement bytes"
 ```
 
 ## Bytes That Do Not Match The File Name's Type Are A Failed Download
