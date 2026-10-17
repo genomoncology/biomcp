@@ -4,7 +4,7 @@ BioMCP publishes from `.github/workflows/release.yml`. A push of a stable tag ma
 
 ## Local qualification
 
-`make main-gate` runs the routine gate followed by `make full-feature-check`. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks.
+`make main-gate` runs the routine gate followed by `make repo-audit` and `make full-feature-check`. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks.
 
 `make release-gate` requires the full-feature check with `FULL_FEATURE_PROFILE=release`, including the optimized executable's PNG, SVG and terminal output checks, before release-profile specifications. Complete this qualification and the final nonpublishing release rehearsal before tagging. The rehearsal must build optimized artifacts and exercise their output checks.
 

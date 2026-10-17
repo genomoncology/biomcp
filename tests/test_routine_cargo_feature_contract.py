@@ -253,7 +253,7 @@ def test_full_feature_gates_build_and_smoke_the_selected_profile(
     wrapper = tmp_path / "gate.mk"
     wrapper.write_text(
         f"include {REPO_ROOT / 'Makefile'}\n"
-        "landing-gate lint test spec:\n\t@:\n",
+        "landing-gate lint test spec repo-audit sync-python-dev:\n\t@:\n",
         encoding="utf-8",
     )
     result = subprocess.run(
