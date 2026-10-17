@@ -38,6 +38,8 @@
 
 ### Internal
 
+- The credential-redaction contract uses permanent local provider failures, so unrelated randomized retry delays cannot exhaust its command watchdog. (2165)
+
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)
