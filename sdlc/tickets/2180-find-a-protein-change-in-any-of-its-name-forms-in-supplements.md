@@ -4,11 +4,13 @@ priority: 2
 
 # 2180 — Find a protein change in any of its name forms in supplements
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 5151a59, accept
+
+Landed: 5151a59 (fast-forward: Accepted work reached main in reviewed combined research-fix landing bf9916b; completion records this source batch without another source change.)
 
 ## Outcome
 
