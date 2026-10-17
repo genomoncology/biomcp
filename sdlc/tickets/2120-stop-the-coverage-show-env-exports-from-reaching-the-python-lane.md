@@ -4,7 +4,7 @@ priority: 3
 
 # 2120 — Scope coverage instrumentation to its Rust suite
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -13,6 +13,8 @@ Depends on: 2117
 Reviews: revision 76222b8, accept
 
 Reviews: revision 67c0d69, accept
+
+Landed: 67c0d69 (fast-forward: Accepted source landed in shared carrier 1dbe0a0e826f562eb2555d2fa419c572b4464dc0 after gate1792258974753-64575; individual review retained and stable metadata integration corrections are included in the carrier.)
 
 ## Outcome
 
