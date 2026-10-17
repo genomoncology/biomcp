@@ -254,6 +254,9 @@ fn file_outcome_rows(
             None,
         ));
     }
+    if rows.is_empty() {
+        rows.push(row(None, ArticleSupplementSearchFileOutcome::EmptyText, None));
+    }
     rows
 }
 
