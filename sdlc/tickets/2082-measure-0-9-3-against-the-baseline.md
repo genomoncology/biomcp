@@ -39,8 +39,6 @@ Depends on: 2169
 Depends on: 2172
 Depends on: 2173
 Depends on: 2174
-Depends on: 2175
-Depends on: 2176
 
 ## Outcome
 
@@ -56,3 +54,5 @@ Fresh v0.9.2 and release-candidate measurements run on the same build machine wi
 PM decision: 2026-10-17. Measure both versions on one build machine. This ticket lands last; the final rehearsal follows all landings, avoiding a self-referential requirement to commit proof for its own final commit.
 
 PM decision: 2026-10-17. Coverage uses the existing groups. The test deletion, parallel lanes and audit move land before this measurement.
+
+PM decision: recurrence tickets 2175 and 2176 remain open through the final release rehearsal. Non-recurrence across the remaining full checks and rehearsal is sufficient for closure, with clean-check counts recorded; 2176 must include checks after the cache changes. They therefore do not block final measurement. All remaining product bugs, including 2172, 2173 and 2174, still precede this measurement. If a recurrence occurs, its fix precedes release.
