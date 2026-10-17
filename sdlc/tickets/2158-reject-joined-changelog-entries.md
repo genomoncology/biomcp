@@ -12,6 +12,8 @@ Depends on: 2156
 
 Reviews: revision 1407c25, accept
 
+Reviews: revision 848f366, accept
+
 ## Outcome
 
 The changelog gate rejects two entries joined onto one line while accepting correctly separated entries and the existing heading structure.
