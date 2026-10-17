@@ -69,7 +69,9 @@ def test_citation_cff_release_metadata_matches_repo_metadata() -> None:
     if "-dev" in cargo_version:
         base, _, ordinal = cargo_version.partition("-dev")
         assert pyproject["project"]["version"] == f"{base}.dev{ordinal.lstrip('.') or '0'}"
-        assert tuple(map(int, citation_version.split("."))) < tuple(map(int, base.split(".")))
+        assert tuple(map(int, citation_version.split("."))) < tuple(
+            map(int, base.split("."))
+        )
     else:
         assert citation_version == cargo_version == pyproject["project"]["version"]
     assert citation_version == changelog_match.group("version")

@@ -509,7 +509,9 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "biomcp ema sync" in previous_new_features_block
     assert _ticket_references(previous_release_block) == {182, *range(193, 214), 221}
 
-    assert _ticket_references(latest_release_block) == EXPECTED_RELEASE_TICKETS[historical_version]
+    assert _ticket_references(latest_release_block) == EXPECTED_RELEASE_TICKETS[
+        historical_version
+    ]
     for marker in EXPECTED_RELEASE_MARKERS[historical_version]["fixes"]:
         assert marker in latest_fixes_block
     for marker in EXPECTED_RELEASE_MARKERS[historical_version]["new_features"]:
