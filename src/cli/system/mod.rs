@@ -162,7 +162,7 @@ pub struct BatchArgs {
     /// Article rendering mode (defaults to detail; article only)
     #[arg(long, value_enum)]
     pub mode: Option<ArticleBatchMode>,
-    /// Optional comma-separated sections (not supported for adverse-event batches)
+    /// Comma-separated sections; article batches support annotations, fulltext, indexing, tldr and all (not supported for adverse-event batches)
     #[arg(long)]
     pub sections: Option<String>,
     /// Trial source when entity=trial (ctgov or nci)

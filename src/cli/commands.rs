@@ -230,6 +230,7 @@ EXAMPLES:
 NOTES:
   - Article compact mode accepts up to 20 IDs; detail and other batches accept up to 10.
   - Each call must use a single entity type.
+  - Article batch sections: annotations, fulltext, indexing, tldr, all; assets and asset downloads need `biomcp get article <id> assets`.
 
 See also: biomcp list batch")]
     Batch(system::BatchArgs),

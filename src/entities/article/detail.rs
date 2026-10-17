@@ -807,16 +807,23 @@ pub async fn get(
     }
 
     let semantic_scholar_enrichment = enrich_article_with_semantic_scholar(&mut article).await;
-    let tldr_outcome = match &semantic_scholar_enrichment {
-        Ok(()) if article.semantic_scholar.is_some() => SectionOutcome::data("Semantic Scholar"),
-        Ok(()) => SectionOutcome::empty("Semantic Scholar"),
-        Err(_) => SectionOutcome::unavailable(
-            "Semantic Scholar article context is temporarily unavailable.",
-        ),
-    };
-    article
-        .section_outcomes
-        .complete(ARTICLE_SECTION_TLDR, tldr_outcome);
+    // The Semantic Scholar lookup feeds PDF discovery even when its own
+    // section was not requested; only requests that carry the tldr section
+    // (tldr, all, or a base card with no sections) report its outcome.
+    if !section_only || section_flags.include_tldr {
+        let tldr_outcome = match &semantic_scholar_enrichment {
+            Ok(()) if article.semantic_scholar.is_some() => {
+                SectionOutcome::data("Semantic Scholar")
+            }
+            Ok(()) => SectionOutcome::empty("Semantic Scholar"),
+            Err(_) => SectionOutcome::unavailable(
+                "Semantic Scholar article context is temporarily unavailable.",
+            ),
+        };
+        article
+            .section_outcomes
+            .complete(ARTICLE_SECTION_TLDR, tldr_outcome);
+    }
     let pdf_discovery =
         fulltext::pdf_discovery_attempt(&article, options.allow_pdf, semantic_scholar_enrichment);
 

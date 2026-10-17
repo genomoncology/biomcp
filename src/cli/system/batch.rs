@@ -104,15 +104,15 @@ fn validate_article_batch_sections(raw: &str) -> Result<(), crate::error::BioMcp
     while index < sections.len() {
         let section = sections[index].to_ascii_lowercase();
         index += 1;
-        if section == "asset" {
-            if index == sections.len() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "asset requires an asset key (example: biomcp batch article 22663011 --sections asset,traces-s1.csv)"
-                        .into(),
-                ));
-            }
-            index += 1;
-        } else if !crate::entities::article::ARTICLE_SECTION_NAMES.contains(&section.as_str()) {
+        if section == "assets" || section == "asset" {
+            // Batch sections resolve identically for every requested ID; the
+            // asset surface is per-article (keys, destinations, view paging),
+            // so it stays on `get article` only.
+            return Err(crate::error::BioMcpError::InvalidArgument(format!(
+                "Article batch does not support the \"{section}\" section; asset lists and downloads need get article (example: biomcp get article 22663011 assets). Supported article batch sections: annotations, fulltext, indexing, tldr, all"
+            )));
+        }
+        if !crate::entities::article::ARTICLE_SECTION_NAMES.contains(&section.as_str()) {
             return Err(crate::error::BioMcpError::InvalidArgument(format!(
                 "Unknown section \"{section}\" for article. Available: {}",
                 crate::entities::article::ARTICLE_SECTION_NAMES.join(", ")
@@ -378,6 +378,25 @@ mod tests {
             assert!(
                 validate_batch_args(&value).is_err(),
                 "malformed detail sections must fail preflight: {sections:?}"
+            );
+        }
+        for (mode, sections) in [
+            (Some(ArticleBatchMode::Detail), "fulltext,assets"),
+            (Some(ArticleBatchMode::Detail), "assets"),
+            (Some(ArticleBatchMode::Detail), "asset,traces-s1.csv"),
+            (None, "assets"),
+        ] {
+            let value = args("article", "one".into(), mode, Some(sections));
+            let error =
+                validate_batch_args(&value).expect_err("batch never supports asset sections");
+            let rendered = error.to_string();
+            assert!(
+                rendered.contains("Article batch does not support"),
+                "sections={sections:?}: {rendered}"
+            );
+            assert!(
+                rendered.contains("annotations, fulltext, indexing, tldr, all"),
+                "sections={sections:?}: {rendered}"
             );
         }
         validate_batch_args(&args(

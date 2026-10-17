@@ -1100,7 +1100,8 @@ fn batch_article_detail_returns_no_tldr_section_unless_asked_for() {
     let result = &value["items"][0]["result"];
     assert_eq!(result["section_outcomes"]["fulltext"]["outcome"], "data");
     assert_eq!(
-        result["section_outcomes"]["tldr"]["outcome"], "not_requested",
+        result["section_outcomes"]["tldr"]["outcome"],
+        "not_requested",
         "unrequested tldr outcome leaked: {}",
         serde_json::to_string_pretty(result).unwrap()
     );
