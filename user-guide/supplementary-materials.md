@@ -126,6 +126,7 @@ biomcp --json get article --asset-view coverage <id> assets
 | `unsupported_origin` | The link pointed somewhere BioMCP will not fetch from. |
 | `source_unavailable` | The provider could not be reached, or returned unusable content. |
 | `empty_response` | The route answered, but its reply held no bytes for the file. |
+| `unusable_asset` | The route answered, but the bytes do not match the file name's type. |
 
 Entries with a `pmc_proof_of_work` outcome carry no `asset_key` and no
 `handle`. The file is named because the article references it, and BioMCP
@@ -140,6 +141,17 @@ empty route is kept in `coverage` with the asset key it would have carried,
 so a caller holding either key gets the copy that exists or a refusal that
 names why.
 
+Bytes that do not match the file name's type are refused the same way with
+the `unusable_asset` outcome: a vendor HTML page under a `.docx` name is a
+failed download, never a delivered file. The check reads the leading bytes
+a file type commits to — PDF, the zip family (docx, xlsx, zip), the legacy
+Office formats, gzip, and the common image types — and leaves text formats
+unchecked.
+
+When every route for one supplement is empty, wrong-type, or missing, the
+manifest keeps the file in `coverage` with that reason, so a caller can tell
+an article with no supplement from one whose copies all failed.
+
 An article whose supplementary materials are deposited only as an author
 manuscript is the common case for this outcome. When Europe PMC holds its
 own copy the file is returned normally; when it does not, the file is named
@@ -152,10 +164,15 @@ BioMCP consults these routes for a validated PMCID and merges the results:
 | Route | Contents |
 | --- | --- |
 | PMC OA Archive | Media objects declared by the article's S3 package metadata. |
+| PMC OA object | A single bucket object fetched by name when the package download failed or its member was refused. |
 | Europe PMC | The article's supplementary files ZIP, validated in memory. |
 | JATS XML | Supplement links declared in the article XML. |
-| PMC HTML | Supplement links found on the article page. |
+| PMC HTML | Supplement links found on the article page, and the page's own file route for a supplement no other copy serves. |
 | Figshare | Records discovered through Semantic Scholar for supported article URLs. |
+
+A supplement whose only copy is Europe PMC's, and whose reply is empty or
+wrong-type, is looked up by file name in the PMC open-data bucket and on the
+PMC article page; a copy found there is listed like any other route.
 
 The `source_attempts` array reports what each route returned, independently
 of whether any file was found:

@@ -346,10 +346,14 @@ metadata or a retained PMC OA manifest supplies a license; retained licenses
 name PMC OA as their source. When named coverage exists but no bytes are
 retrievable, the manifest remains available with `assets: []` and a specific
 per-file outcome. A route whose reply holds zero bytes is a failed download
-with the `empty_response` outcome, writes no output file, and never lists in
-`assets`; when several routes hold one filename, the route that returned
-bytes stays listed and the empty route is marked in `coverage` under the
-asset key it would have carried. If no route names an asset, a healthy
+with the `empty_response` outcome, and a route whose bytes do not match the
+file name's type is a failed download with the `unusable_asset` outcome;
+both write no output file and never list in `assets`, and when several routes
+hold one filename, the route that returned usable bytes stays listed while
+each refused route is marked in `coverage` under the asset key it would have
+carried. A supplement whose only copy is Europe PMC's is also looked up by
+file name in the PMC open-data bucket and on the PMC article page. If no
+route names an asset, a healthy
 all-source miss is `not_found`; source failures remain `source_unavailable`.
 A missing or unknown asset key is `not_found`. Figshare supplement PDFs and
 tables remain assets,

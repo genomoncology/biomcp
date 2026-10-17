@@ -4758,6 +4758,10 @@ whose supplementary materials could not be reached.</p>
 <td><code>empty_response</code></td>
 <td>The route answered, but its reply held no bytes for the file.</td>
 </tr>
+<tr>
+<td><code>unusable_asset</code></td>
+<td>The route answered, but the bytes do not match the file name's type.</td>
+</tr>
 </tbody>
 </table>
 <p>Entries with a <code>pmc_proof_of_work</code> outcome carry no <code>asset_key</code> and no
@@ -4771,6 +4775,15 @@ route that returned bytes stays listed under its own asset key and the
 empty route is kept in <code>coverage</code> with the asset key it would have carried,
 so a caller holding either key gets the copy that exists or a refusal that
 names why.</p>
+<p>Bytes that do not match the file name's type are refused the same way with
+the <code>unusable_asset</code> outcome: a vendor HTML page under a <code>.docx</code> name is a
+failed download, never a delivered file. The check reads the leading bytes
+a file type commits to — PDF, the zip family (docx, xlsx, zip), the legacy
+Office formats, gzip, and the common image types — and leaves text formats
+unchecked.</p>
+<p>When every route for one supplement is empty, wrong-type, or missing, the
+manifest keeps the file in <code>coverage</code> with that reason, so a caller can tell
+an article with no supplement from one whose copies all failed.</p>
 <p>An article whose supplementary materials are deposited only as an author
 manuscript is the common case for this outcome. When Europe PMC holds its
 own copy the file is returned normally; when it does not, the file is named
@@ -4790,6 +4803,10 @@ and not delivered.</p>
 <td>Media objects declared by the article's S3 package metadata.</td>
 </tr>
 <tr>
+<td>PMC OA object</td>
+<td>A single bucket object fetched by name when the package download failed or its member was refused.</td>
+</tr>
+<tr>
 <td>Europe PMC</td>
 <td>The article's supplementary files ZIP, validated in memory.</td>
 </tr>
@@ -4799,7 +4816,7 @@ and not delivered.</p>
 </tr>
 <tr>
 <td>PMC HTML</td>
-<td>Supplement links found on the article page.</td>
+<td>Supplement links found on the article page, and the page's own file route for a supplement no other copy serves.</td>
 </tr>
 <tr>
 <td>Figshare</td>
@@ -4807,6 +4824,9 @@ and not delivered.</p>
 </tr>
 </tbody>
 </table>
+<p>A supplement whose only copy is Europe PMC's, and whose reply is empty or
+wrong-type, is looked up by file name in the PMC open-data bucket and on the
+PMC article page; a copy found there is listed like any other route.</p>
 <p>The <code>source_attempts</code> array reports what each route returned, independently
 of whether any file was found:</p>
 <table>
