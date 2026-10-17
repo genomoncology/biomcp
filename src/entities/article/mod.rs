@@ -352,6 +352,7 @@ pub enum ArticleFulltextAttemptReason {
     MetadataWithoutBody,
     NoContent,
     UnusableContent,
+    BotChallenge,
     SourceUnavailable,
 }
 

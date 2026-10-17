@@ -57,6 +57,7 @@ enum FulltextStepOutcome<T> {
     Data(T),
     Empty,
     Unusable(BioMcpError),
+    BotChallenge(BioMcpError),
     Failed(BioMcpError),
 }
 
@@ -377,6 +378,7 @@ fn classify_html_fetch(
         }
         PmcHtmlFetchOutcome::Empty => FulltextStepOutcome::Empty,
         PmcHtmlFetchOutcome::Unusable(err) => FulltextStepOutcome::Unusable(err),
+        PmcHtmlFetchOutcome::BotChallenge(err) => FulltextStepOutcome::BotChallenge(err),
         PmcHtmlFetchOutcome::Failed(err) => FulltextStepOutcome::Failed(err),
     };
     HtmlResolution {
@@ -894,6 +896,17 @@ pub(super) async fn resolve_fulltext(
                 );
                 state.record_failure(err);
             }
+            FulltextStepOutcome::BotChallenge(err) => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::PmcHtml,
+                    ArticleFulltextAttemptCoverage::Unusable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    resolution.cache_state,
+                    ArticleFulltextAttemptReason::BotChallenge,
+                );
+                state.record_failure(err);
+            }
             FulltextStepOutcome::Failed(err) => {
                 state.record_attempt(
                     &source,
@@ -997,6 +1010,17 @@ pub(super) async fn resolve_fulltext(
                 );
                 state.record_failure(err);
             }
+            FulltextStepOutcome::BotChallenge(err) => {
+                state.record_attempt(
+                    &pdf_source,
+                    ArticleFulltextAttemptSourceKind::Pdf,
+                    ArticleFulltextAttemptCoverage::Unusable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::BotChallenge,
+                );
+                state.record_failure(err);
+            }
             FulltextStepOutcome::Failed(err) => {
                 state.record_attempt(
                     &pdf_source,
@@ -1054,7 +1078,9 @@ mod tests {
 
     fn failed<T>(outcome: FulltextStepOutcome<T>) -> BioMcpError {
         match outcome {
-            FulltextStepOutcome::Failed(err) | FulltextStepOutcome::Unusable(err) => err,
+            FulltextStepOutcome::Failed(err)
+            | FulltextStepOutcome::Unusable(err)
+            | FulltextStepOutcome::BotChallenge(err) => err,
             FulltextStepOutcome::Data(_) | FulltextStepOutcome::Empty => {
                 panic!("attempt should be classified as failure")
             }
@@ -1492,6 +1518,15 @@ mod tests {
             .expect("pmc html attempt");
         let serialized = serde_json::to_value(html_attempt).expect("serialized attempt");
         assert_eq!(serialized["reason"], "bot_challenge");
+        assert_eq!(
+            html_attempt.reason,
+            ArticleFulltextAttemptReason::BotChallenge
+        );
+        assert_eq!(html_attempt.coverage, ArticleFulltextAttemptCoverage::Unusable);
+        assert_eq!(
+            html_attempt.outcome,
+            ArticleFulltextAttemptOutcome::Unavailable
+        );
         let pdf_attempt_index = attempts
             .iter()
             .position(|attempt| attempt.source_kind == ArticleFulltextAttemptSourceKind::Pdf)
