@@ -6077,6 +6077,11 @@ mod tests {
         .expect("exact-name outcome");
 
         assert!(!outcome.hard_error, "rows came back from the exact name");
+        assert!(
+            !outcome.response.results.is_empty(),
+            "the exact name found rows: {:?}",
+            outcome.response.source_status
+        );
         let logged = requests.lock().expect("request log").clone();
         let pubmed_term = logged
             .iter()
@@ -6091,7 +6096,7 @@ mod tests {
             .iter()
             .find(|line| line.starts_with("GET /search?"))
             .and_then(|line| query_param(line, "query"))
-            .expect("europepmc search ran");
+            .unwrap_or_else(|| panic!("europepmc search ran: {logged:?}"));
         assert_eq!(
             europepmc_query, "TITLE_ABS:\"BRAF V600E\"",
             "europepmc received the name as one title/abstract phrase: {logged:?}"
@@ -6313,7 +6318,8 @@ mod tests {
             for source in ["pubmed", "europepmc", "pubtator", "semanticscholar"] {
                 assert!(
                     find("exact_lexical", alias, source).is_some(),
-                    "alias {alias} reports its {source} yield"
+                    "alias {alias} reports its {source} yield: {:?}",
+                    plan.alias_yields
                 );
             }
         }
