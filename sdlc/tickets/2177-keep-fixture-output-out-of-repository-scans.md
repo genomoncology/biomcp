@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 7e0ee10, accept
+
 ## Outcome
 
 Fulltext replay fixtures create temporary server and cache state inside ignored test output, so concurrent repository scans never read files that fixture cleanup can remove.
