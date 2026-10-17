@@ -14,6 +14,8 @@ Reviews: revision cf985c2, accept
 
 Reviews: revision 8d9a644, accept
 
+Reviews: revision 4b478c0, accept
+
 ## Outcome
 
 `get article ID asset NAME --output bare.pdf` writes `bare.pdf` in the current directory, the same as `./bare.pdf`.
