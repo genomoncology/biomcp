@@ -3140,6 +3140,83 @@ fn variant_article_terminal_state(
     (complete, truncated)
 }
 
+/// The early outcome for a request whose variant identity could not be
+/// resolved: an empty, incomplete page whose structured error names the
+/// failing sources instead of pretending a search ran.
+#[allow(clippy::too_many_arguments)]
+fn resolution_unavailable_outcome(
+    context: VariantArticleResolutionContext,
+    canonical_equivalence: CanonicalEquivalence,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    include_debug_plan: bool,
+    execution: &VariantArticleExecutionContext,
+) -> VariantArticleOutcome {
+    let events = execution.events();
+    let mut source_status = terminal_reconciled_statuses(&execution, &events);
+    if source_status.is_empty() {
+        source_status.push(status(
+            "resolution",
+            "myvariant",
+            VariantArticleSourceStatusKind::Unavailable,
+        ));
+    }
+    // Preserve legacy failure priority while ordering any additionally
+    // materialized terminal routes deterministically.
+    source_status.sort_by_key(|status| {
+        (
+            status.route != "resolution",
+            status.route.clone(),
+            status.source.clone(),
+        )
+    });
+    let debug_plan = include_debug_plan.then(|| {
+        let mut plan =
+            empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
+        plan.budgets.item = execution.item_work();
+        plan.budgets.request = execution.request_work();
+        plan.deadline = execution.deadline_plan();
+        plan
+    });
+    let outage_message = variant_article_outage_message(&source_status);
+    return Ok(VariantArticleOutcome {
+        response: VariantArticleResponse {
+            requested_variant: context.requested,
+            resolution: context.resolution,
+            canonical_equivalence: Some(canonical_equivalence),
+            strategy,
+            complete: false,
+            truncated: true,
+            pagination: VariantArticlePagination {
+                offset,
+                limit,
+                returned: 0,
+                total: None,
+                has_more: true,
+                next_page_token: None,
+            },
+            source_status,
+            retrieval_path: "variant resolution unavailable",
+            results: Vec::new(),
+            error: Some(VariantArticleItemError {
+                code: if execution.deadline.is_exhausted() {
+                    "deadline_exceeded"
+                } else {
+                    "source_unavailable"
+                },
+                message: if execution.deadline.is_exhausted() {
+                    "the variant article invocation deadline expired before a usable result was available".into()
+                } else {
+                    outage_message
+                },
+            }),
+            debug_plan,
+        },
+        hard_error: true,
+    });
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_identity(
     input: &str,
@@ -3175,68 +3252,15 @@ async fn search_variant_articles_identity(
         );
     }
     if !context.available {
-        let events = execution.events();
-        let mut source_status = terminal_reconciled_statuses(&execution, &events);
-        if source_status.is_empty() {
-            source_status.push(status(
-                "resolution",
-                "myvariant",
-                VariantArticleSourceStatusKind::Unavailable,
-            ));
-        }
-        // Preserve legacy failure priority while ordering any additionally
-        // materialized terminal routes deterministically.
-        source_status.sort_by_key(|status| {
-            (
-                status.route != "resolution",
-                status.route.clone(),
-                status.source.clone(),
-            )
-        });
-        let debug_plan = include_debug_plan.then(|| {
-            let mut plan =
-                empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
-            plan.budgets.item = execution.item_work();
-            plan.budgets.request = execution.request_work();
-            plan.deadline = execution.deadline_plan();
-            plan
-        });
-        let outage_message = variant_article_outage_message(&source_status);
-        return Ok(VariantArticleOutcome {
-            response: VariantArticleResponse {
-                requested_variant: context.requested,
-                resolution: context.resolution,
-                canonical_equivalence: Some(canonical_equivalence),
-                strategy,
-                complete: false,
-                truncated: true,
-                pagination: VariantArticlePagination {
-                    offset,
-                    limit,
-                    returned: 0,
-                    total: None,
-                    has_more: true,
-                    next_page_token: None,
-                },
-                source_status,
-                retrieval_path: "variant resolution unavailable",
-                results: Vec::new(),
-                error: Some(VariantArticleItemError {
-                    code: if execution.deadline.is_exhausted() {
-                        "deadline_exceeded"
-                    } else {
-                        "source_unavailable"
-                    },
-                    message: if execution.deadline.is_exhausted() {
-                        "the variant article invocation deadline expired before a usable result was available".into()
-                    } else {
-                        outage_message
-                    },
-                }),
-                debug_plan,
-            },
-            hard_error: true,
-        });
+        return Ok(resolution_unavailable_outcome(
+            context,
+            canonical_equivalence,
+            strategy,
+            limit,
+            offset,
+            include_debug_plan,
+            &execution,
+        ));
     }
     if verification.verify_identity {
         // Keep one verification unit before discovery. Each discovery page then
