@@ -105,11 +105,17 @@ detail_markdown="$($binary variant erepo CA015543 --detail)"
 resolved_gene="$($binary variant erepo CA000072)"
 zero_gene="$($binary variant erepo CA000075)"
 "$binary" variant erepo CA000073 > "$tmp/missing_gene.stdout"
-head -c -1 "$tmp/missing_gene.stdout" > "$tmp/missing_gene.md"
 "$binary" variant erepo CA000074 > "$tmp/unavailable_gene.stdout"
-head -c -1 "$tmp/unavailable_gene.stdout" > "$tmp/unavailable_gene.md"
 "$binary" variant erepo CA000076 > "$tmp/unavailable_count.stdout"
-head -c -1 "$tmp/unavailable_count.stdout" > "$tmp/unavailable_count.md"
+# Remove exactly one output byte without GNU head's negative-count extension.
+python3 - "$tmp" <<'PY'
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+for name in ("missing_gene", "unavailable_gene", "unavailable_count"):
+    (root / f"{name}.md").write_bytes((root / f"{name}.stdout").read_bytes()[:-1])
+PY
 summary="$($binary --json variant erepo CA015543)"
 detail="$($binary --json variant erepo CA015543 --detail)"
 pten="$($binary --json variant erepo CA000498)"
