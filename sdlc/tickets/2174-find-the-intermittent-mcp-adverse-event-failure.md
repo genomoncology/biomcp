@@ -4,7 +4,7 @@ priority: 3
 
 # 2174 — Find the intermittent MCP adverse-event failure
 
-Status: COMPLETE.
+Status: OPEN.
 
 Milestone: 0.9.3
 
@@ -12,14 +12,16 @@ Depends on: 2172
 
 Reviews: revision 2992721, accept
 
+Reopened: 2026-10-17 — Full actual-main check2156/1792267972991-69042 atda3be5638db5f6b21b395998e412e6bbe9587b0c reproduced the same MCP case after fifty clean isolated repetitions. Diagnostic names an OpenFDA HTTP request failure at rmcp_client_contract.rs1619. Reopen for one captured-cause repair lane; formal measurements and ordinary landings wait for green main.
+
 ## Outcome
 
-The intermittent failure of `raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts` has a named cause and a fix, or a recorded finding that 2172 removed it.
+The recurring failure of `raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts` has a captured cause and a minimal fix that preserves its complete contract.
 
 - Evidence: on 2026-10-17 the test failed once at `tests/rmcp_client_contract.rs:1553` with `isError` true instead of false, in a gate run on code identical to a run where it passed. 91f4afc46 now exposes the MCP error reply in the failure output. The cause is unknown. One candidate, unconfirmed: the adverse-event command reads openFDA through the HTTP cache, and on main a cache lock or I/O failure fails the source, which 2172 changes.
 - Starts from: the next failure's error reply, captured by 91f4afc46's diagnostics, and the gate logs.
 - Keeps: the contract the test checks.
-- Changes: `sdlc/tickets/2174-find-the-intermittent-mcp-adverse-event-failure.md` for the approved repeat-run finding. If a failure recurs, claim its actual test/source files before changing them; preserve the existing diagnostics and contract.
+- Changes: `tests/rmcp_client_contract.rs`, `sdlc/tickets/2174-find-the-intermittent-mcp-adverse-event-failure.md`, `CHANGELOG.md`. Identify and claim any additional source/helper file from the captured cause before changing it; preserve diagnostics and the contract.
 - Proof: name the cause from a captured error reply, or reproduce it by running the test repeatedly through one build job on the build host within its configured job limit. Show the failure before the fix and its absence across the same number of repeats after. If 2172 lands first and fifty repeats show no failure, record that finding and close.
 - Defers: nothing. This ticket gets no fourth gate rerun as a substitute for a cause.
 
@@ -34,3 +36,5 @@ Repeat command and provenance before execution: Copy the archive and paired CLI 
 Approved repeat finding: Job1792267485428-95569 on actual main62cefadf94b11b25bc5f79d88723aaec049dbf06 exited0 after fifty actual executions, all passed with zero failures; the log includes fifty distinct PASS results and the matching50/50 iteration summary. Both the paired owned CLI and the archive-extracted CLI matched the qualified hash above. One archive extraction served all repetitions; no compilation, source change, assertion change or behavioral retry occurred. Earlier1792267458848-93381 exited96 before any test because the extraction directory was absent; creating that directory corrected setup, and its zero executions are excluded from the fifty. This meets the PM's stated closure condition after the cache batch. It establishes non-recurrence under this check, not historical causation. The existing bounded diagnostics remain available.
 
 Prepared closure: This candidate changes only ticket records, including the already recorded observation progress for2175 and2176; their statuses remain OPEN through final rehearsal. Main62cefadf9's full check2156/1792267362041-77812 is running and must pass before this ordinary landing. The unchanged diagnostic changelog bullet already landed with the cache batch. Reuse the passing combined gate for identical product inputs; no new source or test implementation is introduced by this finding.
+
+Reopened outcome before repair: The approved fifty isolated repetitions passed, but full actual-main job2156/1792267972991-69042 atda3be5638db5f6b21b395998e412e6bbe9587b0c reproduced the same case in0.248seconds at the isError assertion. The bounded diagnostic says `Error: HTTP request to OpenFDA failed. Retry the remote source.` Rust fail-fast reported4314 passed,1 failed,34 skipped and45 unrun; Python passed1253 cases with9 skips. Thus non-recurrence has not held and the fifty-run finding does not establish that the defect is removed. One fresh lane owns this exact failure. Inspect the fixture, endpoint routing, transport/error projection and lifetimes; capture a concrete cause before any fix. Prefer existing bounded diagnostics and qualified artifacts. Do not rerun the gate blindly, raise timeouts or weaken reply/equality/count assertions. A named correction gets affected proof and the concurrent Rust workload that exposed this failure before review and the repair landing gate. Broader fixture scenario refactoring remains deferred. Formal measurements wait for repaired green main; harness-only corrections may continue independently.
