@@ -8798,10 +8798,11 @@ mod tests {
             .expect("32371413 row");
         let identity = case_series.identity.as_ref().expect("32371413 identity");
         assert!(
-            identity.observations.iter().any(|observation| observation
-                .section
-                    == "table"
-                && observation.observed_alias == "p.I448T"),
+            identity
+                .observations
+                .iter()
+                .any(|observation| observation.section == "table"
+                    && observation.observed_alias == "p.I448T"),
             "32371413 confirms from its full-text table: {:?}",
             identity.observations
         );
