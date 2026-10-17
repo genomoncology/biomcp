@@ -1,8 +1,14 @@
+---
+priority: 2
+---
+
 # 2128 — Close the 0.9.3 review's product gaps
 
 Status: OPEN.
 
 Milestone: 0.9.3
+
+Depends on: 2156
 
 ## Outcome
 
@@ -32,6 +38,7 @@ Found by the 0.9.3 adversarial review on 2026-10-16.
   - 7: drop brand values equal to the generic name; keep the cap, ordered by exact brand match first.
   - 8: rewrite the bullet to say what the fix covers.
   - 9: quote the substitution.
-- Changes: claims the files named above, their tests, `docs/reference/configuration.md` and `CHANGELOG.md`.
-- Proof: one recorded-reply or unit test per item, each failing on current main; routine suite.
-- Order: shares `get.rs` with 2113 and `structure.rs` with nothing open; rebase after 2113.
+- Changes: claims `src/entities/variant/structure.rs` `src/entities/variant/structure/tests.rs` `src/entities/variant/get.rs` `src/entities/variant/get/protein_change_tests.rs` `src/entities/variant/resolution.rs` `src/entities/variant/resolution/tests.rs` `src/cache/manager.rs` `src/cache/manager/tests/stale_marker_tests.rs` `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` `src/entities/drug/metadata.rs` `src/entities/drug/metadata/tests.rs` `src/entities/drug/label.rs` `src/entities/drug/label/tests/identity.rs` `src/entities/disease/resolution.rs` `src/entities/disease/resolution/tests.rs` `src/cli/health/local.rs` `src/cli/health/tests/local.rs` `install.sh` `tests/test_public_installer_checksum.py` `docs/reference/configuration.md` `CHANGELOG.md`.
+- Proof: reproduce each behavior on current main through its actual entry point: `biomcp variant structure`, day-cached `biomcp --json search gwas` and openFDA calls, `biomcp get drug`, `biomcp get disease MM`, MCP health, `biomcp get variant`, and a staged `install.sh` installation whose existing path contains spaces. Record the exact commands and replies before changes. Add the smallest recorded-reply regression for each behavior; review the corrected 2084 prose against its existing scope decision. Run affected regressions through the build job and the routine landing gate. No prose-only regression test is needed.
+- Keeps: all nine recorded product decisions above; no new clinical or identity rule. Reuse the approved shared residue check. Escalate a need to change those decisions through the PM.
+- Defers: unrelated clinical interpretation and broad fixture restructuring.

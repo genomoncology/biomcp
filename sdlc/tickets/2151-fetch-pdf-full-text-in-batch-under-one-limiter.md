@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 3
-deps: [2142, 2147]
+priority: 2
 ---
 
 # 2151: Fetch PDF full text in batch under one limiter
@@ -12,23 +11,17 @@ Milestone: 0.9.3
 
 ## Outcome
 
-`batch article --sections fulltext --pdf` fetches the PDF fallback for many papers in one process, under the one in-process Semantic Scholar limiter and the existing page and size limits, and the MCP typed article get gains the same `pdf` option.
+Batch article full-text reads accept the PDF fallback through one process-wide provider limiter and existing page/size limits, and typed MCP article get accepts the same PDF option with per-article source/failure reporting.
 
-## Evidence
+Depends on: 2142
+Depends on: 2147
+Depends on: 2088
+Depends on: 2159
 
-Asked 2026-10-16 by the research team, who need PDF fallbacks for hundreds of papers.
+- Starts from: existing single-article PDF options, batch dispatch, typed MCP mapping and the latest pushed implementation branch.
+- Keeps: shared provider limits, bounded downloads/pages and named per-article failures.
+- Changes: claims `src/cli/system/mod.rs` `src/cli/system/batch.rs` `src/cli/system/dispatch.rs` `src/cli/system/tests.rs` `src/cli/commands.rs` `src/cli/list/literature.rs` `src/mcp/shell.rs` `src/mcp/shell/typed_get.rs` `src/mcp/shell/typed_get_tests.rs` `crates/biomcp-mcp-contract-client/src/lib.rs` `tests/article_batch_outcome.rs` `tests/rmcp_client_contract.rs` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `spec/entity/article.md` `docs/user-guide/article.md` `docs/user-guide/cli-reference.md` `CHANGELOG.md`.
+- Proof: reproduce the missing batch/typed option on current main. A three-article recorded batch exercises Semantic Scholar discovery through its actual limiter policy and returns each text or named failure; a typed MCP contract uses the PDF option. Publisher-download spacing is not proof of Semantic Scholar discovery pacing, and a fixture that bypasses its pacing cannot establish that claim. Run affected checks and the routine merged-candidate gate through build jobs.
+- Defers: supplement extraction to 2152.
 
-- `get article ID fulltext --pdf` exists (`src/cli/article/mod.rs:288`); batch refuses `--pdf` (`src/cli/system/batch.rs:371`), and the MCP article schema has no pdf option.
-- Rate limiters live in one process. Hundreds of separate CLI calls each start a fresh limiter, so only serial calls keep to Semantic Scholar's rate.
-
-## Work
-
-- Add `--pdf` to batch article for the fulltext section, using the same page and size limits as `get article`, through the shared in-process limiter.
-- Add `pdf` to the MCP typed article get.
-- Report per article which full-text source was used and why the PDF step failed when it did.
-
-## Acceptance
-
-1. A recorded-reply test of a three-article batch with `--pdf` spaces Semantic Scholar requests at the limiter's interval and returns each article's text or a named failure.
-2. An MCP contract test calls the typed get with `pdf`.
-3. The changelog carries a bullet for this ticket.
+PM decision: 2026-10-17. Reuse existing implementation and close the specific limiter-proof gap before acceptance. Serialize overlapping article/MCP changes before 2152.

@@ -1,4 +1,8 @@
-# 2123 — Report coverage in five groups
+---
+priority: 2
+---
+
+# 2123 — Report coverage overlap and collection completeness
 
 Status: OPEN.
 
@@ -6,18 +10,15 @@ Milestone: 0.9.3
 
 ## Outcome
 
-The coverage block of `tools/measure-0-9-3-baseline` reports product code in five groups, reached from outside tests, reached only by internal tests, reached by both, unobserved, and failed or missing collections, over one stated denominator, from the profiles it already collects.
+The separate coverage command reports outside-only, internal-only, both and unobserved product lines over one stated denominator, and separately identifies failed or missing collections and incomplete results.
 
-## Evidence
+Depends on: 2117
+Depends on: 2120
 
-- 2116 audit, 2026-10-16: the block prints three line percentages (outside-in, unit, combined). Nothing shows internal-only, both, unobserved, or failed collections, so 2081's deletions and 2082's after-record need a per-file method by hand.
-- The shared build-efficiency rules, 2026-10-16, ask for these five groups and say overlap only nominates tests to remove.
-- 2117 landed the failed-suite marking and the stated denominator; this ticket builds on it.
+- Starts from: `tools/measure-0-9-3-baseline` and its existing profile collections.
+- Keeps: LLVM source coverage, subprocess profiles, collection failures and existing collected profiles; group reporting does not rerun suites solely to derive partitions.
+- Changes: claims `tools/measure-0-9-3-baseline` `CHANGELOG.md`. Derive line groups by file and line from machine-readable exports of the existing profiles. Exclude tests, including inline test modules, and generated code from the product denominator. Name a focused report-parser test in this claim before adding it.
+- Proof: deterministic report cases cover outside-only, internal-only, overlap, unobserved, zero-hit and failed/missing collections; the four exclusive groups sum to the denominator. Run `--only coverage` through the build job separately from routine qualification and record completeness. A failed collection never produces an unqualified percentage.
+- Defers: final comparison of both product versions to 2082.
 
-- Starts from: `tools/measure-0-9-3-baseline` coverage section.
-- Decisions:
-  - Derive the groups from the outside-in and unit reports the script already merges, per line, with no extra test runs.
-  - Print each group as a line count and a share of the denominator; a group fed by a failed or missing collection prints incomplete, as 2117 does.
-- Changes: claims `tools/measure-0-9-3-baseline` `CHANGELOG.md`.
-- Proof: one run of the coverage section on the Linux gate host; the four line groups sum to the denominator, and the record shows them in this ticket.
-- Order: after 2117 (landed) and 2120; before 2082 runs.
+PM decision: 2026-10-17. Coverage runs on the common build machine. Collection completeness is a separate reporting dimension, not a fifth disjoint set of source lines. Resolve the script's inline-test denominator before calling the result product-only.
