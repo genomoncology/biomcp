@@ -695,6 +695,7 @@ fn swallowed_source_failures_do_not_log_credentials() {
             ("BIOMCP_PUBTATOR_BASE", &fixture.base_url),
             ("BIOMCP_LITVAR_BASE", &fixture.base_url),
             ("NCBI_API_KEY", SECRET),
+            ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
             ("BIOMCP_TEST_RETRY_SLEEP_OFF", "1"),
             ("HTTP_PROXY", &deny_proxy.url),
             ("HTTPS_PROXY", &deny_proxy.url),
