@@ -4,7 +4,7 @@ priority: 4
 
 # 2082 — Measure both releases under comparable conditions
 
-Status: COMPLETE.
+Status: OPEN.
 
 Milestone: 0.9.3
 Depends on: 2073
@@ -44,6 +44,14 @@ Depends on: 2177
 Reviews: revision 4160f2f, accept
 
 Reviews: revision ff6ce34, accept
+
+Reopened: 2026-10-17 — PM added five research defects after measurement landed; refresh only affected candidate rows after their fixes, preserving valid old and unrelated runtime measurements.
+
+Depends on: 2179
+Depends on: 2180
+Depends on: 2181
+Depends on: 2182
+Depends on: 2183
 
 ## Outcome
 
@@ -100,3 +108,6 @@ Landing-gate RED before the selection correction:2082/1792272548440-79852 failed
 
 
 Selection correction GREEN: Sourcecc6a4b4f090511a4258bbb59e0b7cf1e6522c423 adds only the conventional module marker and its truthful fake-artifact-path comment. Job2082/1792272865499-11576 ran uv sync --extra dev --no-install-project, then uv run --no-sync pytest -q tests/test_ci_workflow_contract.py::test_the_binary_dependent_modules_carry_the_marker tests/test_measurement_summary_contract.py: all12cases passed. Ruff format/check passed on the module. No guard, measurement tool, product source, formal measurements or coverage method changed. This test-selection correction does not invalidate the recorded immutable product comparison. The accepted4160f2f6f data review remains evidence for the unchanged raw data; a fresh review checks this final delta and record before normal landing.
+
+
+Coordinator refresh scope: PM added five research findings after the comparison landed. Preserve the completed immutable old arm and all unaffected runtime rows. After the product fixes land and main passes, refresh only affected candidate build/test/spec/lint, release size/IR, source-share and coverage observations using the existing reviewed harness and collection method. Determine which runtime rows exercise changed paths before rerunning any. No new harness feature or optimization is authorized. Read the existing record and report the minimal execution plan before collection; no build or timing while current product lanes run. The supported API proof corrections and unavailable PDF evidence are not reasons to invent performance values. Final rehearsal still follows the final measurement landing.
