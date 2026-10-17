@@ -12,7 +12,7 @@ Depends on: 2154
 
 - Starts from: `.github/workflows/ci.yml`, `.github/workflows/docs-edge.yml`, `tests/test_ci_workflow_contract.py`, and the existing documentation-publication contracts.
 - Keeps: manual CI runs exercise the relevant checks rather than skipping them behind old push-only conditions; manual documentation runs retain the publication revision check; release tag triggers and all publication safeguards remain unchanged.
-- Changes: `.github/workflows/ci.yml` `.github/workflows/docs-edge.yml` `tests/test_ci_workflow_contract.py` `tests/test_release_workflow_provenance.py` `CHANGELOG.md`.
+- Changes: claims `.github/workflows/ci.yml` `.github/workflows/docs-edge.yml` `tests/test_ci_workflow_contract.py` `tests/test_docs_publication_contract.py` `tests/test_release_workflow_provenance.py` `CHANGELOG.md`.
 - Proof: on current main, demonstrate the automatic push and pull-request triggers through a failing workflow contract check; run the updated contracts through the build job and prove the workflows admit manual runs while automatic push and pull-request triggers are absent. Check the release workflow trigger is unchanged. Run the existing mechanical checks before reporting.
 - Defers: callable release qualification, untagged full rehearsal and moving documentation publication into the release workflow belong to the subsequent release-workflow ticket.
 
