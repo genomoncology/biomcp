@@ -38,6 +38,7 @@
 
 ### Internal
 
+- Qualify release revisions directly and rehearse complete untagged candidates without publication credentials or external publication. (2161)
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - The no-entity annotation regression returns an empty reply for both PubTator and LitVar2 autocomplete through one shared fixture handler, so an empty LitVar2 match stays a healthy zero-row answer and the test no longer mistakes a missing fixture route for an outage. (2154)

@@ -219,7 +219,7 @@ def test_the_routine_lanes_share_one_build_job_and_run_in_parallel() -> None:
 
 def test_ci_runs_only_when_dispatched_manually() -> None:
     triggers = DOC.get("on", DOC.get(True))
-    assert triggers == {"workflow_dispatch": None}
+    assert triggers == {"workflow_dispatch": None, "workflow_call": {"inputs": {"revision": {"required": True, "type": "string"}}}}
 
 
 def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
@@ -236,7 +236,7 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
     assert output.read_text(encoding="utf-8") == "docs_only=false\n"
     for jid in RUST_JOBS:
         assert _job(jid)["if"].strip() == (
-            "github.event_name == 'workflow_dispatch' && "
+            "(github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && "
             "needs.changes.outputs.docs_only != 'true'"
         ), f"{jid} must run for a manual dispatch on the selected revision"
 

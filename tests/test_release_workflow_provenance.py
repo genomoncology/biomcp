@@ -14,16 +14,53 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 RELEASE_WORKFLOW = WORKFLOWS / "release.yml"
 
+
+def test_manual_release_accepts_an_untagged_candidate_for_full_rehearsal() -> None:
+    workflow = yaml.safe_load(RELEASE_WORKFLOW.read_text(encoding="utf-8"))
+    inputs = workflow[True]["workflow_dispatch"]["inputs"]
+    assert "candidate_sha" in inputs, "rehearsal must accept an untagged revision"
+    assert "rehearsal_version" in inputs
+    assert inputs["tag"]["required"] is False
+    assert workflow["jobs"]["qualification"]["uses"] == "./.github/workflows/ci.yml"
+    assert "gh run list" not in _job_block(
+        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "version-check"
+    ), "release qualification must run directly, without a preceding push run"
+
+
+def test_rehearsal_builds_have_no_publication_permissions_or_credentials() -> None:
+    jobs = yaml.safe_load(RELEASE_WORKFLOW.read_text(encoding="utf-8"))["jobs"]
+    for name in (
+        "version-check", "qualification", "release-gate", "build", "pypi-build",
+        "wheel-smoke", "rehearsal-docs", "rehearsal-container",
+        "rehearsal-payloads", "rehearsal-complete",
+    ):
+        job = jobs[name]
+        assert "write" not in job.get("permissions", {}).values(), name
+        serialized = yaml.safe_dump(job)
+        for publisher in (
+            "docker/login-action@", "gh release create", "gh release upload",
+            "uv publish", "mkdocs gh-deploy", "HOMEBREW_TAP_TOKEN",
+            "id-token: write", "push: true",
+        ):
+            assert publisher not in serialized, (name, publisher)
+    for name in ("create-draft", "publish-assets", "docs-publish", "pypi-publish",
+                 "homebrew-tap", "publish-release"):
+        assert jobs[name]["if"] == "github.event_name == 'push'", name
+    assert "!inputs.candidate_sha" in jobs["container-publish"]["if"]
+
 EXPECTED_NEEDS = {
     "version-check": [],
-    "release-gate": ["version-check"],
-    "create-draft": ["version-check"],
+    "qualification": ["version-check"],
+    "release-gate": ["version-check", "qualification"],
+    "create-draft": ["version-check", "qualification"],
     # No archive is built before the release-gate marker set
     # passes, so build and pypi-build wait on the marker job.
-    "build": ["version-check", "create-draft", "release-gate"],
+    "build": ["version-check", "release-gate"],
+    "publish-assets": ["build", "create-draft"],
     "pypi-build": ["version-check", "release-gate"],
     "wheel-smoke": ["pypi-build"],
-    "docs-live": ["version-check"],
+    "docs-publish": ["version-check", "qualification"],
+    "docs-live": ["version-check", "qualification", "docs-publish"],
     # PyPI last (2026-09-28): every build and smoke job first.
     "pypi-publish": ["pypi-build", "wheel-smoke", "docs-live", "build", "container-publish"],
     # The release is public before the tap lands.
@@ -41,6 +78,7 @@ EXPECTED_NEEDS = {
         "version-check",
         "wheel-smoke",
         "create-draft",
+        "publish-assets",
     ],
     "publish-release": [
         "build",
@@ -71,7 +109,7 @@ def _needs(block: str) -> list[str]:
 def _assert_release_contract(workflow: str) -> None:
     assert "push:\n    tags: ['v*']" in workflow
     assert "permissions: {}" in workflow
-    assert "group: release-${{ inputs.tag || github.ref_name }}" in workflow
+    assert "group: release-${{ inputs.candidate_sha || inputs.tag || github.ref_name }}" in workflow
     assert "github.event.release.tag_name" not in workflow
     for job, needs in EXPECTED_NEEDS.items():
         assert _needs(_job_block(workflow, job)) == needs, job
@@ -95,18 +133,17 @@ def _assert_release_contract(workflow: str) -> None:
 
     expected_ifs = {
         "create-draft": "if: github.event_name == 'push'",
-        "build": "if: github.event_name == 'push'",
-        "pypi-build": "if: github.event_name == 'push'",
-        "wheel-smoke": "if: github.event_name == 'push'",
+        "build": "if: github.event_name == 'push' || inputs.candidate_sha != ''",
+        "pypi-build": "if: github.event_name == 'push' || inputs.candidate_sha != ''",
+        "wheel-smoke": "if: github.event_name == 'push' || inputs.candidate_sha != ''",
         "pypi-publish": "if: github.event_name == 'push'",
         "homebrew-tap": "if: github.event_name == 'push'",
         "publish-release": "if: github.event_name == 'push'",
-        "release-gate": "if: github.event_name == 'push'",
+        "release-gate": "if: github.event_name == 'push' || inputs.candidate_sha != ''",
     }
     for job, condition in expected_ifs.items():
         assert condition in _job_block(workflow, job), job
     assert "\n    if:" not in _job_block(workflow, "version-check")
-    assert "\n    if:" not in _job_block(workflow, "docs-live")
 
     container = _job_block(workflow, "container-publish")
     for clause in (
@@ -141,7 +178,8 @@ def _assert_release_contract(workflow: str) -> None:
         "version-check": "contents: read",
         "release-gate": "contents: read",
         "create-draft": "contents: write",
-        "build": "contents: write",
+        "build": "contents: read",
+        "publish-assets": "contents: write",
         "pypi-build": "contents: read",
         "docs-live": "contents: read",
         "homebrew-tap": "contents: read",
@@ -159,8 +197,8 @@ def _assert_release_contract(workflow: str) -> None:
     # notes, rendered from the checked-out tag.
     assert "release/release_notes.py" in draft
     assert "--notes-file" in draft
-    build = _job_block(workflow, "build")
-    assert 'gh release upload "$TAG"' in build and "--clobber" in build
+    assets = _job_block(workflow, "publish-assets")
+    assert 'gh release upload "$TAG"' in assets and "--clobber" in assets
     assert "skip-existing" not in workflow and "skip_existing" not in workflow
 
     smoke = _job_block(workflow, "wheel-smoke")
@@ -338,7 +376,6 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     # only a push run on main counts — the branch and the event
     # ride with the gh flags and the jq filter, and the count is
     # piped through jq so the filter runs in this script.
-    ("version-check", "Require green CI on the tagged commit"): "8af9d987bd8989ca1e5d1af8ee8120d374fb8faca5033985d1cdc25f9bf0c59b",
     # The marker-set job's run steps are pinned like the pipeline
     # jobs' — the fetch feeds the offline compile and the make
     # target is the marker selection itself.
@@ -378,7 +415,6 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
         "Require the tag and committed versions to agree",
         "Require the changelog to cover merged tickets",
-        "Require green CI on the tagged commit",
     ],
     # 2026-09-28 round three: EVERY release job is pinned, not only
     # the four above — pypi-publish uploads to PyPI, so a new first
@@ -406,7 +442,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "Build and package inside the manylinux 2_28 container",
         "Package (macOS)",
         "Package (Windows)",
-        "Upload release assets",
+        "Retain archive and checksum",
     ],
     "container-publish": [
         "Check out the packaging ref",
@@ -899,24 +935,25 @@ def test_release_locked_build_assertion_catches_a_dropped_flag(tmp_path: Path) -
 # and must break the contract.
 EXPECTED_JOB_IFS = {
     "create-draft": "github.event_name == 'push'",
-    "release-gate": "github.event_name == 'push'",
-    "build": "github.event_name == 'push'",
-    "pypi-build": "github.event_name == 'push'",
-    "wheel-smoke": "github.event_name == 'push'",
+    "release-gate": "github.event_name == 'push' || inputs.candidate_sha != ''",
+    "build": "github.event_name == 'push' || inputs.candidate_sha != ''",
+    "pypi-build": "github.event_name == 'push' || inputs.candidate_sha != ''",
+    "wheel-smoke": "github.event_name == 'push' || inputs.candidate_sha != ''",
     "pypi-publish": "github.event_name == 'push'",
     "homebrew-tap": "github.event_name == 'push'",
     "publish-release": "github.event_name == 'push'",
     "container-publish": (
-        "!cancelled() && ((github.event_name == 'push' && success()) || "
+        "!cancelled() && !inputs.candidate_sha && ((github.event_name == 'push' && success()) || "
         "(inputs.container_only == true && needs.version-check.result == 'success' && "
         "needs.docs-live.result == 'success' && needs.create-draft.result == 'skipped' && "
-        "needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped'))"
+        "needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped' && "
+        "needs.publish-assets.result == 'skipped'))"
     ),
 }
 
 
 def _assert_publish_gating(parsed: dict) -> None:
-    for job in ("version-check", "docs-live"):
+    for job in ("version-check",):
         assert "if" not in parsed["jobs"][job], f"{job}: must run unconditionally"
     for job, expected in EXPECTED_JOB_IFS.items():
         actual = parsed["jobs"][job].get("if")
@@ -926,7 +963,7 @@ def _assert_publish_gating(parsed: dict) -> None:
     # `!cancelled()` re-runs a job after an upstream failure. Only the
     # container rebuild path may use it; a publish path never may.
     for job, spec in parsed["jobs"].items():
-        if job == "container-publish":
+        if job in ("container-publish", "docs-live"):
             continue
         assert "!cancelled()" not in (spec.get("if") or ""), (
             f"{job}: !cancelled() is forbidden"
@@ -1369,15 +1406,15 @@ def test_removing_each_needs_edge_breaks_the_contract(
     "needle,replacement",
     [
         (
-            'run: python3 scripts/check-release-versions.py --tag "$TAG"',
-            'run: python3 scripts/check-release-versions.py --tag "$TAG" || true',
+            '            python3 scripts/check-release-versions.py --tag "$TAG"',
+            '            python3 scripts/check-release-versions.py --tag "$TAG" || true',
         ),
         (
-            'run: python3 scripts/check-release-versions.py --tag "$TAG"',
-            'run: python3 scripts/check-release-versions.py --tag "$TAG" || :',
+            '            python3 scripts/check-release-versions.py --tag "$TAG"',
+            '            python3 scripts/check-release-versions.py --tag "$TAG" || :',
         ),
         (
-            'run: python3 scripts/check-changelog-coverage.py --tag "$TAG"',
+            'run: python3 scripts/check-changelog-coverage.py --tag "$TAG" --revision HEAD',
             'run: python3 scripts/check-changelog-coverage.py --tag "$TAG"; exit 0',
         ),
         (
@@ -2011,6 +2048,9 @@ def _assert_tool_did_not_run(log: Path, prefix: str, where: str) -> None:
 def _write_release_checksums(scratch: Path, arm64: str | None = None) -> None:
     """The dist/ the Homebrew step downloads: both platform checksums,
     or only x86 when arm64 is None."""
+    helper_dir = scratch / "release"
+    helper_dir.mkdir(exist_ok=True)
+    shutil.copy2(REPO_ROOT / "release" / "homebrew_formula.py", helper_dir)
     dist = scratch / "dist"
     dist.mkdir(parents=True, exist_ok=True)
     (dist / "biomcp-darwin-x86_64.tar.gz.sha256").write_text(
@@ -2180,189 +2220,6 @@ def test_homebrew_rehearsal_exit_zero_deleted_lets_git_run(tmp_path: Path) -> No
     assert mutated != script
     with pytest.raises(AssertionError, match="must not touch git"):
         _assert_homebrew_guard_behavior(mutated, tmp_path)
-
-
-def _ci_gate_script() -> str:
-    return _guard_run_script("version-check", "Require green CI on the tagged commit")
-
-
-@pytest.mark.parametrize("repository", [PRODUCTION_REPOSITORY, REHEARSAL_REPOSITORY])
-def test_the_ci_gate_accepts_a_green_main_push_run_and_names_the_commit(
-    tmp_path: Path, repository: str
-) -> None:
-    """Ticket 2053: the release waits on ci.yml success for the exact
-    commit; the query names the workflow and the SHA, so it can never
-    pick another workflow's run. Ticket 2125: only a push run on main
-    counts, so the query carries the branch and the event and jq
-    selects on them in this script."""
-    log = tmp_path / f"ci-green-{repository.replace('/', '-')}.log"
-    result = _run_guard_script(
-        _ci_gate_script(),
-        tmp_path,
-        repository=repository,
-        log=log,
-        extra_env={
-            "GH_RUN_LIST_REPLY": (
-                '[{"conclusion":"success","event":"push","headBranch":"main"}]'
-            )
-        },
-    )
-    assert result.returncode == 0, result.stderr
-    assert "finished green on main" in result.stdout
-    calls = " ".join(_log_lines(log))
-    assert "gh run list --workflow ci.yml --commit " in calls
-    assert "f" * 40 in calls
-    assert "--branch main" in calls and "--event push" in calls
-    assert "--limit 100" in calls
-    assert "--json conclusion,event,headBranch" in calls
-    # The old filter used --status and --conclusion, flags no
-    # shipped gh accepts.
-    assert "--status completed" not in calls
-    assert " --conclusion " not in calls
-
-
-def test_the_ci_gate_refuses_a_commit_whose_only_green_run_is_a_branch_run(
-    tmp_path: Path,
-) -> None:
-    """Ticket 2125: 393737eae carried a failed ci.yml run on main and
-    a green ticket-branch run of the same commit, and the gate that
-    counted any successful run would have released a tag there — a
-    fast-forwarded ticket branch is green without the main-only
-    lanes. Only a push run of ci.yml on main counts, so the gate
-    refuses; against the pre-2125 script this test fails, because
-    that script counts the branch run."""
-    reply = (
-        '[{"conclusion":"failure","event":"push","headBranch":"main"},'
-        '{"conclusion":"success","event":"push",'
-        '"headBranch":"ticket/2074-release-checks-on-every-branch-push"}]'
-    )
-    result = _run_guard_script(
-        _ci_gate_script(),
-        tmp_path,
-        repository=PRODUCTION_REPOSITORY,
-        log=tmp_path / "ci-branch-only.log",
-        extra_env={"GH_RUN_LIST_REPLY": reply},
-    )
-    assert result.returncode != 0
-    assert "refusing to release" in result.stderr
-
-
-def test_the_ci_gate_counts_only_the_main_push_run_among_mixed_runs(
-    tmp_path: Path,
-) -> None:
-    """Ticket 2125: pull-request runs and ticket-branch runs of the
-    same commit, green or not, count for nothing; one green main
-    push run is the release's green run."""
-    reply = (
-        '[{"conclusion":"success","event":"push","headBranch":"ticket/2074-x"},'
-        '{"conclusion":"success","event":"pull_request","headBranch":"ticket/2074-x"},'
-        '{"conclusion":"failure","event":"push","headBranch":"main"},'
-        '{"conclusion":"success","event":"push","headBranch":"main"}]'
-    )
-    result = _run_guard_script(
-        _ci_gate_script(),
-        tmp_path,
-        repository=PRODUCTION_REPOSITORY,
-        log=tmp_path / "ci-mixed.log",
-        extra_env={"GH_RUN_LIST_REPLY": reply},
-    )
-    assert result.returncode == 0, result.stderr
-    assert "finished green on main" in result.stdout
-
-
-def test_the_ci_gate_flags_parse_on_the_real_gh_cli() -> None:
-    """Ticket 2060: the CI gate's gh flags must parse on a real gh
-    binary. Flag errors happen before any network call, so running
-    the step's exact invocation surfaces an unsupported flag at
-    once. The stub gh accepts every flag, and a runner's gh rejected
-    the release tag's --conclusion, so only the real binary can
-    prove the flag surface."""
-    gh = shutil.which("gh")
-    assert gh is not None, (
-        "the CI gate's flags must be proven against the real gh CLI "
-        "on PATH; the stub gh accepts any flag"
-    )
-    script = _ci_gate_script()
-    # Collapse the shell's line continuations, then take the exact
-    # gh invocation the step runs: from `gh run list` to the closing
-    # `)"` at the end of the assignment line.
-    one_line = re.sub(r"\\\n\s*", " ", script)
-    match = re.search(r'gh (run list [^\n]*?)\)"', one_line)
-    assert match is not None, "the CI gate must run gh run list"
-    command = match.group(1)
-    # The branch and event filters are part of the query the runner
-    # must accept, not text only jq sees.
-    assert "--branch main" in command and "--event push" in command
-    assert "--json conclusion,event,headBranch" in command
-    commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
-    env = {
-        key: value
-        for key, value in os.environ.items()
-        if not key.startswith("GH_")
-    }
-    env.update(
-        GH_REPO=PRODUCTION_REPOSITORY,
-        # A deliberately invalid token keeps the run from spending a
-        # host credential; flags parse before any request leaves.
-        GH_TOKEN="flag-parse-check-only",
-        GITHUB_SHA=commit,
-    )
-    result = subprocess.run(
-        ["bash", "-c", f'exec "{gh}" {command}'],
-        capture_output=True,
-        text=True,
-        env=env,
-        cwd=REPO_ROOT,
-    )
-    output = result.stdout + result.stderr
-    assert "unknown flag" not in output, (
-        f"the CI gate uses a flag the real gh CLI rejects:\n{output}"
-    )
-    # An invalid flag makes gh print its usage text; a real answer
-    # (green, empty, or an auth failure) never does.
-    assert "Usage:" not in output, (
-        f"gh answered the CI gate with its usage text:\n{output}"
-    )
-
-
-@pytest.mark.parametrize("reply", ["0", "", "[]"])
-def test_the_ci_gate_refuses_when_no_green_run_exists(
-    tmp_path: Path, reply: str
-) -> None:
-    """A commit with no finished green ci.yml run — CI missing, still
-    running, or failed — fails the release. The count must be a
-    plain nonzero number: the jq filter turns an empty run list
-    into 0, and a raw [] or anything else means gh or jq answered
-    something other than a count, so the release refuses too."""
-    result = _run_guard_script(
-        _ci_gate_script(),
-        tmp_path,
-        repository=PRODUCTION_REPOSITORY,
-        log=tmp_path / f"ci-refuse-{reply or 'empty'}.log",
-        extra_env={"GH_RUN_LIST_REPLY": reply},
-    )
-    assert result.returncode != 0
-    assert "refusing to release" in result.stderr
-
-
-def test_the_ci_gate_fails_when_gh_fails(tmp_path: Path) -> None:
-    """A failing gh call must fail the step, not read as zero runs
-    and quietly release."""
-    result = _run_guard_script(
-        _ci_gate_script(),
-        tmp_path,
-        repository=PRODUCTION_REPOSITORY,
-        log=tmp_path / "ci-gh-fails.log",
-        extra_env={"GH_STUB_FAIL": "1"},
-    )
-    assert result.returncode != 0
-    assert "refusing to release" in result.stderr or "gh failed" in result.stderr
 
 
 def test_the_release_gate_marker_job_and_make_run_the_same_selection() -> None:

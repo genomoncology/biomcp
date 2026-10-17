@@ -57,6 +57,7 @@ def parse_args() -> argparse.Namespace:
         help="the branch form: cover tickets whose diffs change shipped behavior",
     )
     parser.add_argument("--changelog", type=Path, default=Path("CHANGELOG.md"))
+    parser.add_argument("--revision", help="untagged release candidate revision (with --tag for its version)")
     return parser.parse_args()
 
 
@@ -71,8 +72,8 @@ def version_key(tag: str) -> tuple[int, ...]:
     return tuple(int(part) for part in tag[1:].split("."))
 
 
-def previous_tag(tag: str) -> str | None:
-    tags = run_git("tag", "--merged", tag, "--sort=version:refname").splitlines()
+def previous_tag(tag: str, revision: str | None = None) -> str | None:
+    tags = run_git("tag", "--merged", revision or tag, "--sort=version:refname").splitlines()
     older = [
         candidate
         for candidate in tags
@@ -137,7 +138,7 @@ def status_token(content: str) -> str:
     return ""
 
 
-def completed_status_tickets(previous: str, tag: str) -> set[str]:
+def completed_status_tickets(previous: str, tag: str, version: str | None = None) -> set[str]:
     names = run_git(
         "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/tickets/"
     ).splitlines()
@@ -145,7 +146,7 @@ def completed_status_tickets(previous: str, tag: str) -> set[str]:
     # tickets only. Carried tickets from another line (the 1.0
     # planning records landed mid-cycle) complete on their own line
     # and never demand a bullet here.
-    line = re.match(r"v(\d+)\.(\d+)", tag)
+    line = re.match(r"v(\d+)\.(\d+)", version or tag)
     line_prefix = f"{line.group(1)}.{line.group(2)}" if line else None
     found: set[str] = set()
     for name in names:
@@ -166,7 +167,7 @@ def completed_status_tickets(previous: str, tag: str) -> set[str]:
     return found
 
 
-def merged_tickets(previous: str, tag: str) -> set[str]:
+def merged_tickets(previous: str, tag: str, version: str | None = None) -> set[str]:
     # No single source is complete: a landing can be a Land subject,
     # an old-pattern merge subject, or a record file, and a ticket can
     # close with none of them when its work lands as plain commits
@@ -176,7 +177,7 @@ def merged_tickets(previous: str, tag: str) -> set[str]:
     return (
         landing_subject_tickets(previous, tag)
         | record_tickets(previous, tag)
-        | completed_status_tickets(previous, tag)
+        | completed_status_tickets(previous, tag, version)
     )
 
 
@@ -449,6 +450,9 @@ def milestone_problems(
 def main() -> int:
     args = parse_args()
     if args.branch:
+        if args.revision:
+            print("--revision requires --tag", file=sys.stderr)
+            return 1
         try:
             return branch_main(args.changelog)
         except RuntimeError as error:
@@ -461,15 +465,16 @@ def main() -> int:
         )
         return 1
     try:
-        previous = previous_tag(args.tag)
+        revision = args.revision or args.tag
+        previous = previous_tag(args.tag, revision)
         if previous is None:
             print("no previous release; nothing to cover")
             return 0
-        tickets = merged_tickets(previous, args.tag)
+        tickets = merged_tickets(previous, revision, args.tag)
         label, section = section_text(args.changelog, args.tag)
         described = described_tickets(section)
         problems = milestone_problems(
-            section, args.tag.removeprefix("v"), tag_ticket_reader(args.tag)
+            section, args.tag.removeprefix("v"), tag_ticket_reader(revision)
         )
     except RuntimeError as error:
         print(f"changelog coverage check failed: {error}", file=sys.stderr)

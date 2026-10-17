@@ -13,6 +13,33 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "scripts" / "check-changelog-coverage.py"
 
+
+def test_release_candidate_coverage_needs_no_created_tag(tmp_path: Path) -> None:
+    def git(*args: str) -> None:
+        subprocess.run([
+            "git", "-C", str(tmp_path), "-c", "user.name=Test", "-c",
+            "user.email=test@example.invalid", *args,
+        ], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("commit", "--allow-empty", "-qm", "Previous release")
+    git("tag", "v0.9.0")
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text(
+        "## 0.9.1\n\n- Qualify the release candidate without creating a tag. (2161)\n",
+        encoding="utf-8",
+    )
+    git("add", ".")
+    git("commit", "-qm", "Land 2161: qualify the candidate")
+    result = subprocess.run([
+        sys.executable, str(CHECK), "--tag", "v0.9.1", "--revision", "HEAD",
+    ], cwd=tmp_path, text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    assert "covers all 1 tickets" in result.stdout
+    assert subprocess.check_output([
+        "git", "-C", str(tmp_path), "tag", "--list", "v0.9.1",
+    ], text=True) == ""
+
 _SPEC = importlib.util.spec_from_file_location("check_changelog_coverage", CHECK)
 _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
