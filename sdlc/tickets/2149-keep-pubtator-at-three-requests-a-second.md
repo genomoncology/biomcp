@@ -76,3 +76,7 @@ cargo nextest run --no-default-features -E 'test(sources::rate_limit::tests::pub
 Start from pushed `7f701bfac`. Keep its implementation and existing evidence. The outcome means the PubTator policy never receives the keyed E-utilities uplift. The eight files named in Changes are the implementation claim; this record only reconciles the approved contract. Existing interval tests are retained as a numeric boundary regression instead of adding duplicate network timing tests. Before further implementation, rerun the corrected PubTator expectation against main `078ce756d` through a build job; it must fail with 100 ms versus 334 ms, while the keyed E-utilities expectation remains green. Then run those same interval tests against this branch.
 
 Primary source rechecked 2026-10-17: <https://www.ncbi.nlm.nih.gov/research/pubtator3/> embeds its API Documentation in <https://www.ncbi.nlm.nih.gov/research/pubtator3/main.b1489e87146c1c50.js>. It says users should post no more than three requests per second and grants no keyed rate. E-utilities separately documents its keyed uplift at <https://www.ncbi.nlm.nih.gov/books/NBK25497/>.
+
+## Progress
+
+- 2026-10-17 started
