@@ -6205,7 +6205,7 @@ mod tests {
             let body: &[u8] = if first_line.starts_with("GET /query") {
                 // MyVariant resolves ABCC8 R1436Q to a hit carrying only the
                 // gene and p.R1436Q, so the run selects exactly two aliases.
-                br#"{"total":1,"hits":[{"_id":"fixture-abcc8","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"]}}]}\"#
+                br#"{"total":1,"hits":[{"_id":"fixture-abcc8","dbnsfp":{"genename":["ABCC8"],"hgvsp":["p.R1436Q"]}}]}"#
             } else if first_line.starts_with("GET /entrez/eutils/esearch.fcgi") {
                 let term = decoded("term");
                 if term.contains("p.R1436Q") && term.contains("[Title/Abstract]") {
