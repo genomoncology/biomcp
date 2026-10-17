@@ -554,7 +554,9 @@ fn batch_help_includes_examples_and_limits() {
     assert!(help.contains("Article compact mode accepts up to 20 IDs"));
     assert!(help.contains("Each call must use a single entity type."));
     assert!(help.contains("Article batch sections: annotations, fulltext, indexing, tldr, all",));
-    assert!(help.contains("--pdf adds the Semantic Scholar open-PDF fulltext"));
+    assert!(help.contains(
+        "`--pdf` adds the Semantic Scholar open-PDF fulltext fallback; article detail batches only"
+    ));
     assert!(help.contains(
         "biomcp batch article 22663011,24200969 --mode detail --sections fulltext --pdf"
     ));
@@ -691,21 +693,4 @@ fn sync_text_output_reports_its_message_not_a_change_flag() {
     )
     .expect("sync text should render");
     assert_eq!(outcome.text, "EMA data synchronized successfully.\n");
-}
-
-#[test]
-fn tmp_dump_batch_long_help_bytes() {
-    use clap::CommandFactory;
-    let mut cli = crate::cli::Cli::command();
-    let batch = cli
-        .find_subcommand_mut("batch")
-        .expect("batch subcommand should exist");
-    let mut help = Vec::new();
-    batch
-        .write_long_help(&mut help)
-        .expect("batch help should render");
-    eprintln!(
-        "BEGIN-HELP-BYTES>>>{:?}<<<END",
-        String::from_utf8_lossy(&help)
-    );
 }
