@@ -28,3 +28,5 @@ Depends on: 2161
 Coordinator decision: stable metadata preparation is necessary for the approved exact-candidate rehearsal. Run 2082 after this ticket, using both product revisions and one corrected measurement harness. The formula remains a template; this ticket does not publish it.
 
 Current-main integration review accepted 51940b580. Exact published candidate qualification 1792257014937-42177 passed version synchronization, stable v0.9.3 validation, current changelog coverage for all 84 tickets since v0.9.2 and 48 cases across the four affected release-aware modules. Preserve the formula placeholder. No tag or publication occurred. The combined candidate still receives its ordinary landing gate and actual-main full check.
+
+Shared candidate gate 1792258000386-53996 failed the release-process version facts in the CLI surface quality check after stable metadata changed. Correct the release guide version facts to match the committed stable package versions and run the affected release-version contract plus quality checks. Preserve all release qualification and rehearsal behavior.
