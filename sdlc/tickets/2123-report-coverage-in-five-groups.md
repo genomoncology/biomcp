@@ -4,9 +4,11 @@ priority: 3
 
 # 2123 — Report coverage overlap and collection completeness
 
-Status: OPEN.
+Status: WITHDRAWN.
 
-Milestone: 0.9.3
+Opened as: 2026-10-17, The coverage overlap report serves no 0.9.3 or later outcome; the final measurement uses the existing coverage groups..
+
+Milestone: 0.9.4
 
 ## Outcome
 
@@ -22,3 +24,5 @@ Depends on: 2120
 - Defers: final comparison of both product versions to 2082.
 
 PM decision: 2026-10-17. Coverage runs on the common build machine. Collection completeness is a separate reporting dimension, not a fifth disjoint set of source lines. Resolve the script's inline-test denominator before calling the result product-only.
+
+PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every bug is fixed; this ticket improves tests, tooling or dependencies and fixes no user-facing bug. Rebase onto main before resuming; earlier reviews cover the old base only.

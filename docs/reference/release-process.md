@@ -2,6 +2,12 @@
 
 BioMCP publishes from `.github/workflows/release.yml`. A push of a stable tag matching `v*` starts a release. The workflow creates the GitHub release as a draft, validates and publishes the artifacts, then makes the release public last. A manual dispatch can validate an existing tag, republish its container image, or rehearse an untagged candidate without publishing.
 
+## Local qualification
+
+`make main-gate` runs the routine gate followed by `make repo-audit` and `make full-feature-check`. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks.
+
+`make release-gate` requires the full-feature check with `FULL_FEATURE_PROFILE=release`, including the optimized executable's PNG, SVG and terminal output checks, before release-profile specifications. Complete this qualification and the final nonpublishing release rehearsal before tagging. The rehearsal must build optimized artifacts and exercise their output checks.
+
 ## Tag-push release
 
 Prepare and commit every public version file and the versioned CHANGELOG section before pushing the tag. Pre-release tags are not supported.

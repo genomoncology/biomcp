@@ -4,9 +4,15 @@ priority: 3
 
 # 2073 — Delete the benchmark harness and serve-sse leftovers
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 64b0582, accept
+
+Reviews: revision 4428b4e, accept
+
+Landed: 4428b4e (fast-forward: Accepted source landed inside carrier 61a8b075ef075e5650dbb85f8572ee8a341803ad with shared gate1792256340018-55751; individual review retained and actual-main full check follows the batch.)
 
 ## Outcome
 
@@ -21,3 +27,5 @@ Depends on: 2159
 - Defers: unrelated test-only code to 2081.
 
 PM decision: 2026-10-17. Reuse the existing implementation; rebase and review its actual merged result. Do not restore obsolete exact package-count edits after 2159.
+
+PM decision: 2026-10-17. Back in 0.9.3. Faster tests and builds are a 0.9.3 goal, and this ticket carries it. Rebase onto main before resuming; earlier reviews cover the old base only.

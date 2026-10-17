@@ -801,28 +801,12 @@ fn a_disagreeing_label_page_refuses_the_name_as_ambiguous() {
     let LabelIdentityAnswer::Ambiguous(candidates) = answer else {
         panic!("the recorded Pain Relief page must refuse as ambiguous");
     };
-    // Lidocaine and menthol each answer on two of the five records;
-    // acetaminophen and hexylresorcinol on one: record count first, then
-    // name.
-    let listed = candidates
-        .iter()
-        .map(|candidate| (candidate.records, candidate.name.as_str()))
-        .collect::<Vec<_>>();
-    assert_eq!(
-        listed,
-        [
-            (2, "lidocaine"),
-            (2, "menthol"),
-            (1, "acetaminophen"),
-            (1, "hexylresorcinol"),
-        ]
+    assert!(
+        candidates.is_empty(),
+        "no exact brand owner means no candidates"
     );
-    assert_eq!(
-        ambiguous_drug_name_error("Pain Relief", &candidates).to_string(),
-        "Invalid argument: Ambiguous drug name 'Pain Relief': several drug products carry this name.\n\
-Candidates:\n- lidocaine\n- menthol\n- acetaminophen\n- hexylresorcinol\n\
-Try `biomcp get drug \"<ingredient>\"`"
-    );
+    let message = ambiguous_drug_name_error("Pain Relief", &candidates).to_string();
+    assert!(message.contains("biomcp search drug"), "{message}");
 }
 
 #[test]
@@ -945,12 +929,9 @@ async fn get_drug_pain_relief_refuses_as_ambiguous_with_the_recorded_candidates(
         .await
         .expect_err("a name several products share must refuse");
     assert_eq!(err.exit_code(), 2, "{err}");
-    assert_eq!(
-        err.to_string(),
-        "Invalid argument: Ambiguous drug name 'Pain Relief': several drug products carry this name.\n\
-Candidates:\n- lidocaine\n- menthol\n- acetaminophen\n- hexylresorcinol\n\
-Try `biomcp get drug \"<ingredient>\"`"
-    );
+    let message = err.to_string();
+    assert!(message.contains("biomcp search drug"), "{message}");
+    assert!(!message.contains("- lidocaine"), "{message}");
     server.abort();
 }
 

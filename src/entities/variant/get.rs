@@ -350,7 +350,7 @@ fn protein_change_numbering_note(
 
 /// The requested reference residue and position of a compact substitution
 /// (`R209Q` → `('R', 209)`), when the request names one.
-fn requested_reference_residue(change: &str) -> Option<(char, u32)> {
+pub(super) fn requested_reference_residue(change: &str) -> Option<(char, u32)> {
     let normalized = super::normalize_protein_substitution(change)?;
     let bytes = normalized.as_bytes();
     let digits = bytes.iter().position(|b| b.is_ascii_digit())?;

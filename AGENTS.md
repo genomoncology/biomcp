@@ -1,5 +1,7 @@
 # AGENTS.md — BioMCP
 
+This repository is public and talks only about itself.
+
 BioMCP is a Rust CLI and MCP server with a Python docs/contract harness. The
 Rust runtime lives under `src/`; Python tests, docs checks, and executable
 contracts exercise the shipped CLI/MCP surface.
@@ -38,30 +40,43 @@ https://biomcp.org/:
   ad hoc docs. Specification pages execute prepared paths and must not invoke
   `cargo run`, `cargo build`, `cargo rustc`, `cargo test`, `cargo tree`, or
   `cargo metadata`.
-- Unit/static layers run with `make test`: Rust nextest first, then the Python
-  CLI/MCP/docs contract lane.
+- Unit/static layers run with `make test`: Rust nextest and the Python
+  CLI/MCP/docs contract lane run concurrently.
 
 ## Working
 
-Keep incremental compilation on for the whole edit loop:
+Run affected tests through the build job, leaving `CARGO_INCREMENTAL` unset so the configured compiler cache can run:
 
 ```
-CARGO_INCREMENTAL=1 cargo nextest run --no-default-features -E 'test(...)'
+pm job run <ticket> <revision> -- cargo nextest run --no-default-features -E 'test(...)'
 ```
 
-Keep `CARGO_INCREMENTAL` set for the whole loop and unset it for the gates:
-toggling the setting recompiles the crate.
+Run affected tests during development. Run one Rust build at a time within a lane. Build-job admission schedules independent lanes in parallel.
 
-A test that takes more than a few seconds is a defect to fix, not a cost to
-accept. Run one Rust build at a time on a machine.
+tools/run-offline isolates the network only on Linux, so run any gate that must prove offline behavior on a Linux build host.
 
 There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
 `make spec` is the routine mustmatch contract gate. Routine gates use
 `--no-default-features` so lint, test, and spec share one small Cargo graph;
 that graph does not exercise AlphaGenome. Run `make full-feature-check` for all
-shipped features and the AlphaGenome behavior tests, and `make release-gate`
-for both lanes.
+shipped features and the AlphaGenome behavior tests with the development
+profile, including PNG, SVG and terminal output checks. `make release-gate`
+requires the same full-feature build and output checks with the optimized
+release profile before release-profile specifications. The final release
+rehearsal also requires optimized artifacts and their output checks. `make landing-gate` runs lint, routine tests and
+specifications in order. `make main-gate` runs that standard gate and then
+`make repo-audit` and `make full-feature-check`. The audit stage retains the
+whole-repository source, capture, coupling and CLI surface checks; routine Python
+keeps their focused malformed-input and wrapper checks. Release qualification
+also runs this required audit stage. Routine lint includes test targets. Long, load,
+coverage and release-only packaging checks stay outside per-landing gates.
+Routine test runners warn with the test identity and machine load when a case
+exceeds the threshold in their runner configuration; time alone never fails
+or terminates a test. Assertions still fail. Exhaustive Rust cases use a
+`long_suite_` test name and Python cases use `@pytest.mark.long`. Run these explicitly
+with `make test-long` at release candidate; `make release-gate` includes them.
+Live-service tests and subprocess helpers retain their existing ignored selections.
 
 ## Releases
 
@@ -79,18 +94,20 @@ published tag. Keep container publication in `.github/workflows/release.yml`;
 `spec/surface/docker-image.md` and `tests/test_release_workflow_provenance.py`
 enforce it.
 
-Every release works the checklist at `sdlc/release-checklist.md`, in order, with evidence for each item. Ian cuts every release; the release bar is the tagged commit's green run.
+Every release works the checklist at `sdlc/release-checklist.md`, in order, with evidence for each item. Ian cuts every release after local checks and the full nonpublishing rehearsal pass; the tagged release workflow must also pass.
 
 ## Hygiene
 
 Do not commit secrets, PHI, absolute local paths, planning notes, or local
 runtime state. Keep local caches and generated build outputs out of git.
 
-## CI and merging
+## Landing changes
 
-A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on this on 2026-09-29.
+One coordinator lands one ticket at a time through `pm ticket land`. The configured `ticketsGate` runs `make landing-gate` through the build job on the reviewed merge candidate. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
 
-CI skips the Rust jobs only when every file a push changes is documentation, an `sdlc/` file, or a `notes/` file; the classify job decides by the changed files, never by the commit message, and the repository-contract job still runs the docs and record tests plus the strict documentation build. Never rely on a commit-message prefix to skip CI.
+A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another ticket.
+
+Everyday builds and tests use build jobs. GitHub Actions run for releases after local checks pass, and retain manual dispatch for explicit checks. The release workflow must qualify its candidate directly; a prior CI run on main does not qualify it. Rehearse the full release workflow without publishing before Ian tags a release.
 
 ## Source licensing
 

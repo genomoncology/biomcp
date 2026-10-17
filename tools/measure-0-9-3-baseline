@@ -66,6 +66,12 @@ cd "$CLONE"
 CLONE="$(pwd)"
 LOGD=".cache/measure"
 mkdir -p "$LOGD"
+# Keep temporary fixtures inside the checkout, as the routine gates do.
+# Store security checks deliberately reject symlink components in paths.
+mkdir -p "$LOGD/tmp"
+chmod 700 "$LOGD/tmp"
+TMPDIR="$(cd "$LOGD/tmp" && pwd -P)"
+export TMPDIR
 
 say() { printf '\n### %s — %s\n' "$1" "$2"; }
 result() { printf 'RESULT %s = %s\n' "$1" "$2"; }
@@ -531,12 +537,16 @@ if want_section coverage; then
       nextest)
         summary="$(grep -E 'Summary \[' "$logfile" | tail -1 || true)"
         if [[ -n "$summary" ]]; then
-          n_run="$(cov_clause 'tests? run:' "$summary")"
+          # Fail-fast summaries show executed/selected tests. The
+          # numerator is the work that actually ran.
+          n_run="$(sed -nE 's/.*] +([0-9]+)(\/[0-9]+)? tests? run:.*/\1/p' <<<"$summary")"
           n_passed="$(cov_clause passed "$summary")"
           n_failed="$(cov_clause failed "$summary")"
           n_timeout="$(cov_clause 'timed out' "$summary")"
           n_skipped="$(cov_clause skipped "$summary")"
-          counts="${n_run:-0} run: ${n_passed:-0} passed, ${n_failed:-0} failed, ${n_timeout:-0} timed out, ${n_skipped:-0} skipped"
+          if [[ -n "$n_run" ]]; then
+            counts="${n_run} run: ${n_passed:-0} passed, ${n_failed:-0} failed, ${n_timeout:-0} timed out, ${n_skipped:-0} skipped"
+          fi
         fi
         ;;
       pytest)
@@ -550,13 +560,24 @@ if want_section coverage; then
         fi
         ;;
       spec)
-        pages="$(grep -c '^=== spec page: ' "$logfile" || true)"
+        # Current runners list all selected pages in one header; older
+        # runners print one singular header for each page.
+        pages="$(awk '
+          /^=== spec pages: / {
+            sub(/^=== spec pages: /, ""); sub(/ ===$/, "")
+            aggregate += NF
+          }
+          /^=== spec page: / { singular++ }
+          END { print aggregate + singular }
+        ' "$logfile")"
         failed_pages="$(grep -oE 'spec run failed \([0-9]+\)' "$logfile" | grep -oE '[0-9]+' | tail -1 || true)"
         if [[ -z "$failed_pages" ]]; then
           failed_pages="$(grep -c 'spec page failed: ' "$logfile" || true)"
         fi
         n_failed="$failed_pages"
-        counts="${pages:-0} pages, ${failed_pages:-0} failed"
+        if ((pages > 0)); then
+          counts="${pages} pages, ${failed_pages:-0} failed"
+        fi
         ;;
     esac
     result "coverage_${label}" "exit ${status}; ${counts}"
@@ -603,7 +624,7 @@ if want_section coverage; then
     record_cov_suite integration_tests nextest "$LOGD/cov-integration.exit" "$LOGD/cov-integration.log"
   fi
   timedsh_exit coverage_python_lane "$LOGD/cov-pytest.exit" \
-    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp TMPDIR=\$PWD/$LOGD/tmp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1"
+    "tools/run-offline -- env BIOMCP_ROUTINE_TEST_LANE=1 BIOMCP_BIN=\$PWD/$COVT/debug/biomcp uv run --no-sync pytest tests/ -n 4 --dist loadfile --basetemp $LOGD/pytest-basetemp > $LOGD/cov-pytest.log 2>&1"
   runsh "grep -E '^=+ .* (passed|failed|error).* =+$' $LOGD/cov-pytest.log | tail -2 || true"
   if ((!DRY_RUN)); then
     record_cov_suite python_lane pytest "$LOGD/cov-pytest.exit" "$LOGD/cov-pytest.log"

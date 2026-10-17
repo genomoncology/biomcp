@@ -1,5 +1,7 @@
 from pathlib import Path
 import subprocess
+import shlex
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,3 +63,32 @@ def test_contract_gate_keeps_temporary_paths_in_the_worktree() -> None:
     assert ".cache/routine-test-tmp" in pytest_line
     assert '--basetemp "' in pytest_line
     assert ".cache/routine-test-tmp/pytest" in pytest_line
+
+
+def test_routine_python_selection_excludes_audits_long_and_release_cases(
+    tmp_path: Path,
+) -> None:
+    dry_run = subprocess.run(
+        ["make", "-n", "test-contracts-prepared"],
+        cwd=ROOT, check=True, capture_output=True, text=True,
+    ).stdout
+    command = shlex.split(next(
+        line for line in dry_run.splitlines() if "pytest tests/" in line
+    ))
+    selection = command[command.index("-m") + 1]
+    (tmp_path / "pytest.ini").write_text(
+        "[pytest]\nmarkers =\n    repo_audit\n    long\n    release_gate\n"
+    )
+    (tmp_path / "test_selection.py").write_text(
+        "import pytest\n"
+        "def test_routine(): pass\n"
+        "@pytest.mark.repo_audit\ndef test_audit(): assert False\n"
+        "@pytest.mark.long\ndef test_long(): assert False\n"
+        "@pytest.mark.release_gate\ndef test_release(): assert False\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "-m", selection, str(tmp_path)],
+        cwd=tmp_path, capture_output=True, text=True, timeout=15,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "1 passed, 3 deselected" in result.stdout

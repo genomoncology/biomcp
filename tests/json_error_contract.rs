@@ -262,13 +262,9 @@ fn serve_credential_redaction_request(
         "/entity/autocomplete/" | "/search" | "/search/" => (
             "pubtator",
             r#"{"error":"fixture outage"}"#,
-            "503 Service Unavailable",
+            "400 Bad Request",
         ),
-        "/variant/autocomplete/" => (
-            "litvar",
-            r#"{"error":"fixture outage"}"#,
-            "503 Service Unavailable",
-        ),
+        "/variant/autocomplete/" => ("litvar", r#"{"error":"fixture outage"}"#, "400 Bad Request"),
         _ => {
             return Err(format!(
                 "credential fixture received unexpected path {path}"
@@ -705,6 +701,19 @@ fn swallowed_source_failures_do_not_log_credentials() {
     );
     let requests = fixture.requests();
     let denied_destinations = deny_proxy.received_destinations();
+
+    // This case checks safe failure reporting, not transient-error retries.
+    // Permanent fixture failures keep randomized backoff out of its watchdog.
+    for provider in ["myvariant", "litvar", "pubtator"] {
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|request| request.provider == provider)
+                .count(),
+            1,
+            "credential contract should exercise each provider failure once: {provider}"
+        );
+    }
 
     assert_eq!(result.code, Some(1));
     assert!(result.stdout.trim().is_empty(), "stdout={}", result.stdout);
