@@ -1281,3 +1281,187 @@ fn rejected_batch_matrix_never_reaches_real_cli_client_cache_fs_or_item_work() {
         );
     }
 }
+
+fn article_fulltext_pdf_attempt(item: &serde_json::Value) -> &serde_json::Value {
+    item["full_text_coverage"]["attempts"]
+        .as_array()
+        .expect("full_text_coverage attempts should be a list")
+        .iter()
+        .find(|attempt| attempt["source_kind"] == "pdf")
+        .unwrap_or_else(|| panic!("no pdf attempt recorded: {item}"))
+}
+
+fn logged_timestamps(log: &str, prefix: &str) -> Vec<f64> {
+    log.lines()
+        .filter(|line| line.starts_with(prefix))
+        .filter_map(|line| line.rsplit_once('@'))
+        .filter_map(|(_, stamp)| stamp.parse::<f64>().ok())
+        .collect()
+}
+
+#[test]
+fn batch_article_detail_pdf_fetches_three_papers_under_one_limiter() {
+    let fixture = provision_article_fulltext_fixture(env!("CARGO_MANIFEST_DIR"))
+        .expect("provision article fixture");
+    std::fs::write(&fixture.request_log, b"").expect("truncate fixture request log");
+
+    let output = run_fixture(
+        &fixture,
+        &[
+            "--json",
+            "batch",
+            "article",
+            "22663026,22663028,22663029",
+            "--mode",
+            "detail",
+            "--sections",
+            "fulltext",
+            "--pdf",
+        ],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "stdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("batch JSON should parse");
+    let items = doc["items"].as_array().expect("batch items should be a list");
+    assert_eq!(items.len(), 3);
+    assert_eq!(doc["summary"]["failed"], json!(0));
+
+    // 22663026: the XML and HTML rungs hold no body, so the provider-vouched
+    // open PDF serves the text and the winner names the source.
+    let winner = &items[0]["result"];
+    assert_eq!(winner["full_text_manifest"]["source_kind"], json!("pdf"));
+    assert_eq!(
+        winner["full_text_manifest"]["provider"]["label"],
+        json!("Semantic Scholar PDF")
+    );
+    assert_eq!(
+        winner["section_outcomes"]["fulltext"],
+        json!({"outcome": "data", "sources": ["Semantic Scholar"]})
+    );
+    let saved = winner["full_text_path"]
+        .as_str()
+        .expect("pdf fulltext should name its saved path");
+    let text = std::fs::read_to_string(saved).expect("captured PDF text should be saved");
+    assert!(
+        text.to_lowercase().contains("controller"),
+        "saved text lost the paper title"
+    );
+
+    // 22663028: the publisher download itself failed; the attempt names the
+    // part instead of a bare source_unavailable.
+    let download_failed = &items[1]["result"];
+    assert_eq!(download_failed["full_text_path"], serde_json::Value::Null);
+    assert_eq!(
+        article_fulltext_pdf_attempt(download_failed)["reason"],
+        json!("open_pdf_download_failed")
+    );
+    assert_eq!(
+        download_failed["section_outcomes"]["fulltext"]["outcome"],
+        json!("unavailable")
+    );
+
+    // 22663029: the PDF bytes arrived but held no readable text.
+    let unusable = &items[2]["result"];
+    assert_eq!(
+        article_fulltext_pdf_attempt(unusable)["reason"],
+        json!("open_pdf_text_unusable")
+    );
+    assert_eq!(
+        unusable["section_outcomes"]["fulltext"]["outcome"],
+        json!("unavailable")
+    );
+
+    // One process, one limiter: this single run issued every Semantic
+    // Scholar paper lookup, and consecutive requests to the paced publisher
+    // origin keep the limiter's per-origin interval (100 ms, checked with a
+    // 10 ms clock-schedule allowance).
+    let log = std::fs::read_to_string(&fixture.request_log).expect("fixture request log");
+    let paper_lookups = log
+        .lines()
+        .filter(|line| line.starts_with("s2:paper:"))
+        .count();
+    assert_eq!(
+        paper_lookups, 3,
+        "each article asked Semantic Scholar once in this one process: {log}"
+    );
+    let stamps = logged_timestamps(&log, "publisher-pdf:");
+    assert!(
+        stamps.len() >= 3,
+        "each PDF article contacted the publisher origin: {log}"
+    );
+    for pair in stamps.windows(2) {
+        let gap = pair[1] - pair[0];
+        assert!(
+            gap >= 0.09,
+            "publisher PDF requests must keep the limiter interval, saw {gap:.3}s: {log}"
+        );
+    }
+}
+
+#[test]
+fn batch_article_detail_pdf_names_the_fulltext_source_each_article_used() {
+    let fixture = provision_article_fulltext_fixture(env!("CARGO_MANIFEST_DIR"))
+        .expect("provision article fixture");
+
+    let output = run_fixture(
+        &fixture,
+        &[
+            "--json",
+            "batch",
+            "article",
+            "22663011,22663026",
+            "--mode",
+            "detail",
+            "--sections",
+            "fulltext",
+            "--pdf",
+        ],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "stdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("batch JSON should parse");
+    let items = doc["items"].as_array().expect("batch items should be a list");
+    assert_eq!(items.len(), 2);
+    assert_eq!(doc["summary"]["failed"], json!(0));
+
+    // 22663011 wins on Europe PMC JATS XML before the PDF rung: --pdf adds
+    // the fallback without changing the reported source, and the PDF row the
+    // coverage still records names the absent open link, not a failure.
+    let xml_winner = &items[0]["result"];
+    assert_eq!(xml_winner["full_text_manifest"]["source_kind"], json!("jats_xml"));
+    assert_eq!(
+        xml_winner["section_outcomes"]["fulltext"],
+        json!({"outcome": "data", "sources": ["Europe PMC"]})
+    );
+    assert_eq!(
+        article_fulltext_pdf_attempt(xml_winner)["reason"],
+        json!("open_pdf_link_absent")
+    );
+
+    // 22663026 falls through to the vouched open PDF, and the provenance row
+    // names the per-article source beside the section outcome.
+    let pdf_winner = &items[1]["result"];
+    assert_eq!(pdf_winner["full_text_manifest"]["source_kind"], json!("pdf"));
+    let row = pdf_winner["_meta"]["section_sources"]
+        .as_array()
+        .expect("section_sources should be a list")
+        .into_iter()
+        .find(|row| row["key"] == "fulltext")
+        .expect("fulltext provenance row");
+    assert_eq!(
+        row,
+        &json!({"key": "fulltext", "label": "Full Text", "outcome": "data", "sources": ["Semantic Scholar"]})
+    );
+}
