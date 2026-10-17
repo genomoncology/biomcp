@@ -16,6 +16,8 @@ Reviews: revision 5b7f6dd, accept
 
 Reviews: revision 3c79683, accept
 
+Reviews: revision 6fc832b, accept
+
 ## Outcome
 
 A routine Rust or Python test exceeding thirty seconds emits a warning identifying the test and machine load; elapsed time alone never fails or terminates it.
