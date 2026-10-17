@@ -12,6 +12,8 @@ Milestone: 0.9.3
 
 Reviews: revision b9036da, accept
 
+Reviews: revision 780dd2a, accept
+
 ## Outcome
 
 `make test-contracts` is green in one pm job on the Linux gate host at the ticket branch tip, in the same pm-job checkout shape that is red today, without weakening either failing test.
