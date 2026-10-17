@@ -116,7 +116,9 @@ fn decoded_search_rows_preserve_hpo_labels_and_provider_order() {
 // dying connection to one attempt on a loaded host, so the physical
 // connection count comes up short while the policy still made every
 // attempt.
-#[tokio::test(start_paused = true)]
+// Keep real time for real sockets: paused time can advance the client's
+// timeouts before the loopback server gets another I/O turn.
+#[tokio::test]
 async fn phenotype_hpo_operation_uses_only_the_shared_four_attempts() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
