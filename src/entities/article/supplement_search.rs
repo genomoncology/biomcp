@@ -340,12 +340,8 @@ async fn run_extraction_worker(
     bytes: &[u8],
     timeout: std::time::Duration,
 ) -> Result<SupplementTextExtraction, String> {
-    use std::process::Stdio;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let mut child = command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
         .kill_on_drop(true)
         .spawn()
         .map_err(|error| format!("extraction worker failed: {error}"))?;
@@ -420,8 +416,13 @@ async fn supplement_text_for_bytes(
     }
     let result = match std::env::current_exe() {
         Ok(exe) => {
+            use std::process::Stdio;
             let mut command = tokio::process::Command::new(exe);
-            command.args(["__supplement-text-worker", format.as_str()]);
+            command
+                .args(["__supplement-text-worker", format.as_str()])
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::null());
             run_extraction_worker(command, bytes, SUPPLEMENT_SEARCH_FILE_TIMEOUT).await
         }
         Err(error) => Err(format!("extraction worker unavailable: {error}")),
@@ -442,7 +443,7 @@ fn extraction_timed_out(extraction: &SupplementTextExtraction) -> bool {
         .any(|problem| problem.reason == "extraction time limit exceeded")
 }
 
-fn supplement_text_cache_path(sha256: &str) -> Result<std::path::PathBuf, BioMcpError> {
+fn supplement_text_entry_path(sha256: &str) -> Result<std::path::PathBuf, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
     Ok(config
         .cache_root
@@ -455,7 +456,7 @@ async fn read_cached_supplement_text(
     sha256: &str,
     format: SupplementFormat,
 ) -> Option<SupplementTextExtraction> {
-    let path = supplement_text_cache_path(sha256).ok()?;
+    let path = supplement_text_entry_path(sha256).ok()?;
     let metadata = match tokio::fs::symlink_metadata(&path).await {
         Ok(metadata) => metadata,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return None,
@@ -518,7 +519,7 @@ async fn write_cached_supplement_text(
         tracing::warn!("Supplement text cache entry exceeded its size budget");
         return;
     }
-    let Ok(path) = supplement_text_cache_path(sha256) else {
+    let Ok(path) = supplement_text_entry_path(sha256) else {
         return;
     };
     if let Err(error) = crate::utils::download::write_atomic_bytes(&path, &bytes).await {
@@ -539,11 +540,16 @@ mod tests {
     #[cfg(unix)]
     #[tokio::test]
     async fn extraction_timeout_kills_and_reaps_the_worker() {
+        use std::process::Stdio;
         let root = tempfile::tempdir().unwrap();
         let pid_file = root.path().join("worker.pid");
         let mut command = tokio::process::Command::new("sh");
-        command.args(["-c", "echo $$ > \"$1\"; exec sleep 30", "worker"]);
-        command.arg(&pid_file);
+        command
+            .args(["-c", "echo $$ > \"$1\"; exec sleep 30", "worker"])
+            .arg(&pid_file)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
         let result =
             run_extraction_worker(command, b"", std::time::Duration::from_millis(250)).await;
         assert_eq!(result.unwrap_err(), "extraction time limit exceeded");
