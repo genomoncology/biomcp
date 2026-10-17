@@ -321,6 +321,22 @@ mod closing {
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
+    async fn configured_person_read_records_the_bearer_header() {
+        let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
+        let _env = OrcidEnv::new(&base);
+        OrcidClient::new()
+            .expect("client")
+            .person(RECORDED_TOKENLESS_ID, deadline(30))
+            .await
+            .expect("configured person read");
+        assert_eq!(
+            *requests.lock().unwrap(),
+            vec![format!("/{RECORDED_TOKENLESS_ID}/person auth=Bearer fixture-public-read-token")]
+        );
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
     async fn tokenless_person_read_serves_the_recorded_reply_without_bearer_auth() {
         let (base, requests) = spawn_recorded_orcid(RECORDED_PERSON, RECORDED_WORKS).await;
         let _env = OrcidEnv::tokenless(&base);

@@ -359,7 +359,7 @@ mod orcid_row {
     #[serial_test::serial(source_env)]
     async fn a_configured_token_probes_the_public_person_endpoint() {
         let _env = TokenEnv::set(Some("fixture-public-read-token"));
-        let (url, hits, _authorizations) = probe_server();
+        let (url, hits, authorizations) = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
@@ -372,5 +372,6 @@ mod orcid_row {
         assert_eq!(outcome.row.status, HealthStatus::Ok);
         assert_eq!(outcome.row.key_configured, Some(true));
         assert_eq!(*hits.lock().unwrap(), 1, "exactly one non-retried GET");
+        assert_eq!(*authorizations.lock().unwrap(), vec!["Bearer fixture-public-read-token"]);
     }
 }
