@@ -215,3 +215,15 @@ def test_unreadable_cache_configuration_uses_provider(provider):
     config = cache.parent / config_home / "biomcp/cache.toml"
     config.mkdir(parents=True)
     assert_answer(run(GENE), "initialization")
+
+
+def test_failed_cache_size_marker_write_warns_without_exposing_local_paths(provider):
+    run, cache, _, _ = provider
+    first = run(GENE)
+    assert first.returncode == 0, first.stderr
+    marker = cache / "http/.content-bytes-v1"
+    marker.unlink()
+    marker.mkdir()
+    result = run(GENE)
+    assert_answer(result, "initialization")
+    assert str(cache) not in result.stderr

@@ -252,10 +252,7 @@ impl SizeAwareCacheManager {
         let approx_bytes = match (services.estimate_cache_bytes)(&path) {
             Ok(bytes) => bytes,
             Err(err) => {
-                warn!(
-                    cache_path = %path.display(),
-                    "fast cache size estimate failed; seeding size tracker to 0: {err}"
-                );
+                super::warn_local_http_cache("initialization", &err);
                 0
             }
         };
@@ -356,10 +353,7 @@ impl CacheManager for SizeAwareCacheManager {
                     .min_disk_free
                     .is_violated(space.available_bytes, space.total_bytes),
                 Err(err) => {
-                    warn!(
-                        cache_root = %self.config.cache_root.display(),
-                        "cache filesystem inspection failed after put; skipping disk-pressure trigger: {err}"
-                    );
+                    super::warn_local_http_cache("write", &err);
                     false
                 }
             };
@@ -437,10 +431,7 @@ fn estimate_cache_bytes_fast(path: &Path) -> io::Result<u64> {
     }
     let total = sum_content_tree_bytes(path)?;
     if let Err(err) = write_content_totals_marker(path, total) {
-        warn!(
-            cache_path = %path.display(),
-            "writing cache size totals marker failed: {err}"
-        );
+        super::warn_local_http_cache("initialization", &err);
     }
     Ok(total)
 }
@@ -563,18 +554,12 @@ fn refresh_content_totals_marker(cache_path: &Path) {
     let usage = match snapshot_cache(cache_path) {
         Ok(snapshot) => summarize_cache_usage(&snapshot),
         Err(err) => {
-            warn!(
-                cache_path = %cache_path.display(),
-                "cache size totals refresh failed after maintenance: {err}"
-            );
+            super::warn_local_http_cache("initialization", &err);
             return;
         }
     };
     if let Err(err) = write_content_totals_marker(cache_path, usage.referenced_blob_bytes) {
-        warn!(
-            cache_path = %cache_path.display(),
-            "writing cache size totals marker failed after maintenance: {err}"
-        );
+        super::warn_local_http_cache("initialization", &err);
     }
 }
 
