@@ -1423,6 +1423,9 @@ pub(crate) enum VariantProviderValidationStatus {
     Indeterminate,
     Contradictory,
     Unavailable,
+    /// The exact-name strategy never asks MyVariant to validate anything;
+    /// this status keeps the response from claiming a provider miss.
+    NotAttempted,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -47,7 +47,7 @@ def test_json_list_outputs_are_parseable_reference_objects() -> None:
     assert any("get gene <symbol>" in str(command) for command in _entries(gene.get("entries")))
     assert any(
         "variant articles <id>" in str(command)
-        and "enum:union|annotation|lexical" in str(command)
+        and "enum:union|annotation|exact|lexical" in str(command)
         for command in _entries(variant.get("entries"))
     )
 

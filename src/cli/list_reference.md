@@ -132,7 +132,7 @@ New to BioMCP? Try:
 ## Helpers
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
-- `variant articles <id> [--strategy <union|annotation|lexical>]`
+- `variant articles <id> [--strategy <union|annotation|exact|lexical>]`
 - `--json variant articles --input <path|-> [--debug-plan]`
 - `variant erepo <CAid> [--detail --assertion <UUID> --version <exact-docVersion>]`
 - `variant erepo --gene <symbol> [--limit <1-100>] [--offset <N>]`

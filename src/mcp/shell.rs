@@ -486,7 +486,12 @@ fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
 fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
     add_string_enum(
         schema,
-        &["union".into(), "annotation".into(), "lexical".into()],
+        &[
+            "union".into(),
+            "annotation".into(),
+            "exact".into(),
+            "lexical".into(),
+        ],
     );
 }
 
@@ -496,9 +501,10 @@ fn variant_article_strategy(
     match value.trim().to_ascii_lowercase().as_str() {
         "union" => Ok(crate::entities::article::VariantArticleStrategy::Union),
         "annotation" => Ok(crate::entities::article::VariantArticleStrategy::Annotation),
+        "exact" => Ok(crate::entities::article::VariantArticleStrategy::Exact),
         "lexical" => Ok(crate::entities::article::VariantArticleStrategy::Lexical),
         _ => Err(McpError::invalid_params(
-            "variant_articles strategy must be union, annotation, or lexical",
+            "variant_articles strategy must be union, annotation, exact, or lexical",
             None,
         )),
     }

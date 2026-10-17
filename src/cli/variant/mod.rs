@@ -112,7 +112,7 @@ EXAMPLES:
   biomcp --json variant articles --input variants.json --debug-plan
   cat variants.json | biomcp --json variant articles --input -
 
-Note: The default union combines exact PubTator annotations, normalized aliases, and source citations before ranking and pagination. Structured JSON input accepts 1-10 items. Use annotation or lexical only for route diagnosis. Unresolved input is labeled as best-effort free text.
+Note: The default union combines exact PubTator annotations, normalized aliases, and source citations before ranking and pagination. Structured JSON input accepts 1-10 items. Use annotation or lexical only for route diagnosis. Exact searches one caller-supplied name with no resolution or alias expansion. Unresolved input is labeled as best-effort free text.
 See also: biomcp list variant")]
     Articles {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
@@ -130,7 +130,7 @@ See also: biomcp list variant")]
         /// Return only captured-evidence confirmations (requires --verify-identity)
         #[arg(long, requires = "verify_identity")]
         confirmed_only: bool,
-        /// Retrieval strategy (union, annotation, or lexical)
+        /// Retrieval strategy (union, annotation, exact, or lexical)
         #[arg(long, value_enum, default_value_t = VariantArticleStrategy::Union)]
         strategy: VariantArticleStrategy,
         /// Maximum results, 1-50 (default: 10)

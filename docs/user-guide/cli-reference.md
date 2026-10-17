@@ -849,6 +849,7 @@ See also: `docs/reference/mcp-server.md`.
 biomcp variant trials "BRAF V600E"
 biomcp variant articles "BRAF V600E"
 biomcp variant articles "BRAF V600E" --strategy annotation
+biomcp variant articles "BRAF V600E" --strategy exact
 biomcp variant articles "BRAF V600E" --strategy lexical
 biomcp --json variant articles --input variants.json --debug-plan
 cat variants.json | biomcp --json variant articles --input -
