@@ -268,7 +268,7 @@ fn empty_europe_pmc_supplement_finds_the_pmc_oa_bucket_copy() {
 
     let manifest = successful_output(
         &fixture,
-        &["--json", "get", "article", "22663026", "assets"],
+        &["--json", "get", "article", "22663031", "assets"],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&manifest.stdout).expect("asset manifest should be JSON");
@@ -309,7 +309,7 @@ fn empty_europe_pmc_supplement_finds_the_pmc_oa_bucket_copy() {
         &[
             "get",
             "article",
-            "22663026",
+            "22663031",
             "asset",
             filename,
             "--output",
@@ -335,7 +335,7 @@ fn wrong_type_supplement_reply_fails_the_download_and_writes_no_file() {
 
     let manifest = successful_output(
         &fixture,
-        &["--json", "get", "article", "22663027", "assets"],
+        &["--json", "get", "article", "22663032", "assets"],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&manifest.stdout).expect("asset manifest should be JSON");
@@ -372,7 +372,7 @@ fn wrong_type_supplement_reply_fails_the_download_and_writes_no_file() {
         .biomcp_command(&[
             "get",
             "article",
-            "22663027",
+            "22663032",
             "asset",
             &europe_key,
             "--output",
@@ -415,7 +415,7 @@ fn two_route_pdf_supplement_prefers_the_pmc_oa_copy() {
 
     let manifest = successful_output(
         &fixture,
-        &["--json", "get", "article", "22663028", "assets"],
+        &["--json", "get", "article", "22663033", "assets"],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&manifest.stdout).expect("asset manifest should be JSON");
@@ -447,7 +447,7 @@ fn two_route_pdf_supplement_prefers_the_pmc_oa_copy() {
         &[
             "get",
             "article",
-            "22663028",
+            "22663033",
             "asset",
             filename,
             "--output",
@@ -615,7 +615,7 @@ fn publisher_open_pdf_link_downloads_and_returns_its_text() {
 
     let output = successful_output(
         &fixture,
-        &["--json", "get", "article", "22663026", "fulltext", "--pdf"],
+        &["--json", "get", "article", "22663031", "fulltext", "--pdf"],
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("article JSON should parse");
@@ -662,8 +662,8 @@ fn open_pdf_failures_name_the_part_that_failed() {
     for (pmid, expected_reason, outcome) in [
         ("22663019", "open_pdf_link_absent", "empty"),
         ("22663030", "open_pdf_link_unavailable", "unavailable"),
-        ("22663027", "open_pdf_link_rejected", "unavailable"),
-        ("22663028", "open_pdf_download_failed", "unavailable"),
+        ("22663032", "open_pdf_link_rejected", "unavailable"),
+        ("22663033", "open_pdf_download_failed", "unavailable"),
         ("22663014", "open_pdf_download_absent", "empty"),
         ("22663029", "open_pdf_text_unusable", "unavailable"),
     ] {

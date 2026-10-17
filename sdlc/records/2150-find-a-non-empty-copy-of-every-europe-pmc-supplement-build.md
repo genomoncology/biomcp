@@ -67,13 +67,16 @@ answers with a bot-challenge page that the linked classifier records as
 - `src/sources/pmc_oa.rs`: `object_bytes` is crate-visible for the fallback;
   the media-object filename extraction moved to `media_object_filename`,
   which `archive_package` now shares.
-- Fixtures: `22663026` mirrors the Word case (empty Europe PMC member,
+- Fixtures: `22663031` mirrors the Word case (empty Europe PMC member,
   package broken by a 9 MiB sibling, bucket object with the real docx),
-  `22663027` the wrong-type case (vendor HTML under a .docx name in both
-  archive routes, article page gated), `22663028` the PDF case (zero-byte
+  `22663032` the wrong-type case (vendor HTML under a .docx name in both
+  archive routes, article page gated), `22663033` the PDF case (zero-byte
   PDF member beside a figure with bytes; package holds the real PDF).
   Existing xlsx/docx fixture bytes gained committed leading bytes (`PK`)
-  because the binary they stand in for now answers a type check.
+  because the binary they stand in for now answers a type check. The three
+  fixture articles first shipped as 22663026–28 and moved to 22663031–33
+  when 2142's landed PDF-failure fixtures took 22663026–30; the earlier gate
+  jobs in this record ran under the old ids with byte-identical fixtures.
 - Tests: three recorded-reply terminal tests (the Word case finds the bucket
   copy, the wrong-type case is refused with `unusable_asset` and writes no
   file, the PDF case prefers the PMC OA copy), unit tests for wrong-type key
