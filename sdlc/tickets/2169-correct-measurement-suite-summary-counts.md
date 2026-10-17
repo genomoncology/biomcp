@@ -1,6 +1,6 @@
 # 2169 — correct-measurement-suite-summary-counts
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -11,6 +11,8 @@ Reviews: revision f151f0d, accept
 Reviews: revision c0715ff, accept
 
 Reviews: revision a970a2e, accept
+
+Landed: a970a2e (fast-forward: Accepted source landed inside carrier 61a8b075ef075e5650dbb85f8572ee8a341803ad with shared gate1792256340018-55751; individual review retained and actual-main full check follows the batch.)
 
 ## Outcome
 
