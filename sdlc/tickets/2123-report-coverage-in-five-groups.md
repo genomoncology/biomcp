@@ -1,5 +1,5 @@
 ---
-priority: 2
+priority: 3
 ---
 
 # 2123 — Report coverage overlap and collection completeness

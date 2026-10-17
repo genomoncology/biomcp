@@ -1,5 +1,5 @@
 ---
-priority: 2
+priority: 3
 ---
 
 # 2120 — Scope coverage instrumentation to its Rust suite
