@@ -45,7 +45,7 @@ Reviews: revision 4160f2f, accept
 
 Reviews: revision ff6ce34, accept
 
-Reopened: 2026-10-17 — PM added five research defects after measurement landed; refresh only affected candidate rows after their fixes, preserving valid old and unrelated runtime measurements.
+Reopened: 2026-10-17 — Refresh the measurement rows the five research fixes affect, on current main, keeping unchanged rows and their source identities.
 
 Depends on: 2179
 Depends on: 2180
