@@ -682,6 +682,36 @@ fn publisher_open_pdf_link_downloads_and_returns_its_text() {
 
 #[test]
 #[serial_test::serial(article_output_fixture)]
+fn open_pdf_responses_distinguish_unavailable_bytes_from_unusable_text() {
+    let fixture = ArticleFixture::start();
+    for (pmid, reason, coverage) in [
+        ("22663041", "open_pdf_download_failed", "unavailable"),
+        ("22663042", "open_pdf_download_failed", "unavailable"),
+        ("22663043", "open_pdf_download_failed", "unavailable"),
+        ("22663044", "open_pdf_text_unusable", "unusable"),
+    ] {
+        let output = successful_output(
+            &fixture,
+            &["--json", "get", "article", pmid, "fulltext", "--pdf"],
+        );
+        let doc: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("article JSON should parse");
+        let attempt = article_fulltext_pdf_attempt(&doc);
+        assert_eq!(
+            attempt["reason"], reason,
+            "wrong PDF response reason for {pmid}: {doc}"
+        );
+        assert_eq!(
+            attempt["coverage"], coverage,
+            "wrong PDF coverage for {pmid}"
+        );
+        assert_eq!(attempt["outcome"], "unavailable");
+        assert_eq!(doc["full_text_path"], serde_json::Value::Null);
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
 fn open_pdf_failures_name_the_part_that_failed() {
     let fixture = ArticleFixture::start();
 
