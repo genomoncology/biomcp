@@ -17,6 +17,8 @@ Reviews: revision 5a609b5, accept
 
 Reviews: revision 44c3fd5, accept
 
+Reviews: revision c0dc241, accept
+
 ## Outcome
 
 From an article identifier, with an optional asset restriction, BioMCP extracts the text of an article's xlsx, xls, csv, docx, pdf and zip supplements, searches it for a given string, and returns each hit with an exact locator. It matches text only and interprets nothing.
