@@ -5,7 +5,7 @@ priority: 2
 
 # 2149: Keep PubTator at three requests a second
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -14,6 +14,8 @@ Reviews: revision 238ed5f, accept
 Reviews: revision 0d18634, accept
 
 Reviews: revision 6afc858, accept
+
+Landed: 6afc858 (fast-forward: Accepted source landed inside carrier 27e59b197 with its passing shared gate; record this carried ticket separately without rerunning unchanged code.)
 
 ## Outcome
 
