@@ -52,7 +52,9 @@ struct CacheInitializationSettlement {
 impl CacheInitializationSettlement {
     fn begin() -> Option<Self> {
         let state = current_cache_publication_state()?;
-        let previous = state.marker().swap(true, std::sync::atomic::Ordering::AcqRel);
+        let previous = state
+            .marker()
+            .swap(true, std::sync::atomic::Ordering::AcqRel);
         Some(Self { state, previous })
     }
 }

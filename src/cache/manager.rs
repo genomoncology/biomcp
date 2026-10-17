@@ -686,10 +686,7 @@ where
     )?;
 
     if !report.errors.is_empty() {
-        super::warn_local_http_cache(
-            "maintenance",
-            &io::Error::other("cache cleanup incomplete"),
-        );
+        super::warn_local_http_cache("maintenance", &io::Error::other("cache cleanup incomplete"));
     }
 
     let snapshot_after =

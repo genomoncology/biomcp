@@ -651,7 +651,8 @@ async fn expired_invocation_cannot_build_a_cache_fallback_client() {
 async fn lazy_cache_initialization_settles_before_deadline_releases_its_locks() {
     let root = TempDirGuard::new("lazy-cache-settlement");
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let origin = reqwest::Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
+    let origin =
+        reqwest::Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
     let policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
         provider_url_policy::ProviderUrlConsumer::GithubRelease,
         &origin,
