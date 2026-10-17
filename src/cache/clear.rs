@@ -167,7 +167,7 @@ fn register_shared(root: &Path) -> SharedLease {
 }
 
 fn unregister_shared(root: &Path) {
-    let mut leases = crate::utils::sync::recover_poison(shared_leases().0.lock());
+    let mut leases = lease_registry();
     if let Some(count) = leases.get_mut(root) {
         *count -= 1;
         if *count == 0 {
