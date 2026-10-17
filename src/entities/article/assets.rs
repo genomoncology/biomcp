@@ -1027,13 +1027,15 @@ async fn supplement_fallback(
     }
 
     if let Some(manifest) = manifest {
+        // Owned identities: the loop below mutates both collections this
+        // snapshot is taken from.
         let observed = assets
             .iter()
-            .map(|asset| asset.canonical_identity.as_str())
+            .map(|asset| asset.canonical_identity.clone())
             .chain(
                 nonretrievable
                     .iter()
-                    .map(|pending| pending.canonical_identity.as_str()),
+                    .map(|pending| pending.canonical_identity.clone()),
             )
             .collect::<BTreeSet<_>>();
         if let Ok(client) = PmcOaClient::new() {
@@ -1050,7 +1052,7 @@ async fn supplement_fallback(
                 // The bucket route already answered for this file when the
                 // package delivered or refused its member; the same bytes are
                 // not fetched twice.
-                if observed.contains(identity.as_str()) {
+                if observed.contains(&identity) {
                     continue;
                 }
                 let Some(object_url) = manifest.media_urls.iter().find(|url| {
@@ -2591,7 +2593,8 @@ fn filename_kind(filename: &str) -> &'static str {
 /// signature (CSV, text, XML) accept any bytes; callers check an empty body
 /// before this, so a known type with no bytes reads as a mismatch.
 fn asset_bytes_match_filename(filename: &str, bytes: &[u8]) -> bool {
-    let Some((_, extension)) = filename.to_ascii_lowercase().rsplit_once('.') else {
+    let lower = filename.to_ascii_lowercase();
+    let Some((_, extension)) = lower.rsplit_once('.') else {
         return true;
     };
     let starts = |magic: &[u8]| bytes.starts_with(magic);
@@ -3450,7 +3453,7 @@ mod tests {
             ("legacy-supplement.doc", &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1][..]),
             ("archive.tgz", &[0x1F, 0x8B, 0x08][..]),
             ("figure.png", &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A][..]),
-            ("figure.gif", b"GIF89a\x01\x00"),
+            ("figure.gif", b"GIF89a\x01\x00".as_slice()),
             ("figure.jpg", &[0xFF, 0xD8, 0xFF, 0xE0][..]),
         ] {
             assert!(
@@ -3461,14 +3464,14 @@ mod tests {
         for (filename, bytes) in [
             (
                 "pgen.1009231.s004.docx",
-                b"<!DOCTYPE html>\n<html lang=\"en-US\"><body>vendor page</body></html>\n",
+                b"<!DOCTYPE html>\n<html lang=\"en-US\"><body>vendor page</body></html>\n".as_slice(),
             ),
             (
                 "NIHMS1501645-supplement-2.docx",
-                b"\n\n<!DOCTYPE html><head></head>",
+                b"\n\n<!DOCTYPE html><head></head>".as_slice(),
             ),
-            ("pone.0153788.s001.pdf", b"PK\x03\x04not a pdf"),
-            ("supplement.xlsx", b"%PDF-1.7 not a workbook"),
+            ("pone.0153788.s001.pdf", b"PK\x03\x04not a pdf".as_slice()),
+            ("supplement.xlsx", b"%PDF-1.7 not a workbook".as_slice()),
         ] {
             assert!(
                 !asset_bytes_match_filename(filename, bytes),
