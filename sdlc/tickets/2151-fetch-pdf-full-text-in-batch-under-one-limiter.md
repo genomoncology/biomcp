@@ -31,3 +31,5 @@ Depends on: 2159
 - Defers: supplement extraction to 2152.
 
 PM decision: 2026-10-17. Reuse existing implementation and close the specific limiter-proof gap before acceptance. Serialize overlapping article/MCP changes before 2152.
+
+Integration review accepts 0f593f105848a45a531c703082544c81bfb454ce against final main 92dfd1e86. Only the ticket text conflicted; preserve the expanded limiter claim and reproduction evidence. Owned PDF implementation, tests and fixture script remain unchanged, so reuse red jobs 1792241038040-77137 and 1792241140546-39873 and green 1792241968899-16484. Main stable metadata, completed records, security, fixture isolation and diagnostics remain intact. Land after the actual-main full check passes. The independent cache lane is still investigating a regression; this ticket may land separately to unblock the dependent supplement product change rather than waiting behind that investigation.
