@@ -4,11 +4,13 @@ priority: 2
 
 # 2181 — Search full text in the exact variant name strategy
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 428ecb0, accept
+
+Landed: 428ecb0 (fast-forward: Accepted work reached main in reviewed combined research-fix landing bf9916b; completion records this source batch without another source change.)
 
 ## Outcome
 
