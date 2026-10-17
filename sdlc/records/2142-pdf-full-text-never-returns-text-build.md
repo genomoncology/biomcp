@@ -81,8 +81,8 @@ of the six part-naming reasons exist on main).
 
 ## Green evidence
 
-Final tip `d34868ba4` ("Capture a readable open PDF and move the outage case to
-a no-winner paper"; the two earlier branch tips `69c4263cb` and `3cfd2199c`
+Code tip `c878b691b` ("Classify the PDF fixture origin and fix the changelog
+list"; the branch's record-only commit `6d4987b6b` sits above it), the two earlier branch tips `69c4263cb` and `3cfd2199c`
 carried a first capture whose text layer the production extractor cannot read
 and an outage case whose paper has a PMC HTML winner, so the PDF step never
 ran — both caught by CI's rust lane and fixed in the final tip):
@@ -92,12 +92,14 @@ ran — both caught by CI's rust lane and fixed in the final tip):
 | 1792213118704-3620 | the macOS gate host | scratch diagnostic: candidate PDF through the real CLI | clean text, capture swapped |
 | 1792213389724-11900 | the macOS gate host | `make lint` at `d34868ba4` | passed |
 | 1792214725519-38339 | the macOS gate host | `make lint` at `c878b691b` | passed |
-| 1792213392668-12436 | the macOS gate host | `make spec` at `d34868ba4` | 59 passed; the only 2 failures are the pre-existing clingen-erepo page (below) |
+| 1792213396455-2587464 | the Linux gate host | `make test` at `d34868ba4` (one commit below the contract fixes) | failed on exactly the three contract gaps `c878b691b` fixed; the rust half passed |
+| 1792213392668-12436 | the macOS gate host | `make spec` at `d34868ba4` (no spec-relevant change after it) | 59 passed; the only 2 failures are the pre-existing clingen-erepo page (below) |
 | 1792212451039-54350 | the macOS gate host | `make spec` at plain main `b138f6097` | same 2 clingen-erepo failures — pre-existing, not this ticket |
-| «yellow-targeted» | the Linux gate host | targeted nextest: the new tests at `d34868ba4` | CI's rust lane covers the same tests green at both tips; the queued yellow runs are noted below |
-| «yellow-test» | the Linux gate host | `make test` at `c878b691b` | «fill» |
+| 1792211386749-2435194 | the Linux gate host | targeted nextest at `69c4263cb` (superseded before it ran: the first capture's text tokens and the outage case) | 4/6 passed; the 2 terminal tests failed on exactly the defect the final capture fixed |
+| 1792221263175-3454392 | the Linux gate host | `make test` at `6d4987b6b` (final tip) | passed (exit 0; rust lane plus 1159 python tests) |
 | CI run 39004824318 | GitHub Linux | full ci.yml at `d34868ba4` | python-lane failed (3 contract gaps below), all other executed lanes green |
-| CI run 39006201972 | GitHub Linux | full ci.yml at `c878b691b` (final tip) | green — every executed lane passed |
+| CI run 39006201972 | GitHub Linux | full ci.yml at `c878b691b` (code tip) | green — every executed lane passed |
+| CI run 39012882066 | GitHub Linux | ci.yml at `6d4987b6b` (record-only tip) | green (docs-only fast route) |
 
 ### Live probe (read-only public GETs, the macOS gate host, job 1792213938177-72006, `d34868ba4`)
 
@@ -135,6 +137,11 @@ ran — both caught by CI's rust lane and fixed in the final tip):
 
 ## Findings
 
+- The Linux gate host's dispatch once failed before running anything
+  (`git clean -fd failed: git clean timed out after 10s`) while preparing the
+  final-tip `make test`; the re-dispatched run is the one cited above. Whoever
+  owns the dispatch should look at the 10-second clean budget against a warm
+  job worktree.
 - The python lane caught three contract gaps at `d34868ba4`, all fixed at
   `c878b691b`: the new env var needed a fixture-only classification, the replay
   env needed it listed as a non-provider override (it is an allowlist entry the
