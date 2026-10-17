@@ -43,14 +43,11 @@ https://biomcp.org/:
 
 ## Working
 
-Keep incremental compilation on for the whole edit loop:
+Run affected tests through the build job, leaving `CARGO_INCREMENTAL` unset so the configured compiler cache can run:
 
 ```
-CARGO_INCREMENTAL=1 cargo nextest run --no-default-features -E 'test(...)'
+pm job run <ticket> <revision> -- cargo nextest run --no-default-features -E 'test(...)'
 ```
-
-Keep `CARGO_INCREMENTAL` set for the whole loop and unset it for the gates:
-toggling the setting recompiles the crate.
 
 Run affected tests during development. Run one Rust build at a time on a build host.
 
