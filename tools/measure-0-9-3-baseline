@@ -531,7 +531,9 @@ if want_section coverage; then
       nextest)
         summary="$(grep -E 'Summary \[' "$logfile" | tail -1 || true)"
         if [[ -n "$summary" ]]; then
-          n_run="$(cov_clause 'tests? run:' "$summary")"
+          # Fail-fast summaries show executed/selected tests. The
+          # numerator is the work that actually ran.
+          n_run="$(sed -nE 's/.*] +([0-9]+)(\/[0-9]+)? tests? run:.*/\1/p' <<<"$summary")"
           n_passed="$(cov_clause passed "$summary")"
           n_failed="$(cov_clause failed "$summary")"
           n_timeout="$(cov_clause 'timed out' "$summary")"
@@ -550,13 +552,24 @@ if want_section coverage; then
         fi
         ;;
       spec)
-        pages="$(grep -c '^=== spec page: ' "$logfile" || true)"
+        # Current runners list all selected pages in one header; older
+        # runners print one singular header for each page.
+        pages="$(awk '
+          /^=== spec pages: / {
+            sub(/^=== spec pages: /, ""); sub(/ ===$/, "")
+            aggregate += NF
+          }
+          /^=== spec page: / { singular++ }
+          END { print aggregate + singular }
+        ' "$logfile")"
         failed_pages="$(grep -oE 'spec run failed \([0-9]+\)' "$logfile" | grep -oE '[0-9]+' | tail -1 || true)"
         if [[ -z "$failed_pages" ]]; then
           failed_pages="$(grep -c 'spec page failed: ' "$logfile" || true)"
         fi
         n_failed="$failed_pages"
-        counts="${pages:-0} pages, ${failed_pages:-0} failed"
+        if ((pages > 0)); then
+          counts="${pages} pages, ${failed_pages:-0} failed"
+        fi
         ;;
     esac
     result "coverage_${label}" "exit ${status}; ${counts}"
