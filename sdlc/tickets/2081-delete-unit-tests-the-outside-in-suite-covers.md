@@ -4,7 +4,7 @@ priority: 3
 
 # 2081 — Delete every test that is not one of the four kinds
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
