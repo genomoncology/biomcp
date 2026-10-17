@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.needs_binary]  # Coverage toolchain contracts run in the routine lane.
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
