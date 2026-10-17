@@ -21,6 +21,7 @@ Coordinator outcome before code: Inspect the actual Semantic Scholar PDF text la
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 next: Blocked on actual authorized PDF bytes or PM disposition; publisher returns HTTP403 HTML, so text-layer status is unknown.
 
 
 ## Coordinator reproduction and scope
