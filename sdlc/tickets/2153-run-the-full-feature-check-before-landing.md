@@ -6,7 +6,9 @@ deps: []
 
 # 2153: Run the full-feature check before landing
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-17, Ian ruled 2026-10-17 that GitHub runs the release process only and builds run on the build host through pm job, so CI must not grow onto ticket branches..
 
 Milestone: 0.9.3
 
