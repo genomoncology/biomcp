@@ -86,3 +86,4 @@ Updated batch preparation: The public-text cleanup landed independently as91a862
 ## Progress
 
 - 2026-10-17 started
+- 2026-10-17 next: Accepted2173 shard repair and restored fail-soft cache are prepared together at55263a574; final carrier review proceeds while unrelated main repair2178 lands and passes full main check. Then run one batch landing gate.
