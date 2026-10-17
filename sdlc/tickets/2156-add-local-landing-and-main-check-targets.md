@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 5e4712b, accept
+
 ## Outcome
 
 The existing landing command checks the reviewed merge candidate through the build job, and the coordinator runs the complete standard and shipped-feature checks on main before another ordinary landing.
