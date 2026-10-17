@@ -13,6 +13,8 @@ Reviews: revision 07b2520, accept
 
 Reviews: revision 34d0bb9, accept
 
+Reviews: revision ac7f5a4, accept
+
 ## Outcome
 
 Variant article identity verification uses PubTator full-text annotations alongside the existing abstract evidence. The recorded replies confirm papers 34480199 and 30275001 under the existing identity rules. Paper 32371413 remains available and unverified, with a reason naming the missing typed Gene annotation.
