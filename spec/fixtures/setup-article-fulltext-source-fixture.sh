@@ -549,7 +549,7 @@ def make_europe_pmc_supplementary_zip():
     with zipfile.ZipFile(out, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(
             "41408_2024_1068_MOESM1_ESM.docx",
-            b"scrubbed Europe PMC supplementary DOCX fixture bytes\n",
+            b"PK\x03\x04\nscrubbed Europe PMC supplementary DOCX fixture bytes\n",
         )
     return out.getvalue()
 
@@ -564,19 +564,110 @@ def make_empty_member_supplementary_zip(name):
     return out.getvalue()
 
 
+def make_typed_member_supplementary_zip(name, body):
+    # Ticket 2150: a supplementaryFiles member carrying bytes that do not
+    # match the file name's type (the observed vendor page under a .docx
+    # name on PMC7787686).
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(name, body)
+    return out.getvalue()
+
+
+def make_pdf_case_supplementary_zip():
+    # Ticket 2150: scrubbed from the observed PMC4858276 supplementaryFiles
+    # archive shape, whose figure member holds bytes while the PDF supplement
+    # member is a genuinely zero-length entry.
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("pone.0153788.t004.gif", PDF_CASE_FIGURE_GIF)
+        archive.writestr("pone.0153788.s001.pdf", b"")
+    return out.getvalue()
+
+
 OA_ASSETS_TGZ = make_oa_assets_tgz()
 PMC_OA_ONLY_TGZ = make_pmc_oa_only_tgz()
 EUROPE_PMC_SUPPLEMENTARY_ZIP = make_europe_pmc_supplementary_zip()
 # Ticket 2146: the two-route supplement keeps its full copy in the PMC OA
 # package while Europe PMC's archive holds a zero-byte member for the same
 # filename, and the Europe-only article's sole route replies with nothing.
-TWO_ROUTE_SUPPLEMENT_XLSX = b"scrubbed two-route supplement XLSX fixture bytes\n"
+TWO_ROUTE_SUPPLEMENT_XLSX = b"PK\x03\x04\nscrubbed two-route supplement XLSX fixture bytes\n"
 EUROPE_PMC_TWO_ROUTE_EMPTY_ZIP = make_empty_member_supplementary_zip(
     "NIHMS1501643-supplement-2.xlsx"
 )
 EUROPE_PMC_ONLY_EMPTY_ZIP = make_empty_member_supplementary_zip(
     "NIHMS1501644-supplement-1.xlsx"
 )
+
+
+# Ticket 2150: the three reported shapes, scrubbed to fixture bytes.
+# The Word case mirrors PMC6168352: Europe PMC's archive holds a zero-byte
+# member, and the PMC OA package refuses to download because one media
+# object exceeds the per-object budget while the bucket object for the
+# supplement itself still serves the real file.
+WORD_CASE_DOCX = b"PK\x03\x04\x14\x00\x06\x00scrubbed Word supplement DOCX fixture bytes\n"
+OVERSIZED_SIBLING_PDF = b"\0" * (9 * 1024 * 1024)
+EUROPE_PMC_WORD_CASE_EMPTY_ZIP = make_empty_member_supplementary_zip(
+    "NIHMS1501645-supplement-2.docx"
+)
+WORD_CASE_PACKAGE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+  <front>
+    <article-meta>
+      <title-group><article-title>Europe-only empty supplement manuscript</article-title></title-group>
+      <abstract><p>Word case abstract text.</p></abstract>
+    </article-meta>
+  </front>
+  <body>
+    <sec><title>Word case body</title><p>Fixture-only body text.</p></sec>
+  </body>
+</article>"""
+# The wrong-type case mirrors PMC7787686: a vendor HTML page under a .docx
+# name in both the PMC OA package and Europe PMC's archive, with the article
+# page's file route gated.
+WRONG_TYPE_VENDOR_PAGE = (
+    b"<!DOCTYPE html>\n<html lang=\"en-US\">\n"
+    b"<head><meta charset=\"UTF-8\"><title>Scrubbed vendor page</title></head>\n"
+    b"<body>A vendor page served under a supplement file name.</body>\n</html>\n"
+)
+EUROPE_PMC_WRONG_TYPE_ZIP = make_typed_member_supplementary_zip(
+    "pgen.1009231.s004.docx", WRONG_TYPE_VENDOR_PAGE
+)
+WRONG_TYPE_PACKAGE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+  <front>
+    <article-meta>
+      <title-group><article-title>Wrong-type supplement fixture</article-title></title-group>
+      <abstract><p>Wrong-type abstract text.</p></abstract>
+    </article-meta>
+  </front>
+  <body>
+    <supplementary-material id="pgen.1009231.s004" position="float">
+      <label>Supporting information S4</label>
+      <caption><p>Scrubbed supporting information.</p></caption>
+      <self-uri xlink:href="pgen.1009231.s004.docx"/>
+    </supplementary-material>
+  </body>
+</article>"""
+# The PDF case mirrors PMC4858276: Europe PMC's archive holds a zero-byte
+# PDF member beside a figure with bytes, while the PMC OA package holds the
+# real PDF.
+PDF_CASE_SUPPLEMENT_PDF = b"%PDF-1.4\nscrubbed fixture PDF supplement bytes\n%%EOF\n"
+PDF_CASE_FIGURE_GIF = b"GIF89a\x01\x00\x01\x00\x80\x00\x00scrubbed figure bytes\n"
+EUROPE_PMC_PDF_CASE_ZIP = make_pdf_case_supplementary_zip()
+PDF_CASE_PACKAGE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+  <front>
+    <article-meta>
+      <title-group><article-title>Two-route PDF supplement fixture</article-title></title-group>
+      <abstract><p>PDF case abstract text.</p></abstract>
+    </article-meta>
+  </front>
+  <body>
+    <supplementary-material id="pone.0153788.s001" position="float">
+      <label>Supporting information S1</label>
+      <caption><p>Scrubbed supporting information.</p></caption>
+      <self-uri xlink:href="pone.0153788.s001.pdf"/>
+    </supplementary-material>
+  </body>
+</article>"""
 
 
 ARTICLES = {
@@ -743,6 +834,28 @@ ARTICLES = {
         "title": "Open PDF link unavailable fixture",
         "abstract": "Abstract text.",
         "paper_id": "paper-20",
+    },
+    # Ticket 2150: the three reported supplement shapes, on ids clear of the
+    # PDF-failure fixtures above. 22663031 mirrors the Europe-only empty
+    # Word supplement (PMC6168352), 22663032 the wrong-type docx
+    # (PMC7787686), 22663033 the two-route PDF supplement (PMC4858276).
+    "22663031": {
+        "pmcid": "PMC123469",
+        "title": "Europe-only empty supplement manuscript",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-21",
+    },
+    "22663032": {
+        "pmcid": "PMC123470",
+        "title": "Wrong-type supplement fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-22",
+    },
+    "22663033": {
+        "pmcid": "PMC123471",
+        "title": "Two-route PDF supplement fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-23",
     },
 }
 
@@ -1481,6 +1594,18 @@ class Handler(BaseHTTPRequestHandler):
             send_bytes(self, 200, EUROPE_PMC_ONLY_EMPTY_ZIP, "application/zip")
             return
 
+        if decoded_path == "/PMC123469/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_WORD_CASE_EMPTY_ZIP, "application/zip")
+            return
+
+        if decoded_path == "/PMC123470/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_WRONG_TYPE_ZIP, "application/zip")
+            return
+
+        if decoded_path == "/PMC123471/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_PDF_CASE_ZIP, "application/zip")
+            return
+
         if decoded_path == "/PMC123459/fullTextXML":
             append_request_log("fulltext:xml:europepmc-pmc")
             send_text(self, 404, "not found", "text/plain")
@@ -1617,6 +1742,84 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/PMC123467.1/NIHMS1501643-supplement-2.xlsx":
             send_bytes(self, 200, TWO_ROUTE_SUPPLEMENT_XLSX, "application/octet-stream")
+            return
+
+        # Ticket 2150: the Word case's bucket. The package download fails on
+        # the over-budget sibling, so the manifest's own objects are the
+        # per-file fallback route.
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC123469."]:
+            send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123469.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
+            return
+
+        if decoded_path == "/PMC123469.1/PMC123469.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123469", "version": 1, "is_retracted": False, "license_code": "TDM", "xml_url": "s3://pmc-oa-opendata/PMC123469.1/PMC123469.1.xml", "media_urls": ["s3://pmc-oa-opendata/PMC123469.1/NIHMS1501645-supplement-1.pdf", "s3://pmc-oa-opendata/PMC123469.1/NIHMS1501645-supplement-2.docx"]}), "application/json")
+            return
+
+        if decoded_path == "/PMC123469.1/PMC123469.1.xml":
+            send_text(self, 200, WORD_CASE_PACKAGE_XML, "application/xml")
+            return
+
+        if decoded_path == "/PMC123469.1/NIHMS1501645-supplement-1.pdf":
+            # One media object over the per-object budget refuses the whole
+            # package download, the way the observed 46 MiB supplement does.
+            send_bytes(self, 200, OVERSIZED_SIBLING_PDF, "application/pdf")
+            return
+
+        if decoded_path == "/PMC123469.1/NIHMS1501645-supplement-2.docx":
+            send_bytes(self, 200, WORD_CASE_DOCX, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            return
+
+        if decoded_path == "/articles/instance/123469/bin/NIHMS1501645-supplement-2.docx":
+            send_bytes(self, 200, POW_INTERSTITIAL, "text/html; charset=utf-8")
+            return
+
+        # Ticket 2150: the wrong-type case's bucket — the vendor page under a
+        # .docx name in the package, in Europe PMC's archive, and gated on the
+        # article page's file route.
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC123470."]:
+            send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123470.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
+            return
+
+        if decoded_path == "/PMC123470.1/PMC123470.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123470", "version": 1, "is_retracted": False, "license_code": "CC BY", "xml_url": "s3://pmc-oa-opendata/PMC123470.1/PMC123470.1.xml", "media_urls": ["s3://pmc-oa-opendata/PMC123470.1/pgen.1009231.s004.docx"]}), "application/json")
+            return
+
+        if decoded_path == "/PMC123470.1/PMC123470.1.xml":
+            send_text(self, 200, WRONG_TYPE_PACKAGE_XML, "application/xml")
+            return
+
+        if decoded_path == "/PMC123470.1/pgen.1009231.s004.docx":
+            send_bytes(self, 200, WRONG_TYPE_VENDOR_PAGE, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            return
+
+        if decoded_path == "/articles/instance/123470/bin/pgen.1009231.s004.docx":
+            send_bytes(self, 200, POW_INTERSTITIAL, "text/html; charset=utf-8")
+            return
+
+        # Ticket 2150: the PDF case's bucket — the package holds the real PDF
+        # while Europe PMC's archive member is zero-length.
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC123471."]:
+            send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123471.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
+            return
+
+        if decoded_path == "/PMC123471.1/PMC123471.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123471", "version": 1, "is_retracted": False, "license_code": "CC0", "xml_url": "s3://pmc-oa-opendata/PMC123471.1/PMC123471.1.xml", "media_urls": ["s3://pmc-oa-opendata/PMC123471.1/pone.0153788.t004.gif", "s3://pmc-oa-opendata/PMC123471.1/pone.0153788.s001.pdf"]}), "application/json")
+            return
+
+        if decoded_path == "/PMC123471.1/PMC123471.1.xml":
+            send_text(self, 200, PDF_CASE_PACKAGE_XML, "application/xml")
+            return
+
+        if decoded_path == "/PMC123471.1/pone.0153788.t004.gif":
+            send_bytes(self, 200, PDF_CASE_FIGURE_GIF, "image/gif")
+            return
+
+        if decoded_path == "/PMC123471.1/pone.0153788.s001.pdf":
+            send_bytes(self, 200, PDF_CASE_SUPPLEMENT_PDF, "application/pdf")
+            return
+
+        if decoded_path == "/articles/instance/123471/bin/pone.0153788.s001.pdf":
+            send_bytes(self, 200, POW_INTERSTITIAL, "text/html; charset=utf-8")
             return
 
         if decoded_path == "/articles/PMC123457/":

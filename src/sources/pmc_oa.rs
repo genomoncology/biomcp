@@ -191,15 +191,7 @@ impl PmcOaClient {
                     "media objects exceeded the aggregate resource limit",
                 ));
             }
-            let filename = reqwest::Url::parse(media_url)
-                .ok()
-                .and_then(|url| {
-                    Path::new(url.path())
-                        .file_name()?
-                        .to_str()
-                        .map(str::to_string)
-                })
-                .and_then(|name| safe_archive_name(Path::new(&name)))
+            let filename = media_object_filename(media_url)
                 .ok_or_else(|| route_error("metadata named an unsafe media object"))?;
             entries.push(PmcOaArchiveEntry {
                 is_xml: is_xml_name(&filename),
@@ -350,7 +342,7 @@ impl PmcOaClient {
         Ok(fixture)
     }
 
-    async fn object_bytes(&self, raw: &str) -> Result<Vec<u8>, BioMcpError> {
+    pub(crate) async fn object_bytes(&self, raw: &str) -> Result<Vec<u8>, BioMcpError> {
         let object_url = self.object_url(raw)?;
         let request = self
             .client
@@ -409,6 +401,21 @@ fn decode_archive_bytes(status: reqwest::StatusCode, bytes: &[u8]) -> Result<Vec
 fn is_xml_name(filename: &str) -> bool {
     let lower = filename.to_ascii_lowercase();
     lower.ends_with(".nxml") || lower.ends_with(".xml")
+}
+
+/// The safe file name a media-object URL names. Bucket objects carry the
+/// supplement's own name as the final path segment, so an object URL can be
+/// matched to the supplement file name it serves.
+pub(crate) fn media_object_filename(raw: &str) -> Option<String> {
+    reqwest::Url::parse(raw)
+        .ok()
+        .and_then(|url| {
+            Path::new(url.path())
+                .file_name()?
+                .to_str()
+                .map(str::to_string)
+        })
+        .and_then(|name| safe_archive_name(Path::new(&name)))
 }
 
 fn safe_archive_name(path: &Path) -> Option<String> {
