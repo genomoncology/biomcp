@@ -41,7 +41,6 @@
 - Keep retry fixtures on real time during loopback requests; preserve the HPO four-attempt policy and compact-command retry cancellation checks. (2167)
 - Preserve changelog entries for batches already landed when unfinished work moves to a later release. (2166)
 - The credential-redaction contract uses permanent local provider failures, so unrelated randomized retry delays cannot exhaust its command watchdog. (2165)
-
 - Isolate MCP contract servers from inherited credentials, configuration and caches (2160).
 - Release work uses reviewed local qualification, explicit ticket prerequisites, comparable measurements and a final untagged publication rehearsal. (2162)
 - Landings run the routine lint, tests and specifications through the configured build job gate; main adds the complete shipped-feature check before the next landing, and routine Clippy now checks test targets. (2156)
@@ -136,7 +135,6 @@
 - A held test reply that nothing releases now ends on its own at a bound above every real test wait, so a run that loses its caller fails at a named test instead of sitting forever. (2045)
 - The release workflow's smoke legs now compare the printed version with the tag exactly, the workflow lint refuses duplicate option keys and variables a container script never receives, and the changelog gate covers every landing shape and stays inside the tag's own release line. (2046)
 - Records written by the ticket tool now pass the repository's review contract unchanged, and every landed ticket closes through the tool that recorded it. (2048)
-
 - The `who sync` report moved into its own module, bringing its command file back under the repository's line limit and retiring the entry that had allowed the overage. (2010)
 - The release check that every fixed ticket has a changelog bullet now counts every way a change can land — merge commits, `Land NNNN:` subjects, ticket files marked complete, and build records — so a ticket cannot ship undescribed, and a push that changes only the changelog now runs the changelog test instead of skipping as documentation. (2019)
 - The repository tree no longer ships a stray packaging file: the package count returned to its true value, the forbidden-name check reads a local untracked file, and the article specification's deadline blocks run again. (2020)
