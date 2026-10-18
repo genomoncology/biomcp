@@ -54,7 +54,6 @@
 ### Internal
 
 - Build untagged rehearsal archives and wheels with the admitted stable release version while retaining their actual source revision. (2190)
-
 - Prepare the release marker runner with the shared Linux offline sandbox setup before running packaged-release checks. (2189)
 - Prepare Python dependencies before the independent offline contract lane, and give the routine feature probe its own temporary directory in clean release checkouts. (2186)
 - Isolate the measurement coverage command fixture from installed Cargo and coverage tools while retaining environment and incomplete-collection checks. (2187)
