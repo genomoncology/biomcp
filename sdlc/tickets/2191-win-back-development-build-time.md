@@ -16,3 +16,7 @@ A fresh development build and a rebuild after a Rust change are at least as fast
 - Starts from: re-measure both rows on an idle build machine with the existing harness, then find the cause with `cargo build --timings` and the existing LLVM IR line counts (6.90 M to 7.20 M lines; function copies 138,788 to 143,558). Suspects to check, not assume: the 2171 dev profile, crates added since v0.9.2, and generic code that grew more copies.
 - Changes: claims only what the cause requires; `CHANGELOG.md`.
 - Proof: idle-machine before and after numbers for both rows against v0.9.2, with raw samples, and the routine test and spec targets still met.
+
+## Progress
+
+- 2026-10-18 started
