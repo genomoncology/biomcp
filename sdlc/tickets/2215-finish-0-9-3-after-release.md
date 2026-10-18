@@ -18,3 +18,7 @@ Main reports the next development version instead of the released number, the ch
 - Proof: inspect current manifests/changelog before edits; existing version-sync and development-version contracts pass through a build job, and a built CLI identifies the coming development version. Verify the short record against GitHub API evidence: tag and commit, publishing run and elapsed duration, five archive sizes, full rehearsal count with each failed rehearsal cause, and PM verification. Record PM verification explicitly as reported, rather than claiming a new independent install. Fresh review and normal landing/main checks follow.
 
 PM verification: GitHub release is public with five archives/checksums; PyPI serves0.9.3 and `uvx` runs `biomcp0.9.3`; version and latest container tags share the amd64/arm64 index; Homebrew formula names0.9.3. PM owns external GitHub replies. No MCP Registry submission or external directory change is authorized here.
+
+## Progress
+
+- 2026-10-18 started
