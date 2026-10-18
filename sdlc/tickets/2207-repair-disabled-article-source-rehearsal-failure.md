@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 484b5cd, accept
+
 ## Outcome
 
 Disabled article sources remain explicitly skipped, silent and complete in the shipped CLI. Diagnose the current Linux release-qualification failure without hiding genuine provider failures or weakening the disabled-source assertion. Correct the smallest production defect or fixture omission that the actual failure establishes.
