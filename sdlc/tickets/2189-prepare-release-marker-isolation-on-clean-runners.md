@@ -26,3 +26,14 @@ The release marker job prepares the Linux isolation prerequisites before invokin
 ## Progress
 
 - 2026-10-17 started
+
+## Repair and checks
+
+Restated outcome: the release marker runner invokes the same Linux isolation preparation owner as qualification before it fetches Cargo data and runs the existing marker command. The shared action installs Bubblewrap, loads its existing AppArmor policy and tests isolation. The repair adds one `lane-setup` step with `offline: true`; it changes no shared helper, tool version, command, permission or publication trigger.
+
+- Files changed: release workflow, its existing provenance contract and changelog. The provenance contract keeps its existing step-list and input-pin mechanism, adds the new setup step, and requires that shared offline setup precede markers. No additional file was needed.
+- RED job1792283048193-25478: after `make sync-python-dev`, the targeted existing marker contract failed because shared sandbox setup was absent. The actual rehearsal failure is direct operating-system prerequisite evidence.
+- GREEN job1792283074116-27468: after canonical Python preparation, release provenance and CI contracts passed179tests with two workers; existing shared offline setup contracts passed2tests. Ruff, tracked text, workflow lint, quality ratchet and whitespace checks passed.
+- Tested patch SHA256 a966017e3b7818c0c7ffed5c96ed85e79cf34fb8aa1df312f8247ee8cfa6e8a5 equals the committed diff c3ce13588..c41c8329a393976d91b52a863adcad303dc54a5f. The coordinator checked that equality and job result.
+
+Product source and measured workloads are unchanged, so retain their existing evidence at its original revisions. A parallel executor runs the existing complete release marker command on Linux at current main before the next full rehearsal; that check tests packaged behavior, while the workflow repair supplies missing runner preparation. Fresh review, configured landing gate, actual-main full check and the complete nonpublishing rehearsal remain required.
