@@ -269,7 +269,7 @@ def test_ci_runs_only_when_dispatched_or_called_for_a_release() -> None:
     triggers = DOC.get("on", DOC.get(True))
     assert set(triggers) == {"workflow_dispatch", "workflow_call"}
     assert triggers["workflow_dispatch"]["inputs"]["windows_only"] == {
-        "description": "Run only the Windows cache-lock regression checks",
+        "description": "Run only the Windows cache concurrency and deadline checks",
         "type": "boolean",
         "default": False,
     }
@@ -296,6 +296,7 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
         ), f"{jid} must run for a full manual dispatch on the selected revision"
     windows_runs = "\n".join(s.get("run", "") for s in _job("windows-contracts")["steps"])
     for test in (
+        "windows_stdio_contract",
         "windows_lock_contract",
         "body_limit_epoch_lock_contention_obeys_variant_article_deadline",
         "construction_under_a_held_epoch_lock_honors_the_deadline",
@@ -303,7 +304,7 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
         assert test in windows_runs, f"Windows must run the {test} regression"
 
 
-@pytest.mark.parametrize("failed_command", [0, 1, 2])
+@pytest.mark.parametrize("failed_command", [0, 1, 2, 3])
 def test_windows_lock_proof_propagates_each_cargo_failure(
     tmp_path: Path, failed_command: int
 ) -> None:
