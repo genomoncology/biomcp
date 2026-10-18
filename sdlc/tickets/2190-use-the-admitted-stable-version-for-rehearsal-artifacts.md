@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 779b069, accept
+
 ## Outcome
 
 A full untagged rehearsal builds archives and wheels with the admitted stable release version while retaining their actual candidate revision. Installed-wheel and local-container smokes validate the release payload without needing a tag. Ordinary development identity and tag publication behavior stay intact.
