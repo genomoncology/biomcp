@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import shlex
@@ -81,7 +82,7 @@ def test_existing_tag_modes_keep_the_released_helper_command_line(
             result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=tmp_path,
                                     env=env, text=True, capture_output=True)
             assert result.returncode == 0, result.stderr
-    assert output.read_text(encoding="utf-8") == f"source_sha={sha}\n"
+    assert output.read_text(encoding="utf-8") == f"source_sha={sha}\nbuild_version=0.9.2\n"
 
 EXPECTED_NEEDS = {
     "rehearsal-docs": ["version-check", "qualification"],
@@ -407,7 +408,7 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("docs-live", "Resolve the tag commit"): "b9e7731ec89c65f683eb9045aa898fcb7091e0c718f75c1f6ca29bc49d615255",
     ("docs-live", "Require the live documentation revision to equal or descend from the tag"): "d8e88f95d2e890e14d314242bcce698767ddd834b4ccbab56469d5fd684eb54d",
     ("version-check", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "20b8f03bdcde7c6e9713aa4c8aefe129de93e2dcc00e902f2b22cf8589b63a9f",
-    ("version-check", "Require the tag and committed versions to agree"): "c2d07928dc3e896981d3a1497b56ab77a81e484fcb23bad911e2627c64fe6265",
+    ("version-check", "Require the tag and committed versions to agree"): "65da2401fd66e25808ab8c3abc9758b8671fef888ffd0eb13457044764c5bf5d",
     ("version-check", "Require the changelog to cover merged tickets"): "1f76a37b3d73ab514debb49e722c4e1be630ffec9d136fadb6c2c0ad70a1b78b",
     # The marker-set job's run steps are pinned like the pipeline
     # jobs' — the fetch feeds the offline compile and the make
@@ -898,6 +899,69 @@ def _assert_build_identity_routing(parsed: dict) -> None:
                         "tools/with-build-identity or the shipped binary "
                         'prints "git unknown, build unknown"'
                     )
+
+
+@pytest.mark.parametrize("job", ["build", "pypi-build"])
+@pytest.mark.parametrize("manylinux", [False, True])
+def test_release_builders_use_admitted_version_and_actual_revision(
+    tmp_path: Path, job: str, manylinux: bool,
+) -> None:
+    """Execute native identity routing and the manylinux env-file producer.
+
+    The compiler is replaced by an environment reader; the real wrapper and
+    Git checkout decide the version and revision that the compiler receives.
+    """
+    root = tmp_path / "candidate"
+    (root / "tools").mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / "tools/with-build-identity", root / "tools/with-build-identity")
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+    subprocess.run([
+        "git", "-C", str(root), "-c", "user.name=Test", "-c",
+        "user.email=test@example.invalid", "commit", "-qm", "Candidate",
+    ], check=True)
+    sha = subprocess.check_output([
+        "git", "-C", str(root), "rev-parse", "--short=8", "HEAD",
+    ], text=True).strip()
+    parsed = _load_release_pipeline()
+    build_job = parsed["jobs"][job]
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("BIOMCP_BUILD_")}
+    env.update(CARGO_PKG_VERSION="1.2.3", RUNNER_TEMP=str(tmp_path))
+    development = subprocess.run(
+        ["python3", "tools/with-build-identity", "env"], cwd=root, env=env,
+        capture_output=True, text=True, check=True,
+    )
+    assert f"BIOMCP_BUILD_VERSION=1.2.3+g{sha}\n" in development.stdout
+    version_input = build_job.get("env", {}).get("BIOMCP_BUILD_VERSION")
+    if version_input is not None:
+        assert version_input == "${{ needs.version-check.outputs.build_version }}"
+        env["BIOMCP_BUILD_VERSION"] = "1.2.3"
+    name = ("Build and package inside the manylinux 2_28 container" if job == "build"
+            else "Build wheels inside the manylinux 2_28 container") if manylinux else (
+                "Build release binary" if job == "build" else "Build wheels")
+    script = _step_by_name(parsed, job, name)["run"]
+    if manylinux:
+        result = subprocess.run(["bash", "-e", "-c", script.splitlines()[0]],
+                                cwd=root, env=env, capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+        identity = dict(line.split("=", 1) for line in
+                        (tmp_path / "biomcp-build-identity.env").read_text().splitlines())
+        assert '--env-file "$RUNNER_TEMP/biomcp-build-identity.env"' in script
+    else:
+        command = script[:script.index("cargo build" if job == "build" else "maturin build")]
+        reader = ("import json,os; print(json.dumps({k:v for k,v in "
+                  "os.environ.items() if k.startswith(\"BIOMCP_BUILD_\")}))")
+        command += "python3 -c " + shlex.quote(reader)
+        result = subprocess.run(["bash", "-e", "-c", command], cwd=root,
+                                env=env, capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+        identity = json.loads(result.stdout)
+    assert identity["BIOMCP_BUILD_VERSION"] == "1.2.3", identity
+    assert identity["BIOMCP_BUILD_GIT_SHA"] == sha
+    admission = parsed["jobs"]["version-check"]
+    assert admission["outputs"]["build_version"] == "${{ steps.identity.outputs.build_version }}"
+    assert 'echo "build_version=${TAG#v}" >> "$GITHUB_OUTPUT"' in admission["steps"][1]["run"]
 
 
 def test_build_identity_routing_assertion_catches_a_direct_build() -> None:

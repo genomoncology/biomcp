@@ -47,6 +47,7 @@ jobs:
       contents: read
     outputs:
       source_sha: ${{ steps.identity.outputs.source_sha }}
+      build_version: ${{ steps.identity.outputs.build_version }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -74,6 +75,7 @@ jobs:
             python3 scripts/check-release-versions.py --tag "$TAG"
           fi
           echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "build_version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
       - name: Require the changelog to cover merged tickets
         env:
@@ -198,6 +200,7 @@ jobs:
             artifact: biomcp-windows-x86_64.zip
     runs-on: ${{ matrix.os }}
     env:
+      BIOMCP_BUILD_VERSION: ${{ needs.version-check.outputs.build_version }}
       # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
       # directory it cannot discover the repository (the fourth
       # go-request review reproduced create-draft failing here).
@@ -335,6 +338,8 @@ jobs:
           - os: windows-2022
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
+    env:
+      BIOMCP_BUILD_VERSION: ${{ needs.version-check.outputs.build_version }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
