@@ -40,6 +40,8 @@ Depends on: 2172
 Depends on: 2173
 Depends on: 2174
 Depends on: 2177
+Depends on: 2207
+Depends on: 2208
 
 Reviews: revision 4160f2f, accept
 
@@ -135,3 +137,5 @@ All raw logs, setup, source counts and safe reports were retrieved before cleanu
 - 2026-10-18 next: Measure old v0.9.2 and final product c4281daa7304c0dd2875aa3e0d253ae9d2010eed with the frozen harness on one build host: refresh runtime, candidate four-suite coverage/source counts and stripped sizes only. Preserve historical build and gate timings at their measured revisions. Main check 2156/1792327112413-3132 passed; collection launched after confirming no other build processes.
 
 PM decision: 2026-10-18. Jarvis declined a build-machine hold. Run the existing runtime cases now in alternating old/new pairs under the same conditions, compare pairs and record host load as a limitation. Quiet activity is recorded and cannot block this collection. The first scoped attempt, `2082/1792327543488-12063`, built the candidate successfully but stopped at quiet admission before any runtime sample; retain both binaries and resume without rebuilding. The temporary ordering adapter preserves frozen `run_once`/`report`, cases, counts, per-arm working directories, cache preparation and 180-second limits. Its SHA-256 is `267ba2aa25c778fe0ad0b309885ce4e4b36da32b243f8d16735532b6c5da74c5`. This explicitly changes version scheduling rather than claiming the frozen harness already paired versions.
+
+PM decision: 2026-10-18. Land approved rehearsal repairs2207 and2208 in one batch. Before the next rehearsal, run the full Rust and Python suites once offline from a fresh Linux build-job clone, matching rehearsal isolation. Dispatch the next full rehearsal only after that and the native main check pass. The final measurement record remains last and refreshes only rows affected by production changes.
