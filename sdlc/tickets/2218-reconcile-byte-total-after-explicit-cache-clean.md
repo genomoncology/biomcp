@@ -17,3 +17,7 @@ Successful explicit cache cleanup reconciles the saved HTTP-content byte total w
 - Changes: `src/cli/cache.rs` `src/cache/clean.rs` and the existing byte-total maintenance helper only as required, plus an outside-in CLI cache test and `CHANGELOG.md`. Declare exact final test/helper paths before editing. Reuse the shared accounting/locking path rather than duplicating arithmetic or inventing another marker.
 - Keeps: conservative overcount before maintenance is allowed. No guarantee of provider-answer loss or size-limit breach is asserted by the review. No root filesystem filling, production cache mutation, or new cleanup framework.
 - Proof: add an owning real-CLI regression that seeds valid cached content plus a legitimate conservative overcount, calls explicit cleanup, and fails when reported successful maintenance leaves a stale marker. Preserve exclusion with an active writer and timeout/fail-open behavior. Run targeted checks and rerun the existing bounded owned full-filesystem reproduction once after the fix; actual ENOSPC still returns the provider answer and successful cleanup reconciles the total. No broad repeated ENOSPC suite. Fresh review and normal landing/main checks follow.
+
+## Progress
+
+- 2026-10-18 started
