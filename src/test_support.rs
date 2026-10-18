@@ -3,6 +3,35 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
 
+/// Capture warning output for the future without changing the process subscriber.
+pub(crate) async fn capture_warnings<F: std::future::Future>(future: F) -> (F::Output, String) {
+    use tracing::instrument::WithSubscriber;
+
+    #[derive(Clone)]
+    struct Writer(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+    impl std::io::Write for Writer {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().expect("warning capture lock").write(bytes)
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    let bytes = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let writer = Writer(std::sync::Arc::clone(&bytes));
+    let subscriber = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::WARN)
+        .with_ansi(false)
+        .without_time()
+        .with_writer(move || writer.clone())
+        .finish();
+    let result = future.with_subscriber(subscriber).await;
+    let logs = String::from_utf8(bytes.lock().expect("warning capture lock").clone())
+        .expect("UTF-8 warnings");
+    (result, logs)
+}
+
 pub(crate) struct TempDirGuard {
     inner: tempfile::TempDir,
 }
