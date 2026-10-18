@@ -6,6 +6,9 @@ use std::process::Command;
 #[path = "pty_helpers.rs"]
 mod pty_helpers;
 
+#[path = "article_asset_terminal/supplement_cache.rs"]
+mod supplement_cache;
+
 struct ArticleFixture {
     root: PathBuf,
     workspace: PathBuf,
@@ -905,14 +908,12 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
     assert_eq!(files[0]["outcome"], "searched");
     assert_eq!(files[0]["sha256"], hits[0]["sha256"]);
 
-    let cache = fixture
-        .root
-        .join("cache/sessions/article-supplement-text-v1")
-        .join(format!("{sha256}.json"));
-    let mut cached: serde_json::Value = serde_json::from_slice(&fs::read(&cache).unwrap()).unwrap();
+    let cache = fixture.root.join("cache/http");
+    let key = supplement_cache::key(sha256);
+    let mut cached = supplement_cache::read(&cache, &key);
     cached["format"] = serde_json::json!("csv");
     cached["extraction"]["blocks"] = serde_json::json!([]);
-    fs::write(&cache, serde_json::to_vec(&cached).unwrap()).unwrap();
+    supplement_cache::write(&cache, &key, &cached);
     let again = successful_output(
         &fixture,
         &[
@@ -929,7 +930,7 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
         "incompatible cached format must be reparsed"
     );
 
-    let mut cached: serde_json::Value = serde_json::from_slice(&fs::read(&cache).unwrap()).unwrap();
+    let mut cached = supplement_cache::read(&cache, &key);
     let mut block = cached["extraction"]["blocks"]
         .as_array()
         .unwrap()
@@ -939,7 +940,7 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
         .clone();
     block["text"] = serde_json::json!(format!("F1761I{}", "é".repeat(400)));
     cached["extraction"]["blocks"] = serde_json::json!([block]);
-    fs::write(&cache, serde_json::to_vec(&cached).unwrap()).unwrap();
+    supplement_cache::write(&cache, &key, &cached);
     let unicode = successful_output(
         &fixture,
         &[

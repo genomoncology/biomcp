@@ -9,7 +9,9 @@
 
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Serialize};
+mod cache;
+
+use cache::{read_cached_supplement_text, write_cached_supplement_text};
 
 use crate::error::BioMcpError;
 use crate::transform::article::{
@@ -36,16 +38,6 @@ const SUPPLEMENT_SEARCH_FILE_TIMEOUT: std::time::Duration = std::time::Duration:
 const SUPPLEMENT_SEARCH_HIT_LIMIT: usize = 200;
 const SUPPLEMENT_SEARCH_CONTEXT_BYTES: usize = 400;
 const SUPPLEMENT_SEARCH_NEEDLE_MAX_BYTES: usize = 1024;
-const SUPPLEMENT_TEXT_CACHE_SCHEMA: u8 = 1;
-const SUPPLEMENT_TEXT_CACHE_MAX_BYTES: usize = 16 * 1024 * 1024;
-
-#[derive(Deserialize, Serialize)]
-struct CachedSupplementText {
-    schema: u8,
-    format: String,
-    extraction: SupplementTextExtraction,
-}
-
 /// Searches supplement text for a literal or a defined protein substitution name.
 ///
 /// `asset_filter` restricts the search to one manifest asset by asset key or
@@ -448,7 +440,7 @@ async fn supplement_text_for_bytes(
         )
         .into_extraction();
     };
-    if !crate::sources::is_no_cache_enabled()
+    if !crate::sources::cache_is_bypassed()
         && let Some(extraction) = read_cached_supplement_text(sha256, format).await
     {
         return extraction;
@@ -469,7 +461,7 @@ async fn supplement_text_for_bytes(
     let extraction = result.unwrap_or_else(|reason| {
         SupplementExtractionProblem::unread(None, format.as_str(), reason).into_extraction()
     });
-    if !extraction_timed_out(&extraction) && !crate::sources::is_no_cache_enabled() {
+    if !extraction_timed_out(&extraction) && !crate::sources::cache_is_bypassed() {
         write_cached_supplement_text(sha256, format, &extraction).await;
     }
     extraction
@@ -480,90 +472,6 @@ fn extraction_timed_out(extraction: &SupplementTextExtraction) -> bool {
         .problems
         .iter()
         .any(|problem| problem.reason == "extraction time limit exceeded")
-}
-
-fn supplement_text_entry_path(sha256: &str) -> Result<std::path::PathBuf, BioMcpError> {
-    let config = crate::cache::resolve_cache_config()?;
-    Ok(config
-        .cache_root
-        .join("sessions")
-        .join("article-supplement-text-v1")
-        .join(format!("{sha256}.json")))
-}
-
-async fn read_cached_supplement_text(
-    sha256: &str,
-    format: SupplementFormat,
-) -> Option<SupplementTextExtraction> {
-    let path = supplement_text_entry_path(sha256).ok()?;
-    let metadata = match tokio::fs::symlink_metadata(&path).await {
-        Ok(metadata) => metadata,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return None,
-        Err(error) => {
-            tracing::warn!("Supplement text cache metadata unavailable: {error}");
-            return None;
-        }
-    };
-    if metadata.file_type().is_symlink()
-        || !metadata.is_file()
-        || metadata.len() > SUPPLEMENT_TEXT_CACHE_MAX_BYTES as u64
-    {
-        let _ = tokio::fs::remove_file(&path).await;
-        return None;
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::MetadataExt;
-        if metadata.nlink() != 1 {
-            tracing::warn!("Ignoring linked supplement text cache entry");
-            return None;
-        }
-    }
-    let bytes = tokio::fs::read(&path).await.ok()?;
-    let cached: CachedSupplementText = match serde_json::from_slice(&bytes) {
-        Ok(cached) => cached,
-        Err(_) => {
-            let _ = tokio::fs::remove_file(&path).await;
-            return None;
-        }
-    };
-    if cached.schema != SUPPLEMENT_TEXT_CACHE_SCHEMA || cached.format != format.as_str() {
-        let _ = tokio::fs::remove_file(&path).await;
-        return None;
-    }
-    if let Some(parent) = path.parent()
-        && let Err(error) = crate::cache::secure_managed_tree(parent, true, None)
-    {
-        tracing::warn!("Supplement text cache permissions could not be repaired: {error}");
-        return None;
-    }
-    Some(cached.extraction)
-}
-
-async fn write_cached_supplement_text(
-    sha256: &str,
-    format: SupplementFormat,
-    extraction: &SupplementTextExtraction,
-) {
-    let cached = CachedSupplementText {
-        schema: SUPPLEMENT_TEXT_CACHE_SCHEMA,
-        format: format.as_str().to_owned(),
-        extraction: extraction.clone(),
-    };
-    let Ok(bytes) = serde_json::to_vec(&cached) else {
-        tracing::warn!("Supplement text cache serialization failed");
-        return;
-    };
-    if bytes.len() > SUPPLEMENT_TEXT_CACHE_MAX_BYTES {
-        tracing::warn!("Supplement text cache entry exceeded its size budget");
-        return;
-    }
-    let Ok(path) = supplement_text_entry_path(sha256) else {
-        return;
-    };
-    if let Err(error) = crate::utils::download::write_atomic_bytes(&path, &bytes).await {
-        tracing::warn!("Supplement text cache write failed: {error}");
-    }
 }
 
 #[cfg(test)]
