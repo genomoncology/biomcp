@@ -309,6 +309,10 @@ def test_orcid_is_a_direct_exact_record_source() -> None:
         "author papers orcid:<id>",
     ]
     assert "public" in orcid["license_summary"].lower()
+    assert orcid["commercial_terms"] == "non-commercial"
+    assert orcid["terms_url"] == "https://info.orcid.org/public-client-terms-of-service/"
+    assert "CC0" in orcid["license_summary"]
+    assert "revenue-generating" in orcid["license_summary"]
     assert "identically licensed" in orcid["redistribution_summary"]
 
     pubmed = _inventory_item("PubMed")

@@ -1314,14 +1314,14 @@
       "author papers orcid:<id>"
     ],
     "bioMcp_auth": "required_env",
-    "commercial_terms": null,
+    "commercial_terms": "non-commercial",
     "env_var": "ORCID_ACCESS_TOKEN",
     "provider_access": "public-read bearer token obtained from ORCID for the /read-public scope",
-    "license_summary": "ORCID public API terms; public data is released for reuse under the ORCID public-data license",
+    "license_summary": "restricted: ORCID Public and Anonymous APIs permit non-commercial use; section 2 excludes use in revenue-generating products or services even though public record data is CC0",
     "redistribution_summary": "display public record data with attribution; do not assume all record data or downstream works are identically licensed",
-    "terms_url": "https://info.orcid.org/documentation/features/public-api/",
+    "terms_url": "https://info.orcid.org/public-client-terms-of-service/",
     "key_url": "https://orcid.org/signin",
-    "reviewed_on": "2026-09-13",
+    "reviewed_on": "2026-10-18",
     "notes": "exact public person and works records only; no name search, member API, private fields, or cross-provider identity merge"
   },
   {

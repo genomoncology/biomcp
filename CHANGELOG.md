@@ -6,9 +6,12 @@
 
 ### Fixes
 
+- Include ORCID in restricted source groups and distinguish its non-commercial API terms from public record data reuse. (2216)
+
 ### Internal
 
 - Open the next development version after the 0.9.3 release. (2215)
+- Exercise production HTTP cache startup and migration in the existing security, contention, upgrade and startup-cost cases, removing unused blocking test constructors. (2199)
 
 ## 0.9.3 — 2026-10-17
 

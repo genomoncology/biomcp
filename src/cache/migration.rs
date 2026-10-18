@@ -74,16 +74,6 @@ fn directory_exists(path: &Path, label: &str) -> Result<bool, io::Error> {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn migrate_http_cache(cache_root: &Path) -> Result<MigrationOutcome, io::Error> {
-    let old = cache_root.join("http-cacache");
-    if !directory_exists(&old, "legacy cache path")? {
-        return Ok(MigrationOutcome::SkippedOldMissing);
-    }
-    let _maintenance = super::lock_cache_maintenance(cache_root)?;
-    migrate_http_cache_locked(cache_root)
-}
-
 pub(crate) fn try_migrate_http_cache(cache_root: &Path) -> io::Result<MigrationOutcome> {
     if !directory_exists(&cache_root.join("http-cacache"), "legacy cache path")? {
         return Ok(MigrationOutcome::SkippedOldMissing);
@@ -139,21 +129,6 @@ pub(crate) fn try_ensure_body_limited_cache_epoch(
     )
 }
 
-#[cfg(test)]
-pub(crate) async fn migrate_http_cache_with_deadline(
-    cache_root: &Path,
-    deadline: &crate::sources::VariantArticleDeadline,
-) -> Result<MigrationOutcome, io::Error> {
-    if !directory_exists(&cache_root.join("http-cacache"), "legacy cache path")? {
-        return Ok(MigrationOutcome::SkippedOldMissing);
-    }
-    let _maintenance = super::lock_cache_maintenance_until(cache_root, deadline).await?;
-    deadline.ensure_time_io()?;
-    let result = migrate_http_cache_locked(cache_root);
-    deadline.ensure_time_io()?;
-    result
-}
-
 fn migrate_http_cache_locked(cache_root: &Path) -> Result<MigrationOutcome, io::Error> {
     let old = cache_root.join("http-cacache");
     let new = cache_root.join("http");
@@ -203,35 +178,10 @@ where
     )
 }
 
-#[cfg(test)]
-pub(crate) async fn ensure_body_limited_cache_epoch_until(
-    cache_root: &Path,
-    legacy_cache_was_renamed: bool,
-    deadline: &crate::sources::VariantArticleDeadline,
-) -> Result<(), io::Error> {
-    ensure_body_limited_cache_epoch_until_with(
-        cache_root,
-        legacy_cache_was_renamed,
-        deadline,
-        false,
-    )
-    .await
-}
-
 pub(crate) async fn try_ensure_body_limited_cache_epoch_until(
     cache_root: &Path,
     legacy_cache_was_renamed: bool,
     deadline: &crate::sources::VariantArticleDeadline,
-) -> io::Result<()> {
-    ensure_body_limited_cache_epoch_until_with(cache_root, legacy_cache_was_renamed, deadline, true)
-        .await
-}
-
-async fn ensure_body_limited_cache_epoch_until_with(
-    cache_root: &Path,
-    legacy_cache_was_renamed: bool,
-    deadline: &crate::sources::VariantArticleDeadline,
-    try_only: bool,
 ) -> io::Result<()> {
     deadline_io(deadline, tokio::fs::create_dir_all(cache_root)).await?;
     let lock_root = cache_root.to_path_buf();
@@ -247,25 +197,7 @@ async fn ensure_body_limited_cache_epoch_until_with(
     if state == EpochState::Current {
         return Ok(());
     }
-    loop {
-        match fs_lock::try_lock_exclusive(&lock) {
-            Ok(()) => break,
-            Err(error) if error.kind() == io::ErrorKind::WouldBlock && !try_only => {
-                // sleep reason: deadline-bounded retry poll for the epoch lock
-                #[allow(clippy::disallowed_methods)]
-                deadline
-                    .run(tokio::time::sleep(std::time::Duration::from_millis(10)))
-                    .await
-                    .map_err(|_| {
-                        io::Error::new(
-                            io::ErrorKind::TimedOut,
-                            "variant article invocation deadline exceeded",
-                        )
-                    })?;
-            }
-            Err(error) => return Err(error),
-        }
-    }
+    fs_lock::try_lock_exclusive(&lock)?;
     #[cfg(test)]
     crate::sources::observe_cache_setup(cache_root, true);
     let current_root = cache_root.to_path_buf();
@@ -279,13 +211,9 @@ async fn ensure_body_limited_cache_epoch_until_with(
     if state == EpochState::Current {
         return lock.unlock();
     }
-    let maintenance = if try_only {
-        super::try_lock_cache_maintenance_until(cache_root, deadline)
-            .await?
-            .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?
-    } else {
-        super::lock_cache_maintenance_until(cache_root, deadline).await?
-    };
+    let maintenance = super::try_lock_cache_maintenance_until(cache_root, deadline)
+        .await?
+        .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?;
     deadline.ensure_time_io()?;
     ensure_body_limited_cache_epoch_async(
         cache_root,
@@ -668,7 +596,7 @@ mod tests {
         let sentinel = legacy_dir.join("sentinel.txt");
         std::fs::write(&sentinel, b"cached payload").expect("write sentinel");
 
-        let result = migrate_http_cache(root.path());
+        let result = try_migrate_http_cache(root.path());
 
         assert!(matches!(result, Ok(MigrationOutcome::Renamed)));
         assert!(target_dir.is_dir(), "runtime dir should exist after rename");
@@ -690,7 +618,7 @@ mod tests {
     fn skips_when_legacy_http_cache_directory_is_missing() {
         let root = TempDirGuard::new("old-missing");
 
-        let result = migrate_http_cache(root.path());
+        let result = try_migrate_http_cache(root.path());
 
         assert!(matches!(result, Ok(MigrationOutcome::SkippedOldMissing)));
     }
@@ -705,7 +633,7 @@ mod tests {
         std::fs::write(legacy_dir.join("legacy.txt"), b"legacy").expect("write legacy file");
         std::fs::write(target_dir.join("runtime.txt"), b"runtime").expect("write runtime file");
 
-        let result = migrate_http_cache(root.path());
+        let result = try_migrate_http_cache(root.path());
 
         assert!(matches!(result, Ok(MigrationOutcome::SkippedTargetPresent)));
         assert!(legacy_dir.join("legacy.txt").is_file());
@@ -718,7 +646,7 @@ mod tests {
         std::fs::write(root.path().join("http-cacache"), b"not a dir").expect("write legacy file");
 
         assert_invalid_input_contains(
-            migrate_http_cache(root.path()),
+            try_migrate_http_cache(root.path()),
             &["legacy cache path", "not a directory"],
         );
     }
@@ -730,7 +658,7 @@ mod tests {
         std::fs::write(root.path().join("http"), b"not a dir").expect("write target file");
 
         assert_invalid_input_contains(
-            migrate_http_cache(root.path()),
+            try_migrate_http_cache(root.path()),
             &["runtime cache target", "not a directory"],
         );
     }
@@ -746,7 +674,7 @@ mod tests {
         .expect("create dangling legacy symlink");
 
         assert_invalid_input_contains(
-            migrate_http_cache(root.path()),
+            try_migrate_http_cache(root.path()),
             &["legacy cache path", "missing target"],
         );
     }
@@ -787,25 +715,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn body_limit_epoch_lock_contention_obeys_variant_article_deadline() {
+    async fn body_limit_epoch_lock_contention_preserves_variant_article_time() {
         let root = TempDirGuard::new("body-limit-epoch-deadline");
         fs::create_dir_all(root.path()).expect("cache root");
         let held = open_epoch_lock(root.path()).expect("epoch lock");
         held.lock().expect("hold epoch lock");
         let deadline =
-            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
 
-        let error = ensure_body_limited_cache_epoch_until(root.path(), false, &deadline)
+        let error = try_ensure_body_limited_cache_epoch_until(root.path(), false, &deadline)
             .await
-            .expect_err("contended epoch lock must not outlive the invocation");
+            .expect_err("contended epoch lock must leave time for the provider");
 
-        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert_eq!(error.kind(), io::ErrorKind::WouldBlock);
+        assert!(!deadline.is_exhausted());
         assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
         held.unlock().expect("release epoch lock");
     }
 
     #[tokio::test(start_paused = true)]
-    async fn maintenance_contention_expires_without_partial_migration_and_releases_for_retry() {
+    async fn maintenance_contention_skips_without_partial_migration_and_releases_for_retry() {
         let root = TempDirGuard::new("migration-maintenance-deadline");
         fs::create_dir_all(root.path().join("http-cacache")).unwrap();
         fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
@@ -815,10 +744,11 @@ mod tests {
         let deadline =
             crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
 
-        let error = migrate_http_cache_with_deadline(root.path(), &deadline)
+        let error = try_migrate_http_cache_until(root.path(), &deadline)
             .await
-            .expect_err("contended migration must expire");
-        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+            .expect_err("contended migration must skip immediately");
+        assert_eq!(error.kind(), io::ErrorKind::WouldBlock);
+        assert!(!deadline.is_exhausted());
         assert_eq!(
             fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
             b"legacy"
@@ -829,7 +759,7 @@ mod tests {
         let retry =
             crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
         assert!(matches!(
-            migrate_http_cache_with_deadline(root.path(), &retry)
+            try_migrate_http_cache_until(root.path(), &retry)
                 .await
                 .unwrap(),
             MigrationOutcome::Renamed
@@ -1180,7 +1110,7 @@ mod tests {
             .expect("create dangling runtime symlink");
 
         assert_invalid_input_contains(
-            migrate_http_cache(root.path()),
+            try_migrate_http_cache(root.path()),
             &["runtime cache target", "missing target"],
         );
     }
