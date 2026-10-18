@@ -1334,7 +1334,7 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`.cache/biomcp-specs/`" in contributing_ws
     assert "`BIOMCP_SPEC_CACHE_HIT=1`" in contributing_ws
     assert "`make spec-smoke`" not in contributing_ws
-    assert "beelink" in contributing
+    assert "Measured on the development host" in contributing
     assert "2026-04-23" in contributing
     assert "/usr/bin/time -p" in contributing
     assert "warm-cache steady-state" in contributing_ws

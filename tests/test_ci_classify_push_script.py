@@ -137,7 +137,7 @@ def test_sdlc_program_or_configuration_push_runs_full_ci(
     """A program, gate wrapper or configuration under sdlc/ counts as
     a change, because sdlc/ holds more than records: the gate wrappers
     in sdlc/scripts, the lifecycle programs and their state in
-    sdlc/project, pm's own configuration, the skills the checks read,
+    sdlc/project, the landing configuration, the skills the checks read,
     and the release checklist. A push touching any of them must run
     the full jobs.
     """
@@ -168,7 +168,7 @@ def test_sdlc_record_text_push_stays_docs_only(scratch_repo: Path, path: str) ->
 
 
 def test_tickets_and_records_together_stay_docs_only(scratch_repo: Path) -> None:
-    """The pm landing shape: a push touching only ticket and record
+    """The landing shape: a push touching only ticket and record
     text across both folders still classifies docs-only.
     """
     sha = _commit(
@@ -320,7 +320,7 @@ def _fake_gh_bin(tmp_path: Path) -> Path:
 
 
 def _record_push_over_code_tip(scratch_repo: Path) -> tuple[str, str]:
-    """The pm landing shape: a code commit (the previous tip), then a
+    """The landing shape: a code commit (the previous tip), then a
     record commit that touches only sdlc/. The merge-base route says
     full CI (the code changed since main), so only the green-tip
     route can skip. Returns (previous tip, pushed tip).
@@ -403,7 +403,7 @@ def test_anything_but_a_green_tip_runs_full_ci(
 def test_second_route_counts_only_sdlc_paths(scratch_repo: Path, tmp_path: Path) -> None:
     """notes/ is in the merge-base allow list but not here: the
     previous tip's green run proved a tree without the notes change,
-    and only sdlc/ is what pm writes onto a branch.
+    and only sdlc/ is written onto a landing branch.
     """
     code_tip = _commit(scratch_repo, {"src/lib.rs": "fn a() {}"}, "code")
     tip = _commit(

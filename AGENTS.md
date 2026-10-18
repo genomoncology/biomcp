@@ -45,10 +45,10 @@ https://biomcp.org/:
 
 ## Working
 
-Run affected tests through the build job, leaving `CARGO_INCREMENTAL` unset so the configured compiler cache can run:
+Run affected tests on the configured build machine, leaving `CARGO_INCREMENTAL` unset so the configured compiler cache can run:
 
 ```
-pm job run <ticket> <revision> -- cargo nextest run --no-default-features -E 'test(...)'
+cargo nextest run --no-default-features -E 'test(...)'
 ```
 
 Run affected tests during development. Run one Rust build at a time within a lane. Build-job admission schedules independent lanes in parallel.
@@ -103,7 +103,7 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 ## Landing changes
 
-One coordinator lands one ticket at a time through `pm ticket land`. The configured `ticketsGate` runs `make landing-gate` through the build job on the reviewed merge candidate. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
+One coordinator lands one reviewed ticket at a time. Run `make landing-gate` on the reviewed merge candidate through the configured build job. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
 
 A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another ticket.
 
