@@ -4,7 +4,7 @@ priority: 4
 
 # 2082 — Measure both releases under comparable conditions
 
-Status: COMPLETE.
+Status: OPEN.
 
 Milestone: 0.9.3
 Depends on: 2073
@@ -58,6 +58,8 @@ Reviews: revision dff1bfc, accept
 Reopened: 2026-10-18 — Refresh affected runtime and coverage measurements after additional release fixes; retain unaffected evidence under its measured revision.
 
 Reviews: revision ddc1729, accept
+
+Reopened: 2026-10-18 — The rejected final rehearsal requires two repairs; refresh only measurement rows affected by any production change and keep the prior measurements under their original source identity. Land the final record after both repairs, then rehearse the replacement candidate.
 
 ## Outcome
 
