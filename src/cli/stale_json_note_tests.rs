@@ -2,8 +2,9 @@
 //! What this file proves, exactly: the note reaches article search
 //! JSON and search-all JSON through `_meta.notes` (parsed, not
 //! grepped); the ClinGen prefetch inside `get gene` carries a stale
-//! serve's note to the markdown card. Day-cached GWAS replies carry
-//! the same age note once past the provider's freshness window.
+//! serve's note to the markdown card. Day-cached GWAS replies remain
+//! free of stale notes inside the day window even when the provider's
+//! shorter freshness window has expired.
 //! Fixtures answer with a one-second freshness window, then stop.
 
 /// Answer every request with `body` as JSON, fresh-cacheable for one
@@ -327,7 +328,7 @@ async fn a_stale_article_search_json_states_the_cache_age_in_meta_notes() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn a_day_cached_gwas_search_states_the_cache_age() {
+async fn a_day_cached_gwas_search_inside_the_day_window_has_no_cache_note() {
     const BODY: &str = r#"{"_embedded":{"associations":[{"accession_id":"GCST90002321","p_value":5e-8,"mapped_genes":["BRAF"],"reported_trait":["melanoma"],"snp_allele":[{"rs_id":"rs121913524","effect_allele":"T"}]}]},"page":{"totalElements":1}}"#;
     let (base, server) = stale_note_fixture_server(BODY).await;
     let _env = StaleNoteEnv::new(&base, &["BIOMCP_GWAS_BASE"]);
@@ -338,10 +339,8 @@ async fn a_day_cached_gwas_search_states_the_cache_age() {
     server.abort();
     let cached = run(&args).await;
     assert!(
-        meta_notes(&cached)
-            .iter()
-            .any(|note| note.contains("older than the provider's freshness window")),
-        "{cached}"
+        meta_notes(&cached).is_empty(),
+        "the day-cached answer is still fresh: {cached}"
     );
 }
 

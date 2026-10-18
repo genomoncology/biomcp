@@ -155,10 +155,20 @@ async fn a_repeat_gwas_search_inside_a_day_makes_no_request() {
         .search_associations(Some("BRAF"), None, 5)
         .await
         .expect("first search");
-    let second = client
-        .search_associations(Some("BRAF"), None, 5)
-        .await
-        .expect("repeat search");
+    let ((second, notes), warnings) =
+        crate::test_support::capture_warnings(crate::sources::with_stale_serve_notes(async {
+            let second = client
+                .search_associations(Some("BRAF"), None, 5)
+                .await
+                .expect("repeat search");
+            (second, crate::sources::take_stale_serve_sentences())
+        }))
+        .await;
+    assert!(
+        notes.is_empty(),
+        "a day-cache hit is still fresh: {notes:?}"
+    );
+    assert!(!warnings.contains("served from cache"), "{warnings}");
 
     server.abort();
     drop(env);
@@ -218,10 +228,21 @@ async fn infinite_cache_mode_still_serves_the_aged_gwas_answer() {
         .await
         .expect("first search");
     let _infinite = crate::sources::test_cache_mode::infinite();
-    let second = client
-        .search_associations(Some("BRAF"), None, 5)
-        .await
-        .expect("infinite-mode repeat");
+    let ((second, notes), warnings) =
+        crate::test_support::capture_warnings(crate::sources::with_stale_serve_notes(async {
+            let second = client
+                .search_associations(Some("BRAF"), None, 5)
+                .await
+                .expect("infinite-mode repeat");
+            (second, crate::sources::take_stale_serve_sentences())
+        }))
+        .await;
+    assert_eq!(
+        notes.len(),
+        1,
+        "an expired infinite-mode serve keeps its note"
+    );
+    assert!(warnings.contains("served from cache"), "{warnings}");
 
     server.abort();
     drop(env);

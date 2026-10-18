@@ -565,7 +565,10 @@ fn shared_http_clients() -> Result<SharedHttpClients, BioMcpError> {
         .write()
         .expect("shared HTTP client lock poisoned");
     if slot.is_none() {
-        let cache = std::sync::Arc::new(SharedHttpCache::default());
+        let cache = std::sync::Arc::new(SharedHttpCache {
+            config: resolve_http_cache_config()?,
+            ..SharedHttpCache::default()
+        });
         let client = finish_http_client(SharedHttpClientKind::Default, None, Some(cache.clone()))?;
         *slot = Some(SharedHttpClients { client, cache });
     }
@@ -578,6 +581,7 @@ fn shared_http_clients() -> Result<SharedHttpClients, BioMcpError> {
 
 #[derive(Default)]
 struct SharedHttpCache {
+    config: Option<crate::cache::ResolvedCacheConfig>,
     ready: tokio::sync::OnceCell<std::sync::Arc<dyn Middleware>>,
     initialization: tokio::sync::Mutex<()>,
 }
@@ -605,7 +609,7 @@ impl SharedHttpCache {
         if let Some(cache) = self.ready.get() {
             return Ok(Some(cache.clone()));
         }
-        let Some(config) = resolve_http_cache_config()? else {
+        let Some(config) = self.config.clone() else {
             return Ok(None);
         };
         let initialized = self
@@ -629,7 +633,7 @@ impl SharedHttpCache {
             }
             Err(error) => {
                 // A transient cache failure leaves the cell empty for a later request.
-                crate::cache::warn_local_http_cache("initialization", &error);
+                note_http_cache_setup_failure(&error);
                 Ok(None)
             }
         }
@@ -1454,6 +1458,16 @@ impl reqwest_retry::RetryableStrategy for NoTrustFailureStrategy {
     }
 }
 
+fn note_http_cache_setup_failure(error: &BioMcpError) {
+    if matches!(error, BioMcpError::Io(error) if error.kind() == std::io::ErrorKind::WouldBlock) {
+        tracing::debug!(
+            "local HTTP cache initialization skipped while migration or maintenance is active"
+        );
+    } else {
+        crate::cache::warn_local_http_cache("initialization", error);
+    }
+}
+
 fn resolve_http_cache_config() -> Result<Option<crate::cache::ResolvedCacheConfig>, BioMcpError> {
     match crate::cache::resolve_cache_config() {
         Ok(config) => Ok(Some(config)),
@@ -1509,7 +1523,7 @@ where
     let manager = match prepare_http_cache(config, make_manager) {
         Ok(manager) => manager,
         Err(error) => {
-            crate::cache::warn_local_http_cache("initialization", &error);
+            note_http_cache_setup_failure(&error);
             return build_uncached_http_client(kind, provider_policy);
         }
     };
@@ -1637,7 +1651,7 @@ async fn build_http_client_with_config_deadline(
             if deadline.is_exhausted() {
                 return Err(variant_article_deadline_error());
             }
-            crate::cache::warn_local_http_cache("initialization", &error);
+            note_http_cache_setup_failure(&error);
             return build_uncached_http_client(kind, provider_policy);
         }
     };

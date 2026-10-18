@@ -19,3 +19,4 @@ The supplement text cache obeys the same age, size and disk limits as the rest o
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-18 next: Outcome: supplement extraction uses managed cache age/size/disk accounting and direct keyed lookup. Baseline stores extraction in sessions/article-supplement-text-v1 and recursively secures its parent; clean and stats skip it. Change supplement_search and child cache module plus outside-in article asset cases. Reproduction patch queued; old unreleased entries remain until existing whole-cache clear.

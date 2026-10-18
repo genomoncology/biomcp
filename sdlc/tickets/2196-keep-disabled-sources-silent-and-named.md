@@ -16,3 +16,7 @@ A disabled source is never contacted, including by `biomcp health`, and every pl
 - Cause: health builds its own client (`src/cli/health/runner.rs` near 344), matches rows by display name, and the FDA orphan probe uses a raw client.
 - Changes: route health probes through the disabled-source check by source id; report disabled sections and article sources as disabled with the setting's name; drop carried fields of disabled sources; name the actual origin of an override; fix the terms records so the group matches its documented rule.
 - Proof: traced-network outside-in cases: health with sources disabled makes no call to them; each named section reports disabled; carried fields absent; group membership matches the recorded terms.
+
+## Progress
+
+- 2026-10-18 started

@@ -129,11 +129,21 @@ async fn a_repeat_label_search_inside_a_day_makes_no_request() {
         .await
         .expect("first label search")
         .expect("a label answer");
-    let second = client
-        .label_search("vemurafenib")
-        .await
-        .expect("repeat label search")
-        .expect("the repeat serves the same answer");
+    let ((second, notes), warnings) =
+        crate::test_support::capture_warnings(crate::sources::with_stale_serve_notes(async {
+            let second = client
+                .label_search("vemurafenib")
+                .await
+                .expect("repeat label search")
+                .expect("the repeat serves the same answer");
+            (second, crate::sources::take_stale_serve_sentences())
+        }))
+        .await;
+    assert!(
+        notes.is_empty(),
+        "a day-cache hit is still fresh: {notes:?}"
+    );
+    assert!(!warnings.contains("served from cache"), "{warnings}");
 
     server.abort();
     drop(env);
@@ -198,15 +208,25 @@ async fn a_repeat_adverse_event_count_inside_a_day_makes_no_request() {
         .await
         .expect("first count")
         .expect("a count answer");
-    let second = client
-        .faers_count(
-            "patient.drug.medicinalproduct:\"pembrolizumab\"",
-            "patient.reaction.reactionmeddrapt",
-            5,
-        )
-        .await
-        .expect("repeat count")
-        .expect("the repeat serves the same answer");
+    let ((second, notes), warnings) =
+        crate::test_support::capture_warnings(crate::sources::with_stale_serve_notes(async {
+            let second = client
+                .faers_count(
+                    "patient.drug.medicinalproduct:\"pembrolizumab\"",
+                    "patient.reaction.reactionmeddrapt",
+                    5,
+                )
+                .await
+                .expect("repeat count")
+                .expect("the repeat serves the same answer");
+            (second, crate::sources::take_stale_serve_sentences())
+        }))
+        .await;
+    assert!(
+        notes.is_empty(),
+        "a day-cache hit is still fresh: {notes:?}"
+    );
+    assert!(!warnings.contains("served from cache"), "{warnings}");
 
     server.abort();
     drop(env);
@@ -317,4 +337,41 @@ async fn cache_mode_off_never_serves_the_stored_label_answer() {
         "mode off must hit the provider each time"
     );
     assert_eq!(first, second);
+}
+
+/// Infinite mode may serve a genuinely old answer; its warning and note remain.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn infinite_cache_mode_keeps_the_aged_label_warning_and_note() {
+    let (base, requests, server) =
+        day_cache_server(Reply::json_a_day_old(LABEL_BODY), Reply::json(COUNT_BODY)).await;
+    let mut env = FixtureEnv::scratch_cache_only();
+    let client = day_cached_client(&base, &mut env);
+    let first = client
+        .label_search("vemurafenib")
+        .await
+        .expect("first search");
+    let _infinite = crate::sources::test_cache_mode::infinite();
+    let ((second, notes), warnings) =
+        crate::test_support::capture_warnings(crate::sources::with_stale_serve_notes(async {
+            let answer = client
+                .label_search("vemurafenib")
+                .await
+                .expect("cached search");
+            (answer, crate::sources::take_stale_serve_sentences())
+        }))
+        .await;
+    server.abort();
+    assert_eq!(first, second);
+    assert_eq!(
+        request_count(&requests),
+        1,
+        "infinite mode must serve the old answer"
+    );
+    assert_eq!(
+        notes.len(),
+        1,
+        "an expired infinite-mode serve keeps its note"
+    );
+    assert!(warnings.contains("served from cache"), "{warnings}");
 }
