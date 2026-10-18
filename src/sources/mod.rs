@@ -565,7 +565,10 @@ fn shared_http_clients() -> Result<SharedHttpClients, BioMcpError> {
         .write()
         .expect("shared HTTP client lock poisoned");
     if slot.is_none() {
-        let cache = std::sync::Arc::new(SharedHttpCache::default());
+        let cache = std::sync::Arc::new(SharedHttpCache {
+            config: resolve_http_cache_config()?,
+            ..SharedHttpCache::default()
+        });
         let client = finish_http_client(SharedHttpClientKind::Default, None, Some(cache.clone()))?;
         *slot = Some(SharedHttpClients { client, cache });
     }
@@ -578,6 +581,7 @@ fn shared_http_clients() -> Result<SharedHttpClients, BioMcpError> {
 
 #[derive(Default)]
 struct SharedHttpCache {
+    config: Option<crate::cache::ResolvedCacheConfig>,
     ready: tokio::sync::OnceCell<std::sync::Arc<dyn Middleware>>,
     initialization: tokio::sync::Mutex<()>,
 }
@@ -605,7 +609,7 @@ impl SharedHttpCache {
         if let Some(cache) = self.ready.get() {
             return Ok(Some(cache.clone()));
         }
-        let Some(config) = resolve_http_cache_config()? else {
+        let Some(config) = self.config.clone() else {
             return Ok(None);
         };
         let initialized = self
