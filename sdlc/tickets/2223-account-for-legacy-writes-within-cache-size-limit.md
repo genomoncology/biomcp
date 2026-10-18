@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Depends on: 2218
 
+Reviews: revision a40fd13, accept
+
 ## Outcome
 
 Document the approved mixed-version boundary: sharing a cache with v0.9.2 may temporarily exceed the configured size limit until the next command-triggered daily clean reconciles it. Preserve fast startup and hit paths, and name explicit cleanup as the earlier remedy. No production cache-code change.
