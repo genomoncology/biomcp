@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 8a022cd, accept
 
+Reviews: revision d0cc62e, accept
+
 ## Outcome
 
 Reactome's source terms distinguish CC0 database data and derived files from CC BY4 illustrations/art/branding and the separately licensed software, matching the official license for BioMCP's actual integration.
