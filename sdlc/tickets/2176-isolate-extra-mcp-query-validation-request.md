@@ -4,13 +4,15 @@ priority: 1
 
 # 2176 — Repair the extra MCP query-validation request
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
 Reviews: revision 819befe, accept
 
 Reviews: revision f11f6dc, accept
+
+Landed: 22b4cec (fast-forward: Accepted no-store fixture correction is already carried on main. Fifteen full main checks passed since diagnostics: four before the stale-note recurrence and eleven after the reviewed no-store correction; nine include the cache batch. Latest 2156/1792285080324-84922 passed at 7025e1176195a9bfa6e4fcd8dbe84c30862cf1a6. Complete nonpublishing rehearsal https://github.com/genomoncology/biomcp/actions/runs/39085869827 passed on that candidate including all installed wheels and both containers. No extra-request recurrence followed the correction. The original three-versus-two cause remains unconfirmed; the separately reproduced stale-note fixture leak was fixed. This closure changes ticket records only; tag the rehearsed candidate.)
 
 ## Outcome
 
