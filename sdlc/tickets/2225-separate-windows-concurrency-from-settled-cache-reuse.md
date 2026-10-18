@@ -4,6 +4,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 88393e5, accept
+
 ## Outcome
 
 Determine whether the Windows warm-cache failure reflects a product defect or an invalid test assumption, including comparison with released v0.9.3. Fix the demonstrated cause while preserving successful concurrent CLI and MCP responses, fail-open caching, and exact settled byte accounting.
