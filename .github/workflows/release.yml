@@ -127,6 +127,11 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
 
+      - name: Prepare the offline sandbox
+        uses: ./.github/actions/lane-setup
+        with:
+          offline: true
+
       # The marker set compiles the packaged crate offline; the
       # registry has to be fetched first, the same fetch the CI
       # python lane runs for its contract tests.
