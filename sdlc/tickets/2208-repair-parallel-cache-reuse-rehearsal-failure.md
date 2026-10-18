@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision f95d38e, accept
+
 ## Outcome
 
 Concurrent CLI starts reuse a fresh current-epoch cache while its epoch lock is held. Diagnose the current Linux release-qualification extra request and repair its cause without relaxing the no-refetch assertion, freshness, deadlines or cache safety.
