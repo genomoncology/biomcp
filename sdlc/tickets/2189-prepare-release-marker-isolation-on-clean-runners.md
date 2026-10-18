@@ -22,3 +22,7 @@ The release marker job prepares the Linux isolation prerequisites before invokin
 - Candidate c91929c9a7ababa9d52574c12fc489a99d8bfc29.
 - Run https://github.com/genomoncology/biomcp/actions/runs/39081464829 ; release-gate job117541976588, command `make release-gate-markers`, exit2 before marker tests.
 - The coordinator retains the complete failed job log in temporary scratch.
+
+## Progress
+
+- 2026-10-17 started
