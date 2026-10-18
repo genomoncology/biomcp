@@ -177,6 +177,9 @@ def cache_retention_bypasses(root: Path) -> list[str]:
         r"[\"']BIOMCP_CACHE_MODE[\"']\s*(?:\]\s*=|:)\s*[\"'](?:default|infinite)[\"']"
         r"|\.pop\(\s*[\"']BIOMCP_CACHE_MODE[\"']"
         r"|BIOMCP_CACHE_MODE\s*=\s*[\"'](?:default|infinite)[\"']"
+        r"|\.setenv\(\s*[\"']BIOMCP_CACHE_MODE[\"']\s*,\s*[\"'](?:default|infinite)[\"']"
+        r"|\.delenv\(\s*[\"']BIOMCP_CACHE_MODE[\"']"
+        r"|\bdel\s+\w+\[\s*[\"']BIOMCP_CACHE_MODE[\"']\s*\]"
     )
     allowed = {"tests/golden/replay_env.py", "tests/test_cache_invalid_settings.py"}
     found = []
@@ -193,13 +196,21 @@ def test_cache_retention_fixtures_use_the_shared_environment() -> None:
     assert cache_retention_bypasses(REPO_ROOT) == []
 
 
-def test_cache_retention_guard_rejects_an_unisolated_fixture(tmp_path: Path) -> None:
+@pytest.mark.parametrize("statement", [
+    'env.pop("BIOMCP_CACHE_MODE", None)',
+    'env["BIOMCP_CACHE_MODE"] = "default"',
+    'env.update(BIOMCP_CACHE_MODE="infinite")',
+    'env = {"BIOMCP_CACHE_MODE": "default"}',
+    'monkeypatch.setenv("BIOMCP_CACHE_MODE", "default")',
+    'monkeypatch.delenv("BIOMCP_CACHE_MODE", raising=False)',
+    'del env["BIOMCP_CACHE_MODE"]',
+])
+def test_cache_retention_guard_rejects_an_unisolated_fixture(tmp_path: Path, statement: str) -> None:
     tests = tmp_path / "tests"
     tests.mkdir()
     (tests / "retention.py").write_text(
-        'env.pop("BIOMCP_CACHE_MODE", None)\n'
-        'env["BIOMCP_CACHE_MODE"] = "default"\n', encoding="utf-8",
+        statement + "\n", encoding="utf-8",
     )
     assert cache_retention_bypasses(tmp_path) == [
-        "tests/retention.py:1", "tests/retention.py:2",
+        "tests/retention.py:1",
     ]
