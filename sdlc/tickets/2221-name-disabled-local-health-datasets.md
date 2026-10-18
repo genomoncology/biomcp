@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision f92aad4, accept
+
 ## Outcome
 
 Health names the disable setting for every disabled local dataset, consistently with the existing DDInter row, without calling a configured disable a dataset error.
