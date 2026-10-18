@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision a5c5aac, accept
 
+Reviews: revision db2e8b7, accept
+
 ## Outcome
 
 Error messages say what went wrong.
