@@ -67,8 +67,9 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 
 # gRPC (AlphaGenome). The transport default brings a gRPC server this
 # client never runs; channel alone gives it Endpoint and Channel.
-tonic = { version = "0.12", default-features = false, features = ["codegen", "prost", "channel", "tls", "tls-roots"], optional = true }
-prost = { version = "0.13", optional = true }
+tonic = { version = "0.14", default-features = false, features = ["codegen", "channel", "tls-ring", "tls-native-roots"], optional = true }
+tonic-prost = { version = "0.14", optional = true }
+prost = { version = "0.14", optional = true }
 zstd = { version = "0.13", optional = true }
 
 # JSON
@@ -145,7 +146,7 @@ unicode-normalization = "0.1.25"
 
 [features]
 default = ["alphagenome", "charts-png"]
-alphagenome = ["dep:tonic", "dep:prost", "dep:zstd", "dep:tokio-stream"]
+alphagenome = ["dep:tonic", "dep:tonic-prost", "dep:prost", "dep:zstd", "dep:tokio-stream"]
 charts-png = ["kuva/png"]
 
 [lints.clippy]

@@ -81,6 +81,23 @@ where
     outcome(row, ProbeClass::Error)
 }
 
+fn disabled_local_data_outcome(
+    source_id: &str,
+    label: &str,
+    affects: &'static str,
+) -> Option<ProbeOutcome> {
+    let reason = crate::sources::disable::reason(source_id)?;
+    let mut row = health_row(
+        label,
+        HealthStatus::Disabled,
+        "-".to_string(),
+        Some(affects),
+        None,
+    );
+    row.disabled_reason = Some(reason.to_string());
+    Some(outcome(row, ProbeClass::Excluded))
+}
+
 pub(in crate::cli::health) fn ema_local_data_outcome(
     root: &Path,
     env_configured: bool,
@@ -99,6 +116,11 @@ pub(in crate::cli::health) fn ema_local_data_outcome(
 }
 
 pub(in crate::cli::health) fn check_ema_local_data(mcp: bool) -> ProbeOutcome {
+    if let Some(disabled) =
+        disabled_local_data_outcome("ema", "EMA local data", EMA_LOCAL_DATA_AFFECTS)
+    {
+        return disabled;
+    }
     let env_configured = configured_key("BIOMCP_EMA_DIR").is_some();
     let root = crate::sources::ema::resolve_ema_root();
     ema_local_data_outcome(&root, env_configured, mcp)
@@ -122,6 +144,11 @@ pub(in crate::cli::health) fn cvx_local_data_outcome(
 }
 
 pub(in crate::cli::health) fn check_cvx_local_data(mcp: bool) -> ProbeOutcome {
+    if let Some(disabled) =
+        disabled_local_data_outcome("cdc-cvx", "CDC CVX/MVX local data", CVX_LOCAL_DATA_AFFECTS)
+    {
+        return disabled;
+    }
     let env_configured = configured_key("BIOMCP_CVX_DIR").is_some();
     let root = crate::sources::cvx::resolve_cvx_root();
     cvx_local_data_outcome(&root, env_configured, mcp)
@@ -145,16 +172,10 @@ pub(in crate::cli::health) fn ddinter_local_data_outcome(
 }
 
 pub(in crate::cli::health) fn check_ddinter_local_data(mcp: bool) -> ProbeOutcome {
-    if crate::sources::disable::is_disabled("ddinter") {
-        let mut row = super::runner::health_row(
-            "DDInter local data",
-            super::HealthStatus::Disabled,
-            "-".to_string(),
-            Some(DDINTER_LOCAL_DATA_AFFECTS),
-            None,
-        );
-        row.disabled_reason = crate::sources::disable::reason("ddinter").map(str::to_string);
-        return super::runner::outcome(row, super::runner::ProbeClass::Excluded);
+    if let Some(disabled) =
+        disabled_local_data_outcome("ddinter", "DDInter local data", DDINTER_LOCAL_DATA_AFFECTS)
+    {
+        return disabled;
     }
     let env_configured = configured_key("BIOMCP_DDINTER_DIR").is_some();
     let root = crate::sources::ddinter::resolve_ddinter_root();
@@ -179,6 +200,13 @@ pub(in crate::cli::health) fn who_local_data_outcome(
 }
 
 pub(in crate::cli::health) fn check_who_local_data(mcp: bool) -> ProbeOutcome {
+    if let Some(disabled) = disabled_local_data_outcome(
+        "who-prequalification",
+        "WHO Prequalification local data",
+        WHO_LOCAL_DATA_AFFECTS,
+    ) {
+        return disabled;
+    }
     let env_configured = configured_key("BIOMCP_WHO_DIR").is_some();
     let root = crate::sources::who_pq::resolve_who_pq_root();
     who_local_data_outcome(&root, env_configured, mcp)
@@ -213,6 +241,11 @@ pub(in crate::cli::health) fn gtr_local_data_outcome(
 }
 
 pub(in crate::cli::health) fn check_gtr_local_data(mcp: bool) -> ProbeOutcome {
+    if let Some(disabled) =
+        disabled_local_data_outcome("gtr", "GTR local data", GTR_LOCAL_DATA_AFFECTS)
+    {
+        return disabled;
+    }
     let env_configured = configured_key("BIOMCP_GTR_DIR").is_some();
     let root = crate::sources::gtr::resolve_gtr_root();
     gtr_local_data_outcome(&root, env_configured, mcp)
@@ -236,6 +269,11 @@ pub(in crate::cli::health) fn who_ivd_local_data_outcome(
 }
 
 pub(in crate::cli::health) fn check_who_ivd_local_data(mcp: bool) -> ProbeOutcome {
+    if let Some(disabled) =
+        disabled_local_data_outcome("who-ivd", "WHO IVD local data", WHO_IVD_LOCAL_DATA_AFFECTS)
+    {
+        return disabled;
+    }
     let env_configured = configured_key("BIOMCP_WHO_IVD_DIR").is_some();
     let root = crate::sources::who_ivd::resolve_who_ivd_root();
     who_ivd_local_data_outcome(&root, env_configured, mcp)

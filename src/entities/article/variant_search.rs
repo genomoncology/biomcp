@@ -212,6 +212,7 @@ struct VariantArticleCallEvent {
     latency_ms: u64,
     pages: usize,
     reason_code: Option<&'static str>,
+    disabled_reason: Option<String>,
 }
 
 /// One alias's yield from one source, as the route observed it before the
@@ -614,6 +615,7 @@ impl VariantArticleExecutionContext {
                 latency_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
                 pages,
                 reason_code,
+                disabled_reason: None,
             });
     }
 
@@ -624,8 +626,11 @@ impl VariantArticleExecutionContext {
         started: Instant,
         error: &BioMcpError,
     ) {
+        let disabled_reason = crate::sources::disable::unavailable_disabled_reason(error);
         let (status, reason_code) = if self.deadline.is_exhausted() {
             ("timed_out", "invocation_deadline")
+        } else if disabled_reason.is_some() {
+            ("unavailable", "source_disabled")
         } else if variant_article_error_is_provider_timeout(error) {
             ("unavailable", "provider_timeout")
         } else if matches!(
@@ -648,6 +653,7 @@ impl VariantArticleExecutionContext {
                 latency_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
                 pages: 0,
                 reason_code: Some(reason_code),
+                disabled_reason: disabled_reason.map(str::to_string),
             });
     }
 
@@ -667,6 +673,7 @@ impl VariantArticleExecutionContext {
                 latency_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
                 pages: 0,
                 reason_code: Some(reason_code),
+                disabled_reason: None,
             });
     }
 
@@ -685,6 +692,7 @@ impl VariantArticleExecutionContext {
                 } else {
                     "logical_work_cap"
                 }),
+                disabled_reason: None,
             });
     }
 
@@ -915,6 +923,7 @@ impl VariantArticleExecutionContext {
                 latency_ms: 0,
                 pages: 0,
                 reason_code: Some("no_variant_entity"),
+                disabled_reason: None,
             });
     }
 }
@@ -1360,6 +1369,23 @@ fn aggregate_source_status(
     }
 }
 
+/// Keep the configured disable setting beside the shared status ledger.
+fn name_disabled_source<'a>(
+    status: &mut VariantArticleSourceStatus,
+    events: impl Iterator<Item = &'a VariantArticleCallEvent>,
+) {
+    let reasons = events
+        .filter_map(|event| event.disabled_reason.as_deref())
+        .collect::<BTreeSet<_>>();
+    if !reasons.is_empty() {
+        let reason = reasons.into_iter().collect::<Vec<_>>().join("; ");
+        status.detail = Some(match status.detail.take() {
+            Some(detail) => format!("{detail}; {reason}"),
+            None => reason,
+        });
+    }
+}
+
 fn provider_statuses_for_route(
     route: &str,
     events: &[VariantArticleCallEvent],
@@ -1395,7 +1421,9 @@ fn provider_statuses_for_route(
                 .iter()
                 .filter_map(|event| event.reason_code)
                 .collect();
-            aggregate_source_status(route, &source, work, reasons)
+            let mut status = aggregate_source_status(route, &source, work, reasons);
+            name_disabled_source(&mut status, events.into_iter());
+            status
         })
         .collect()
 }
@@ -1479,6 +1507,7 @@ fn terminal_reconciled_statuses(
                 });
             }
             let mut status = aggregate_source_status(&route, &source, work, reasons);
+            name_disabled_source(&mut status, matching.into_iter());
             if planned == 0 && started == 0 {
                 status.status = VariantArticleSourceStatusKind::Ok;
                 status.detail = None;
@@ -1510,10 +1539,20 @@ fn variant_article_outage_message(statuses: &[VariantArticleSourceStatus]) -> St
     if failing.is_empty() {
         failing.push("resolution/myvariant".into());
     }
-    format!(
+    let disabled = statuses
+        .iter()
+        .filter(|status| status.reason_codes.contains(&"source_disabled"))
+        .filter_map(|status| status.detail.as_deref())
+        .collect::<Vec<_>>();
+    let message = format!(
         "variant article sources were unavailable: {}",
         failing.join(", ")
-    )
+    );
+    if disabled.is_empty() {
+        message
+    } else {
+        format!("{message}; {}", disabled.join("; "))
+    }
 }
 
 fn source_statuses_incomplete(statuses: &[VariantArticleSourceStatus]) -> bool {
@@ -7945,6 +7984,7 @@ mod tests {
             latency_ms: 0,
             pages: 1,
             reason_code: None,
+            disabled_reason: None,
         };
         let unavailable = VariantArticleCallEvent {
             status: "unavailable".into(),

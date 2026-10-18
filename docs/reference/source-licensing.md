@@ -117,7 +117,7 @@ sources stay out on their recorded open readings.
 | PubMed | 1 | direct_api | optional_env | NLM public-domain search and metadata service | search results are broadly reusable, but article-level abstracts, full text, and downstream reuse still depend on the returned record context | <https://www.ncbi.nlm.nih.gov/books/NBK25501/> |
 | PubTator3 | 1 | direct_api | optional_env | NCBI/NLM public-domain annotation service | results are broadly reusable, but preserve PMID/source provenance and article-level rights separately | <https://www.ncbi.nlm.nih.gov/research/pubtator3/api> |
 | QuickGO | 1 | direct_api | none | GO/EMBL-EBI open data service | query results are generally reusable; preserve GO/EMBL-EBI attribution where expected | <https://www.ebi.ac.uk/QuickGO/> |
-| Reactome | 1 | direct_api | none | Reactome pathway content is CC BY 4.0, with some data exports additionally placed under CC0 | reuse is allowed with attribution; preserve pathway/source provenance in downstream materials | <https://reactome.org/license> |
+| Reactome | 1 | direct_api | none | Reactome database data and derived files are CC0; illustrations, icons, art and branding are CC BY 4.0; software has separate licenses | database data and derived files may be reused commercially without permission; attribution is encouraged for data and required for CC BY 4.0 art | <https://reactome.org/license> |
 | SEER Explorer | 1 | direct_api | none | U.S. government cancer-statistics website and public explorer | summary survival statistics are broadly reusable, but users should preserve SEER/NCI attribution and understand the explorer endpoints are undocumented UI routes | <https://seer.cancer.gov/about/using-website.html> |
 | Semantic Scholar | 2 | direct_api | optional_env | custom API license agreement | the API license restricts repackaging, resale, and broad commercial redistribution without expanded licensing | <https://www.semanticscholar.org/product/api/license> |
 | STRING | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution to STRING and the original publication/resource | <https://string-db.org/cgi/access?footer_active_subpage=licensing> |
@@ -829,11 +829,11 @@ Reviewed on: `2026-09-27`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
-- License / terms summary: Reactome pathway content is CC BY 4.0, with some data exports additionally placed under CC0
-- Redistribution / reuse summary: reuse is allowed with attribution; preserve pathway/source provenance in downstream materials
+- License / terms summary: Reactome database data and derived files are CC0; illustrations, icons, art and branding are CC BY 4.0; software has separate licenses
+- Redistribution / reuse summary: database data and derived files may be reused commercially without permission; attribution is encouraged for data and required for CC BY 4.0 art
 - Official terms URL: <https://reactome.org/license>
-Reviewed on: `2026-09-27`
-- Notes: Reactome announced in 2017 that some annotation files moved to CC0 while core site/code materials remained under CC BY 4.0.
+Reviewed on: `2026-10-18`
+- Notes: BioMCP retrieves database data through the ContentService JSON API. License section 1(c) covers database data and derived files under CC0; section 1(a) covers illustrations, icons, art and branding under CC BY 4.0. Section 1(b) licenses software under Apache 2.0, with exceptions for copyleft dependencies and separately licensed FoamTree software.
 
 ### SEER Explorer
 

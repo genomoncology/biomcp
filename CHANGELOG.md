@@ -6,10 +6,14 @@
 
 ### Fixes
 
+- Report disabled local datasets as disabled in health checks and name the setting instead of reporting missing-file errors. (2221)
+
 - Resolve an rsID in plain PubTator article search through the matching variant entity, preserving text search when no matching entity is available. (2184)
 
 - Include ORCID in restricted source groups and distinguish its non-commercial API terms from public record data reuse. (2216)
+- Correct Reactome licensing guidance to distinguish CC0 database data from CC BY 4.0 art and separately licensed software. (2217)
 - Reconcile HTTP cache byte accounting after explicit cleanup, including reservations left by failed writes. (2218)
+- Preserve configured source-disable reasons in variant literature CLI and MCP responses instead of reporting a provider failure. (2222)
 
 ### Internal
 
@@ -17,6 +21,7 @@
 
 - Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
 
+- Upgrade the AlphaGenome client and its explicit protocol generator to tonic and prost 0.14, sharing the current HTTP stack and removing the obsolete PEM-reader advisory exception. (2077)
 - Open the next development version after the 0.9.3 release. (2215)
 - Exercise production HTTP cache startup and migration in the existing security, contention, upgrade and startup-cost cases, removing unused blocking test constructors. (2199)
 - Exercise parallel CLI searches, a persistent MCP server, cache clearing and shared byte totals in the manual Windows runtime checks. (2201)
