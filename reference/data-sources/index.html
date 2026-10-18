@@ -4704,8 +4704,8 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td>Author search and detail</td>
 <td>Semantic Scholar; ORCID for exact <code>orcid:</code> records</td>
 <td><code>https://api.semanticscholar.org</code>, <code>https://pub.orcid.org/v3.0</code></td>
-<td>Optional (<code>S2_API_KEY</code>); Required for ORCID (<code>ORCID_ACCESS_TOKEN</code>)</td>
-<td>Provider-exact author records; no cross-provider resolution. <code>orcid:</code> detail and claimed works stay exact public ORCID records</td>
+<td>Optional (<code>S2_API_KEY</code>, <code>ORCID_ACCESS_TOKEN</code>)</td>
+<td>Provider-exact author records; no cross-provider resolution. <code>orcid:</code> detail and claimed works stay exact public ORCID records; ORCID serves both without a token</td>
 </tr>
 <tr>
 <td>Article enrichment and graph helpers</td>
@@ -5049,7 +5049,7 @@ reported without provider payload or object-path leakage.</p>
 <tr>
 <td>NCBI E-utilities</td>
 <td><code>NCBI_API_KEY</code></td>
-<td>Optional; improves ClinVar EFetch, PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom</td>
+<td>Optional; improves ClinVar EFetch, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom; PubTator3 keeps its published three-requests-a-second cap with or without the key</td>
 </tr>
 <tr>
 <td>OpenFDA</td>

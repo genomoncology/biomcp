@@ -369,9 +369,9 @@ old_sha=""
 old_version=""
 if [[ -f "$installed_bin" ]]; then
   old_sha="$(compute_sha256 "$installed_bin")"
-  old_output="$($installed_bin --version 2>/dev/null | head -n 1 || true)"
+  old_output="$("$installed_bin" --version 2>/dev/null | head -n 1 || true)"
   if [[ -z "$old_output" ]]; then
-    old_output="$($installed_bin version 2>/dev/null | head -n 1 || true)"
+    old_output="$("$installed_bin" version 2>/dev/null | head -n 1 || true)"
   fi
   old_version="${old_output#* }"
   old_version="${old_version%% *}"

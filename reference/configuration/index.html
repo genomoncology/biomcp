@@ -4480,7 +4480,7 @@ internal fixture overrides and release/install variables.</p>
 </tr>
 <tr>
 <td><code>NCBI_API_KEY</code></td>
-<td>Improves NCBI E-utilities quota for ClinVar, PubMed, PubTator, PMC OA, and ID Converter paths</td>
+<td>Improves NCBI E-utilities quota for ClinVar, PubMed, PMC OA, and ID Converter paths; PubTator3 stays at its published three requests a second with or without the key</td>
 </tr>
 <tr>
 <td><code>NCI_API_KEY</code></td>
@@ -4523,7 +4523,7 @@ internal fixture overrides and release/install variables.</p>
 </tr>
 <tr>
 <td><code>BIOMCP_CACHE_MODE</code></td>
-<td>Cache behavior; <code>infinite</code> is used for local replay/spec cache hits</td>
+<td>Cache behavior; <code>infinite</code> serves cached replies without expiration or revalidation, including GWAS and openFDA day-cache entries</td>
 </tr>
 <tr>
 <td><code>BIOMCP_CACHE_MAX_AGE</code></td>
@@ -4599,9 +4599,14 @@ writes, statistics, and maintenance physically remove entries older than
 <code>max_age_secs</code>; opening the session store removes expired sessions. The
 automatic start-up clean runs at most once a day, and <code>biomcp cache clean</code>
 runs it now; <code>BIOMCP_CACHE_MODE=off</code> skips the start-up clean entirely.
-Managed directories and files are private to the current OS user. BioMCP
-repairs overly broad permissions inside the managed root and refuses linked
-regular files rather than risking access through another pathname.
+BioMCP creates managed directories and files with access limited to the current
+OS user. On Unix this means 0700 directories and 0600 files. HTTP cache startup
+repairs the root directory every time and secures the existing tree once, when
+its <code>.tree-secured-v1</code> marker is missing or invalid. After that marker exists,
+startup does not walk the tree or repair permissions broadened later on its
+children. BioMCP repairs managed paths when it opens them for writing; reads
+do not repair broadened child permissions. It refuses linked regular files
+rather than risking access through another pathname.
 The global <code>--no-cache</code> flag bypasses these HTTP and session stores completely
 for one invocation. It does not override explicit output paths or provider
 retention. In particular, it neither deletes nor force-refreshes the GenCC
@@ -4774,7 +4779,7 @@ stay off without one regardless of this setting.</p>
 <li><code>biomcp health --apis-only</code> reports API/source connectivity and excluded
   key-gated rows; full <code>biomcp health</code> also reports local runtime data and cache
   readiness.</li>
-<li>Optional entity lookups expose typed outcomes in JSON/MCP. <code>inapplicable</code>
+<li>Optional entity lookups expose typed outcomes in JSON/MCP. <code>disabled</code> names an operator setting and offers no retry; <code>inapplicable</code>
   means a required input was absent and no provider was contacted; <code>empty</code> is a
   successful zero-result query; <code>unavailable</code> means retrieval produced no usable
   result; and <code>degraded</code> preserves partial evidence. <code>_meta.section_sources</code>

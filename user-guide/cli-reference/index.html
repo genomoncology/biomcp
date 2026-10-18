@@ -5313,8 +5313,8 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp get &lt;entity&gt; &lt;id&gt; [section...]
 </code></pre></div>
 <p>Section names are positional trailing arguments after <code>&lt;id&gt;</code>. <code>get article</code>
-also accepts the named <code>--pdf</code> modifier, but only together with the <code>fulltext</code>
-section.</p>
+and article detail batches also accept the named <code>--pdf</code> modifier, but only
+together with the <code>fulltext</code> section.</p>
 <h2 id="evidence-metadata">Evidence metadata<a class="headerlink" href="#evidence-metadata" title="Permanent link">&para;</a></h2>
 <p><code>get</code> responses include outbound evidence links in markdown output where available.
 In JSON mode, links are exposed under <code>_meta.evidence_urls</code> and can include
@@ -5749,6 +5749,7 @@ broader paged results.</p>
 <a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>asset<span class="w"> </span>&lt;asset-key&gt;
 <a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
 <a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact
+<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>detail<span class="w"> </span>--sections<span class="w"> </span>fulltext<span class="w"> </span>--pdf
 </code></pre></div>
 <p>Article detail and batch return every author supplied by the selected source in
 source order. JSON carries <code>authors</code>, returned <code>author_count</code>,
@@ -5781,8 +5782,10 @@ helpers. Without it, those same paths use the shared unauthenticated pool at
 <p>For article full text, the default ladder is XML -&gt; PMC HTML. A rung wins only
 when its JATS/HTML structure contains article-body content; abstract-only and
 metadata-only responses remain healthy partials and later rungs continue. Add
-<code>--pdf</code> only to <code>get article &lt;id&gt; fulltext</code> when you want Semantic Scholar
-open-access PDF as the final fallback after XML and HTML do not provide a body.
+<code>--pdf</code> to <code>get article &lt;id&gt; fulltext</code> or to <code>batch article &lt;ids&gt; --mode detail
+--sections fulltext</code> when you want Semantic Scholar open-access PDF as the final
+fallback after XML and HTML do not provide a body; the batch keeps every paper
+under the one in-process Semantic Scholar limiter.
 Requested full-text JSON adds <code>full_text_coverage</code> with final
 <code>full_text</code>/<code>abstract_only</code>/<code>metadata_only</code>/<code>none</code>/<code>unavailable</code> coverage and
 ordered sanitized attempts (provider, source kind, coverage, outcome, cache
@@ -5956,7 +5959,6 @@ appears. Adverse-event batches do not support <code>--sections</code>; use indiv
 <li>Loopback binds accept local Host headers by default. Non-loopback binds require <code>--allowed-hosts</code>; <code>--unsafe-allow-any-host</code> explicitly disables only that check and adds no authentication or encryption. Each allowlist entry is an exact hostname or IP address with an optional port; IPv6 entries with ports use brackets, such as <code>[::1]:8080</code>.</li>
 <li>Streamable HTTP clients connect to <code>/mcp</code>.</li>
 <li>Probe routes: <code>/health</code>, <code>/readyz</code>, and <code>/</code>.</li>
-<li><code>biomcp serve-sse</code> remains available only as a hidden compatibility command that points users back to <code>biomcp serve-http</code>.</li>
 </ul>
 <p>See also: <code>docs/reference/mcp-server.md</code>.</p>
 <h2 id="helper-command-families">Helper command families<a class="headerlink" href="#helper-command-families" title="Permanent link">&para;</a></h2>

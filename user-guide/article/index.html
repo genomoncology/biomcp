@@ -4613,7 +4613,10 @@ exact-variant-literature</code>.</p>
 identity projection from captured provider evidence without changing normal
 retrieval recall. <code>--confirmed-only</code> requires verification and filters the
 verified candidate pool before ranking and pagination. Retrieval aliases remain
-provenance, not observed article evidence. Confirmation requires a returned-PMID typed PubTator Gene/Variant linkage whose
+provenance, not observed article evidence. Verification reads the PubTator3 full-text
+export, so an annotation in a table or paragraph of the full text confirms the same
+way an abstract annotation does. Confirmation requires a returned-PMID typed PubTator
+Gene/Variant linkage whose
 exact HGVS and CorrespondingGene/NCBI Gene-ID facts agree, or an optional bounded
 ClinGen LDH CAid/gene/PMCID annotation with one exact text/table selector. LDH only
 observes already retrieved candidates; absent coverage is not negative evidence.
@@ -4838,6 +4841,13 @@ path after XML and PMC HTML fail to provide an article body (including when they
 provide only an abstract or metadata):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext<span class="w"> </span>--pdf
 </code></pre></div>
+<p>Batch detail requests take the same fallback for many papers in one process,
+where the single in-process Semantic Scholar limiter spaces every paper lookup
+and every PDF download instead of one fresh limiter per CLI call:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,22663026,22663028<span class="w"> </span>--mode<span class="w"> </span>detail<span class="w"> </span>--sections<span class="w"> </span>fulltext<span class="w"> </span>--pdf
+</code></pre></div>
+<p>Typed MCP <code>get article</code> carries the same option as the boolean <code>pdf</code> field
+beside <code>sections</code>.</p>
 <p>With <code>--pdf</code>, BioMCP downloads the Semantic Scholar open-access PDF URL at
 whatever HTTPS publisher origin Semantic Scholar lists — the link is
 provider-vouched, and the guards stay on the transport (HTTPS default-port
@@ -4850,10 +4860,12 @@ in its attempt <code>reason</code>: <code>open_pdf_link_unavailable</code> (the 
 asked for), <code>open_pdf_link_absent</code> (no open PDF listed), <code>open_pdf_link_rejected</code>
 (the link was refused before contact), <code>open_pdf_download_failed</code>,
 <code>open_pdf_download_absent</code>, or <code>open_pdf_text_unusable</code>. <code>--pdf</code> is only
-valid with the <code>fulltext</code> section; <code>biomcp get article 22663011 --pdf</code> is
-rejected instead of silently doing nothing.</p>
+valid with the <code>fulltext</code> section; <code>biomcp get article 22663011 --pdf</code> and
+<code>biomcp batch article 22663011 --pdf</code> are rejected instead of silently doing
+nothing, and each batch item still reports the full-text source it used and
+the named PDF-step failure when the fallback did not deliver.</p>
 <p>Indexing section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>indexing
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>indexing
 </code></pre></div>
 <p>This opt-in section fetches PubMed citation XML and keeps each author's name,
 optional ORCID, and source-associated affiliations together. MeSH descriptors
@@ -4868,24 +4880,25 @@ credentials, or parser details. The base article still succeeds. Ordinary detail
 search, and batch do not make this extra request; <code>get article &lt;id&gt; all</code> includes
 it.</p>
 <p>Annotation section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
 </code></pre></div>
 <p>Semantic Scholar TLDR section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
 </code></pre></div>
 <p>The attempted Semantic Scholar enrichment is recorded in
 <code>section_outcomes.tldr</code> as <code>data</code>, <code>empty</code>, or <code>unavailable</code>; its
 <code>_meta.section_sources</code> entry projects the same state and credits Semantic
 Scholar only after a successful response.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">30738221</span><span class="w">   </span><span class="c1"># annotated entities with identifiers and follow-up get commands</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">30738221</span><span class="w"> </span>--full<span class="w">   </span><span class="c1"># same rows with passage positions</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact<span class="w">  </span><span class="c1"># compact summary cards</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w">                 </span><span class="c1"># detail records (default)</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">   </span><span class="c1"># one Semantic Scholar citation page</span>
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">  </span><span class="c1"># one Semantic Scholar reference page</span>
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citation-evidence<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">10</span>.1038/nature10725<span class="w">  </span><span class="c1"># passage for one directed citation</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">30738221</span><span class="w">   </span><span class="c1"># annotated entities with identifiers and follow-up get commands</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">30738221</span><span class="w"> </span>--full<span class="w">   </span><span class="c1"># same rows with passage positions</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact<span class="w">  </span><span class="c1"># compact summary cards</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w">                 </span><span class="c1"># detail records (default)</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">   </span><span class="c1"># one Semantic Scholar citation page</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">  </span><span class="c1"># one Semantic Scholar reference page</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citation-evidence<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">10</span>.1038/nature10725<span class="w">  </span><span class="c1"># passage for one directed citation</span>
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>supplement-search<span class="w"> </span><span class="m">30209399</span><span class="w"> </span>F1761I<span class="w">  </span><span class="c1"># exact-locator text search inside supplements</span>
 </code></pre></div>
 <p>Variant rows in <code>article entities</code> print a <code>get variant</code> command that opens
 the row's own allele whenever the row carries a gene and a protein change. A
@@ -4936,10 +4949,10 @@ how the cited work was used.</p>
 <p>Downloaded content is stored in the BioMCP cache directory.
 This avoids repeated large payload downloads during iterative workflows.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact
 </code></pre></div>
 <p>JSON article responses include <code>_meta.next_commands</code> and <code>_meta.section_sources</code>,
 so article workflows can promote the next likely pivots and preserve section

@@ -212,7 +212,7 @@ BioMCP works out of the box with no API keys. All nine article capabilities are 
 export S2_API_KEY="your-key-here"
 ```
 
-**NCBI** (`NCBI_API_KEY`): Free key from [ncbiinsights.ncbi.nlm.nih.gov](https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/). PubTator3, PubMed, and PMC Open Access all use NCBI infrastructure. Without a key, you're limited to 3 requests per second. With the key, 10 requests per second.
+**NCBI** (`NCBI_API_KEY`): Free key from [ncbiinsights.ncbi.nlm.nih.gov](https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/). PubMed's E-utilities answer 3 requests per second without a key and 10 with it; PubTator3 and PMC Open Access stay at 3 requests per second either way.
 
 ```bash
 export NCBI_API_KEY="your-key-here"

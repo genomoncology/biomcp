@@ -1261,6 +1261,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#searching-supplement-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Searching supplement text
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Searching supplement text">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-file-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the file outcomes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#limits" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4505,6 +4544,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#searching-supplement-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Searching supplement text
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Searching supplement text">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-file-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the file outcomes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#limits" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4576,7 +4654,9 @@ them. In JATS XML a <code>&lt;supplementary-material&gt;</code> element carries 
 caption, a filename, and a media type — the file itself is a separate
 binary stored beside the XML. BioMCP locates those binaries, merges the
 copies published by different providers into one list, and returns the
-bytes unchanged. It does not convert or parse them.</p>
+bytes unchanged. It does not convert or parse them on delivery; the
+<a href="#searching-supplement-text">supplement text search</a> reads them in place
+without changing what downloads return.</p>
 <h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <p>List what an article has, then download one file:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>PMC7857465<span class="w"> </span>assets
@@ -4876,6 +4956,91 @@ the article's license, and is frequently unknown:</p>
 the provider's terms before redistributing a downloaded file. The durable
 inventory of provider terms is in
 <a href="../../reference/source-licensing/">Source Licensing</a>.</p>
+<h2 id="searching-supplement-text">Searching supplement text<a class="headerlink" href="#searching-supplement-text" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>supplement-search<span class="w"> </span><span class="m">30209399</span><span class="w"> </span>F1761I
+</code></pre></div>
+<p>The command extracts the text of the article's xlsx, xls, csv, docx, pdf
+and zip supplements and reports each match. Protein substitutions match
+their one-letter, three-letter and <code>p.</code> name forms, so <code>P245S</code>, <code>Pro245Ser</code>
+and <code>p.Pro245Ser</code> find the same change. Other text uses case-sensitive
+substring matching.</p>
+<p><code>&lt;id&gt;</code> accepts a PMID, a PMCID, or a DOI. Add <code>--asset &lt;asset-key&gt;</code> to
+search one file from the manifest instead of all of them. Output is JSON
+only.</p>
+<p>Each hit carries the file it came from, the file's <code>sha256</code> checksum, and
+an exact locator:</p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Locator</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>xlsx, xls</td>
+<td>Worksheet name and row (<code>Sheet1 row 2780</code>).</td>
+</tr>
+<tr>
+<td>csv</td>
+<td>Row, counting the header as row 1.</td>
+</tr>
+<tr>
+<td>pdf</td>
+<td>Page number.</td>
+</tr>
+<tr>
+<td>docx</td>
+<td>Paragraph number.</td>
+</tr>
+<tr>
+<td>zip</td>
+<td>The member path, plus the member's own locator.</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>context</code> field holds the matched row, page, or paragraph text, capped
+at 400 bytes, so a hit can be verified at its locator.</p>
+<h3 id="reading-the-file-outcomes">Reading the file outcomes<a class="headerlink" href="#reading-the-file-outcomes" title="Permanent link">&para;</a></h3>
+<p>The <code>files</code> array reports what happened to each searched file, and each
+archive member inside one:</p>
+<table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>searched</code></td>
+<td>Text was extracted and searched.</td>
+</tr>
+<tr>
+<td><code>empty_text</code></td>
+<td>The file parsed but holds no text, such as a scanned PDF.</td>
+</tr>
+<tr>
+<td><code>unextractable</code></td>
+<td>The file could not be read; <code>reason</code> names why.</td>
+</tr>
+</tbody>
+</table>
+<p>An empty <code>hits</code> list with every file <code>searched</code> means the string appears
+nowhere. A file reported <code>unextractable</code> was never searched, so its format
+and reason tell the caller what is missing.</p>
+<h3 id="search-limits">Search limits<a class="headerlink" href="#search-limits" title="Permanent link">&para;</a></h3>
+<p>Extraction is bounded. Beyond the retrieval limits above, text extraction
+stops at 64 MiB per file, 64 MiB per archive member, 256 MiB aggregate per
+file, 500 PDF pages, and 20 seconds per file; a file that crosses a limit
+is reported with its reason. At most 200 hits are reported, and
+<code>hits_truncated</code> says when to narrow the string.</p>
+<p>Extracted text uses the managed HTTP cache, keyed by the source file's
+SHA-256. The same bytes reuse their extraction until the configured
+<code>[cache].max_age_secs</code> expires or cache maintenance removes the entry;
+changed bytes get a new key. Cache statistics include extracted text, and
+age, size and free-disk limits apply to it. <code>--no-cache</code> and
+<code>BIOMCP_CACHE_MODE=off</code> skip both read and write.</p>
 <h2 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link">&para;</a></h2>
 <p>Retrieval is bounded. Content beyond these limits is reported as
 unavailable rather than truncated:</p>

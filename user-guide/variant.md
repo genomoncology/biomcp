@@ -414,8 +414,8 @@ length of `candidates`. It retains visible, deduplicated receipts first, then
 fills remaining capacity in observation order. Use `--strategy annotation` or
 `--strategy lexical` to diagnose one exact route. `--strategy exact NAME`
 searches the caller's string alone: no resolution, no alias expansion, one
-phrase-quoted query per source (PubMed and Europe PMC as title/abstract
-phrases, Semantic Scholar through its bulk phrase endpoint, PubTator as
+phrase-quoted query per source (PubMed as a title/abstract phrase, Europe PMC
+across full text, Semantic Scholar through its bulk phrase endpoint, PubTator as
 search text), and the per-alias yield table in `--debug-plan` reports each
 alias's hits received, hits kept after merging, and whether the 25-result
 cap cut each source's list. Ambiguous or unresolved input
@@ -433,10 +433,16 @@ makes a provider request is reported as source-neutral `internal` /
 retrieved pool. `--confirmed-only` requires it and filters before ranking and
 pagination. Query aliases remain retrieval provenance, never observed aliases.
 Identity observations retain source, section, locator, linked gene, observed
-alias, typed `provider_linkage`, and canonical captured-content hash. Confirmation uses returned-PMID typed PubTator Gene/Variant facts with matching
+alias, typed `provider_linkage`, and canonical captured-content hash. Verification reads
+the PubTator3 full-text export, so a paper whose variant annotation sits in a table or
+paragraph of the full text confirms the same way an abstract annotation does; a
+document keyed by its numeric PMC id counts as the expected paper when its own pmid
+field agrees. Confirmation uses returned-PMID typed PubTator Gene/Variant facts with matching
 exact HGVS and CorrespondingGene/NCBI Gene-ID evidence, or an optional bounded
 ClinGen LDH annotation that binds the applicable CAid, requested gene, known PMCID,
-and one exact text/table selector. LDH only observes already retrieved PMCID
+and one exact text/table selector. A variant annotation without its typed Gene
+annotation remains unverified with `identity.reason: "missing_typed_gene_annotation"`;
+plain gene mentions cannot replace the annotation. LDH only observes already retrieved PMCID
 candidates: missing coverage, malformed data, and outages never remove a candidate
 or become negative evidence. `--debug-plan` records versioned clinically relevant response/content subset hashes,
 the post-response verifier and provider-template versions, plus artifact identity;
