@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Reconcile HTTP cache byte accounting after explicit cleanup, including reservations left by failed writes. (2218)
 - Include ORCID in restricted source groups and distinguish its non-commercial API terms from public record data reuse. (2216)
 
 ### Internal

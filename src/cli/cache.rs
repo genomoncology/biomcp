@@ -117,6 +117,13 @@ pub(crate) fn execute_clean(
         &config,
         now_ms,
     )?;
+    if !dry_run
+        && let Err(error) = crate::cache::manager::refresh_content_totals_marker(&cache_path)
+    {
+        report
+            .errors
+            .push(format!("HTTP cache accounting maintenance failed: {error}"));
+    }
     let capture_store = crate::cache::ProviderCaptureStore::new(&config.cache_root);
     match if dry_run {
         capture_store.planned_maintenance_bytes_freed()

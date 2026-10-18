@@ -567,25 +567,20 @@ fn run_startup_clean_at(
         now_ms,
     )?;
     write_startup_clean_marker(&marker, now_ms)?;
-    refresh_content_totals_marker(cache_path);
+    if let Err(err) = refresh_content_totals_marker(cache_path) {
+        super::warn_local_http_cache("initialization", &err);
+    }
     Ok(())
 }
 
-/// Rewrite the totals marker with an exact total taken from a fresh
-/// snapshot, so the kept total the next start-up reads is exact again
-/// after a maintenance pass. Best effort: a failure warns and leaves the
-/// previous marker, which the next maintenance pass replaces.
-fn refresh_content_totals_marker(cache_path: &Path) {
-    let usage = match snapshot_cache(cache_path) {
-        Ok(snapshot) => summarize_cache_usage(&snapshot),
-        Err(err) => {
-            super::warn_local_http_cache("initialization", &err);
-            return;
-        }
-    };
-    if let Err(err) = write_content_totals_marker(cache_path, usage.referenced_blob_bytes) {
-        super::warn_local_http_cache("initialization", &err);
-    }
+/// Rewrite the totals marker from a fresh snapshot while the caller holds
+/// the maintenance lock, excluding content writers until the total is saved.
+pub(crate) fn refresh_content_totals_marker(cache_path: &Path) -> Result<(), BioMcpError> {
+    let snapshot =
+        snapshot_cache(cache_path).map_err(|err| BioMcpError::Io(io::Error::other(err)))?;
+    let usage = summarize_cache_usage(&snapshot);
+    write_content_totals_marker(cache_path, usage.referenced_blob_bytes)?;
+    Ok(())
 }
 
 /// Whether the start-up clean is due: the marker is missing, unreadable, or
