@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision ab501ee, accept
+
 ## Outcome
 
 `search all`, `update` and `uninstall` each have whole-program tests that run the shipped binary.
