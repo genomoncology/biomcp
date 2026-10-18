@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 87a1073, accept
 
+Reviews: revision 1fe4099, accept
+
 ## Outcome
 
 An agent test review on Windows covers parallel CLI runs, an MCP server and `cache clear` sharing one cache, and the size marker, under Windows' mandatory locks.
