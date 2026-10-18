@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 8d8bfe1, accept
+
 ## Outcome
 
 Main reports the next development version instead of the released number, the changelog has an Unreleased section with the conventional headings and one short Internal bookkeeping bullet, and a short release record preserves the actual 0.9.3 publication evidence.
