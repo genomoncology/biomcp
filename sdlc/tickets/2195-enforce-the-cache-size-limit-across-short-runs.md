@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 582462e, accept
+
 ## Outcome
 
 The cache size limit holds across many short CLI runs, as it did in v0.9.2, and the saved byte total cannot be torn.
