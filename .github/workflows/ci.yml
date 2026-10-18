@@ -3,10 +3,6 @@ name: CI
 on:
   workflow_dispatch:
     inputs:
-      revision:
-        description: Exact revision to check (defaults to the selected ref)
-        required: false
-        type: string
       windows_only:
         description: Run only the Windows cache concurrency and deadline checks
         type: boolean
