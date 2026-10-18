@@ -14,13 +14,11 @@ Ordinary nonblocking HTTP cache-write lock contention returns the provider answe
 
 Depends on: 2225
 
+- Changes: `src/cache/http.rs`, `tests/test_http_cache_fail_soft.py`, `tests/windows_stdio_contract.rs`, `CHANGELOG.md`, `sdlc/tickets/2228-document-python-job-bootstrap-without-packaging.md` and this ticket. Keep the change in shared error classification or logging rather than adding provider-specific handling.
+
 ## Evidence
 
 Windows comparison39167643933 on the verified official0.9.3 executable and currentcandidatebb799c1b3 reproduces a successful provider answer with an intentionally skipped write under the held byte-total lock. Both emit `local HTTP cache write failed; continuing` at WARN with `io_kind=Some(WouldBlock)`. Routine contention is expected fail-open behavior. The PM requested this small priority3 follow-up on2026-10-18, consistent with2194's debug-level contention policy.
-
-## Changes
-
-`src/cache/http.rs`, `tests/test_http_cache_fail_soft.py`, `tests/windows_stdio_contract.rs`, `CHANGELOG.md` and this ticket. Keep the change in shared error classification or logging rather than adding provider-specific handling.
 
 ## Keeps
 
@@ -43,3 +41,7 @@ Actual Windows39167643933 on currentcandidatebb799c1b3 and official0.9.3 ran the
 Extend the existing Python fail-soft fixture with real held byte-total lock controls at warning/debug verbosity: correct provider answer, skipped index entry, no WARN for ordinary contention, and a debug explanation only at debug. Preserve the real non-contention filesystem-failure warning control and subsequent refetch/reuse after unlock. Keep routine contention outside the global warning allowance. Adjust the existing Windows diagnostic to distinguish the explicitly configured legacy0.9.3comparison from current logging; retain successful answer/contention/accounting semantics. Shared logging-only behavior needs no extra broad Windows dispatch.
 
 Write the failing desired-verbosity assertions before the production change, then run affected red/green checks through one bounded build job using a frozen qualified baseline and one ordinary candidate build. Preserve exact commands/results and run format/lint/quality checks; no new harness, live provider call or WIP push.
+
+## Related instruction prevention
+
+The separate priority3 ticket2228 records the repeated Python setup/packaging and Ruff-location mistakes seen in multiple lanes. It changes instructions only and does not broaden this logging fix.
