@@ -197,9 +197,11 @@
     "integration_mode": "direct_api",
     "via": null,
     "bioMcp_surfaces": [
+      "get variant <id> civic",
       "get gene <symbol> civic",
       "get drug <name> targets",
       "get drug <name> civic",
+      "get disease <id> civic",
       "get disease <id> variants"
     ],
     "bioMcp_auth": "none",
@@ -909,7 +911,7 @@
     "integration_mode": "direct_api",
     "via": null,
     "bioMcp_surfaces": [
-      "search article -k <query>"
+      "search article --source litsense2 -k <query>"
     ],
     "bioMcp_auth": "none",
     "commercial_terms": null,

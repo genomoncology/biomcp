@@ -236,7 +236,7 @@ Current group membership comes from the registry:
 <!-- licensing:litsense2 -->
 ### LitSense2
 
-- BioMCP surfaces: `search article -k <query>`
+- BioMCP surfaces: `search article --source litsense2 -k <query>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Commercial terms: `null`
@@ -374,7 +374,7 @@ Current group membership comes from the registry:
 <!-- licensing:civic -->
 ### CIViC
 
-- BioMCP surfaces: `get gene <symbol> civic`; `get drug <name> targets`; `get drug <name> civic`; `get disease <id> variants`
+- BioMCP surfaces: `get variant <id> civic`; `get gene <symbol> civic`; `get drug <name> targets`; `get drug <name> civic`; `get disease <id> civic`; `get disease <id> variants`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Commercial terms: `null`
