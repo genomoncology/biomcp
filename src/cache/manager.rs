@@ -19,10 +19,19 @@ use super::{
 };
 use crate::error::BioMcpError;
 
+mod totals;
+use totals::{read_content_totals_marker, write_content_totals_marker};
+
 type EstimateCacheBytesFn = dyn Fn(&Path) -> io::Result<u64> + Send + Sync;
 type InspectSpaceFn = dyn Fn(&Path) -> Result<FilesystemSpace, BioMcpError> + Send + Sync;
-type ScheduleEvictionFn =
-    dyn Fn(PathBuf, ResolvedCacheConfig, Arc<AtomicU64>, Arc<AtomicBool>) + Send + Sync;
+type ScheduleEvictionFn = dyn Fn(
+        PathBuf,
+        ResolvedCacheConfig,
+        Arc<AtomicU64>,
+        Arc<AtomicBool>,
+    ) -> Option<tokio::task::JoinHandle<()>>
+    + Send
+    + Sync;
 type CacheAccessObserverFn = dyn Fn(&Path, &str) + Send + Sync;
 type CacheAsyncObserverFn =
     dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> + Send + Sync;
@@ -45,11 +54,9 @@ pub(crate) const STALE_SERVE_AGE_HEADER: &str = "x-biomcp-cache-stale-age";
 
 /// Marker file under the HTTP cache recording the total stored content
 /// bytes the size tracker reads at start-up. The value is
-/// exact whenever a maintenance pass recomputes it — the daily start-up
-/// clean and every eviction cycle — and reads cheaply on every other
-/// start-up instead of statting every content file. A missing or
-/// malformed marker costs one full walk, the same shape as the daily
-/// clean marker.
+/// conservatively reserved before each write and made exact by maintenance.
+/// Start-up reads it instead of statting every content file. A missing,
+/// legacy or malformed marker costs one full recount.
 const CONTENT_TOTALS_MARKER_FILE: &str = ".content-bytes-v1";
 
 /// Marker file under the HTTP cache directory recording when the automatic
@@ -180,7 +187,10 @@ impl SizeAwareCacheManager {
             ManagerServices {
                 estimate_cache_bytes: Arc::new(estimate_cache_bytes),
                 inspect_space: Arc::new(inspect_space),
-                schedule_eviction: Arc::new(schedule_eviction),
+                schedule_eviction: Arc::new(move |path, config, bytes, running| {
+                    schedule_eviction(path, config, bytes, running);
+                    None
+                }),
                 observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(|_, _| {}),
                 after_safe_return_armed: Arc::new(|| Box::pin(async {})),
@@ -215,7 +225,10 @@ impl SizeAwareCacheManager {
             ManagerServices {
                 estimate_cache_bytes: Arc::new(estimate_cache_bytes),
                 inspect_space: Arc::new(inspect_space),
-                schedule_eviction: Arc::new(schedule_eviction),
+                schedule_eviction: Arc::new(move |path, config, bytes, running| {
+                    schedule_eviction(path, config, bytes, running);
+                    None
+                }),
                 observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(after_put),
                 after_safe_return_armed: Arc::new(|| Box::pin(async {})),
@@ -330,6 +343,12 @@ impl CacheManager for SizeAwareCacheManager {
                 response: &res,
                 policy: &policy,
             })?;
+            // Reserve bytes before publishing: interruption can overcount a failed
+            // write until maintenance, but cannot hide a successful write from
+            // the next process. Replacements are conservative for the same reason.
+            let total =
+                totals::add_content_bytes(&self.inner.path, bytes.len() as u64, self.try_locks)?;
+            self.approx_bytes.fetch_max(total, Ordering::Relaxed);
             let mut writer = cacache::Writer::create(&self.inner.path, &cache_key).await?;
             writer.write_all(&bytes).await?;
             safe_return.arm();
@@ -350,9 +369,6 @@ impl CacheManager for SizeAwareCacheManager {
                 .map_err(|_| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?
                 .ok_or_else(|| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?;
             super::secure_written_content(&self.inner.path, &metadata.integrity)?;
-            self.approx_bytes
-                .fetch_add(metadata.size as u64, Ordering::Relaxed);
-
             let approx_bytes = self.approx_bytes.load(Ordering::Relaxed);
             let below_min_disk_free = match (self.services.inspect_space)(&self.config.cache_root) {
                 Ok(space) => self
@@ -365,23 +381,36 @@ impl CacheManager for SizeAwareCacheManager {
                 }
             };
 
-            if (approx_bytes > self.config.max_size || below_min_disk_free)
+            let should_evict = (approx_bytes > self.config.max_size || below_min_disk_free)
                 && self
                     .eviction_running
                     .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-                    .is_ok()
-            {
-                (self.services.schedule_eviction)(
-                    self.inner.path.clone(),
-                    self.config.clone(),
-                    Arc::clone(&self.approx_bytes),
-                    Arc::clone(&self.eviction_running),
-                );
-            }
-
-            Ok(response)
+                    .is_ok();
+            Ok::<_, http_cache::BoxError>((response, should_evict))
         };
-        crate::sources::with_variant_article_safe_return(finalization).await
+        let settled = crate::sources::with_variant_article_safe_return(finalization).await;
+        // Cleanup needs the exclusive maintenance lock. Release this put's
+        // shared/key lease before starting it, and settle our own cleanup before
+        // a short-lived caller can tear down its runtime.
+        drop(_operation);
+        let (response, should_evict) = settled?;
+        if should_evict {
+            let eviction = (self.services.schedule_eviction)(
+                self.inner.path.clone(),
+                self.config.clone(),
+                Arc::clone(&self.approx_bytes),
+                Arc::clone(&self.eviction_running),
+            );
+            if let Some(eviction) = eviction {
+                crate::sources::with_variant_article_safe_return(async {
+                    if let Err(error) = eviction.await {
+                        super::warn_local_http_cache("maintenance", &error);
+                    }
+                })
+                .await;
+            }
+        }
+        Ok(response)
     }
 
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
@@ -436,32 +465,15 @@ fn estimate_cache_bytes_fast(path: &Path) -> io::Result<u64> {
     if let Some(total) = read_content_totals_marker(path) {
         return Ok(total);
     }
-    let total = sum_content_tree_bytes(path)?;
-    if let Err(err) = write_content_totals_marker(path, total) {
-        super::warn_local_http_cache("initialization", &err);
-    }
-    Ok(total)
-}
-
-/// The kept total from the totals marker, or `None` when it is missing,
-/// unreadable, or malformed (the next maintenance pass rewrites it).
-fn read_content_totals_marker(cache_path: &Path) -> Option<u64> {
-    use std::io::Read;
-    let mut file =
-        super::private::open_managed_read(&cache_path.join(CONTENT_TOTALS_MARKER_FILE)).ok()?;
-    let mut text = String::new();
-    file.read_to_string(&mut text).ok()?;
-    text.trim().parse().ok()
-}
-
-fn write_content_totals_marker(cache_path: &Path, total_bytes: u64) -> io::Result<()> {
-    use std::io::Write;
-    super::private::secure_managed_dir(cache_path)?;
-    let mut options = fs::OpenOptions::new();
-    options.write(true).create(true).truncate(true);
-    let mut file =
-        super::private::open_private(&mut options, &cache_path.join(CONTENT_TOTALS_MARKER_FILE))?;
-    file.write_all(total_bytes.to_string().as_bytes())
+    totals::with_lock(path, false, || {
+        // Another writer may have published a complete marker while we waited.
+        if let Some(total) = read_content_totals_marker(path) {
+            return Ok(total);
+        }
+        let total = sum_content_tree_bytes(path)?;
+        write_content_totals_marker(path, total)?;
+        Ok(total)
+    })
 }
 
 fn sum_content_tree_bytes(cache_path: &Path) -> io::Result<u64> {
@@ -609,8 +621,8 @@ fn spawn_eviction_task(
     config: ResolvedCacheConfig,
     approx_bytes: Arc<AtomicU64>,
     eviction_running: Arc<AtomicBool>,
-) {
-    tokio::spawn(async move {
+) -> Option<tokio::task::JoinHandle<()>> {
+    Some(tokio::spawn(async move {
         struct ResetFlag(Arc<AtomicBool>);
 
         impl Drop for ResetFlag {
@@ -630,7 +642,7 @@ fn spawn_eviction_task(
             Ok(Err(err)) => super::warn_local_http_cache("maintenance", &err),
             Err(err) => super::warn_local_http_cache("maintenance", &err),
         }
-    });
+    }))
 }
 
 fn run_eviction_cycle(
@@ -906,9 +918,8 @@ mod tests {
             b"live-bytes".len() as u64
         );
         assert_eq!(
-            std::fs::read_to_string(cache_path.join(super::CONTENT_TOTALS_MARKER_FILE))
-                .expect("totals marker after resync"),
-            b"live-bytes".len().to_string(),
+            super::read_content_totals_marker(&cache_path),
+            Some(b"live-bytes".len() as u64),
             "a resync without cleaning still persists the exact total"
         );
     }

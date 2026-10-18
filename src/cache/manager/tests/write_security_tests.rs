@@ -206,8 +206,8 @@ fn estimate_cache_bytes_fast_totals_once_then_reads_the_kept_marker() {
     // records the total it found.
     assert_eq!(estimate_cache_bytes_fast(&cache_path).unwrap(), 8);
     assert_eq!(
-        fs::read_to_string(cache_path.join(super::super::CONTENT_TOTALS_MARKER_FILE)).unwrap(),
-        "8"
+        super::super::read_content_totals_marker(&cache_path),
+        Some(8)
     );
 
     // With the marker the kept total answers without a walk; files

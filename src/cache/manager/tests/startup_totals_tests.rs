@@ -4,6 +4,7 @@
 //! reads nothing. Pure manager logic over a real temp cache dir.
 
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 
@@ -79,8 +80,8 @@ fn the_daily_clean_rewrites_the_totals_marker_with_an_exact_total() {
 
     let usage = summarize_cache_usage(&snapshot_cache(&cache_path).expect("snapshot"));
     assert_eq!(
-        fs::read_to_string(totals_marker_path(&cache_path)).expect("totals marker"),
-        usage.referenced_blob_bytes.to_string(),
+        super::super::read_content_totals_marker(&cache_path),
+        Some(usage.referenced_blob_bytes),
         "the marker holds the exact post-clean total"
     );
 }
@@ -105,5 +106,27 @@ fn cache_mode_off_seeds_zero_without_reading_the_cache() {
     assert!(
         !totals_marker_path(&cache_path).exists(),
         "cache mode off writes no totals marker"
+    );
+}
+
+#[test]
+fn updating_the_total_replaces_the_record_without_truncating_its_old_inode() {
+    let root = TempDirGuard::new("totals-atomic");
+    let cache_path = root.path().join("http");
+    super::super::write_content_totals_marker(&cache_path, 12345).expect("seed total");
+    let mut previous = fs::File::open(totals_marker_path(&cache_path)).expect("old record");
+    let expected = fs::read(totals_marker_path(&cache_path)).expect("complete old bytes");
+    super::super::write_content_totals_marker(&cache_path, 67890).expect("replace total");
+    let mut old_bytes = Vec::new();
+    previous
+        .read_to_end(&mut old_bytes)
+        .expect("read old record");
+    assert_eq!(
+        old_bytes, expected,
+        "the old record is never truncated in place"
+    );
+    assert_eq!(
+        super::super::read_content_totals_marker(&cache_path),
+        Some(67890)
     );
 }
