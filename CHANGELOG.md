@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Include ORCID in restricted source groups and distinguish its non-commercial API terms from public record data reuse. (2216)
+
 ### Internal
 
 - Open the next development version after the 0.9.3 release. (2215)
