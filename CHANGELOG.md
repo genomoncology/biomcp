@@ -17,6 +17,8 @@
 
 ### Internal
 
+- Document daily size reconciliation when sharing an HTTP cache with BioMCP 0.9.2 and the explicit cleanup command for earlier reconciliation. (2223)
+
 - Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
 
 - Upgrade the AlphaGenome client and its explicit protocol generator to tonic and prost 0.14, sharing the current HTTP stack and removing the obsolete PEM-reader advisory exception. (2077)
