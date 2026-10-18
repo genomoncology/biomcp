@@ -9,13 +9,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("unexpected extra argument".into());
     }
 
-    tonic_build::configure()
+    tonic_prost_build::configure()
         .build_client(true)
         .build_server(false)
         .out_dir(output_root)
-        .compile_protos(
-            &[proto_root.join("dna_model_service.proto")],
-            &[proto_root],
-        )?;
+        .compile_protos(&[proto_root.join("dna_model_service.proto")], &[proto_root])?;
     Ok(())
 }
