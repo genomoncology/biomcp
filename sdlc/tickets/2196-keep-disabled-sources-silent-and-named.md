@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision d4c2c60, accept
+
 ## Outcome
 
 A disabled source is never contacted, including by `biomcp health`, and every place it would have appeared names the setting instead of a failure.
