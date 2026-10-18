@@ -166,7 +166,7 @@
     "terms_url": "https://www.cellosaurus.org/description.html",
     "key_url": null,
     "reviewed_on": "2026-09-16",
-    "notes": "Cellosaurus is the identity source for cell lines and the RRID authority. Every BioMCP cell line output names the release, CC BY 4.0, and the citation Bairoch A. J. Biomol. Tech. 29:25-38 (2018)."
+    "notes": "Cellosaurus is the identity source for cell lines and the RRID authority. Every BioMCP cell line output names the release, CC BY 4.0, and the citation Bairoch A. J. Biomol. Tech. 29:25-38 (2018). Cellosaurus is the RRID authority for cell lines, and the RRID is `RRID:` plus the primary accession. The requested citation is Bairoch A. \"The Cellosaurus, a cell line knowledge resource.\" J. Biomol. Tech. 29:25-38 (2018)."
   },
   {
     "id": "chembl",
@@ -197,9 +197,11 @@
     "integration_mode": "direct_api",
     "via": null,
     "bioMcp_surfaces": [
+      "get variant <id> civic",
       "get gene <symbol> civic",
       "get drug <name> targets",
       "get drug <name> civic",
+      "get disease <id> civic",
       "get disease <id> variants"
     ],
     "bioMcp_auth": "none",
@@ -232,7 +234,7 @@
     "terms_url": "https://clinicalgenome.org/",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "The gene clingen section reports gene-validity and dosage-sensitivity acquisition independently, preserves partial evidence, and distinguishes a missing dosage classification from a literal ClinGen no-evidence classification. BioMCP uses distinct ClinGen Search and Evidence Repository origins; ERepo assertions preserve panel source facts and versioned SEPIO provenance without interpretation."
+    "notes": "The gene clingen section reports gene-validity and dosage-sensitivity acquisition independently, preserves partial evidence, and distinguishes a missing dosage classification from a literal ClinGen no-evidence classification. BioMCP uses distinct ClinGen Search and Evidence Repository origins; ERepo assertions preserve panel source facts and versioned SEPIO provenance without interpretation. Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly."
   },
   {
     "id": "clingen_car",
@@ -252,7 +254,7 @@
     "terms_url": "https://reg.genome.network",
     "key_url": null,
     "reviewed_on": "2026-07-24",
-    "notes": "BioMCP performs read-only projected CAR lookups for supported versioned RefSeq HGVS values."
+    "notes": "BioMCP performs read-only projected CAR lookups for supported versioned RefSeq HGVS values. BioMCP makes read-only projected CAR lookups and returns source facts without assigning clinical meaning."
   },
   {
     "id": "clingen_cspec",
@@ -293,7 +295,7 @@
     "terms_url": "https://erepo.clinicalgenome.org",
     "key_url": null,
     "reviewed_on": "2026-07-23",
-    "notes": "BioMCP retrieves only bounded exact-CAid summaries and explicitly selected versioned detail documents."
+    "notes": "BioMCP retrieves only bounded exact-CAid summaries and explicitly selected versioned detail documents. BioMCP exposes bounded source facts and explicitly selected versioned detail without interpreting expert assertions."
   },
   {
     "id": "clingen_ldh",
@@ -390,12 +392,12 @@
     "commercial_terms": null,
     "env_var": null,
     "provider_access": "surfaced indirectly through cached MyVariant.info fields; no standalone BioMCP COSMIC client",
-    "license_summary": "BioMCP reads COSMIC only through MyVariant.info, whose COSMIC fields are the v68 snapshot \u2014 per MyVariant's metadata: 'COSMIC v68 was imported from UCSC database dump. This is the last freely available somatic variants from COSMIC before their licence change' (checked 2026-09-27). The v68-era terms, not the current cosmickb.org licence, govern those fields. The current licence requires a commercial licence for commercial use including patient services and clinical reporting; it governs COSMIC's current direct offering only. The practical limit of the v68 fields is age, not licence.",
+    "license_summary": "BioMCP reads COSMIC only through MyVariant.info, whose COSMIC fields are the v68 snapshot — per MyVariant's metadata: 'COSMIC v68 was imported from UCSC database dump. This is the last freely available somatic variants from COSMIC before their licence change' (checked 2026-09-27). The v68-era terms, not the current cosmickb.org licence, govern those fields. The current licence requires a commercial licence for commercial use including patient services and clinical reporting; it governs COSMIC's current direct offering only. The practical limit of the v68 fields is age, not licence.",
     "redistribution_summary": "MyVariant's COSMIC v68 snapshot predates the current COSMIC licence; treat the fields under the v68-era terms and cite MyVariant as the serving source. Direct use of current COSMIC releases remains commercially restricted.",
     "terms_url": "https://docs.myvariant.info/en/latest/doc/data_source.html",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "This is the most important indirect-only caution row. BioMCP intentionally does not support direct COSMIC querying because of licensing risk."
+    "notes": "This is the most important indirect-only caution row. BioMCP intentionally does not support direct COSMIC querying because of licensing risk. Direct COSMIC integration is not part of BioMCP's supported source surface because the provider's licensing model creates unacceptable redistribution and deployment risk for an MIT-licensed open tool."
   },
   {
     "id": "cpic",
@@ -459,7 +461,7 @@
     "terms_url": "https://ddinter.scbdd.com/terms/",
     "key_url": null,
     "reviewed_on": "2026-04-25",
-    "notes": "BioMCP requires all eight DDInter CSV files. Interaction reads use the installed bundle without maintenance and report fresh/stale state. biomcp ddinter sync explicitly downloads, validates, and publishes a complete replacement bundle; empty results remain scoped to the current DDInter bundle."
+    "notes": "BioMCP requires all eight DDInter CSV files. Interaction reads use the installed bundle without maintenance and report fresh/stale state. biomcp ddinter sync explicitly downloads, validates, and publishes a complete replacement bundle; empty results remain scoped to the current DDInter bundle. BioMCP reads the eight required DDInter CSV files from `BIOMCP_DDINTER_DIR` or the default data directory without automatic maintenance."
   },
   {
     "id": "depmap",
@@ -606,7 +608,7 @@
     "terms_url": "https://www.ema.europa.eu/en/about-us/about-website/legal-notice",
     "key_url": null,
     "reviewed_on": "2026-03-24",
-    "notes": "BioMCP auto-downloads the EMA human-medicines JSON batch into BIOMCP_EMA_DIR or the default data directory on first use, refreshes stale files, supports explicit refresh via biomcp ema sync, accepts `ema` as an input alias for the canonical `eu` region value, and treats omitted `--region` on `get drug <name> regulatory` as the combined U.S.+EU direct-regulatory path."
+    "notes": "BioMCP auto-downloads the EMA human-medicines JSON batch into BIOMCP_EMA_DIR or the default data directory on first use, refreshes stale files, supports explicit refresh via biomcp ema sync, accepts `ema` as an input alias for the canonical `eu` region value, and treats omitted `--region` on `get drug <name> regulatory` as the combined U.S.+EU direct-regulatory path. The download landing page is <https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format>."
   },
   {
     "id": "enrichr",
@@ -626,7 +628,7 @@
     "terms_url": "https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html",
     "key_url": null,
     "reviewed_on": "2026-09-29",
-    "notes": "Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead."
+    "notes": "Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead. Academic and non-profit reuse with citation to Enrichr and its libraries; commercial reuse needs the Mount Sinai license; the service must not be used to treat or diagnose human subjects."
   },
   {
     "id": "europe-pmc",
@@ -650,7 +652,7 @@
     "terms_url": "https://europepmc.org/RestfulWebService",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "BioMCP uses Europe PMC for search, bibliographic metadata, article full-text XML, and the second article-asset rung after PMC OA. Supplementary ZIP bytes do not imply reusable status; a retained PMC OA license keeps PMC OA source attribution."
+    "notes": "BioMCP uses Europe PMC for search, bibliographic metadata, article full-text XML, and the second article-asset rung after PMC OA. Supplementary ZIP bytes do not imply reusable status; a retained PMC OA license keeps PMC OA source attribution. BioMCP reports unknown reuse unless article metadata or a retained PMC OA manifest supplies a license, and retained PMC licenses keep PMC OA source attribution."
   },
   {
     "id": "fda-orphan-designations",
@@ -796,7 +798,7 @@
     "terms_url": "https://www.ncbi.nlm.nih.gov/gtr/docs/faq/",
     "key_url": null,
     "reviewed_on": "2026-04-17",
-    "notes": "BioMCP requires `test_version.gz` and `test_condition_gene.txt`, auto-downloads them on first diagnostic use, refreshes stale files after 7 days, and supports explicit refresh via `biomcp gtr sync`."
+    "notes": "BioMCP requires `test_version.gz` and `test_condition_gene.txt`, auto-downloads them on first diagnostic use, refreshes stale files after 7 days, and supports explicit refresh via `biomcp gtr sync`. BioMCP auto-downloads `test_version.gz` and `test_condition_gene.txt` into `BIOMCP_GTR_DIR` or the default data directory on first use, refreshes stale files after 7 days, and supports explicit refresh via `biomcp gtr sync`."
   },
   {
     "id": "gwas-catalog",
@@ -909,7 +911,7 @@
     "integration_mode": "direct_api",
     "via": null,
     "bioMcp_surfaces": [
-      "search article -k <query>"
+      "search article --source litsense2 -k <query>"
     ],
     "bioMcp_auth": "none",
     "commercial_terms": null,
@@ -1113,7 +1115,7 @@
     "terms_url": "https://docs.myvariant.info/en/latest/",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "BioMCP intentionally documents several indirect-only provenance rows that arrive through MyVariant.info payloads."
+    "notes": "BioMCP intentionally documents several indirect-only provenance rows that arrive through MyVariant.info payloads. Exact variant-search transcript annotations identify MyVariant.info as the direct carrier and SnpEff `ann` as their indirect annotation provenance."
   },
   {
     "id": "ncbi-e-utilities",
@@ -1322,7 +1324,7 @@
     "terms_url": "https://info.orcid.org/public-client-terms-of-service/",
     "key_url": "https://orcid.org/signin",
     "reviewed_on": "2026-10-18",
-    "notes": "exact public person and works records only; no name search, member API, private fields, or cross-provider identity merge"
+    "notes": "exact public person and works records only; no name search, member API, private fields, or cross-provider identity merge. This supersedes the earlier citation-supplied-evidence-only boundary recorded in 2026-09-07 planning; the ADR lives at `sdlc/planning/adr/0001-call-the-orcid-public-api-for-exact-author-records.md`."
   },
   {
     "id": "pdb",
@@ -1366,7 +1368,7 @@
     "terms_url": null,
     "key_url": null,
     "reviewed_on": "2026-09-18",
-    "notes": "Verified 2026-09-18: pharmacodb.ca serves the same 2,258-byte single-page shell on every path (/about, /documentation, /terms, /api) and its application bundle contains no licence string, so the provider publishes no licence or terms page. The code licence is GPL-3.0 at https://github.com/bhklab/PharmacoDB/blob/master/LICENSE. The CC BY-NC 4.0 reading traces to the describing paper, Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which states \"This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License\"; that covers the article, not the database. PharmacoDB publishes no version or release date, so every output carries the retrieval time."
+    "notes": "Verified 2026-09-18: pharmacodb.ca serves the same 2,258-byte single-page shell on every path (/about, /documentation, /terms, /api) and its application bundle contains no licence string, so the provider publishes no licence or terms page. The code licence is GPL-3.0 at https://github.com/bhklab/PharmacoDB/blob/master/LICENSE. The CC BY-NC 4.0 reading traces to the describing paper, Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which states \"This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License\"; that covers the article, not the database. PharmacoDB publishes no version or release date, so every output carries the retrieval time. Every BioMCP output names the non-commercial term because a user cannot read it from the numbers."
   },
   {
     "id": "pharmgkb",
@@ -1408,7 +1410,7 @@
     "terms_url": "https://pmc.ncbi.nlm.nih.gov/tools/openftlist/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-08-05",
-    "notes": "BioMCP resolves a PMC OA version-prefix listing through its flat version-prefix S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
+    "notes": "BioMCP resolves a PMC OA version-prefix listing through its flat version-prefix S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses. BioMCP also resolves recognized PMC JATS/HTML supplement links behind stable BioMCP handles without exposing provider URLs."
   },
   {
     "id": "pubmed",
@@ -1668,7 +1670,7 @@
     "terms_url": "https://www.who.int/about/policies/publishing/copyright",
     "key_url": null,
     "reviewed_on": "2026-04-18",
-    "notes": "BioMCP requires `who_ivd.csv`, auto-downloads it on first diagnostic WHO IVD use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`."
+    "notes": "BioMCP requires `who_ivd.csv`, auto-downloads it into `BIOMCP_WHO_IVD_DIR` or the default data directory on first diagnostic WHO IVD use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`."
   },
   {
     "id": "who-prequalification",
