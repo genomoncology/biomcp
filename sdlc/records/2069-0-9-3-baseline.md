@@ -1,5 +1,17931 @@
 # 2069 — The 0.9.3 baseline
 
+## Scoped refresh after the cache and source fixes, 2026-10-18
+
+This section refreshes paired runtime observations and stripped sizes for immutable v0.9.2 and the new candidate, plus candidate source counts and coverage. All earlier sections below remain historical evidence under their original source identities. Earlier build, routine test, specification, lint, dependency, advisory and LLVM observations are retained; they are not fresh measurements of this candidate.
+
+| Identity | Revision or SHA-256 |
+| --- | --- |
+| v0.9.2 product | `4049666f5cce2794f16cdbdf0ded49878e5bb147` |
+| Measured candidate product | `c4281daa7304c0dd2875aa3e0d253ae9d2010eed` |
+| Frozen helper snapshot checkout | `631f7904900b00c48039ebd80b5fa77546f929ac` |
+| Frozen measurement helper, SHA-256 | `30e542c63a348cdceff09f1f4189264ef9d81061de2a42dbe7c2770ad81c7ac6` |
+| Temporary ordering adapter, SHA-256 | `267ba2aa25c778fe0ad0b309885ce4e4b36da32b243f8d16735532b6c5da74c5` |
+
+Both products run on `build-host-1`, Darwin 25.4.0, ARM64, with Python 3.12.13, Rust/Cargo 1.95.0 and the same compiler-cache/linker settings. Ordinary builds leave `CARGO_INCREMENTAL` unset. The existing coverage section retains its own qualified instrumentation settings. Provider environment settings are inherited equally; `OPENFDA_API_KEY` is removed as in the earlier comparison. No secret values are recorded.
+
+The frozen helper supplies unchanged `run_once` and `report` functions, command arguments, sample counts, 180-second outer timeout, prefetch behavior and isolated cache-off roots. The temporary adapter changes version scheduling: every observation has an old/candidate pair, with the first version alternating by sample index and case. Each version keeps its own warm-then-off ordering and product working directory. This is a scheduling change; the frozen helper did not already alternate versions.
+
+Quiet activity is recorded rather than required. The one-minute host load spans 3.91748046875 to 12.505859375 across observations. Process-name snapshots before and after the runtime block show no selected build/test process at those instants; they do not establish an exclusive window. Shared load, network latency, provider variability and output differences limit causal interpretation. Pair medians are observations, not a guarantee of speedup.
+
+The earlier attempt `2082/1792327543488-12063` built the candidate but stopped at quiet admission before any runtime sample. The old prerequisite initially needed the canonical Python interpreter to import `tomllib`, then built successfully. Both optimized artifacts were retained and reused. Their setup build durations are excluded from the comparable speed rows. Stripped binary size is **32,775,040 bytes** for v0.9.2 and **33,916,000 bytes** for the candidate.
+
+### Paired runtime observations
+
+The completed runtime portion of collection `2082/1792328222960-21993` has 87 pairs and 87 observations per product: 80 measured observations and seven prefetches per product. Every process exits 0 and no 180-second outer timeout occurs. Source-level failure remains separate from process success.
+
+| Existing runtime label | v0.9.2 median, seconds | Candidate median, seconds |
+| --- | --- | --- |
+| version_empty_cache | 0.005876 | 0.006244 |
+| version_large_cache | 0.006045 | 0.006187 |
+| warm_get_gene_BRAF | 0.227579 | 0.219261 |
+| nocache_get_gene_BRAF | 0.529884 | 0.519970 |
+| warm_get_variant_BRAF_V600E | 0.011799 | 0.012263 |
+| nocache_get_variant_BRAF_V600E | 0.557131 | 0.572834 |
+| warm_get_drug_imatinib | 1.387783 | 0.256297 |
+| nocache_get_drug_imatinib | 2.979410 | 1.321741 |
+| warm_search_article_BRAF | 1.723964 | 1.876952 |
+| nocache_search_article_BRAF | 1.818437 | 2.278901 |
+| warm_search_all_BRAF_melanoma | 12.028292 | 12.021290 |
+| nocache_search_all_BRAF_melanoma | 12.052366 | 12.045909 |
+| day_gwas_BRAF | 10.733017 | 0.042629 |
+| day_openfda_drug_imatinib | 1.781169 | 0.227678 |
+
+| Case / cache mode | Measured pairs | Median paired candidate minus old, seconds | Median paired candidate / old |
+| --- | --- | --- | --- |
+| version_empty_cache / default | 5 | 0.000753 | 1.137207 |
+| version_large_cache / default | 5 | 0.000143 | 1.023596 |
+| get_gene_BRAF / infinite | 5 | -0.008885 | 0.961416 |
+| get_gene_BRAF / off | 5 | 0.000858 | 1.001619 |
+| get_variant_BRAF_V600E / infinite | 5 | 0.000628 | 1.054019 |
+| get_variant_BRAF_V600E / off | 5 | 0.000600 | 1.001049 |
+| get_drug_imatinib / infinite | 10 | -1.112869 | 0.185279 |
+| get_drug_imatinib / off | 10 | -1.061287 | 0.456746 |
+| search_article_BRAF / infinite | 5 | -0.061268 | 0.964461 |
+| search_article_BRAF / off | 5 | 0.451751 | 1.247244 |
+| search_all_BRAF_melanoma / infinite | 5 | -0.009985 | 0.999170 |
+| search_all_BRAF_melanoma / off | 5 | -0.006945 | 0.999422 |
+| day_gwas_BRAF / default | 5 | -10.727113 | 0.003387 |
+| day_openfda_drug_imatinib / default | 5 | -1.546357 | 0.131830 |
+
+The paired difference is the median of each pair's difference; it need not equal the difference between the two marginal medians. Ratios use each pair before taking the median. All original first-run version outliers remain in the raw samples. The `version_large_cache` label means the existing default cache; no entry count was recorded, and `--version` does not establish cache-initialization or contention performance.
+
+Every search-all prefetch and measured observation in both products retains `gwas search timed out after 12s`. Its approximately twelve-second timing therefore measures a partial result constrained by a source timeout. Article timings also retain PubTator metadata fallback failures and stale-cache warnings. These errors remain in the raw samples.
+
+Direct day-cached GWAS prefetches and all five measured replies in each product return ten results, with no error field, no stderr warning and no provider-budget truncation. The faster candidate day-cache observation is not an empty-result or source-timeout comparison. This records response structure without interpreting its content. Default-mode drug timing combines openFDA with other providers and does not prove that openFDA made zero requests. All ten measured warm drug-card hashes and all ten measured cache-off drug-card hashes are stable within each product; this does not assert identical cards between products.
+
+### Retained targets and limits
+
+The most recent retained routine test and specification timings are 111.2 and 24.5 seconds on product `518a0e689659500bec8cbc33d195a6cbd1da78b8`; both met their 200-second targets at that revision. This scoped collection does not refresh those timing verdicts for `c4281daa7304c0dd2875aa3e0d253ae9d2010eed`. Its full main qualification passed separately in `2156/1792327112413-3132` (418.179 seconds overall), which is not a per-command timing comparison. No numeric source-share target was set. Warm-cache wins remain observations rather than acceptance conditions.
+
+### Candidate coverage and source counts
+
+Coverage collection is **complete** for this candidate: the unchanged integration, unit, Python and specification collections all exit 0, and all three JSON exports exit 0. The complete scoped job `2082/1792328222960-21993` exits 0 after 792.786 seconds. That overall duration combines collection work and is not a refreshed product build or routine-suite timing row.
+
+| Collection | Actual result |
+| --- | --- |
+| Rust integration | 168 passed, 5 skipped, 0 failed, 0 timed out |
+| Rust unit | 4205 passed, 29 skipped, 0 failed, 0 timed out |
+| Python | 1289 passed, 9 skipped, 0 failed, 0 errors |
+| Specifications | 7 pages, 0 failed |
+
+The existing filename-filtered instrumented-source denominator is **145451 lines** for all three reports. It includes inline test code and some standard-library instrumentation and covers routine features. It is neither pure production-source coverage nor all-feature coverage. The old release's coverage remains unavailable on this host because of its existing platform prerequisites; no old percentage is invented. Changed source and test code change the candidate denominator, so earlier candidate coverage counts are not relabeled or combined with this collection.
+
+| Report | Reached lines | Denominator | Percentage |
+| --- | --- | --- | --- |
+| Outside tests | 51337 | 145451 | 35.295048% |
+| Unit tests | 115862 | 145451 | 79.657067% |
+| Combined | 123231 | 145451 | 84.723378% |
+
+Five groups: outside only **7369**, unit only **71894**, both **43968**, unobserved **22220**, incomplete collections **0**. LLVM's own exported line counts match the existing text reports. For reached sets O and U and their union C, both is O+U−C, outside only is C−U, unit only is C−O, and unobserved is denominator−C. No manual expansion of source regions changes LLVM's line-count semantics. The unchanged helper still does not retain the individual text-report tool exit statuses; the new exports retain their own actual exits, and their counts match the fresh text totals.
+
+| Source measure | v0.9.2, retained at `4049666f` | Candidate `c4281daa` |
+| --- | --- | --- |
+| Root-crate Rust source and external test lines | 301538 | 315971 |
+| Rust test lines | 139914 | 150479 |
+| Rust test share | 46.400122% | 47.624307% |
+| Separate Python test physical lines | 37979 | 36241 |
+
+The source-only Rust view is 137024 test lines out of 302516 physical lines (45.294794%). The primary view adds 13455 lines from 34 external Rust test files. Generated source is excluded; workspace helpers, examples, benches, build scripts and other languages remain outside that Rust denominator. Blank and comment lines remain included, and Python remains a separate count. No numeric share target exists, so no met/missed verdict is assigned.
+
+The original temporary reducer had been removed during cleanup and could not be recovered. The reconstructed temporary reducer follows the already recorded physical-line, test-only-path and brace-aware `#[cfg(test)]` item-span union method, ignoring literals/comments and retaining per-file counts. It also reduces the existing coverage groups without changing suites or filename filters. Its SHA-256 is `d45efb85e1d4e553b5c54ab1ac114905f68a55e789b74c7f91972dbfc80f47f6`. This identifies reconstructed reduction code rather than claiming the original helper survived. The full counts, exits, method and source limitations follow.
+
+```json
+{
+  "collection": "2082/1792328222960-21993",
+  "collection_exit_code": 0,
+  "collection_elapsed_s": 792.786,
+  "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+  "temporary_reducer_sha256": "d45efb85e1d4e553b5c54ab1ac114905f68a55e789b74c7f91972dbfc80f47f6",
+  "reducer_note": "Reconstructed temporary reduction of the existing recorded source-census and coverage-group method; the old temporary helper was unavailable after cleanup. No repository tooling or denominator rule changed.",
+  "inherited_relevant_environment_names": [
+    "ALPHAGENOME_API_KEY",
+    "DISGENET_API_KEY",
+    "HOME",
+    "NCI_API_KEY",
+    "PATH",
+    "S2_API_KEY",
+    "TMPDIR",
+    "UMLS_API_KEY"
+  ],
+  "suite_and_export_statuses": {
+    "integration_tests": {
+      "exit_code": 0,
+      "complete": true,
+      "summary": "exit 0; 168 run: 168 passed, 0 failed, 0 timed out, 5 skipped"
+    },
+    "unit_tests": {
+      "exit_code": 0,
+      "complete": true,
+      "summary": "exit 0; 4205 run: 4205 passed, 0 failed, 0 timed out, 29 skipped"
+    },
+    "python_lane": {
+      "exit_code": 0,
+      "complete": true,
+      "summary": "exit 0; 1289 passed, 0 failed, 0 errors, 9 skipped"
+    },
+    "spec_lane": {
+      "exit_code": 0,
+      "complete": true,
+      "summary": "exit 0; 7 pages, 0 failed"
+    },
+    "export_outside_in": {
+      "exit_code": 0
+    },
+    "export_unit": {
+      "exit_code": 0
+    },
+    "export_combined": {
+      "exit_code": 0
+    }
+  },
+  "coverage": {
+    "collection": "complete",
+    "reports": {
+      "outside_in": {
+        "denominator_lines": 145451,
+        "reached_lines": 51337,
+        "line_coverage_pct": 35.295047816790536,
+        "export_file": "candidate/coverage/refresh-outside_in.json"
+      },
+      "unit": {
+        "denominator_lines": 145451,
+        "reached_lines": 115862,
+        "line_coverage_pct": 79.65706664099937,
+        "export_file": "candidate/coverage/refresh-unit.json"
+      },
+      "combined": {
+        "denominator_lines": 145451,
+        "reached_lines": 123231,
+        "line_coverage_pct": 84.72337763232979,
+        "export_file": "candidate/coverage/refresh-combined.json"
+      }
+    },
+    "denominator_lines": 145451,
+    "five_groups": {
+      "outside_only_lines": 7369,
+      "unit_only_lines": 71894,
+      "both_lines": 43968,
+      "unobserved_lines": 22220,
+      "incomplete_collections": 0
+    },
+    "denominator_label": "Existing filename-filtered instrumented source; inline tests and some standard-library instrumentation remain; routine features only."
+  },
+  "source_census": {
+    "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+    "method": "Physical lines including blanks/comments; nongenerated tracked root src/**/*.rs plus external tests/**/*.rs; test-only paths and union of brace-aware cfg(test) item spans with literals/comments ignored; separate Python test count.",
+    "total_src_rust_lines": 302516,
+    "test_only_file_lines": 99005,
+    "inline_cfg_test_lines": 38019,
+    "test_code_lines": 137024,
+    "test_code_share_pct": 45.29479432492827,
+    "primary_crate_rust": {
+      "runtime_and_test_lines": 315971,
+      "test_code_lines": 150479,
+      "test_code_share_pct": 47.62430729402382,
+      "external_test_rust_lines": 13455,
+      "external_test_rust_files": 34
+    },
+    "python_test_physical_lines": 36241,
+    "numeric_target": null,
+    "files": [
+      {
+        "file": "src/build_identity.rs",
+        "lines": 24,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/citation_evidence.rs",
+        "lines": 183,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/clean.rs",
+        "lines": 717,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 503
+      },
+      {
+        "file": "src/cache/clear.rs",
+        "lines": 971,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 378
+      },
+      {
+        "file": "src/cache/config.rs",
+        "lines": 949,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 547
+      },
+      {
+        "file": "src/cache/http.rs",
+        "lines": 84,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/limits.rs",
+        "lines": 279,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 114
+      },
+      {
+        "file": "src/cache/manager.rs",
+        "lines": 1331,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 673
+      },
+      {
+        "file": "src/cache/manager/tests/stale_marker_tests.rs",
+        "lines": 124,
+        "test_only_file_lines": 124,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/manager/tests/startup_clean_tests.rs",
+        "lines": 138,
+        "test_only_file_lines": 138,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/manager/tests/startup_totals_tests.rs",
+        "lines": 132,
+        "test_only_file_lines": 132,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/manager/tests/write_security_tests.rs",
+        "lines": 776,
+        "test_only_file_lines": 776,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/manager/tests/write_security_windows_tests.rs",
+        "lines": 113,
+        "test_only_file_lines": 113,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/manager/totals.rs",
+        "lines": 80,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cache/migration.rs",
+        "lines": 1187,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 595
+      },
+      {
+        "file": "src/cache/mod.rs",
+        "lines": 135,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 30
+      },
+      {
+        "file": "src/cache/planner.rs",
+        "lines": 877,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 394
+      },
+      {
+        "file": "src/cache/private.rs",
+        "lines": 869,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cache/provider_capture.rs",
+        "lines": 1506,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 463
+      },
+      {
+        "file": "src/cache/provider_capture/unsupported.rs",
+        "lines": 25,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 17
+      },
+      {
+        "file": "src/cli/adverse_event/dispatch.rs",
+        "lines": 522,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/adverse_event/mod.rs",
+        "lines": 93,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/adverse_event/plan.rs",
+        "lines": 201,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/adverse_event/tests.rs",
+        "lines": 546,
+        "test_only_file_lines": 546,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/annotations.rs",
+        "lines": 54,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/assets.rs",
+        "lines": 317,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 3
+      },
+      {
+        "file": "src/cli/article/dispatch.rs",
+        "lines": 756,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 24
+      },
+      {
+        "file": "src/cli/article/dispatch/workflow_tests.rs",
+        "lines": 75,
+        "test_only_file_lines": 75,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/export.rs",
+        "lines": 102,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/fulltext_view.rs",
+        "lines": 349,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 3
+      },
+      {
+        "file": "src/cli/article/mod.rs",
+        "lines": 541,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/article/render.rs",
+        "lines": 52,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/session.rs",
+        "lines": 370,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/cli/article/session/tests.rs",
+        "lines": 427,
+        "test_only_file_lines": 427,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/citation_evidence.rs",
+        "lines": 82,
+        "test_only_file_lines": 82,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/diagnostics.rs",
+        "lines": 65,
+        "test_only_file_lines": 65,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/entities_disease_links.rs",
+        "lines": 237,
+        "test_only_file_lines": 237,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/exact_lookup.rs",
+        "lines": 446,
+        "test_only_file_lines": 446,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/filters.rs",
+        "lines": 650,
+        "test_only_file_lines": 650,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/help.rs",
+        "lines": 265,
+        "test_only_file_lines": 265,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/json.rs",
+        "lines": 699,
+        "test_only_file_lines": 699,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/mod.rs",
+        "lines": 11,
+        "test_only_file_lines": 11,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/next_commands.rs",
+        "lines": 41,
+        "test_only_file_lines": 41,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/tests/outage.rs",
+        "lines": 223,
+        "test_only_file_lines": 223,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/article/workflow.rs",
+        "lines": 96,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/author/detail.rs",
+        "lines": 28,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/author/mod.rs",
+        "lines": 121,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 76
+      },
+      {
+        "file": "src/cli/author/papers.rs",
+        "lines": 27,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/author/search.rs",
+        "lines": 38,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/cache.rs",
+        "lines": 402,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 19
+      },
+      {
+        "file": "src/cli/cache/tests.rs",
+        "lines": 468,
+        "test_only_file_lines": 468,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/cell_line/dispatch.rs",
+        "lines": 115,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/cell_line/mod.rs",
+        "lines": 85,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/chart.rs",
+        "lines": 249,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 152
+      },
+      {
+        "file": "src/cli/commands.rs",
+        "lines": 276,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/commands/selectors.rs",
+        "lines": 445,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/debug_plan.rs",
+        "lines": 35,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/diagnostic/dispatch.rs",
+        "lines": 136,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/diagnostic/mod.rs",
+        "lines": 66,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/diagnostic/tests.rs",
+        "lines": 342,
+        "test_only_file_lines": 342,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/discover.rs",
+        "lines": 570,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 431
+      },
+      {
+        "file": "src/cli/disease/dispatch.rs",
+        "lines": 381,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 32
+      },
+      {
+        "file": "src/cli/disease/mod.rs",
+        "lines": 114,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/disease/tests.rs",
+        "lines": 225,
+        "test_only_file_lines": 225,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/drug/alias_alignment_tests.rs",
+        "lines": 70,
+        "test_only_file_lines": 70,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/drug/dispatch.rs",
+        "lines": 676,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/drug/mod.rs",
+        "lines": 232,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 6
+      },
+      {
+        "file": "src/cli/drug/render.rs",
+        "lines": 303,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/drug/tests.rs",
+        "lines": 695,
+        "test_only_file_lines": 695,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/drug/workflow.rs",
+        "lines": 15,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/gene/cspec.rs",
+        "lines": 236,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/gene/dispatch.rs",
+        "lines": 175,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/gene/mod.rs",
+        "lines": 209,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 5
+      },
+      {
+        "file": "src/cli/gene/related.rs",
+        "lines": 232,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 34
+      },
+      {
+        "file": "src/cli/gwas/dispatch.rs",
+        "lines": 134,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 59
+      },
+      {
+        "file": "src/cli/gwas/mod.rs",
+        "lines": 31,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/cli/gwas/tests.rs",
+        "lines": 158,
+        "test_only_file_lines": 158,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/health/catalog.rs",
+        "lines": 611,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/health/http.rs",
+        "lines": 625,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 80
+      },
+      {
+        "file": "src/cli/health/local.rs",
+        "lines": 482,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/health/mod.rs",
+        "lines": 556,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 259
+      },
+      {
+        "file": "src/cli/health/runner.rs",
+        "lines": 438,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 20
+      },
+      {
+        "file": "src/cli/health/tests/catalog.rs",
+        "lines": 208,
+        "test_only_file_lines": 208,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/health/tests/fda.rs",
+        "lines": 156,
+        "test_only_file_lines": 156,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/health/tests/http.rs",
+        "lines": 392,
+        "test_only_file_lines": 392,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/health/tests/local.rs",
+        "lines": 691,
+        "test_only_file_lines": 691,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/health/tests/runner.rs",
+        "lines": 567,
+        "test_only_file_lines": 567,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/install.rs",
+        "lines": 388,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 110
+      },
+      {
+        "file": "src/cli/list/catalog.rs",
+        "lines": 276,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/list/clinical.rs",
+        "lines": 363,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/list/helpers.rs",
+        "lines": 157,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/list/literature.rs",
+        "lines": 217,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/list/mod.rs",
+        "lines": 102,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 5
+      },
+      {
+        "file": "src/cli/list/molecular.rs",
+        "lines": 379,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/list/tests/pages.rs",
+        "lines": 700,
+        "test_only_file_lines": 700,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/list/tests/router.rs",
+        "lines": 26,
+        "test_only_file_lines": 26,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/mcp_config.rs",
+        "lines": 186,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 84
+      },
+      {
+        "file": "src/cli/mod.rs",
+        "lines": 97,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 14
+      },
+      {
+        "file": "src/cli/outcome.rs",
+        "lines": 685,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 6
+      },
+      {
+        "file": "src/cli/outcome/mcp_chart.rs",
+        "lines": 55,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/outcome/probe_tests.rs",
+        "lines": 108,
+        "test_only_file_lines": 108,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/outcome/tests.rs",
+        "lines": 33,
+        "test_only_file_lines": 33,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/pathway/dispatch.rs",
+        "lines": 353,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/pathway/mod.rs",
+        "lines": 106,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/pathway/tests.rs",
+        "lines": 168,
+        "test_only_file_lines": 168,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/pgx/dispatch.rs",
+        "lines": 85,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/pgx/mod.rs",
+        "lines": 57,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/pgx/tests.rs",
+        "lines": 61,
+        "test_only_file_lines": 61,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/phenotype/dispatch.rs",
+        "lines": 84,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/phenotype/mod.rs",
+        "lines": 21,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/cli/phenotype/tests.rs",
+        "lines": 115,
+        "test_only_file_lines": 115,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/protein/dispatch.rs",
+        "lines": 184,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/protein/mod.rs",
+        "lines": 75,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/protein/tests.rs",
+        "lines": 137,
+        "test_only_file_lines": 137,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/response_contract.rs",
+        "lines": 633,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 272
+      },
+      {
+        "file": "src/cli/search_all/dispatch.rs",
+        "lines": 458,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all/format.rs",
+        "lines": 349,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all/links.rs",
+        "lines": 370,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all/mod.rs",
+        "lines": 296,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 7
+      },
+      {
+        "file": "src/cli/search_all/plan.rs",
+        "lines": 650,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all/tests/dispatch.rs",
+        "lines": 283,
+        "test_only_file_lines": 283,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all/tests/format.rs",
+        "lines": 290,
+        "test_only_file_lines": 290,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all/tests/links.rs",
+        "lines": 218,
+        "test_only_file_lines": 218,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all/tests/plan.rs",
+        "lines": 468,
+        "test_only_file_lines": 468,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/search_all_command.rs",
+        "lines": 161,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 123
+      },
+      {
+        "file": "src/cli/shared.rs",
+        "lines": 489,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 11
+      },
+      {
+        "file": "src/cli/shared/search_payloads.rs",
+        "lines": 282,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/skill/assets.rs",
+        "lines": 55,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/skill/atomic_swap.rs",
+        "lines": 122,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 23
+      },
+      {
+        "file": "src/cli/skill/catalog.rs",
+        "lines": 171,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/skill/install.rs",
+        "lines": 620,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/skill/mod.rs",
+        "lines": 65,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 5
+      },
+      {
+        "file": "src/cli/skill/status.rs",
+        "lines": 319,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/skill/tests/catalog.rs",
+        "lines": 391,
+        "test_only_file_lines": 391,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/skill/tests/install.rs",
+        "lines": 374,
+        "test_only_file_lines": 374,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/stale_json_note_tests.rs",
+        "lines": 538,
+        "test_only_file_lines": 538,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/study/dispatch.rs",
+        "lines": 437,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/study/mod.rs",
+        "lines": 183,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/cli/study/tests.rs",
+        "lines": 10,
+        "test_only_file_lines": 10,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/study/tests/charts.rs",
+        "lines": 412,
+        "test_only_file_lines": 412,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/study/tests/help.rs",
+        "lines": 126,
+        "test_only_file_lines": 126,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/study/tests/parsing.rs",
+        "lines": 270,
+        "test_only_file_lines": 270,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/study/tests/validation.rs",
+        "lines": 184,
+        "test_only_file_lines": 184,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/system/batch.rs",
+        "lines": 812,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 530
+      },
+      {
+        "file": "src/cli/system/dispatch.rs",
+        "lines": 680,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 45
+      },
+      {
+        "file": "src/cli/system/mod.rs",
+        "lines": 231,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/cli/system/tests.rs",
+        "lines": 696,
+        "test_only_file_lines": 696,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/system/tests/dev2_contracts.rs",
+        "lines": 307,
+        "test_only_file_lines": 307,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/system/tests/who_sync.rs",
+        "lines": 132,
+        "test_only_file_lines": 132,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/system/who_sync.rs",
+        "lines": 70,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/facade.rs",
+        "lines": 543,
+        "test_only_file_lines": 543,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/facade/cache.rs",
+        "lines": 214,
+        "test_only_file_lines": 214,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/facade/chart.rs",
+        "lines": 157,
+        "test_only_file_lines": 157,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/facade/help.rs",
+        "lines": 195,
+        "test_only_file_lines": 195,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/mod.rs",
+        "lines": 6,
+        "test_only_file_lines": 6,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_json_property.rs",
+        "lines": 67,
+        "test_only_file_lines": 67,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_json_property/diagnostic.rs",
+        "lines": 287,
+        "test_only_file_lines": 287,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_json_property/disease_trial.rs",
+        "lines": 294,
+        "test_only_file_lines": 294,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_json_property/gene_article.rs",
+        "lines": 306,
+        "test_only_file_lines": 306,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_json_property/pathway_adverse_event.rs",
+        "lines": 298,
+        "test_only_file_lines": 298,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_json_property/protein_phenotype.rs",
+        "lines": 85,
+        "test_only_file_lines": 85,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_json_property/variant_drug.rs",
+        "lines": 152,
+        "test_only_file_lines": 152,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/next_commands_validity.rs",
+        "lines": 306,
+        "test_only_file_lines": 306,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/outcome.rs",
+        "lines": 552,
+        "test_only_file_lines": 552,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/printed_card_commands.rs",
+        "lines": 595,
+        "test_only_file_lines": 595,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/tests/surface_agreement.rs",
+        "lines": 398,
+        "test_only_file_lines": 398,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/trial/count_tests.rs",
+        "lines": 117,
+        "test_only_file_lines": 117,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/trial/dispatch.rs",
+        "lines": 630,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/trial/documents.rs",
+        "lines": 188,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 78
+      },
+      {
+        "file": "src/cli/trial/mod.rs",
+        "lines": 163,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 8
+      },
+      {
+        "file": "src/cli/trial/tests.rs",
+        "lines": 689,
+        "test_only_file_lines": 689,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/trial/tests_locations.rs",
+        "lines": 650,
+        "test_only_file_lines": 650,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/trial/zero_result.rs",
+        "lines": 191,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/types.rs",
+        "lines": 421,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/update.rs",
+        "lines": 541,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 8
+      },
+      {
+        "file": "src/cli/update/tests.rs",
+        "lines": 365,
+        "test_only_file_lines": 365,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/variant/articles.rs",
+        "lines": 235,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/variant/car.rs",
+        "lines": 107,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 19
+      },
+      {
+        "file": "src/cli/variant/dispatch.rs",
+        "lines": 598,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 79
+      },
+      {
+        "file": "src/cli/variant/erepo.rs",
+        "lines": 357,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 97
+      },
+      {
+        "file": "src/cli/variant/guidance.rs",
+        "lines": 28,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/variant/mod.rs",
+        "lines": 336,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 5
+      },
+      {
+        "file": "src/cli/variant/normalization_json.rs",
+        "lines": 117,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 55
+      },
+      {
+        "file": "src/cli/variant/query.rs",
+        "lines": 585,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/variant/trial.rs",
+        "lines": 33,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/cli/worker.rs",
+        "lines": 97,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 24
+      },
+      {
+        "file": "src/entities/adverse_event.rs",
+        "lines": 2664,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 783
+      },
+      {
+        "file": "src/entities/adverse_event/device.rs",
+        "lines": 184,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/adverse_event/sections.rs",
+        "lines": 158,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 46
+      },
+      {
+        "file": "src/entities/article/assets.rs",
+        "lines": 3712,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 975
+      },
+      {
+        "file": "src/entities/article/backends.rs",
+        "lines": 1001,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/backends/provider_unit.rs",
+        "lines": 140,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/backends/tests.rs",
+        "lines": 687,
+        "test_only_file_lines": 687,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/batch.rs",
+        "lines": 203,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 30
+      },
+      {
+        "file": "src/entities/article/batch/tests.rs",
+        "lines": 276,
+        "test_only_file_lines": 276,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/candidates.rs",
+        "lines": 368,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/candidates/tests.rs",
+        "lines": 580,
+        "test_only_file_lines": 580,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/detail.rs",
+        "lines": 849,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/detail/tests.rs",
+        "lines": 421,
+        "test_only_file_lines": 421,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/enrichment.rs",
+        "lines": 595,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/enrichment/tests.rs",
+        "lines": 354,
+        "test_only_file_lines": 354,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/filters.rs",
+        "lines": 330,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/filters/tests.rs",
+        "lines": 335,
+        "test_only_file_lines": 335,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/fulltext.rs",
+        "lines": 1880,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 829
+      },
+      {
+        "file": "src/entities/article/graph.rs",
+        "lines": 503,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/graph/citation_evidence.rs",
+        "lines": 1278,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 19
+      },
+      {
+        "file": "src/entities/article/graph/tests.rs",
+        "lines": 2263,
+        "test_only_file_lines": 2263,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/graph/tests/admission.rs",
+        "lines": 307,
+        "test_only_file_lines": 307,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/graph/tests/cache.rs",
+        "lines": 660,
+        "test_only_file_lines": 660,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/identity_verification.rs",
+        "lines": 1533,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 620
+      },
+      {
+        "file": "src/entities/article/mod.rs",
+        "lines": 1536,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 324
+      },
+      {
+        "file": "src/entities/article/planner.rs",
+        "lines": 320,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/planner/tests.rs",
+        "lines": 460,
+        "test_only_file_lines": 460,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/query.rs",
+        "lines": 686,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 17
+      },
+      {
+        "file": "src/entities/article/query/tests.rs",
+        "lines": 458,
+        "test_only_file_lines": 458,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/ranking.rs",
+        "lines": 573,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/ranking/tests.rs",
+        "lines": 27,
+        "test_only_file_lines": 27,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/ranking/tests/calibration.rs",
+        "lines": 153,
+        "test_only_file_lines": 153,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/ranking/tests/calibration/hybrid.rs",
+        "lines": 524,
+        "test_only_file_lines": 524,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/ranking/tests/calibration/rescue.rs",
+        "lines": 319,
+        "test_only_file_lines": 319,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/ranking/tests/directness.rs",
+        "lines": 208,
+        "test_only_file_lines": 208,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/ranking/tests/keyword.rs",
+        "lines": 82,
+        "test_only_file_lines": 82,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/ranking/tests/policy.rs",
+        "lines": 144,
+        "test_only_file_lines": 144,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search.rs",
+        "lines": 1018,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/article/search/deadline.rs",
+        "lines": 215,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 40
+      },
+      {
+        "file": "src/entities/article/search/status.rs",
+        "lines": 91,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search/tests.rs",
+        "lines": 169,
+        "test_only_file_lines": 169,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search/tests/deadline.rs",
+        "lines": 663,
+        "test_only_file_lines": 663,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search/tests/finalizer.rs",
+        "lines": 89,
+        "test_only_file_lines": 89,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search/tests/integration.rs",
+        "lines": 82,
+        "test_only_file_lines": 82,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search/tests/merge.rs",
+        "lines": 449,
+        "test_only_file_lines": 449,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search/tests/relevance_paging.rs",
+        "lines": 53,
+        "test_only_file_lines": 53,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/search/tests/type_capable.rs",
+        "lines": 120,
+        "test_only_file_lines": 120,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/supplement_search.rs",
+        "lines": 527,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 51
+      },
+      {
+        "file": "src/entities/article/supplement_search/cache.rs",
+        "lines": 96,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/test_support.rs",
+        "lines": 224,
+        "test_only_file_lines": 224,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/article/variant_search.rs",
+        "lines": 8959,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4014
+      },
+      {
+        "file": "src/entities/author/mod.rs",
+        "lines": 618,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 179
+      },
+      {
+        "file": "src/entities/author/papers.rs",
+        "lines": 1597,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 869
+      },
+      {
+        "file": "src/entities/author/search.rs",
+        "lines": 358,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 123
+      },
+      {
+        "file": "src/entities/cell_line.rs",
+        "lines": 754,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 11
+      },
+      {
+        "file": "src/entities/cell_line/chembl.rs",
+        "lines": 138,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/cell_line/chembl/tests.rs",
+        "lines": 196,
+        "test_only_file_lines": 196,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/cell_line/pharmacodb.rs",
+        "lines": 166,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/cell_line/pharmacodb/tests.rs",
+        "lines": 243,
+        "test_only_file_lines": 243,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/cell_line/tests.rs",
+        "lines": 467,
+        "test_only_file_lines": 467,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/diagnostic/get.rs",
+        "lines": 695,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 35
+      },
+      {
+        "file": "src/entities/diagnostic/mod.rs",
+        "lines": 861,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 566
+      },
+      {
+        "file": "src/entities/diagnostic/search.rs",
+        "lines": 707,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 257
+      },
+      {
+        "file": "src/entities/discover.rs",
+        "lines": 4220,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 1477
+      },
+      {
+        "file": "src/entities/disease/article_links.rs",
+        "lines": 167,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/disease/article_links/tests.rs",
+        "lines": 102,
+        "test_only_file_lines": 102,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/associations.rs",
+        "lines": 664,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 7
+      },
+      {
+        "file": "src/entities/disease/associations/tests.rs",
+        "lines": 128,
+        "test_only_file_lines": 128,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/enrichment.rs",
+        "lines": 872,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 8
+      },
+      {
+        "file": "src/entities/disease/enrichment/tests.rs",
+        "lines": 574,
+        "test_only_file_lines": 574,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/fallback.rs",
+        "lines": 515,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/disease/fallback/tests.rs",
+        "lines": 455,
+        "test_only_file_lines": 455,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/get.rs",
+        "lines": 287,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 6
+      },
+      {
+        "file": "src/entities/disease/get/tests.rs",
+        "lines": 820,
+        "test_only_file_lines": 820,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/mod.rs",
+        "lines": 384,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/entities/disease/resolution.rs",
+        "lines": 914,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/disease/resolution/ambiguity.rs",
+        "lines": 226,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/resolution/tests.rs",
+        "lines": 745,
+        "test_only_file_lines": 745,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/search.rs",
+        "lines": 837,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 14
+      },
+      {
+        "file": "src/entities/disease/search/tests.rs",
+        "lines": 703,
+        "test_only_file_lines": 703,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/test_support.rs",
+        "lines": 98,
+        "test_only_file_lines": 98,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/disease/tests.rs",
+        "lines": 65,
+        "test_only_file_lines": 65,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/cell_lines.rs",
+        "lines": 231,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/drug/cell_lines/tests.rs",
+        "lines": 233,
+        "test_only_file_lines": 233,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/get.rs",
+        "lines": 1709,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 6
+      },
+      {
+        "file": "src/entities/drug/get/tests.rs",
+        "lines": 1105,
+        "test_only_file_lines": 1105,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/interactions.rs",
+        "lines": 482,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 103
+      },
+      {
+        "file": "src/entities/drug/label.rs",
+        "lines": 1349,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/entities/drug/label/tests.rs",
+        "lines": 5,
+        "test_only_file_lines": 5,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/label/tests/extraction.rs",
+        "lines": 262,
+        "test_only_file_lines": 262,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/label/tests/identity.rs",
+        "lines": 398,
+        "test_only_file_lines": 398,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/label/tests/summary.rs",
+        "lines": 103,
+        "test_only_file_lines": 103,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/metadata.rs",
+        "lines": 530,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/drug/metadata/tests.rs",
+        "lines": 152,
+        "test_only_file_lines": 152,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/mod.rs",
+        "lines": 718,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 31
+      },
+      {
+        "file": "src/entities/drug/query.rs",
+        "lines": 278,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/drug/query/tests.rs",
+        "lines": 137,
+        "test_only_file_lines": 137,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/search.rs",
+        "lines": 999,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 46
+      },
+      {
+        "file": "src/entities/drug/search/tests.rs",
+        "lines": 271,
+        "test_only_file_lines": 271,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/search/tests/fallback.rs",
+        "lines": 242,
+        "test_only_file_lines": 242,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/search/tests/mechanism.rs",
+        "lines": 55,
+        "test_only_file_lines": 55,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/search/tests/who.rs",
+        "lines": 218,
+        "test_only_file_lines": 218,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/targets.rs",
+        "lines": 466,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/drug/targets/tests.rs",
+        "lines": 8,
+        "test_only_file_lines": 8,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/targets/tests/civic.rs",
+        "lines": 99,
+        "test_only_file_lines": 99,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/targets/tests/family.rs",
+        "lines": 160,
+        "test_only_file_lines": 160,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/targets/tests/indications.rs",
+        "lines": 39,
+        "test_only_file_lines": 39,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/test_support.rs",
+        "lines": 967,
+        "test_only_file_lines": 967,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/test_support/brand_resolution.rs",
+        "lines": 762,
+        "test_only_file_lines": 762,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/test_support/ingredient_resolution.rs",
+        "lines": 689,
+        "test_only_file_lines": 689,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/test_support/label_choice.rs",
+        "lines": 1288,
+        "test_only_file_lines": 1288,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/drug/test_support/product_names.rs",
+        "lines": 638,
+        "test_only_file_lines": 638,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/gene.rs",
+        "lines": 3973,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 677
+      },
+      {
+        "file": "src/entities/gene/cell_lines.rs",
+        "lines": 199,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/gene/cell_lines/tests.rs",
+        "lines": 324,
+        "test_only_file_lines": 324,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/gene/clingen.rs",
+        "lines": 283,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 153
+      },
+      {
+        "file": "src/entities/gene/cspec.rs",
+        "lines": 1105,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 405
+      },
+      {
+        "file": "src/entities/gene/gencc.rs",
+        "lines": 288,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 11
+      },
+      {
+        "file": "src/entities/gene/gencc/tests.rs",
+        "lines": 1037,
+        "test_only_file_lines": 1037,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/mod.rs",
+        "lines": 84,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/pathway.rs",
+        "lines": 1301,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 409
+      },
+      {
+        "file": "src/entities/pgx.rs",
+        "lines": 1140,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 157
+      },
+      {
+        "file": "src/entities/pgx/recommendation_tests.rs",
+        "lines": 179,
+        "test_only_file_lines": 179,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/pharmacodb.rs",
+        "lines": 366,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/pharmacodb/tests.rs",
+        "lines": 425,
+        "test_only_file_lines": 425,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/protein.rs",
+        "lines": 958,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 282
+      },
+      {
+        "file": "src/entities/section_outcome.rs",
+        "lines": 523,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 159
+      },
+      {
+        "file": "src/entities/source_state_registry.rs",
+        "lines": 968,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 44
+      },
+      {
+        "file": "src/entities/study.rs",
+        "lines": 1774,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 535
+      },
+      {
+        "file": "src/entities/study/tests/missing_root.rs",
+        "lines": 46,
+        "test_only_file_lines": 46,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/design.rs",
+        "lines": 943,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 45
+      },
+      {
+        "file": "src/entities/trial/documents.rs",
+        "lines": 500,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 219
+      },
+      {
+        "file": "src/entities/trial/eligibility.rs",
+        "lines": 810,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 288
+      },
+      {
+        "file": "src/entities/trial/get.rs",
+        "lines": 306,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/trial/get/tests.rs",
+        "lines": 907,
+        "test_only_file_lines": 907,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/mod.rs",
+        "lines": 860,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 159
+      },
+      {
+        "file": "src/entities/trial/search/ctgov.rs",
+        "lines": 1134,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/entities/trial/search/ctgov/abbreviation_note_tests.rs",
+        "lines": 247,
+        "test_only_file_lines": 247,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/search/ctgov/tests.rs",
+        "lines": 1123,
+        "test_only_file_lines": 1123,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/search/eligibility.rs",
+        "lines": 438,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/entities/trial/search/eligibility/keep_paths.rs",
+        "lines": 134,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/search/eligibility/tests.rs",
+        "lines": 334,
+        "test_only_file_lines": 334,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/search/essie.rs",
+        "lines": 316,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 109
+      },
+      {
+        "file": "src/entities/trial/search/mod.rs",
+        "lines": 416,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/search/nci.rs",
+        "lines": 266,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/trial/search/nci/tests.rs",
+        "lines": 782,
+        "test_only_file_lines": 782,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/search/normalization.rs",
+        "lines": 235,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 12
+      },
+      {
+        "file": "src/entities/trial/search/normalization/tests.rs",
+        "lines": 211,
+        "test_only_file_lines": 211,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/trial/test_support.rs",
+        "lines": 279,
+        "test_only_file_lines": 279,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/clinvar.rs",
+        "lines": 799,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 560
+      },
+      {
+        "file": "src/entities/variant/erepo.rs",
+        "lines": 1026,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 243
+      },
+      {
+        "file": "src/entities/variant/get.rs",
+        "lines": 2068,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 19
+      },
+      {
+        "file": "src/entities/variant/get/protein_change_tests.rs",
+        "lines": 1392,
+        "test_only_file_lines": 1392,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/get/tests.rs",
+        "lines": 1539,
+        "test_only_file_lines": 1539,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/gwas.rs",
+        "lines": 617,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/variant/gwas/tests.rs",
+        "lines": 479,
+        "test_only_file_lines": 479,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/mod.rs",
+        "lines": 744,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 4
+      },
+      {
+        "file": "src/entities/variant/normalization.rs",
+        "lines": 429,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 61
+      },
+      {
+        "file": "src/entities/variant/resolution.rs",
+        "lines": 1482,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/variant/resolution/tests.rs",
+        "lines": 699,
+        "test_only_file_lines": 699,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/search/diagnostics.rs",
+        "lines": 377,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/search/mod.rs",
+        "lines": 1113,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/variant/search/tests.rs",
+        "lines": 874,
+        "test_only_file_lines": 874,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/structure.rs",
+        "lines": 519,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/entities/variant/structure/tests.rs",
+        "lines": 595,
+        "test_only_file_lines": 595,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/entities/variant/test_support.rs",
+        "lines": 4,
+        "test_only_file_lines": 4,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/error.rs",
+        "lines": 1546,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 517
+      },
+      {
+        "file": "src/gene.rs",
+        "lines": 3,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/lib.rs",
+        "lines": 59,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 26
+      },
+      {
+        "file": "src/main.rs",
+        "lines": 229,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/mcp/catalog.rs",
+        "lines": 119,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/mcp/mod.rs",
+        "lines": 46,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/mcp/shell.rs",
+        "lines": 2867,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 1073
+      },
+      {
+        "file": "src/mcp/shell/http_server.rs",
+        "lines": 614,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 127
+      },
+      {
+        "file": "src/mcp/shell/modern.rs",
+        "lines": 273,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/mcp/shell/pre_session.rs",
+        "lines": 153,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/mcp/shell/tests/ticket_1120.rs",
+        "lines": 117,
+        "test_only_file_lines": 117,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/mcp/shell/trial_phase.rs",
+        "lines": 54,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 37
+      },
+      {
+        "file": "src/mcp/shell/typed_get.rs",
+        "lines": 111,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/mcp/shell/typed_get_tests.rs",
+        "lines": 975,
+        "test_only_file_lines": 975,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/next_command.rs",
+        "lines": 103,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 17
+      },
+      {
+        "file": "src/render/chart.rs",
+        "lines": 2068,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 1087
+      },
+      {
+        "file": "src/render/chart/bounds.rs",
+        "lines": 64,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/human.rs",
+        "lines": 535,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 293
+      },
+      {
+        "file": "src/render/json.rs",
+        "lines": 1598,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 955
+      },
+      {
+        "file": "src/render/markdown/adverse_event.rs",
+        "lines": 381,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/adverse_event/tests.rs",
+        "lines": 475,
+        "test_only_file_lines": 475,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/article.rs",
+        "lines": 789,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/article/tests.rs",
+        "lines": 1351,
+        "test_only_file_lines": 1351,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/author.rs",
+        "lines": 873,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 465
+      },
+      {
+        "file": "src/render/markdown/cell_line.rs",
+        "lines": 104,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/cell_line/tests.rs",
+        "lines": 194,
+        "test_only_file_lines": 194,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/diagnostic.rs",
+        "lines": 249,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/diagnostic/tests.rs",
+        "lines": 424,
+        "test_only_file_lines": 424,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/discovery.rs",
+        "lines": 184,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/discovery/tests.rs",
+        "lines": 176,
+        "test_only_file_lines": 176,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/disease.rs",
+        "lines": 406,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/disease/tests.rs",
+        "lines": 128,
+        "test_only_file_lines": 128,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/disease/tests/extended.rs",
+        "lines": 260,
+        "test_only_file_lines": 260,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/disease/tests/rendering.rs",
+        "lines": 918,
+        "test_only_file_lines": 918,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/drug.rs",
+        "lines": 731,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/drug/tests.rs",
+        "lines": 1149,
+        "test_only_file_lines": 1149,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/drug/tests/label_sections.rs",
+        "lines": 164,
+        "test_only_file_lines": 164,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/drug/tests/label_warnings.rs",
+        "lines": 196,
+        "test_only_file_lines": 196,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/drug_regulatory.rs",
+        "lines": 775,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 61
+      },
+      {
+        "file": "src/render/markdown/evidence.rs",
+        "lines": 494,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/evidence/tests.rs",
+        "lines": 306,
+        "test_only_file_lines": 306,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/funding.rs",
+        "lines": 85,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/gene.rs",
+        "lines": 131,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/gene/tests.rs",
+        "lines": 4,
+        "test_only_file_lines": 4,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/gene/tests/extended.rs",
+        "lines": 414,
+        "test_only_file_lines": 414,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/gene/tests/rendering.rs",
+        "lines": 829,
+        "test_only_file_lines": 829,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/mod.rs",
+        "lines": 925,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 15
+      },
+      {
+        "file": "src/render/markdown/pathway.rs",
+        "lines": 62,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/pathway/tests.rs",
+        "lines": 77,
+        "test_only_file_lines": 77,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/pgx.rs",
+        "lines": 78,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/pgx/tests.rs",
+        "lines": 90,
+        "test_only_file_lines": 90,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/pharmacodb.rs",
+        "lines": 55,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/protein.rs",
+        "lines": 156,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/protein/tests.rs",
+        "lines": 90,
+        "test_only_file_lines": 90,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related.rs",
+        "lines": 1141,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 23
+      },
+      {
+        "file": "src/render/markdown/related/article_support.rs",
+        "lines": 435,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related/tests.rs",
+        "lines": 8,
+        "test_only_file_lines": 8,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related/tests/article_search.rs",
+        "lines": 376,
+        "test_only_file_lines": 376,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related/tests/diagnostic.rs",
+        "lines": 99,
+        "test_only_file_lines": 99,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related/tests/disease.rs",
+        "lines": 468,
+        "test_only_file_lines": 468,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related/tests/drug_variant_article_trial.rs",
+        "lines": 734,
+        "test_only_file_lines": 734,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related/tests/gene_drug.rs",
+        "lines": 196,
+        "test_only_file_lines": 196,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/related/tests/misc.rs",
+        "lines": 126,
+        "test_only_file_lines": 126,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/root_tests.rs",
+        "lines": 708,
+        "test_only_file_lines": 708,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/sections.rs",
+        "lines": 674,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/sections/tests.rs",
+        "lines": 912,
+        "test_only_file_lines": 912,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/study.rs",
+        "lines": 481,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/study/tests.rs",
+        "lines": 429,
+        "test_only_file_lines": 429,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/support.rs",
+        "lines": 159,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/support/tests.rs",
+        "lines": 48,
+        "test_only_file_lines": 48,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/test_support.rs",
+        "lines": 25,
+        "test_only_file_lines": 25,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/tests.rs",
+        "lines": 5,
+        "test_only_file_lines": 5,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/trial.rs",
+        "lines": 472,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/trial/tests.rs",
+        "lines": 997,
+        "test_only_file_lines": 997,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/markdown/variant.rs",
+        "lines": 714,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/render/markdown/variant/tests.rs",
+        "lines": 1251,
+        "test_only_file_lines": 1251,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/mod.rs",
+        "lines": 7,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/render/provenance.rs",
+        "lines": 1917,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 1025
+      },
+      {
+        "file": "src/render/provenance/adverse_event.rs",
+        "lines": 101,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/skill_assets.rs",
+        "lines": 29,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/alphagenome.rs",
+        "lines": 552,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/alphagenome/tests/construction.rs",
+        "lines": 40,
+        "test_only_file_lines": 40,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/alphagenome/tests/mod.rs",
+        "lines": 15,
+        "test_only_file_lines": 15,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/alphagenome/tests/parsing.rs",
+        "lines": 69,
+        "test_only_file_lines": 69,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/archive_budget.rs",
+        "lines": 467,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 283
+      },
+      {
+        "file": "src/sources/ca_bundle.rs",
+        "lines": 460,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 246
+      },
+      {
+        "file": "src/sources/cancerhotspots.rs",
+        "lines": 194,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 5
+      },
+      {
+        "file": "src/sources/cancerhotspots/tests/construction.rs",
+        "lines": 33,
+        "test_only_file_lines": 33,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cancerhotspots/tests/parsing.rs",
+        "lines": 178,
+        "test_only_file_lines": 178,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal.rs",
+        "lines": 330,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/cbioportal/tests/construction.rs",
+        "lines": 69,
+        "test_only_file_lines": 69,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal/tests/live.rs",
+        "lines": 14,
+        "test_only_file_lines": 14,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal/tests/parsing.rs",
+        "lines": 85,
+        "test_only_file_lines": 85,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal_download.rs",
+        "lines": 559,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/cbioportal_download/tests/construction.rs",
+        "lines": 81,
+        "test_only_file_lines": 81,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal_download/tests/download.rs",
+        "lines": 127,
+        "test_only_file_lines": 127,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal_download/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal_download/tests/parsing.rs",
+        "lines": 338,
+        "test_only_file_lines": 338,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cbioportal_study.rs",
+        "lines": 3195,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 974
+      },
+      {
+        "file": "src/sources/cbioportal_study/tests/dev2_contracts.rs",
+        "lines": 48,
+        "test_only_file_lines": 48,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cellosaurus.rs",
+        "lines": 507,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/cellosaurus/tests.rs",
+        "lines": 124,
+        "test_only_file_lines": 124,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/chembl.rs",
+        "lines": 374,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 21
+      },
+      {
+        "file": "src/sources/chembl/tests/construction.rs",
+        "lines": 78,
+        "test_only_file_lines": 78,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/chembl/tests/parsing.rs",
+        "lines": 149,
+        "test_only_file_lines": 149,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/civic.rs",
+        "lines": 526,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/civic/tests/construction.rs",
+        "lines": 46,
+        "test_only_file_lines": 46,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/civic/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/civic/tests/parsing.rs",
+        "lines": 120,
+        "test_only_file_lines": 120,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/clingen.rs",
+        "lines": 812,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 36
+      },
+      {
+        "file": "src/sources/clingen/tests/mod.rs",
+        "lines": 422,
+        "test_only_file_lines": 422,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/clingen/tests/parsing.rs",
+        "lines": 286,
+        "test_only_file_lines": 286,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/clingen_allele_registry.rs",
+        "lines": 762,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 252
+      },
+      {
+        "file": "src/sources/clingen_cspec.rs",
+        "lines": 335,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 187
+      },
+      {
+        "file": "src/sources/clingen_erepo.rs",
+        "lines": 337,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 82
+      },
+      {
+        "file": "src/sources/clingen_ldh.rs",
+        "lines": 124,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 23
+      },
+      {
+        "file": "src/sources/clinicaltrials.rs",
+        "lines": 968,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 8
+      },
+      {
+        "file": "src/sources/clinicaltrials/tests/construction.rs",
+        "lines": 266,
+        "test_only_file_lines": 266,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/clinicaltrials/tests/live.rs",
+        "lines": 18,
+        "test_only_file_lines": 18,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/clinicaltrials/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/clinicaltrials/tests/parsing.rs",
+        "lines": 469,
+        "test_only_file_lines": 469,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/complexportal.rs",
+        "lines": 237,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/complexportal/tests/construction.rs",
+        "lines": 32,
+        "test_only_file_lines": 32,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/complexportal/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/complexportal/tests/parsing.rs",
+        "lines": 89,
+        "test_only_file_lines": 89,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cpic.rs",
+        "lines": 485,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 40
+      },
+      {
+        "file": "src/sources/cpic/tests/construction.rs",
+        "lines": 76,
+        "test_only_file_lines": 76,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cpic/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cpic/tests/parsing.rs",
+        "lines": 143,
+        "test_only_file_lines": 143,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cvx.rs",
+        "lines": 880,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 17
+      },
+      {
+        "file": "src/sources/cvx/tests/construction.rs",
+        "lines": 80,
+        "test_only_file_lines": 80,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cvx/tests/mod.rs",
+        "lines": 22,
+        "test_only_file_lines": 22,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/cvx/tests/parsing.rs",
+        "lines": 212,
+        "test_only_file_lines": 212,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/dbsnp.rs",
+        "lines": 208,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ddinter.rs",
+        "lines": 542,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/ddinter/tests/construction.rs",
+        "lines": 111,
+        "test_only_file_lines": 111,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ddinter/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ddinter/tests/parsing.rs",
+        "lines": 208,
+        "test_only_file_lines": 208,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/dgidb.rs",
+        "lines": 391,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/dgidb/tests/construction.rs",
+        "lines": 34,
+        "test_only_file_lines": 34,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/dgidb/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/dgidb/tests/parsing.rs",
+        "lines": 79,
+        "test_only_file_lines": 79,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/disable.rs",
+        "lines": 525,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 147
+      },
+      {
+        "file": "src/sources/disgenet.rs",
+        "lines": 466,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/disgenet/tests/construction.rs",
+        "lines": 93,
+        "test_only_file_lines": 93,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/disgenet/tests/mod.rs",
+        "lines": 154,
+        "test_only_file_lines": 154,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/disgenet/tests/parsing.rs",
+        "lines": 178,
+        "test_only_file_lines": 178,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ema.rs",
+        "lines": 1003,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 8
+      },
+      {
+        "file": "src/sources/ema/identity.rs",
+        "lines": 264,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 11
+      },
+      {
+        "file": "src/sources/ema/tests/mod.rs",
+        "lines": 103,
+        "test_only_file_lines": 103,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ema/tests/parsing.rs",
+        "lines": 416,
+        "test_only_file_lines": 416,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/enrichr.rs",
+        "lines": 239,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/enrichr/tests/construction.rs",
+        "lines": 30,
+        "test_only_file_lines": 30,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/enrichr/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/enrichr/tests/parsing.rs",
+        "lines": 45,
+        "test_only_file_lines": 45,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/europepmc.rs",
+        "lines": 619,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/europepmc/tests/construction.rs",
+        "lines": 120,
+        "test_only_file_lines": 120,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/europepmc/tests/live.rs",
+        "lines": 14,
+        "test_only_file_lines": 14,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/europepmc/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/europepmc/tests/parsing.rs",
+        "lines": 238,
+        "test_only_file_lines": 238,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/fda_orphan.rs",
+        "lines": 1042,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 346
+      },
+      {
+        "file": "src/sources/figshare.rs",
+        "lines": 515,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/figshare/tests/construction.rs",
+        "lines": 126,
+        "test_only_file_lines": 126,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/figshare/tests/mod.rs",
+        "lines": 52,
+        "test_only_file_lines": 52,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/figshare/tests/parsing.rs",
+        "lines": 135,
+        "test_only_file_lines": 135,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gencc.rs",
+        "lines": 1021,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 237
+      },
+      {
+        "file": "src/sources/gencc/model.rs",
+        "lines": 396,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 8
+      },
+      {
+        "file": "src/sources/gencc/store.rs",
+        "lines": 1211,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 8
+      },
+      {
+        "file": "src/sources/gencc/tests.rs",
+        "lines": 1188,
+        "test_only_file_lines": 1188,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gnomad.rs",
+        "lines": 359,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/gnomad/tests/construction.rs",
+        "lines": 75,
+        "test_only_file_lines": 75,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gnomad/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gnomad/tests/parsing.rs",
+        "lines": 167,
+        "test_only_file_lines": 167,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gprofiler.rs",
+        "lines": 236,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/gprofiler/tests/construction.rs",
+        "lines": 34,
+        "test_only_file_lines": 34,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gprofiler/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gprofiler/tests/parsing.rs",
+        "lines": 95,
+        "test_only_file_lines": 95,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gtex.rs",
+        "lines": 280,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/gtex/tests/construction.rs",
+        "lines": 39,
+        "test_only_file_lines": 39,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gtex/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gtex/tests/parsing.rs",
+        "lines": 94,
+        "test_only_file_lines": 94,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gtr.rs",
+        "lines": 791,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 18
+      },
+      {
+        "file": "src/sources/gtr/tests/construction.rs",
+        "lines": 110,
+        "test_only_file_lines": 110,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gtr/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gtr/tests/parsing.rs",
+        "lines": 306,
+        "test_only_file_lines": 306,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gwas.rs",
+        "lines": 569,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/gwas/tests/construction.rs",
+        "lines": 58,
+        "test_only_file_lines": 58,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gwas/tests/day_cache.rs",
+        "lines": 381,
+        "test_only_file_lines": 381,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gwas/tests/mod.rs",
+        "lines": 4,
+        "test_only_file_lines": 4,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gwas/tests/parsing.rs",
+        "lines": 133,
+        "test_only_file_lines": 133,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/gwas/tests/retired_endpoint.rs",
+        "lines": 114,
+        "test_only_file_lines": 114,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/hpa.rs",
+        "lines": 661,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/hpa/tests/construction.rs",
+        "lines": 53,
+        "test_only_file_lines": 53,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/hpa/tests/mod.rs",
+        "lines": 42,
+        "test_only_file_lines": 42,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/hpa/tests/parsing.rs",
+        "lines": 87,
+        "test_only_file_lines": 87,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/hpo.rs",
+        "lines": 310,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 20
+      },
+      {
+        "file": "src/sources/hpo/tests/construction.rs",
+        "lines": 60,
+        "test_only_file_lines": 60,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/hpo/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/hpo/tests/parsing.rs",
+        "lines": 167,
+        "test_only_file_lines": 167,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/interpro.rs",
+        "lines": 197,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/interpro/tests/construction.rs",
+        "lines": 23,
+        "test_only_file_lines": 23,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/interpro/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/interpro/tests/parsing.rs",
+        "lines": 26,
+        "test_only_file_lines": 26,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/kegg.rs",
+        "lines": 332,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/kegg/tests/construction.rs",
+        "lines": 25,
+        "test_only_file_lines": 25,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/kegg/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/kegg/tests/parsing.rs",
+        "lines": 74,
+        "test_only_file_lines": 74,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litsense2.rs",
+        "lines": 183,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/litsense2/tests/construction.rs",
+        "lines": 71,
+        "test_only_file_lines": 71,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litsense2/tests/live.rs",
+        "lines": 14,
+        "test_only_file_lines": 14,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litsense2/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litsense2/tests/parsing.rs",
+        "lines": 107,
+        "test_only_file_lines": 107,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litvar.rs",
+        "lines": 215,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/litvar/tests/construction.rs",
+        "lines": 56,
+        "test_only_file_lines": 56,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litvar/tests/live.rs",
+        "lines": 26,
+        "test_only_file_lines": 26,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litvar/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/litvar/tests/parsing.rs",
+        "lines": 148,
+        "test_only_file_lines": 148,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/medlineplus.rs",
+        "lines": 235,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/medlineplus/tests/construction.rs",
+        "lines": 56,
+        "test_only_file_lines": 56,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/medlineplus/tests/mod.rs",
+        "lines": 28,
+        "test_only_file_lines": 28,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/medlineplus/tests/parsing.rs",
+        "lines": 85,
+        "test_only_file_lines": 85,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mod.rs",
+        "lines": 3087,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 1145
+      },
+      {
+        "file": "src/sources/monarch.rs",
+        "lines": 748,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/monarch/tests/construction.rs",
+        "lines": 95,
+        "test_only_file_lines": 95,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/monarch/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/monarch/tests/parsing.rs",
+        "lines": 333,
+        "test_only_file_lines": 333,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mutalyzer.rs",
+        "lines": 261,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/mutalyzer/tests/construction.rs",
+        "lines": 38,
+        "test_only_file_lines": 38,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mutalyzer/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mutalyzer/tests/parsing.rs",
+        "lines": 109,
+        "test_only_file_lines": 109,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mychem.rs",
+        "lines": 336,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/mychem/tests/construction.rs",
+        "lines": 63,
+        "test_only_file_lines": 63,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mychem/tests/live.rs",
+        "lines": 14,
+        "test_only_file_lines": 14,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mychem/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mychem/tests/parsing.rs",
+        "lines": 257,
+        "test_only_file_lines": 257,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mydisease.rs",
+        "lines": 493,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 9
+      },
+      {
+        "file": "src/sources/mydisease/tests/construction.rs",
+        "lines": 160,
+        "test_only_file_lines": 160,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mydisease/tests/live.rs",
+        "lines": 25,
+        "test_only_file_lines": 25,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mydisease/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mydisease/tests/parsing.rs",
+        "lines": 109,
+        "test_only_file_lines": 109,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/mygene.rs",
+        "lines": 888,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 353
+      },
+      {
+        "file": "src/sources/mygene/tests/live.rs",
+        "lines": 58,
+        "test_only_file_lines": 58,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/myvariant.rs",
+        "lines": 1619,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 23
+      },
+      {
+        "file": "src/sources/myvariant/carried.rs",
+        "lines": 29,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/myvariant/filter_conflicts.rs",
+        "lines": 47,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/myvariant/filter_keys.rs",
+        "lines": 19,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/myvariant/tests/construction.rs",
+        "lines": 915,
+        "test_only_file_lines": 915,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/myvariant/tests/live.rs",
+        "lines": 87,
+        "test_only_file_lines": 87,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/myvariant/tests/mod.rs",
+        "lines": 10,
+        "test_only_file_lines": 10,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/myvariant/tests/parsing.rs",
+        "lines": 631,
+        "test_only_file_lines": 631,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_efetch.rs",
+        "lines": 1322,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 428
+      },
+      {
+        "file": "src/sources/ncbi_efetch/tests/construction.rs",
+        "lines": 60,
+        "test_only_file_lines": 60,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_efetch/tests/live.rs",
+        "lines": 15,
+        "test_only_file_lines": 15,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_efetch/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_efetch/tests/parsing.rs",
+        "lines": 85,
+        "test_only_file_lines": 85,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_idconv.rs",
+        "lines": 174,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/ncbi_idconv/tests/construction.rs",
+        "lines": 64,
+        "test_only_file_lines": 64,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_idconv/tests/live.rs",
+        "lines": 13,
+        "test_only_file_lines": 13,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_idconv/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ncbi_idconv/tests/parsing.rs",
+        "lines": 76,
+        "test_only_file_lines": 76,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nci_cts.rs",
+        "lines": 672,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/nci_cts/tests/construction.rs",
+        "lines": 167,
+        "test_only_file_lines": 167,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nci_cts/tests/live.rs",
+        "lines": 48,
+        "test_only_file_lines": 48,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nci_cts/tests/mod.rs",
+        "lines": 9,
+        "test_only_file_lines": 9,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nci_cts/tests/parsing.rs",
+        "lines": 247,
+        "test_only_file_lines": 247,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nih_reporter.rs",
+        "lines": 353,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/nih_reporter/tests/construction.rs",
+        "lines": 75,
+        "test_only_file_lines": 75,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nih_reporter/tests/live.rs",
+        "lines": 14,
+        "test_only_file_lines": 14,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nih_reporter/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/nih_reporter/tests/parsing.rs",
+        "lines": 212,
+        "test_only_file_lines": 212,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ols4.rs",
+        "lines": 192,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 9
+      },
+      {
+        "file": "src/sources/ols4/tests/construction.rs",
+        "lines": 37,
+        "test_only_file_lines": 37,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ols4/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ols4/tests/parsing.rs",
+        "lines": 59,
+        "test_only_file_lines": 59,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/oncokb.rs",
+        "lines": 219,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/oncokb/tests/construction.rs",
+        "lines": 56,
+        "test_only_file_lines": 56,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/oncokb/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/oncokb/tests/parsing.rs",
+        "lines": 60,
+        "test_only_file_lines": 60,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/opencitations.rs",
+        "lines": 388,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 267
+      },
+      {
+        "file": "src/sources/openfda.rs",
+        "lines": 864,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 9
+      },
+      {
+        "file": "src/sources/openfda/tests/construction.rs",
+        "lines": 179,
+        "test_only_file_lines": 179,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/openfda/tests/day_cache.rs",
+        "lines": 377,
+        "test_only_file_lines": 377,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/openfda/tests/parsing.rs",
+        "lines": 122,
+        "test_only_file_lines": 122,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/opentargets.rs",
+        "lines": 2088,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 639
+      },
+      {
+        "file": "src/sources/orcid.rs",
+        "lines": 710,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/orcid/tests.rs",
+        "lines": 772,
+        "test_only_file_lines": 772,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/ordinary_url_policy.rs",
+        "lines": 427,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 100
+      },
+      {
+        "file": "src/sources/pharmacodb.rs",
+        "lines": 685,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 6
+      },
+      {
+        "file": "src/sources/pharmacodb/tests/construction.rs",
+        "lines": 154,
+        "test_only_file_lines": 154,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pharmacodb/tests/limits.rs",
+        "lines": 128,
+        "test_only_file_lines": 128,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pharmacodb/tests/parsing.rs",
+        "lines": 232,
+        "test_only_file_lines": 232,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pharmgkb.rs",
+        "lines": 367,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 16
+      },
+      {
+        "file": "src/sources/pharmgkb/tests/construction.rs",
+        "lines": 68,
+        "test_only_file_lines": 68,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pharmgkb/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pharmgkb/tests/parsing.rs",
+        "lines": 123,
+        "test_only_file_lines": 123,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pmc_article.rs",
+        "lines": 899,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 368
+      },
+      {
+        "file": "src/sources/pmc_oa.rs",
+        "lines": 528,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 98
+      },
+      {
+        "file": "src/sources/pmc_oa/tests/construction.rs",
+        "lines": 37,
+        "test_only_file_lines": 37,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pmc_oa/tests/live.rs",
+        "lines": 25,
+        "test_only_file_lines": 25,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pmc_oa/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pmc_oa/tests/parsing.rs",
+        "lines": 293,
+        "test_only_file_lines": 293,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/provider_url_policy.rs",
+        "lines": 1118,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 395
+      },
+      {
+        "file": "src/sources/pubmed.rs",
+        "lines": 744,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/pubmed/tests/construction.rs",
+        "lines": 113,
+        "test_only_file_lines": 113,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pubmed/tests/live.rs",
+        "lines": 20,
+        "test_only_file_lines": 20,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pubmed/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pubmed/tests/parsing.rs",
+        "lines": 493,
+        "test_only_file_lines": 493,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pubtator.rs",
+        "lines": 498,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/pubtator/tests/construction.rs",
+        "lines": 126,
+        "test_only_file_lines": 126,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pubtator/tests/live.rs",
+        "lines": 17,
+        "test_only_file_lines": 17,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pubtator/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/pubtator/tests/parsing.rs",
+        "lines": 285,
+        "test_only_file_lines": 285,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/quickgo.rs",
+        "lines": 155,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/quickgo/tests/construction.rs",
+        "lines": 35,
+        "test_only_file_lines": 35,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/quickgo/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/quickgo/tests/parsing.rs",
+        "lines": 46,
+        "test_only_file_lines": 46,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/rate_limit.rs",
+        "lines": 747,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 378
+      },
+      {
+        "file": "src/sources/reactome.rs",
+        "lines": 390,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/reactome/tests/construction.rs",
+        "lines": 61,
+        "test_only_file_lines": 61,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/reactome/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/reactome/tests/parsing.rs",
+        "lines": 61,
+        "test_only_file_lines": 61,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/request_plan_transport.rs",
+        "lines": 220,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/seer.rs",
+        "lines": 697,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 13
+      },
+      {
+        "file": "src/sources/seer/tests/construction.rs",
+        "lines": 27,
+        "test_only_file_lines": 27,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/seer/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/seer/tests/parsing.rs",
+        "lines": 198,
+        "test_only_file_lines": 198,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/semantic_scholar.rs",
+        "lines": 1053,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 54
+      },
+      {
+        "file": "src/sources/semantic_scholar/tests/construction.rs",
+        "lines": 633,
+        "test_only_file_lines": 633,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/semantic_scholar/tests/live.rs",
+        "lines": 14,
+        "test_only_file_lines": 14,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/semantic_scholar/tests/mod.rs",
+        "lines": 3,
+        "test_only_file_lines": 3,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/semantic_scholar/tests/parsing.rs",
+        "lines": 382,
+        "test_only_file_lines": 382,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/string.rs",
+        "lines": 109,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/string/tests/construction.rs",
+        "lines": 22,
+        "test_only_file_lines": 22,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/string/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/string/tests/parsing.rs",
+        "lines": 31,
+        "test_only_file_lines": 31,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/tests/clingen_runtime.rs",
+        "lines": 204,
+        "test_only_file_lines": 204,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/tests/provider_network.rs",
+        "lines": 1466,
+        "test_only_file_lines": 1466,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/trust_failure_tests/mod.rs",
+        "lines": 130,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/umls.rs",
+        "lines": 254,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/umls/tests/construction.rs",
+        "lines": 32,
+        "test_only_file_lines": 32,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/umls/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/umls/tests/parsing.rs",
+        "lines": 105,
+        "test_only_file_lines": 105,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/uniprot.rs",
+        "lines": 794,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/uniprot/tests/construction.rs",
+        "lines": 74,
+        "test_only_file_lines": 74,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/uniprot/tests/mod.rs",
+        "lines": 18,
+        "test_only_file_lines": 18,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/uniprot/tests/parsing.rs",
+        "lines": 380,
+        "test_only_file_lines": 380,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/vaers.rs",
+        "lines": 465,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/vaers/tests/construction.rs",
+        "lines": 67,
+        "test_only_file_lines": 67,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/vaers/tests/mod.rs",
+        "lines": 39,
+        "test_only_file_lines": 39,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/vaers/tests/parsing.rs",
+        "lines": 106,
+        "test_only_file_lines": 106,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/variantvalidator.rs",
+        "lines": 275,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/variantvalidator/tests/construction.rs",
+        "lines": 44,
+        "test_only_file_lines": 44,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/variantvalidator/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/variantvalidator/tests/parsing.rs",
+        "lines": 115,
+        "test_only_file_lines": 115,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/who_ivd.rs",
+        "lines": 419,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 17
+      },
+      {
+        "file": "src/sources/who_ivd/tests/construction.rs",
+        "lines": 112,
+        "test_only_file_lines": 112,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/who_ivd/tests/mod.rs",
+        "lines": 15,
+        "test_only_file_lines": 15,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/who_ivd/tests/parsing.rs",
+        "lines": 71,
+        "test_only_file_lines": 71,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/who_pq.rs",
+        "lines": 1299,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/who_pq/tests/construction.rs",
+        "lines": 150,
+        "test_only_file_lines": 150,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/who_pq/tests/mod.rs",
+        "lines": 38,
+        "test_only_file_lines": 38,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/who_pq/tests/parsing.rs",
+        "lines": 398,
+        "test_only_file_lines": 398,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/who_pq/tests/sync.rs",
+        "lines": 310,
+        "test_only_file_lines": 310,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/wikipathways.rs",
+        "lines": 432,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/sources/wikipathways/tests/construction.rs",
+        "lines": 40,
+        "test_only_file_lines": 40,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/wikipathways/tests/mod.rs",
+        "lines": 2,
+        "test_only_file_lines": 2,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/sources/wikipathways/tests/parsing.rs",
+        "lines": 89,
+        "test_only_file_lines": 89,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/test_support.rs",
+        "lines": 335,
+        "test_only_file_lines": 335,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/adverse_event.rs",
+        "lines": 592,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 115
+      },
+      {
+        "file": "src/transform/article.rs",
+        "lines": 127,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 43
+      },
+      {
+        "file": "src/transform/article/anchors.rs",
+        "lines": 91,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/transform/article/anchors/tests.rs",
+        "lines": 31,
+        "test_only_file_lines": 31,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/annotations.rs",
+        "lines": 515,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/transform/article/annotations/tests.rs",
+        "lines": 323,
+        "test_only_file_lines": 323,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/annotations/tests/mutation_identity.rs",
+        "lines": 684,
+        "test_only_file_lines": 684,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/federation.rs",
+        "lines": 546,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/transform/article/federation/tests.rs",
+        "lines": 420,
+        "test_only_file_lines": 420,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/html.rs",
+        "lines": 566,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 206
+      },
+      {
+        "file": "src/transform/article/jats.rs",
+        "lines": 677,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/transform/article/jats/refs.rs",
+        "lines": 546,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/jats/refs/citation.rs",
+        "lines": 608,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/jats/supplements.rs",
+        "lines": 179,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 28
+      },
+      {
+        "file": "src/transform/article/jats/tables.rs",
+        "lines": 134,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/jats/tests.rs",
+        "lines": 615,
+        "test_only_file_lines": 615,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/jats/tests/citation_evidence.rs",
+        "lines": 553,
+        "test_only_file_lines": 553,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/article/pdf.rs",
+        "lines": 73,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 41
+      },
+      {
+        "file": "src/transform/article/supplement_text.rs",
+        "lines": 696,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/transform/article/supplement_text/tests.rs",
+        "lines": 291,
+        "test_only_file_lines": 291,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/disease.rs",
+        "lines": 1154,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 318
+      },
+      {
+        "file": "src/transform/drug.rs",
+        "lines": 1699,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 450
+      },
+      {
+        "file": "src/transform/drug/name_resolution_tests.rs",
+        "lines": 891,
+        "test_only_file_lines": 891,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/drug/shared_name_tests.rs",
+        "lines": 304,
+        "test_only_file_lines": 304,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/gene.rs",
+        "lines": 384,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 144
+      },
+      {
+        "file": "src/transform/mod.rs",
+        "lines": 11,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/pathway.rs",
+        "lines": 208,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 128
+      },
+      {
+        "file": "src/transform/protein.rs",
+        "lines": 217,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 151
+      },
+      {
+        "file": "src/transform/trial.rs",
+        "lines": 459,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 3
+      },
+      {
+        "file": "src/transform/trial/tests.rs",
+        "lines": 673,
+        "test_only_file_lines": 673,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/trial/tests/ticket_1107.rs",
+        "lines": 61,
+        "test_only_file_lines": 61,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/trial/tests/ticket_1111.rs",
+        "lines": 86,
+        "test_only_file_lines": 86,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/trial/tests/ticket_1114.rs",
+        "lines": 122,
+        "test_only_file_lines": 122,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/trial/tests/ticket_1115.rs",
+        "lines": 42,
+        "test_only_file_lines": 42,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/transform/variant.rs",
+        "lines": 1264,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 2
+      },
+      {
+        "file": "src/transform/variant/tests.rs",
+        "lines": 446,
+        "test_only_file_lines": 446,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/utils/date.rs",
+        "lines": 225,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 98
+      },
+      {
+        "file": "src/utils/download.rs",
+        "lines": 474,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 241
+      },
+      {
+        "file": "src/utils/fs_lock.rs",
+        "lines": 25,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 0
+      },
+      {
+        "file": "src/utils/mod.rs",
+        "lines": 41,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 18
+      },
+      {
+        "file": "src/utils/query.rs",
+        "lines": 29,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 10
+      },
+      {
+        "file": "src/utils/serde.rs",
+        "lines": 46,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 17
+      },
+      {
+        "file": "src/utils/sync.rs",
+        "lines": 37,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 31
+      },
+      {
+        "file": "src/workflow_ladders.rs",
+        "lines": 152,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 24
+      },
+      {
+        "file": "src/xml.rs",
+        "lines": 240,
+        "test_only_file_lines": 0,
+        "inline_cfg_test_lines": 122
+      }
+    ],
+    "external_rust_test_files": [
+      {
+        "file": "tests/adverse_event_route_contract.rs",
+        "lines": 453
+      },
+      {
+        "file": "tests/article_asset_terminal.rs",
+        "lines": 1077
+      },
+      {
+        "file": "tests/article_asset_terminal/supplement_cache.rs",
+        "lines": 95
+      },
+      {
+        "file": "tests/article_batch_outcome.rs",
+        "lines": 1527
+      },
+      {
+        "file": "tests/article_transform_structure.rs",
+        "lines": 129
+      },
+      {
+        "file": "tests/article_usage_stderr.rs",
+        "lines": 363
+      },
+      {
+        "file": "tests/cache_clear.rs",
+        "lines": 333
+      },
+      {
+        "file": "tests/cli_global_modifiers.rs",
+        "lines": 61
+      },
+      {
+        "file": "tests/disable_sources_cli.rs",
+        "lines": 1067
+      },
+      {
+        "file": "tests/fulltext_fixture_output_location.rs",
+        "lines": 43
+      },
+      {
+        "file": "tests/health_cli_structure.rs",
+        "lines": 139
+      },
+      {
+        "file": "tests/json_error_contract.rs",
+        "lines": 1156
+      },
+      {
+        "file": "tests/legacy_cache_helper_cleanup.rs",
+        "lines": 66
+      },
+      {
+        "file": "tests/list_cli_structure.rs",
+        "lines": 137
+      },
+      {
+        "file": "tests/live_smoke.rs",
+        "lines": 80
+      },
+      {
+        "file": "tests/managed_state_permissions.rs",
+        "lines": 428
+      },
+      {
+        "file": "tests/package_build_identity.rs",
+        "lines": 9
+      },
+      {
+        "file": "tests/pgx_get_paging.rs",
+        "lines": 61
+      },
+      {
+        "file": "tests/plugin_manifest.rs",
+        "lines": 53
+      },
+      {
+        "file": "tests/pty_helpers.rs",
+        "lines": 35
+      },
+      {
+        "file": "tests/rmcp_client_contract.rs",
+        "lines": 2333
+      },
+      {
+        "file": "tests/search_all_cli_structure.rs",
+        "lines": 138
+      },
+      {
+        "file": "tests/skill_cli_structure.rs",
+        "lines": 138
+      },
+      {
+        "file": "tests/tls_ca_bundle_contract.rs",
+        "lines": 814
+      },
+      {
+        "file": "tests/unit/cli/article_assets.rs",
+        "lines": 54
+      },
+      {
+        "file": "tests/unit/cli/article_fulltext.rs",
+        "lines": 91
+      },
+      {
+        "file": "tests/unit/cli/drug_json.rs",
+        "lines": 521
+      },
+      {
+        "file": "tests/unit/cli/gene.rs",
+        "lines": 179
+      },
+      {
+        "file": "tests/unit/cli/variant.rs",
+        "lines": 1489
+      },
+      {
+        "file": "tests/unit/cli/variant/articles.rs",
+        "lines": 87
+      },
+      {
+        "file": "tests/unit/cli/variant/parsing.rs",
+        "lines": 86
+      },
+      {
+        "file": "tests/unit/render/json_error.rs",
+        "lines": 36
+      },
+      {
+        "file": "tests/windows_lock_contract.rs",
+        "lines": 34
+      },
+      {
+        "file": "tests/windows_stdio_contract.rs",
+        "lines": 143
+      }
+    ],
+    "python_test_files": [
+      {
+        "file": "tests/conftest.py",
+        "lines": 130
+      },
+      {
+        "file": "tests/golden/conftest.py",
+        "lines": 34
+      },
+      {
+        "file": "tests/golden/replay_env.py",
+        "lines": 209
+      },
+      {
+        "file": "tests/golden/spec/test_cleanup_cli_behaviors.py",
+        "lines": 40
+      },
+      {
+        "file": "tests/golden/spec/test_spec_page_golden.py",
+        "lines": 109
+      },
+      {
+        "file": "tests/golden/test_golden_output.py",
+        "lines": 153
+      },
+      {
+        "file": "tests/support.py",
+        "lines": 62
+      },
+      {
+        "file": "tests/surface/test_architecture_docs_parity_contract.py",
+        "lines": 105
+      },
+      {
+        "file": "tests/surface/test_biomcp_ci_path_contract.py",
+        "lines": 80
+      },
+      {
+        "file": "tests/surface/test_biomcp_verify_live.py",
+        "lines": 252
+      },
+      {
+        "file": "tests/surface/test_complexportal_fixture_contract.py",
+        "lines": 35
+      },
+      {
+        "file": "tests/surface/test_mcp_live_gate_contract.py",
+        "lines": 47
+      },
+      {
+        "file": "tests/surface/test_public_entity_contract_docs.py",
+        "lines": 53
+      },
+      {
+        "file": "tests/surface/test_search_all_cli_structure.py",
+        "lines": 80
+      },
+      {
+        "file": "tests/surface/test_semantic_scholar_retry_after_contract.py",
+        "lines": 288
+      },
+      {
+        "file": "tests/surface/test_source_configuration_docs_contract.py",
+        "lines": 200
+      },
+      {
+        "file": "tests/surface/test_ticket_401_surface_ratchets.py",
+        "lines": 142
+      },
+      {
+        "file": "tests/surface/test_ticket_405_architecture_operator_contracts.py",
+        "lines": 199
+      },
+      {
+        "file": "tests/surface/test_trial_help_contract.py",
+        "lines": 213
+      },
+      {
+        "file": "tests/surface/test_variant_normalization_docs_contract.py",
+        "lines": 112
+      },
+      {
+        "file": "tests/test_alphagenome_proto_generation.py",
+        "lines": 134
+      },
+      {
+        "file": "tests/test_author_surface_docs.py",
+        "lines": 875
+      },
+      {
+        "file": "tests/test_binary_asset_gitattributes_contract.py",
+        "lines": 71
+      },
+      {
+        "file": "tests/test_bioasq_benchmark_contract.py",
+        "lines": 168
+      },
+      {
+        "file": "tests/test_bioasq_ingest.py",
+        "lines": 285
+      },
+      {
+        "file": "tests/test_biomcp_ci_contract.py",
+        "lines": 247
+      },
+      {
+        "file": "tests/test_build_identity_rebuild.py",
+        "lines": 148
+      },
+      {
+        "file": "tests/test_build_identity_wrapper_contract.py",
+        "lines": 98
+      },
+      {
+        "file": "tests/test_cache_invalid_settings.py",
+        "lines": 83
+      },
+      {
+        "file": "tests/test_cache_persistent_size.py",
+        "lines": 91
+      },
+      {
+        "file": "tests/test_capture_receipts.py",
+        "lines": 1317
+      },
+      {
+        "file": "tests/test_cbioportal_study_download_timeout_contract.py",
+        "lines": 29
+      },
+      {
+        "file": "tests/test_central_test_support_helpers.py",
+        "lines": 171
+      },
+      {
+        "file": "tests/test_changelog_coverage_check.py",
+        "lines": 1163
+      },
+      {
+        "file": "tests/test_ci_classify_push_script.py",
+        "lines": 539
+      },
+      {
+        "file": "tests/test_ci_workflow_contract.py",
+        "lines": 659
+      },
+      {
+        "file": "tests/test_citation_contract.py",
+        "lines": 113
+      },
+      {
+        "file": "tests/test_cli_surface_contract_ratchet.py",
+        "lines": 383
+      },
+      {
+        "file": "tests/test_cross_entity_pivots_docs_contract.py",
+        "lines": 30
+      },
+      {
+        "file": "tests/test_ctgov_trial_search_detail_reuse.py",
+        "lines": 507
+      },
+      {
+        "file": "tests/test_directory_submission_contract.py",
+        "lines": 357
+      },
+      {
+        "file": "tests/test_disable_sources_replay_walk.py",
+        "lines": 293
+      },
+      {
+        "file": "tests/test_docs_changelog_refresh.py",
+        "lines": 1176
+      },
+      {
+        "file": "tests/test_docs_live_revision_gate.py",
+        "lines": 85
+      },
+      {
+        "file": "tests/test_docs_publication_contract.py",
+        "lines": 566
+      },
+      {
+        "file": "tests/test_documentation_consistency_audit_contract.py",
+        "lines": 738
+      },
+      {
+        "file": "tests/test_documentation_toolchain_contract.py",
+        "lines": 79
+      },
+      {
+        "file": "tests/test_gencc_docs_contract.py",
+        "lines": 163
+      },
+      {
+        "file": "tests/test_gwas_day_cache_contract.py",
+        "lines": 136
+      },
+      {
+        "file": "tests/test_http_cache_fail_soft.py",
+        "lines": 257
+      },
+      {
+        "file": "tests/test_json_list_contract.py",
+        "lines": 66
+      },
+      {
+        "file": "tests/test_lint.py",
+        "lines": 541
+      },
+      {
+        "file": "tests/test_llms_txt_contract.py",
+        "lines": 106
+      },
+      {
+        "file": "tests/test_markdown_twins_contract.py",
+        "lines": 70
+      },
+      {
+        "file": "tests/test_mcp_2026_protocol.py",
+        "lines": 487
+      },
+      {
+        "file": "tests/test_mcp_http_surface.py",
+        "lines": 501
+      },
+      {
+        "file": "tests/test_mcp_stdio_guidance.py",
+        "lines": 147
+      },
+      {
+        "file": "tests/test_mcp_tool_catalog.py",
+        "lines": 326
+      },
+      {
+        "file": "tests/test_measurement_coverage_contract.py",
+        "lines": 119
+      },
+      {
+        "file": "tests/test_measurement_summary_contract.py",
+        "lines": 290
+      },
+      {
+        "file": "tests/test_merge_conflict_markers.py",
+        "lines": 75
+      },
+      {
+        "file": "tests/test_nci_filter_transport.py",
+        "lines": 212
+      },
+      {
+        "file": "tests/test_no_cache_managed_state.py",
+        "lines": 188
+      },
+      {
+        "file": "tests/test_no_climb_tracked_script.py",
+        "lines": 81
+      },
+      {
+        "file": "tests/test_offline_gate_contract.py",
+        "lines": 458
+      },
+      {
+        "file": "tests/test_output_footprint_benchmark.py",
+        "lines": 91
+      },
+      {
+        "file": "tests/test_png_artifact_contract.py",
+        "lines": 35
+      },
+      {
+        "file": "tests/test_prepare_spec_artifacts.py",
+        "lines": 104
+      },
+      {
+        "file": "tests/test_provider_contract_fixture.py",
+        "lines": 154
+      },
+      {
+        "file": "tests/test_provider_network_policy.py",
+        "lines": 187
+      },
+      {
+        "file": "tests/test_public_example_accessions.py",
+        "lines": 186
+      },
+      {
+        "file": "tests/test_public_install_docs_contract.py",
+        "lines": 179
+      },
+      {
+        "file": "tests/test_public_installer_checksum.py",
+        "lines": 464
+      },
+      {
+        "file": "tests/test_public_landing_copy_docs_contract.py",
+        "lines": 134
+      },
+      {
+        "file": "tests/test_public_search_all_docs_contract.py",
+        "lines": 224
+      },
+      {
+        "file": "tests/test_public_skill_docs_contract.py",
+        "lines": 537
+      },
+      {
+        "file": "tests/test_python_contract_parallelism.py",
+        "lines": 94
+      },
+      {
+        "file": "tests/test_python_lane_cache_isolation.py",
+        "lines": 43
+      },
+      {
+        "file": "tests/test_quality_ratchet_contract.py",
+        "lines": 1731
+      },
+      {
+        "file": "tests/test_release_candidate.py",
+        "lines": 427
+      },
+      {
+        "file": "tests/test_release_container.py",
+        "lines": 179
+      },
+      {
+        "file": "tests/test_release_draft_notes.py",
+        "lines": 86
+      },
+      {
+        "file": "tests/test_release_homebrew.py",
+        "lines": 84
+      },
+      {
+        "file": "tests/test_release_mcpb.py",
+        "lines": 585
+      },
+      {
+        "file": "tests/test_release_metadata_contract.py",
+        "lines": 303
+      },
+      {
+        "file": "tests/test_release_notes.py",
+        "lines": 145
+      },
+      {
+        "file": "tests/test_release_package.py",
+        "lines": 607
+      },
+      {
+        "file": "tests/test_release_promotion.py",
+        "lines": 733
+      },
+      {
+        "file": "tests/test_release_signing.py",
+        "lines": 226
+      },
+      {
+        "file": "tests/test_release_smoke_script.py",
+        "lines": 261
+      },
+      {
+        "file": "tests/test_release_targets.py",
+        "lines": 85
+      },
+      {
+        "file": "tests/test_release_versions_check.py",
+        "lines": 139
+      },
+      {
+        "file": "tests/test_release_workflow_provenance.py",
+        "lines": 2358
+      },
+      {
+        "file": "tests/test_routine_cargo_feature_contract.py",
+        "lines": 311
+      },
+      {
+        "file": "tests/test_sdlc_clean_contract.py",
+        "lines": 111
+      },
+      {
+        "file": "tests/test_sdlc_project_lifecycle_contract.py",
+        "lines": 1097
+      },
+      {
+        "file": "tests/test_shell_workflow_lint_contract.py",
+        "lines": 46
+      },
+      {
+        "file": "tests/test_short_unix_socket_contract.py",
+        "lines": 21
+      },
+      {
+        "file": "tests/test_should_move_latest.py",
+        "lines": 77
+      },
+      {
+        "file": "tests/test_skill_prompt_contract.py",
+        "lines": 352
+      },
+      {
+        "file": "tests/test_slow_test_reporting.py",
+        "lines": 117
+      },
+      {
+        "file": "tests/test_small_rust_test_boundaries.py",
+        "lines": 39
+      },
+      {
+        "file": "tests/test_source_child_stdio_guard.py",
+        "lines": 667
+      },
+      {
+        "file": "tests/test_source_external_xml_guard.py",
+        "lines": 282
+      },
+      {
+        "file": "tests/test_source_licensing_docs_contract.py",
+        "lines": 576
+      },
+      {
+        "file": "tests/test_source_package_boundary.py",
+        "lines": 219
+      },
+      {
+        "file": "tests/test_source_pages_docs_contract.py",
+        "lines": 1103
+      },
+      {
+        "file": "tests/test_streamable_http_demo.py",
+        "lines": 95
+      },
+      {
+        "file": "tests/test_stress_lane_contract.py",
+        "lines": 95
+      },
+      {
+        "file": "tests/test_update_command_docs_contract.py",
+        "lines": 58
+      },
+      {
+        "file": "tests/test_upstream_planning_analysis_docs.py",
+        "lines": 1622
+      },
+      {
+        "file": "tests/test_variant_article_exact_fulltext.py",
+        "lines": 119
+      },
+      {
+        "file": "tests/test_variant_article_live_canary.py",
+        "lines": 503
+      },
+      {
+        "file": "tests/test_variant_normalize_json_contract.py",
+        "lines": 69
+      },
+      {
+        "file": "tests/test_version_sync_script.py",
+        "lines": 430
+      },
+      {
+        "file": "tests/test_wheel_glibc_floor_check.py",
+        "lines": 218
+      },
+      {
+        "file": "tests/test_zero_coupling_ratchet.py",
+        "lines": 462
+      }
+    ],
+    "excluded_generated_files": [
+      {
+        "file": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+        "lines": 1486
+      }
+    ],
+    "scope_limits": [
+      "Root crate src/tests only; workspace helpers, examples, benches, build scripts and other languages excluded.",
+      "Physical lines include blank/comment lines; no nonblank or mixed-language share is claimed."
+    ]
+  },
+  "commands": {
+    "runtime": [
+      "python3",
+      "<ordering-adapter>",
+      "<frozen-helper>",
+      "<old-product>",
+      "<candidate-product>",
+      "c4281daa7304c0dd2875aa3e0d253ae9d2010eed"
+    ],
+    "coverage_preparation": [
+      "make sync-python-dev",
+      "cargo fetch --locked",
+      "make prepare-spec"
+    ],
+    "coverage": [
+      "bash5",
+      "<frozen-helper>",
+      "<candidate-product>",
+      "--only",
+      "coverage"
+    ],
+    "exports": "cargo llvm-cov report --json --ignore-filename-regex <unchanged-filter>, with the same out/unit/combined profile subsets as the existing reports",
+    "source_counts": [
+      "python3",
+      "<temporary-reducer>",
+      "census",
+      "<candidate-product>",
+      "c4281daa7304c0dd2875aa3e0d253ae9d2010eed"
+    ]
+  }
+}
+```
+
+#### Coverage report: outside_in
+
+```text
+Filename                                            Regions    Missed Regions     Cover   Functions  Missed Functions  Executed       Lines      Missed Lines     Cover    Branches   Missed Branches     Cover
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+build_identity.rs                                        10                 0   100.00%           2                 0   100.00%           6                 0   100.00%           0                 0         -
+cache/citation_evidence.rs                              177               177     0.00%          13                13     0.00%         121               121     0.00%           0                 0         -
+cache/clean.rs                                          676               549    18.79%          40                31    22.50%         521               388    25.53%           0                 0         -
+cache/clear.rs                                         1331               912    31.48%          91                57    37.36%         732               466    36.34%           0                 0         -
+cache/config.rs                                         884               642    27.38%          65                40    38.46%         642               461    28.19%           0                 0         -
+cache/http.rs                                            43                 5    88.37%           7                 2    71.43%          28                 2    92.86%           0                 0         -
+cache/limits.rs                                         252               173    31.35%          15                 8    46.67%         167               103    38.32%           0                 0         -
+cache/manager.rs                                       1371               881    35.74%         114                70    38.60%         926               559    39.63%           0                 0         -
+cache/manager/totals.rs                                 120                17    85.83%           6                 0   100.00%          58                 3    94.83%           0                 0         -
+cache/migration.rs                                     1582              1116    29.46%          91                51    43.96%         907               579    36.16%           0                 0         -
+cache/mod.rs                                             68                25    63.24%           7                 1    85.71%          47                16    65.96%           0                 0         -
+cache/planner.rs                                       1139               696    38.89%          68                37    45.59%         707               385    45.54%           0                 0         -
+cache/private.rs                                        699               337    51.79%          37                11    70.27%         380               146    61.58%           0                 0         -
+cache/provider_capture.rs                              1935              1542    20.31%          96                65    32.29%        1085               811    25.25%           0                 0         -
+cache/provider_capture/unsupported.rs                    26                26     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+cli/adverse_event/dispatch.rs                           470               144    69.36%           9                 0   100.00%         389               136    65.04%           0                 0         -
+cli/adverse_event/plan.rs                               248                88    64.52%           7                 2    71.43%         171                53    69.01%           0                 0         -
+cli/article/annotations.rs                               69                69     0.00%           9                 9     0.00%          50                50     0.00%           0                 0         -
+cli/article/assets.rs                                   386                54    86.01%          29                 3    89.66%         288                53    81.60%           0                 0         -
+cli/article/dispatch.rs                                 855               303    64.56%          44                23    47.73%         590               204    65.42%           0                 0         -
+cli/article/export.rs                                   137                22    83.94%          10                 3    70.00%          95                20    78.95%           0                 0         -
+cli/article/fulltext_view.rs                            409               261    36.19%          29                16    44.83%         284               173    39.08%           0                 0         -
+cli/article/mod.rs                                      197                38    80.71%          29                12    58.62%         156                26    83.33%           0                 0         -
+cli/article/render.rs                                    61                 9    85.25%           2                 0   100.00%          45                 3    93.33%           0                 0         -
+cli/article/session.rs                                  400               372     7.00%          32                28    12.50%         291               268     7.90%           0                 0         -
+cli/article/workflow.rs                                  96                16    83.33%          16                 4    75.00%          89                21    76.40%           0                 0         -
+cli/author/detail.rs                                     20                 2    90.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+cli/author/mod.rs                                        67                53    20.90%           4                 2    50.00%          66                54    18.18%           0                 0         -
+cli/author/papers.rs                                     34                 3    91.18%           2                 0   100.00%          20                 0   100.00%           0                 0         -
+cli/author/search.rs                                     18                18     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+cli/cache.rs                                            353                84    76.20%          30                13    56.67%         260                56    78.46%           0                 0         -
+cli/cell_line/dispatch.rs                               150               121    19.33%           8                 4    50.00%          99                74    25.25%           0                 0         -
+cli/chart.rs                                            220               220     0.00%          18                18     0.00%         134               134     0.00%           0                 0         -
+cli/commands.rs                                           4                 1    75.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+cli/diagnostic/dispatch.rs                              157               132    15.92%           9                 6    33.33%         115                95    17.39%           0                 0         -
+cli/diagnostic/mod.rs                                     6                 6     0.00%           1                 1     0.00%           6                 6     0.00%           0                 0         -
+cli/discover.rs                                         583               573     1.72%          43                41     4.65%         414               400     3.38%           0                 0         -
+cli/disease/dispatch.rs                                 387               314    18.86%          14                 8    42.86%         273               213    21.98%           0                 0         -
+cli/drug/dispatch.rs                                    641               514    19.81%          17                 8    52.94%         551               436    20.87%           0                 0         -
+cli/drug/render.rs                                      242               209    13.64%          14                11    21.43%         226               187    17.26%           0                 0         -
+cli/drug/workflow.rs                                     15                15     0.00%           1                 1     0.00%          12                12     0.00%           0                 0         -
+cli/gene/cspec.rs                                       297               282     5.05%          14                12    14.29%         198               181     8.59%           0                 0         -
+cli/gene/dispatch.rs                                    197                42    78.68%          12                 1    91.67%         153                31    79.74%           0                 0         -
+cli/gene/related.rs                                     261               261     0.00%           4                 4     0.00%         159               159     0.00%           0                 0         -
+cli/gwas/dispatch.rs                                    111                65    41.44%           7                 4    42.86%          96                60    37.50%           0                 0         -
+cli/health/catalog.rs                                    10                 7    30.00%           3                 2    33.33%          10                 7    30.00%           0                 0         -
+cli/health/http.rs                                      565               505    10.62%          40                35    12.50%         440               395    10.23%           0                 0         -
+cli/health/local.rs                                     479               479     0.00%          36                36     0.00%         388               388     0.00%           0                 0         -
+cli/health/mod.rs                                       521               371    28.79%          37                25    32.43%         348               246    29.31%           0                 0         -
+cli/health/runner.rs                                    389               189    51.41%          30                 5    83.33%         315               135    57.14%           0                 0         -
+cli/install.rs                                          486               486     0.00%          24                24     0.00%         278               278     0.00%           0                 0         -
+cli/list/catalog.rs                                     319                86    73.04%          22                 5    77.27%         193                36    81.35%           0                 0         -
+cli/list/clinical.rs                                     24                20    16.67%           6                 5    16.67%         357               272    23.81%           0                 0         -
+cli/list/helpers.rs                                      35                21    40.00%           6                 5    16.67%         147               136     7.48%           0                 0         -
+cli/list/literature.rs                                   12                12     0.00%           3                 3     0.00%         215               215     0.00%           0                 0         -
+cli/list/mod.rs                                         133                44    66.92%           4                 0   100.00%          68                 4    94.12%           0                 0         -
+cli/list/molecular.rs                                    49                49     0.00%           8                 8     0.00%         368               368     0.00%           0                 0         -
+cli/mcp_config.rs                                       152               152     0.00%          13                13     0.00%         112               112     0.00%           0                 0         -
+cli/mod.rs                                                4                 0   100.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+cli/outcome.rs                                         1029               409    60.25%          42                12    71.43%         495               156    68.48%           0                 0         -
+cli/outcome/mcp_chart.rs                                 51                45    11.76%           2                 0   100.00%          43                37    13.95%           0                 0         -
+cli/pathway/dispatch.rs                                 450               392    12.89%          15                13    13.33%         267               239    10.49%           0                 0         -
+cli/pgx/dispatch.rs                                     114                83    27.19%           6                 3    50.00%          75                51    32.00%           0                 0         -
+cli/phenotype/dispatch.rs                                81                60    25.93%           5                 2    60.00%          63                45    28.57%           0                 0         -
+cli/protein/dispatch.rs                                 199               140    29.65%          12                 8    33.33%         156               113    27.56%           0                 0         -
+cli/response_contract.rs                                446               195    56.28%          25                 8    68.00%         486               287    40.95%           0                 0         -
+cli/search_all/dispatch.rs                              548               227    58.58%          28                17    39.29%         375               164    56.27%           0                 0         -
+cli/search_all/format.rs                                500               293    41.40%          34                16    52.94%         303               174    42.57%           0                 0         -
+cli/search_all/links.rs                                 533               130    75.61%          25                 8    68.00%         301                64    78.74%           0                 0         -
+cli/search_all/mod.rs                                   232                65    71.98%          19                 5    73.68%         144                33    77.08%           0                 0         -
+cli/search_all/plan.rs                                  746               521    30.16%          39                24    38.46%         473               331    30.02%           0                 0         -
+cli/search_all_command.rs                                94                94     0.00%           3                 3     0.00%          74                74     0.00%           0                 0         -
+cli/shared.rs                                           551                71    87.11%          47                 4    91.49%         387                66    82.95%           0                 0         -
+cli/shared/search_payloads.rs                           203                59    70.94%          20                 5    75.00%         202                61    69.80%           0                 0         -
+cli/skill/assets.rs                                      69                11    84.06%           5                 1    80.00%          44                10    77.27%           0                 0         -
+cli/skill/atomic_swap.rs                                 55                21    61.82%           6                 3    50.00%          33                14    57.58%           0                 0         -
+cli/skill/catalog.rs                                    165                28    83.03%          13                 2    84.62%         103                19    81.55%           0                 0         -
+cli/skill/install.rs                                    793               416    47.54%          45                23    48.89%         470               262    44.26%           0                 0         -
+cli/skill/mod.rs                                          8                 1    87.50%           1                 0   100.00%          13                 0   100.00%           0                 0         -
+cli/skill/status.rs                                     365               103    71.78%          22                 6    72.73%         218                72    66.97%           0                 0         -
+cli/study/dispatch.rs                                   534               534     0.00%          10                10     0.00%         331               331     0.00%           0                 0         -
+cli/system/batch.rs                                     984               686    30.28%          42                23    45.24%         681               433    36.42%           0                 0         -
+cli/system/dispatch.rs                                  770               599    22.21%          76                47    38.16%         570               427    25.09%           0                 0         -
+cli/system/mod.rs                                        45                18    60.00%           5                 1    80.00%          39                12    69.23%           0                 0         -
+cli/system/who_sync.rs                                   61                54    11.48%           5                 3    40.00%          47                41    12.77%           0                 0         -
+cli/trial/dispatch.rs                                   761               344    54.80%          57                36    36.84%         552               247    55.25%           0                 0         -
+cli/trial/documents.rs                                  162                82    49.38%          14                 7    50.00%         159                95    40.25%           0                 0         -
+cli/trial/zero_result.rs                                380               380     0.00%          15                15     0.00%         182               182     0.00%           0                 0         -
+cli/types.rs                                            159               101    36.48%          24                15    37.50%         183                98    46.45%           0                 0         -
+cli/update.rs                                           677               677     0.00%          50                50     0.00%         435               435     0.00%           0                 0         -
+cli/variant/articles.rs                                 226                82    63.72%          17                 8    52.94%         222                71    68.02%           0                 0         -
+cli/variant/car.rs                                      114                99    13.16%          13                11    15.38%          86                75    12.79%           0                 0         -
+cli/variant/dispatch.rs                                 632               282    55.38%          22                 6    72.73%         467               202    56.75%           0                 0         -
+cli/variant/erepo.rs                                    385               188    51.17%          18                 7    61.11%         305               164    46.23%           0                 0         -
+cli/variant/guidance.rs                                  19                19     0.00%           2                 2     0.00%          21                21     0.00%           0                 0         -
+cli/variant/mod.rs                                       62                16    74.19%           9                 2    77.78%          42                10    76.19%           0                 0         -
+cli/variant/normalization_json.rs                       103                63    38.83%           4                 2    50.00%          81                47    41.98%           0                 0         -
+cli/variant/query.rs                                    492               462     6.10%          23                22     4.35%         418               391     6.46%           0                 0         -
+cli/variant/trial.rs                                     50                50     0.00%           5                 5     0.00%          33                33     0.00%           0                 0         -
+cli/worker.rs                                            44                24    45.45%           5                 3    40.00%          30                14    53.33%           0                 0         -
+entities/adverse_event.rs                              2535              1903    24.93%         202               146    27.72%        1931              1378    28.64%           0                 0         -
+entities/adverse_event/device.rs                        193                66    65.80%          13                 4    69.23%         146                37    74.66%           0                 0         -
+entities/adverse_event/sections.rs                       85                58    31.76%           4                 1    75.00%          74                36    51.35%           0                 0         -
+entities/article/assets.rs                             4011              1873    53.30%         234                73    68.80%        3054              1464    52.06%           0                 0         -
+entities/article/backends.rs                           1194               504    57.79%          83                35    57.83%         845               358    57.63%           0                 0         -
+entities/article/backends/provider_unit.rs              123                19    84.55%          12                 0   100.00%         101                10    90.10%           0                 0         -
+entities/article/batch.rs                               247                91    63.16%          24                 9    62.50%         165                57    65.45%           0                 0         -
+entities/article/candidates.rs                          469               213    54.58%          39                18    53.85%         309               134    56.63%           0                 0         -
+entities/article/detail.rs                              928               531    42.78%          71                32    54.93%         687               367    46.58%           0                 0         -
+entities/article/enrichment.rs                          616               255    58.60%          36                12    66.67%         471               196    58.39%           0                 0         -
+entities/article/filters.rs                             339               106    68.73%          34                11    67.65%         252                68    73.02%           0                 0         -
+entities/article/fulltext.rs                           1521               776    48.98%         116                55    52.59%        1264               648    48.73%           0                 0         -
+entities/article/graph.rs                               571               417    26.97%          60                43    28.33%         455               321    29.45%           0                 0         -
+entities/article/graph/citation_evidence.rs            1134              1080     4.76%         114               104     8.77%         902               854     5.32%           0                 0         -
+entities/article/identity_verification.rs              1736              1736     0.00%         126               126     0.00%        1233              1233     0.00%           0                 0         -
+entities/article/mod.rs                                 514               410    20.23%          37                25    32.43%         394               304    22.84%           0                 0         -
+entities/article/planner.rs                             283               187    33.92%          19                12    36.84%         246               163    33.74%           0                 0         -
+entities/article/query.rs                               833               466    44.06%          80                51    36.25%         596               325    45.47%           0                 0         -
+entities/article/ranking.rs                             670               133    80.15%          59                16    72.88%         496                90    81.85%           0                 0         -
+entities/article/search.rs                             1056               445    57.86%          46                14    69.57%         762               317    58.40%           0                 0         -
+entities/article/search/deadline.rs                     117                59    49.57%          14                 5    64.29%         118                49    58.47%           0                 0         -
+entities/article/search/status.rs                        64                13    79.69%           6                 2    66.67%          62                13    79.03%           0                 0         -
+entities/article/supplement_search.rs                   657               242    63.17%          42                16    61.90%         425               147    65.41%           0                 0         -
+entities/article/supplement_search/cache.rs             115                16    86.09%           6                 0   100.00%          68                 9    86.76%           0                 0         -
+entities/article/variant_search.rs                     7896              5758    27.08%         490               342    30.20%        6599              4810    27.11%           0                 0         -
+entities/author/mod.rs                                  532               345    35.15%          46                22    52.17%         410               268    34.63%           0                 0         -
+entities/author/papers.rs                              1957              1398    28.56%         112                63    43.75%        1193               790    33.78%           0                 0         -
+entities/author/search.rs                               252               252     0.00%          14                14     0.00%         240               240     0.00%           0                 0         -
+entities/cell_line.rs                                   696               584    16.09%          59                47    20.34%         477               412    13.63%           0                 0         -
+entities/cell_line/chembl.rs                             99                99     0.00%           9                 9     0.00%          82                82     0.00%           0                 0         -
+entities/cell_line/pharmacodb.rs                        120               111     7.50%           8                 6    25.00%         106                96     9.43%           0                 0         -
+entities/diagnostic/get.rs                              880               537    38.98%          73                43    41.10%         586               353    39.76%           0                 0         -
+entities/diagnostic/mod.rs                              752               707     5.98%          59                50    15.25%         556               524     5.76%           0                 0         -
+entities/diagnostic/search.rs                           823               823     0.00%          67                67     0.00%         588               588     0.00%           0                 0         -
+entities/discover.rs                                   4421              3369    23.80%         273               188    31.14%        3238              2451    24.31%           0                 0         -
+entities/disease/article_links.rs                       191               191     0.00%          16                16     0.00%         113               113     0.00%           0                 0         -
+entities/disease/associations.rs                        861               682    20.79%          63                38    39.68%         582               473    18.73%           0                 0         -
+entities/disease/enrichment.rs                          997               612    38.62%          66                45    31.82%         712               444    37.64%           0                 0         -
+entities/disease/fallback.rs                            584               584     0.00%          38                38     0.00%         413               413     0.00%           0                 0         -
+entities/disease/get.rs                                 372               228    38.71%          22                13    40.91%         227               131    42.29%           0                 0         -
+entities/disease/mod.rs                                  19                14    26.32%           2                 1    50.00%          15                12    20.00%           0                 0         -
+entities/disease/resolution.rs                         1126               320    71.58%         103                21    79.61%         749               210    71.96%           0                 0         -
+entities/disease/resolution/ambiguity.rs                109                48    55.96%          16                 3    81.25%          80                27    66.25%           0                 0         -
+entities/disease/search.rs                              899               506    43.72%          91                59    35.16%         690               399    42.17%           0                 0         -
+entities/drug/cell_lines.rs                             165               162     1.82%          10                 9    10.00%         149               146     2.01%           0                 0         -
+entities/drug/get.rs                                   1711              1070    37.46%         121                61    49.59%        1238               728    41.20%           0                 0         -
+entities/drug/interactions.rs                           520               514     1.15%          37                35     5.41%         342               334     2.34%           0                 0         -
+entities/drug/label.rs                                 1638              1638     0.00%         164               164     0.00%        1051              1051     0.00%           0                 0         -
+entities/drug/metadata.rs                               769               612    20.42%          70                55    21.43%         474               392    17.30%           0                 0         -
+entities/drug/mod.rs                                    213               108    49.30%          28                11    60.71%         148                83    43.92%           0                 0         -
+entities/drug/query.rs                                  300               229    23.67%          28                24    14.29%         251               178    29.08%           0                 0         -
+entities/drug/search.rs                                1215              1006    17.20%         100                85    15.00%         840               679    19.17%           0                 0         -
+entities/drug/targets.rs                                593               593     0.00%          44                44     0.00%         385               385     0.00%           0                 0         -
+entities/gene.rs                                       4595              2776    39.59%         336               196    41.67%        3069              1819    40.73%           0                 0         -
+entities/gene/cell_lines.rs                             171               171     0.00%          17                17     0.00%         113               113     0.00%           0                 0         -
+entities/gene/clingen.rs                                289               211    26.99%          30                18    40.00%         218               155    28.90%           0                 0         -
+entities/gene/cspec.rs                                 1418              1393     1.76%          84                79     5.95%         903               884     2.10%           0                 0         -
+entities/gene/gencc.rs                                  309               309     0.00%          17                17     0.00%         219               219     0.00%           0                 0         -
+entities/mod.rs                                          18                 0   100.00%           3                 0   100.00%          36                 0   100.00%           0                 0         -
+entities/pathway.rs                                    1453              1166    19.75%          93                79    15.05%         958               758    20.88%           0                 0         -
+entities/pgx.rs                                        1242              1095    11.84%          90                80    11.11%         854               735    13.93%           0                 0         -
+entities/pharmacodb.rs                                  231               217     6.06%          26                23    11.54%         181               171     5.52%           0                 0         -
+entities/protein.rs                                     970               811    16.39%          50                36    28.00%         689               573    16.84%           0                 0         -
+entities/section_outcome.rs                             434               258    40.55%          48                19    60.42%         334               166    50.30%           0                 0         -
+entities/source_state_registry.rs                       185                80    56.76%          20                 7    65.00%         141                65    53.90%           0                 0         -
+entities/study.rs                                      1770              1770     0.00%         161               161     0.00%        1325              1325     0.00%           0                 0         -
+entities/trial/design.rs                                683               242    64.57%          93                20    78.49%         597               179    70.02%           0                 0         -
+entities/trial/documents.rs                             621               357    42.51%          60                31    48.33%         397               217    45.34%           0                 0         -
+entities/trial/eligibility.rs                           821               605    26.31%          66                44    33.33%         538               374    30.48%           0                 0         -
+entities/trial/get.rs                                   314                40    87.26%          16                 1    93.75%         234                29    87.61%           0                 0         -
+entities/trial/mod.rs                                   728               579    20.47%          46                29    36.96%         447               351    21.48%           0                 0         -
+entities/trial/search/ctgov.rs                         1215               333    72.59%          76                23    69.74%         919               235    74.43%           0                 0         -
+entities/trial/search/eligibility.rs                    515               136    73.59%          59                16    72.88%         378                92    75.66%           0                 0         -
+entities/trial/search/eligibility/keep_paths.rs         198               198     0.00%          16                16     0.00%         101               101     0.00%           0                 0         -
+entities/trial/search/essie.rs                          314               203    35.35%          27                17    37.04%         237               156    34.18%           0                 0         -
+entities/trial/search/mod.rs                            405                87    78.52%          44                21    52.27%         363                74    79.61%           0                 0         -
+entities/trial/search/nci.rs                            227               130    42.73%          18                 6    66.67%         183               107    41.53%           0                 0         -
+entities/trial/search/normalization.rs                  286               155    45.80%          24                10    58.33%         196                95    51.53%           0                 0         -
+entities/variant/clinvar.rs                             892               701    21.41%          47                29    38.30%         544               405    25.55%           0                 0         -
+entities/variant/erepo.rs                              1221               433    64.54%          90                34    62.22%         813               263    67.65%           0                 0         -
+entities/variant/get.rs                                1995              1249    37.39%         149               101    32.21%        1546               965    37.58%           0                 0         -
+entities/variant/gwas.rs                                793               377    52.46%          84                51    39.29%         569               275    51.67%           0                 0         -
+entities/variant/mod.rs                                 237                95    59.92%          18                 9    50.00%         137                53    61.31%           0                 0         -
+entities/variant/normalization.rs                       334               198    40.72%          35                20    42.86%         248               150    39.52%           0                 0         -
+entities/variant/resolution.rs                         1638               763    53.42%         156                69    55.77%        1134               559    50.71%           0                 0         -
+entities/variant/search/diagnostics.rs                  414               377     8.94%          14                13     7.14%         306               275    10.13%           0                 0         -
+entities/variant/search/mod.rs                         1196               636    46.82%          84                49    41.67%         967               460    52.43%           0                 0         -
+entities/variant/structure.rs                           476               145    69.54%          38                10    73.68%         349               124    64.47%           0                 0         -
+error.rs                                               1269               794    37.43%          59                28    52.54%         929               590    36.49%           0                 0         -
+lib.rs                                                   18                18     0.00%           7                 7     0.00%          26                26     0.00%           0                 0         -
+main.rs                                                 225                45    80.00%          12                 3    75.00%         151                30    80.13%           0                 0         -
+mcp/catalog.rs                                           79                12    84.81%          10                 3    70.00%          65                10    84.62%           0                 0         -
+mcp/mod.rs                                               23                 2    91.30%           5                 0   100.00%          19                 0   100.00%           0                 0         -
+mcp/shell.rs                                           3295              2716    17.57%         174               135    22.41%        2077              1668    19.69%           0                 0         -
+mcp/shell/http_server.rs                                719               664     7.65%          73                66     9.59%         504               458     9.13%           0                 0         -
+mcp/shell/modern.rs                                     371               371     0.00%          23                23     0.00%         212               212     0.00%           0                 0         -
+mcp/shell/pre_session.rs                                172               111    35.47%          11                 7    36.36%         112                78    30.36%           0                 0         -
+mcp/shell/trial_phase.rs                                  9                 5    44.44%           2                 1    50.00%           8                 5    37.50%           0                 0         -
+mcp/shell/typed_get.rs                                  143                32    77.62%           9                 3    66.67%          94                24    74.47%           0                 0         -
+next_command.rs                                          89                15    83.15%          11                 1    90.91%          61                10    83.61%           0                 0         -
+render/chart.rs                                        2112              2112     0.00%          83                83     0.00%        1730              1730     0.00%           0                 0         -
+render/chart/bounds.rs                                   80                80     0.00%           6                 6     0.00%          51                51     0.00%           0                 0         -
+render/human.rs                                         371               241    35.04%          22                12    45.45%         256               173    32.42%           0                 0         -
+render/json.rs                                         1487              1288    13.38%          53                36    32.08%        1177               951    19.20%           0                 0         -
+render/markdown/adverse_event.rs                        418               305    27.03%          19                14    26.32%         309               224    27.51%           0                 0         -
+render/markdown/article.rs                              967               491    49.22%          49                25    48.98%         635               321    49.45%           0                 0         -
+render/markdown/author.rs                               985               621    36.95%          55                29    47.27%         717               499    30.40%           0                 0         -
+render/markdown/cell_line.rs                            126               126     0.00%           7                 7     0.00%          80                80     0.00%           0                 0         -
+render/markdown/diagnostic.rs                           291               169    41.92%          19                11    42.11%         194               103    46.91%           0                 0         -
+render/markdown/discovery.rs                            152                97    36.18%           9                 6    33.33%         124                84    32.26%           0                 0         -
+render/markdown/disease.rs                              450               450     0.00%          33                33     0.00%         282               282     0.00%           0                 0         -
+render/markdown/drug.rs                                 908               674    25.77%          55                41    25.45%         621               474    23.67%           0                 0         -
+render/markdown/drug_regulatory.rs                      958               745    22.23%          76                63    17.11%         681               534    21.59%           0                 0         -
+render/markdown/evidence.rs                             606               369    39.11%          57                36    36.84%         495               260    47.47%           0                 0         -
+render/markdown/funding.rs                               91                82     9.89%          10                 8    20.00%          65                56    13.85%           0                 0         -
+render/markdown/gene.rs                                 172                43    75.00%           8                 5    37.50%         101                31    69.31%           0                 0         -
+render/markdown/mod.rs                                  841               273    67.54%          96                37    61.46%         656               219    66.62%           0                 0         -
+render/markdown/pathway.rs                               92                92     0.00%           4                 4     0.00%          46                46     0.00%           0                 0         -
+render/markdown/pgx.rs                                  118               118     0.00%           6                 6     0.00%          62                62     0.00%           0                 0         -
+render/markdown/pharmacodb.rs                            67                67     0.00%           3                 3     0.00%          39                39     0.00%           0                 0         -
+render/markdown/protein.rs                              190               190     0.00%          13                13     0.00%         113               113     0.00%           0                 0         -
+render/markdown/related.rs                             1595               849    46.77%         166               103    37.95%        1084               574    47.05%           0                 0         -
+render/markdown/related/article_support.rs              555               236    57.48%          58                27    53.45%         368               163    55.71%           0                 0         -
+render/markdown/sections.rs                             791               234    70.42%          64                12    81.25%         532               161    69.74%           0                 0         -
+render/markdown/study.rs                                622               622     0.00%          25                25     0.00%         431               431     0.00%           0                 0         -
+render/markdown/support.rs                              190                92    51.58%          14                 5    64.29%         121                67    44.63%           0                 0         -
+render/markdown/trial.rs                                633               131    79.30%          49                 8    83.67%         402                91    77.36%           0                 0         -
+render/markdown/variant.rs                              881               674    23.50%          53                47    11.32%         602               471    21.76%           0                 0         -
+render/provenance.rs                                   1998              1565    21.67%          76                56    26.32%        1713              1311    23.47%           0                 0         -
+render/provenance/adverse_event.rs                      106                46    56.60%           6                 1    83.33%          85                29    65.88%           0                 0         -
+skill_assets.rs                                          27                11    59.26%           5                 2    60.00%          18                 7    61.11%           0                 0         -
+sources/archive_budget.rs                               631               631     0.00%          20                20     0.00%         378               378     0.00%           0                 0         -
+sources/ca_bundle.rs                                    527               361    31.50%          30                15    50.00%         316               201    36.39%           0                 0         -
+sources/cancerhotspots.rs                               185               111    40.00%          19                12    36.84%         126                77    38.89%           0                 0         -
+sources/cbioportal.rs                                   318               226    28.93%          32                18    43.75%         228               152    33.33%           0                 0         -
+sources/cbioportal_download.rs                          572               572     0.00%          34                34     0.00%         446               446     0.00%           0                 0         -
+sources/cbioportal_study.rs                            4088              4063     0.61%         184               181     1.63%        2463              2444     0.77%           0                 0         -
+sources/cellosaurus.rs                                  362               244    32.60%          49                35    28.57%         293               213    27.30%           0                 0         -
+sources/chembl.rs                                       289               289     0.00%          33                33     0.00%         226               226     0.00%           0                 0         -
+sources/civic.rs                                        288               169    41.32%          29                16    44.83%         240               144    40.00%           0                 0         -
+sources/clingen.rs                                      830               614    26.02%          75                54    28.00%         618               423    31.55%           0                 0         -
+sources/clingen_allele_registry.rs                      911               722    20.75%          57                40    29.82%         594               453    23.74%           0                 0         -
+sources/clingen_cspec.rs                                406               273    32.76%          26                16    38.46%         281               201    28.47%           0                 0         -
+sources/clingen_erepo.rs                                374               112    70.05%          32                 7    78.12%         270                74    72.59%           0                 0         -
+sources/clingen_ldh.rs                                  131               131     0.00%          17                17     0.00%         101               101     0.00%           0                 0         -
+sources/clinicaltrials.rs                               779                99    87.29%          70                 8    88.57%         574                38    93.38%           0                 0         -
+sources/complexportal.rs                                182               106    41.76%          20                12    40.00%         154                89    42.21%           0                 0         -
+sources/cpic.rs                                         402               289    28.11%          39                27    30.77%         328               238    27.44%           0                 0         -
+sources/cvx.rs                                         1028               793    22.86%          88                62    29.55%         665               490    26.32%           0                 0         -
+sources/dbsnp.rs                                        179                16    91.06%          20                 0   100.00%         129                10    92.25%           0                 0         -
+sources/ddinter.rs                                      549               542     1.28%          47                45     4.26%         359               352     1.95%           0                 0         -
+sources/dgidb.rs                                        270               188    30.37%          23                14    39.13%         194               127    34.54%           0                 0         -
+sources/disable.rs                                      584               290    50.34%          56                20    64.29%         343               140    59.18%           0                 0         -
+sources/disgenet.rs                                     451               310    31.26%          41                26    36.59%         323               218    32.51%           0                 0         -
+sources/ema.rs                                         1042               471    54.80%          79                26    67.09%         684               307    55.12%           0                 0         -
+sources/ema/identity.rs                                 251               186    25.90%          32                25    21.88%         191               144    24.61%           0                 0         -
+sources/enrichr.rs                                      237                41    82.70%          21                 3    85.71%         184                34    81.52%           0                 0         -
+sources/europepmc.rs                                    606               185    69.47%          53                22    58.49%         464               155    66.59%           0                 0         -
+sources/fda_orphan.rs                                  1284               984    23.36%         103                72    30.10%         819               602    26.50%           0                 0         -
+sources/figshare.rs                                     507               507     0.00%          50                50     0.00%         370               370     0.00%           0                 0         -
+sources/gencc.rs                                       1416              1332     5.93%         107                95    11.21%         802               747     6.86%           0                 0         -
+sources/gencc/model.rs                                  529               529     0.00%          35                35     0.00%         288               288     0.00%           0                 0         -
+sources/gencc/store.rs                                 1845              1732     6.12%          88                80     9.09%         752               712     5.32%           0                 0         -
+sources/gnomad.rs                                       268               206    23.13%          24                19    20.83%         200               151    24.50%           0                 0         -
+sources/gprofiler.rs                                    194                52    73.20%          18                 3    83.33%         147                33    77.55%           0                 0         -
+sources/gtex.rs                                         275               167    39.27%          29                15    48.28%         188               108    42.55%           0                 0         -
+sources/gtr.rs                                          913               329    63.96%          81                28    65.43%         623               244    60.83%           0                 0         -
+sources/gwas.rs                                         363               163    55.10%          32                10    68.75%         286               122    57.34%           0                 0         -
+sources/hpa.rs                                          663               591    10.86%          71                64     9.86%         472               422    10.59%           0                 0         -
+sources/hpo.rs                                          342               201    41.23%          34                19    44.12%         244               141    42.21%           0                 0         -
+sources/interpro.rs                                     147                90    38.78%          15                 9    40.00%         111                57    48.65%           0                 0         -
+sources/kegg.rs                                         441               266    39.68%          31                18    41.94%         256               150    41.41%           0                 0         -
+sources/litsense2.rs                                    134                59    55.97%          16                 7    56.25%         111                52    53.15%           0                 0         -
+sources/litvar.rs                                       186               126    32.26%          22                15    31.82%         139                92    33.81%           0                 0         -
+sources/medlineplus.rs                                  244               168    31.15%          21                13    38.10%         177               116    34.46%           0                 0         -
+sources/mod.rs                                         2753              1504    45.37%         282               138    51.06%        2044              1069    47.70%           0                 0         -
+sources/monarch.rs                                      679               534    21.35%          53                38    28.30%         515               390    24.27%           0                 0         -
+sources/mutalyzer.rs                                    276                90    67.39%          30                15    50.00%         216                68    68.52%           0                 0         -
+sources/mychem.rs                                       181                62    65.75%          18                 6    66.67%         124                35    71.77%           0                 0         -
+sources/mydisease.rs                                    384               194    49.48%          30                17    43.33%         297               160    46.13%           0                 0         -
+sources/mygene.rs                                      1003               732    27.02%          84                53    36.90%         579               389    32.82%           0                 0         -
+sources/myvariant.rs                                   1315               839    36.20%         121                84    30.58%         949               563    40.67%           0                 0         -
+sources/myvariant/carried.rs                              9                 1    88.89%           1                 0   100.00%           9                 0   100.00%           0                 0         -
+sources/myvariant/filter_conflicts.rs                    77                33    57.14%           4                 0   100.00%          40                11    72.50%           0                 0         -
+sources/myvariant/filter_keys.rs                         31                12    61.29%           1                 0   100.00%          18                 8    55.56%           0                 0         -
+sources/ncbi_efetch.rs                                 1853              1670     9.88%         120               103    14.17%        1067               928    13.03%           0                 0         -
+sources/ncbi_idconv.rs                                  160                57    64.38%          19                 6    68.42%         113                41    63.72%           0                 0         -
+sources/nci_cts.rs                                      844               204    75.83%          58                10    82.76%         520                95    81.73%           0                 0         -
+sources/nih_reporter.rs                                 275               163    40.73%          31                18    41.94%         201               115    42.79%           0                 0         -
+sources/ols4.rs                                         123                15    87.80%          12                 2    83.33%          82                11    86.59%           0                 0         -
+sources/oncokb.rs                                       204                31    84.80%          22                 3    86.36%         145                23    84.14%           0                 0         -
+sources/opencitations.rs                                383               383     0.00%          25                25     0.00%         242               242     0.00%           0                 0         -
+sources/openfda.rs                                      598               340    43.14%          54                26    51.85%         489               269    44.99%           0                 0         -
+sources/opentargets.rs                                 1822              1503    17.51%         137               106    22.63%        1238              1010    18.42%           0                 0         -
+sources/orcid.rs                                        695               148    78.71%          65                14    78.46%         467               100    78.59%           0                 0         -
+sources/ordinary_url_policy.rs                          409               153    62.59%          42                14    66.67%         304               116    61.84%           0                 0         -
+sources/pharmacodb.rs                                   469               469     0.00%          50                50     0.00%         327               327     0.00%           0                 0         -
+sources/pharmgkb.rs                                     343               343     0.00%          37                37     0.00%         299               299     0.00%           0                 0         -
+sources/pmc_article.rs                                 1057               693    34.44%          71                34    52.11%         663               415    37.41%           0                 0         -
+sources/pmc_oa.rs                                       654               219    66.51%          60                24    60.00%         450               135    70.00%           0                 0         -
+sources/provider_url_policy.rs                         1305               745    42.91%          86                43    50.00%         875               473    45.94%           0                 0         -
+sources/pubmed.rs                                       819               506    38.22%          83                57    31.33%         582               360    38.14%           0                 0         -
+sources/pubtator.rs                                     368               172    53.26%          30                13    56.67%         247               115    53.44%           0                 0         -
+sources/quickgo.rs                                      123                55    55.28%          14                 6    57.14%          94                35    62.77%           0                 0         -
+sources/rate_limit.rs                                   771               523    32.17%          62                36    41.94%         503               317    36.98%           0                 0         -
+sources/reactome.rs                                     368               237    35.60%          45                31    31.11%         259               161    37.84%           0                 0         -
+sources/seer.rs                                         654               586    10.40%          55                46    16.36%         453               399    11.92%           0                 0         -
+sources/semantic_scholar.rs                             891               396    55.56%          82                35    57.32%         718               328    54.32%           0                 0         -
+sources/string.rs                                        85                12    85.88%           9                 1    88.89%          70                 8    88.57%           0                 0         -
+sources/trust_failure_tests/mod.rs                       87                87     0.00%          11                11     0.00%          83                83     0.00%           0                 0         -
+sources/umls.rs                                         213               115    46.01%          20                11    45.00%         158                80    49.37%           0                 0         -
+sources/uniprot.rs                                      869               585    32.68%          90                54    40.00%         581               390    32.87%           0                 0         -
+sources/vaers.rs                                        469               469     0.00%          52                52     0.00%         359               359     0.00%           0                 0         -
+sources/variantvalidator.rs                             291               151    48.11%          30                18    40.00%         228               106    53.51%           0                 0         -
+sources/who_ivd.rs                                      477               318    33.33%          48                28    41.67%         322               205    36.34%           0                 0         -
+sources/who_pq.rs                                      1392               365    73.78%         115                31    73.04%         980               259    73.57%           0                 0         -
+sources/wikipathways.rs                                 464               220    52.59%          50                26    48.00%         316               137    56.65%           0                 0         -
+transform/adverse_event.rs                              769               472    38.62%          68                49    27.94%         527               326    38.14%           0                 0         -
+transform/article.rs                                     41                19    53.66%           2                 1    50.00%          45                30    33.33%           0                 0         -
+transform/article/anchors.rs                            100                13    87.00%          12                 2    83.33%          66                10    84.85%           0                 0         -
+transform/article/annotations.rs                        533               434    18.57%          41                37     9.76%         373               308    17.43%           0                 0         -
+transform/article/federation.rs                         786               301    61.70%          76                30    60.53%         517               179    65.38%           0                 0         -
+transform/article/html.rs                               643               643     0.00%          43                43     0.00%         422               422     0.00%           0                 0         -
+transform/article/jats.rs                               952               307    67.75%          72                11    84.72%         545               168    69.17%           0                 0         -
+transform/article/jats/refs.rs                          825               699    15.27%          54                40    25.93%         449               374    16.70%           0                 0         -
+transform/article/jats/refs/citation.rs                 687               687     0.00%          49                49     0.00%         453               453     0.00%           0                 0         -
+transform/article/jats/supplements.rs                   222                52    76.58%          20                 2    90.00%         155                34    78.06%           0                 0         -
+transform/article/jats/tables.rs                        205                13    93.66%          17                 2    88.24%         109                 6    94.50%           0                 0         -
+transform/article/pdf.rs                                 64                36    43.75%           6                 4    33.33%          46                30    34.78%           0                 0         -
+transform/article/supplement_text.rs                    685               543    20.73%          26                16    38.46%         506               395    21.94%           0                 0         -
+transform/disease.rs                                   1565               987    36.93%         115                72    37.39%         995               593    40.40%           0                 0         -
+transform/drug.rs                                      2163               953    55.94%         188                63    66.49%        1343               577    57.04%           0                 0         -
+transform/gene.rs                                       570               242    57.54%          38                 9    76.32%         318               115    63.84%           0                 0         -
+transform/pathway.rs                                    210               195     7.14%          14                11    21.43%         169               148    12.43%           0                 0         -
+transform/protein.rs                                    221               179    19.00%          17                16     5.88%         193               160    17.10%           0                 0         -
+transform/trial.rs                                      720               276    61.67%         100                24    76.00%         478               152    68.20%           0                 0         -
+transform/variant.rs                                   1630               246    84.91%         171                26    84.80%        1149               139    87.90%           0                 0         -
+utils/date.rs                                           257               137    46.69%          22                14    36.36%         164                90    45.12%           0                 0         -
+utils/download.rs                                       626               461    26.36%          47                28    40.43%         379               276    27.18%           0                 0         -
+utils/fs_lock.rs                                         17                 2    88.24%           3                 0   100.00%          11                 1    90.91%           0                 0         -
+utils/mod.rs                                             29                29     0.00%           3                 3     0.00%          17                17     0.00%           0                 0         -
+utils/query.rs                                           24                 6    75.00%           2                 1    50.00%          15                 4    73.33%           0                 0         -
+utils/serde.rs                                           48                29    39.58%           4                 1    75.00%          23                11    52.17%           0                 0         -
+utils/sync.rs                                            50                46     8.00%           4                 3    25.00%          24                21    12.50%           0                 0         -
+workflow_ladders.rs                                     106                51    51.89%           7                 3    57.14%          82                43    47.56%           0                 0         -
+xml.rs                                                  246               151    38.62%          17                14    17.65%         162                94    41.98%           0                 0         -
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                                                206555            136486    33.92%       15223              9239    39.31%      145451             94114    35.30%           0                 0         -
+```
+
+#### Coverage report: unit
+
+```text
+Filename                                            Regions    Missed Regions     Cover   Functions  Missed Functions  Executed       Lines      Missed Lines     Cover    Branches   Missed Branches     Cover
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+build_identity.rs                                        10                 4    60.00%           2                 1    50.00%           6                 3    50.00%           0                 0         -
+cache/citation_evidence.rs                              177                12    93.22%          13                 0   100.00%         121                 5    95.87%           0                 0         -
+cache/clean.rs                                          676                46    93.20%          40                 4    90.00%         521                19    96.35%           0                 0         -
+cache/clear.rs                                         1331               119    91.06%          91                 4    95.60%         732                53    92.76%           0                 0         -
+cache/config.rs                                         884                17    98.08%          65                 1    98.46%         642                12    98.13%           0                 0         -
+cache/http.rs                                            43                 1    97.67%           7                 0   100.00%          28                 0   100.00%           0                 0         -
+cache/limits.rs                                         252                20    92.06%          15                 2    86.67%         167                21    87.43%           0                 0         -
+cache/manager.rs                                       1371               109    92.05%         114                 8    92.98%         926                51    94.49%           0                 0         -
+cache/manager/totals.rs                                 120                18    85.00%           6                 0   100.00%          58                 3    94.83%           0                 0         -
+cache/migration.rs                                     1582               184    88.37%          91                 4    95.60%         907                80    91.18%           0                 0         -
+cache/mod.rs                                             68                 1    98.53%           7                 0   100.00%          47                 1    97.87%           0                 0         -
+cache/planner.rs                                       1139                70    93.85%          68                 8    88.24%         707                46    93.49%           0                 0         -
+cache/private.rs                                        699                49    92.99%          37                 4    89.19%         380                16    95.79%           0                 0         -
+cache/provider_capture.rs                              1935               190    90.18%          96                 5    94.79%        1085                55    94.93%           0                 0         -
+cache/provider_capture/unsupported.rs                    26                 0   100.00%           2                 0   100.00%          12                 0   100.00%           0                 0         -
+cli/adverse_event/dispatch.rs                           470               437     7.02%           9                 7    22.22%         389               355     8.74%           0                 0         -
+cli/adverse_event/plan.rs                               248                 4    98.39%           7                 0   100.00%         171                 4    97.66%           0                 0         -
+cli/article/annotations.rs                               69                 2    97.10%           9                 0   100.00%          50                 1    98.00%           0                 0         -
+cli/article/assets.rs                                   386               282    26.94%          29                13    55.17%         288               202    29.86%           0                 0         -
+cli/article/dispatch.rs                                 855               330    61.40%          44                13    70.45%         590               192    67.46%           0                 0         -
+cli/article/export.rs                                   137               137     0.00%          10                10     0.00%          95                95     0.00%           0                 0         -
+cli/article/fulltext_view.rs                            409               227    44.50%          29                15    48.28%         284               154    45.77%           0                 0         -
+cli/article/mod.rs                                      197                12    93.91%          29                 8    72.41%         156                10    93.59%           0                 0         -
+cli/article/render.rs                                    61                 9    85.25%           2                 0   100.00%          45                 3    93.33%           0                 0         -
+cli/article/session.rs                                  400                38    90.50%          32                 3    90.62%         291                23    92.10%           0                 0         -
+cli/article/workflow.rs                                  96                 4    95.83%          16                 0   100.00%          89                10    88.76%           0                 0         -
+cli/author/detail.rs                                     20                14    30.00%           3                 2    33.33%          17                 9    47.06%           0                 0         -
+cli/author/mod.rs                                        67                15    77.61%           4                 2    50.00%          66                13    80.30%           0                 0         -
+cli/author/papers.rs                                     34                34     0.00%           2                 2     0.00%          20                20     0.00%           0                 0         -
+cli/author/search.rs                                     18                18     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+cli/cache.rs                                            353               199    43.63%          30                16    46.67%         260               122    53.08%           0                 0         -
+cli/cell_line/dispatch.rs                               150               150     0.00%           8                 8     0.00%          99                99     0.00%           0                 0         -
+cli/chart.rs                                            220                13    94.09%          18                 2    88.89%         134                 4    97.01%           0                 0         -
+cli/commands.rs                                           4                 4     0.00%           1                 1     0.00%           3                 3     0.00%           0                 0         -
+cli/diagnostic/dispatch.rs                              157                81    48.41%           9                 4    55.56%         115                48    58.26%           0                 0         -
+cli/diagnostic/mod.rs                                     6                 2    66.67%           1                 0   100.00%           6                 2    66.67%           0                 0         -
+cli/discover.rs                                         583                47    91.94%          43                 5    88.37%         414                25    93.96%           0                 0         -
+cli/disease/dispatch.rs                                 387               203    47.55%          14                 2    85.71%         273               123    54.95%           0                 0         -
+cli/drug/dispatch.rs                                    641               510    20.44%          17                 8    52.94%         551               427    22.50%           0                 0         -
+cli/drug/render.rs                                      242                30    87.60%          14                 3    78.57%         226                29    87.17%           0                 0         -
+cli/drug/workflow.rs                                     15                15     0.00%           1                 1     0.00%          12                12     0.00%           0                 0         -
+cli/gene/cspec.rs                                       297               297     0.00%          14                14     0.00%         198               198     0.00%           0                 0         -
+cli/gene/dispatch.rs                                    197               133    32.49%          12                 5    58.33%         153                92    39.87%           0                 0         -
+cli/gene/related.rs                                     261               215    17.62%           4                 2    50.00%         159               125    21.38%           0                 0         -
+cli/gwas/dispatch.rs                                    111                13    88.29%           7                 0   100.00%          96                 7    92.71%           0                 0         -
+cli/health/catalog.rs                                    10                 0   100.00%           3                 0   100.00%          10                 0   100.00%           0                 0         -
+cli/health/http.rs                                      565               281    50.27%          40                19    52.50%         440               207    52.95%           0                 0         -
+cli/health/local.rs                                     479               164    65.76%          36                12    66.67%         388                92    76.29%           0                 0         -
+cli/health/mod.rs                                       521                92    82.34%          37                 4    89.19%         348                54    84.48%           0                 0         -
+cli/health/runner.rs                                    389               263    32.39%          30                17    43.33%         315               183    41.90%           0                 0         -
+cli/install.rs                                          486                57    88.27%          24                 3    87.50%         278                26    90.65%           0                 0         -
+cli/list/catalog.rs                                     319                56    82.45%          22                 3    86.36%         193                26    86.53%           0                 0         -
+cli/list/clinical.rs                                     24                 0   100.00%           6                 0   100.00%         357                 0   100.00%           0                 0         -
+cli/list/helpers.rs                                      35                 5    85.71%           6                 1    83.33%         147                 5    96.60%           0                 0         -
+cli/list/literature.rs                                   12                 4    66.67%           3                 1    66.67%         215                21    90.23%           0                 0         -
+cli/list/mod.rs                                         133                10    92.48%           4                 0   100.00%          68                 1    98.53%           0                 0         -
+cli/list/molecular.rs                                    49                13    73.47%           8                 3    62.50%         368                95    74.18%           0                 0         -
+cli/mcp_config.rs                                       152                12    92.11%          13                 0   100.00%         112                 1    99.11%           0                 0         -
+cli/mod.rs                                                4                 0   100.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+cli/outcome.rs                                         1029               590    42.66%          42                 9    78.57%         495               228    53.94%           0                 0         -
+cli/outcome/mcp_chart.rs                                 51                27    47.06%           2                 0   100.00%          43                23    46.51%           0                 0         -
+cli/pathway/dispatch.rs                                 450               390    13.33%          15                 9    40.00%         267               214    19.85%           0                 0         -
+cli/pgx/dispatch.rs                                     114                92    19.30%           6                 4    33.33%          75                52    30.67%           0                 0         -
+cli/phenotype/dispatch.rs                                81                60    25.93%           5                 3    40.00%          63                42    33.33%           0                 0         -
+cli/protein/dispatch.rs                                 199               142    28.64%          12                 8    33.33%         156               103    33.97%           0                 0         -
+cli/response_contract.rs                                446                49    89.01%          25                 1    96.00%         486                43    91.15%           0                 0         -
+cli/search_all/dispatch.rs                              548               432    21.17%          28                17    39.29%         375               283    24.53%           0                 0         -
+cli/search_all/format.rs                                500               218    56.40%          34                 8    76.47%         303               116    61.72%           0                 0         -
+cli/search_all/links.rs                                 533               315    40.90%          25                14    44.00%         301               177    41.20%           0                 0         -
+cli/search_all/mod.rs                                   232                51    78.02%          19                 3    84.21%         144                25    82.64%           0                 0         -
+cli/search_all/plan.rs                                  746               229    69.30%          39                 6    84.62%         473               119    74.84%           0                 0         -
+cli/search_all_command.rs                                94                 3    96.81%           3                 0   100.00%          74                 3    95.95%           0                 0         -
+cli/shared.rs                                           551               128    76.77%          47                 8    82.98%         387                69    82.17%           0                 0         -
+cli/shared/search_payloads.rs                           203                42    79.31%          20                 2    90.00%         202                42    79.21%           0                 0         -
+cli/skill/assets.rs                                      69                11    84.06%           5                 1    80.00%          44                10    77.27%           0                 0         -
+cli/skill/atomic_swap.rs                                 55                 7    87.27%           6                 1    83.33%          33                 2    93.94%           0                 0         -
+cli/skill/catalog.rs                                    165                 7    95.76%          13                 0   100.00%         103                 2    98.06%           0                 0         -
+cli/skill/install.rs                                    793               248    68.73%          45                10    77.78%         470               140    70.21%           0                 0         -
+cli/skill/mod.rs                                          8                 8     0.00%           1                 1     0.00%          13                13     0.00%           0                 0         -
+cli/skill/status.rs                                     365                78    78.63%          22                 5    77.27%         218                60    72.48%           0                 0         -
+cli/study/dispatch.rs                                   534               332    37.83%          10                 0   100.00%         331               171    48.34%           0                 0         -
+cli/system/batch.rs                                     984                82    91.67%          42                 4    90.48%         681                55    91.92%           0                 0         -
+cli/system/dispatch.rs                                  770               565    26.62%          76                55    27.63%         570               416    27.02%           0                 0         -
+cli/system/mod.rs                                        45                35    22.22%           5                 4    20.00%          39                29    25.64%           0                 0         -
+cli/system/who_sync.rs                                   61                12    80.33%           5                 2    60.00%          47                 8    82.98%           0                 0         -
+cli/trial/dispatch.rs                                   761               226    70.30%          57                22    61.40%         552               133    75.91%           0                 0         -
+cli/trial/documents.rs                                  162                46    71.60%          14                 3    78.57%         159                31    80.50%           0                 0         -
+cli/trial/zero_result.rs                                380                96    74.74%          15                 1    93.33%         182                44    75.82%           0                 0         -
+cli/types.rs                                            159                44    72.33%          24                 9    62.50%         183                51    72.13%           0                 0         -
+cli/update.rs                                           677               320    52.73%          50                25    50.00%         435               202    53.56%           0                 0         -
+cli/variant/articles.rs                                 226               214     5.31%          17                15    11.76%         222               198    10.81%           0                 0         -
+cli/variant/car.rs                                      114                68    40.35%          13                 9    30.77%          86                56    34.88%           0                 0         -
+cli/variant/dispatch.rs                                 632               196    68.99%          22                 1    95.45%         467               120    74.30%           0                 0         -
+cli/variant/erepo.rs                                    385               228    40.78%          18                11    38.89%         305               157    48.52%           0                 0         -
+cli/variant/guidance.rs                                  19                13    31.58%           2                 1    50.00%          21                13    38.10%           0                 0         -
+cli/variant/mod.rs                                       62                 3    95.16%           9                 1    88.89%          42                 1    97.62%           0                 0         -
+cli/variant/normalization_json.rs                       103                 8    92.23%           4                 0   100.00%          81                 4    95.06%           0                 0         -
+cli/variant/query.rs                                    492                25    94.92%          23                 0   100.00%         418                36    91.39%           0                 0         -
+cli/variant/trial.rs                                     50                50     0.00%           5                 5     0.00%          33                33     0.00%           0                 0         -
+cli/worker.rs                                            44                 4    90.91%           5                 0   100.00%          30                 2    93.33%           0                 0         -
+entities/adverse_event.rs                              2535               852    66.39%         202                76    62.38%        1931               617    68.05%           0                 0         -
+entities/adverse_event/device.rs                        193                48    75.13%          13                 4    69.23%         146                33    77.40%           0                 0         -
+entities/adverse_event/sections.rs                       85                 0   100.00%           4                 0   100.00%          74                 0   100.00%           0                 0         -
+entities/article/assets.rs                             4011              1244    68.99%         234                46    80.34%        3054               939    69.25%           0                 0         -
+entities/article/backends.rs                           1194               206    82.75%          83                14    83.13%         845               145    82.84%           0                 0         -
+entities/article/backends/provider_unit.rs              123                 8    93.50%          12                 0   100.00%         101                 4    96.04%           0                 0         -
+entities/article/batch.rs                               247                78    68.42%          24                 5    79.17%         165                40    75.76%           0                 0         -
+entities/article/candidates.rs                          469                39    91.68%          39                 6    84.62%         309                15    95.15%           0                 0         -
+entities/article/detail.rs                              928               291    68.64%          71                 9    87.32%         687               177    74.24%           0                 0         -
+entities/article/enrichment.rs                          616               107    82.63%          36                 4    88.89%         471                83    82.38%           0                 0         -
+entities/article/filters.rs                             339                17    94.99%          34                 1    97.06%         252                10    96.03%           0                 0         -
+entities/article/fulltext.rs                           1521               373    75.48%         116                16    86.21%        1264               308    75.63%           0                 0         -
+entities/article/graph.rs                               571               364    36.25%          60                36    40.00%         455               248    45.49%           0                 0         -
+entities/article/graph/citation_evidence.rs            1134                83    92.68%         114                16    85.96%         902                49    94.57%           0                 0         -
+entities/article/identity_verification.rs              1736               116    93.32%         126                10    92.06%        1233                61    95.05%           0                 0         -
+entities/article/mod.rs                                 514                20    96.11%          37                 0   100.00%         394                14    96.45%           0                 0         -
+entities/article/planner.rs                             283                24    91.52%          19                 1    94.74%         246                21    91.46%           0                 0         -
+entities/article/query.rs                               833               128    84.63%          80                15    81.25%         596                72    87.92%           0                 0         -
+entities/article/ranking.rs                             670                19    97.16%          59                 2    96.61%         496                 9    98.19%           0                 0         -
+entities/article/search.rs                             1056               348    67.05%          46                11    76.09%         762               234    69.29%           0                 0         -
+entities/article/search/deadline.rs                     117                 7    94.02%          14                 1    92.86%         118                 6    94.92%           0                 0         -
+entities/article/search/status.rs                        64                 2    96.88%           6                 0   100.00%          62                 2    96.77%           0                 0         -
+entities/article/supplement_search.rs                   657               461    29.83%          42                29    30.95%         425               291    31.53%           0                 0         -
+entities/article/supplement_search/cache.rs             115               115     0.00%           6                 6     0.00%          68                68     0.00%           0                 0         -
+entities/article/variant_search.rs                     7896               686    91.31%         490                37    92.45%        6599               558    91.54%           0                 0         -
+entities/author/mod.rs                                  532                97    81.77%          46                11    76.09%         410                81    80.24%           0                 0         -
+entities/author/papers.rs                              1957               182    90.70%         112                 8    92.86%        1193                95    92.04%           0                 0         -
+entities/author/search.rs                               252                36    85.71%          14                 2    85.71%         240                31    87.08%           0                 0         -
+entities/cell_line.rs                                   696               327    53.02%          59                20    66.10%         477               201    57.86%           0                 0         -
+entities/cell_line/chembl.rs                             99                33    66.67%           9                 2    77.78%          82                15    81.71%           0                 0         -
+entities/cell_line/pharmacodb.rs                        120                95    20.83%           8                 6    25.00%         106                84    20.75%           0                 0         -
+entities/diagnostic/get.rs                              880               382    56.59%          73                33    54.79%         586               225    61.60%           0                 0         -
+entities/diagnostic/mod.rs                              752                16    97.87%          59                 5    91.53%         556                10    98.20%           0                 0         -
+entities/diagnostic/search.rs                           823                86    89.55%          67                 3    95.52%         588                52    91.16%           0                 0         -
+entities/discover.rs                                   4421               435    90.16%         273                17    93.77%        3238               271    91.63%           0                 0         -
+entities/disease/article_links.rs                       191                13    93.19%          16                 0   100.00%         113                 8    92.92%           0                 0         -
+entities/disease/associations.rs                        861               571    33.68%          63                37    41.27%         582               386    33.68%           0                 0         -
+entities/disease/enrichment.rs                          997               598    40.02%          66                35    46.97%         712               389    45.37%           0                 0         -
+entities/disease/fallback.rs                            584               131    77.57%          38                 5    86.84%         413                89    78.45%           0                 0         -
+entities/disease/get.rs                                 372               116    68.82%          22                 3    86.36%         227                63    72.25%           0                 0         -
+entities/disease/mod.rs                                  19                 2    89.47%           2                 0   100.00%          15                 0   100.00%           0                 0         -
+entities/disease/resolution.rs                         1126                59    94.76%         103                 7    93.20%         749                32    95.73%           0                 0         -
+entities/disease/resolution/ambiguity.rs                109                 6    94.50%          16                 0   100.00%          80                 2    97.50%           0                 0         -
+entities/disease/search.rs                              899               252    71.97%          91                32    64.84%         690               185    73.19%           0                 0         -
+entities/drug/cell_lines.rs                             165               131    20.61%          10                 7    30.00%         149               113    24.16%           0                 0         -
+entities/drug/get.rs                                   1711               370    78.38%         121                24    80.17%        1238               258    79.16%           0                 0         -
+entities/drug/interactions.rs                           520               127    75.58%          37                 8    78.38%         342                79    76.90%           0                 0         -
+entities/drug/label.rs                                 1638                80    95.12%         164                 3    98.17%        1051                45    95.72%           0                 0         -
+entities/drug/metadata.rs                               769               143    81.40%          70                15    78.57%         474                95    79.96%           0                 0         -
+entities/drug/mod.rs                                    213                24    88.73%          28                 2    92.86%         148                15    89.86%           0                 0         -
+entities/drug/query.rs                                  300               121    59.67%          28                13    53.57%         251               102    59.36%           0                 0         -
+entities/drug/search.rs                                1215               507    58.27%         100                33    67.00%         840               334    60.24%           0                 0         -
+entities/drug/targets.rs                                593               130    78.08%          44                 4    90.91%         385                81    78.96%           0                 0         -
+entities/gene.rs                                       4595              2570    44.07%         336               190    43.45%        3069              1646    46.37%           0                 0         -
+entities/gene/cell_lines.rs                             171               120    29.82%          17                10    41.18%         113                74    34.51%           0                 0         -
+entities/gene/clingen.rs                                289                44    84.78%          30                 4    86.67%         218                26    88.07%           0                 0         -
+entities/gene/cspec.rs                                 1418               326    77.01%          84                27    67.86%         903               189    79.07%           0                 0         -
+entities/gene/gencc.rs                                  309                90    70.87%          17                 4    76.47%         219                44    79.91%           0                 0         -
+entities/mod.rs                                          18                 6    66.67%           3                 1    66.67%          36                13    63.89%           0                 0         -
+entities/pathway.rs                                    1453               410    71.78%          93                14    84.95%         958               255    73.38%           0                 0         -
+entities/pgx.rs                                        1242               684    44.93%          90                45    50.00%         854               461    46.02%           0                 0         -
+entities/pharmacodb.rs                                  231                 9    96.10%          26                 2    92.31%         181                 5    97.24%           0                 0         -
+entities/protein.rs                                     970               456    52.99%          50                20    60.00%         689               311    54.86%           0                 0         -
+entities/section_outcome.rs                             434                20    95.39%          48                 2    95.83%         334                15    95.51%           0                 0         -
+entities/source_state_registry.rs                       185                29    84.32%          20                 6    70.00%         141                41    70.92%           0                 0         -
+entities/study.rs                                      1770               354    80.00%         161                36    77.64%        1325               235    82.26%           0                 0         -
+entities/trial/design.rs                                683                39    94.29%          93                 4    95.70%         597                19    96.82%           0                 0         -
+entities/trial/documents.rs                             621               140    77.46%          60                15    75.00%         397                92    76.83%           0                 0         -
+entities/trial/eligibility.rs                           821                55    93.30%          66                11    83.33%         538                42    92.19%           0                 0         -
+entities/trial/get.rs                                   314                22    92.99%          16                 0   100.00%         234                15    93.59%           0                 0         -
+entities/trial/mod.rs                                   728                29    96.02%          46                 4    91.30%         447                13    97.09%           0                 0         -
+entities/trial/search/ctgov.rs                         1215               441    63.70%          76                15    80.26%         919               273    70.29%           0                 0         -
+entities/trial/search/eligibility.rs                    515                44    91.46%          59                 2    96.61%         378                22    94.18%           0                 0         -
+entities/trial/search/eligibility/keep_paths.rs         198                 3    98.48%          16                 0   100.00%         101                 2    98.02%           0                 0         -
+entities/trial/search/essie.rs                          314                38    87.90%          27                 5    81.48%         237                27    88.61%           0                 0         -
+entities/trial/search/mod.rs                            405                28    93.09%          44                 2    95.45%         363                20    94.49%           0                 0         -
+entities/trial/search/nci.rs                            227                24    89.43%          18                 0   100.00%         183                22    87.98%           0                 0         -
+entities/trial/search/normalization.rs                  286                23    91.96%          24                 2    91.67%         196                22    88.78%           0                 0         -
+entities/variant/clinvar.rs                             892                27    96.97%          47                 2    95.74%         544                12    97.79%           0                 0         -
+entities/variant/erepo.rs                              1221               137    88.78%          90                14    84.44%         813                92    88.68%           0                 0         -
+entities/variant/get.rs                                1995               466    76.64%         149                21    85.91%        1546               336    78.27%           0                 0         -
+entities/variant/gwas.rs                                793               319    59.77%          84                45    46.43%         569               234    58.88%           0                 0         -
+entities/variant/mod.rs                                 237                20    91.56%          18                 0   100.00%         137                10    92.70%           0                 0         -
+entities/variant/normalization.rs                       334                99    70.36%          35                 7    80.00%         248                69    72.18%           0                 0         -
+entities/variant/resolution.rs                         1638               107    93.47%         156                 6    96.15%        1134                90    92.06%           0                 0         -
+entities/variant/search/diagnostics.rs                  414               293    29.23%          14                 9    35.71%         306               200    34.64%           0                 0         -
+entities/variant/search/mod.rs                         1196               303    74.67%          84                25    70.24%         967               212    78.08%           0                 0         -
+entities/variant/structure.rs                           476                60    87.39%          38                 4    89.47%         349                37    89.40%           0                 0         -
+error.rs                                               1269               221    82.58%          59                 4    93.22%         929               118    87.30%           0                 0         -
+lib.rs                                                   18                 0   100.00%           7                 0   100.00%          26                 0   100.00%           0                 0         -
+main.rs                                                 225               225     0.00%          12                12     0.00%         151               151     0.00%           0                 0         -
+mcp/catalog.rs                                           79                49    37.97%          10                 8    20.00%          65                42    35.38%           0                 0         -
+mcp/mod.rs                                               23                23     0.00%           5                 5     0.00%          19                19     0.00%           0                 0         -
+mcp/shell.rs                                           3295               735    77.69%         174                54    68.97%        2077               502    75.83%           0                 0         -
+mcp/shell/http_server.rs                                719               345    52.02%          73                33    54.79%         504               235    53.37%           0                 0         -
+mcp/shell/modern.rs                                     371               371     0.00%          23                23     0.00%         212               212     0.00%           0                 0         -
+mcp/shell/pre_session.rs                                172               172     0.00%          11                11     0.00%         112               112     0.00%           0                 0         -
+mcp/shell/trial_phase.rs                                  9                 0   100.00%           2                 0   100.00%           8                 0   100.00%           0                 0         -
+mcp/shell/typed_get.rs                                  143                 3    97.90%           9                 0   100.00%          94                 2    97.87%           0                 0         -
+next_command.rs                                          89                 0   100.00%          11                 0   100.00%          61                 0   100.00%           0                 0         -
+render/chart.rs                                        2112               310    85.32%          83                 5    93.98%        1730               198    88.55%           0                 0         -
+render/chart/bounds.rs                                   80                10    87.50%           6                 1    83.33%          51                 9    82.35%           0                 0         -
+render/human.rs                                         371                 1    99.73%          22                 0   100.00%         256                 0   100.00%           0                 0         -
+render/json.rs                                         1487                38    97.44%          53                 0   100.00%        1177                21    98.22%           0                 0         -
+render/markdown/adverse_event.rs                        418                38    90.91%          19                 0   100.00%         309                20    93.53%           0                 0         -
+render/markdown/article.rs                              967               167    82.73%          49                 5    89.80%         635                85    86.61%           0                 0         -
+render/markdown/author.rs                               985               149    84.87%          55                 9    83.64%         717                98    86.33%           0                 0         -
+render/markdown/cell_line.rs                            126                 8    93.65%           7                 0   100.00%          80                 3    96.25%           0                 0         -
+render/markdown/diagnostic.rs                           291                14    95.19%          19                 1    94.74%         194                 7    96.39%           0                 0         -
+render/markdown/discovery.rs                            152                16    89.47%           9                 0   100.00%         124                 7    94.35%           0                 0         -
+render/markdown/disease.rs                              450                24    94.67%          33                 2    93.94%         282                13    95.39%           0                 0         -
+render/markdown/drug.rs                                 908               169    81.39%          55                17    69.09%         621                96    84.54%           0                 0         -
+render/markdown/drug_regulatory.rs                      958               212    77.87%          76                37    51.32%         681               158    76.80%           0                 0         -
+render/markdown/evidence.rs                             606                53    91.25%          57                 3    94.74%         495                28    94.34%           0                 0         -
+render/markdown/funding.rs                               91                11    87.91%          10                 2    80.00%          65                 4    93.85%           0                 0         -
+render/markdown/gene.rs                                 172                 9    94.77%           8                 0   100.00%         101                 3    97.03%           0                 0         -
+render/markdown/mod.rs                                  841               108    87.16%          96                12    87.50%         656                98    85.06%           0                 0         -
+render/markdown/pathway.rs                               92                19    79.35%           4                 2    50.00%          46                 5    89.13%           0                 0         -
+render/markdown/pgx.rs                                  118                20    83.05%           6                 1    83.33%          62                12    80.65%           0                 0         -
+render/markdown/pharmacodb.rs                            67                67     0.00%           3                 3     0.00%          39                39     0.00%           0                 0         -
+render/markdown/protein.rs                              190                29    84.74%          13                 2    84.62%         113                19    83.19%           0                 0         -
+render/markdown/related.rs                             1595               264    83.45%         166                28    83.13%        1084               181    83.30%           0                 0         -
+render/markdown/related/article_support.rs              555                26    95.32%          58                 3    94.83%         368                14    96.20%           0                 0         -
+render/markdown/sections.rs                             791                54    93.17%          64                 1    98.44%         532                32    93.98%           0                 0         -
+render/markdown/study.rs                                622                76    87.78%          25                 4    84.00%         431                55    87.24%           0                 0         -
+render/markdown/support.rs                              190                40    78.95%          14                 2    85.71%         121                30    75.21%           0                 0         -
+render/markdown/trial.rs                                633                22    96.52%          49                 0   100.00%         402                 9    97.76%           0                 0         -
+render/markdown/variant.rs                              881               136    84.56%          53                 4    92.45%         602                77    87.21%           0                 0         -
+render/provenance.rs                                   1998               172    91.39%          76                 3    96.05%        1713                96    94.40%           0                 0         -
+render/provenance/adverse_event.rs                      106                28    73.58%           6                 1    83.33%          85                19    77.65%           0                 0         -
+skill_assets.rs                                          27                11    59.26%           5                 2    60.00%          18                 7    61.11%           0                 0         -
+sources/archive_budget.rs                               631                43    93.19%          20                 0   100.00%         378                13    96.56%           0                 0         -
+sources/ca_bundle.rs                                    527                60    88.61%          30                 7    76.67%         316                43    86.39%           0                 0         -
+sources/cancerhotspots.rs                               185                12    93.51%          19                 1    94.74%         126                 6    95.24%           0                 0         -
+sources/cbioportal.rs                                   318               197    38.05%          32                15    53.12%         228               126    44.74%           0                 0         -
+sources/cbioportal_download.rs                          572               215    62.41%          34                11    67.65%         446               168    62.33%           0                 0         -
+sources/cbioportal_study.rs                            4088               336    91.78%         184                14    92.39%        2463               213    91.35%           0                 0         -
+sources/cellosaurus.rs                                  362               179    50.55%          49                27    44.90%         293               151    48.46%           0                 0         -
+sources/chembl.rs                                       289                75    74.05%          33                 9    72.73%         226                40    82.30%           0                 0         -
+sources/civic.rs                                        288                25    91.32%          29                 3    89.66%         240                24    90.00%           0                 0         -
+sources/clingen.rs                                      830                61    92.65%          75                 9    88.00%         618                67    89.16%           0                 0         -
+sources/clingen_allele_registry.rs                      911               209    77.06%          57                16    71.93%         594               144    75.76%           0                 0         -
+sources/clingen_cspec.rs                                406                42    89.66%          26                 1    96.15%         281                21    92.53%           0                 0         -
+sources/clingen_erepo.rs                                374                55    85.29%          32                 4    87.50%         270                46    82.96%           0                 0         -
+sources/clingen_ldh.rs                                  131                23    82.44%          17                 4    76.47%         101                16    84.16%           0                 0         -
+sources/clinicaltrials.rs                               779                45    94.22%          70                 3    95.71%         574                 9    98.43%           0                 0         -
+sources/complexportal.rs                                182                80    56.04%          20                 8    60.00%         154                53    65.58%           0                 0         -
+sources/cpic.rs                                         402               104    74.13%          39                12    69.23%         328                80    75.61%           0                 0         -
+sources/cvx.rs                                         1028               351    65.86%          88                30    65.91%         665               218    67.22%           0                 0         -
+sources/dbsnp.rs                                        179                14    92.18%          20                 0   100.00%         129                 9    93.02%           0                 0         -
+sources/ddinter.rs                                      549               235    57.19%          47                17    63.83%         359               146    59.33%           0                 0         -
+sources/dgidb.rs                                        270                74    72.59%          23                 7    69.57%         194                51    73.71%           0                 0         -
+sources/disable.rs                                      584                98    83.22%          56                 7    87.50%         343                63    81.63%           0                 0         -
+sources/disgenet.rs                                     451               191    57.65%          41                15    63.41%         323               107    66.87%           0                 0         -
+sources/ema.rs                                         1042               332    68.14%          79                21    73.42%         684               208    69.59%           0                 0         -
+sources/ema/identity.rs                                 251                 3    98.80%          32                 0   100.00%         191                 2    98.95%           0                 0         -
+sources/enrichr.rs                                      237               173    27.00%          21                17    19.05%         184               128    30.43%           0                 0         -
+sources/europepmc.rs                                    606               104    82.84%          53                15    71.70%         464                79    82.97%           0                 0         -
+sources/fda_orphan.rs                                  1284                35    97.27%         103                 3    97.09%         819                21    97.44%           0                 0         -
+sources/figshare.rs                                     507               124    75.54%          50                12    76.00%         370                86    76.76%           0                 0         -
+sources/gencc.rs                                       1416               206    85.45%         107                13    87.85%         802                70    91.27%           0                 0         -
+sources/gencc/model.rs                                  529                39    92.63%          35                 1    97.14%         288                11    96.18%           0                 0         -
+sources/gencc/store.rs                                 1845               214    88.40%          88                 6    93.18%         752                44    94.15%           0                 0         -
+sources/gnomad.rs                                       268                69    74.25%          24                 6    75.00%         200                38    81.00%           0                 0         -
+sources/gprofiler.rs                                    194               117    39.69%          18                10    44.44%         147                77    47.62%           0                 0         -
+sources/gtex.rs                                         275               112    59.27%          29                14    51.72%         188                69    63.30%           0                 0         -
+sources/gtr.rs                                          913               341    62.65%          81                32    60.49%         623               242    61.16%           0                 0         -
+sources/gwas.rs                                         363                46    87.33%          32                 1    96.88%         286                34    88.11%           0                 0         -
+sources/hpa.rs                                          663               240    63.80%          71                23    67.61%         472               154    67.37%           0                 0         -
+sources/hpo.rs                                          342               103    69.88%          34                11    67.65%         244                68    72.13%           0                 0         -
+sources/interpro.rs                                     147                22    85.03%          15                 2    86.67%         111                16    85.59%           0                 0         -
+sources/kegg.rs                                         441               145    67.12%          31                14    54.84%         256                82    67.97%           0                 0         -
+sources/litsense2.rs                                    134                66    50.75%          16                 8    50.00%         111                51    54.05%           0                 0         -
+sources/litvar.rs                                       186                 6    96.77%          22                 0   100.00%         139                 3    97.84%           0                 0         -
+sources/medlineplus.rs                                  244                36    85.25%          21                 3    85.71%         177                26    85.31%           0                 0         -
+sources/mod.rs                                         2753               185    93.28%         282                 7    97.52%        2044               100    95.11%           0                 0         -
+sources/monarch.rs                                      679               181    73.34%          53                18    66.04%         515               140    72.82%           0                 0         -
+sources/mutalyzer.rs                                    276                37    86.59%          30                 6    80.00%         216                23    89.35%           0                 0         -
+sources/mychem.rs                                       181                15    91.71%          18                 1    94.44%         124                 8    93.55%           0                 0         -
+sources/mydisease.rs                                    384                23    94.01%          30                 0   100.00%         297                13    95.62%           0                 0         -
+sources/mygene.rs                                      1003                70    93.02%          84                 3    96.43%         579                25    95.68%           0                 0         -
+sources/myvariant.rs                                   1315               226    82.81%         121                38    68.60%         949               145    84.72%           0                 0         -
+sources/myvariant/carried.rs                              9                 2    77.78%           1                 0   100.00%           9                 1    88.89%           0                 0         -
+sources/myvariant/filter_conflicts.rs                    77                 0   100.00%           4                 0   100.00%          40                 0   100.00%           0                 0         -
+sources/myvariant/filter_keys.rs                         31                 1    96.77%           1                 0   100.00%          18                 0   100.00%           0                 0         -
+sources/ncbi_efetch.rs                                 1853                84    95.47%         120                 2    98.33%        1067                35    96.72%           0                 0         -
+sources/ncbi_idconv.rs                                  160                33    79.38%          19                 4    78.95%         113                19    83.19%           0                 0         -
+sources/nci_cts.rs                                      844                71    91.59%          58                 1    98.28%         520                11    97.88%           0                 0         -
+sources/nih_reporter.rs                                 275                80    70.91%          31                10    67.74%         201                51    74.63%           0                 0         -
+sources/ols4.rs                                         123                10    91.87%          12                 1    91.67%          82                 5    93.90%           0                 0         -
+sources/oncokb.rs                                       204               131    35.78%          22                17    22.73%         145                90    37.93%           0                 0         -
+sources/opencitations.rs                                383                10    97.39%          25                 0   100.00%         242                 2    99.17%           0                 0         -
+sources/openfda.rs                                      598               128    78.60%          54                12    77.78%         489                86    82.41%           0                 0         -
+sources/opentargets.rs                                 1822               255    86.00%         137                25    81.75%        1238               199    83.93%           0                 0         -
+sources/orcid.rs                                        695                68    90.22%          65                 5    92.31%         467                37    92.08%           0                 0         -
+sources/ordinary_url_policy.rs                          409                32    92.18%          42                 6    85.71%         304                19    93.75%           0                 0         -
+sources/pharmacodb.rs                                   469               161    65.67%          50                18    64.00%         327                95    70.95%           0                 0         -
+sources/pharmgkb.rs                                     343               119    65.31%          37                14    62.16%         299                81    72.91%           0                 0         -
+sources/pmc_article.rs                                 1057                93    91.20%          71                 6    91.55%         663                63    90.50%           0                 0         -
+sources/pmc_oa.rs                                       654               247    62.23%          60                26    56.67%         450               156    65.33%           0                 0         -
+sources/provider_url_policy.rs                         1305               180    86.21%          86                18    79.07%         875                91    89.60%           0                 0         -
+sources/pubmed.rs                                       819               111    86.45%          83                10    87.95%         582                68    88.32%           0                 0         -
+sources/pubtator.rs                                     368                25    93.21%          30                 0   100.00%         247                13    94.74%           0                 0         -
+sources/quickgo.rs                                      123                76    38.21%          14                 9    35.71%          94                54    42.55%           0                 0         -
+sources/rate_limit.rs                                   771                 8    98.96%          62                 0   100.00%         503                 3    99.40%           0                 0         -
+sources/reactome.rs                                     368               220    40.22%          45                29    35.56%         259               148    42.86%           0                 0         -
+sources/seer.rs                                         654               228    65.14%          55                23    58.18%         453               155    65.78%           0                 0         -
+sources/semantic_scholar.rs                             891               147    83.50%          82                14    82.93%         718               100    86.07%           0                 0         -
+sources/string.rs                                        85                57    32.94%           9                 7    22.22%          70                44    37.14%           0                 0         -
+sources/trust_failure_tests/mod.rs                       87                 0   100.00%          11                 0   100.00%          83                 0   100.00%           0                 0         -
+sources/umls.rs                                         213                64    69.95%          20                 7    65.00%         158                37    76.58%           0                 0         -
+sources/uniprot.rs                                      869               145    83.31%          90                13    85.56%         581                95    83.65%           0                 0         -
+sources/vaers.rs                                        469               211    55.01%          52                27    48.08%         359               165    54.04%           0                 0         -
+sources/variantvalidator.rs                             291                38    86.94%          30                 5    83.33%         228                24    89.47%           0                 0         -
+sources/who_ivd.rs                                      477               241    49.48%          48                23    52.08%         322               147    54.35%           0                 0         -
+sources/who_pq.rs                                      1392               239    82.83%         115                24    79.13%         980               179    81.73%           0                 0         -
+sources/wikipathways.rs                                 464               179    61.42%          50                20    60.00%         316               106    66.46%           0                 0         -
+transform/adverse_event.rs                              769               442    42.52%          68                44    35.29%         527               274    48.01%           0                 0         -
+transform/article.rs                                     41                 0   100.00%           2                 0   100.00%          45                 0   100.00%           0                 0         -
+transform/article/anchors.rs                            100                 2    98.00%          12                 0   100.00%          66                 3    95.45%           0                 0         -
+transform/article/annotations.rs                        533                19    96.44%          41                 3    92.68%         373                13    96.51%           0                 0         -
+transform/article/federation.rs                         786                77    90.20%          76                 8    89.47%         517                36    93.04%           0                 0         -
+transform/article/html.rs                               643                32    95.02%          43                 2    95.35%         422                19    95.50%           0                 0         -
+transform/article/jats.rs                               952                80    91.60%          72                 2    97.22%         545                41    92.48%           0                 0         -
+transform/article/jats/refs.rs                          825               280    66.06%          54                11    79.63%         449               129    71.27%           0                 0         -
+transform/article/jats/refs/citation.rs                 687                33    95.20%          49                 1    97.96%         453                24    94.70%           0                 0         -
+transform/article/jats/supplements.rs                   222                10    95.50%          20                 1    95.00%         155                 4    97.42%           0                 0         -
+transform/article/jats/tables.rs                        205                 6    97.07%          17                 0   100.00%         109                 2    98.17%           0                 0         -
+transform/article/pdf.rs                                 64                 9    85.94%           6                 2    66.67%          46                 5    89.13%           0                 0         -
+transform/article/supplement_text.rs                    685               204    70.22%          26                 6    76.92%         506               160    68.38%           0                 0         -
+transform/disease.rs                                   1565               169    89.20%         115                11    90.43%         995                82    91.76%           0                 0         -
+transform/drug.rs                                      2163               117    94.59%         188                11    94.15%        1343                62    95.38%           0                 0         -
+transform/gene.rs                                       570                78    86.32%          38                 3    92.11%         318                39    87.74%           0                 0         -
+transform/pathway.rs                                    210                 0   100.00%          14                 0   100.00%         169                 0   100.00%           0                 0         -
+transform/protein.rs                                    221                 2    99.10%          17                 1    94.12%         193                 1    99.48%           0                 0         -
+transform/trial.rs                                      720                23    96.81%         100                 0   100.00%         478                11    97.70%           0                 0         -
+transform/variant.rs                                   1630               130    92.02%         171                13    92.40%        1149                65    94.34%           0                 0         -
+utils/date.rs                                           257                12    95.33%          22                 3    86.36%         164                 8    95.12%           0                 0         -
+utils/download.rs                                       626                92    85.30%          47                 2    95.74%         379                50    86.81%           0                 0         -
+utils/fs_lock.rs                                         17                 2    88.24%           3                 0   100.00%          11                 1    90.91%           0                 0         -
+utils/mod.rs                                             29                 0   100.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+utils/query.rs                                           24                 0   100.00%           2                 0   100.00%          15                 0   100.00%           0                 0         -
+utils/serde.rs                                           48                 0   100.00%           4                 0   100.00%          23                 0   100.00%           0                 0         -
+utils/sync.rs                                            50                 0   100.00%           4                 0   100.00%          24                 0   100.00%           0                 0         -
+workflow_ladders.rs                                     106                18    83.02%           7                 1    85.71%          82                25    69.51%           0                 0         -
+xml.rs                                                  246                 5    97.97%          17                 0   100.00%         162                 1    99.38%           0                 0         -
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                                                206555             45482    77.98%       15223              3070    79.83%      145451             29589    79.66%           0                 0         -
+```
+
+#### Coverage report: combined
+
+```text
+Filename                                            Regions    Missed Regions     Cover   Functions  Missed Functions  Executed       Lines      Missed Lines     Cover    Branches   Missed Branches     Cover
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+build_identity.rs                                        10                 0   100.00%           2                 0   100.00%           6                 0   100.00%           0                 0         -
+cache/citation_evidence.rs                              177                12    93.22%          13                 0   100.00%         121                 5    95.87%           0                 0         -
+cache/clean.rs                                          676                46    93.20%          40                 4    90.00%         521                19    96.35%           0                 0         -
+cache/clear.rs                                         1331               119    91.06%          91                 4    95.60%         732                53    92.76%           0                 0         -
+cache/config.rs                                         884                14    98.42%          65                 1    98.46%         642                 9    98.60%           0                 0         -
+cache/http.rs                                            43                 0   100.00%           7                 0   100.00%          28                 0   100.00%           0                 0         -
+cache/limits.rs                                         252                20    92.06%          15                 2    86.67%         167                21    87.43%           0                 0         -
+cache/manager.rs                                       1371               102    92.56%         114                 8    92.98%         926                48    94.82%           0                 0         -
+cache/manager/totals.rs                                 120                15    87.50%           6                 0   100.00%          58                 2    96.55%           0                 0         -
+cache/migration.rs                                     1582               182    88.50%          91                 3    96.70%         907                79    91.29%           0                 0         -
+cache/mod.rs                                             68                 1    98.53%           7                 0   100.00%          47                 1    97.87%           0                 0         -
+cache/planner.rs                                       1139                70    93.85%          68                 8    88.24%         707                46    93.49%           0                 0         -
+cache/private.rs                                        699                49    92.99%          37                 4    89.19%         380                16    95.79%           0                 0         -
+cache/provider_capture.rs                              1935               190    90.18%          96                 5    94.79%        1085                55    94.93%           0                 0         -
+cache/provider_capture/unsupported.rs                    26                 0   100.00%           2                 0   100.00%          12                 0   100.00%           0                 0         -
+cli/adverse_event/dispatch.rs                           470               144    69.36%           9                 0   100.00%         389               133    65.81%           0                 0         -
+cli/adverse_event/plan.rs                               248                 4    98.39%           7                 0   100.00%         171                 4    97.66%           0                 0         -
+cli/article/annotations.rs                               69                 2    97.10%           9                 0   100.00%          50                 1    98.00%           0                 0         -
+cli/article/assets.rs                                   386                47    87.82%          29                 1    96.55%         288                39    86.46%           0                 0         -
+cli/article/dispatch.rs                                 855               149    82.57%          44                 7    84.09%         590                80    86.44%           0                 0         -
+cli/article/export.rs                                   137                22    83.94%          10                 3    70.00%          95                20    78.95%           0                 0         -
+cli/article/fulltext_view.rs                            409               107    73.84%          29                 7    75.86%         284                70    75.35%           0                 0         -
+cli/article/mod.rs                                      197                11    94.42%          29                 7    75.86%         156                 9    94.23%           0                 0         -
+cli/article/render.rs                                    61                 9    85.25%           2                 0   100.00%          45                 3    93.33%           0                 0         -
+cli/article/session.rs                                  400                38    90.50%          32                 3    90.62%         291                23    92.10%           0                 0         -
+cli/article/workflow.rs                                  96                 4    95.83%          16                 0   100.00%          89                10    88.76%           0                 0         -
+cli/author/detail.rs                                     20                 2    90.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+cli/author/mod.rs                                        67                 1    98.51%           4                 0   100.00%          66                 1    98.48%           0                 0         -
+cli/author/papers.rs                                     34                 3    91.18%           2                 0   100.00%          20                 0   100.00%           0                 0         -
+cli/author/search.rs                                     18                18     0.00%           2                 2     0.00%          12                12     0.00%           0                 0         -
+cli/cache.rs                                            353                58    83.57%          30                10    66.67%         260                30    88.46%           0                 0         -
+cli/cell_line/dispatch.rs                               150               121    19.33%           8                 4    50.00%          99                74    25.25%           0                 0         -
+cli/chart.rs                                            220                13    94.09%          18                 2    88.89%         134                 4    97.01%           0                 0         -
+cli/commands.rs                                           4                 1    75.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+cli/diagnostic/dispatch.rs                              157                62    60.51%           9                 2    77.78%         115                37    67.83%           0                 0         -
+cli/diagnostic/mod.rs                                     6                 2    66.67%           1                 0   100.00%           6                 2    66.67%           0                 0         -
+cli/discover.rs                                         583                47    91.94%          43                 5    88.37%         414                25    93.96%           0                 0         -
+cli/disease/dispatch.rs                                 387               203    47.55%          14                 2    85.71%         273               123    54.95%           0                 0         -
+cli/drug/dispatch.rs                                    641               490    23.56%          17                 6    64.71%         551               408    25.95%           0                 0         -
+cli/drug/render.rs                                      242                30    87.60%          14                 3    78.57%         226                29    87.17%           0                 0         -
+cli/drug/workflow.rs                                     15                15     0.00%           1                 1     0.00%          12                12     0.00%           0                 0         -
+cli/gene/cspec.rs                                       297               282     5.05%          14                12    14.29%         198               181     8.59%           0                 0         -
+cli/gene/dispatch.rs                                    197                42    78.68%          12                 1    91.67%         153                31    79.74%           0                 0         -
+cli/gene/related.rs                                     261               215    17.62%           4                 2    50.00%         159               125    21.38%           0                 0         -
+cli/gwas/dispatch.rs                                    111                13    88.29%           7                 0   100.00%          96                 7    92.71%           0                 0         -
+cli/health/catalog.rs                                    10                 0   100.00%           3                 0   100.00%          10                 0   100.00%           0                 0         -
+cli/health/http.rs                                      565               270    52.21%          40                17    57.50%         440               198    55.00%           0                 0         -
+cli/health/local.rs                                     479               164    65.76%          36                12    66.67%         388                92    76.29%           0                 0         -
+cli/health/mod.rs                                       521                60    88.48%          37                 0   100.00%         348                31    91.09%           0                 0         -
+cli/health/runner.rs                                    389               155    60.15%          30                 3    90.00%         315                98    68.89%           0                 0         -
+cli/install.rs                                          486                57    88.27%          24                 3    87.50%         278                26    90.65%           0                 0         -
+cli/list/catalog.rs                                     319                54    83.07%          22                 3    86.36%         193                26    86.53%           0                 0         -
+cli/list/clinical.rs                                     24                 0   100.00%           6                 0   100.00%         357                 0   100.00%           0                 0         -
+cli/list/helpers.rs                                      35                 5    85.71%           6                 1    83.33%         147                 5    96.60%           0                 0         -
+cli/list/literature.rs                                   12                 4    66.67%           3                 1    66.67%         215                21    90.23%           0                 0         -
+cli/list/mod.rs                                         133                10    92.48%           4                 0   100.00%          68                 1    98.53%           0                 0         -
+cli/list/molecular.rs                                    49                13    73.47%           8                 3    62.50%         368                95    74.18%           0                 0         -
+cli/mcp_config.rs                                       152                12    92.11%          13                 0   100.00%         112                 1    99.11%           0                 0         -
+cli/mod.rs                                                4                 0   100.00%           1                 0   100.00%           3                 0   100.00%           0                 0         -
+cli/outcome.rs                                         1029               362    64.82%          42                 5    88.10%         495               124    74.95%           0                 0         -
+cli/outcome/mcp_chart.rs                                 51                27    47.06%           2                 0   100.00%          43                23    46.51%           0                 0         -
+cli/pathway/dispatch.rs                                 450               358    20.44%          15                 9    40.00%         267               204    23.60%           0                 0         -
+cli/pgx/dispatch.rs                                     114                65    42.98%           6                 2    66.67%          75                33    56.00%           0                 0         -
+cli/phenotype/dispatch.rs                                81                45    44.44%           5                 1    80.00%          63                29    53.97%           0                 0         -
+cli/protein/dispatch.rs                                 199               123    38.19%          12                 6    50.00%         156                92    41.03%           0                 0         -
+cli/response_contract.rs                                446                33    92.60%          25                 0   100.00%         486                35    92.80%           0                 0         -
+cli/search_all/dispatch.rs                              548               190    65.33%          28                14    50.00%         375               136    63.73%           0                 0         -
+cli/search_all/format.rs                                500               150    70.00%          34                 7    79.41%         303                86    71.62%           0                 0         -
+cli/search_all/links.rs                                 533               126    76.36%          25                 6    76.00%         301                62    79.40%           0                 0         -
+cli/search_all/mod.rs                                   232                44    81.03%          19                 3    84.21%         144                18    87.50%           0                 0         -
+cli/search_all/plan.rs                                  746               229    69.30%          39                 6    84.62%         473               119    74.84%           0                 0         -
+cli/search_all_command.rs                                94                 3    96.81%           3                 0   100.00%          74                 3    95.95%           0                 0         -
+cli/shared.rs                                           551                19    96.55%          47                 1    97.87%         387                12    96.90%           0                 0         -
+cli/shared/search_payloads.rs                           203                42    79.31%          20                 2    90.00%         202                41    79.70%           0                 0         -
+cli/skill/assets.rs                                      69                11    84.06%           5                 1    80.00%          44                10    77.27%           0                 0         -
+cli/skill/atomic_swap.rs                                 55                 7    87.27%           6                 1    83.33%          33                 2    93.94%           0                 0         -
+cli/skill/catalog.rs                                    165                 7    95.76%          13                 0   100.00%         103                 2    98.06%           0                 0         -
+cli/skill/install.rs                                    793               221    72.13%          45                 7    84.44%         470               123    73.83%           0                 0         -
+cli/skill/mod.rs                                          8                 1    87.50%           1                 0   100.00%          13                 0   100.00%           0                 0         -
+cli/skill/status.rs                                     365                78    78.63%          22                 5    77.27%         218                60    72.48%           0                 0         -
+cli/study/dispatch.rs                                   534               332    37.83%          10                 0   100.00%         331               171    48.34%           0                 0         -
+cli/system/batch.rs                                     984                29    97.05%          42                 3    92.86%         681                12    98.24%           0                 0         -
+cli/system/dispatch.rs                                  770               454    41.04%          76                37    51.32%         570               332    41.75%           0                 0         -
+cli/system/mod.rs                                        45                18    60.00%           5                 1    80.00%          39                12    69.23%           0                 0         -
+cli/system/who_sync.rs                                   61                 5    91.80%           5                 0   100.00%          47                 2    95.74%           0                 0         -
+cli/trial/dispatch.rs                                   761               176    76.87%          57                20    64.91%         552               108    80.43%           0                 0         -
+cli/trial/documents.rs                                  162                17    89.51%          14                 2    85.71%         159                19    88.05%           0                 0         -
+cli/trial/zero_result.rs                                380                96    74.74%          15                 1    93.33%         182                44    75.82%           0                 0         -
+cli/types.rs                                            159                26    83.65%          24                 6    75.00%         183                26    85.79%           0                 0         -
+cli/update.rs                                           677               320    52.73%          50                25    50.00%         435               202    53.56%           0                 0         -
+cli/variant/articles.rs                                 226                82    63.72%          17                 8    52.94%         222                71    68.02%           0                 0         -
+cli/variant/car.rs                                      114                53    53.51%          13                 7    46.15%          86                45    47.67%           0                 0         -
+cli/variant/dispatch.rs                                 632               137    78.32%          22                 1    95.45%         467                75    83.94%           0                 0         -
+cli/variant/erepo.rs                                    385                96    75.06%          18                 3    83.33%         305                75    75.41%           0                 0         -
+cli/variant/guidance.rs                                  19                13    31.58%           2                 1    50.00%          21                13    38.10%           0                 0         -
+cli/variant/mod.rs                                       62                 3    95.16%           9                 1    88.89%          42                 1    97.62%           0                 0         -
+cli/variant/normalization_json.rs                       103                 3    97.09%           4                 0   100.00%          81                 2    97.53%           0                 0         -
+cli/variant/query.rs                                    492                25    94.92%          23                 0   100.00%         418                36    91.39%           0                 0         -
+cli/variant/trial.rs                                     50                50     0.00%           5                 5     0.00%          33                33     0.00%           0                 0         -
+cli/worker.rs                                            44                 4    90.91%           5                 0   100.00%          30                 2    93.33%           0                 0         -
+entities/adverse_event.rs                              2535               611    75.90%         202                50    75.25%        1931               419    78.30%           0                 0         -
+entities/adverse_event/device.rs                        193                23    88.08%          13                 1    92.31%         146                11    92.47%           0                 0         -
+entities/adverse_event/sections.rs                       85                 0   100.00%           4                 0   100.00%          74                 0   100.00%           0                 0         -
+entities/article/assets.rs                             4011               571    85.76%         234                16    93.16%        3054               452    85.20%           0                 0         -
+entities/article/backends.rs                           1194               178    85.09%          83                10    87.95%         845               127    84.97%           0                 0         -
+entities/article/backends/provider_unit.rs              123                 8    93.50%          12                 0   100.00%         101                 4    96.04%           0                 0         -
+entities/article/batch.rs                               247                65    73.68%          24                 5    79.17%         165                34    79.39%           0                 0         -
+entities/article/candidates.rs                          469                39    91.68%          39                 6    84.62%         309                15    95.15%           0                 0         -
+entities/article/detail.rs                              928               248    73.28%          71                 8    88.73%         687               154    77.58%           0                 0         -
+entities/article/enrichment.rs                          616               107    82.63%          36                 4    88.89%         471                83    82.38%           0                 0         -
+entities/article/filters.rs                             339                17    94.99%          34                 1    97.06%         252                10    96.03%           0                 0         -
+entities/article/fulltext.rs                           1521               245    83.89%         116                 9    92.24%        1264               192    84.81%           0                 0         -
+entities/article/graph.rs                               571               317    44.48%          60                32    46.67%         455               217    52.31%           0                 0         -
+entities/article/graph/citation_evidence.rs            1134                83    92.68%         114                16    85.96%         902                49    94.57%           0                 0         -
+entities/article/identity_verification.rs              1736               116    93.32%         126                10    92.06%        1233                61    95.05%           0                 0         -
+entities/article/mod.rs                                 514                14    97.28%          37                 0   100.00%         394                11    97.21%           0                 0         -
+entities/article/planner.rs                             283                24    91.52%          19                 1    94.74%         246                21    91.46%           0                 0         -
+entities/article/query.rs                               833               117    85.95%          80                11    86.25%         596                67    88.76%           0                 0         -
+entities/article/ranking.rs                             670                18    97.31%          59                 2    96.61%         496                 8    98.39%           0                 0         -
+entities/article/search.rs                             1056               284    73.11%          46                 9    80.43%         762               195    74.41%           0                 0         -
+entities/article/search/deadline.rs                     117                 7    94.02%          14                 1    92.86%         118                 6    94.92%           0                 0         -
+entities/article/search/status.rs                        64                 2    96.88%           6                 0   100.00%          62                 2    96.77%           0                 0         -
+entities/article/supplement_search.rs                   657               144    78.08%          42                12    71.43%         425                88    79.29%           0                 0         -
+entities/article/supplement_search/cache.rs             115                16    86.09%           6                 0   100.00%          68                 9    86.76%           0                 0         -
+entities/article/variant_search.rs                     7896               673    91.48%         490                34    93.06%        6599               534    91.91%           0                 0         -
+entities/author/mod.rs                                  532                38    92.86%          46                 4    91.30%         410                23    94.39%           0                 0         -
+entities/author/papers.rs                              1957               125    93.61%         112                 5    95.54%        1193                48    95.98%           0                 0         -
+entities/author/search.rs                               252                36    85.71%          14                 2    85.71%         240                31    87.08%           0                 0         -
+entities/cell_line.rs                                   696               242    65.23%          59                12    79.66%         477               157    67.09%           0                 0         -
+entities/cell_line/chembl.rs                             99                33    66.67%           9                 2    77.78%          82                15    81.71%           0                 0         -
+entities/cell_line/pharmacodb.rs                        120                86    28.33%           8                 4    50.00%         106                74    30.19%           0                 0         -
+entities/diagnostic/get.rs                              880               228    74.09%          73                19    73.97%         586               130    77.82%           0                 0         -
+entities/diagnostic/mod.rs                              752                16    97.87%          59                 5    91.53%         556                10    98.20%           0                 0         -
+entities/diagnostic/search.rs                           823                86    89.55%          67                 3    95.52%         588                52    91.16%           0                 0         -
+entities/discover.rs                                   4421               431    90.25%         273                17    93.77%        3238               269    91.69%           0                 0         -
+entities/disease/article_links.rs                       191                13    93.19%          16                 0   100.00%         113                 8    92.92%           0                 0         -
+entities/disease/associations.rs                        861               489    43.21%          63                22    65.08%         582               339    41.75%           0                 0         -
+entities/disease/enrichment.rs                          997               391    60.78%          66                27    59.09%         712               282    60.39%           0                 0         -
+entities/disease/fallback.rs                            584               131    77.57%          38                 5    86.84%         413                89    78.45%           0                 0         -
+entities/disease/get.rs                                 372               116    68.82%          22                 3    86.36%         227                63    72.25%           0                 0         -
+entities/disease/mod.rs                                  19                 2    89.47%           2                 0   100.00%          15                 0   100.00%           0                 0         -
+entities/disease/resolution.rs                         1126                55    95.12%         103                 6    94.17%         749                30    95.99%           0                 0         -
+entities/disease/resolution/ambiguity.rs                109                 6    94.50%          16                 0   100.00%          80                 2    97.50%           0                 0         -
+entities/disease/search.rs                              899               216    75.97%          91                27    70.33%         690               160    76.81%           0                 0         -
+entities/drug/cell_lines.rs                             165               131    20.61%          10                 7    30.00%         149               113    24.16%           0                 0         -
+entities/drug/get.rs                                   1711               279    83.69%         121                13    89.26%        1238               191    84.57%           0                 0         -
+entities/drug/interactions.rs                           520               121    76.73%          37                 6    83.78%         342                71    79.24%           0                 0         -
+entities/drug/label.rs                                 1638                80    95.12%         164                 3    98.17%        1051                45    95.72%           0                 0         -
+entities/drug/metadata.rs                               769               139    81.92%          70                13    81.43%         474                93    80.38%           0                 0         -
+entities/drug/mod.rs                                    213                17    92.02%          28                 1    96.43%         148                12    91.89%           0                 0         -
+entities/drug/query.rs                                  300               121    59.67%          28                13    53.57%         251               102    59.36%           0                 0         -
+entities/drug/search.rs                                1215               448    63.13%         100                30    70.00%         840               295    64.88%           0                 0         -
+entities/drug/targets.rs                                593               130    78.08%          44                 4    90.91%         385                81    78.96%           0                 0         -
+entities/gene.rs                                       4595              1586    65.48%         336               127    62.20%        3069              1030    66.44%           0                 0         -
+entities/gene/cell_lines.rs                             171               120    29.82%          17                10    41.18%         113                74    34.51%           0                 0         -
+entities/gene/clingen.rs                                289                44    84.78%          30                 4    86.67%         218                26    88.07%           0                 0         -
+entities/gene/cspec.rs                                 1418               301    78.77%          84                22    73.81%         903               170    81.17%           0                 0         -
+entities/gene/gencc.rs                                  309                90    70.87%          17                 4    76.47%         219                44    79.91%           0                 0         -
+entities/mod.rs                                          18                 0   100.00%           3                 0   100.00%          36                 0   100.00%           0                 0         -
+entities/pathway.rs                                    1453               311    78.60%          93                11    88.17%         958               193    79.85%           0                 0         -
+entities/pgx.rs                                        1242               591    52.42%          90                40    55.56%         854               396    53.63%           0                 0         -
+entities/pharmacodb.rs                                  231                 9    96.10%          26                 2    92.31%         181                 5    97.24%           0                 0         -
+entities/protein.rs                                     970               363    62.58%          50                13    74.00%         689               241    65.02%           0                 0         -
+entities/section_outcome.rs                             434                13    97.00%          48                 1    97.92%         334                 6    98.20%           0                 0         -
+entities/source_state_registry.rs                       185                24    87.03%          20                 5    75.00%         141                37    73.76%           0                 0         -
+entities/study.rs                                      1770               354    80.00%         161                36    77.64%        1325               235    82.26%           0                 0         -
+entities/trial/design.rs                                683                39    94.29%          93                 4    95.70%         597                19    96.82%           0                 0         -
+entities/trial/documents.rs                             621                43    93.08%          60                 4    93.33%         397                35    91.18%           0                 0         -
+entities/trial/eligibility.rs                           821                55    93.30%          66                11    83.33%         538                42    92.19%           0                 0         -
+entities/trial/get.rs                                   314                22    92.99%          16                 0   100.00%         234                15    93.59%           0                 0         -
+entities/trial/mod.rs                                   728                29    96.02%          46                 4    91.30%         447                13    97.09%           0                 0         -
+entities/trial/search/ctgov.rs                         1215               175    85.60%          76                 7    90.79%         919               122    86.72%           0                 0         -
+entities/trial/search/eligibility.rs                    515                32    93.79%          59                 0   100.00%         378                18    95.24%           0                 0         -
+entities/trial/search/eligibility/keep_paths.rs         198                 3    98.48%          16                 0   100.00%         101                 2    98.02%           0                 0         -
+entities/trial/search/essie.rs                          314                38    87.90%          27                 5    81.48%         237                27    88.61%           0                 0         -
+entities/trial/search/mod.rs                            405                27    93.33%          44                 2    95.45%         363                20    94.49%           0                 0         -
+entities/trial/search/nci.rs                            227                24    89.43%          18                 0   100.00%         183                22    87.98%           0                 0         -
+entities/trial/search/normalization.rs                  286                14    95.10%          24                 0   100.00%         196                16    91.84%           0                 0         -
+entities/variant/clinvar.rs                             892                23    97.42%          47                 2    95.74%         544                11    97.98%           0                 0         -
+entities/variant/erepo.rs                              1221                80    93.45%          90                 9    90.00%         813                62    92.37%           0                 0         -
+entities/variant/get.rs                                1995               413    79.30%         149                16    89.26%        1546               299    80.66%           0                 0         -
+entities/variant/gwas.rs                                793               315    60.28%          84                45    46.43%         569               232    59.23%           0                 0         -
+entities/variant/mod.rs                                 237                19    91.98%          18                 0   100.00%         137                 9    93.43%           0                 0         -
+entities/variant/normalization.rs                       334                71    78.74%          35                 7    80.00%         248                51    79.44%           0                 0         -
+entities/variant/resolution.rs                         1638               102    93.77%         156                 6    96.15%        1134                85    92.50%           0                 0         -
+entities/variant/search/diagnostics.rs                  414               293    29.23%          14                 9    35.71%         306               200    34.64%           0                 0         -
+entities/variant/search/mod.rs                         1196               269    77.51%          84                19    77.38%         967               155    83.97%           0                 0         -
+entities/variant/structure.rs                           476                60    87.39%          38                 4    89.47%         349                37    89.40%           0                 0         -
+error.rs                                               1269               220    82.66%          59                 4    93.22%         929               117    87.41%           0                 0         -
+lib.rs                                                   18                 0   100.00%           7                 0   100.00%          26                 0   100.00%           0                 0         -
+main.rs                                                 225                45    80.00%          12                 3    75.00%         151                30    80.13%           0                 0         -
+mcp/catalog.rs                                           79                12    84.81%          10                 3    70.00%          65                10    84.62%           0                 0         -
+mcp/mod.rs                                               23                 2    91.30%           5                 0   100.00%          19                 0   100.00%           0                 0         -
+mcp/shell.rs                                           3295               658    80.03%         174                45    74.14%        2077               445    78.57%           0                 0         -
+mcp/shell/http_server.rs                                719               326    54.66%          73                31    57.53%         504               221    56.15%           0                 0         -
+mcp/shell/modern.rs                                     371               371     0.00%          23                23     0.00%         212               212     0.00%           0                 0         -
+mcp/shell/pre_session.rs                                172               111    35.47%          11                 7    36.36%         112                78    30.36%           0                 0         -
+mcp/shell/trial_phase.rs                                  9                 0   100.00%           2                 0   100.00%           8                 0   100.00%           0                 0         -
+mcp/shell/typed_get.rs                                  143                 3    97.90%           9                 0   100.00%          94                 2    97.87%           0                 0         -
+next_command.rs                                          89                 0   100.00%          11                 0   100.00%          61                 0   100.00%           0                 0         -
+render/chart.rs                                        2112               310    85.32%          83                 5    93.98%        1730               198    88.55%           0                 0         -
+render/chart/bounds.rs                                   80                10    87.50%           6                 1    83.33%          51                 9    82.35%           0                 0         -
+render/human.rs                                         371                 1    99.73%          22                 0   100.00%         256                 0   100.00%           0                 0         -
+render/json.rs                                         1487                37    97.51%          53                 0   100.00%        1177                20    98.30%           0                 0         -
+render/markdown/adverse_event.rs                        418                38    90.91%          19                 0   100.00%         309                20    93.53%           0                 0         -
+render/markdown/article.rs                              967               167    82.73%          49                 5    89.80%         635                85    86.61%           0                 0         -
+render/markdown/author.rs                               985               149    84.87%          55                 9    83.64%         717                98    86.33%           0                 0         -
+render/markdown/cell_line.rs                            126                 8    93.65%           7                 0   100.00%          80                 3    96.25%           0                 0         -
+render/markdown/diagnostic.rs                           291                14    95.19%          19                 1    94.74%         194                 7    96.39%           0                 0         -
+render/markdown/discovery.rs                            152                12    92.11%           9                 0   100.00%         124                 4    96.77%           0                 0         -
+render/markdown/disease.rs                              450                24    94.67%          33                 2    93.94%         282                13    95.39%           0                 0         -
+render/markdown/drug.rs                                 908               168    81.50%          55                16    70.91%         621                95    84.70%           0                 0         -
+render/markdown/drug_regulatory.rs                      958               212    77.87%          76                37    51.32%         681               158    76.80%           0                 0         -
+render/markdown/evidence.rs                             606                53    91.25%          57                 3    94.74%         495                28    94.34%           0                 0         -
+render/markdown/funding.rs                               91                11    87.91%          10                 2    80.00%          65                 4    93.85%           0                 0         -
+render/markdown/gene.rs                                 172                 9    94.77%           8                 0   100.00%         101                 3    97.03%           0                 0         -
+render/markdown/mod.rs                                  841                75    91.08%          96                 5    94.79%         656                68    89.63%           0                 0         -
+render/markdown/pathway.rs                               92                19    79.35%           4                 2    50.00%          46                 5    89.13%           0                 0         -
+render/markdown/pgx.rs                                  118                20    83.05%           6                 1    83.33%          62                12    80.65%           0                 0         -
+render/markdown/pharmacodb.rs                            67                67     0.00%           3                 3     0.00%          39                39     0.00%           0                 0         -
+render/markdown/protein.rs                              190                29    84.74%          13                 2    84.62%         113                19    83.19%           0                 0         -
+render/markdown/related.rs                             1595               167    89.53%         166                16    90.36%        1084               116    89.30%           0                 0         -
+render/markdown/related/article_support.rs              555                26    95.32%          58                 3    94.83%         368                14    96.20%           0                 0         -
+render/markdown/sections.rs                             791                54    93.17%          64                 1    98.44%         532                32    93.98%           0                 0         -
+render/markdown/study.rs                                622                76    87.78%          25                 4    84.00%         431                55    87.24%           0                 0         -
+render/markdown/support.rs                              190                40    78.95%          14                 2    85.71%         121                30    75.21%           0                 0         -
+render/markdown/trial.rs                                633                20    96.84%          49                 0   100.00%         402                 7    98.26%           0                 0         -
+render/markdown/variant.rs                              881               136    84.56%          53                 4    92.45%         602                77    87.21%           0                 0         -
+render/provenance.rs                                   1998               168    91.59%          76                 2    97.37%        1713                92    94.63%           0                 0         -
+render/provenance/adverse_event.rs                      106                22    79.25%           6                 0   100.00%          85                11    87.06%           0                 0         -
+skill_assets.rs                                          27                11    59.26%           5                 2    60.00%          18                 7    61.11%           0                 0         -
+sources/archive_budget.rs                               631                43    93.19%          20                 0   100.00%         378                13    96.56%           0                 0         -
+sources/ca_bundle.rs                                    527                40    92.41%          30                 4    86.67%         316                30    90.51%           0                 0         -
+sources/cancerhotspots.rs                               185                11    94.05%          19                 1    94.74%         126                 6    95.24%           0                 0         -
+sources/cbioportal.rs                                   318               196    38.36%          32                15    53.12%         228               126    44.74%           0                 0         -
+sources/cbioportal_download.rs                          572               215    62.41%          34                11    67.65%         446               168    62.33%           0                 0         -
+sources/cbioportal_study.rs                            4088               336    91.78%         184                14    92.39%        2463               213    91.35%           0                 0         -
+sources/cellosaurus.rs                                  362               106    70.72%          49                16    67.35%         293               104    64.51%           0                 0         -
+sources/chembl.rs                                       289                75    74.05%          33                 9    72.73%         226                40    82.30%           0                 0         -
+sources/civic.rs                                        288                12    95.83%          29                 0   100.00%         240                12    95.00%           0                 0         -
+sources/clingen.rs                                      830                60    92.77%          75                 9    88.00%         618                67    89.16%           0                 0         -
+sources/clingen_allele_registry.rs                      911               118    87.05%          57                 7    87.72%         594                90    84.85%           0                 0         -
+sources/clingen_cspec.rs                                406                31    92.36%          26                 1    96.15%         281                14    95.02%           0                 0         -
+sources/clingen_erepo.rs                                374                29    92.25%          32                 2    93.75%         270                21    92.22%           0                 0         -
+sources/clingen_ldh.rs                                  131                23    82.44%          17                 4    76.47%         101                16    84.16%           0                 0         -
+sources/clinicaltrials.rs                               779                38    95.12%          70                 2    97.14%         574                 6    98.95%           0                 0         -
+sources/complexportal.rs                                182                25    86.26%          20                 2    90.00%         154                15    90.26%           0                 0         -
+sources/cpic.rs                                         402                80    80.10%          39                 8    79.49%         328                62    81.10%           0                 0         -
+sources/cvx.rs                                         1028               228    77.82%          88                22    75.00%         665               127    80.90%           0                 0         -
+sources/dbsnp.rs                                        179                14    92.18%          20                 0   100.00%         129                 9    93.02%           0                 0         -
+sources/ddinter.rs                                      549               228    58.47%          47                15    68.09%         359               139    61.28%           0                 0         -
+sources/dgidb.rs                                        270                23    91.48%          23                 1    95.65%         194                15    92.27%           0                 0         -
+sources/disable.rs                                      584                29    95.03%          56                 0   100.00%         343                18    94.75%           0                 0         -
+sources/disgenet.rs                                     451               120    73.39%          41                 7    82.93%         323                61    81.11%           0                 0         -
+sources/ema.rs                                         1042               153    85.32%          79                 8    89.87%         684                97    85.82%           0                 0         -
+sources/ema/identity.rs                                 251                 3    98.80%          32                 0   100.00%         191                 2    98.95%           0                 0         -
+sources/enrichr.rs                                      237                32    86.50%          21                 3    85.71%         184                21    88.59%           0                 0         -
+sources/europepmc.rs                                    606                84    86.14%          53                13    75.47%         464                62    86.64%           0                 0         -
+sources/fda_orphan.rs                                  1284                35    97.27%         103                 3    97.09%         819                21    97.44%           0                 0         -
+sources/figshare.rs                                     507               124    75.54%          50                12    76.00%         370                86    76.76%           0                 0         -
+sources/gencc.rs                                       1416               204    85.59%         107                12    88.79%         802                68    91.52%           0                 0         -
+sources/gencc/model.rs                                  529                39    92.63%          35                 1    97.14%         288                11    96.18%           0                 0         -
+sources/gencc/store.rs                                 1845               214    88.40%          88                 6    93.18%         752                44    94.15%           0                 0         -
+sources/gnomad.rs                                       268                69    74.25%          24                 6    75.00%         200                38    81.00%           0                 0         -
+sources/gprofiler.rs                                    194                36    81.44%          18                 1    94.44%         147                13    91.16%           0                 0         -
+sources/gtex.rs                                         275                42    84.73%          29                 4    86.21%         188                18    90.43%           0                 0         -
+sources/gtr.rs                                          913               201    77.98%          81                14    82.72%         623               133    78.65%           0                 0         -
+sources/gwas.rs                                         363                45    87.60%          32                 1    96.88%         286                34    88.11%           0                 0         -
+sources/hpa.rs                                          663               200    69.83%          71                20    71.83%         472               128    72.88%           0                 0         -
+sources/hpo.rs                                          342               102    70.18%          34                11    67.65%         244                68    72.13%           0                 0         -
+sources/interpro.rs                                     147                20    86.39%          15                 2    86.67%         111                12    89.19%           0                 0         -
+sources/kegg.rs                                         441                74    83.22%          31                 7    77.42%         256                36    85.94%           0                 0         -
+sources/litsense2.rs                                    134                 9    93.28%          16                 0   100.00%         111                 4    96.40%           0                 0         -
+sources/litvar.rs                                       186                 6    96.77%          22                 0   100.00%         139                 3    97.84%           0                 0         -
+sources/medlineplus.rs                                  244                35    85.66%          21                 3    85.71%         177                26    85.31%           0                 0         -
+sources/mod.rs                                         2753               148    94.62%         282                 5    98.23%        2044                78    96.18%           0                 0         -
+sources/monarch.rs                                      679               100    85.27%          53                 8    84.91%         515                70    86.41%           0                 0         -
+sources/mutalyzer.rs                                    276                34    87.68%          30                 5    83.33%         216                22    89.81%           0                 0         -
+sources/mychem.rs                                       181                14    92.27%          18                 1    94.44%         124                 8    93.55%           0                 0         -
+sources/mydisease.rs                                    384                22    94.27%          30                 0   100.00%         297                13    95.62%           0                 0         -
+sources/mygene.rs                                      1003                68    93.22%          84                 3    96.43%         579                25    95.68%           0                 0         -
+sources/myvariant.rs                                   1315               223    83.04%         121                38    68.60%         949               145    84.72%           0                 0         -
+sources/myvariant/carried.rs                              9                 1    88.89%           1                 0   100.00%           9                 0   100.00%           0                 0         -
+sources/myvariant/filter_conflicts.rs                    77                 0   100.00%           4                 0   100.00%          40                 0   100.00%           0                 0         -
+sources/myvariant/filter_keys.rs                         31                 1    96.77%           1                 0   100.00%          18                 0   100.00%           0                 0         -
+sources/ncbi_efetch.rs                                 1853                84    95.47%         120                 2    98.33%        1067                35    96.72%           0                 0         -
+sources/ncbi_idconv.rs                                  160                32    80.00%          19                 4    78.95%         113                19    83.19%           0                 0         -
+sources/nci_cts.rs                                      844                70    91.71%          58                 1    98.28%         520                11    97.88%           0                 0         -
+sources/nih_reporter.rs                                 275                22    92.00%          31                 3    90.32%         201                12    94.03%           0                 0         -
+sources/ols4.rs                                         123                 9    92.68%          12                 1    91.67%          82                 5    93.90%           0                 0         -
+sources/oncokb.rs                                       204                23    88.73%          22                 3    86.36%         145                14    90.34%           0                 0         -
+sources/opencitations.rs                                383                10    97.39%          25                 0   100.00%         242                 2    99.17%           0                 0         -
+sources/openfda.rs                                      598                57    90.47%          54                 3    94.44%         489                38    92.23%           0                 0         -
+sources/opentargets.rs                                 1822               220    87.93%         137                20    85.40%        1238               174    85.95%           0                 0         -
+sources/orcid.rs                                        695                53    92.37%          65                 4    93.85%         467                28    94.00%           0                 0         -
+sources/ordinary_url_policy.rs                          409                32    92.18%          42                 6    85.71%         304                19    93.75%           0                 0         -
+sources/pharmacodb.rs                                   469               161    65.67%          50                18    64.00%         327                95    70.95%           0                 0         -
+sources/pharmgkb.rs                                     343               119    65.31%          37                14    62.16%         299                81    72.91%           0                 0         -
+sources/pmc_article.rs                                 1057                93    91.20%          71                 6    91.55%         663                62    90.65%           0                 0         -
+sources/pmc_oa.rs                                       654               111    83.03%          60                17    71.67%         450                59    86.89%           0                 0         -
+sources/provider_url_policy.rs                         1305               138    89.43%          86                16    81.40%         875                66    92.46%           0                 0         -
+sources/pubmed.rs                                       819               110    86.57%          83                10    87.95%         582                68    88.32%           0                 0         -
+sources/pubtator.rs                                     368                23    93.75%          30                 0   100.00%         247                13    94.74%           0                 0         -
+sources/quickgo.rs                                      123                30    75.61%          14                 3    78.57%          94                15    84.04%           0                 0         -
+sources/rate_limit.rs                                   771                 7    99.09%          62                 0   100.00%         503                 2    99.60%           0                 0         -
+sources/reactome.rs                                     368               171    53.53%          45                23    48.89%         259               111    57.14%           0                 0         -
+sources/seer.rs                                         654               174    73.39%          55                17    69.09%         453               121    73.29%           0                 0         -
+sources/semantic_scholar.rs                             891               121    86.42%          82                11    86.59%         718                79    89.00%           0                 0         -
+sources/string.rs                                        85                11    87.06%           9                 1    88.89%          70                 5    92.86%           0                 0         -
+sources/trust_failure_tests/mod.rs                       87                 0   100.00%          11                 0   100.00%          83                 0   100.00%           0                 0         -
+sources/umls.rs                                         213                63    70.42%          20                 7    65.00%         158                37    76.58%           0                 0         -
+sources/uniprot.rs                                      869               144    83.43%          90                13    85.56%         581                95    83.65%           0                 0         -
+sources/vaers.rs                                        469               211    55.01%          52                27    48.08%         359               165    54.04%           0                 0         -
+sources/variantvalidator.rs                             291                37    87.29%          30                 5    83.33%         228                24    89.47%           0                 0         -
+sources/who_ivd.rs                                      477               127    73.38%          48                10    79.17%         322                67    79.19%           0                 0         -
+sources/who_pq.rs                                      1392               218    84.34%         115                22    80.87%         980               169    82.76%           0                 0         -
+sources/wikipathways.rs                                 464               107    76.94%          50                11    78.00%         316                53    83.23%           0                 0         -
+transform/adverse_event.rs                              769               323    58.00%          68                35    48.53%         527               197    62.62%           0                 0         -
+transform/article.rs                                     41                 0   100.00%           2                 0   100.00%          45                 0   100.00%           0                 0         -
+transform/article/anchors.rs                            100                 2    98.00%          12                 0   100.00%          66                 3    95.45%           0                 0         -
+transform/article/annotations.rs                        533                19    96.44%          41                 3    92.68%         373                13    96.51%           0                 0         -
+transform/article/federation.rs                         786                73    90.71%          76                 6    92.11%         517                34    93.42%           0                 0         -
+transform/article/html.rs                               643                32    95.02%          43                 2    95.35%         422                19    95.50%           0                 0         -
+transform/article/jats.rs                               952                80    91.60%          72                 2    97.22%         545                41    92.48%           0                 0         -
+transform/article/jats/refs.rs                          825               280    66.06%          54                11    79.63%         449               129    71.27%           0                 0         -
+transform/article/jats/refs/citation.rs                 687                33    95.20%          49                 1    97.96%         453                24    94.70%           0                 0         -
+transform/article/jats/supplements.rs                   222                 8    96.40%          20                 0   100.00%         155                 3    98.06%           0                 0         -
+transform/article/jats/tables.rs                        205                 6    97.07%          17                 0   100.00%         109                 2    98.17%           0                 0         -
+transform/article/pdf.rs                                 64                 9    85.94%           6                 2    66.67%          46                 5    89.13%           0                 0         -
+transform/article/supplement_text.rs                    685               204    70.22%          26                 6    76.92%         506               160    68.38%           0                 0         -
+transform/disease.rs                                   1565               166    89.39%         115                10    91.30%         995                81    91.86%           0                 0         -
+transform/drug.rs                                      2163               114    94.73%         188                10    94.68%        1343                61    95.46%           0                 0         -
+transform/gene.rs                                       570                31    94.56%          38                 0   100.00%         318                10    96.86%           0                 0         -
+transform/pathway.rs                                    210                 0   100.00%          14                 0   100.00%         169                 0   100.00%           0                 0         -
+transform/protein.rs                                    221                 2    99.10%          17                 1    94.12%         193                 1    99.48%           0                 0         -
+transform/trial.rs                                      720                23    96.81%         100                 0   100.00%         478                11    97.70%           0                 0         -
+transform/variant.rs                                   1630               122    92.52%         171                10    94.15%        1149                61    94.69%           0                 0         -
+utils/date.rs                                           257                12    95.33%          22                 3    86.36%         164                 8    95.12%           0                 0         -
+utils/download.rs                                       626                86    86.26%          47                 2    95.74%         379                45    88.13%           0                 0         -
+utils/fs_lock.rs                                         17                 2    88.24%           3                 0   100.00%          11                 1    90.91%           0                 0         -
+utils/mod.rs                                             29                 0   100.00%           3                 0   100.00%          17                 0   100.00%           0                 0         -
+utils/query.rs                                           24                 0   100.00%           2                 0   100.00%          15                 0   100.00%           0                 0         -
+utils/serde.rs                                           48                 0   100.00%           4                 0   100.00%          23                 0   100.00%           0                 0         -
+utils/sync.rs                                            50                 0   100.00%           4                 0   100.00%          24                 0   100.00%           0                 0         -
+workflow_ladders.rs                                     106                18    83.02%           7                 1    85.71%          82                25    69.51%           0                 0         -
+xml.rs                                                  246                 5    97.97%          17                 0   100.00%         162                 1    99.38%           0                 0         -
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                                                206555             34701    83.20%       15223              2243    85.27%      145451             22220    84.72%           0                 0         -
+```
+
+### Scoped raw runtime evidence
+
+All elapsed samples, statuses, output sizes/checksums, pair ordering, host loads and captured source errors are retained below. Full output bodies remain in the private collection evidence; the public projection keeps structural JSON outcomes and exact error text without publishing local identity/path fields.
+
+```json
+{
+  "collection": "2082/1792328222960-21993",
+  "metadata": {
+    "adapter_sha256": "267ba2aa25c778fe0ad0b309885ce4e4b36da32b243f8d16735532b6c5da74c5",
+    "frozen_harness_sha256": "30e542c63a348cdceff09f1f4189264ef9d81061de2a42dbe7c2770ad81c7ac6",
+    "product_shas": {
+      "old": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+      "candidate": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed"
+    },
+    "host": {
+      "label": "build-host-1",
+      "os": "Darwin",
+      "os_release": "25.4.0",
+      "architecture": "arm64"
+    },
+    "python": "3.12.13 (main, May 10 2026, 19:20:41) [Clang 22.1.3 ]",
+    "ordering": "Each existing observation is paired old/candidate; first arm alternates by sample index (offset by case). Each arm retains warm then off, separate off roots and original prefetches.",
+    "quiet_policy": "Record build/test process names and load; concurrent work does not block collection.",
+    "before": {
+      "load_1_5_15": [
+        10.77783203125,
+        10.966796875,
+        10.7529296875
+      ],
+      "build_test_process_names": {}
+    },
+    "after": {
+      "load_1_5_15": [
+        4.00390625,
+        6.38818359375,
+        8.560546875
+      ],
+      "build_test_process_names": {}
+    },
+    "sample_counts": {
+      "old": 87,
+      "candidate": 87
+    },
+    "pair_count": 87
+  },
+  "tool_versions": {
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "cargo": "1.95.0 (f2d3ce0bd 2026-03-21)",
+    "cargo_llvm_cov": "0.9.1",
+    "uv": "0.11.14",
+    "python": "3.12.13"
+  },
+  "runtime_environment_removed_names": [
+    "OPENFDA_API_KEY"
+  ],
+  "runtime_environment_names": [
+    "BIOMCP_CACHE_DIR",
+    "BIOMCP_CACHE_MODE"
+  ],
+  "runtime_timeout_s": 180,
+  "stripped_release_binary_bytes": {
+    "old": 32775040,
+    "candidate": 33916000
+  },
+  "paired_summary": [
+    {
+      "case": "version_empty_cache",
+      "mode": "default",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": 0.0007533330062869936,
+      "median_pair_candidate_over_old": 1.1372066307849824,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "version_large_cache",
+      "mode": "default",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": 0.00014262499462347478,
+      "median_pair_candidate_over_old": 1.0235955060210193,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "get_gene_BRAF",
+      "mode": "infinite",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": -0.008884625000064261,
+      "median_pair_candidate_over_old": 0.9614160704387872,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "get_gene_BRAF",
+      "mode": "off",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": 0.0008578330016462132,
+      "median_pair_candidate_over_old": 1.0016189075420394,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "get_variant_BRAF_V600E",
+      "mode": "infinite",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": 0.0006284579867497087,
+      "median_pair_candidate_over_old": 1.0540186908207703,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "get_variant_BRAF_V600E",
+      "mode": "off",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": 0.0006003339949529618,
+      "median_pair_candidate_over_old": 1.0010491067702418,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "get_drug_imatinib",
+      "mode": "infinite",
+      "pair_count": 10,
+      "median_pair_candidate_minus_old_s": -1.1128692079946632,
+      "median_pair_candidate_over_old": 0.18527931565375794,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "get_drug_imatinib",
+      "mode": "off",
+      "pair_count": 10,
+      "median_pair_candidate_minus_old_s": -1.0612868959942716,
+      "median_pair_candidate_over_old": 0.4567463752923454,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "search_article_BRAF",
+      "mode": "infinite",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": -0.061268000994459726,
+      "median_pair_candidate_over_old": 0.9644609708241719,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "search_article_BRAF",
+      "mode": "off",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": 0.4517510419973405,
+      "median_pair_candidate_over_old": 1.2472435330847296,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "search_all_BRAF_melanoma",
+      "mode": "infinite",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": -0.009985124997911043,
+      "median_pair_candidate_over_old": 0.9991698634527352,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "search_all_BRAF_melanoma",
+      "mode": "off",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": -0.0069445419940166175,
+      "median_pair_candidate_over_old": 0.9994224470031886,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "day_gwas_BRAF",
+      "mode": "default",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": -10.727113417015062,
+      "median_pair_candidate_over_old": 0.0033872912437204797,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    },
+    {
+      "case": "day_openfda_drug_imatinib",
+      "mode": "default",
+      "pair_count": 5,
+      "median_pair_candidate_minus_old_s": -1.5463573339948198,
+      "median_pair_candidate_over_old": 0.13183020984781585,
+      "old_nonzero_or_timeout": 0,
+      "candidate_nonzero_or_timeout": 0
+    }
+  ],
+  "raw_pairs": [
+    {
+      "pair_index": 0,
+      "case": "version",
+      "workload_label": "version_empty_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.6108939999976428,
+        "candidate": 0.7247995829966385
+      },
+      "candidate_minus_old_s": 0.11390558299899567,
+      "candidate_over_old": 1.186457197156029,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 1,
+      "case": "version",
+      "workload_label": "version_empty_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.007686666998779401,
+        "candidate": 0.011027792003005743
+      },
+      "candidate_minus_old_s": 0.003341125004226342,
+      "candidate_over_old": 1.4346649861060579,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 2,
+      "case": "version",
+      "workload_label": "version_empty_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.005490499999723397,
+        "candidate": 0.006243833006010391
+      },
+      "candidate_minus_old_s": 0.0007533330062869936,
+      "candidate_over_old": 1.1372066307849824,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 3,
+      "case": "version",
+      "workload_label": "version_empty_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.005524707987206057,
+        "candidate": 0.005949792001047172
+      },
+      "candidate_minus_old_s": 0.00042508401384111494,
+      "candidate_over_old": 1.0769423496817407,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 4,
+      "case": "version",
+      "workload_label": "version_empty_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.005875791001017205,
+        "candidate": 0.0058246249973308295
+      },
+      "candidate_minus_old_s": -5.1166003686375916e-05,
+      "candidate_over_old": 0.9912920654125515,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 5,
+      "case": "version",
+      "workload_label": "version_large_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.006044583002221771,
+        "candidate": 0.006187207996845245
+      },
+      "candidate_minus_old_s": 0.00014262499462347478,
+      "candidate_over_old": 1.0235955060210193,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 6,
+      "case": "version",
+      "workload_label": "version_large_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.0060403750103432685,
+        "candidate": 0.006667082998319529
+      },
+      "candidate_minus_old_s": 0.0006267079879762605,
+      "candidate_over_old": 1.1037531588524079,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 7,
+      "case": "version",
+      "workload_label": "version_large_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.00642274999700021,
+        "candidate": 0.005972875005681999
+      },
+      "candidate_minus_old_s": -0.00044987499131821096,
+      "candidate_over_old": 0.9299560170443614,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 8,
+      "case": "version",
+      "workload_label": "version_large_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.005739209009334445,
+        "candidate": 0.006361000007018447
+      },
+      "candidate_minus_old_s": 0.0006217909976840019,
+      "candidate_over_old": 1.1083408875112755,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 9,
+      "case": "version",
+      "workload_label": "version_large_cache",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.006308084004558623,
+        "candidate": 0.006054291996406391
+      },
+      "candidate_minus_old_s": -0.0002537920081522316,
+      "candidate_over_old": 0.9597671800234706,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 10,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "default",
+      "phase": "prefetch",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.7891204580082558,
+        "candidate": 1.4955288340133848
+      },
+      "candidate_minus_old_s": 0.706408376005129,
+      "candidate_over_old": 1.8951844662449981,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 11,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.22155820799525827,
+        "candidate": 0.22895037500711624
+      },
+      "candidate_minus_old_s": 0.007392167011857964,
+      "candidate_over_old": 1.0333644466560055,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 12,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.550140791994636,
+        "candidate": 0.5163065840024501
+      },
+      "candidate_minus_old_s": -0.03383420799218584,
+      "candidate_over_old": 0.9384990015564675,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 13,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.21893683400412556,
+        "candidate": 0.21926141699077561
+      },
+      "candidate_minus_old_s": 0.00032458298665005714,
+      "candidate_over_old": 1.001482541702617,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 14,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.51579129100719,
+        "candidate": 0.5233761249983218
+      },
+      "candidate_minus_old_s": 0.007584833991131745,
+      "candidate_over_old": 1.0147052385788073,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 15,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.2275794580054935,
+        "candidate": 0.21197925000160467
+      },
+      "candidate_minus_old_s": -0.015600208003888838,
+      "candidate_over_old": 0.9314515987488103,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 16,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.5383306669973535,
+        "candidate": 0.4871813750069123
+      },
+      "candidate_minus_old_s": -0.05114929199044127,
+      "candidate_over_old": 0.9049853647095072,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 17,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.23630637500900775,
+        "candidate": 0.19381104200147092
+      },
+      "candidate_minus_old_s": -0.04249533300753683,
+      "candidate_over_old": 0.8201684867540414,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 18,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.5152768749976531,
+        "candidate": 0.5199699590011733
+      },
+      "candidate_minus_old_s": 0.004693084003520198,
+      "candidate_over_old": 1.0091078878778357,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 19,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.2302674999955343,
+        "candidate": 0.22138287499547005
+      },
+      "candidate_minus_old_s": -0.008884625000064261,
+      "candidate_over_old": 0.9614160704387872,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 20,
+      "case": "get_gene_BRAF",
+      "workload_label": "get_gene_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.5298838750022696,
+        "candidate": 0.5307417080039158
+      },
+      "candidate_minus_old_s": 0.0008578330016462132,
+      "candidate_over_old": 1.0016189075420394,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 21,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "default",
+      "phase": "prefetch",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.5447460840077838,
+        "candidate": 0.6514632500038715
+      },
+      "candidate_minus_old_s": 0.10671716599608772,
+      "candidate_over_old": 1.1959025849455447,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 22,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.01163408400316257,
+        "candidate": 0.012262541989912279
+      },
+      "candidate_minus_old_s": 0.0006284579867497087,
+      "candidate_over_old": 1.0540186908207703,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 23,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.5490198330080602,
+        "candidate": 0.5654795410082443
+      },
+      "candidate_minus_old_s": 0.016459708000184037,
+      "candidate_over_old": 1.0299801701333846,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 24,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.0194240830023773,
+        "candidate": 0.011834584001917392
+      },
+      "candidate_minus_old_s": -0.0075894990004599094,
+      "candidate_over_old": 0.6092737557015672,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 25,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.5425353750033537,
+        "candidate": 0.587705999991158
+      },
+      "candidate_minus_old_s": 0.04517062498780433,
+      "candidate_over_old": 1.0832583958005044,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 26,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.010469665998243727,
+        "candidate": 0.01775741700839717
+      },
+      "candidate_minus_old_s": 0.007287751010153443,
+      "candidate_over_old": 1.6960824740135887,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 27,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.6037334169959649,
+        "candidate": 0.5841995840019081
+      },
+      "candidate_minus_old_s": -0.019533832994056866,
+      "candidate_over_old": 0.9676449365826848,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 28,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.02199954200477805,
+        "candidate": 0.012130250004702248
+      },
+      "candidate_minus_old_s": -0.009869292000075802,
+      "candidate_over_old": 0.5513864789579572,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 29,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 0.5722334580059396,
+        "candidate": 0.5728337920008926
+      },
+      "candidate_minus_old_s": 0.0006003339949529618,
+      "candidate_over_old": 1.0010491067702418,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 30,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.011798500010627322,
+        "candidate": 0.017494792002253234
+      },
+      "candidate_minus_old_s": 0.0056962919916259125,
+      "candidate_over_old": 1.4827979816497914,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 31,
+      "case": "get_variant_BRAF_V600E",
+      "workload_label": "get_variant_BRAF_V600E",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 0.5571310000086669,
+        "candidate": 0.5328255000058562
+      },
+      "candidate_minus_old_s": -0.02430550000281073,
+      "candidate_over_old": 0.9563738151306737,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 32,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "default",
+      "phase": "prefetch",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 2.608756583009381,
+        "candidate": 1.3011124170006951
+      },
+      "candidate_minus_old_s": -1.3076441660086857,
+      "candidate_over_old": 0.49874811068028896,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 33,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.4009150420024525,
+        "candidate": 0.26867041700461414
+      },
+      "candidate_minus_old_s": -1.1322446249978384,
+      "candidate_over_old": 0.19178209166815682,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 34,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 3.1754119580000406,
+        "candidate": 2.3538167079968844
+      },
+      "candidate_minus_old_s": -0.8215952500031563,
+      "candidate_over_old": 0.741263413733373,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 35,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.4148584159993334,
+        "candidate": 0.32136462500784546
+      },
+      "candidate_minus_old_s": -1.093493790991488,
+      "candidate_over_old": 0.227135536230218,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 36,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 6.078483125005732,
+        "candidate": 1.0500309159979224
+      },
+      "candidate_minus_old_s": -5.02845220900781,
+      "candidate_over_old": 0.17274555088888763,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 37,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.441671958004008,
+        "candidate": 0.26620179098972585
+      },
+      "candidate_minus_old_s": -1.1754701670142822,
+      "candidate_over_old": 0.18464796343703715,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 38,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 2.397348291997332,
+        "candidate": 1.0194822500052396
+      },
+      "candidate_minus_old_s": -1.3778660419920925,
+      "candidate_over_old": 0.4252541249047571,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 39,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.4598242500069318,
+        "candidate": 0.26495470899681095
+      },
+      "candidate_minus_old_s": -1.1948695410101209,
+      "candidate_over_old": 0.18149767617269877,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 40,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 3.8190789999935078,
+        "candidate": 1.4840026670135558
+      },
+      "candidate_minus_old_s": -2.335076332979952,
+      "candidate_over_old": 0.38857605904881215,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 41,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.4069734170043375,
+        "candidate": 0.2686962909938302
+      },
+      "candidate_minus_old_s": -1.1382771260105073,
+      "candidate_over_old": 0.1909746749628901,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 42,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 2.258217208000133,
+        "candidate": 2.026407958008349
+      },
+      "candidate_minus_old_s": -0.23180924999178387,
+      "candidate_over_old": 0.8973485592216025,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 43,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 5,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.2501906250108732,
+        "candidate": 0.2476389579969691
+      },
+      "candidate_minus_old_s": -1.002551667013904,
+      "candidate_over_old": 0.19808095904959722,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 44,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 5,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 5.082266375000472,
+        "candidate": 1.159479125009966
+      },
+      "candidate_minus_old_s": -3.922787249990506,
+      "candidate_over_old": 0.22814213963939628,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 45,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 6,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.3746512920042733,
+        "candidate": 0.23153095800080337
+      },
+      "candidate_minus_old_s": -1.14312033400347,
+      "candidate_over_old": 0.16842886581310806,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 46,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 6,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 2.990937708003912,
+        "candidate": 2.1827505420078523
+      },
+      "candidate_minus_old_s": -0.8081871659960598,
+      "candidate_over_old": 0.7297880314145938,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 47,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 7,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.282516334002139,
+        "candidate": 0.22876054100925103
+      },
+      "candidate_minus_old_s": -1.053755792992888,
+      "candidate_over_old": 0.17836852049704147,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 48,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 7,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.9705743749946123,
+        "candidate": 0.8878907909966074
+      },
+      "candidate_minus_old_s": -1.082683583998005,
+      "candidate_over_old": 0.45057461533215915,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 49,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 8,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.289650333012105,
+        "candidate": 0.21357504099432845
+      },
+      "candidate_minus_old_s": -1.0760752920177765,
+      "candidate_over_old": 0.16560693664576737,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 50,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 8,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 2.9678832500067074,
+        "candidate": 2.502029167008004
+      },
+      "candidate_minus_old_s": -0.46585408299870323,
+      "candidate_over_old": 0.8430349027382898,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 51,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 9,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.2497848329949193,
+        "candidate": 0.23234833299648017
+      },
+      "candidate_minus_old_s": -1.017436499998439,
+      "candidate_over_old": 0.18591066787047875,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 52,
+      "case": "get_drug_imatinib",
+      "workload_label": "get_drug_imatinib",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 9,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.9361856659961632,
+        "candidate": 0.8962954580056248
+      },
+      "candidate_minus_old_s": -1.0398902079905383,
+      "candidate_over_old": 0.4629181352525316,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 53,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "default",
+      "phase": "prefetch",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.8465847919869702,
+        "candidate": 2.8434736659983173
+      },
+      "candidate_minus_old_s": 0.9968888740113471,
+      "candidate_over_old": 1.5398554555074995,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 54,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 2.6489251669991063,
+        "candidate": 1.876951750004082
+      },
+      "candidate_minus_old_s": -0.7719734169950243,
+      "candidate_over_old": 0.7085710738028996,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 55,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 2.038157000002684,
+        "candidate": 2.2377791249891743
+      },
+      "candidate_minus_old_s": 0.19962212498649023,
+      "candidate_over_old": 1.0979424671338995,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 56,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.8539170409931103,
+        "candidate": 1.6469820829952369
+      },
+      "candidate_minus_old_s": -0.20693495799787343,
+      "candidate_over_old": 0.8883796019874644,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 57,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.807296375001897,
+        "candidate": 2.2243207080027787
+      },
+      "candidate_minus_old_s": 0.4170243330008816,
+      "candidate_over_old": 1.2307448511318149,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 58,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.7239638339960948,
+        "candidate": 1.662695833001635
+      },
+      "candidate_minus_old_s": -0.061268000994459726,
+      "candidate_over_old": 0.9644609708241719,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 59,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.7818100839940598,
+        "candidate": 2.3281252089946065
+      },
+      "candidate_minus_old_s": 0.5463151250005467,
+      "candidate_over_old": 1.3066068207313883,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 60,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.650977958997828,
+        "candidate": 2.6004638750018785
+      },
+      "candidate_minus_old_s": 0.9494859160040505,
+      "candidate_over_old": 1.5751051434874423,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 61,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.8271500830014702,
+        "candidate": 2.2789011249988107
+      },
+      "candidate_minus_old_s": 0.4517510419973405,
+      "candidate_over_old": 1.2472435330847296,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 62,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.6423114170029294,
+        "candidate": 2.602180000001681
+      },
+      "candidate_minus_old_s": 0.9598685829987517,
+      "candidate_over_old": 1.5844619802682889,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 63,
+      "case": "search_article_BRAF",
+      "workload_label": "search_article_BRAF",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.8184369999944465,
+        "candidate": 2.5334167499968316
+      },
+      "candidate_minus_old_s": 0.7149797500023851,
+      "candidate_over_old": 1.393183679173141,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 64,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "default",
+      "phase": "prefetch",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.024634040993988,
+        "candidate": 12.029523500008509
+      },
+      "candidate_minus_old_s": 0.00488945901452098,
+      "candidate_over_old": 1.0004066201930015,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 65,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.028292250004597,
+        "candidate": 12.018307125006686
+      },
+      "candidate_minus_old_s": -0.009985124997911043,
+      "candidate_over_old": 0.9991698634527352,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 66,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.042987000007997,
+        "candidate": 12.058863208003459
+      },
+      "candidate_minus_old_s": 0.0158762079954613,
+      "candidate_over_old": 1.001318294871152,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 67,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 12.070990832988173,
+        "candidate": 12.021289625001373
+      },
+      "candidate_minus_old_s": -0.0497012079868,
+      "candidate_over_old": 0.9958825908598179,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 68,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 12.024077499998384,
+        "candidate": 12.017132958004368
+      },
+      "candidate_minus_old_s": -0.0069445419940166175,
+      "candidate_over_old": 0.9994224470031886,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 69,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.025152333008009,
+        "candidate": 12.065008874997147
+      },
+      "candidate_minus_old_s": 0.03985654198913835,
+      "candidate_over_old": 1.0033144313589888,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 70,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.094883916986873,
+        "candidate": 12.048200416000327
+      },
+      "candidate_minus_old_s": -0.04668350098654628,
+      "candidate_over_old": 0.9961402274460046,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 71,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 12.048005791992182,
+        "candidate": 12.018960542001878
+      },
+      "candidate_minus_old_s": -0.029045249990304,
+      "candidate_over_old": 0.9975892068370676,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 72,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 12.061324457987212,
+        "candidate": 12.014446917004534
+      },
+      "candidate_minus_old_s": -0.0468775409826776,
+      "candidate_over_old": 0.996113400220186,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 73,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "infinite",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.026842207997106,
+        "candidate": 12.061339000007138
+      },
+      "candidate_minus_old_s": 0.03449679201003164,
+      "candidate_over_old": 1.0028683166714445,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 74,
+      "case": "search_all_BRAF_melanoma",
+      "workload_label": "search_all_BRAF_melanoma",
+      "mode": "off",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.052365916999406,
+        "candidate": 12.04590879198804
+      },
+      "candidate_minus_old_s": -0.006457125011365861,
+      "candidate_over_old": 0.9994642441943902,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [
+          "gwas search timed out after 12s"
+        ],
+        "candidate": [
+          "gwas search timed out after 12s"
+        ]
+      }
+    },
+    {
+      "pair_index": 75,
+      "case": "day_gwas_BRAF",
+      "workload_label": "day_gwas_BRAF",
+      "mode": "default",
+      "phase": "prefetch",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.818637958000181,
+        "candidate": 7.66089029199793
+      },
+      "candidate_minus_old_s": -5.157747666002251,
+      "candidate_over_old": 0.597636840754733,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 76,
+      "case": "day_gwas_BRAF",
+      "workload_label": "day_gwas_BRAF",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 9.653217416998814,
+        "candidate": 0.06980274998932146
+      },
+      "candidate_minus_old_s": -9.583414667009492,
+      "candidate_over_old": 0.007231034687606067,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 77,
+      "case": "day_gwas_BRAF",
+      "workload_label": "day_gwas_BRAF",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 10.305855915998109,
+        "candidate": 0.0071043339994503185
+      },
+      "candidate_minus_old_s": -10.298751581998658,
+      "candidate_over_old": 0.0006893492454539399,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 78,
+      "case": "day_gwas_BRAF",
+      "workload_label": "day_gwas_BRAF",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 12.585056000010809,
+        "candidate": 0.042629249990568496
+      },
+      "candidate_minus_old_s": -12.54242675002024,
+      "candidate_over_old": 0.0033872912437204797,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 79,
+      "case": "day_gwas_BRAF",
+      "workload_label": "day_gwas_BRAF",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 10.73301745900244,
+        "candidate": 0.00590404198737815
+      },
+      "candidate_minus_old_s": -10.727113417015062,
+      "candidate_over_old": 0.0005500822121952358,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 80,
+      "case": "day_gwas_BRAF",
+      "workload_label": "day_gwas_BRAF",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 11.966989749998902,
+        "candidate": 0.0426309169997694
+      },
+      "candidate_minus_old_s": -11.924358832999133,
+      "candidate_over_old": 0.0035623759934927082,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 81,
+      "case": "day_openfda_drug_imatinib",
+      "workload_label": "day_openfda_drug_imatinib",
+      "mode": "default",
+      "phase": "prefetch",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 2.1826390839996748,
+        "candidate": 1.2865638329967624
+      },
+      "candidate_minus_old_s": -0.8960752510029124,
+      "candidate_over_old": 0.58945331018225,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 82,
+      "case": "day_openfda_drug_imatinib",
+      "workload_label": "day_openfda_drug_imatinib",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 0,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 3.1370027089869836,
+        "candidate": 0.22631337499478832
+      },
+      "candidate_minus_old_s": -2.9106893339921953,
+      "candidate_over_old": 0.0721431876186905,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 83,
+      "case": "day_openfda_drug_imatinib",
+      "workload_label": "day_openfda_drug_imatinib",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 1,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 2.699027875001775,
+        "candidate": 0.2184760000091046
+      },
+      "candidate_minus_old_s": -2.4805518749926705,
+      "candidate_over_old": 0.08094618141317304,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 84,
+      "case": "day_openfda_drug_imatinib",
+      "workload_label": "day_openfda_drug_imatinib",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 2,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.78116924999631,
+        "candidate": 0.23481191600149032
+      },
+      "candidate_minus_old_s": -1.5463573339948198,
+      "candidate_over_old": 0.13183020984781585,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 85,
+      "case": "day_openfda_drug_imatinib",
+      "workload_label": "day_openfda_drug_imatinib",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 3,
+      "order": [
+        "old",
+        "candidate"
+      ],
+      "elapsed_s": {
+        "old": 1.1965750420058612,
+        "candidate": 0.2276784590067109
+      },
+      "candidate_minus_old_s": -0.9688965829991503,
+      "candidate_over_old": 0.19027511941503095,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    },
+    {
+      "pair_index": 86,
+      "case": "day_openfda_drug_imatinib",
+      "workload_label": "day_openfda_drug_imatinib",
+      "mode": "default",
+      "phase": "measure",
+      "sample_index": 4,
+      "order": [
+        "candidate",
+        "old"
+      ],
+      "elapsed_s": {
+        "old": 1.2552889170037815,
+        "candidate": 0.23884058299881872
+      },
+      "candidate_minus_old_s": -1.0164483340049628,
+      "candidate_over_old": 0.1902674195267345,
+      "exit_codes": {
+        "old": 0,
+        "candidate": 0
+      },
+      "timeouts": {
+        "old": false,
+        "candidate": false
+      },
+      "gwas_errors": {
+        "old": [],
+        "candidate": []
+      }
+    }
+  ],
+  "arms": {
+    "old": {
+      "samples": [
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.6108939999976428,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0000-version-measure-default.stdout",
+          "stderr_file": "0000-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 0,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.77783203125,
+            10.966796875,
+            10.7529296875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.007686666998779401,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0001-version-measure-default.stdout",
+          "stderr_file": "0001-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 1,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.005490499999723397,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0002-version-measure-default.stdout",
+          "stderr_file": "0002-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 2,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.005524707987206057,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0003-version-measure-default.stdout",
+          "stderr_file": "0003-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 3,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.005875791001017205,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0004-version-measure-default.stdout",
+          "stderr_file": "0004-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 4,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.006044583002221771,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0005-version-measure-default.stdout",
+          "stderr_file": "0005-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 5,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.0060403750103432685,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0006-version-measure-default.stdout",
+          "stderr_file": "0006-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 6,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.00642274999700021,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0007-version-measure-default.stdout",
+          "stderr_file": "0007-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 7,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.005739209009334445,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0008-version-measure-default.stdout",
+          "stderr_file": "0008-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 8,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.006308084004558623,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0009-version-measure-default.stdout",
+          "stderr_file": "0009-version-measure-default.stderr",
+          "stdout_bytes": 13,
+          "stdout_sha256": "0ce2eedb794722333d806fa4b8be1fc4f5d1112418ece41c7e3457349f0b1381",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 9,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.7891204580082558,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0010-get_gene_BRAF-prefetch-default.stdout",
+          "stderr_file": "0010-get_gene_BRAF-prefetch-default.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 10,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.22155820799525827,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0011-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0011-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 11,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/0",
+          "elapsed_s": 0.550140791994636,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0012-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0012-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 12,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.21893683400412556,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0013-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0013-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 13,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/1",
+          "elapsed_s": 0.51579129100719,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0014-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0014-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 14,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.2275794580054935,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0015-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0015-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 15,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/2",
+          "elapsed_s": 0.5383306669973535,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0016-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0016-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 16,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.23630637500900775,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0017-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0017-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 17,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/3",
+          "elapsed_s": 0.5152768749976531,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0018-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0018-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 18,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.2302674999955343,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0019-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0019-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 19,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/4",
+          "elapsed_s": 0.5298838750022696,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0020-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0020-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 20,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.5447460840077838,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0021-get_variant_BRAF_V600E-prefetch-default.stdout",
+          "stderr_file": "0021-get_variant_BRAF_V600E-prefetch-default.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 21,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.01163408400316257,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0022-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0022-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 22,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/0",
+          "elapsed_s": 0.5490198330080602,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0023-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0023-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 23,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.0194240830023773,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0024-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0024-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 24,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/1",
+          "elapsed_s": 0.5425353750033537,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0025-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0025-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 25,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.010469665998243727,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0026-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0026-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 26,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/2",
+          "elapsed_s": 0.6037334169959649,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0027-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0027-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 27,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.02199954200477805,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0028-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0028-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 28,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/3",
+          "elapsed_s": 0.5722334580059396,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0029-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0029-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 29,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.011798500010627322,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0030-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0030-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 30,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/4",
+          "elapsed_s": 0.5571310000086669,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0031-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0031-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 31,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 2.608756583009381,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0032-get_drug_imatinib-prefetch-default.stdout",
+          "stderr_file": "0032-get_drug_imatinib-prefetch-default.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 32,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.4009150420024525,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0033-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0033-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 33,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "load_after": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/0",
+          "elapsed_s": 3.1754119580000406,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0034-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0034-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 34,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "load_after": [
+            11.2587890625,
+            11.115234375,
+            10.81591796875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.4148584159993334,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0035-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0035-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 35,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            11.2587890625,
+            11.115234375,
+            10.81591796875
+          ],
+          "load_after": [
+            10.83740234375,
+            11.0302734375,
+            10.78759765625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/1",
+          "elapsed_s": 6.078483125005732,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0036-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0036-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 36,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.83740234375,
+            11.0302734375,
+            10.78759765625
+          ],
+          "load_after": [
+            10.44970703125,
+            10.9462890625,
+            10.75927734375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.441671958004008,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0037-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0037-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 37,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.44970703125,
+            10.9462890625,
+            10.75927734375
+          ],
+          "load_after": [
+            10.44970703125,
+            10.9462890625,
+            10.75927734375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/2",
+          "elapsed_s": 2.397348291997332,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0038-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0038-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 38,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.44970703125,
+            10.9462890625,
+            10.75927734375
+          ],
+          "load_after": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.4598242500069318,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0039-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0039-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 39,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "load_after": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/3",
+          "elapsed_s": 3.8190789999935078,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0040-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0040-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 40,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            9.92529296875,
+            10.81591796875,
+            10.71484375
+          ],
+          "load_after": [
+            9.92529296875,
+            10.81591796875,
+            10.71484375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.4069734170043375,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0041-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0041-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 41,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            9.92529296875,
+            10.81591796875,
+            10.71484375
+          ],
+          "load_after": [
+            9.77099609375,
+            10.76904296875,
+            10.69873046875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/4",
+          "elapsed_s": 2.258217208000133,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0042-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0042-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 42,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            9.77099609375,
+            10.76904296875,
+            10.69873046875
+          ],
+          "load_after": [
+            9.77099609375,
+            10.76904296875,
+            10.69873046875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.2501906250108732,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0043-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0043-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 43,
+          "sample_index": 5,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "load_after": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/5",
+          "elapsed_s": 5.082266375000472,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0044-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0044-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 44,
+          "sample_index": 5,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "load_after": [
+            9.34423828125,
+            10.64404296875,
+            10.65478515625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.3746512920042733,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0045-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0045-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 45,
+          "sample_index": 6,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            9.34423828125,
+            10.64404296875,
+            10.65478515625
+          ],
+          "load_after": [
+            8.755859375,
+            10.50048828125,
+            10.60400390625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/6",
+          "elapsed_s": 2.990937708003912,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0046-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0046-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 46,
+          "sample_index": 6,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            8.755859375,
+            10.50048828125,
+            10.60400390625
+          ],
+          "load_after": [
+            8.755859375,
+            10.50048828125,
+            10.60400390625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.282516334002139,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0047-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0047-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 47,
+          "sample_index": 7,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "load_after": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/7",
+          "elapsed_s": 1.9705743749946123,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0048-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0048-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 48,
+          "sample_index": 7,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "load_after": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.289650333012105,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0049-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0049-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 49,
+          "sample_index": 8,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "load_after": [
+            8.11083984375,
+            10.302734375,
+            10.5322265625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/8",
+          "elapsed_s": 2.9678832500067074,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0050-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0050-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 50,
+          "sample_index": 8,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            8.11083984375,
+            10.302734375,
+            10.5322265625
+          ],
+          "load_after": [
+            8.11083984375,
+            10.302734375,
+            10.5322265625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.2497848329949193,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0051-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0051-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 51,
+          "sample_index": 9,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "load_after": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/9",
+          "elapsed_s": 1.9361856659961632,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0052-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0052-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 52,
+          "sample_index": 9,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "load_after": [
+            7.55810546875,
+            10.111328125,
+            10.46142578125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.8465847919869702,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0053-search_article_BRAF-prefetch-default.stdout",
+          "stderr_file": "0053-search_article_BRAF-prefetch-default.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 53,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.55810546875,
+            10.111328125,
+            10.46142578125
+          ],
+          "load_after": [
+            8.15380859375,
+            10.1923828125,
+            10.48779296875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:35.909886Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:36.250675Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 2.6489251669991063,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0054-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0054-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2866,
+          "stdout_sha256": "f4227af8faaba5683b52cfc70e4faf4f77ad3bcb7bafbf574493fef5477e8de0",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 54,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.15380859375,
+            10.1923828125,
+            10.48779296875
+          ],
+          "load_after": [
+            7.82080078125,
+            10.08935546875,
+            10.44970703125
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:38.178439Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (3 s old) age_seconds=3\n2026-10-18T12:58:38.178983Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (3 s old) age_seconds=3\n2026-10-18T12:58:38.189808Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (3 s old) age_seconds=3\n2026-10-18T12:58:40.530399Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (4 s old) age_seconds=4\n2026-10-18T12:58:40.530442Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:40.782452Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (4 s old) age_seconds=4\n2026-10-18T12:58:40.782478Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/0",
+          "elapsed_s": 2.038157000002684,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0055-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0055-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 55,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.82080078125,
+            10.08935546875,
+            10.44970703125
+          ],
+          "load_after": [
+            7.82080078125,
+            10.08935546875,
+            10.44970703125
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:44.735443Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:45.071676Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.8539170409931103,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0056-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0056-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2767,
+          "stdout_sha256": "fc4b84ac5b7bc208dcbfddb9acea756d0265b705eee0e8dbecf3198f2db43d70",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 56,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.82080078125,
+            10.08935546875,
+            10.44970703125
+          ],
+          "load_after": [
+            7.5947265625,
+            10.00439453125,
+            10.41748046875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:45.111386Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (10 s old) age_seconds=10\n2026-10-18T12:58:45.122734Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (10 s old) age_seconds=10\n2026-10-18T12:58:45.123203Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (10 s old) age_seconds=10\n2026-10-18T12:58:46.673470Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (10 s old) age_seconds=10\n2026-10-18T12:58:46.673513Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:46.933509Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (10 s old) age_seconds=10\n2026-10-18T12:58:46.933537Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/1",
+          "elapsed_s": 1.807296375001897,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0057-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0057-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 57,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.5947265625,
+            10.00439453125,
+            10.41748046875
+          ],
+          "load_after": [
+            7.146484375,
+            9.87109375,
+            10.36767578125
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:50.074630Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:50.400614Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.7239638339960948,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0058-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0058-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2767,
+          "stdout_sha256": "e9e8250ee56411622ef883d0fefc847318e9e58b4a58dc96c8286ea5196b61c9",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 58,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.146484375,
+            9.87109375,
+            10.36767578125
+          ],
+          "load_after": [
+            6.81396484375,
+            9.7568359375,
+            10.32421875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:54.335688Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:54.351331Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:54.351896Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:55.778953Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:55.778996Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:56.030109Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:56.030143Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/2",
+          "elapsed_s": 1.7818100839940598,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0059-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0059-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 59,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            6.81396484375,
+            9.7568359375,
+            10.32421875
+          ],
+          "load_after": [
+            6.81396484375,
+            9.7568359375,
+            10.32421875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:59.820198Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:00.163439Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.650977958997828,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0060-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0060-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2767,
+          "stdout_sha256": "acaac464e625bc0424b9e53cbdb8034ff22b147e5df48b38457db8283459ec92",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 60,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.81396484375,
+            9.7568359375,
+            10.32421875
+          ],
+          "load_after": [
+            6.82861328125,
+            9.7109375,
+            10.3046875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:00.189562Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (25 s old) age_seconds=25\n2026-10-18T12:59:00.216639Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (25 s old) age_seconds=25\n2026-10-18T12:59:00.217090Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (25 s old) age_seconds=25\n2026-10-18T12:59:01.558606Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (25 s old) age_seconds=25\n2026-10-18T12:59:01.558651Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:01.822996Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (25 s old) age_seconds=25\n2026-10-18T12:59:01.823024Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/3",
+          "elapsed_s": 1.8271500830014702,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0061-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0061-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 61,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.82861328125,
+            9.7109375,
+            10.3046875
+          ],
+          "load_after": [
+            6.84228515625,
+            9.66552734375,
+            10.28515625
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:05.928776Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:06.264597Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.6423114170029294,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0062-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0062-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2767,
+          "stdout_sha256": "48913de5527b1f66a26969fe4f2ec17994377c5ec19ffda66951cb9875153d78",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 62,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            6.9345703125,
+            9.6376953125,
+            10.271484375
+          ],
+          "load_after": [
+            6.9345703125,
+            9.6376953125,
+            10.271484375
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:11.185741Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:11.223900Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:11.224441Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:12.550715Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:12.550758Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:12.811449Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:12.811467Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/4",
+          "elapsed_s": 1.8184369999944465,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0063-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0063-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 63,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            6.9345703125,
+            9.6376953125,
+            10.271484375
+          ],
+          "load_after": [
+            6.69921875,
+            9.5439453125,
+            10.234375
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:16.881572Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:17.204860Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.024634040993988,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0064-search_all_BRAF_melanoma-prefetch-default.stdout",
+          "stderr_file": "0064-search_all_BRAF_melanoma-prefetch-default.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "566d35897b9127ca2aa90784859c327eeb774c6103bf7b38cc2b004cb2366f02",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 64,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.69921875,
+            9.5439453125,
+            10.234375
+          ],
+          "load_after": [
+            9.16015625,
+            9.95849609375,
+            10.3720703125
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.028292250004597,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0065-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0065-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2384,
+          "stdout_sha256": "83fe80b5c4b25ab61763c6dc4e84891d4d185cd365f79ccb6b083e50f6d27570",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 65,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            8.939453125,
+            9.87646484375,
+            10.33544921875
+          ],
+          "load_after": [
+            8.17919921875,
+            9.6826171875,
+            10.2607421875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T12:59:41.348925Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:41.349049Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:41.349245Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:41.350680Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:41.350839Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (22 s old) age_seconds=22\n2026-10-18T12:59:41.350879Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:41.351064Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:41.351486Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (21 s old) age_seconds=21\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 23 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 23 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 23 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 23 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 22 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 23 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 21 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/0",
+          "elapsed_s": 12.042987000007997,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0066-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0066-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "6aa3bcfb9a17fb8b2b091259fab882d41da2ec1e4c2e1ecd8388d07e7076f96b",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 66,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.91748046875,
+            9.5771484375,
+            10.21630859375
+          ],
+          "load_after": [
+            7.51708984375,
+            9.40234375,
+            10.14208984375
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.070990832988173,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0067-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0067-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2384,
+          "stdout_sha256": "a31a6b23e5b14e27e6c7c4ad20b6f519c136e726375f96aa76d46f379a58fd78",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 67,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.55859375,
+            9.27001953125,
+            10.07275390625
+          ],
+          "load_after": [
+            7.078125,
+            9.11181640625,
+            10.00732421875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:00:41.649930Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (84 s old) age_seconds=84\n2026-10-18T13:00:41.652544Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (84 s old) age_seconds=84\n2026-10-18T13:00:41.652642Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (83 s old) age_seconds=83\n2026-10-18T13:00:41.662576Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (84 s old) age_seconds=84\n2026-10-18T13:00:41.662672Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (82 s old) age_seconds=82\n2026-10-18T13:00:41.662715Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (84 s old) age_seconds=84\n2026-10-18T13:00:41.665122Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (84 s old) age_seconds=84\n2026-10-18T13:00:41.665456Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (82 s old) age_seconds=82\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 84 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 84 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 83 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 84 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 82 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 84 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 82 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/1",
+          "elapsed_s": 12.024077499998384,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0068-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0068-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "5d491c7011d44200412fa65141f9c3d5870ea91418d5593dcaeb133418742e11",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 68,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            6.93701171875,
+            8.9765625,
+            9.9423828125
+          ],
+          "load_after": [
+            6.478515625,
+            8.81201171875,
+            9.87255859375
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.025152333008009,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0069-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0069-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2391,
+          "stdout_sha256": "3803acf003e5154f7ab17bd8797c30522d09bc487a5e42c9ac9239cf1a7f33d7",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 69,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.478515625,
+            8.81201171875,
+            9.87255859375
+          ],
+          "load_after": [
+            6.54541015625,
+            8.75146484375,
+            9.83837890625
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:01:17.727269Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:17.727341Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:17.727438Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (119 s old) age_seconds=119\n2026-10-18T13:01:17.736410Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:17.736499Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (118 s old) age_seconds=118\n2026-10-18T13:01:17.736533Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:17.736788Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:17.737130Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (118 s old) age_seconds=118\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 120 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 120 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 119 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 120 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 118 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 120 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 118 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/2",
+          "elapsed_s": 12.094883916986873,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0070-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0070-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "58a077e6a7ca59d850bfa73345bb28d2e3daf946e550b492d1f56373c134ba29",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 70,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.04833984375,
+            8.5341796875,
+            9.7412109375
+          ],
+          "load_after": [
+            5.88037109375,
+            8.4169921875,
+            9.685546875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.048005791992182,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0071-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0071-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2391,
+          "stdout_sha256": "65fd0de3606c0917d4e4abb973037fa0cd170fead6d5b85f42976dcf1540805a",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 71,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            5.92236328125,
+            8.22216796875,
+            9.57763671875
+          ],
+          "load_after": [
+            5.84716796875,
+            8.1318359375,
+            9.52978515625
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:02:18.074680Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (180 s old) age_seconds=180\n2026-10-18T13:02:18.075709Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (180 s old) age_seconds=180\n2026-10-18T13:02:18.075805Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (180 s old) age_seconds=180\n2026-10-18T13:02:18.085635Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (180 s old) age_seconds=180\n2026-10-18T13:02:18.085725Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (179 s old) age_seconds=179\n2026-10-18T13:02:18.085763Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (180 s old) age_seconds=180\n2026-10-18T13:02:18.086161Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (180 s old) age_seconds=180\n2026-10-18T13:02:18.086478Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (178 s old) age_seconds=178\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 180 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 180 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 180 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 180 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 179 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 180 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 178 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/3",
+          "elapsed_s": 12.061324457987212,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0072-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0072-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "656961950b32dd4ca3ab3b11d4e4a3fb7274cb0759186e5e319ba86fc2b2e1a0",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 72,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            5.67138671875,
+            7.97802734375,
+            9.4501953125
+          ],
+          "load_after": [
+            5.49365234375,
+            7.86328125,
+            9.3916015625
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.026842207997106,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0073-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0073-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2391,
+          "stdout_sha256": "3e4b6f524fd5bac50c7c0c299d4f368e175d1b8590131f20896b1dfed4cb67f9",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 73,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            5.49365234375,
+            7.86328125,
+            9.3916015625
+          ],
+          "load_after": [
+            5.45751953125,
+            7.73876953125,
+            9.31982421875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:02:54.244486Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:02:54.244558Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:02:54.244650Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:02:54.253589Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:02:54.253671Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (215 s old) age_seconds=215\n2026-10-18T13:02:54.253702Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:02:54.254038Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:02:54.254377Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (214 s old) age_seconds=214\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 216 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 216 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 216 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 216 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 215 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 216 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 214 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/4",
+          "elapsed_s": 12.052365916999406,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0074-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0074-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "45ed1f71cadde1c0b83283fcf8bc8ad54240fdde6aaf71555352ec0d92f75b14",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 74,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            5.0791015625,
+            7.58203125,
+            9.24560546875
+          ],
+          "load_after": [
+            4.75927734375,
+            7.4306640625,
+            9.17236328125
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 12.818637958000181,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0075-day_gwas_BRAF-prefetch-default.stdout",
+          "stderr_file": "0075-day_gwas_BRAF-prefetch-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 75,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.97802734375,
+            7.3447265625,
+            9.1103515625
+          ],
+          "load_after": [
+            4.9072265625,
+            7.2509765625,
+            9.05615234375
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 9.653217416998814,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0076-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0076-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 76,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.392578125,
+            7.0615234375,
+            8.96728515625
+          ],
+          "load_after": [
+            4.41796875,
+            6.97705078125,
+            8.91455078125
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 10.305855915998109,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0077-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0077-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 77,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.41796875,
+            6.97705078125,
+            8.91455078125
+          ],
+          "load_after": [
+            4.11962890625,
+            6.8291015625,
+            8.83935546875
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 12.585056000010809,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0078-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0078-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 78,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.11962890625,
+            6.8291015625,
+            8.83935546875
+          ],
+          "load_after": [
+            4.16796875,
+            6.75146484375,
+            8.7880859375
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 10.73301745900244,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0079-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0079-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 79,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.16796875,
+            6.75146484375,
+            8.7880859375
+          ],
+          "load_after": [
+            4.28955078125,
+            6.64892578125,
+            8.71533203125
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 11.966989749998902,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0080-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0080-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 80,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.28955078125,
+            6.64892578125,
+            8.71533203125
+          ],
+          "load_after": [
+            4.08447265625,
+            6.52783203125,
+            8.64794921875
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 2.1826390839996748,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0081-day_openfda_drug_imatinib-prefetch-default.stdout",
+          "stderr_file": "0081-day_openfda_drug_imatinib-prefetch-default.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 81,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.08447265625,
+            6.52783203125,
+            8.64794921875
+          ],
+          "load_after": [
+            3.99755859375,
+            6.46923828125,
+            8.61474609375
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 3.1370027089869836,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0082-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0082-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 82,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            3.99755859375,
+            6.46923828125,
+            8.61474609375
+          ],
+          "load_after": [
+            3.99755859375,
+            6.46923828125,
+            8.61474609375
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 2.699027875001775,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0083-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0083-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 83,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            3.99755859375,
+            6.46923828125,
+            8.61474609375
+          ],
+          "load_after": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 1.78116924999631,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0084-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0084-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 84,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "load_after": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 1.1965750420058612,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0085-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0085-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 85,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "load_after": [
+            4.00390625,
+            6.38818359375,
+            8.560546875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 1.2552889170037815,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0086-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0086-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2410,
+          "stdout_sha256": "026cfb1aac9b693578aae079f5f2b70592086359cb267ddf507e051fbe00ad1f",
+          "arm": "old",
+          "product_sha": "4049666f5cce2794f16cdbdf0ded49878e5bb147",
+          "pair_index": 86,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.00390625,
+            6.38818359375,
+            8.560546875
+          ],
+          "load_after": [
+            4.00390625,
+            6.38818359375,
+            8.560546875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        }
+      ],
+      "summary": {
+        "version_empty_cache": {
+          "median_s": 0.005875791001017205,
+          "spread_s": 0.6054034999979194,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "version_large_cache": {
+          "median_s": 0.006044583002221771,
+          "spread_s": 0.000683540987665765,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_get_gene_BRAF": {
+          "median_s": 0.2275794580054935,
+          "spread_s": 0.017369541004882194,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_get_gene_BRAF": {
+          "median_s": 0.5298838750022696,
+          "spread_s": 0.03486391699698288,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_get_variant_BRAF_V600E": {
+          "median_s": 0.011798500010627322,
+          "spread_s": 0.011529876006534323,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_get_variant_BRAF_V600E": {
+          "median_s": 0.5571310000086669,
+          "spread_s": 0.06119804199261125,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_get_drug_imatinib": {
+          "median_s": 1.387783167003363,
+          "spread_s": 0.21003941701201256,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_get_drug_imatinib": {
+          "median_s": 2.9794104790053098,
+          "spread_s": 4.142297459009569,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_search_article_BRAF": {
+          "median_s": 1.7239638339960948,
+          "spread_s": 1.006613749996177,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_search_article_BRAF": {
+          "median_s": 1.8184369999944465,
+          "spread_s": 0.25634691600862425,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_search_all_BRAF_melanoma": {
+          "median_s": 12.028292250004597,
+          "spread_s": 0.04583849998016376,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_search_all_BRAF_melanoma": {
+          "median_s": 12.052365916999406,
+          "spread_s": 0.07080641698848922,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "day_gwas_BRAF": {
+          "median_s": 10.73301745900244,
+          "spread_s": 2.931838583011995,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "day_openfda_drug_imatinib": {
+          "median_s": 1.78116924999631,
+          "spread_s": 1.9404276669811225,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        }
+      }
+    },
+    "candidate": {
+      "samples": [
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.7247995829966385,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0000-version-measure-default.stdout",
+          "stderr_file": "0000-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 0,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.011027792003005743,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0001-version-measure-default.stdout",
+          "stderr_file": "0001-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 1,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.006243833006010391,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0002-version-measure-default.stdout",
+          "stderr_file": "0002-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 2,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.005949792001047172,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0003-version-measure-default.stdout",
+          "stderr_file": "0003-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 3,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "empty-cache",
+          "elapsed_s": 0.0058246249973308295,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0004-version-measure-default.stdout",
+          "stderr_file": "0004-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 4,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_empty_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.006187207996845245,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0005-version-measure-default.stdout",
+          "stderr_file": "0005-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 5,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.006667082998319529,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0006-version-measure-default.stdout",
+          "stderr_file": "0006-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 6,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.005972875005681999,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0007-version-measure-default.stdout",
+          "stderr_file": "0007-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 7,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.006361000007018447,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0008-version-measure-default.stdout",
+          "stderr_file": "0008-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 8,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "version",
+          "argv": [
+            "--version"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "../../../../../../../../../../Library/Caches/biomcp",
+          "elapsed_s": 0.006054291996406391,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0009-version-measure-default.stdout",
+          "stderr_file": "0009-version-measure-default.stderr",
+          "stdout_bytes": 23,
+          "stdout_sha256": "23d896edf31e3f892fcc10a5b55a6488ca1315a8d0b9e14ef44dde9d2d3497ab",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 9,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "version_large_cache",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 1.4955288340133848,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0010-get_gene_BRAF-prefetch-default.stdout",
+          "stderr_file": "0010-get_gene_BRAF-prefetch-default.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 10,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.22895037500711624,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0011-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0011-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 11,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/0",
+          "elapsed_s": 0.5163065840024501,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0012-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0012-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 12,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.21926141699077561,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0013-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0013-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 13,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "load_after": [
+            10.63525390625,
+            10.93408203125,
+            10.7421875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/1",
+          "elapsed_s": 0.5233761249983218,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0014-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0014-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 14,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.21197925000160467,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0015-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0015-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 15,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/2",
+          "elapsed_s": 0.4871813750069123,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0016-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0016-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 16,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.19381104200147092,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0017-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0017-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 17,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/3",
+          "elapsed_s": 0.5199699590011733,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0018-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0018-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 18,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_gene_BRAF",
+          "elapsed_s": 0.22138287499547005,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0019-get_gene_BRAF-measure-infinite.stdout",
+          "stderr_file": "0019-get_gene_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 19,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "load_after": [
+            12.505859375,
+            11.31689453125,
+            10.87841796875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_gene_BRAF",
+          "argv": [
+            "get",
+            "gene",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_gene_BRAF/4",
+          "elapsed_s": 0.5307417080039158,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0020-get_gene_BRAF-measure-off.stdout",
+          "stderr_file": "0020-get_gene_BRAF-measure-off.stderr",
+          "stdout_bytes": 1646,
+          "stdout_sha256": "940babba82abba4b561a7af00e06f6d0715e7d12b32d3db8df4e240800ee9b2e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 20,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_gene_BRAF",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.6514632500038715,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0021-get_variant_BRAF_V600E-prefetch-default.stdout",
+          "stderr_file": "0021-get_variant_BRAF_V600E-prefetch-default.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 21,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.012262541989912279,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0022-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0022-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 22,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/0",
+          "elapsed_s": 0.5654795410082443,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0023-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0023-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 23,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.011834584001917392,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0024-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0024-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 24,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/1",
+          "elapsed_s": 0.587705999991158,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0025-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0025-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 25,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.01775741700839717,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0026-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0026-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 26,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/2",
+          "elapsed_s": 0.5841995840019081,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0027-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0027-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 27,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "load_after": [
+            12.30517578125,
+            11.294921875,
+            10.873046875
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.012130250004702248,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0028-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0028-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 28,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/3",
+          "elapsed_s": 0.5728337920008926,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0029-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0029-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 29,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_variant_BRAF_V600E",
+          "elapsed_s": 0.017494792002253234,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0030-get_variant_BRAF_V600E-measure-infinite.stdout",
+          "stderr_file": "0030-get_variant_BRAF_V600E-measure-infinite.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 30,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_variant_BRAF_V600E",
+          "argv": [
+            "get",
+            "variant",
+            "BRAF V600E"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_variant_BRAF_V600E/4",
+          "elapsed_s": 0.5328255000058562,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0031-get_variant_BRAF_V600E-measure-off.stdout",
+          "stderr_file": "0031-get_variant_BRAF_V600E-measure-off.stderr",
+          "stdout_bytes": 1371,
+          "stdout_sha256": "0746f675385674010d7c1d539ff29ded13a50be473f49efd81b73087496a890c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 31,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "load_after": [
+            12.1201171875,
+            11.27294921875,
+            10.86767578125
+          ],
+          "workload_label": "get_variant_BRAF_V600E",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 1.3011124170006951,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0032-get_drug_imatinib-prefetch-default.stdout",
+          "stderr_file": "0032-get_drug_imatinib-prefetch-default.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 32,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "load_after": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.26867041700461414,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0033-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0033-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 33,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "load_after": [
+            11.6298828125,
+            11.18505859375,
+            10.8388671875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/0",
+          "elapsed_s": 2.3538167079968844,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0034-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0034-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 34,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            11.2587890625,
+            11.115234375,
+            10.81591796875
+          ],
+          "load_after": [
+            11.2587890625,
+            11.115234375,
+            10.81591796875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.32136462500784546,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0035-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0035-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 35,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            11.2587890625,
+            11.115234375,
+            10.81591796875
+          ],
+          "load_after": [
+            11.2587890625,
+            11.115234375,
+            10.81591796875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/1",
+          "elapsed_s": 1.0500309159979224,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0036-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0036-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 36,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.83740234375,
+            11.0302734375,
+            10.78759765625
+          ],
+          "load_after": [
+            10.83740234375,
+            11.0302734375,
+            10.78759765625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.26620179098972585,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0037-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0037-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 37,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.44970703125,
+            10.9462890625,
+            10.75927734375
+          ],
+          "load_after": [
+            10.44970703125,
+            10.9462890625,
+            10.75927734375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/2",
+          "elapsed_s": 1.0194822500052396,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0038-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0038-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 38,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "load_after": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.26495470899681095,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0039-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0039-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 39,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "load_after": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/3",
+          "elapsed_s": 1.4840026670135558,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0040-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0040-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 40,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            10.09326171875,
+            10.86376953125,
+            10.73095703125
+          ],
+          "load_after": [
+            9.92529296875,
+            10.81591796875,
+            10.71484375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.2686962909938302,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0041-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0041-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 41,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            9.77099609375,
+            10.76904296875,
+            10.69873046875
+          ],
+          "load_after": [
+            9.77099609375,
+            10.76904296875,
+            10.69873046875
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/4",
+          "elapsed_s": 2.026407958008349,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0042-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0042-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 42,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            9.77099609375,
+            10.76904296875,
+            10.69873046875
+          ],
+          "load_after": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.2476389579969691,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0043-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0043-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 43,
+          "sample_index": 5,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "load_after": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/5",
+          "elapsed_s": 1.159479125009966,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0044-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0044-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 44,
+          "sample_index": 5,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "load_after": [
+            9.548828125,
+            10.7060546875,
+            10.6767578125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.23153095800080337,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0045-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0045-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 45,
+          "sample_index": 6,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.755859375,
+            10.50048828125,
+            10.60400390625
+          ],
+          "load_after": [
+            8.755859375,
+            10.50048828125,
+            10.60400390625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/6",
+          "elapsed_s": 2.1827505420078523,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0046-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0046-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 46,
+          "sample_index": 6,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.755859375,
+            10.50048828125,
+            10.60400390625
+          ],
+          "load_after": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.22876054100925103,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0047-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0047-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 47,
+          "sample_index": 7,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "load_after": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/7",
+          "elapsed_s": 0.8878907909966074,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0048-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0048-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 48,
+          "sample_index": 7,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "load_after": [
+            8.294921875,
+            10.37548828125,
+            10.55908203125
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.21357504099432845,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0049-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0049-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 49,
+          "sample_index": 8,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.11083984375,
+            10.302734375,
+            10.5322265625
+          ],
+          "load_after": [
+            8.11083984375,
+            10.302734375,
+            10.5322265625
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/8",
+          "elapsed_s": 2.502029167008004,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0050-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0050-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 50,
+          "sample_index": 8,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.11083984375,
+            10.302734375,
+            10.5322265625
+          ],
+          "load_after": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/get_drug_imatinib",
+          "elapsed_s": 0.23234833299648017,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0051-get_drug_imatinib-measure-infinite.stdout",
+          "stderr_file": "0051-get_drug_imatinib-measure-infinite.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 51,
+          "sample_index": 9,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "load_after": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "get_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/get_drug_imatinib/9",
+          "elapsed_s": 0.8962954580056248,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0052-get_drug_imatinib-measure-off.stdout",
+          "stderr_file": "0052-get_drug_imatinib-measure-off.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 52,
+          "sample_index": 9,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "load_after": [
+            7.78125,
+            10.19775390625,
+            10.49365234375
+          ],
+          "workload_label": "get_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 2.8434736659983173,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0053-search_article_BRAF-prefetch-default.stdout",
+          "stderr_file": "0053-search_article_BRAF-prefetch-default.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 53,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.55810546875,
+            10.111328125,
+            10.46142578125
+          ],
+          "load_after": [
+            7.55810546875,
+            10.111328125,
+            10.46142578125
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:34.080405Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:34.400913Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.876951750004082,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0054-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0054-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2866,
+          "stdout_sha256": "52d4121108171bbb739e226d04dfab7e111a02af64f5ab8f2a4f901c63af4e61",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 54,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            8.15380859375,
+            10.1923828125,
+            10.48779296875
+          ],
+          "load_after": [
+            8.15380859375,
+            10.1923828125,
+            10.48779296875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:36.263579Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (4 s old) age_seconds=4\n2026-10-18T12:58:36.263715Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (4 s old) age_seconds=4\n2026-10-18T12:58:36.264305Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (4 s old) age_seconds=4\n2026-10-18T12:58:37.892982Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (3 s old) age_seconds=3\n2026-10-18T12:58:37.893423Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (3 s old) age_seconds=3\n2026-10-18T12:58:37.893452Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:38.127148Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (3 s old) age_seconds=3\n2026-10-18T12:58:38.127484Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (3 s old) age_seconds=3\n2026-10-18T12:58:38.127498Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/0",
+          "elapsed_s": 2.2377791249891743,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0055-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0055-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 55,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.82080078125,
+            10.08935546875,
+            10.44970703125
+          ],
+          "load_after": [
+            7.82080078125,
+            10.08935546875,
+            10.44970703125
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:42.700422Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:43.029982Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.6469820829952369,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0056-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0056-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2869,
+          "stdout_sha256": "f5bfbff7fd2f7ca406bd1853bbc005fecad6c97c816c9cb1dec5a73412807467",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 56,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.5947265625,
+            10.00439453125,
+            10.41748046875
+          ],
+          "load_after": [
+            7.5947265625,
+            10.00439453125,
+            10.41748046875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:46.957510Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (15 s old) age_seconds=15\n2026-10-18T12:58:46.957747Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (14 s old) age_seconds=14\n2026-10-18T12:58:46.958696Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (14 s old) age_seconds=14\n2026-10-18T12:58:48.350385Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (14 s old) age_seconds=14\n2026-10-18T12:58:48.350771Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (14 s old) age_seconds=14\n2026-10-18T12:58:48.350793Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:48.586331Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (14 s old) age_seconds=14\n2026-10-18T12:58:48.586653Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (14 s old) age_seconds=14\n2026-10-18T12:58:48.586667Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/1",
+          "elapsed_s": 2.2243207080027787,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0057-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0057-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 57,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.146484375,
+            9.87109375,
+            10.36767578125
+          ],
+          "load_after": [
+            7.146484375,
+            9.87109375,
+            10.36767578125
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:52.365408Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:52.634399Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 1.662695833001635,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0058-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0058-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2869,
+          "stdout_sha256": "65ac5d8acf7c3f6de37780705249484acfc134202c96ae52b5c5ff1cc9a8bda6",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 58,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.146484375,
+            9.87109375,
+            10.36767578125
+          ],
+          "load_after": [
+            7.146484375,
+            9.87109375,
+            10.36767578125
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:52.655282Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (20 s old) age_seconds=20\n2026-10-18T12:58:52.655514Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (20 s old) age_seconds=20\n2026-10-18T12:58:52.656418Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (20 s old) age_seconds=20\n2026-10-18T12:58:54.059656Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:54.060026Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:54.060056Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:54.301575Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:54.301912Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (19 s old) age_seconds=19\n2026-10-18T12:58:54.301923Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/2",
+          "elapsed_s": 2.3281252089946065,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0059-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0059-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 59,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.81396484375,
+            9.7568359375,
+            10.32421875
+          ],
+          "load_after": [
+            6.81396484375,
+            9.7568359375,
+            10.32421875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:58:58.083377Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:58:58.369070Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 2.6004638750018785,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0060-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0060-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2971,
+          "stdout_sha256": "ee17c4fc3e8f8bc5e69d744adae801fa1ef9d74dc2152badeae982d022d94d10",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 60,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            6.82861328125,
+            9.7109375,
+            10.3046875
+          ],
+          "load_after": [
+            6.82861328125,
+            9.7109375,
+            10.3046875
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:01.847668Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (30 s old) age_seconds=30\n2026-10-18T12:59:01.847872Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (29 s old) age_seconds=29\n2026-10-18T12:59:01.848783Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (29 s old) age_seconds=29\n2026-10-18T12:59:04.200034Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (30 s old) age_seconds=30\n2026-10-18T12:59:04.200443Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (30 s old) age_seconds=30\n2026-10-18T12:59:04.200477Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:04.432324Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (30 s old) age_seconds=30\n2026-10-18T12:59:04.432571Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (30 s old) age_seconds=30\n2026-10-18T12:59:04.432583Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/3",
+          "elapsed_s": 2.2789011249988107,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0061-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0061-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 61,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            6.84228515625,
+            9.66552734375,
+            10.28515625
+          ],
+          "load_after": [
+            6.84228515625,
+            9.66552734375,
+            10.28515625
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:08.269613Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:08.549938Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_article_BRAF",
+          "elapsed_s": 2.602180000001681,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0062-search_article_BRAF-measure-infinite.stdout",
+          "stderr_file": "0062-search_article_BRAF-measure-infinite.stderr",
+          "stdout_bytes": 2767,
+          "stdout_sha256": "12af7ec2aa6e4e958d0db68ee61a83e8f1e405de7a9f4652bf3c7c65c7721acb",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 62,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.84228515625,
+            9.66552734375,
+            10.28515625
+          ],
+          "load_after": [
+            6.9345703125,
+            9.6376953125,
+            10.271484375
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:08.574011Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:08.574219Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:08.575112Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:10.917093Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:10.917565Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:10.917598Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:11.159556Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:11.159891Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (36 s old) age_seconds=36\n2026-10-18T12:59:11.159905Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_article_BRAF",
+          "argv": [
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--limit",
+            "10"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_article_BRAF/4",
+          "elapsed_s": 2.5334167499968316,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0063-search_article_BRAF-measure-off.stdout",
+          "stderr_file": "0063-search_article_BRAF-measure-off.stderr",
+          "stdout_bytes": 2562,
+          "stdout_sha256": "019be28ab49e8faea3874cb3e11222d2dfa18ebcad7f1fafe0ee6eb65985fe76",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 63,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.9345703125,
+            9.6376953125,
+            10.271484375
+          ],
+          "load_after": [
+            6.9345703125,
+            9.6376953125,
+            10.271484375
+          ],
+          "workload_label": "search_article_BRAF",
+          "stderr": "2026-10-18T12:59:14.885105Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n2026-10-18T12:59:15.363092Z  WARN biomcp_cli::error: External provider operation failed provider=\"PubTator 3\" operation=\"visible article metadata fallback\" class=\"internal\" internal failure\n"
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.029523500008509,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0064-search_all_BRAF_melanoma-prefetch-default.stdout",
+          "stderr_file": "0064-search_all_BRAF_melanoma-prefetch-default.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "59f2c00fac258a51123a811705be592e6560960118a20659f49419521e1c2180",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 64,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            9.16015625,
+            9.95849609375,
+            10.3720703125
+          ],
+          "load_after": [
+            8.939453125,
+            9.87646484375,
+            10.33544921875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.018307125006686,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0065-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0065-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2285,
+          "stdout_sha256": "07cbb7f9f2ee1597b85f9898ff7264d571192dc87df18a313e6f7a9f0d52c9b5",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 65,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            8.17919921875,
+            9.6826171875,
+            10.2607421875
+          ],
+          "load_after": [
+            7.91748046875,
+            9.5771484375,
+            10.21630859375
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T12:59:53.366419Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:53.366684Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:53.367291Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:53.367961Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:53.368150Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:53.368433Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:53.369452Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n2026-10-18T12:59:53.369976Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (23 s old) age_seconds=23\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 23 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 23 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 23 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 23 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 23 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 23 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/0",
+          "elapsed_s": 12.058863208003459,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0066-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0066-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "824afe017f35764fdd6d2e7ca6c3a4463b0481031a3c7dbc7a249ec5cc058ec9",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 66,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            7.51708984375,
+            9.40234375,
+            10.14208984375
+          ],
+          "load_after": [
+            7.89208984375,
+            9.42138671875,
+            10.14013671875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.021289625001373,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0067-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0067-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2384,
+          "stdout_sha256": "6cd3172212fa86d4bcffb30bc0224be5ed735a63c1825589124eab1395feff8c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 67,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.89208984375,
+            9.42138671875,
+            10.14013671875
+          ],
+          "load_after": [
+            7.55859375,
+            9.27001953125,
+            10.07275390625
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:00:29.549069Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (60 s old) age_seconds=60\n2026-10-18T13:00:29.549396Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (60 s old) age_seconds=60\n2026-10-18T13:00:29.549571Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (59 s old) age_seconds=59\n2026-10-18T13:00:29.549988Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (59 s old) age_seconds=59\n2026-10-18T13:00:29.566568Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (60 s old) age_seconds=60\n2026-10-18T13:00:29.566752Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (60 s old) age_seconds=60\n2026-10-18T13:00:29.568992Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (59 s old) age_seconds=59\n2026-10-18T13:00:29.569563Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (59 s old) age_seconds=59\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 60 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 60 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 59 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 59 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 60 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 60 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 59 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/1",
+          "elapsed_s": 12.017132958004368,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0068-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0068-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "577b78c86a8538b042681e36a2966f9c51e7a6c769627199ce28fbb22c7fdc4e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 68,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            7.078125,
+            9.11181640625,
+            10.00732421875
+          ],
+          "load_after": [
+            6.93701171875,
+            8.9765625,
+            9.9423828125
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.065008874997147,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0069-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0069-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2391,
+          "stdout_sha256": "52d660629d8708d013605bae51811675c79b4e6b100db3bff79e8e4f7049618b",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 69,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            6.54541015625,
+            8.75146484375,
+            9.83837890625
+          ],
+          "load_after": [
+            6.04833984375,
+            8.5341796875,
+            9.7412109375
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:01:29.809100Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:29.810348Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:29.810438Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (119 s old) age_seconds=119\n2026-10-18T13:01:29.812263Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (119 s old) age_seconds=119\n2026-10-18T13:01:29.821287Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:29.821414Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:29.823426Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (120 s old) age_seconds=120\n2026-10-18T13:01:29.823879Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (119 s old) age_seconds=119\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 120 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 120 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 119 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 119 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 120 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 120 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 119 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/2",
+          "elapsed_s": 12.048200416000327,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0070-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0070-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "7a95b36e44c74841a4c45358315f833c9c213d20fb6d5efebdf7fab9e736cffb",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 70,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            5.88037109375,
+            8.4169921875,
+            9.685546875
+          ],
+          "load_after": [
+            6.0107421875,
+            8.3154296875,
+            9.62646484375
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.018960542001878,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0071-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0071-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2391,
+          "stdout_sha256": "914c6e37911a1291843a07c74b92df68427fe0e03d99c22246d1c436467e1c7c",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 71,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            6.0107421875,
+            8.3154296875,
+            9.62646484375
+          ],
+          "load_after": [
+            5.92236328125,
+            8.22216796875,
+            9.57763671875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:02:06.013636Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (156 s old) age_seconds=156\n2026-10-18T13:02:06.014141Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (156 s old) age_seconds=156\n2026-10-18T13:02:06.014986Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (156 s old) age_seconds=156\n2026-10-18T13:02:06.015615Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (156 s old) age_seconds=156\n2026-10-18T13:02:06.015778Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (155 s old) age_seconds=155\n2026-10-18T13:02:06.029413Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (156 s old) age_seconds=156\n2026-10-18T13:02:06.030347Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (156 s old) age_seconds=156\n2026-10-18T13:02:06.030792Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (155 s old) age_seconds=155\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 156 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 156 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 156 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 156 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 155 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 156 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 155 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/3",
+          "elapsed_s": 12.014446917004534,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0072-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0072-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "577b78c86a8538b042681e36a2966f9c51e7a6c769627199ce28fbb22c7fdc4e",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 72,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            5.84716796875,
+            8.1318359375,
+            9.52978515625
+          ],
+          "load_after": [
+            5.67138671875,
+            7.97802734375,
+            9.4501953125
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "infinite",
+          "cache_dir": "warm-cache/search_all_BRAF_melanoma",
+          "elapsed_s": 12.061339000007138,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0073-search_all_BRAF_melanoma-measure-infinite.stdout",
+          "stderr_file": "0073-search_all_BRAF_melanoma-measure-infinite.stderr",
+          "stdout_bytes": 2291,
+          "stdout_sha256": "fbd5f3705081a397f874b8ab98c29e72cd8432c19366b804c52703dca434f2dd",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 73,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            5.45751953125,
+            7.73876953125,
+            9.31982421875
+          ],
+          "load_after": [
+            5.0791015625,
+            7.58203125,
+            9.24560546875
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "2026-10-18T13:03:06.317226Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:03:06.318432Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:03:06.318535Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:03:06.328270Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:03:06.328374Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:03:06.328417Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:03:06.330254Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n2026-10-18T13:03:06.330765Z  WARN biomcp_cli::sources: served from cache, older than the provider's freshness window (216 s old) age_seconds=216\n",
+          "stdout_json_observation": {
+            "meta": {
+              "notes": [
+                "ClinicalTrials.gov data served from cache, 216 s old (older than the provider's freshness window).",
+                "PubTator 3 data served from cache, 216 s old (older than the provider's freshness window).",
+                "Europe PMC data served from cache, 216 s old (older than the provider's freshness window).",
+                "Reactome data served from cache, 216 s old (older than the provider's freshness window).",
+                "KEGG data served from cache, 216 s old (older than the provider's freshness window).",
+                "CPIC data served from cache, 216 s old (older than the provider's freshness window)."
+              ]
+            },
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "search_all_BRAF_melanoma",
+          "argv": [
+            "--json",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--counts-only"
+          ],
+          "phase": "measure",
+          "mode": "off",
+          "cache_dir": "off-cache/search_all_BRAF_melanoma/4",
+          "elapsed_s": 12.04590879198804,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [
+            "gwas search timed out after 12s"
+          ],
+          "stdout_file": "0074-search_all_BRAF_melanoma-measure-off.stdout",
+          "stderr_file": "0074-search_all_BRAF_melanoma-measure-off.stderr",
+          "stdout_bytes": 1659,
+          "stdout_sha256": "23136760cd26fa9752768f4867398d4fbc5d81c77dbf0f0cc8dc27b15a9e8d37",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 74,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.75927734375,
+            7.4306640625,
+            9.17236328125
+          ],
+          "load_after": [
+            4.97802734375,
+            7.3447265625,
+            9.1103515625
+          ],
+          "workload_label": "search_all_BRAF_melanoma",
+          "stderr": "",
+          "stdout_json_observation": {
+            "section_outcomes": [
+              {
+                "entity": "gene"
+              },
+              {
+                "entity": "variant"
+              },
+              {
+                "entity": "disease"
+              },
+              {
+                "entity": "drug"
+              },
+              {
+                "entity": "trial"
+              },
+              {
+                "entity": "article"
+              },
+              {
+                "entity": "pathway"
+              },
+              {
+                "entity": "pgx"
+              },
+              {
+                "entity": "gwas",
+                "error": "gwas search timed out after 12s"
+              }
+            ]
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 7.66089029199793,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0075-day_gwas_BRAF-prefetch-default.stdout",
+          "stderr_file": "0075-day_gwas_BRAF-prefetch-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 75,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.9072265625,
+            7.2509765625,
+            9.05615234375
+          ],
+          "load_after": [
+            4.392578125,
+            7.0615234375,
+            8.96728515625
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 0.06980274998932146,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0076-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0076-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 76,
+          "sample_index": 0,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.41796875,
+            6.97705078125,
+            8.91455078125
+          ],
+          "load_after": [
+            4.41796875,
+            6.97705078125,
+            8.91455078125
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 0.0071043339994503185,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0077-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0077-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 77,
+          "sample_index": 1,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.41796875,
+            6.97705078125,
+            8.91455078125
+          ],
+          "load_after": [
+            4.41796875,
+            6.97705078125,
+            8.91455078125
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 0.042629249990568496,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0078-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0078-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 78,
+          "sample_index": 2,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.16796875,
+            6.75146484375,
+            8.7880859375
+          ],
+          "load_after": [
+            4.16796875,
+            6.75146484375,
+            8.7880859375
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 0.00590404198737815,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0079-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0079-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 79,
+          "sample_index": 3,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.16796875,
+            6.75146484375,
+            8.7880859375
+          ],
+          "load_after": [
+            4.16796875,
+            6.75146484375,
+            8.7880859375
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_gwas_BRAF",
+          "argv": [
+            "--json",
+            "search",
+            "gwas",
+            "-g",
+            "BRAF"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_gwas_BRAF",
+          "elapsed_s": 0.0426309169997694,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0080-day_gwas_BRAF-measure-default.stdout",
+          "stderr_file": "0080-day_gwas_BRAF-measure-default.stderr",
+          "stdout_bytes": 4930,
+          "stdout_sha256": "e1dce06839998f8a068251486c82f4e7fd30e99ab16f9b1ec1d291e26118f33b",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 80,
+          "sample_index": 4,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.08447265625,
+            6.52783203125,
+            8.64794921875
+          ],
+          "load_after": [
+            4.08447265625,
+            6.52783203125,
+            8.64794921875
+          ],
+          "workload_label": "day_gwas_BRAF",
+          "stderr": "",
+          "stdout_json_observation": {
+            "count": 10,
+            "returned_result_count": 10,
+            "meta": {
+              "pagination": {
+                "limit": 10,
+                "offset": 0,
+                "returned": 10,
+                "has_more": true,
+                "next_offset": 10,
+                "truncated_by_provider_budget": false
+              },
+              "next_commands": [
+                "biomcp get variant rs10487888",
+                "biomcp list gwas"
+              ]
+            }
+          }
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "prefetch",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 1.2865638329967624,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0081-day_openfda_drug_imatinib-prefetch-default.stdout",
+          "stderr_file": "0081-day_openfda_drug_imatinib-prefetch-default.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 81,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.08447265625,
+            6.52783203125,
+            8.64794921875
+          ],
+          "load_after": [
+            4.08447265625,
+            6.52783203125,
+            8.64794921875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 0.22631337499478832,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0082-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0082-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 82,
+          "sample_index": 0,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            3.99755859375,
+            6.46923828125,
+            8.61474609375
+          ],
+          "load_after": [
+            3.99755859375,
+            6.46923828125,
+            8.61474609375
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 0.2184760000091046,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0083-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0083-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 83,
+          "sample_index": 1,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "load_after": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 0.23481191600149032,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0084-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0084-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 84,
+          "sample_index": 2,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "load_after": [
+            3.91748046875,
+            6.41162109375,
+            8.58154296875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 0.2276784590067109,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0085-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0085-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 85,
+          "sample_index": 3,
+          "pair_order": [
+            "old",
+            "candidate"
+          ],
+          "order_in_pair": 1,
+          "load_before": [
+            4.00390625,
+            6.38818359375,
+            8.560546875
+          ],
+          "load_after": [
+            4.00390625,
+            6.38818359375,
+            8.560546875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        },
+        {
+          "case": "day_openfda_drug_imatinib",
+          "argv": [
+            "get",
+            "drug",
+            "imatinib"
+          ],
+          "phase": "measure",
+          "mode": "default",
+          "cache_dir": "day-cache/day_openfda_drug_imatinib",
+          "elapsed_s": 0.23884058299881872,
+          "exit_code": 0,
+          "timed_out": false,
+          "gwas_errors": [],
+          "stdout_file": "0086-day_openfda_drug_imatinib-measure-default.stdout",
+          "stderr_file": "0086-day_openfda_drug_imatinib-measure-default.stderr",
+          "stdout_bytes": 2275,
+          "stdout_sha256": "b220c8b652a781cff42f3d4d8dad1dbe51ed3f2df0a0165543ad133acdef7666",
+          "arm": "candidate",
+          "product_sha": "c4281daa7304c0dd2875aa3e0d253ae9d2010eed",
+          "pair_index": 86,
+          "sample_index": 4,
+          "pair_order": [
+            "candidate",
+            "old"
+          ],
+          "order_in_pair": 0,
+          "load_before": [
+            4.00390625,
+            6.38818359375,
+            8.560546875
+          ],
+          "load_after": [
+            4.00390625,
+            6.38818359375,
+            8.560546875
+          ],
+          "workload_label": "day_openfda_drug_imatinib",
+          "stderr": ""
+        }
+      ],
+      "summary": {
+        "version_empty_cache": {
+          "median_s": 0.006243833006010391,
+          "spread_s": 0.7189749579993077,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "version_large_cache": {
+          "median_s": 0.006187207996845245,
+          "spread_s": 0.00069420799263753,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_get_gene_BRAF": {
+          "median_s": 0.21926141699077561,
+          "spread_s": 0.03513933300564531,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_get_gene_BRAF": {
+          "median_s": 0.5199699590011733,
+          "spread_s": 0.04356033299700357,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_get_variant_BRAF_V600E": {
+          "median_s": 0.012262541989912279,
+          "spread_s": 0.005922833006479777,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_get_variant_BRAF_V600E": {
+          "median_s": 0.5728337920008926,
+          "spread_s": 0.05488049998530187,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_get_drug_imatinib": {
+          "median_s": 0.25629683349689003,
+          "spread_s": 0.10778958401351701,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_get_drug_imatinib": {
+          "median_s": 1.321740896011761,
+          "spread_s": 1.6141383760113968,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_search_article_BRAF": {
+          "median_s": 1.876951750004082,
+          "spread_s": 0.9551979170064442,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_search_article_BRAF": {
+          "median_s": 2.2789011249988107,
+          "spread_s": 0.30909604199405294,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "warm_search_all_BRAF_melanoma": {
+          "median_s": 12.021289625001373,
+          "spread_s": 0.046701749990461394,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "nocache_search_all_BRAF_melanoma": {
+          "median_s": 12.04590879198804,
+          "spread_s": 0.044416290998924524,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "day_gwas_BRAF": {
+          "median_s": 0.042629249990568496,
+          "spread_s": 0.0638987080019433,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        },
+        "day_openfda_drug_imatinib": {
+          "median_s": 0.2276784590067109,
+          "spread_s": 0.02036458298971411,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "timeouts": 0
+        }
+      }
+    }
+  }
+}
+```
+
 ## Candidate refresh after the research fixes, 2026-10-17
 
 This section replaces the affected candidate columns of the earlier comparison below. The old release results remain unchanged. All 174 runtime observations retain their original product identities, including candidate `234d2b32d3b5068dc27b2543d676997b75ad5baa`; they are not fresh timings of the final product. Those commands do not invoke asset output, supplement search, exact variant article search, article full text or PDF extraction. Dependency/advisory rows also remain unchanged. The complete earlier raw evidence is retained below.
