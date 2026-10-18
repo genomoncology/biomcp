@@ -16,3 +16,7 @@ Variant article search follows the clinical ruling on transcript aliases: an ali
 - Starts from: `sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md`, the clinical review ruling.
 - Changes: claims the alias expansion in `src/entities/article/variant_search.rs` and its tests, `CHANGELOG.md`, and the output that groups article results.
 - Proof: recorded replies for BRCA1 F1761I show alias-only papers such as 34829431 in the unverified alias group with the alias and transcript named; a paper that states a projecting accession, coordinates with a build, or a resolving rsID is verified; an alias that is a different valid MANE variant is labeled or dropped.
+
+## Progress
+
+- 2026-10-18 started
