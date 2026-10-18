@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision a333e52, accept
+
 ## Outcome
 
 The 0.9.3 release notes describe user-visible changes to BioMCP, credit every GitHub reporter whose issue 0.9.3 answers, and the public repo names no private tooling.
