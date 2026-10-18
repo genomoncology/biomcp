@@ -169,3 +169,48 @@ def test_scanner_ignores_imports_and_comments_in_fixture(tmp_path: Path) -> None
 
     for marker in ALLOWED:
         assert_marker_is_centralized(tmp_path, marker)
+
+
+def cache_retention_bypasses(root: Path) -> list[str]:
+    """Cache-enabling fixtures use the helper that owns their disk floor."""
+    pattern = re.compile(
+        r"[\"']BIOMCP_CACHE_MODE[\"']\s*(?:\]\s*=|:)\s*[\"'](?:default|infinite)[\"']"
+        r"|\.pop\(\s*[\"']BIOMCP_CACHE_MODE[\"']"
+        r"|BIOMCP_CACHE_MODE\s*=\s*[\"'](?:default|infinite)[\"']"
+        r"|\.setenv\(\s*[\"']BIOMCP_CACHE_MODE[\"']\s*,\s*[\"'](?:default|infinite)[\"']"
+        r"|\.delenv\(\s*[\"']BIOMCP_CACHE_MODE[\"']"
+        r"|\bdel\s+\w+\[\s*[\"']BIOMCP_CACHE_MODE[\"']\s*\]"
+    )
+    allowed = {"tests/golden/replay_env.py", "tests/test_cache_invalid_settings.py"}
+    found = []
+    for path in sorted((root / "tests").rglob("*.py")):
+        relative = path.relative_to(root).as_posix()
+        if relative in allowed or path.resolve() == THIS_FILE:
+            continue
+        text = path.read_text(encoding="utf-8")
+        found.extend(f"{relative}:{line_number(text, match.start())}" for match in pattern.finditer(text))
+    return found
+
+
+def test_cache_retention_fixtures_use_the_shared_environment() -> None:
+    assert cache_retention_bypasses(REPO_ROOT) == []
+
+
+@pytest.mark.parametrize("statement", [
+    'env.pop("BIOMCP_CACHE_MODE", None)',
+    'env["BIOMCP_CACHE_MODE"] = "default"',
+    'env.update(BIOMCP_CACHE_MODE="infinite")',
+    'env = {"BIOMCP_CACHE_MODE": "default"}',
+    'monkeypatch.setenv("BIOMCP_CACHE_MODE", "default")',
+    'monkeypatch.delenv("BIOMCP_CACHE_MODE", raising=False)',
+    'del env["BIOMCP_CACHE_MODE"]',
+])
+def test_cache_retention_guard_rejects_an_unisolated_fixture(tmp_path: Path, statement: str) -> None:
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "retention.py").write_text(
+        statement + "\n", encoding="utf-8",
+    )
+    assert cache_retention_bypasses(tmp_path) == [
+        "tests/retention.py:1",
+    ]

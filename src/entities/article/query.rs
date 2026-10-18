@@ -654,7 +654,18 @@ pub(super) async fn build_pubtator_query(
         .map(str::trim)
         .filter(|v| !v.is_empty())
     {
-        terms.push(keyword.to_string());
+        let entity = if crate::entities::variant::is_rsid(keyword) {
+            let intent = super::ArticleVariantIntent {
+                original: keyword.to_string(),
+                gene: None,
+                change: None,
+                entity_id: None,
+            };
+            resolve_variant_entity_token(pubtator, &intent).await
+        } else {
+            None
+        };
+        terms.push(entity.unwrap_or_else(|| keyword.to_string()));
     }
 
     if terms.is_empty() {

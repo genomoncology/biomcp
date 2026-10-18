@@ -16,7 +16,7 @@ from urllib.request import urlopen
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent / "golden"))
-from replay_env import REPO_ROOT, replay_environment  # noqa: E402
+from replay_env import REPO_ROOT, replay_environment, retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
@@ -61,12 +61,11 @@ def provider(tmp_path: Path):
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         run_dir = replay._next_run_dir()
-        env = replay.command_env(run_dir)
-        env.pop("BIOMCP_CACHE_MODE", None)
+        env = retained_cache_env(run_dir, replay.provider_env, replay.origin)
         origin = f"http://127.0.0.1:{server.server_port}"
         for name, value in replay.provider_env.items():
             env[name] = value.replace(replay.origin, origin)
-        env.update(BIOMCP_TEST_UNPACED_ORIGIN=origin, RUST_LOG="warn", BIOMCP_CACHE_MIN_DISK_FREE="1B",
+        env.update(BIOMCP_TEST_UNPACED_ORIGIN=origin, RUST_LOG="warn",
                    BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS="3000")
         cache = Path(env["BIOMCP_CACHE_DIR"])
 

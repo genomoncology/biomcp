@@ -6,10 +6,14 @@
 
 ### Fixes
 
+- Resolve an rsID in plain PubTator article search through the matching variant entity, preserving text search when no matching entity is available. (2184)
+
 - Include ORCID in restricted source groups and distinguish its non-commercial API terms from public record data reuse. (2216)
+- Reconcile HTTP cache byte accounting after explicit cleanup, including reservations left by failed writes. (2218)
 
 ### Internal
 
+- Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
 
 - Open the next development version after the 0.9.3 release. (2215)
 - Exercise production HTTP cache startup and migration in the existing security, contention, upgrade and startup-cost cases, removing unused blocking test constructors. (2199)
