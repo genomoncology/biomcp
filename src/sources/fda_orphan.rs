@@ -680,7 +680,7 @@ pub(crate) enum FdaOrphanHealth {
     Ok,
     /// The site answered the scripted POST with this redirect status.
     Redirect(u16),
-    Failed,
+    Failed(String),
 }
 
 pub(crate) async fn health_probe(_client: reqwest::Client) -> FdaOrphanHealth {
@@ -690,7 +690,7 @@ pub(crate) async fn health_probe(_client: reqwest::Client) -> FdaOrphanHealth {
             .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION"))),
     ) {
         Ok(client) => client,
-        Err(_) => return FdaOrphanHealth::Failed,
+        Err(_) => return FdaOrphanHealth::Failed("HTTP client configuration failed".into()),
     };
     let base = crate::sources::env_base(BASE, BASE_ENV);
     let url = format!("{}/OOPD_Results.cfm", base.trim_end_matches('/'));
@@ -701,32 +701,41 @@ pub(crate) async fn health_probe(_client: reqwest::Client) -> FdaOrphanHealth {
         .await
     {
         Ok(response) => response,
-        Err(_) => return FdaOrphanHealth::Failed,
+        Err(error) => {
+            let reason = if error.is_timeout() {
+                "request timed out"
+            } else if error.is_connect() {
+                "connection failed"
+            } else {
+                "request failed"
+            };
+            return FdaOrphanHealth::Failed(reason.into());
+        }
     };
     let status = response.status();
     if status.is_redirection() {
         return FdaOrphanHealth::Redirect(status.as_u16());
     }
     if status != reqwest::StatusCode::OK {
-        return FdaOrphanHealth::Failed;
+        return FdaOrphanHealth::Failed(format!("HTTP {}", status.as_u16()));
     }
     let bytes =
         match crate::sources::read_limited_body_with_limit(response, FDA_ORPHAN_SOURCE, MAX_BODY)
             .await
         {
             Ok(bytes) => bytes,
-            Err(_) => return FdaOrphanHealth::Failed,
+            Err(_) => return FdaOrphanHealth::Failed("could not read designation response".into()),
         };
     let fully_valid = match parse_table(&bytes)
         .and_then(|table| parse_records(table, &[]).map(|(_, fully_valid)| fully_valid))
     {
         Ok(fully_valid) => fully_valid,
-        Err(_) => return FdaOrphanHealth::Failed,
+        Err(_) => return FdaOrphanHealth::Failed("invalid designation response".into()),
     };
     if fully_valid {
         FdaOrphanHealth::Ok
     } else {
-        FdaOrphanHealth::Failed
+        FdaOrphanHealth::Failed("invalid designation response".into())
     }
 }
 

@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 - Report disabled local datasets as disabled in health checks and name the setting instead of reporting missing-file errors. (2221)
 
 - Resolve an rsID in plain PubTator article search through the matching variant entity, preserving text search when no matching entity is available. (2184)
