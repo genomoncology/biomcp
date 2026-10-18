@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision a03d835, accept
+
 ## Outcome
 
 After 2196 lands, an agent test review checks every entity, section, typed MCP tool and health row with sources disabled for any call or wrong reason, and audits every source's commercial terms record.
