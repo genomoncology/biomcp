@@ -20,7 +20,7 @@ Depends on: 2156
 
 - Starts from: the existing replay server, recording/request-log support and four JSON/Markdown golden pairs for get gene, get variant and the two search-all modes.
 - Keeps: existing goldens, frozen source captures and reader-facing specification claims. Record new replies under the existing replay-data paths.
-- Changes: claims `tools/replay-server` `tests/golden/test_golden_output.py` `tests/golden/replay_env.py` `tests/golden/conftest.py` `tests/golden/cases/**` `tests/golden/spec/**` `testdata/replay/**` `CHANGELOG.md`. Name affected specification pages and `scripts/run-specs.sh` in each batch's actual claim before editing them.
+- Changes: current batch claims `tests/golden/test_golden_output.py`, `tests/golden/cases/get-trial-nct02576665-references.json`, `tests/golden/cases/get-trial-nct02576665-references.md`, `tests/golden/cases/get-trial-nct06131398-references.json`, `tests/golden/cases/get-trial-nct06131398-references.md`, `testdata/replay/manifest.json`, `testdata/replay/responses/ctgov/ctgov-studies-nct02576665-references.json`, `testdata/replay/responses/ctgov/ctgov-studies-nct06131398-references.json`, `CHANGELOG.md` and this ticket. Name actual files for each later batch before editing them; this batch changes no specification page or runner.
 - Proof: each remaining command-family batch has executed JSON and Markdown cases that fail when its output changes. Run the affected cases offline through the build job and the routine merged-candidate gate; report coverage without a new percentage gate. Measure the existing sixty-second golden-suite target rather than infer it; it is a suite target, not an elapsed-time failure rule for an individual test.
 - Defers: broad shared fixture identifiers/scenario restructuring to the next release unless a named current migration needs a narrow change.
 
@@ -31,3 +31,9 @@ PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every b
 ## Progress
 
 - 2026-10-18 started
+
+## Next bounded batch
+
+Restated batch outcome: add populated and empty trial-reference JSON/Markdown golden cases through the existing replay server. This prepares2111's named test_recorded_references_and_empty_result_keep_section_behavior migration. Reuse unchanged existing CTGov captures for NCT02576665 and NCT06131398. Current inventory has no corresponding committed trial-reference golden pair; this is missing outside-in coverage, not a functional defect requiring an invented failing baseline. Preserve the old consumer and reader-facing specifications.
+
+Generate four goldens using the qualified current-main CLI and frozen local replies; verify source-order references, PMID/citation/source_type and the clinicaltrials.gov link plus explicit empty behavior. In one disposable build-job copy, clear acquired trial.references to demonstrate both populated JSON and Markdown cases fail; restore source and run the affected pairs and existing golden suite offline. Measure actual suite elapsed time, without a new elapsed-time failure rule. No new recorder, live capture, fixture-identifier refactor or product change. Keep the parent open after this batch until its remaining contracted coverage is addressed.
