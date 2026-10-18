@@ -10,7 +10,7 @@ Milestone: 0.9.4
 
 ## Outcome
 
-Main reports the next development version instead of the released number, the changelog has an empty Unreleased section with the conventional headings, and a short release record preserves the actual 0.9.3 publication evidence.
+Main reports the next development version instead of the released number, the changelog has an Unreleased section with the conventional headings and one short Internal bookkeeping bullet, and a short release record preserves the actual 0.9.3 publication evidence.
 
 - Evidence: PM authorized this work after tagged release run `39150372750` succeeded on `5641de7d7b79b53872f8599dbb4dba22e611dcaf`. Current main still carries stable0.9.3 and begins the changelog with that release. PM released the main hold and owns GitHub issue replies with Ian.
 - Changes: `Cargo.toml` `Cargo.lock` `pyproject.toml` `uv.lock` `manifest.json` `CITATION.cff` `server.json` `Formula/biomcp.rb` `CHANGELOG.md` `sdlc/records/2215-0-9-3-release.md` `docs/reference/release-process.md`. Use the existing post-release version convention and version tools; narrow any unneeded version-file edits after reading their rules. No release workflow, publisher, tag or product behavior change.
@@ -29,3 +29,5 @@ Focused check `2215/1792348190229-38824` passed version-sync, all32 existing ver
 - 2026-10-18 next: Developer stopped and pushed once at effe9f05ad9b60c0159a5aaf58282bffe8a61e92. Version sync,32 existing version/identity contracts and formatting passed job1792348190229-38824; its quality failure identified the corrected current-version prose. Version sync and corrected quality passed1792348291161-46891. Tracked text,diff and CLI build passed1792348326368-52731; banner biomcp0.9.4-dev+geffe9f05. Final direct banner assertion/diff passed1792348381030-55399. Two checking-command errors (script invocation and missing scratch tee directory) are excluded from product failures; no build/contract repeats. Fresh review now runs before solo landing of this version/config update, then full actual-main check; start the first six independent0.9.4 lanes afterward.
 
 PM decision needed: existing Unreleased-description contract and branch/main changelog coverage require a2215 description for this version/docs update, while the approved outcome requires an empty Unreleased section. Prefer one Internal after-release bookkeeping bullet to a new version-only gate exception; PM ruling is pending. Reviewer has made no edit and source remains effe9f05.
+
+PM decision: Allow one short, user-neutral Internal2215 bookkeeping bullet under Unreleased, with no private tool names. Keep New features and Fixes empty, preserve released0.9.3 notes, and retain the existing changelog check and tests unchanged. This supersedes the literal empty-section wording.
