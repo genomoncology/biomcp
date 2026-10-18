@@ -17,6 +17,8 @@
 
 ### Internal
 
+- Derive licensing reference facts and source notes from the source registry so corrections cannot leave stale guidance. (2224)
+
 - Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
 
 - Open the next development version after the 0.9.3 release. (2215)
