@@ -17,3 +17,7 @@ The source registry describes the non-commercial terms for ORCID Public and Anon
 - Proof: reproduce the current commercial-restricted group omitting ORCID with the existing actual selection path; an outside-in/group contract fails before correction and passes afterward. Confirm explicit ORCID and group disable retain truthful disabled reasons and avoid its fixture requests. Verify source registry/licensing documentation checks. Targeted build-job tests, fresh review and ordinary landing/main checks follow.
 
 PM decision: Correct the registry and test group membership; no provider contact, license purchase, default-disable policy change or claim about unverified providers is authorized.
+
+## Progress
+
+- 2026-10-18 started
