@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision a0b0230, accept
+
 ## Outcome
 
 The shipped AlphaGenome client builds on tonic and prost 0.14, the all-features normal dependency tree has no duplicated tower, indexmap, socket2 or axum versions, and the obsolete rustls-pemfile advisory exception is removed.
