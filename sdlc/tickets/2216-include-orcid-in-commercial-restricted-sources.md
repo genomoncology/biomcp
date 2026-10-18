@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision b8bf623, accept
+
 ## Outcome
 
 The source registry describes the non-commercial terms for ORCID Public and Anonymous APIs, and commercial-restricted source selection includes ORCID so users can disable that direct API under the existing policy.
