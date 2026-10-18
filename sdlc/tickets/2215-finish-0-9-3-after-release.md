@@ -22,3 +22,5 @@ PM verification: GitHub release is public with five archives/checksums; PyPI ser
 ## Progress
 
 - 2026-10-18 started
+
+Developer outcome before editing: current Cargo, Python and lock versions are0.9.3 and the changelog starts with0.9.3, so main has no next-dev state. Existing2132 convention sets Cargo0.9.4-dev/Python0.9.4.dev0 while registry, citation and server records keep latest stable0.9.3; preserve the existing formula placeholder convention. Actual claim narrows to `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, `uv.lock`, `CHANGELOG.md` and `sdlc/records/2215-0-9-3-release.md`. Reuse version-sync/development-version contracts and a built CLI version check through one build job; add no redundant test. Release record must distinguish full workflow-dispatch attempts from tagged or container-only runs, retain each failed attempt cause and cite the source of reported publication verification.
