@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision c1722b9, accept
+
 ## Outcome
 
 Variant article search names configured source disables consistently through CLI and MCP. Disabled resolution providers do not become unexplained provider failures. Preserve the established variant identity rules.
