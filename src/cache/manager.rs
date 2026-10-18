@@ -60,14 +60,21 @@ const STARTUP_CLEAN_MARKER_FILE: &str = ".last-startup-clean";
 const STARTUP_CLEAN_INTERVAL_MS: u128 = 24 * 60 * 60 * 1_000;
 
 /// Stamp the stale-serve marker from the stored policy when the entry is
-/// past its freshness window. The age comes from the policy clock, not the
-/// file's write time, and the marker is never stamped on a fresh entry.
+/// past its effective freshness window. Day-cache requests use their day
+/// window instead of the provider's policy. The age comes from the policy
+/// clock, not the file's write time.
 fn stamp_stale_serve_marker(response: &mut HttpResponse, policy: &CachePolicy) {
     let now = SystemTime::now();
-    if !policy.is_stale(now) {
+    let age = policy.age(now);
+    let is_stale = if crate::sources::day_cache_request_active() {
+        age >= crate::sources::DAY_CACHE_TTL
+    } else {
+        policy.is_stale(now)
+    };
+    if !is_stale {
         return;
     }
-    let age_seconds = policy.age(now).as_secs();
+    let age_seconds = age.as_secs();
     response
         .headers
         .insert(STALE_SERVE_AGE_HEADER.to_string(), age_seconds.to_string());
