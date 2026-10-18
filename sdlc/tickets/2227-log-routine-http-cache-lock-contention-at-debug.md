@@ -29,3 +29,7 @@ Do not block requests or require every contended cache write to persist. Do not 
 ## Proof
 
 Use the real byte-total lock to reproduce a successful response and skipped cache write. At normal warning verbosity, routine WouldBlock contention emits no WARN; debug verbosity retains the contention explanation. A real non-contention I/O failure still warns and leaves the provider response intact. Reuse existing fixture evidence and run affected checks rather than another broad platform matrix.
+
+## Progress
+
+- 2026-10-18 started
