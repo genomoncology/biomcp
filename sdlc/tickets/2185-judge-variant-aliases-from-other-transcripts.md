@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 73da5c5, accept
+
 ## Outcome
 
 Variant article search follows the clinical ruling on transcript aliases: an alias-only match is verified only when the paper pins it to the same genomic change, and unverified alias matches appear in their own labeled group, never in evidence summaries.
