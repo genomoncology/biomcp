@@ -14,6 +14,8 @@ Reviews: revision c892df7, accept
 
 Reviews: revision 61e8d2b, accept
 
+Reviews: revision 61e8d2b, reject
+
 ## Outcome
 
 Each source's licensing facts in the reference agree with the registry, so a correction cannot leave a stale table or detail paragraph. Keep the registry as the source of truth and preserve distinct source terms and caveats.
