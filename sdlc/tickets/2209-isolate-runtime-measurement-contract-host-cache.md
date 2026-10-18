@@ -19,3 +19,5 @@ The fake-CLI runtime measurement contract uses its own home and cache tree. It m
 ## Progress
 
 - 2026-10-18 started
+
+Developer outcome and diagnosis reported before editing: the fake-CLI runtime contract must own its home/cache tree. Neighboring measurement contracts already isolate HOME, but this case inherits it; the real helper intentionally scans its host cache before running observations. The existing full Linux failure is the pre-fix reproduction, so do not scan that real cache again. Prepared fixture-only change creates `tmp_path/home`, passes a copied environment with HOME overridden, and leaves the helper, assertions and60s timeout unchanged. Claim only the two named files. The coordinator recorded this brief after the fixture patch was prepared; no production edit or new test run preceded the recorded Linux failure.
