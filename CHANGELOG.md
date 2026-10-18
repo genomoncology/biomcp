@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Resolve an rsID in plain PubTator article search through the matching variant entity, preserving text search when no matching entity is available. (2184)
+
 - Include ORCID in restricted source groups and distinguish its non-commercial API terms from public record data reuse. (2216)
 
 ### Internal
