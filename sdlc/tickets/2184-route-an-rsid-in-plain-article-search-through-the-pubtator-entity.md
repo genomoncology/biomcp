@@ -13,7 +13,7 @@ Milestone: 0.9.4
 `search article <rsID> --source pubtator` uses the PubTator variant entity, as `variant articles` already does.
 
 - Evidence: research's spot check: `search article rs113488022 --source pubtator` returns the 47 text matches, while the variant-articles annotation route finds about 1,250 candidates.
-- Changes: claims the PubTator article search path and its tests, `CHANGELOG.md`.
+- Changes: `src/entities/article/query.rs` `tests/test_article_rsid_search.py` `CHANGELOG.md`. Reuse the existing typed PubTator resolver for exact rsID keywords.
 - Proof: recorded replies show the plain search resolving the rsID to its entity; current main uses text search.
 
 ## Progress
