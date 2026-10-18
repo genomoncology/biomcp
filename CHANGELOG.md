@@ -13,6 +13,8 @@
 
 ### Internal
 
+- Document daily size reconciliation when sharing an HTTP cache with BioMCP 0.9.2 and the explicit cleanup command for earlier reconciliation. (2223)
+
 - Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
 
 - Open the next development version after the 0.9.3 release. (2215)
