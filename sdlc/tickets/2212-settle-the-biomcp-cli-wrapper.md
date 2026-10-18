@@ -4,7 +4,9 @@ priority: 3
 
 # 2212 — Settle the biomcp-cli wrapper
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-18, Settled by 2064: the PyPI package ships as biomcp-cli and installs only the biomcp command, so no second wrapper program remains to decide on..
 
 Milestone: 0.9.4
 
