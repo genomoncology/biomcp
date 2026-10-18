@@ -25,6 +25,7 @@
 - Report HTML and other non-PDF full-text replies as unavailable downloads, including replies labeled as PDF; reserve unusable PDF text for PDF bytes that cannot yield text. (2183)
 - Store extracted supplement text in the managed cache so age and size cleanup, disk limits, and cache statistics include it, and lookups read one key without scanning the extraction directory. (2197)
 - Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
+- Bound optional HTTP cache eviction by the request deadline while preserving committed responses and ordinary cache-size enforcement (2206).
 - Local HTTP cache failures keep provider searches working: initialization and lock contention bypass the cache, unreadable or undecodable entries refetch, and failed cache writes retain the provider answer. A local warning names the failing cache operation without exposing paths or request details; invocation deadlines and cache security checks still apply. (2172)
 - Handle Windows cache-lock contention without failing provider searches, and report local I/O kinds and OS errors without exposing paths. Reported by rizakardas, GitHub #292. (2170)
 - Suppress unresolved structural hotspot counts, preserve cached-answer age notes, keep drug and disease identity refusals precise, hide health error paths, validate protein residues, and handle installer paths with spaces. (2128)
