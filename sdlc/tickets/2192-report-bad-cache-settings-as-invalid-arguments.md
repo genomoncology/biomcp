@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision e1eb5cb, accept
+
 ## Outcome
 
 A bad cache setting fails with exit 2 and an invalid-argument message naming the setting and value, as v0.9.2 does, on the CLI, in JSON and over MCP.
