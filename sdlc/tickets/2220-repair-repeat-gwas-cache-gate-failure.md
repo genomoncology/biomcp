@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision e090ca0, accept
+
 ## Outcome
 
 Explain and fix the repeat-search cache failure that stopped the unrelated Windows review landing. Preserve the outside-in claim that a same-day repeat search with an isolated cache returns the same rows without another provider request.
