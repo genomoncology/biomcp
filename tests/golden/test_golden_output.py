@@ -47,6 +47,14 @@ CASES = (
     Case("get-gene-braf", ("get", "gene", "BRAF")),
     Case("get-variant-braf-v600e", ("get", "variant", "BRAF V600E")),
     Case(
+        "get-trial-nct02576665-references",
+        ("get", "trial", "NCT02576665", "--source", "ctgov", "references"),
+    ),
+    Case(
+        "get-trial-nct06131398-references",
+        ("get", "trial", "NCT06131398", "--source", "ctgov", "references"),
+    ),
+    Case(
         "search-all-braf-melanoma",
         ("search", "all", "--gene", "BRAF", "--disease", "melanoma"),
     ),

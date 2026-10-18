@@ -1,0 +1,171 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "ClinicalTrials.gov",
+        "url": "https://clinicaltrials.gov/study/NCT06131398"
+      }
+    ],
+    "next_commands": [
+      "biomcp search article --drug \"AMG 355\" -q \"NCT06131398 A Study of AMG 355 Alone\" --limit 5",
+      "biomcp search disease --query \"Advanced Solid Tumors\"",
+      "biomcp search article -d \"Advanced Solid Tumors\"",
+      "biomcp search trial -c \"Advanced Solid Tumors\"",
+      "biomcp search drug -q \"Keytruda\""
+    ],
+    "section_sources": [
+      {
+        "key": "overview",
+        "label": "Overview",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "conditions",
+        "label": "Conditions",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "interventions",
+        "label": "Interventions",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "outcomes",
+        "label": "Outcomes",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "references",
+        "label": "References",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      }
+    ]
+  },
+  "completion_date": "2026-07-22",
+  "conditions": [
+    "Advanced Solid Tumors"
+  ],
+  "enrollment": 77,
+  "interventions": [
+    {
+      "description": "Short-term intravenous (IV) infusion",
+      "id": 1,
+      "name": "AMG 355",
+      "other_names": [],
+      "type": {
+        "authority": "clinicaltrials.gov",
+        "code": "DRUG",
+        "display": null,
+        "recognized_meaning": null,
+        "vocabulary_version": null
+      }
+    },
+    {
+      "description": "Short-term IV infusion",
+      "id": 2,
+      "name": "Pembrolizumab",
+      "other_names": [
+        "Keytruda"
+      ],
+      "type": {
+        "authority": "clinicaltrials.gov",
+        "code": "DRUG",
+        "display": null,
+        "recognized_meaning": null,
+        "vocabulary_version": null
+      }
+    }
+  ],
+  "nct_id": "NCT06131398",
+  "outcomes": {
+    "primary": [
+      {
+        "measure": "Number of Participants Who Experience a Dose Limiting Toxicity (DLT)",
+        "time_frame": "Day 1 to Day 21"
+      },
+      {
+        "description": "Adverse events (AEs) are defined as any untoward medical occurrence in a clinical study participant irrespective of a causal relationship with the study treatment. TEAEs are any event that occurs after the participant has received study treatment. Any clinically significant changes in vital signs, electrocardiograms (ECGs), and clinical laboratory tests, as assessed by the investigator, will also be reported as TEAEs.",
+        "measure": "Number of Participants Who Experience a Treatment-emergent Adverse Event (TEAE)",
+        "time_frame": "Up to 2 years"
+      },
+      {
+        "measure": "Number of Participants Who Experience a Treatment-related AE",
+        "time_frame": "Up to 2 years"
+      }
+    ],
+    "secondary": [
+      {
+        "measure": "Maximum Observed Serum Concentration (Cmax) of AMG 355",
+        "time_frame": "Up to 85 days"
+      },
+      {
+        "measure": "Minimum Observed Serum Concentration (Cmin) of AMG 355",
+        "time_frame": "Up to 85 days"
+      },
+      {
+        "measure": "Area Under the Concentration-time Curve (AUC) of AMG 355",
+        "time_frame": "Up to 85 days"
+      },
+      {
+        "measure": "Confirmed Objective Response (OR) Based on Response Evaluation Criteria in Solid Tumors version 1.1 (RECIST v1.1).",
+        "time_frame": "Up to 2 years"
+      },
+      {
+        "measure": "Clinical Benefit per RECIST v1.1",
+        "time_frame": "Up to 2 years"
+      },
+      {
+        "measure": "Duration of Response per RECIST v1.1",
+        "time_frame": "Up to 2 years"
+      },
+      {
+        "measure": "Time to Progression by RECIST v1.1",
+        "time_frame": "Up to 2 years"
+      },
+      {
+        "measure": "Progression-free Survival (PFS) by RECIST v1.1",
+        "time_frame": "Up to 2 years"
+      },
+      {
+        "measure": "Overall Survival",
+        "time_frame": "Up to 2 years"
+      },
+      {
+        "measure": "Change From Baseline in C-C motif chemokine receptor 8 (CCR8+) Expression Between Pre and On Treatment Tumor Samples",
+        "time_frame": "Up to 2 years"
+      }
+    ]
+  },
+  "phase": "PHASE1",
+  "references": [],
+  "source": "ClinicalTrials.gov",
+  "sponsor": "Amgen",
+  "start_date": "2024-03-07",
+  "status": "COMPLETED",
+  "study_type": "INTERVENTIONAL",
+  "summary": "The primary objectives of this study are to:\n\n* Evaluate the safety and tolerability of AMG 355 as monotherapy and in combination with pembrolizumab in participants with advanced solid tumors\n* Determine the recommended phase 2 dose and the maximum tolerated dose for AMG 355 as monotherapy and in combination with pembrolizumab in participants with advanced solid tumors.",
+  "title": "A Study of AMG 355 Alone and in Combination With Pembrolizumab in Participants With Advanced Solid Tumors"
+}
