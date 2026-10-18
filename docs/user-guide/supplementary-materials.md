@@ -261,10 +261,12 @@ file, 500 PDF pages, and 20 seconds per file; a file that crosses a limit
 is reported with its reason. At most 200 hits are reported, and
 `hits_truncated` says when to narrow the string.
 
-Extracted text is cached under the session cache, keyed by the source
-file's SHA-256: the same file content is not re-extracted while the cache
-stands, and changed bytes get a new key. `--no-cache` skips both read and
-write.
+Extracted text uses the managed HTTP cache, keyed by the source file's
+SHA-256. The same bytes reuse their extraction until the configured
+`[cache].max_age_secs` expires or cache maintenance removes the entry;
+changed bytes get a new key. Cache statistics include extracted text, and
+age, size and free-disk limits apply to it. `--no-cache` and
+`BIOMCP_CACHE_MODE=off` skip both read and write.
 
 ## Limits
 
