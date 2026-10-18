@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 85fb4bc, accept
 
+Reviews: revision 3c2dca6, accept
+
 ## Outcome
 
 A fresh development build and a rebuild after a Rust change are at least as fast as v0.9.2's on the same build machine, or the record names what costs the time and why it stays.
