@@ -553,6 +553,60 @@ async fn cold_cache_different_shard_puts_tolerate_common_directory_creation_race
     );
 }
 
+// A real manager is the owning concurrency boundary: the CLI cannot hold
+// an in-process maintenance lease across its own committed cache write.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn put_does_not_wait_past_request_deadline_for_eviction() {
+    let root = TempDirGuard::new("deadline-bounded-eviction");
+    let cache_path = root.path().join("http");
+    let manager = SizeAwareCacheManager::new(
+        cache_path.clone(),
+        test_config(root.path(), 1, DiskFreeThreshold::Bytes(1)),
+    )
+    .expect("production cache manager");
+    let operation = crate::cache::lock_cache_shared(root.path()).expect("hold another lease");
+    let deadline = crate::sources::VariantArticleDeadline::from_now(
+        crate::test_support::watchdog_millis(1000),
+    );
+    let observation = deadline.limit() + crate::test_support::watchdog_millis(500);
+    let mut put = tokio::spawn(async move {
+        crate::sources::with_variant_article_deadline(deadline.clone(), async {
+            crate::sources::run_with_cache_publication(
+                &deadline,
+                manager.put(
+                    "deadline-entry".into(),
+                    test_http_response(b"committed"),
+                    test_policy(),
+                ),
+            )
+            .await
+        })
+        .await
+    });
+    let observed = tokio::time::timeout(observation, &mut put).await;
+    let completed_in_time = observed.is_ok();
+    let committed_while_lease_held = cacache::read(&cache_path, "deadline-entry").await.is_ok();
+    // Always release and drain before asserting: the pre-fix case must not
+    // leave a blocked eviction task behind in the shared test runtime.
+    drop(operation);
+    let result = match observed {
+        Ok(result) => result,
+        Err(_) => put.await,
+    };
+    result
+        .expect("put task")
+        .expect("publication scope")
+        .expect("committed put");
+    assert!(
+        committed_while_lease_held,
+        "deadline must preserve the committed entry"
+    );
+    assert!(
+        completed_in_time,
+        "optional eviction waited beyond the request deadline"
+    );
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn eviction_waits_for_an_active_cache_operation() {
     let root = TempDirGuard::new("coordinated-eviction");

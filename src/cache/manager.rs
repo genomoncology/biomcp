@@ -622,6 +622,9 @@ fn spawn_eviction_task(
     approx_bytes: Arc<AtomicU64>,
     eviction_running: Arc<AtomicBool>,
 ) -> Option<tokio::task::JoinHandle<()>> {
+    // Tokio tasks and blocking workers do not inherit request task locals.
+    // Carry this ceiling into optional maintenance before crossing either boundary.
+    let deadline = crate::sources::current_variant_article_deadline();
     Some(tokio::spawn(async move {
         struct ResetFlag(Arc<AtomicBool>);
 
@@ -633,7 +636,13 @@ fn spawn_eviction_task(
 
         let _reset_flag = ResetFlag(Arc::clone(&eviction_running));
         let result = tokio::task::spawn_blocking(move || {
-            run_eviction_cycle(&cache_path, &config, approx_bytes.as_ref())
+            let evict = || run_eviction_cycle(&cache_path, &config, approx_bytes.as_ref());
+            match deadline {
+                Some(deadline) => tokio::runtime::Handle::current().block_on(
+                    crate::sources::with_variant_article_deadline(deadline, async { evict() }),
+                ),
+                None => evict(),
+            }
         })
         .await;
 
@@ -650,7 +659,11 @@ fn run_eviction_cycle(
     config: &ResolvedCacheConfig,
     approx_bytes: &AtomicU64,
 ) -> Result<(), BioMcpError> {
-    let _operation = super::lock_cache_maintenance_after_shared(&config.cache_root)?;
+    let _operation = if crate::sources::current_variant_article_deadline().is_some() {
+        super::lock_cache_maintenance(&config.cache_root)?
+    } else {
+        super::lock_cache_maintenance_after_shared(&config.cache_root)?
+    };
     run_eviction_cycle_with(
         cache_path,
         config,

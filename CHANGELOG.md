@@ -25,6 +25,7 @@
 - Report HTML and other non-PDF full-text replies as unavailable downloads, including replies labeled as PDF; reserve unusable PDF text for PDF bytes that cannot yield text. (2183)
 - Store extracted supplement text in the managed cache so age and size cleanup, disk limits, and cache statistics include it, and lookups read one key without scanning the extraction directory. (2197)
 - Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
+- Bound optional HTTP cache eviction by the request deadline while preserving committed responses and ordinary cache-size enforcement (2206).
 - Fulltext replay fixtures keep their server and Unicode cache state inside ignored test output, so concurrent repository audits never scan files that fixture cleanup can remove. (2177)
 - Reject changelog entries accidentally joined onto one line before landing or release, including repository-only changes. (2158)
 - Local HTTP cache failures keep provider searches working: initialization and lock contention bypass the cache, unreadable or undecodable entries refetch, and failed cache writes retain the provider answer. A local warning names the failing cache operation without exposing paths or request details; invocation deadlines and cache security checks still apply. (2172)
