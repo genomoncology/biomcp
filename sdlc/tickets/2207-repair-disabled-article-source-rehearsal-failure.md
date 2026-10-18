@@ -4,9 +4,11 @@ priority: 1
 
 # 2207 — Repair disabled article source qualification
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
+
+Reviews: revision 484b5cd, accept
 
 ## Outcome
 
@@ -19,3 +21,7 @@ Disabled article sources remain explicitly skipped, silent and complete in the s
 ## Progress
 
 - 2026-10-18 started
+
+Developer outcome before code: Keep disabled article providers skipped, silent and complete; keep real enabled-provider failures visible. The existing CLI fixture sets many provider bases but omits OLS4. Keyword resolution can therefore call the live OLS4 endpoint, which the Linux offline gate blocks and native development does not isolate. Claim only `tests/disable_sources_cli.rs` and `CHANGELOG.md`; production warning behavior stays intact. Focused current-main RED is `env -u CARGO_INCREMENTAL BIOMCP_OLS4_BASE=http://127.0.0.1:0 tools/with-build-identity cargo nextest run --no-default-features -E 'binary(disable_sources_cli) and test(disabled_article_sources_are_skipped_without_warnings_or_incompleteness)' --no-capture`, through a build job. An explicitly refused local endpoint recreates the missing fixture failure before any edit. The repair will route the existing OLS4 request into its fixture and retain both silence and genuine-provider warning assertions.
+
+Focused RED before edits: build job `2207/1792330778260-52542` on `2e078ef21` ran the recorded command with OLS4 explicitly unavailable. It failed exactly at `tests/disable_sources_cli.rs:1014` with `WARN biomcp_cli::cli::article::dispatch: Exact article keyword entity lookup unavailable`; one failed case, 19 skipped, 5.934s test duration. This deterministically confirms the unowned live OLS4 dependency while production remains unchanged.

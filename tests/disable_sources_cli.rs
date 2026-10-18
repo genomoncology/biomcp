@@ -121,6 +121,10 @@ fn find_head_end(bytes: &[u8]) -> Option<usize> {
 fn route(path: &str, query: &str) -> (&'static str, &'static str, &'static [u8]) {
     match path {
         "/europe/search" => ("200 OK", "application/json", br#"{"hitCount":0,"resultList":{"result":[]}}"#),
+        "/ols4/api/search" => (
+            "200 OK", "application/json",
+            br#"{"response":{"numFound":0,"start":0,"docs":[]}}"#,
+        ),
         path if path.starts_with("/myvariant/v1/variant/") => (
             "200 OK", "application/json",
             include_bytes!("../testdata/sources/myvariant/get_braf_v600e.json"),
@@ -203,6 +207,7 @@ impl<'a> Binary<'a> {
             .args(args)
             .env("BIOMCP_CACHE_DIR", self.cache.path())
             .env("BIOMCP_MYGENE_BASE", format!("{base}/mygene/v3"))
+            .env("BIOMCP_OLS4_BASE", format!("{base}/ols4"))
             .env(
                 "BIOMCP_REACTOME_BASE",
                 format!("{base}/reactome/ContentService"),
@@ -1013,6 +1018,7 @@ fn disabled_article_sources_are_skipped_without_warnings_or_incompleteness() {
     }
     assert!(!stderr(&output).contains("WARN"), "{}", stderr(&output));
     assert!(fixture.requests_matching("/europe/search") > 0);
+    assert!(fixture.requests_matching("/ols4/api/search") > 0);
     let failed = Binary::new(&fixture)
         .env(
             "BIOMCP_EUROPEPMC_BASE",

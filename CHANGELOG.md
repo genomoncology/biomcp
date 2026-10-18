@@ -22,6 +22,7 @@
 - Keep the HTTP cache size budget across short commands, recover missing or interrupted byte totals, and finish required eviction before a command exits. (2195)
 - `variant articles --strategy exact` searches the caller's exact phrase across Europe PMC full text, finding PMID 10811118 for `F1761I`, while PubMed keeps its title/abstract search and the debug plan retains per-source yields. (2181)
 - Disabled sources stay silent in health probes, report disabled section and article status with the setting that turned them off, and contribute no carried variant annotations. MCP override refusals name the original setting, and restricted-source groups include recorded CGI, DisGeNET and hosted AlphaGenome terms. (2196)
+- Disabled article-source checks replay the keyword entity lookup locally, so offline qualification preserves skipped-source silence and still checks real provider warnings. (2207)
 - Report HTML and other non-PDF full-text replies as unavailable downloads, including replies labeled as PDF; reserve unusable PDF text for PDF bytes that cannot yield text. (2183)
 - Store extracted supplement text in the managed cache so age and size cleanup, disk limits, and cache statistics include it, and lookups read one key without scanning the extraction directory. (2197)
 - Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
