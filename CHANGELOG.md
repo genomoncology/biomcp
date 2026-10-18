@@ -25,6 +25,7 @@
 - Open the next development version after the 0.9.3 release. (2215)
 - Exercise production HTTP cache startup and migration in the existing security, contention, upgrade and startup-cost cases, removing unused blocking test constructors. (2199)
 - Exercise parallel CLI searches, a persistent MCP server, cache clearing and shared byte totals in the manual Windows runtime checks. (2201)
+- Derive licensing reference facts and source notes from the source registry so corrections cannot leave stale guidance. (2224)
 
 ## 0.9.3 — 2026-10-17
 
