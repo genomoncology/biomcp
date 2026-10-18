@@ -412,6 +412,7 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     # The marker-set job's run steps are pinned like the pipeline
     # jobs' — the fetch feeds the offline compile and the make
     # target is the marker selection itself.
+    ("release-gate", "Prepare the offline sandbox"): "0be31f2888e78f84d42c9931097fd08831272388f097b98302f0f286e62aea35",
     ("release-gate", "Fetch the cargo registry for the offline marker set"): "bd8a3eea8fbfa7f0592cc9160f727c40bf2cac4f30ca475277ea9ce01a8b7403",
     ("release-gate", "Run the release-gate marker set"): "477790ec0a17570da21b61265e5ac11c81b6b047fe889e57570aa4f334f266bb",
 }
@@ -512,6 +513,7 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
         "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
         "astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a",
+        "Prepare the offline sandbox",
         "Fetch the cargo registry for the offline marker set",
         "Run the release-gate marker set",
     ],
@@ -2275,6 +2277,16 @@ def test_the_release_gate_marker_job_and_make_run_the_same_selection() -> None:
     workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
     gate = _job_block(workflow, "release-gate")
     assert "make release-gate-markers" in gate
+    parsed = _load_release_pipeline()
+    steps = _pipeline_steps(parsed, "release-gate")
+    setup = [
+        step for step in steps
+        if step.get("uses") == "./.github/actions/lane-setup"
+    ]
+    assert len(setup) == 1, "release markers must prepare the shared offline sandbox"
+    assert setup[0].get("with") == {"offline": True}
+    marker = _step_by_name(parsed, "release-gate", "Run the release-gate marker set")
+    assert steps.index(setup[0]) < steps.index(marker)
     for job in ("build", "pypi-build"):
         assert "release-gate" in _needs(_job_block(workflow, job)), (
             f"{job} must wait on the release-gate marker job before it "
