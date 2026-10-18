@@ -171,7 +171,7 @@ pub(super) async fn handle(
                 },
             )
         };
-        let mut markdown = if results.is_empty() {
+        let mut markdown = if results.is_empty() && !outcome.response.results.is_empty() {
             format!("# Variant articles: {id}")
         } else {
             render(&results, None)?
