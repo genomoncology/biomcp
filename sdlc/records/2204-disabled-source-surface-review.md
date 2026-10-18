@@ -29,7 +29,7 @@ The prepared assessment examined every registry row and its recorded primary ter
 
 ORCID's public/anonymous API restriction found in the initial assessment is already corrected in the review base by 2216; [Public API terms §2](https://info.orcid.org/public-client-terms-of-service/) distinguish API service access from public-data reuse. Reactome's database-data wording remains covered by 2217: [License §1](https://reactome.org/license) assigns CC0 to database data/derived files, CC BY to art and separate licenses to software. No duplicate fix is proposed.
 
-| Source | Assessment | Recorded primary reference |
+| Source | Assessment | Primary reference |
 | --- | --- | --- |
 | `alphafold-db` | Prior registry reading retained; current page missing/shell/generic or not independently sufficient for data-rights verification. | [Provider reference](https://alphafold.ebi.ac.uk/faq) |
 | `alphagenome` | Confirmed hosted-output non-commercial restriction; downloadable/cloud exceptions differ. | [Provider reference](https://google-deepmind-alphagenome.readthedocs-hosted.com/faqs.html#what-terms-of-use-apply-to-alphagenome-outputs) |
@@ -41,14 +41,14 @@ ORCID's public/anonymous API restriction found in the initial assessment is alre
 | `cellosaurus` | Confirmed CC BY4; preserve attribution. | [Provider reference](https://www.cellosaurus.org/description.html) |
 | `chembl` | Confirmed CC BY-SA3; preserve attribution and ShareAlike. | [Provider reference](https://www.ebi.ac.uk/chembl/) |
 | `civic` | Confirmed content CC0; code license separate. | [Provider reference](https://docs.civicdb.org/en/latest/about/faq.html) |
-| `clingen` | Confirmed curated content CC0; attribution/date requested. | [Provider reference](https://clinicalgenome.org/) |
-| `clingen_car` | ClinGen CC0 curated-content umbrella confirmed; attachments/linked resources need their own rights. | [Provider reference](https://reg.genome.network) |
-| `clingen_cspec` | ClinGen CC0 curated-content umbrella confirmed; attachments/linked resources need their own rights. | [Provider reference](https://cspec.clinicalgenome.org) |
-| `clingen_erepo` | ClinGen CC0 curated-content umbrella confirmed; attachments/linked resources need their own rights. | [Provider reference](https://erepo.clinicalgenome.org) |
-| `clingen_ldh` | ClinGen CC0 curated-content umbrella confirmed; attachments/linked resources need their own rights. | [Provider reference](https://ldh.genome.network) |
+| `clingen` | Confirmed curated content CC0; attribution/date requested. | [Provider reference](https://clinicalgenome.org/docs/terms-of-use/) |
+| `clingen_car` | ClinGen CC0 applies to curated content; applicability to other service payloads, attachments and linked resources remains unverified. | [ClinGen curated-content terms](https://clinicalgenome.org/docs/terms-of-use/) |
+| `clingen_cspec` | ClinGen CC0 applies to curated content; applicability to other service payloads, attachments and linked resources remains unverified. | [ClinGen curated-content terms](https://clinicalgenome.org/docs/terms-of-use/) |
+| `clingen_erepo` | ClinGen CC0 applies to curated content; applicability to other service payloads, attachments and linked resources remains unverified. | [ClinGen curated-content terms](https://clinicalgenome.org/docs/terms-of-use/) |
+| `clingen_ldh` | ClinGen CC0 applies to curated content; applicability to other service payloads, attachments and linked resources remains unverified. | [ClinGen curated-content terms](https://clinicalgenome.org/docs/terms-of-use/) |
 | `clinicaltrials-gov` | Government service baseline retained; source-specific/third-party content rights not waived by public access. | [Provider reference](https://clinicaltrials.gov/data-api/about-api) |
 | `clinvar` | Confirmed attribution requested; generic NCBI/third-party caveats retained. | [Provider reference](https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/) |
-| `complexportal` | Confirmed EBI umbrella adds no owner restrictions; specific underlying data terms still apply. | [Provider reference](https://www.ebi.ac.uk/complexportal/) |
+| `complexportal` | Confirmed EBI umbrella adds no owner restrictions; specific underlying data terms still apply. | [EMBL-EBI data terms](https://www.ebi.ac.uk/about/terms-of-use/) |
 | `cosmic` | Historical MyVariant v68 scope recorded; current terms do not prove historical rights; metadata URL inaccessible. | [Provider reference](https://docs.myvariant.info/en/latest/doc/data_source.html) |
 | `cpic` | JS policy page; prior successor CC BY-SA4 reading retained; CPIC-specific applicability unresolved. | [Provider reference](https://www.clinpgx.org/page/dataUsagePolicy) |
 | `dbsnp` | Confirmed NCBI no imposed data restrictions, but submitter/third-party rights not transferred. | [Provider reference](https://www.ncbi.nlm.nih.gov/home/about/policies/) |
@@ -100,7 +100,7 @@ ORCID's public/anonymous API restriction found in the initial assessment is alre
 | `pmc-oa` | Confirmed article-specific licenses; OA is not uniformly commercial permission. | [Provider reference](https://pmc.ncbi.nlm.nih.gov/tools/openftlist/) |
 | `pubmed` | Government service baseline retained; source-specific/third-party content rights not waived by public access. | [Provider reference](https://www.ncbi.nlm.nih.gov/books/NBK25501/) |
 | `pubtator3` | Government service baseline retained; source-specific/third-party content rights not waived by public access. | [Provider reference](https://www.ncbi.nlm.nih.gov/research/pubtator3/api) |
-| `quickgo` | Confirmed EBI umbrella adds no owner restrictions; specific underlying data terms still apply. | [Provider reference](https://www.ebi.ac.uk/about/terms-of-use) |
+| `quickgo` | Confirmed EBI umbrella adds no owner restrictions; specific underlying data terms still apply. | [EMBL-EBI data terms](https://www.ebi.ac.uk/about/terms-of-use/) |
 | `reactome` | Database data/derived files CC0, art CC BY4; wording correction already covered by 2217. | [Provider reference](https://reactome.org/license) |
 | `seer-explorer` | Government service baseline retained; source-specific/third-party content rights not waived by public access. | [Provider reference](https://seer.cancer.gov/about/using-website.html) |
 | `semantic-scholar` | UNRESOLVED: canonical API terms403; official dataset/API agreement conflict; verify service applicability. | [Provider reference](https://www.semanticscholar.org/product/api/license) |
