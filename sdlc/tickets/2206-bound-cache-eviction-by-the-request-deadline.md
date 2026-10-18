@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Reviews: revision 662d893, accept
 
+Reviews: revision 8a9a064, accept
+
 ## Outcome
 
 A cache write cannot make a variant or article request wait beyond its deadline for another operation to release a cache lease. Keep committed entries valid and preserve ordinary short-run cache-size enforcement.
