@@ -20,11 +20,11 @@ Done when: every 0.9.3 bug ticket has landed with its proof; the test and build 
 
 ## 0.9.4
 
-Delivers: BioMCP's cache in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely; plus the test work moved out of 0.9.3: golden output tests on the replay server, the remaining fixture consumers on the replay server, owned fixture identifiers, and the tonic and prost upgrade.
+Delivers: BioMCP's cache in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely; plus the test work moved out of 0.9.3: golden output tests on the replay server, the remaining fixture consumers on the replay server, owned fixture identifiers, and the tonic and prost upgrade; development builds back to v0.9.2's speed; and two article-search follow-ups from research: rsID routing in plain search and a clinical ruling on variant names from other transcripts.
 
 Serves: BioMCP's ideal state that work stays bounded and that the same binary runs safely as a shell command, a local MCP server and a shared HTTP server.
 
-Done when: a long-used cache starts as fast as an empty one, the moved test work has landed, and a full release rehearsal passes.
+Done when: a long-used cache starts as fast as an empty one, the moved test work has landed, fresh and Rust-touch development builds are no slower than v0.9.2's on one build machine or the cost is explained, and a full release rehearsal passes.
 
 ## 1.0
 
