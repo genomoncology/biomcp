@@ -14,7 +14,7 @@ Variant article search follows the clinical ruling on transcript aliases: an ali
 
 - Evidence: research's spot check: `BRCA1 F1761I` expands to aliases such as `BRCA1 F71I` and `BRCA1 c.211T>A` from other transcripts, which pull papers matched only by those names, for example 34829431; identity checks mark them unverified.
 - Starts from: `sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md`, the clinical review ruling.
-- Changes: `src/entities/article/variant_search.rs`, `src/entities/article/identity_verification.rs`, `src/cli/variant/articles.rs`, `tests/test_variant_article_transcript_aliases.py`, `tests/fixtures/article/**`, `CHANGELOG.md` and this ticket. Preserve transcript provenance once in the shared result classification and use it in CLI and MCP output.
+- Changes: `src/entities/article/variant_search.rs`, `src/entities/article/identity_verification.rs`, `src/cli/variant/articles.rs`, `tests/test_variant_article_transcript_aliases.py`, `tests/fixtures/article/**`, `CHANGELOG.md` `sdlc/tickets/2226-resolve-explicit-paper-transcript-and-genomic-anchors.md` and this ticket. Preserve transcript provenance once in the shared result classification and use it in CLI and MCP output.
 - Proof: recorded replies for BRCA1 F1761I show alias-only papers such as 34829431 in the unverified alias group with the alias and transcript named; a paper that states a projecting accession, coordinates with a build, or a resolving rsID is verified; an alias that is a different valid MANE variant is labeled or dropped.
 
 ## Progress
@@ -40,3 +40,7 @@ Job2185/1792358727485-25955 replayed only the84recorded replies against the qual
 For PMID34829431, JSON fails `assert None == unverified_alias_match`; Markdown lacks the unverified alias group; compact MCP fails because actual match_reason is exact_variant instead of unverified_alias_match. The paper remains identity-unverified and matches only BRCA1F71I. The fixture contains actual captured provider data, not inferred transcript mappings.
 
 Proceed with the shared row classification and provenance fix, compact MCP consumption, and Markdown grouping. Preserve the typed Gene rule and accept clinical identity only through the recorded ruling. Source transcript is named only from provider-paired metadata; missing provenance uses the exact PM-approved phrase. No new clinical inference is authorized.
+
+## Bounded identity proof ruling
+
+PM decision on2026-10-18: Preserve the existing identity verifier. Prove its supported same-allele path with the real TP53/CHEK2 captures plus the recorded unknown-alias regression. General paper-text anchor resolution is not added; unsupported anchors remain unverified. The separate priority3 ticket2226 covers explicit paper transcript/build-coordinate resolution and may move to a later release without blocking2185 or this release.
