@@ -5,10 +5,9 @@ use std::sync::{
 };
 
 use super::super::{
-    RequestBuilderSourceContextExt, SharedHttpClientKind, VariantArticleDeadline,
-    build_http_client_with_config_and_manager, build_http_client_with_config_deadline,
-    build_uncached_http_client, finish_cached_http_client, provider_url_policy,
-    with_variant_article_deadline,
+    RequestBuilderSourceContextExt, SharedHttpCache, SharedHttpClientKind, VariantArticleDeadline,
+    build_http_client_with_config_and_manager, build_uncached_http_client,
+    finish_cached_http_client, provider_url_policy, with_variant_article_deadline,
 };
 use crate::test_support::TempDirGuard;
 use axum::{
@@ -494,14 +493,11 @@ async fn contended_maintenance_deadline_publishes_no_partial_client_or_cache_tre
         .unwrap()
         .unwrap();
     let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
-    let _client = build_http_client_with_config_deadline(
-        SharedHttpClientKind::Default,
-        super::test_cache_config(root.path()),
-        None,
-        &deadline,
-    )
-    .await
-    .expect("cache contention must build an uncached client");
+    let cache = SharedHttpCache {
+        config: Some(super::test_cache_config(root.path())),
+        ..SharedHttpCache::default()
+    };
+    assert!(cache.initialize(Some(&deadline)).await.unwrap().is_none());
     assert!(
         !deadline.is_exhausted(),
         "cache contention preserves provider time"
@@ -612,21 +608,25 @@ async fn legacy_cache_upgrade_waits_for_local_source_lease() {
     std::fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
     let shared = crate::cache::lock_cache_shared(root.path()).unwrap();
     let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
-    let construction = build_http_client_with_config_deadline(
-        SharedHttpClientKind::Default,
-        super::test_cache_config(root.path()),
-        None,
-        &deadline,
-    );
-    tokio::pin!(construction);
+    let cache = SharedHttpCache {
+        config: Some(super::test_cache_config(root.path())),
+        ..SharedHttpCache::default()
+    };
+    // Local leases protect in-process readers. The production path waits
+    // for them, while external maintenance contention fails soft.
+    let initialization = cache.initialize(Some(&deadline));
+    tokio::pin!(initialization);
     assert!(
-        futures::poll!(&mut construction).is_pending(),
+        futures::poll!(&mut initialization).is_pending(),
         "legacy upgrade must wait for the local source"
     );
+    assert!(!root.path().join("http").exists());
+    assert_eq!(
+        std::fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
+        b"legacy"
+    );
     drop(shared);
-    construction
-        .await
-        .expect("cached client after local source release");
+    assert!(initialization.await.unwrap().is_some());
     assert!(root.path().join(".body-limit-cache-v1").is_file());
     assert!(!root.path().join("http-cacache").exists());
 }
@@ -635,14 +635,11 @@ async fn legacy_cache_upgrade_waits_for_local_source_lease() {
 async fn expired_invocation_cannot_build_a_cache_fallback_client() {
     let root = TempDirGuard::new("expired-cache-fallback");
     let deadline = VariantArticleDeadline::from_now(std::time::Duration::ZERO);
-    build_http_client_with_config_deadline(
-        SharedHttpClientKind::Default,
-        super::test_cache_config(root.path()),
-        None,
-        &deadline,
-    )
-    .await
-    .expect_err("an expired invocation must not admit a provider client");
+    let cache = SharedHttpCache {
+        config: Some(super::test_cache_config(root.path())),
+        ..SharedHttpCache::default()
+    };
+    assert!(cache.initialize(Some(&deadline)).await.is_err());
     assert!(!root.path().join("http").exists());
 }
 
@@ -1086,31 +1083,22 @@ mod cache_security {
 
     use super::super::*;
 
-    #[test]
-    fn concurrent_constructor_does_not_wait_for_an_existing_shared_operation() {
+    #[tokio::test]
+    async fn concurrent_constructor_reuses_cache_during_an_existing_shared_operation() {
         let root = TempDirGuard::new("parallel-http-cache-construction");
         crate::cache::ensure_body_limited_cache_epoch(root.path(), false)
             .expect("seed cache epoch");
         let existing = crate::cache::lock_cache_shared(root.path()).expect("shared operation");
-        let config = test_cache_config(root.path());
-        let (finished_tx, finished_rx) = std::sync::mpsc::channel();
-        let constructor = std::thread::spawn(move || {
-            let result = build_http_client_with_config(SharedHttpClientKind::Default, config, None);
-            finished_tx
-                .send(result.map(|_| ()))
-                .expect("report constructor result");
-        });
-
-        finished_rx
-            .recv_timeout(Duration::from_secs(5))
-            .expect("constructor must not wait for an unrelated shared operation")
-            .expect("construct HTTP client");
+        let cache = SharedHttpCache {
+            config: Some(test_cache_config(root.path())),
+            ..SharedHttpCache::default()
+        };
+        assert!(cache.initialize(None).await.unwrap().is_some());
         drop(existing);
-        constructor.join().expect("constructor thread");
     }
 
-    #[test]
-    fn build_http_client_repairs_unrelated_permissive_cache_state() {
+    #[tokio::test]
+    async fn build_http_client_repairs_unrelated_permissive_cache_state() {
         let root = TempDirGuard::new("http-cache-permission-repair");
         let cache_root = root.path().join("cache-root");
         let sentinel = cache_root.join("http/unrelated/sentinel");
@@ -1124,12 +1112,11 @@ mod cache_security {
         std::fs::set_permissions(&sentinel, std::fs::Permissions::from_mode(0o644))
             .expect("permissive sentinel");
 
-        build_http_client_with_config(
-            SharedHttpClientKind::Default,
-            test_cache_config(&cache_root),
-            None,
-        )
-        .expect("client construction repairs cache state");
+        let cache = SharedHttpCache {
+            config: Some(test_cache_config(&cache_root)),
+            ..SharedHttpCache::default()
+        };
+        assert!(cache.initialize(None).await.unwrap().is_some());
         assert_eq!(
             std::fs::metadata(&sentinel)
                 .expect("sentinel metadata")
@@ -1140,8 +1127,8 @@ mod cache_security {
         );
     }
 
-    #[test]
-    fn build_http_client_bypasses_directory_symlink_inside_content_tree() {
+    #[tokio::test]
+    async fn build_http_client_bypasses_directory_symlink_inside_content_tree() {
         let root = TempDirGuard::new("http-cache-content-link");
         let cache_root = root.path().join("cache-root");
         let outside = root.path().join("outside");
@@ -1155,12 +1142,11 @@ mod cache_security {
         symlink(&outside, cache_root.join("http/content-v2/sha256/aa"))
             .expect("content directory symlink");
 
-        build_http_client_with_config(
-            SharedHttpClientKind::Default,
-            test_cache_config(&cache_root),
-            None,
-        )
-        .expect("unsafe cache state must produce an uncached client");
+        let cache = SharedHttpCache {
+            config: Some(test_cache_config(&cache_root)),
+            ..SharedHttpCache::default()
+        };
+        assert!(cache.initialize(None).await.unwrap().is_none());
         assert_eq!(
             std::fs::read_dir(&outside)
                 .expect("outside directory")
@@ -1172,13 +1158,12 @@ mod cache_security {
 
 /// Start-up cost proofs: a command's cache start-up must not walk the
 /// HTTP cache tree, so the number of cache files it touches does not
-/// grow with the cache, `BIOMCP_CACHE_MODE=off` touches none, and the
-/// one-time tree-secure walk runs only until its marker exists.
+/// grow with the cache, and the one-time tree-secure walk runs only
+/// until its marker exists.
 mod startup_cost {
     use std::path::Path;
 
     use super::super::*;
-    use super::EnvRestore;
     use crate::test_support::{
         TempDirGuard, reset_startup_cache_file_visits, startup_cache_file_visits,
     };
@@ -1209,35 +1194,16 @@ mod startup_cost {
         }
     }
 
-    fn build_once(cache_root: &Path) {
-        build_http_client_with_config(
-            SharedHttpClientKind::Default,
-            test_cache_config(cache_root),
-            None,
-        )
-        .expect("build cached client");
+    async fn build_once(cache_root: &Path) {
+        let cache = SharedHttpCache {
+            config: Some(test_cache_config(cache_root)),
+            ..SharedHttpCache::default()
+        };
+        assert!(cache.initialize(None).await.unwrap().is_some());
     }
 
-    fn count_regular_files(root: &Path) -> usize {
-        let mut total = 0usize;
-        let mut pending = vec![root.to_path_buf()];
-        while let Some(path) = pending.pop() {
-            let entries = std::fs::read_dir(&path).expect("read dir for inventory");
-            for entry in entries {
-                let entry = entry.expect("inventory entry");
-                let path = entry.path();
-                if path.is_dir() {
-                    pending.push(path);
-                } else {
-                    total += 1;
-                }
-            }
-        }
-        total
-    }
-
-    #[test]
-    fn start_up_touches_no_more_cache_files_as_the_cache_grows() {
+    #[tokio::test]
+    async fn start_up_touches_no_more_cache_files_as_the_cache_grows() {
         let small = TempDirGuard::new("startup-cost-small");
         let large = TempDirGuard::new("startup-cost-large");
         seed_cache_entries(small.path(), 200);
@@ -1246,15 +1212,15 @@ mod startup_cost {
         // The first start-up settles the one-time markers: the tree-secure
         // walk, the day's clean, and the kept size totals. Steady state —
         // what every later command pays — is the second start-up.
-        build_once(small.path());
-        build_once(large.path());
+        build_once(small.path()).await;
+        build_once(large.path()).await;
 
         reset_startup_cache_file_visits();
-        build_once(small.path());
+        build_once(small.path()).await;
         let small_visits = startup_cache_file_visits();
 
         reset_startup_cache_file_visits();
-        build_once(large.path());
+        build_once(large.path()).await;
         let large_visits = startup_cache_file_visits();
 
         assert_eq!(
@@ -1267,43 +1233,12 @@ mod startup_cost {
         );
     }
 
-    #[test]
-    #[serial_test::serial(source_env)]
-    fn cache_mode_off_touches_no_cache_file() {
-        let root = TempDirGuard::new("startup-cost-mode-off");
-        seed_cache_entries(root.path(), 50);
-        build_once(root.path());
-        cacache::write_sync(root.path().join("http"), "post-settle-key", b"post settle")
-            .expect("post-settle entry");
-        let cache_http = root.path().join("http");
-        let files_before = count_regular_files(&cache_http);
-
-        // Point the environment's cache at the fixture even though an
-        // off-mode command must never resolve it, so a regression that
-        // builds the cached client anyway walks this fixture, not a real
-        // cache directory.
-        let cache_dir = root.path().to_string_lossy().into_owned();
-        let _env = EnvRestore::set(&[("BIOMCP_CACHE_DIR", Some(cache_dir.as_str()))]);
-        let _mode = crate::sources::test_cache_mode::off();
-        reset_startup_cache_file_visits();
-
-        build_http_client(SharedHttpClientKind::Default).expect("off-mode client builds");
-
-        assert_eq!(
-            startup_cache_file_visits(),
-            0,
-            "cache mode off must not touch any cache file during start-up"
-        );
-        assert_eq!(
-            count_regular_files(&cache_http),
-            files_before,
-            "cache mode off must not create or remove cache files during start-up"
-        );
-    }
+    // Cache-off immutability is owned by the CLI contract
+    // test_no_cache_bypasses_prepopulated_cache_without_updating_it.
 
     #[cfg(unix)]
-    #[test]
-    fn the_tree_secure_marker_walks_only_until_it_exists() {
+    #[tokio::test]
+    async fn the_tree_secure_marker_walks_only_until_it_exists() {
         use std::os::unix::fs::PermissionsExt;
 
         let root = TempDirGuard::new("startup-cost-tree-marker");
@@ -1320,7 +1255,7 @@ mod startup_cost {
 
         let first = sentinel("first");
         seed_epoch_marker(root.path());
-        build_once(root.path());
+        build_once(root.path()).await;
         assert_eq!(
             std::fs::metadata(&first)
                 .expect("first sentinel metadata")
@@ -1339,7 +1274,7 @@ mod startup_cost {
         // A file broadened after the marker is repaired when it is written
         // through, not by every command's start-up.
         let second = sentinel("second");
-        build_once(root.path());
+        build_once(root.path()).await;
         assert_eq!(
             std::fs::metadata(&second)
                 .expect("second sentinel metadata")

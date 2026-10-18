@@ -1479,32 +1479,11 @@ fn resolve_http_cache_config() -> Result<Option<crate::cache::ResolvedCacheConfi
     }
 }
 
-#[cfg(test)]
-fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware, BioMcpError> {
-    if cache_is_bypassed() {
-        return build_uncached_http_client(kind, None);
-    }
-    let Some(config) = resolve_http_cache_config()? else {
-        return build_uncached_http_client(kind, None);
-    };
-    build_http_client_with_config(kind, config, None)
-}
 pub(crate) fn build_uncached_http_client(
     kind: SharedHttpClientKind,
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     finish_http_client(kind, provider_policy, None)
-}
-
-#[cfg(test)]
-fn build_http_client_with_config(
-    kind: SharedHttpClientKind,
-    config: crate::cache::ResolvedCacheConfig,
-    provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
-) -> Result<ClientWithMiddleware, BioMcpError> {
-    build_http_client_with_config_and_manager(kind, config, provider_policy, |path, config| {
-        crate::cache::SizeAwareCacheManager::new(path, config)
-    })
 }
 
 #[cfg(test)]
@@ -1633,31 +1612,6 @@ fn finish_http_client(
         .with(rate_limit::RateLimitMiddleware::new())
         .with(ResponseBodyLimitMiddleware)
         .build())
-}
-
-#[cfg(test)]
-async fn build_http_client_with_config_deadline(
-    kind: SharedHttpClientKind,
-    config: crate::cache::ResolvedCacheConfig,
-    provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
-    deadline: &VariantArticleDeadline,
-) -> Result<ClientWithMiddleware, BioMcpError> {
-    if deadline.is_exhausted() {
-        return Err(variant_article_deadline_error());
-    }
-    let manager = match prepare_http_cache_with_deadline(config, deadline).await {
-        Ok(manager) => manager,
-        Err(error) => {
-            if deadline.is_exhausted() {
-                return Err(variant_article_deadline_error());
-            }
-            note_http_cache_setup_failure(&error);
-            return build_uncached_http_client(kind, provider_policy);
-        }
-    };
-    let client = finish_cached_http_client(kind, provider_policy, manager)?;
-    deadline.ensure_time_io()?;
-    Ok(client)
 }
 
 async fn prepare_http_cache_with_deadline(
@@ -2659,10 +2613,14 @@ mod tests {
             &fixture_url,
         )
         .expect("body-limit fixture policy");
-        let client = build_http_client_with_config(
+        let cache = SharedHttpCache {
+            config: Some(test_cache_config(cache_root.path())),
+            ..SharedHttpCache::default()
+        };
+        let client = finish_http_client(
             SharedHttpClientKind::Default,
-            test_cache_config(cache_root.path()),
             Some(&fixture_policy),
+            Some(std::sync::Arc::new(cache)),
         )
         .expect("test client");
         let server = tokio::spawn(async move {
@@ -3013,24 +2971,23 @@ mod tests {
         assert_eq!(attempts.load(Ordering::SeqCst), 2);
     }
 
-    #[test]
-    fn build_http_client_migrates_then_clears_pre_limit_legacy_cache() {
+    #[tokio::test]
+    async fn build_http_client_migrates_then_clears_pre_limit_legacy_cache() {
         let root = TempDirGuard::new("http-cache-migration");
         let cache_root = root.path().join("override-root");
         let legacy = cache_root.join("http-cacache");
         std::fs::create_dir_all(&legacy).unwrap();
         std::fs::write(legacy.join("sentinel.txt"), b"cached payload").unwrap();
-        build_http_client_with_config(
-            SharedHttpClientKind::Default,
-            test_cache_config(&cache_root),
-            None,
-        )
-        .unwrap();
+        let cache = SharedHttpCache {
+            config: Some(test_cache_config(&cache_root)),
+            ..SharedHttpCache::default()
+        };
+        assert!(cache.initialize(None).await.unwrap().is_some());
         assert!(cache_root.join("http").is_dir());
         assert!(!cache_root.join("http/sentinel.txt").exists() && !legacy.exists());
     }
-    #[test]
-    fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
+    #[tokio::test]
+    async fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
         let root = TempDirGuard::new("http-cache-epoch-clear");
         let cache_root = root.path().join("cache-root");
         let legacy = cache_root.join("http-cacache");
@@ -3041,12 +2998,11 @@ mod tests {
             b"bounded-response-body-v1\n",
         )
         .unwrap();
-        build_http_client_with_config(
-            SharedHttpClientKind::Default,
-            test_cache_config(&cache_root),
-            None,
-        )
-        .unwrap();
+        let cache = SharedHttpCache {
+            config: Some(test_cache_config(&cache_root)),
+            ..SharedHttpCache::default()
+        };
+        assert!(cache.initialize(None).await.unwrap().is_some());
         assert!(cache_root.join("http").is_dir());
         assert!(!cache_root.join("http/legacy-sentinel").exists() && !legacy.exists());
     }
