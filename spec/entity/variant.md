@@ -159,6 +159,8 @@ biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140453136A>T'
 ```bash run id=declared-assembly-miss-message
 message="$(biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140453136A>T' 2>/dev/null \
   | jq -r '.error.message')"
+printf '%s\n' "$message" | grep -Fq "variant 'chr7:g.140453136A>T' not found."
+printf '%s\n' "$message" | grep -Fq 'biomcp search variant "chr7:g.140453136A>T"'
 printf '%s\n' "$message" | grep -Fq 'attempted GRCh38'
 printf '%s\n' "$message" | grep -Fq 'upstream HTTP 404'
 printf '%s\n' "$message" | grep -Fqv 'GRCh37'

@@ -352,9 +352,9 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
     SourceDescriptor {
         source_id: "gwas-catalog",
         api: "GWAS Catalog",
-        affects: Some("gwas search and variant gwas context"),
+        affects: Some("gwas association search"),
         probe: ProbeKind::Get {
-            url: "https://www.ebi.ac.uk/gwas/rest/api/singleNucleotidePolymorphisms/rs7903146",
+            url: "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?mapped_gene=TCF7L2&page=0&size=1&sort=p_value&direction=asc",
         },
     },
     SourceDescriptor {

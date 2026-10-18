@@ -16,6 +16,7 @@
 - Correct Reactome licensing guidance to distinguish CC0 database data from CC BY 4.0 art and separately licensed software. (2217)
 - Reconcile HTTP cache byte accounting after explicit cleanup, including reservations left by failed writes. (2218)
 - Preserve configured source-disable reasons in variant literature CLI and MCP responses instead of reporting a provider failure. (2222)
+- Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 
 ### Internal
 
