@@ -15,6 +15,7 @@ Reviews: revision 5c3ea58, accept
 An agent test review fills a small dedicated filesystem during cache writes and eviction and checks requests still answer, no temp files leak and the size total stays right.
 
 - Evidence: the 0.9.3 release review only simulated low disk with the free-disk setting; a real ENOSPC mid-write was not exercised.
+- Changes: `sdlc/records/2202-full-disk-cache-review.md` `sdlc/tickets/2202-full-disk-cache-review.md`. Record the bounded actual-filesystem review; product repairs are separate tickets.
 - Proof: recorded results; file defects as tickets.
 
 ## Progress
