@@ -20,7 +20,7 @@ Windows comparison39167643933 on the verified official0.9.3 executable and curre
 
 ## Changes
 
-`src/cache/http.rs`, focused existing cache/CLI tests and `CHANGELOG.md`. Name the actual test paths before implementation. Keep the change in shared error classification or logging rather than adding provider-specific handling.
+`src/cache/http.rs`, `tests/test_http_cache_fail_soft.py`, `tests/windows_stdio_contract.rs`, `CHANGELOG.md` and this ticket. Keep the change in shared error classification or logging rather than adding provider-specific handling.
 
 ## Keeps
 
@@ -33,3 +33,13 @@ Use the real byte-total lock to reproduce a successful response and skipped cach
 ## Progress
 
 - 2026-10-18 started
+
+## Development brief and reproduction
+
+Restated outcome: classify expected nonblocking cache contention before the shared once-per-process warning guard, log it at debug, and preserve genuine I/O warnings plus provider answers. The current shared warn_local_http_cache helper consumes WARNED before classification, so ordinary contention both emits WARN and can suppress a later genuine fault. HTTP put/delete share nonblocking operation, key and byte-total lock paths; setup contention already logs at debug through the2194policy. No manager/lock/deadline/provider behavior changes.
+
+Actual Windows39167643933 on currentcandidatebb799c1b3 and official0.9.3 ran the real held byte-total lock case. Command: `cargo test --locked --no-default-features --test windows_stdio_contract -- --nocapture`. Both returned the correct BRAF answer, showed BRAF_LOCK absent, and logged `WARN local HTTP cache write failed; continuing` with operationwrite/categorylocal_io/io_kindSome(WouldBlock). The same shared logger is unchanged in current qualified2a711534e4f4d588f1b2be6f48f3f3cd16cd864a, whose fullmain job2156/1792360049283-18457 passed221.910s.
+
+Extend the existing Python fail-soft fixture with real held byte-total lock controls at warning/debug verbosity: correct provider answer, skipped index entry, no WARN for ordinary contention, and a debug explanation only at debug. Preserve the real non-contention filesystem-failure warning control and subsequent refetch/reuse after unlock. Keep routine contention outside the global warning allowance. Adjust the existing Windows diagnostic to distinguish the explicitly configured legacy0.9.3comparison from current logging; retain successful answer/contention/accounting semantics. Shared logging-only behavior needs no extra broad Windows dispatch.
+
+Write the failing desired-verbosity assertions before the production change, then run affected red/green checks through one bounded build job using a frozen qualified baseline and one ordinary candidate build. Preserve exact commands/results and run format/lint/quality checks; no new harness, live provider call or WIP push.
