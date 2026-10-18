@@ -16,7 +16,7 @@ use crate::sources::wikipathways::{WikiPathwaysClient, is_wikipathways_id};
 use crate::transform;
 
 fn default_pathway_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("pathway"))
+    SectionOutcomes::with_keys(&outcome_keys("pathway")).with_entity("pathway")
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,7 +80,8 @@ fn deserialize_pathway_section_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("pathway");
     outcomes
         .validate_keys(&outcome_keys("pathway"))
         .map_err(serde::de::Error::custom)?;

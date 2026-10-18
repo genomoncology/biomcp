@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- Disabled sources stay silent in health probes, report disabled section and article status with the setting that turned them off, and contribute no carried variant annotations. MCP override refusals name the original setting, and restricted-source groups include recorded CGI, DisGeNET and hosted AlphaGenome terms. (2196)
 - Asset downloads accept a bare `--output` filename and save it in the current directory, while still refusing missing output directories. (2179)
 - Find protein substitutions in supplement text across one-letter, three-letter and `p.` name forms while keeping exact source locators and literal matching for other text. (2180)
 - Article full text reports no full text promptly when no PMC record exists, instead of retrying an unsupported Europe PMC PMID XML request and reporting a source failure. Supported PMC requests still distinguish missing full text from transient source outages. (2182)

@@ -179,7 +179,7 @@ stay off without one regardless of this setting.
 - `biomcp health --apis-only` reports API/source connectivity and excluded
   key-gated rows; full `biomcp health` also reports local runtime data and cache
   readiness.
-- Optional entity lookups expose typed outcomes in JSON/MCP. `inapplicable`
+- Optional entity lookups expose typed outcomes in JSON/MCP. `disabled` names an operator setting and offers no retry; `inapplicable`
   means a required input was absent and no provider was contacted; `empty` is a
   successful zero-result query; `unavailable` means retrieval produced no usable
   result; and `degraded` preserves partial evidence. `_meta.section_sources`

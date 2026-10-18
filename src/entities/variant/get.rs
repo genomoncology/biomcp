@@ -1594,6 +1594,14 @@ fn civic_molecular_profile_name(variant: &Variant) -> Option<String> {
 }
 
 async fn add_civic(variant: &mut Variant) {
+    if let Some(reason) = crate::sources::disable::reason("civic") {
+        variant.civic = None;
+        variant.section_outcomes.complete(
+            "civic",
+            SectionOutcome::disabled(format!("CIViC is {reason}.")),
+        );
+        return;
+    }
     let Some(molecular_profile_name) = civic_molecular_profile_name(variant) else {
         variant.section_outcomes.complete(
             "civic",
@@ -1793,6 +1801,14 @@ fn dbsnp_population_rsid<'a>(variant: &'a Variant, id_format: &VariantIdFormat) 
 }
 
 async fn add_population(variant: &mut Variant, id_format: &VariantIdFormat) {
+    if let Some(reason) = crate::sources::disable::reason("gnomad") {
+        variant.population = None;
+        variant.section_outcomes.complete(
+            VARIANT_SECTION_POPULATION,
+            SectionOutcome::disabled(format!("gnomAD is {reason}.")),
+        );
+        return;
+    }
     let (variant_id, resolved_coordinate) = match population_variant_id(variant) {
         Some(variant_id) => (variant_id, None),
         None => {

@@ -37,18 +37,19 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
   `null` means the recorded terms impose no recorded commercial restriction on the content BioMCP serves.
   `license-required` means the recorded terms require a commercial license for commercial use.
   `non-commercial` means the recorded terms allow non-commercial use only.
+  `restricted` means the recorded terms restrict commercial use without establishing either narrower category.
 
 ### Turning restricted sources off
 
 The `commercial_terms` field draws the `--disable-sources` groups:
 `license-required` and `non-commercial` each select their own shape, and
-`commercial-restricted` is their union. Turn any of them off with the global
+`commercial-restricted` includes both groups and sources whose recorded terms restrict commercial use without specifying either narrower category. Turn any of them off with the global
 flag or the environment variable
 ([Configuration: disabling sources by name or group](configuration.md#disabling-sources-by-name-or-group));
 any single source id also works on its own. Membership follows this file, so
 re-recording a source's terms redraws the groups without a code change.
-Today `license-required` covers KEGG, Enrichr, OncoKB, and DrugBank;
-`non-commercial` covers DDInter and PharmacoDB. COSMIC stays out: BioMCP
+Today `license-required` covers KEGG, Enrichr, OncoKB, DrugBank, and DisGeNET;
+`non-commercial` covers DDInter, PharmacoDB, and the hosted AlphaGenome API. Cancer Genome Interpreter joins `commercial-restricted` through its recorded broad restriction. COSMIC stays out: BioMCP
 serves only the v68 snapshot MyVariant carries, and the recorded reading is
 that the v68-era terms govern those fields. Semantic Scholar and the WHO
 sources stay out on their recorded open readings.
@@ -57,7 +58,7 @@ sources stay out on their recorded open readings.
 
 | Source | Tier | Mode | BioMCP auth | License / terms summary | Redistribution summary | Terms URL |
 |---|---|---|---|---|---|---|
-| AlphaGenome | 2 | direct_api | required_env | custom provider terms; access is gated by Google/DeepMind service controls | do not assume open redistribution rights for returned prediction outputs | <https://deepmind.google/science/alphagenome/> |
+| AlphaGenome | 2 | direct_api | required_env | restricted: the hosted AlphaGenome API permits non-commercial use under provider terms | hosted API outputs are restricted to non-commercial research; provider exceptions for downloadable artifacts and separate cloud commercial access do not grant this API integration those rights | <https://google-deepmind-alphagenome.readthedocs-hosted.com/faqs.html#what-terms-of-use-apply-to-alphagenome-outputs> |
 | Cancerhotspots.org | 3 | direct_api | none | public cancer hotspot recurrence resource with provider-specific reuse expectations | BioMCP queries recurrence counts live and does not redistribute a local cancerhotspots dataset | <https://www.cancerhotspots.org/> |
 | cBioPortal | 3 | direct_api | none | public API with study-specific downstream terms | reuse depends on the specific study or consortium behind each dataset | <https://www.cbioportal.org/> |
 | Cell Model Passports | 1 | indirect_only | not_applicable | Sanger DepMap Data Usage Policy: a non-exclusive, non-transferable right to use the data files for internal proprietary research and education; resale of all or a significant part and commercial services excluded, commercial API/data use requires prior consent | BioMCP shows the identifier through a Cellosaurus cross-reference only; users who follow it use the portal under its policy | <https://depmap.sanger.ac.uk/documentation/data-usage-policy/> |
@@ -76,7 +77,7 @@ sources stay out on their recorded open readings.
 | DGIdb | 1 | direct_api | none | open interaction service; aggregated claims may still reflect upstream source terms | treat DGIdb as an aggregation layer and preserve source attribution for underlying claim providers | <https://www.dgidb.org/about> |
 | DDInter | 3 | direct_api | none | CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists | reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims | <https://ddinter.scbdd.com/terms/> |
 | dbSNP | 1 | direct_api | none | NCBI public data service with attribution and non-endorsement expectations | RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement | <https://www.ncbi.nlm.nih.gov/home/about/policies/> |
-| DisGeNET | 2 | direct_api | required_env | custom provider terms for API and downloads | do not assume unrestricted redistribution; use according to the provider account terms | <https://www.disgenet.com/> |
+| DisGeNET | 2 | direct_api | required_env | restricted: commercial use requires a commercial license | standard licenses prohibit redistribution and resale of all or part of the database; custom permission is required | <https://support.disgenet.com/support/solutions/articles/202000087487-do-i-need-a-commercial-license-can-i-use-disgenet-data-in-my-product-> |
 | EMA | 1 | direct_api | none | EMA website material may be reused with source attribution; third-party content can carry separate rights | EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission | <https://www.ema.europa.eu/en/about-us/about-website/legal-notice> |
 | Enrichr | 3 | direct_api | none | free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners; the terms state it is not for treating or diagnosing human subjects | academic and non-profit reuse with citation; commercial use needs the Mount Sinai license; never use for clinical treatment or diagnosis decisions | <https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html> |
 | Europe PMC | 1 | direct_api | none | open literature metadata service; article and full-text licenses vary by record | metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses | <https://europepmc.org/RestfulWebService> |
@@ -126,7 +127,7 @@ sources stay out on their recorded open readings.
 | WHO Prequalification | 1 | direct_api | none | WHO content generally requires attribution; commercial reuse may require permission and third-party materials can carry separate rights | preserve WHO attribution, review commercial-use conditions, and check third-party material rights before republishing | <https://www.who.int/about/policies/publishing/copyright> |
 | WikiPathways | 1 | direct_api | none | CC0 | pathway content is dedicated to the public domain; attribution is still good scholarly practice | <https://www.wikipathways.org/terms.html> |
 | AlphaFold DB | 1 | indirect_only | not_applicable | AlphaFold DB structural predictions are published for broad open use | reuse is generally open, but preserve model/source provenance and article citations | <https://alphafold.ebi.ac.uk/faq> |
-| Cancer Genome Interpreter | 3 | indirect_only | not_applicable | custom tool terms | do not assume commercial reuse rights; the official terms restrict some external and commercial use | <https://www.cancergenomeinterpreter.org/conditions> |
+| Cancer Genome Interpreter | 3 | indirect_only | not_applicable | restricted: custom tool terms restrict external and commercial use | do not assume commercial reuse rights; the official terms restrict some external and commercial use | <https://www.cancergenomeinterpreter.org/conditions> |
 | ClinVar | 1 | direct_api | optional_env | NCBI public-domain submission archive | records are broadly reusable, but preserve accession/provenance and submitter context | <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/> |
 | COSMIC | 3 | indirect_only | not_applicable | BioMCP reads only MyVariant's COSMIC v68 snapshot — "the last freely available somatic variants from COSMIC before their licence change" (MyVariant metadata, checked 2026-09-27); the current cosmickb.org licence (commercial licence for commercial use including patient services and clinical reporting) governs COSMIC's current offering, not the v68 fields | the v68-era terms govern the fields BioMCP surfaces; the practical limit is the snapshot's age, not its licence; direct use of current COSMIC releases remains commercially restricted | <https://docs.myvariant.info/en/latest/doc/data_source.html> |
 | Disease Ontology | 1 | indirect_only | not_applicable | open disease ontology project | reuse is generally open; preserve ontology version and source references | <https://disease-ontology.org/> |
@@ -902,12 +903,12 @@ Reviewed on: `2026-09-27`
 - Integration mode: `direct_api`
 - BioMCP auth: `required_env` via `ALPHAGENOME_API_KEY`
 - Provider access / registration: provider-controlled access to the AlphaGenome service
-- License / terms summary: custom provider terms; access is gated by Google/DeepMind service controls
-- Redistribution / reuse summary: do not assume open redistribution rights for returned prediction outputs
-- Official terms URL: <https://deepmind.google/science/alphagenome/>
+- License / terms summary: restricted: the hosted AlphaGenome API permits non-commercial use under provider terms
+- Redistribution / reuse summary: hosted API outputs are restricted to non-commercial research; provider exceptions for downloadable artifacts and separate cloud commercial access do not grant this API integration those rights
+- Official terms URL: <https://google-deepmind-alphagenome.readthedocs-hosted.com/faqs.html#what-terms-of-use-apply-to-alphagenome-outputs>
 - API key / account URL: <https://deepmind.google/science/alphagenome/>
-Reviewed on: `2026-09-27`
-- Notes: BioMCP calls the hosted gRPC endpoint directly. The public product page is the closest official access reference currently exposed.
+Reviewed on: `2026-10-18`
+- Notes: BioMCP calls the hosted gRPC API, not the separately licensed cloud commercial route. The official FAQ restricts API outputs and disallows clinical decision-making.
 
 ### DisGeNET
 
@@ -915,12 +916,12 @@ Reviewed on: `2026-09-27`
 - Integration mode: `direct_api`
 - BioMCP auth: `required_env` via `DISGENET_API_KEY`
 - Provider access / registration: account registration and API key required
-- License / terms summary: custom provider terms for API and downloads
-- Redistribution / reuse summary: do not assume unrestricted redistribution; use according to the provider account terms
-- Official terms URL: <https://www.disgenet.com/>
+- License / terms summary: restricted: commercial use requires a commercial license
+- Redistribution / reuse summary: standard licenses prohibit redistribution and resale of all or part of the database; custom permission is required
+- Official terms URL: <https://support.disgenet.com/support/solutions/articles/202000087487-do-i-need-a-commercial-license-can-i-use-disgenet-data-in-my-product->
 - API key / account URL: <https://www.disgenet.com/>
-Reviewed on: `2026-09-27`
-- Notes: DisGeNET's public site advertises free and commercial plans. BioMCP documents the API as key-gated and treats it as provider-controlled.
+Reviewed on: `2026-10-18`
+- Notes: The provider licensing FAQ requires a commercial license for commercial companies and commercial product research or services. BioMCP does not obtain licenses or redistribution permission.
 
 ### NCI CTS
 
@@ -1104,7 +1105,7 @@ Reviewed on: `2026-09-27`
 - Integration mode: `indirect_only`
 - BioMCP auth: `not_applicable`
 - Provider access / registration: surfaced indirectly through MyVariant.info payloads
-- License / terms summary: custom tool terms
+- License / terms summary: restricted: custom tool terms restrict external and commercial use
 - Redistribution / reuse summary: do not assume commercial reuse rights; the official terms restrict some external and commercial use
 - Official terms URL: <https://www.cancergenomeinterpreter.org/conditions>
 Reviewed on: `2026-09-27`

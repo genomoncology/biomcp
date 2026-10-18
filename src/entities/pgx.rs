@@ -30,14 +30,15 @@ pub const PGX_SECTION_NAMES: &[&str] = &[
 const OPTIONAL_ENRICHMENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub(crate) fn default_pgx_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("pgx"))
+    SectionOutcomes::with_keys(&outcome_keys("pgx")).with_entity("pgx")
 }
 
 fn deserialize_pgx_section_outcomes<'de, D>(deserializer: D) -> Result<SectionOutcomes, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("pgx");
     outcomes
         .validate_keys(&outcome_keys("pgx"))
         .map_err(serde::de::Error::custom)?;

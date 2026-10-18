@@ -503,6 +503,7 @@ fn health_probes_respect_concurrency_limit_and_source_order() {
 #[test]
 fn timed_out_probe_returns_error_row_with_timeout_latency() {
     let optional_source = SourceDescriptor {
+        source_id: "semantic-scholar",
         api: "Semantic Scholar",
         affects: Some("Semantic Scholar features"),
         probe: ProbeKind::OptionalAuthGet {
@@ -524,6 +525,7 @@ fn timed_out_probe_returns_error_row_with_timeout_latency() {
     assert_eq!(optional_outcome.row.key_configured, Some(false));
 
     let auth_source = SourceDescriptor {
+        source_id: "oncokb",
         api: "OncoKB",
         affects: Some("variant oncokb command and variant evidence section"),
         probe: ProbeKind::AuthGet {
@@ -545,6 +547,7 @@ fn timed_out_probe_returns_error_row_with_timeout_latency() {
     assert_eq!(auth_outcome.row.key_configured, Some(true));
 
     let public_source = SourceDescriptor {
+        source_id: "mygene-info",
         api: "MyGene",
         affects: Some("gene search and gene get"),
         probe: ProbeKind::Get {

@@ -51,6 +51,8 @@ pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "cosmic.cosmic_id,cosmic.mut_freq,cosmic.tumor_site,cosmic.mut_nt,",
     "cgi,civic"
 );
+mod carried;
+
 pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.feature_type,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -853,15 +855,22 @@ pub struct MyVariantHit {
     pub id: String,
 
     pub cadd: Option<MyVariantCadd>,
+    #[serde(default, deserialize_with = "carried::de_clinvar")]
     pub clinvar: Option<MyVariantClinVar>,
     pub dbnsfp: Option<MyVariantDbnsfp>,
+    #[serde(default, deserialize_with = "carried::de_dbsnp")]
     pub dbsnp: Option<MyVariantDbsnp>,
+    #[serde(default, deserialize_with = "carried::de_gnomad_exome")]
     pub gnomad_exome: Option<MyVariantGnomadExome>,
+    #[serde(default, deserialize_with = "carried::de_gnomad")]
     pub gnomad: Option<MyVariantGnomad>,
     pub exac: Option<MyVariantExac>,
     pub exac_nontcga: Option<MyVariantExac>,
+    #[serde(default, deserialize_with = "carried::de_cosmic")]
     pub cosmic: Option<MyVariantCosmic>,
+    #[serde(default, deserialize_with = "carried::de_cgi")]
     pub cgi: Option<serde_json::Value>,
+    #[serde(default, deserialize_with = "carried::de_civic")]
     pub civic: Option<serde_json::Value>,
     #[serde(default, deserialize_with = "de_isolated_snpeff")]
     pub snpeff: Option<MyVariantSnpeff>,

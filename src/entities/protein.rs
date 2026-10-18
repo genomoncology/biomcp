@@ -13,7 +13,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 fn default_protein_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("protein"))
+    SectionOutcomes::with_keys(&outcome_keys("protein")).with_entity("protein")
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -126,7 +126,8 @@ fn deserialize_protein_section_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("protein");
     outcomes
         .validate_keys(&outcome_keys("protein"))
         .map_err(serde::de::Error::custom)?;

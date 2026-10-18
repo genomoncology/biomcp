@@ -14,7 +14,7 @@ use crate::sources::uniprot::{UniProtClient, UniProtRecord};
 use super::{Variant, VariantIdFormat};
 
 fn default_variant_structure_lookup_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("variant_structure"))
+    SectionOutcomes::with_keys(&outcome_keys("variant_structure")).with_entity("variant_structure")
 }
 
 fn deserialize_variant_structure_lookup_outcomes<'de, D>(
@@ -23,7 +23,8 @@ fn deserialize_variant_structure_lookup_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("variant_structure");
     outcomes
         .validate_keys(&outcome_keys("variant_structure"))
         .map_err(serde::de::Error::custom)?;

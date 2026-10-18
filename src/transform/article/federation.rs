@@ -36,7 +36,8 @@ pub fn from_pubtator_document(doc: &PubTatorDocument) -> Article {
     Article {
         section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
             crate::entities::article::ARTICLE_OUTCOME_KEYS,
-        ),
+        )
+        .with_entity("article"),
         pmid: doc.pmid.map(|v| v.to_string()),
         pmcid: doc.pmcid.clone(),
         doi: None,
@@ -228,7 +229,8 @@ pub fn from_europepmc_result(hit: &EuropePmcResult) -> Article {
     Article {
         section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
             crate::entities::article::ARTICLE_OUTCOME_KEYS,
-        ),
+        )
+        .with_entity("article"),
         pmid: hit.pmid.clone(),
         pmcid: hit.pmcid.clone(),
         doi: hit.doi.clone(),

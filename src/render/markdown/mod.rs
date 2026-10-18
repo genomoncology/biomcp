@@ -168,7 +168,9 @@ fn section_render_contexts_with_recovery(
             });
             let payload_allowed = !matches!(
                 state,
-                SectionOutcomeState::Inapplicable | SectionOutcomeState::Unavailable
+                SectionOutcomeState::Inapplicable
+                    | SectionOutcomeState::Unavailable
+                    | SectionOutcomeState::Disabled
             );
             let empty_allowed = matches!(
                 state,
@@ -246,6 +248,7 @@ fn source_state_message_label(state: SectionOutcomeState) -> Option<&'static str
         SectionOutcomeState::NotRequested
         | SectionOutcomeState::Data
         | SectionOutcomeState::Empty => None,
+        SectionOutcomeState::Disabled => Some("disabled"),
         SectionOutcomeState::Inapplicable => Some("inapplicable"),
         SectionOutcomeState::Degraded => Some("degraded (partial/incomplete)"),
         SectionOutcomeState::Unavailable => Some("unavailable; no conclusion can be drawn"),

@@ -61,7 +61,7 @@ fn is_false(value: &bool) -> bool {
 pub(crate) const ARTICLE_OUTCOME_KEYS: &[&str] = &["fulltext", "indexing", "tldr"];
 
 fn default_article_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("article"))
+    SectionOutcomes::with_keys(&outcome_keys("article")).with_entity("article")
 }
 
 fn deserialize_article_section_outcomes<'de, D>(
@@ -70,7 +70,8 @@ fn deserialize_article_section_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("article");
     outcomes
         .validate_keys(&outcome_keys("article"))
         .map_err(serde::de::Error::custom)?;
@@ -635,6 +636,16 @@ pub struct ArticleSourceStatus {
     pub message: Option<String>,
 }
 
+impl ArticleSourceStatus {
+    pub(crate) fn apply_disabled_policy(&mut self) {
+        if let Some(reason) = crate::sources::disable::reason(self.source.source_id()) {
+            self.enabled = false;
+            self.status = Some(ArticleSourceAvailability::Skipped);
+            self.message = Some(format!("{} is {reason}.", self.source.display_name()));
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleSourcePlan {
     pub candidate_sources: Vec<ArticleSource>,
@@ -949,6 +960,16 @@ pub enum ArticleSource {
 }
 
 impl ArticleSource {
+    pub(crate) fn source_id(self) -> &'static str {
+        match self {
+            Self::PubTator => "pubtator3",
+            Self::EuropePmc => "europe-pmc",
+            Self::SemanticScholar => "semantic-scholar",
+            Self::PubMed => "pubmed",
+            Self::LitSense2 => "litsense2",
+        }
+    }
+
     pub fn display_name(self) -> &'static str {
         match self {
             Self::PubTator => "PubTator3",

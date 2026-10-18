@@ -34,7 +34,7 @@ use crate::transform;
 mod article_links;
 
 pub(crate) fn default_disease_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("disease"))
+    SectionOutcomes::with_keys(&outcome_keys("disease")).with_entity("disease")
 }
 
 fn deserialize_disease_section_outcomes<'de, D>(
@@ -43,7 +43,8 @@ fn deserialize_disease_section_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("disease");
     outcomes
         .validate_keys(&outcome_keys("disease"))
         .map_err(serde::de::Error::custom)?;

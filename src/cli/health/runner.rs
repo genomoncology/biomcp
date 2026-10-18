@@ -300,10 +300,7 @@ async fn run_api_probes(
     // setting instead of its latency, and the source's shared row joins
     // the report's disabled list.
     let disabled_row = |source: &SourceDescriptor| {
-        let id = crate::sources::disable::Registry::get()
-            .id_for_name(source.api)
-            .expect("a disabled health row maps to a registry record")
-            .to_string();
+        let id = source.source_id;
         let mut row = health_row(
             source.api,
             HealthStatus::Disabled,
@@ -311,7 +308,7 @@ async fn run_api_probes(
             source.affects,
             None,
         );
-        row.disabled_reason = crate::sources::disable::reason(&id).map(str::to_string);
+        row.disabled_reason = crate::sources::disable::reason(id).map(str::to_string);
         outcome(row, ProbeClass::Excluded)
     };
     run_buffered_in_order(
@@ -320,9 +317,7 @@ async fn run_api_probes(
         move |source| {
             let client = client.clone();
             async move {
-                let disabled = crate::sources::disable::Registry::get()
-                    .id_for_name(source.api)
-                    .is_some_and(crate::sources::disable::is_disabled);
+                let disabled = crate::sources::disable::is_disabled(source.source_id);
                 if disabled {
                     disabled_row(&source)
                 } else {

@@ -15,7 +15,8 @@ pub fn from_reactome_record(record: ReactomePathwayRecord) -> Pathway {
     Pathway {
         section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
             crate::entities::pathway::PATHWAY_OUTCOME_KEYS,
-        ),
+        )
+        .with_entity("pathway"),
         source: "Reactome".to_string(),
         id: record.id,
         name: record.name,
@@ -39,7 +40,8 @@ pub fn from_kegg_record(record: KeggPathwayRecord) -> Pathway {
     Pathway {
         section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
             crate::entities::pathway::PATHWAY_OUTCOME_KEYS,
-        ),
+        )
+        .with_entity("pathway"),
         source: "KEGG".to_string(),
         id: record.id,
         name: record.name,
@@ -63,7 +65,8 @@ pub fn from_wikipathways_record(record: WikiPathwaysRecord) -> Pathway {
     Pathway {
         section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
             crate::entities::pathway::PATHWAY_OUTCOME_KEYS,
-        ),
+        )
+        .with_entity("pathway"),
         source: "WikiPathways".to_string(),
         id: record.id,
         name: record.name,

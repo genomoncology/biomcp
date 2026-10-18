@@ -12,6 +12,7 @@ pub enum SectionOutcomeState {
     Empty,
     Degraded,
     Unavailable,
+    Disabled,
 }
 
 impl SectionOutcomeState {
@@ -23,6 +24,7 @@ impl SectionOutcomeState {
             Self::Empty => "empty",
             Self::Degraded => "degraded",
             Self::Unavailable => "unavailable",
+            Self::Disabled => "disabled",
         }
     }
 }
@@ -135,6 +137,15 @@ impl SectionOutcome {
             sources: Vec::new(),
             message: Some(bounded_message(&message.into())),
             permanent: true,
+        }
+    }
+
+    pub(crate) fn disabled(message: impl Into<String>) -> Self {
+        Self {
+            outcome: SectionOutcomeState::Disabled,
+            sources: Vec::new(),
+            message: Some(bounded_message(&message.into())),
+            permanent: false,
         }
     }
 
@@ -252,7 +263,9 @@ impl<'de> Deserialize<'de> for SectionOutcome {
                         .as_deref()
                         .is_some_and(|message| !message.trim().is_empty())
             }
-            SectionOutcomeState::Unavailable => value.sources.is_empty() && value.message.is_some(),
+            SectionOutcomeState::Unavailable | SectionOutcomeState::Disabled => {
+                value.sources.is_empty() && value.message.is_some()
+            }
         };
         let permanent_is_valid =
             !value.permanent || value.outcome == SectionOutcomeState::Unavailable;
@@ -270,9 +283,20 @@ impl<'de> Deserialize<'de> for SectionOutcome {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(transparent)]
-pub struct SectionOutcomes(BTreeMap<String, SectionOutcome>);
+pub struct SectionOutcomes(
+    BTreeMap<String, SectionOutcome>,
+    #[serde(skip)] Option<&'static str>,
+);
+
+impl PartialEq for SectionOutcomes {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Eq for SectionOutcomes {}
 
 impl SectionOutcomes {
     pub fn with_keys(keys: &[&str]) -> Self {
@@ -290,10 +314,29 @@ impl SectionOutcomes {
                     )
                 })
                 .collect(),
+            None,
         )
     }
 
+    pub(crate) fn with_entity(mut self, entity: &'static str) -> Self {
+        self.bind_entity(entity);
+        self
+    }
+
+    pub(crate) fn bind_entity(&mut self, entity: &'static str) {
+        self.1 = Some(entity);
+    }
+
     pub fn complete(&mut self, key: &str, outcome: SectionOutcome) {
+        let outcome = if outcome.outcome() == SectionOutcomeState::Disabled {
+            outcome
+        } else {
+            self.1
+                .and_then(|entity| {
+                    crate::entities::source_state_registry::disabled_outcome(entity, key)
+                })
+                .unwrap_or(outcome)
+        };
         let current = self
             .0
             .get_mut(key)
