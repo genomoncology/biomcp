@@ -13,6 +13,7 @@ Milestone: 0.9.4
 After 2196 lands, an agent test review checks every entity, section, typed MCP tool and health row with sources disabled for any call or wrong reason, and audits every source's commercial terms record.
 
 - Evidence: the 0.9.3 release review sampled these surfaces and found the defects 2196 fixes.
+- Changes: `sdlc/records/2204-disabled-source-surface-review.md` `sdlc/tickets/2204-disable-sources-surface-review.md`. This ticket records the bounded review; product/terms fixes are separate tickets.
 - Proof: recorded traced-network results; file defects as tickets.
 
 ## Progress
