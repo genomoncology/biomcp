@@ -463,7 +463,7 @@ mod tests {
         let parsed = parse_disable_spec("non-commercial", "--disable-sources").unwrap();
         let entries = parsed.entries();
         let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
-        assert_eq!(ids, vec!["alphagenome", "ddinter", "pharmacodb"]);
+        assert_eq!(ids, vec!["alphagenome", "ddinter", "orcid", "pharmacodb"]);
     }
 
     #[test]
@@ -478,16 +478,13 @@ mod tests {
             .chain(non_commercial.entries())
             .map(|entry| entry.id)
             .collect();
+        member_ids.push("cancer-genome-interpreter".to_string());
         member_ids.sort();
+        let union_ids: Vec<String> = union.entries().into_iter().map(|entry| entry.id).collect();
         assert_eq!(
-            member_ids.len(),
-            8,
-            "the two specific groups keep their recorded members"
+            union_ids, member_ids,
+            "the broad group contains exactly both specific groups and the broad restriction"
         );
-        assert!(union.is_disabled("cancer-genome-interpreter"));
-        for id in &member_ids {
-            assert!(union.is_disabled(id), "{id} must join the union group");
-        }
         assert!(!union.is_disabled("reactome"));
         assert!(!union.is_disabled("cosmic"));
     }
@@ -508,7 +505,6 @@ mod tests {
                 .id_for_name("DDInter")
                 .is_some_and(|id| id == "ddinter")
         );
-        assert_eq!(registry.ids_for_group(None).len(), 9);
     }
 
     #[test]

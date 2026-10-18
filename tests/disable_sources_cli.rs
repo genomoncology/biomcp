@@ -387,6 +387,72 @@ fn commercial_restricted_group_disables_kegg_and_enrichr() {
 }
 
 #[test]
+fn commercial_groups_disable_orcid_records_without_requests() {
+    let fixture = Fixture::start();
+    let binary = Binary::new(&fixture)
+        .env("BIOMCP_HEALTH_PROBE_BASE", &fixture.base)
+        .env("BIOMCP_ORCID_BASE", &format!("{}/orcid", fixture.base))
+        .env("ORCID_ACCESS_TOKEN", "fixture-public-read-token");
+    for group in ["commercial-restricted", "non-commercial"] {
+        let health = binary.run(&[
+            "--json",
+            "--disable-sources",
+            group,
+            "health",
+            "--api",
+            "ORCID",
+        ]);
+        assert!(health.status.success(), "{health:?}");
+        let value: serde_json::Value = serde_json::from_slice(&health.stdout).unwrap();
+        assert_eq!(value["rows"][0]["status"], "disabled", "{value}");
+        let reason = format!("disabled by the {group} group");
+        assert!(
+            value["rows"][0]["disabled_reason"]
+                .as_str()
+                .unwrap()
+                .contains(&reason),
+            "{value}"
+        );
+        assert!(
+            value["disabled"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|entry| entry["id"] == "orcid"),
+            "{value}"
+        );
+        for args in [
+            vec![
+                "--json",
+                "--disable-sources",
+                group,
+                "get",
+                "author",
+                "orcid:0000-0002-1825-0097",
+            ],
+            vec![
+                "--json",
+                "--disable-sources",
+                group,
+                "author",
+                "papers",
+                "orcid:0000-0002-1825-0097",
+            ],
+        ] {
+            let output = binary.run(&args);
+            assert!(!output.status.success(), "{output:?}");
+            let message = format!("{}{}", stdout(&output), stderr(&output));
+            assert!(message.contains(&reason), "{message}");
+        }
+    }
+    assert_eq!(
+        fixture.requests_matching("/"),
+        0,
+        "disabled ORCID calls reached the fixture"
+    );
+}
+
+#[test]
 fn biomcp_disable_kegg_alias_still_disables_kegg() {
     let fixture = Fixture::start();
     let binary = Binary::new(&fixture).env("BIOMCP_DISABLE_KEGG", "1");
@@ -894,6 +960,7 @@ fn disabled_health_aliases_never_probe_and_name_the_setting() {
         ("hpo-jax-api", "HPO"),
         ("human-protein-atlas", "HPA"),
         ("fda-orphan-designations", "FDA Orphan Drug Designations"),
+        ("orcid", "ORCID"),
     ] {
         let output = binary.run(&["--json", "--disable-sources", id, "health", "--api", api]);
         assert!(output.status.success(), "{id}: {output:?}");
