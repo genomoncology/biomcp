@@ -19,3 +19,7 @@ Each source's licensing facts in the reference agree with the registry, so a cor
 - Proof: demonstrate one registry/reference drift that current checks miss, then make the existing contract detect it and verify all source entries. Generate registry-owned facts where practical and preserve hand-written contextual guidance. Run existing affected documentation/licensing checks; no new legal interpretation or source availability changes.
 
 PM ruling: approved at priority3 in0.9.4, after2217; one source of truth is preferred when existing docs tooling can support it.
+
+## Progress
+
+- 2026-10-18 started
