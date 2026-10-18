@@ -14,3 +14,7 @@ After 2196 lands, an agent test review checks every entity, section, typed MCP t
 
 - Evidence: the 0.9.3 release review sampled these surfaces and found the defects 2196 fixes.
 - Proof: recorded traced-network results; file defects as tickets.
+
+## Progress
+
+- 2026-10-18 started
