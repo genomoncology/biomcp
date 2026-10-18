@@ -19,3 +19,5 @@ Concurrent CLI starts reuse a fresh current-epoch cache while its epoch lock is 
 ## Progress
 
 - 2026-10-18 started
+
+Developer outcome before code: Every concurrent CLI process reads a fresh current-epoch answer despite the held epoch lock, retaining fail-open behavior, deadlines, safety and size enforcement. Initial trace identifies the optional startup-clean path taking an exclusive operation lock before reading its already-current stamp; another client constructor can see that contention and silently bypass the cache. The precise extra provider request still needs confirmation. Candidate minimal production claim is `src/cache/manager.rs`; existing cache/replay and startup-marker tests will establish the cause before edits. Preserve the under-lock recheck and real stale/missing-stamp maintenance. Avoid a new test interception framework.
