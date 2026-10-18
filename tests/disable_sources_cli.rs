@@ -120,6 +120,11 @@ fn find_head_end(bytes: &[u8]) -> Option<usize> {
 /// fixtures under `testdata/sources/`.
 fn route(path: &str, query: &str) -> (&'static str, &'static str, &'static [u8]) {
     match path {
+        "/europe/search" => ("200 OK", "application/json", br#"{"hitCount":0,"resultList":{"result":[]}}"#),
+        path if path.starts_with("/myvariant/v1/variant/") => (
+            "200 OK", "application/json",
+            include_bytes!("../testdata/sources/myvariant/get_braf_v600e.json"),
+        ),
         "/mygene/v3/query" => {
             let body = br#"{"total":1,"hits":[{"_id":"673","symbol":"BRAF","name":"B-Raf proto-oncogene, serine/threonine kinase","entrezgene":673,"type_of_gene":"protein-coding","pathway":{"kegg":[{"id":"hsa04010","name":"MAPK signaling pathway - Homo sapiens (human)"},{"id":"hsa04012","name":"ErbB signaling pathway - Homo sapiens (human)"}]}}]}"#;
             ("200 OK", "application/json", body)
@@ -869,4 +874,194 @@ async fn serve_http_civic_description(
     .await;
     let _ = child.kill().await;
     result
+}
+
+#[test]
+fn disabled_health_aliases_never_probe_and_name_the_setting() {
+    let fixture = Fixture::start();
+    let binary = Binary::new(&fixture).env("BIOMCP_HEALTH_PROBE_BASE", &fixture.base);
+    for (id, api) in [
+        ("mygene-info", "MyGene"),
+        ("myvariant-info", "MyVariant"),
+        ("mychem-info", "MyChem"),
+        ("mydisease-info", "MyDisease"),
+        ("monarch-initiative", "Monarch"),
+        ("hpo-jax-api", "HPO"),
+        ("human-protein-atlas", "HPA"),
+        ("fda-orphan-designations", "FDA Orphan Drug Designations"),
+    ] {
+        let output = binary.run(&["--json", "--disable-sources", id, "health", "--api", api]);
+        assert!(output.status.success(), "{id}: {output:?}");
+        let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(value["rows"][0]["status"], "disabled", "{id}: {value}");
+        assert!(
+            value["rows"][0]["disabled_reason"]
+                .as_str()
+                .unwrap()
+                .contains("--disable-sources=")
+        );
+    }
+    assert_eq!(
+        fixture.requests_matching("/"),
+        0,
+        "disabled health probes reached the network"
+    );
+}
+
+#[test]
+fn disabled_variant_sections_drop_carried_data_and_report_disabled_without_retry() {
+    let fixture = Fixture::start();
+    let binary = Binary::new(&fixture);
+    let disabled = "clinvar,civic,gnomad";
+    for section in ["clinvar", "civic", "population"] {
+        let output = binary.run(&[
+            "--json",
+            "--disable-sources",
+            disabled,
+            "get",
+            "variant",
+            "chr7:g.140453136A>T",
+            section,
+        ]);
+        assert!(output.status.success(), "{section}: {output:?}");
+        let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(
+            value["section_outcomes"][section]["outcome"], "disabled",
+            "{value}"
+        );
+        assert!(
+            value["section_outcomes"][section]["message"]
+                .as_str()
+                .unwrap()
+                .contains("disabled by --disable-sources="),
+            "{value}"
+        );
+        assert!(value.get("civic").is_none(), "{value}");
+        assert!(value.get("clinvar").is_none(), "{value}");
+        assert!(value.get("clinvar_id").is_none(), "{value}");
+        let text = binary.run(&[
+            "--disable-sources",
+            disabled,
+            "get",
+            "variant",
+            "chr7:g.140453136A>T",
+            section,
+        ]);
+        let text = stdout(&text);
+        assert!(text.contains("disabled by --disable-sources="), "{text}");
+        assert!(!text.contains("Retry:"), "{text}");
+        assert!(!text.contains("request failed"), "{text}");
+    }
+}
+
+#[test]
+fn restricted_group_includes_recorded_cgi_terms() {
+    let fixture = Fixture::start();
+    let output = Binary::new(&fixture).run(&[
+        "--json",
+        "--disable-sources",
+        "commercial-restricted",
+        "health",
+        "--api",
+        "kegg",
+    ]);
+    assert!(output.status.success(), "{output:?}");
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(
+        value["disabled"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|entry| entry["id"] == "cancer-genome-interpreter"),
+        "{value}"
+    );
+}
+
+#[test]
+fn disabled_article_sources_are_skipped_without_warnings_or_incompleteness() {
+    let fixture = Fixture::start();
+    let binary =
+        Binary::new(&fixture).env("BIOMCP_EUROPEPMC_BASE", &format!("{}/europe", fixture.base));
+    let output = binary.run(&[
+        "--json",
+        "--disable-sources",
+        "pubtator3,pubmed,semantic-scholar,litsense2",
+        "search",
+        "article",
+        "melanoma",
+    ]);
+    assert!(output.status.success(), "{output:?}");
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(value["complete"], true, "{value}");
+    let statuses = value["_meta"]["source_status"]
+        .as_array()
+        .expect("source statuses");
+    for source in ["pubtator", "semanticscholar"] {
+        let status = statuses
+            .iter()
+            .find(|status| status["source"] == source)
+            .expect("disabled source reported");
+        assert_eq!(status["enabled"], false, "{value}");
+        assert_eq!(status["status"], "skipped", "{value}");
+        assert!(
+            status["message"]
+                .as_str()
+                .unwrap()
+                .contains("disabled by --disable-sources="),
+            "{value}"
+        );
+    }
+    assert!(!stderr(&output).contains("WARN"), "{}", stderr(&output));
+    assert!(fixture.requests_matching("/europe/search") > 0);
+    let failed = Binary::new(&fixture)
+        .env(
+            "BIOMCP_EUROPEPMC_BASE",
+            &format!("{}/missing", fixture.base),
+        )
+        .run(&[
+            "--json",
+            "--disable-sources",
+            "pubtator3,pubmed,semantic-scholar,litsense2",
+            "search",
+            "article",
+            "melanoma",
+        ]);
+    assert!(!failed.status.success(), "{failed:?}");
+    assert!(stderr(&failed).contains("WARN"), "{}", stderr(&failed));
+}
+
+#[test]
+fn mcp_override_refusal_names_the_original_flag_setting() {
+    let cache = tempfile::tempdir().unwrap();
+    let harness =
+        biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
+    serve_runtime().block_on(async {
+        let env = vec![
+            (
+                "BIOMCP_CACHE_DIR".to_string(),
+                cache.path().to_string_lossy().into_owned(),
+            ),
+            ("BIOMCP_CACHE_MODE".to_string(), "off".to_string()),
+            ("BIOMCP_DISABLE_SOURCES".to_string(), String::new()),
+            ("BIOMCP_DISABLE_KEGG".to_string(), "0".to_string()),
+        ];
+        let (client, _) = harness
+            .spawn_stdio_client_with_args(&["--disable-sources", "civic"], &env)
+            .await
+            .unwrap();
+        let result = biomcp_mcp_contract_client::call_biomcp(
+            &client,
+            "biomcp --disable-sources kegg health --api kegg",
+        )
+        .await
+        .unwrap();
+        let text = biomcp_mcp_contract_client::first_text(&result.content);
+        assert_eq!(result.is_error, Some(true), "{text}");
+        assert!(
+            text.contains("disabled by --disable-sources=civic"),
+            "{text}"
+        );
+        assert!(!text.contains("by BIOMCP_DISABLE_SOURCES"), "{text}");
+        client.cancel().await.unwrap();
+    });
 }

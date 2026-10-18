@@ -224,7 +224,9 @@ fn without_failed_recovery_sections(
             !outcomes.get(section).is_some_and(|outcome| {
                 matches!(
                     outcome.outcome(),
-                    SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+                    SectionOutcomeState::Degraded
+                        | SectionOutcomeState::Unavailable
+                        | SectionOutcomeState::Disabled
                 )
             })
         })
@@ -492,7 +494,9 @@ pub(crate) fn drug_command_discovery(
         let failed = drug.section_outcomes.get(row.key).is_some_and(|outcome| {
             matches!(
                 outcome.outcome(),
-                SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+                SectionOutcomeState::Degraded
+                    | SectionOutcomeState::Unavailable
+                    | SectionOutcomeState::Disabled
             )
         });
         if !failed {

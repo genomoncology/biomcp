@@ -113,7 +113,7 @@ impl DiagnosticSourceFilter {
 }
 
 pub(crate) fn default_diagnostic_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("diagnostic"))
+    SectionOutcomes::with_keys(&outcome_keys("diagnostic")).with_entity("diagnostic")
 }
 
 fn deserialize_diagnostic_section_outcomes<'de, D>(
@@ -122,7 +122,8 @@ fn deserialize_diagnostic_section_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("diagnostic");
     outcomes
         .validate_keys(&outcome_keys("diagnostic"))
         .map_err(serde::de::Error::custom)?;

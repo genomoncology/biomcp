@@ -63,7 +63,7 @@ pub(crate) use self::search::{
 };
 
 pub(crate) fn default_variant_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("variant"))
+    SectionOutcomes::with_keys(&outcome_keys("variant")).with_entity("variant")
 }
 
 fn deserialize_variant_section_outcomes<'de, D>(
@@ -72,7 +72,8 @@ fn deserialize_variant_section_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("variant");
     outcomes
         .validate_keys(&outcome_keys("variant"))
         .map_err(serde::de::Error::custom)?;

@@ -2,6 +2,7 @@
 
 #[derive(Debug, Clone, Copy)]
 pub(in crate::cli::health) struct SourceDescriptor {
+    pub(in crate::cli::health) source_id: &'static str,
     pub(in crate::cli::health) api: &'static str,
     pub(in crate::cli::health) affects: Option<&'static str>,
     pub(in crate::cli::health) probe: ProbeKind,
@@ -59,11 +60,13 @@ pub(in crate::cli::health) enum ProbeKind {
 
 pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
     SourceDescriptor {
+        source_id: "gencc",
         api: "GenCC",
         affects: Some("gene gencc section"),
         probe: ProbeKind::GenCcHead,
     },
     SourceDescriptor {
+        source_id: "mygene-info",
         api: "MyGene",
         affects: Some("get/search gene and gene helper commands"),
         probe: ProbeKind::Get {
@@ -71,6 +74,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "myvariant-info",
         api: "MyVariant",
         affects: Some("get/search variant and variant helper commands"),
         probe: ProbeKind::Get {
@@ -78,6 +82,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "cancerhotspots",
         api: "Cancerhotspots.org",
         affects: Some("get variant <id> all recurrence counts"),
         probe: ProbeKind::Get {
@@ -85,6 +90,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "mychem-info",
         api: "MyChem",
         affects: Some("get/search drug and drug helper commands"),
         probe: ProbeKind::Get {
@@ -92,6 +98,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "pubtator3",
         api: "PubTator3",
         affects: Some("article annotations and entity extraction"),
         probe: ProbeKind::Get {
@@ -99,6 +106,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "pubmed",
         api: "PubMed",
         affects: Some("PubMed-backed article search foundation"),
         probe: ProbeKind::Get {
@@ -106,6 +114,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "europe-pmc",
         api: "Europe PMC",
         affects: Some("article search coverage"),
         probe: ProbeKind::Get {
@@ -113,6 +122,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "ncbi-e-utilities",
         api: "NCBI E-utilities",
         affects: Some("article fulltext fallback resolution"),
         probe: ProbeKind::Get {
@@ -120,6 +130,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "litsense2",
         api: "LitSense2",
         affects: Some("keyword-gated semantic article search"),
         probe: ProbeKind::Get {
@@ -127,6 +138,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "litvar2",
         api: "LitVar2",
         affects: Some("variant article literature route"),
         probe: ProbeKind::Get {
@@ -134,6 +146,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "pmc-oa",
         api: "PMC OA",
         affects: Some("article fulltext resolution"),
         probe: ProbeKind::Get {
@@ -141,6 +154,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "ncbi-id-converter",
         api: "NCBI ID Converter",
         affects: Some("article fulltext resolution and identifier bridging"),
         probe: ProbeKind::Get {
@@ -148,6 +162,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "clinicaltrials-gov",
         api: "ClinicalTrials.gov",
         affects: Some("search/get trial and trial helper commands"),
         probe: ProbeKind::Get {
@@ -155,6 +170,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "nci-cts",
         api: "NCI CTS",
         affects: Some("trial --source nci"),
         probe: ProbeKind::AuthGet {
@@ -165,6 +181,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "enrichr",
         api: "Enrichr",
         affects: Some("gene/pathway enrichment sections"),
         probe: ProbeKind::Get {
@@ -172,6 +189,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "openfda",
         api: "OpenFDA",
         affects: Some("adverse-event search"),
         probe: ProbeKind::Get {
@@ -179,16 +197,19 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "fda-orphan-designations",
         api: "FDA Orphan Drug Designations",
         affects: Some("get drug regulatory --region us|all"),
         probe: ProbeKind::FdaOrphan,
     },
     SourceDescriptor {
+        source_id: "vaers",
         api: "CDC WONDER VAERS",
         affects: Some("vaccine adverse-event search for --source vaers|all"),
         probe: ProbeKind::VaersQuery,
     },
     SourceDescriptor {
+        source_id: "oncokb",
         api: "OncoKB",
         affects: Some("variant oncokb command and variant evidence section"),
         probe: ProbeKind::AuthGet {
@@ -199,6 +220,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "disgenet",
         api: "DisGeNET",
         affects: Some("gene and disease disgenet sections"),
         probe: ProbeKind::AuthGet {
@@ -209,6 +231,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "alphagenome",
         api: "AlphaGenome",
         affects: Some("variant predict section"),
         probe: {
@@ -225,6 +248,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "semantic-scholar",
         api: "Semantic Scholar",
         affects: Some("Semantic Scholar features"),
         probe: ProbeKind::OptionalAuthGet {
@@ -235,6 +259,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "opencitations",
         api: "OpenCitations",
         affects: Some("citation evidence edge confirmation"),
         probe: ProbeKind::Get {
@@ -242,6 +267,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "orcid",
         api: "ORCID",
         affects: Some("get author and author papers for ORCID IDs"),
         probe: ProbeKind::OrcidGet {
@@ -250,6 +276,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "figshare",
         api: "Figshare",
         affects: Some("non-PMC article asset fallback"),
         probe: ProbeKind::Get {
@@ -257,6 +284,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "cpic",
         api: "CPIC",
         affects: Some("pgx recommendations and annotations"),
         probe: ProbeKind::Get {
@@ -264,6 +292,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "pharmgkb",
         api: "PharmGKB",
         affects: Some("get pgx annotations (moved from api.pharmgkb.org to api.clinpgx.org)"),
         probe: ProbeKind::Get {
@@ -271,6 +300,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "monarch-initiative",
         api: "Monarch",
         affects: Some("disease genes, phenotypes, and models"),
         probe: ProbeKind::Get {
@@ -278,6 +308,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "hpo-jax-api",
         api: "HPO",
         affects: Some("phenotype search and disease ranking"),
         probe: ProbeKind::Get {
@@ -285,6 +316,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "mydisease-info",
         api: "MyDisease",
         affects: Some("disease search and normalization"),
         probe: ProbeKind::Get {
@@ -292,6 +324,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "seer-explorer",
         api: "SEER Explorer",
         affects: Some("disease survival section"),
         probe: ProbeKind::Get {
@@ -299,6 +332,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "nih-reporter",
         api: "NIH Reporter",
         affects: Some("gene and disease funding sections"),
         probe: ProbeKind::PostJson {
@@ -307,6 +341,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "civic",
         api: "CIViC",
         affects: Some("disease genes and variants sections"),
         probe: ProbeKind::PostJson {
@@ -315,6 +350,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "gwas-catalog",
         api: "GWAS Catalog",
         affects: Some("gwas search and variant gwas context"),
         probe: ProbeKind::Get {
@@ -322,6 +358,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "gtex",
         api: "GTEx",
         affects: Some("gene expression section"),
         probe: ProbeKind::Get {
@@ -329,6 +366,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "dgidb",
         api: "DGIdb",
         affects: Some("gene druggability section"),
         probe: ProbeKind::PostJson {
@@ -337,6 +375,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "clingen",
         api: "ClinGen",
         affects: Some("gene clingen section"),
         probe: ProbeKind::Get {
@@ -344,6 +383,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "clingen_car",
         api: "ClinGen Allele Registry",
         affects: Some("variant normalization"),
         probe: ProbeKind::Get {
@@ -351,6 +391,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "clingen_cspec",
         api: "ClinGen CSpec",
         affects: Some("gene cspec helper"),
         probe: ProbeKind::Get {
@@ -358,6 +399,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "clingen_erepo",
         api: "ClinGen ERepo",
         affects: Some("variant erepo helper"),
         probe: ProbeKind::Get {
@@ -365,6 +407,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "clingen_ldh",
         api: "ClinGen LDH",
         affects: Some("variant article identity verification"),
         probe: ProbeKind::Get {
@@ -372,6 +415,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "dbsnp",
         api: "dbSNP",
         affects: Some("variant population coordinate resolution"),
         probe: ProbeKind::Get {
@@ -379,6 +423,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "gnomad",
         api: "gnomAD",
         affects: Some("gene constraint section"),
         probe: ProbeKind::PostJson {
@@ -387,6 +432,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "uniprot",
         api: "UniProt",
         affects: Some("gene protein summary and protein detail sections"),
         probe: ProbeKind::Get {
@@ -394,6 +440,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "quickgo",
         api: "QuickGO",
         affects: Some("gene go terms and protein annotation sections"),
         probe: ProbeKind::Get {
@@ -401,6 +448,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "string",
         api: "STRING",
         affects: Some("gene interactions and protein interaction sections"),
         probe: ProbeKind::Get {
@@ -408,6 +456,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "reactome",
         api: "Reactome",
         affects: Some("pathway search and disease pathway sections"),
         probe: ProbeKind::Get {
@@ -415,6 +464,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "cellosaurus",
         api: "Cellosaurus",
         affects: Some("cell-line search and detail"),
         probe: ProbeKind::Get {
@@ -422,6 +472,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "kegg",
         api: "KEGG",
         affects: Some("pathway search and detail sections"),
         probe: ProbeKind::Get {
@@ -429,6 +480,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "wikipathways",
         api: "WikiPathways",
         affects: Some("pathway search and WikiPathways detail/genes sections"),
         probe: ProbeKind::Get {
@@ -436,6 +488,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "gprofiler",
         api: "g:Profiler",
         affects: Some("gene enrichment (biomcp enrich)"),
         probe: ProbeKind::PostJson {
@@ -444,6 +497,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "opentargets",
         api: "OpenTargets",
         affects: Some("gene druggability, drug target, and disease association sections"),
         probe: ProbeKind::PostJson {
@@ -452,6 +506,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "chembl",
         api: "ChEMBL",
         affects: Some("drug targets and indications sections, and the cell line ChEMBL section"),
         probe: ProbeKind::Get {
@@ -459,6 +514,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "human-protein-atlas",
         api: "HPA",
         affects: Some(
             "gene protein tissue expression and localization section, and gene cell-lines RNA expression",
@@ -468,6 +524,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "interpro",
         api: "InterPro",
         affects: Some("protein domains section"),
         probe: ProbeKind::Get {
@@ -475,6 +532,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "complexportal",
         api: "ComplexPortal",
         affects: Some("protein complex membership section"),
         probe: ProbeKind::Get {
@@ -482,6 +540,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "ols4",
         api: "OLS4",
         affects: Some("discover command concept resolution"),
         probe: ProbeKind::Get {
@@ -489,6 +548,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "umls",
         api: "UMLS",
         affects: Some("discover command clinical crosswalk enrichment"),
         probe: ProbeKind::AuthQueryParam {
@@ -498,6 +558,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "medlineplus",
         api: "MedlinePlus",
         affects: Some("discover command plain-language disease and symptom context"),
         probe: ProbeKind::Get {
@@ -505,6 +566,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "cbioportal",
         api: "cBioPortal",
         affects: Some("cohort frequency section"),
         probe: ProbeKind::Get {
@@ -512,6 +574,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        source_id: "pharmacodb",
         api: "PharmacoDB",
         affects: Some(
             "cell line drug response section and drug cell lines section, and both PharmacoDB row helpers",

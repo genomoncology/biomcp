@@ -169,7 +169,7 @@ pub fn from_mygene_get(resp: MyGeneGetResponse) -> Gene {
     let aliases = normalize_aliases(resp.alias.into_vec());
 
     Gene {
-        section_outcomes: SectionOutcomes::with_keys(GENE_OUTCOME_KEYS),
+        section_outcomes: SectionOutcomes::with_keys(GENE_OUTCOME_KEYS).with_entity("gene"),
         symbol: resp.symbol.unwrap_or_default(),
         name: resp.name.unwrap_or_default(),
         entrez_id: resp

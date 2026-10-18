@@ -1066,7 +1066,8 @@ fn source_search(
     faers: Option<FaersSearchStatus>,
     vaers: Option<VaersSearchPayload>,
 ) -> AdverseEventSourceSearch {
-    let mut section_outcomes = SectionOutcomes::with_keys(ADVERSE_EVENT_OUTCOME_KEYS);
+    let mut section_outcomes =
+        SectionOutcomes::with_keys(ADVERSE_EVENT_OUTCOME_KEYS).with_entity("adverse_event");
     if let Some(status) = &faers {
         section_outcomes.complete("faers", faers_section_outcome(status));
     }

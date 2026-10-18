@@ -33,7 +33,7 @@ use crate::entities::section_outcome::SectionOutcomes;
 use crate::entities::source_state_registry::outcome_keys;
 
 pub(crate) fn default_drug_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("drug"))
+    SectionOutcomes::with_keys(&outcome_keys("drug")).with_entity("drug")
 }
 
 use crate::error::BioMcpError;
@@ -147,7 +147,8 @@ fn deserialize_drug_section_outcomes<'de, D>(deserializer: D) -> Result<SectionO
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("drug");
     outcomes
         .validate_keys(&outcome_keys("drug"))
         .map_err(serde::de::Error::custom)?;

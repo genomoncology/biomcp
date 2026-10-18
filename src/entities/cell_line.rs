@@ -37,7 +37,7 @@ pub(crate) const CELL_LINE_FULL_WINDOW_NOTE: &str = "Cellosaurus returned 1000 r
 Use a more specific name or the CVCL accession.";
 
 fn default_cell_line_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("cell_line"))
+    SectionOutcomes::with_keys(&outcome_keys("cell_line")).with_entity("cell_line")
 }
 
 fn deserialize_cell_line_section_outcomes<'de, D>(
@@ -46,7 +46,8 @@ fn deserialize_cell_line_section_outcomes<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("cell_line");
     outcomes
         .validate_keys(&outcome_keys("cell_line"))
         .map_err(serde::de::Error::custom)?;

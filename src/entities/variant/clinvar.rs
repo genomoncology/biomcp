@@ -205,6 +205,14 @@ pub(super) async fn add_clinvar(
     hit: &crate::sources::myvariant::MyVariantHit,
     timeout: Duration,
 ) {
+    if let Some(reason) = crate::sources::disable::reason("clinvar") {
+        super::get::strip_clinvar_details(variant);
+        variant.section_outcomes.complete(
+            "clinvar",
+            SectionOutcome::disabled(format!("ClinVar is {reason}.")),
+        );
+        return;
+    }
     let fallback = indirect_clinvar_record(hit);
     let variation_id = hit.clinvar.as_ref().and_then(|clinvar| clinvar.variant_id);
     super::get::strip_clinvar_details(variant);

@@ -232,24 +232,21 @@ def _remove_structural_update_description_filter(catalog_file: Path) -> None:
 
 def _remove_mygene_health_entry(health_file: Path) -> None:
     content = health_file.read_text(encoding="utf-8")
-    updated, count = re.subn(
-        r"    SourceDescriptor \{\n"
-        r'        api: "MyGene",\n'
-        r".*?"
-        r"    \},\n",
-        "",
+    entries = re.findall(
+        r"^    SourceDescriptor \{\n.*?^    \},\n",
         content,
-        count=1,
-        flags=re.DOTALL,
+        flags=re.MULTILINE | re.DOTALL,
     )
-    assert count == 1
-    health_file.write_text(updated, encoding="utf-8")
+    matches = [entry for entry in entries if '        api: "MyGene",\n' in entry]
+    assert len(matches) == 1
+    health_file.write_text(content.replace(matches[0], "", 1), encoding="utf-8")
 
 
 def _append_orphan_health_entry(health_file: Path) -> None:
     content = health_file.read_text(encoding="utf-8")
     entry = (
         "    SourceDescriptor {\n"
+        '        source_id: "imaginary-source",\n'
         '        api: "Imaginary Source",\n'
         '        affects: Some("fixture"),\n'
         "        probe: ProbeKind::Get {\n"

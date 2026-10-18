@@ -51,7 +51,7 @@ use self::clingen::{
 
 /// Gene entity from MyGene.info plus optional enrichment sections.
 fn default_gene_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(&outcome_keys("gene"))
+    SectionOutcomes::with_keys(&outcome_keys("gene")).with_entity("gene")
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -282,7 +282,8 @@ fn deserialize_gene_section_outcomes<'de, D>(deserializer: D) -> Result<SectionO
 where
     D: serde::Deserializer<'de>,
 {
-    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    let mut outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes.bind_entity("gene");
     outcomes
         .validate_keys(&outcome_keys("gene"))
         .map_err(serde::de::Error::custom)?;
@@ -1115,9 +1116,7 @@ fn extract_enrich_terms(
 /// keeps the plain unavailable note for ordinary failures.
 fn enrichr_section_unavailable(err: &BioMcpError) -> SectionOutcome {
     match crate::sources::disable::unavailable_disabled_reason(err) {
-        Some(reason) => {
-            SectionOutcome::unavailable_message(format!("Enrichr gene enrichment is {reason}."))
-        }
+        Some(reason) => SectionOutcome::disabled(format!("Enrichr gene enrichment is {reason}.")),
         None => SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
     }
 }

@@ -62,9 +62,12 @@ pub async fn search(
 
 fn article_search_page(
     page: SearchPage<ArticleSearchResult>,
-    source_status: Vec<ArticleSourceStatus>,
+    mut source_status: Vec<ArticleSourceStatus>,
     timings: Vec<ArticleSearchTiming>,
 ) -> ArticleSearchPage {
+    for status in &mut source_status {
+        status.apply_disabled_policy();
+    }
     ArticleSearchPage {
         complete: article_source_statuses_complete(&source_status),
         results: page.results,

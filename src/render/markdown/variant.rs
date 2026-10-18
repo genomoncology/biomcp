@@ -551,13 +551,17 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
         Some(
             SectionOutcomeState::Inapplicable
             | SectionOutcomeState::Degraded
-            | SectionOutcomeState::Unavailable,
+            | SectionOutcomeState::Unavailable
+            | SectionOutcomeState::Disabled,
         ) => {
             if let Some(message) = domains_outcome.and_then(|outcome| outcome.message()) {
                 out.push_str(message);
                 out.push('\n');
             }
-            if let Some(command) = structure_retry.as_deref() {
+            if domains_outcome
+                .is_none_or(|outcome| outcome.outcome() != SectionOutcomeState::Disabled)
+                && let Some(command) = structure_retry.as_deref()
+            {
                 out.push_str(&format!("Retry: {}\n", markdown_code_span(command)));
             }
             out.push('\n');
@@ -611,13 +615,18 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
         Some(
             SectionOutcomeState::Inapplicable
             | SectionOutcomeState::Degraded
-            | SectionOutcomeState::Unavailable,
+            | SectionOutcomeState::Unavailable
+            | SectionOutcomeState::Disabled,
         ) => {
             if let Some(message) = hotspots_outcome.and_then(|outcome| outcome.message()) {
                 out.push_str(message);
                 out.push('\n');
             }
-            if !domains_recoverable && let Some(command) = structure_retry.as_deref() {
+            if !domains_recoverable
+                && hotspots_outcome
+                    .is_none_or(|outcome| outcome.outcome() != SectionOutcomeState::Disabled)
+                && let Some(command) = structure_retry.as_deref()
+            {
                 out.push_str(&format!("Retry: {}\n", markdown_code_span(command)));
             }
             out.push('\n');

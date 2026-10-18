@@ -18,12 +18,13 @@ pub(crate) const DISABLE_SOURCES_ENV: &str = "BIOMCP_DISABLE_SOURCES";
 pub(crate) const DISABLE_KEGG_ENV: &str = "BIOMCP_DISABLE_KEGG";
 
 /// The recorded commercial-terms shape of a source. The two shapes name
-/// their own groups, and `commercial-restricted` is their union.
+/// their own groups; the broad restricted shape joins only `commercial-restricted`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 enum CommercialTerms {
     LicenseRequired,
     NonCommercial,
+    Restricted,
 }
 
 impl CommercialTerms {
@@ -33,6 +34,7 @@ impl CommercialTerms {
                 "the recorded terms require a commercial license for commercial use"
             }
             Self::NonCommercial => "the recorded terms allow non-commercial use only",
+            Self::Restricted => "the recorded terms restrict commercial use",
         }
     }
 }
@@ -86,6 +88,29 @@ impl Registry {
             .iter()
             .find(|record| record.name.eq_ignore_ascii_case(name))
             .map(|record| record.id.as_str())
+    }
+
+    /// Entity provenance labels that differ from the inventory name.
+    pub(crate) fn id_for_provider(&self, name: &str) -> Option<&str> {
+        let id = match name {
+            "NCBI ClinVar" => "clinvar",
+            "gnomAD v4" => "gnomad",
+            "Complex Portal" => "complexportal",
+            "PDBe" => "pdb",
+            "OpenFDA Drugs@FDA"
+            | "OpenFDA FAERS"
+            | "OpenFDA label"
+            | "OpenFDA Device 510(k) / PMA" => "openfda",
+            "DrugCentral" | "Guide to PHARMACOLOGY" => "mychem-info",
+            "Open Targets" => "opentargets",
+            "HPO" => "hpo-jax-api",
+            "CDC CVX" => "cdc-cvx",
+            "CDC VAERS" => "vaers",
+            "MyChem.info indication search" => "mychem-info",
+            "NCBI EFetch" | "PMC" => "ncbi-e-utilities",
+            _ => return self.id_for_name(name),
+        };
+        Some(id)
     }
 
     /// The inventory display name for one id, for `biomcp health` rows.
@@ -257,8 +282,13 @@ pub(crate) fn init(flag: Option<&str>) -> Result<(), BioMcpError> {
             return Ok(());
         }
         return Err(BioMcpError::InvalidArgument(format!(
-            "Disabled sources were already resolved for this process by {DISABLE_SOURCES_ENV} \
-or {DISABLE_KEGG_ENV}; pass --disable-sources only to a one-shot CLI invocation"
+            "Disabled sources were already resolved for this process ({}); pass --disable-sources only to a one-shot CLI invocation",
+            state
+                .entries
+                .values()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("; ")
         )));
     }
     let mut entries = resolve_from_env()?.entries;
@@ -413,11 +443,14 @@ mod tests {
     }
 
     #[test]
-    fn license_required_group_covers_the_four_recorded_sources() {
+    fn license_required_group_covers_the_recorded_sources() {
         let parsed = parse_disable_spec("license-required", "--disable-sources").unwrap();
         let entries = parsed.entries();
         let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
-        assert_eq!(ids, vec!["drugbank", "enrichr", "kegg", "oncokb"]);
+        assert_eq!(
+            ids,
+            vec!["disgenet", "drugbank", "enrichr", "kegg", "oncokb"]
+        );
         assert!(entries.iter().all(|entry| {
             entry
                 .reason
@@ -426,15 +459,15 @@ mod tests {
     }
 
     #[test]
-    fn non_commercial_group_covers_the_two_recorded_sources() {
+    fn non_commercial_group_covers_the_recorded_sources() {
         let parsed = parse_disable_spec("non-commercial", "--disable-sources").unwrap();
         let entries = parsed.entries();
         let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
-        assert_eq!(ids, vec!["ddinter", "pharmacodb"]);
+        assert_eq!(ids, vec!["alphagenome", "ddinter", "pharmacodb"]);
     }
 
     #[test]
-    fn commercial_restricted_group_is_the_union_of_both_shapes() {
+    fn commercial_restricted_group_includes_specific_and_broad_restrictions() {
         let union = parse_disable_spec("commercial-restricted", "--disable-sources").unwrap();
         let license = parse_disable_spec("license-required", "--disable-sources").unwrap();
         let non_commercial = parse_disable_spec("non-commercial", "--disable-sources").unwrap();
@@ -446,7 +479,12 @@ mod tests {
             .map(|entry| entry.id)
             .collect();
         member_ids.sort();
-        assert_eq!(member_ids.len(), 6, "union covers both shapes");
+        assert_eq!(
+            member_ids.len(),
+            8,
+            "the two specific groups keep their recorded members"
+        );
+        assert!(union.is_disabled("cancer-genome-interpreter"));
         for id in &member_ids {
             assert!(union.is_disabled(id), "{id} must join the union group");
         }
@@ -470,7 +508,7 @@ mod tests {
                 .id_for_name("DDInter")
                 .is_some_and(|id| id == "ddinter")
         );
-        assert!(registry.ids_for_group(None).len() == 6);
+        assert_eq!(registry.ids_for_group(None).len(), 9);
     }
 
     #[test]

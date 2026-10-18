@@ -164,7 +164,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
 
     allowed_auth = {"none", "optional_env", "required_env", "not_applicable"}
     allowed_modes = {"direct_api", "indirect_only"}
-    allowed_commercial_terms = {"license-required", "non-commercial"}
+    allowed_commercial_terms = {"license-required", "non-commercial", "restricted"}
     for item in inventory:
         assert set(item) == {
             "id",

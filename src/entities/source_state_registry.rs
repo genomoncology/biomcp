@@ -900,6 +900,28 @@ pub(crate) fn recovery_route(entity: &str, key: &str) -> Option<RecoveryRoute> {
     })
 }
 
+/// An intentionally disabled section is distinct from an upstream failure.
+pub(crate) fn disabled_outcome(
+    entity: &str,
+    key: &str,
+) -> Option<crate::entities::section_outcome::SectionOutcome> {
+    let row = SOURCE_STATE_ROWS
+        .iter()
+        .find(|row| row.entity == entity && row.key == key)?;
+    let reasons = row
+        .providers
+        .iter()
+        .map(|provider| {
+            let registry = crate::sources::disable::Registry::get();
+            let id = registry.id_for_provider(provider)?;
+            crate::sources::disable::reason(id).map(|reason| format!("{provider} is {reason}."))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    Some(crate::entities::section_outcome::SectionOutcome::disabled(
+        reasons.join(" "),
+    ))
+}
+
 #[cfg(test)]
 mod recovery_tests {
     use super::*;

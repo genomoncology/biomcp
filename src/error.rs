@@ -344,6 +344,9 @@ pub(crate) fn warn_external_failure(
     provider: SourceProvider,
     operation: &'static str,
 ) {
+    if crate::sources::disable::unavailable_disabled_reason(error).is_some() {
+        return;
+    }
     emit_external_failure!(warn, error, provider, operation);
 }
 

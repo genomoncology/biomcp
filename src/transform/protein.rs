@@ -47,7 +47,8 @@ pub fn from_uniprot_record_base(record: UniProtRecord) -> Protein {
     Protein {
         section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
             crate::entities::protein::PROTEIN_OUTCOME_KEYS,
-        ),
+        )
+        .with_entity("protein"),
         accession,
         entry_id,
         name,

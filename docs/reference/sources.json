@@ -29,15 +29,15 @@
       "get variant <id> predict"
     ],
     "bioMcp_auth": "required_env",
-    "commercial_terms": null,
+    "commercial_terms": "non-commercial",
     "env_var": "ALPHAGENOME_API_KEY",
     "provider_access": "provider-controlled access to the AlphaGenome service",
-    "license_summary": "custom provider terms; access is gated by Google/DeepMind service controls",
-    "redistribution_summary": "do not assume open redistribution rights for returned prediction outputs",
-    "terms_url": "https://deepmind.google/science/alphagenome/",
+    "license_summary": "restricted: the hosted AlphaGenome API permits non-commercial use under provider terms",
+    "redistribution_summary": "hosted API outputs are restricted to non-commercial research; provider exceptions for downloadable artifacts and separate cloud commercial access do not grant this API integration those rights",
+    "terms_url": "https://google-deepmind-alphagenome.readthedocs-hosted.com/faqs.html#what-terms-of-use-apply-to-alphagenome-outputs",
     "key_url": "https://deepmind.google/science/alphagenome/",
-    "reviewed_on": "2026-09-27",
-    "notes": "BioMCP calls the hosted gRPC endpoint directly. The public product page is the closest official access reference currently exposed."
+    "reviewed_on": "2026-10-18",
+    "notes": "BioMCP calls the hosted gRPC API, not the separately licensed cloud commercial route. The official FAQ restricts API outputs and disallows clinical decision-making."
   },
   {
     "id": "cancer-genome-interpreter",
@@ -49,10 +49,10 @@
       "get variant <id>"
     ],
     "bioMcp_auth": "not_applicable",
-    "commercial_terms": null,
+    "commercial_terms": "restricted",
     "env_var": null,
     "provider_access": "surfaced indirectly through MyVariant.info payloads",
-    "license_summary": "custom tool terms",
+    "license_summary": "restricted: custom tool terms restrict external and commercial use",
     "redistribution_summary": "do not assume commercial reuse rights; the official terms restrict some external and commercial use",
     "terms_url": "https://www.cancergenomeinterpreter.org/conditions",
     "key_url": null,
@@ -534,15 +534,15 @@
       "get disease <id> disgenet"
     ],
     "bioMcp_auth": "required_env",
-    "commercial_terms": null,
+    "commercial_terms": "license-required",
     "env_var": "DISGENET_API_KEY",
     "provider_access": "account registration and API key required",
-    "license_summary": "custom provider terms for API and downloads",
-    "redistribution_summary": "do not assume unrestricted redistribution; use according to the provider account terms",
-    "terms_url": "https://www.disgenet.com/",
+    "license_summary": "restricted: commercial use requires a commercial license",
+    "redistribution_summary": "standard licenses prohibit redistribution and resale of all or part of the database; custom permission is required",
+    "terms_url": "https://support.disgenet.com/support/solutions/articles/202000087487-do-i-need-a-commercial-license-can-i-use-disgenet-data-in-my-product-",
     "key_url": "https://www.disgenet.com/",
-    "reviewed_on": "2026-09-27",
-    "notes": "DisGeNET's public site advertises free and commercial plans. BioMCP documents the API as key-gated and treats it as provider-controlled."
+    "reviewed_on": "2026-10-18",
+    "notes": "The provider licensing FAQ requires a commercial license for commercial companies and commercial product research or services. BioMCP does not obtain licenses or redistribution permission."
   },
   {
     "id": "drugbank",

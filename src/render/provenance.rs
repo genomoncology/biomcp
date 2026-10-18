@@ -37,6 +37,7 @@ impl SectionSource {
                 && !matches!(
                     self.outcome,
                     SectionOutcomeState::Inapplicable
+                        | SectionOutcomeState::Disabled
                         | SectionOutcomeState::Degraded
                         | SectionOutcomeState::Unavailable
                 ))

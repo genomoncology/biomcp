@@ -39,7 +39,7 @@ impl SemanticScholarStatusTracker {
         } else {
             ArticleSourceAvailability::Ok
         };
-        vec![ArticleSourceStatus {
+        let mut status = ArticleSourceStatus {
             source: ArticleSource::SemanticScholar,
             enabled: true,
             auth_mode: self.auth_mode,
@@ -48,7 +48,9 @@ impl SemanticScholarStatusTracker {
                 self.message
                     .unwrap_or_else(|| "Semantic Scholar unavailable".to_string()),
             ),
-        }]
+        };
+        status.apply_disabled_policy();
+        vec![status]
     }
 }
 
@@ -66,13 +68,15 @@ pub(super) fn source_degraded_status(
     source: ArticleSource,
     message: String,
 ) -> ArticleSourceStatus {
-    ArticleSourceStatus {
+    let mut status = ArticleSourceStatus {
         source,
         enabled: true,
         auth_mode: None,
         status: Some(ArticleSourceAvailability::Degraded),
         message: Some(message),
-    }
+    };
+    status.apply_disabled_policy();
+    status
 }
 
 pub(super) fn timed_out_source_status(source: ArticleSource) -> ArticleSourceStatus {
