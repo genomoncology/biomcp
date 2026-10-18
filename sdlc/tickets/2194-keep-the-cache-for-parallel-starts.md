@@ -16,3 +16,7 @@ Parallel BioMCP processes starting on one cache use it, without warnings, whenev
 - Cause: start-up takes an exclusive try-lock on the epoch lock file only to confirm the epoch is current (`try_ensure_body_limited_cache_epoch`, `src/cache/migration.rs:113-120`, called near `src/sources/mod.rs:1535`).
 - Changes: confirm a current epoch without the exclusive lock (read the marker, or a shared lock), take the exclusive lock only to migrate, and keep contention during a real migration falling through quietly at debug level.
 - Proof: a concurrency case driving the production start-up path (not the test-only blocking helpers) with many parallel starts on a current cache: every process uses the cache and none warns; red on current main.
+
+## Progress
+
+- 2026-10-18 started

@@ -16,3 +16,7 @@ A bad cache setting fails with exit 2 and an invalid-argument message naming the
 - Cause: 2173's lazy shared cache resolves configuration inside the request middleware (`resolve_http_cache_config()?` near `src/sources/mod.rs:608`, mapped near 650-654), so a configuration error becomes a request error. 2172's fall-through must not swallow it either.
 - Changes: resolve and validate cache configuration once before the first request and report it as invalid input; keep cache I/O failures falling through to the provider.
 - Proof: outside-in cases for each setting above, CLI exit code and message, JSON code, and one MCP reply; red on current main.
+
+## Progress
+
+- 2026-10-18 started
