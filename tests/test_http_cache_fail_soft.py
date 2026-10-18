@@ -254,4 +254,8 @@ def test_parallel_current_cache_starts_use_cache_while_epoch_lock_is_held(provid
         assert result.returncode == 0, result.stderr
         assert json.loads(result.stdout)["results"] == expected
         assert "local HTTP cache" not in result.stderr, result.stderr
-    assert replay.request_log_line_count() == before, "all parallel starts must reuse the cache"
+    assert replay.request_log_line_count() == before, (
+        "all parallel starts must reuse the cache",
+        replay.request_log_entries(since=before),
+        [result.stderr for result in results],
+    )

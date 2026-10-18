@@ -541,11 +541,17 @@ fn run_startup_clean_at(
         debug!("cache mode off; start-up cache clean skipped");
         return Ok(());
     }
+    let marker = cache_path.join(STARTUP_CLEAN_MARKER_FILE);
+    // A current marker needs no maintenance. Even a brief exclusive lease
+    // here can make another process's shared startup lease fail open.
+    if !startup_clean_due(&marker, now_ms) {
+        debug!("start-up cache clean skipped; last run within a day");
+        return Ok(());
+    }
     let Some(_maintenance) = super::try_lock_cache_maintenance(&config.cache_root)? else {
         debug!("cache initialization cleanup skipped while another cache operation is active");
         return Ok(());
     };
-    let marker = cache_path.join(STARTUP_CLEAN_MARKER_FILE);
     if !startup_clean_due(&marker, now_ms) {
         debug!("start-up cache clean skipped; last run within a day");
         return Ok(());

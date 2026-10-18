@@ -18,6 +18,7 @@
 - Keep day-cached openFDA and GWAS answers free of stale-cache notes and warnings while they are inside the day window; genuinely expired serves still carry them. (2193)
 - Find protein substitutions in supplement text across one-letter, three-letter and `p.` name forms while keeping exact source locators and literal matching for other text. (2180)
 - Keep the HTTP cache available to parallel starts when its epoch is current, and quietly bypass it while migration or maintenance is active. (2194)
+- Reuse fresh HTTP cache answers across parallel commands without taking an unnecessary startup maintenance lock. (2208)
 - Article full text reports no full text promptly when no PMC record exists, instead of retrying an unsupported Europe PMC PMID XML request and reporting a source failure. Supported PMC requests still distinguish missing full text from transient source outages. (2182)
 - Keep the HTTP cache size budget across short commands, recover missing or interrupted byte totals, and finish required eviction before a command exits. (2195)
 - `variant articles --strategy exact` searches the caller's exact phrase across Europe PMC full text, finding PMID 10811118 for `F1761I`, while PubMed keeps its title/abstract search and the debug plan retains per-source yields. (2181)
