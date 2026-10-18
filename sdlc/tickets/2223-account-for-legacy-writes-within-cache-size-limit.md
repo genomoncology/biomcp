@@ -2,20 +2,26 @@
 priority: 2
 ---
 
-# 2223 — Account for legacy writes within the cache size limit
+# 2223 — Document legacy cache reconciliation at daily maintenance
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Depends on: 2218
 
+Reviews: revision a40fd13, accept
+
+Reviews: revision 8a34b9a, accept
+
 ## Outcome
 
-A current command keeps the configured HTTP cache size limit after an older released binary writes to the same cache without updating the current saved byte marker. Keep startup free of a full tree walk and preserve provider fail-open behavior and request deadlines.
-
+Document the approved mixed-version boundary: sharing a cache with v0.9.2 may temporarily exceed the configured size limit until the next command-triggered daily clean reconciles it. Preserve fast startup and hit paths, and name explicit cleanup as the earlier remedy. No production cache-code change.
 - Evidence:2203 job1792355882950-20969 used exact87d53c current and verified publishedv0.9.2 with a50000-byte limit. Currentseed left17440actual/17440marker; oldwrite left34882actual/17440marker; nextcurrentcommand returned validBRAF but left52332actual/34890marker, exceeding the limit. Daily marker remained fresh. This is more than an expected intermediate legacy stale marker.
-- Changes: `src/cache/manager.rs` `tests/test_cache_persistent_size.py` `CHANGELOG.md`. Diagnose before editing, declare any additional exact paths before changing them, and reuse existing legacy-writer/cache fixtures without a new framework or runtime dependency.
-- Proof: preserve2203 owned experiment2077 failingcache/results and verified binaries until consumed. Reproduce on currentmain, add a deterministic outside-in regression without requiring a public download in routine tests, fix the narrow cause and run affected checks. Retain existing fast-startup/deadline/provider behavior; do not introduce a full startup scan. After repair,2203 must finish both controlled daily-clean checks and prove exact marker reconciliation.
+- Changes: `docs/reference/configuration.md` `CHANGELOG.md` `sdlc/tickets/2223-account-for-legacy-writes-within-cache-size-limit.md`. Add the narrow explanation beside existing daily-clean guidance; no new framework, policy parser, or test duplicating prose.
+- Proof: compare documentation with the recorded PM ruling and2203's two controlled daily-clean observations. Reuse2218 explicit-clean proof for the manual remedy. The earlier immediate-cap RED records the superseded premise; remove that uncommitted assertion and preserve the raw experiment. No new build or behavioral test is required for this wording-only change.
 
-PM ruling: priority2 because mixed versions are uncommon, but the configured size limit must hold. Keep repair narrow and start-up free of a full tree walk.2203 remains open for the two daily-clean checks that stopped before execution.
+PM ruling: Option1 supersedes immediate mixed-version enforcement. Keep fast paths; reconcile v0.9.2 writes at the daily maintenance boundary, document the temporary overage, and finish2203's two controlled daily cleans. Maintenance runs when a command opens the cache, not from a background timer. SQLite storage compatibility will be considered separately.
+Actual RED: job2223/1792356413928-86704 on publishede334c5965 plus deterministic existing-module test, copied qualified20de CLI SHA2569291dc4583a51a2d156b9da720684b6d186b7fceeefc84c3baab8d923bb81ebf. Three real CLI commands return valid gene data; restoring the prior saved marker reproduces a legacy untracked write, then the next command leaves52494physical bytes against50000 and fails the size assertion in0.65s. A first fresh-venv setup invocation lacked pytest; corrected invocation reused prepared2156 Python without rebuilding. Product code remains unchanged.
+
+PM decision: resolved as Option1 above. No per-operation full-tree walk, namespace change or production edit was made. The standalone13-line strict-cap regression was removed because its assertion conflicts with the revised boundary.

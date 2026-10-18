@@ -19,12 +19,15 @@
 
 ### Internal
 
+- Document daily size reconciliation when sharing an HTTP cache with BioMCP 0.9.2 and the explicit cleanup command for earlier reconciliation. (2223)
+
 - Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
 
 - Upgrade the AlphaGenome client and its explicit protocol generator to tonic and prost 0.14, sharing the current HTTP stack and removing the obsolete PEM-reader advisory exception. (2077)
 - Open the next development version after the 0.9.3 release. (2215)
 - Exercise production HTTP cache startup and migration in the existing security, contention, upgrade and startup-cost cases, removing unused blocking test constructors. (2199)
 - Exercise parallel CLI searches, a persistent MCP server, cache clearing and shared byte totals in the manual Windows runtime checks. (2201)
+- Derive licensing reference facts and source notes from the source registry so corrections cannot leave stale guidance. (2224)
 
 ## 0.9.3 — 2026-10-17
 
