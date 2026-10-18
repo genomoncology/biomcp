@@ -57,6 +57,8 @@ Reviews: revision dff1bfc, accept
 
 Reopened: 2026-10-18 — Refresh affected runtime and coverage measurements after additional release fixes; retain unaffected evidence under its measured revision.
 
+Reviews: revision ddc1729, accept
+
 ## Outcome
 
 Fresh v0.9.2 and release-candidate measurements run on the same build machine with the same corrected harness, toolchain, workloads, provider settings and cache preparation, and the baseline record reports raw samples, honest comparisons and remaining failures.
