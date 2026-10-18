@@ -291,3 +291,48 @@ def test_every_disabled_source_id_stops_its_own_requests() -> None:
                     )
 
     assert not failures, "\n\n".join(failures)
+
+
+@pytest.mark.parametrize("origin", ["--disable-sources", "BIOMCP_DISABLE_SOURCES"])
+def test_disabled_local_health_names_the_setting_without_errors(origin: str) -> None:
+    """Configured disables exclude local datasets without inspecting missing files."""
+    binary = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "debug" / "biomcp"))
+    ids = ",".join(record["id"] for record in json.loads(SOURCES_JSON.read_text()))
+    with replay_environment(record=False) as replay:
+        env = replay.command_env(replay._next_run_dir())
+        env.pop("BIOMCP_DISABLE_SOURCES", None)
+        env.pop("BIOMCP_DISABLE_KEGG", None)
+        argv = [str(binary), "--json", "health"]
+        if origin == "--disable-sources":
+            argv.extend([origin, ids])
+        else:
+            env[origin] = ids
+        before = replay.request_log_line_count()
+        process = subprocess.run(
+            argv, env=env, capture_output=True, text=True,
+            timeout=RUN_TIMEOUT_SECONDS, cwd=str(REPO_ROOT),
+        )
+        assert process.returncode == 0, process.stderr
+        report = json.loads(process.stdout)
+        local_sources = {
+            "EMA local data": "ema",
+            "CDC CVX/MVX local data": "cdc-cvx",
+            "DDInter local data": "ddinter",
+            "WHO Prequalification local data": "who-prequalification",
+            "GTR local data": "gtr",
+            "WHO IVD local data": "who-ivd",
+        }
+        rows = {
+            row["api"].split(" (")[0]: row
+            for row in report["rows"]
+            if row["api"].split(" (")[0] in local_sources
+        }
+        assert set(rows) == set(local_sources), report
+        assert {name: row["status"] for name, row in rows.items()} == {
+            name: "disabled" for name in local_sources
+        }
+        for name, source_id in local_sources.items():
+            assert rows[name]["disabled_reason"] == f"disabled by {origin}={source_id}"
+            assert not rows[name].get("missing_files"), rows[name]
+        assert report["error"] == 0, report
+        assert replay.request_log_entries(since=before) == []

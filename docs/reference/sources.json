@@ -1488,12 +1488,12 @@
     "commercial_terms": null,
     "env_var": null,
     "provider_access": "open public API",
-    "license_summary": "Reactome pathway content is CC BY 4.0, with some data exports additionally placed under CC0",
-    "redistribution_summary": "reuse is allowed with attribution; preserve pathway/source provenance in downstream materials",
+    "license_summary": "Reactome database data and derived files are CC0; illustrations, icons, art and branding are CC BY 4.0; software has separate licenses",
+    "redistribution_summary": "database data and derived files may be reused commercially without permission; attribution is encouraged for data and required for CC BY 4.0 art",
     "terms_url": "https://reactome.org/license",
     "key_url": null,
-    "reviewed_on": "2026-09-27",
-    "notes": "Reactome announced in 2017 that some annotation files moved to CC0 while core site/code materials remained under CC BY 4.0."
+    "reviewed_on": "2026-10-18",
+    "notes": "BioMCP retrieves database data through the ContentService JSON API. License section 1(c) covers database data and derived files under CC0; section 1(a) covers illustrations, icons, art and branding under CC BY 4.0. Section 1(b) licenses software under Apache 2.0, with exceptions for copyleft dependencies and separately licensed FoamTree software."
   },
   {
     "id": "seer-explorer",
