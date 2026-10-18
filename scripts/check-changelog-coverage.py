@@ -115,9 +115,9 @@ def record_tickets(previous: str, tag: str) -> set[str]:
 
 
 def status_token(content: str) -> str:
-    """The status token pm reads from a ticket file.
+    """The status token read from a ticket file.
 
-    Mirrors pm's grammar: the first `Status:` line within the first
+    Uses the ticket status grammar: the first `Status:` line within the first
     25 lines, emphasis stripped, cut at the first sentence terminator
     (a period between digits is a decimal, not a terminator), trimmed
     and lowercased. Real tickets spell completion "complete.",

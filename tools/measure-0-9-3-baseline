@@ -9,11 +9,10 @@
 #   RESULT <key> = <value>
 #
 # so a record can hold the exact evidence and a second run can be compared
-# key by key. The script carries no host locks: the gate host's pm job is
-# the scheduler, so a measurement run books the machine through pm job and
-# both measurement arms run on that one host, which keeps a comparison
-# like 2082's like-for-like. The script still refuses to start while any
-# build, test, or gate process is alive.
+# key by key. The script carries no host locks: schedule the measurement
+# through the configured build runner and run both comparison arms on
+# that one host to keep the comparison like-for-like. The script refuses
+# to start while any build, test, or gate process is alive.
 #
 # Usage:
 #   tools/measure-0-9-3-baseline <clone-dir> [options]
