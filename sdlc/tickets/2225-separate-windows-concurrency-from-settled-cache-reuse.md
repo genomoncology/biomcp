@@ -24,3 +24,4 @@ Manual Windows run39166219806 at add602786ade203d31f58331fd8a2cc039470bd3 failed
 
 - 2026-10-18 started: Restated outcome is to distinguish a real Windows cache-reuse defect from permitted fail-open cache writes, compare the released version, and repair only the demonstrated cause. One repair lane replaces the blocked2219 development phase; other landings continue.
 - 2026-10-18 started
+- 2026-10-18 next: Component accepted bb799c1b3de8a09b8d59c536a1fbdd978e0d2e20 after concurrency-barrier repair and qualified-main integration. Manual Windows39167643933 verified exacthead bb799c1b3de8a09b8d59c536a1fbdd978e0d2e20. Final acceptance waits released/current real-lock, originalwarm-oracle, settledreuse/accounting and renamedselector proof. No product defect or runtime pass claimed.
