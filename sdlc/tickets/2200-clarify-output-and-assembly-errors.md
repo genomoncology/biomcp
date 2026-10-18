@@ -25,7 +25,7 @@ Error messages say what went wrong.
 
 Restated outcome: directory output destinations identify the file-path error; variant misses quote only the requested identifier, put attempted build and upstream context outside it, and provide a runnable search command containing the input. Health failures disclose the reason observed.
 
-Changes: `src/utils/download.rs`, `src/entities/variant/get.rs`, `src/entities/variant/get/**`, `src/sources/fda_orphan.rs`, `src/cli/health/runner.rs`, `src/cli/health/http.rs`, `src/cli/health/catalog.rs`, `tests/article_asset_terminal.rs`, `tests/disable_sources_cli.rs`, `spec/entity/variant.md`, `CHANGELOG.md` and this ticket. Add an exact claim before any further file is needed. Do not redesign the generic error envelope or provider retrieval.
+- Changes: `src/utils/download.rs`, `src/entities/variant/get.rs`, `src/entities/variant/get/**`, `src/sources/fda_orphan.rs`, `src/cli/health/runner.rs`, `src/cli/health/http.rs`, `src/cli/health/catalog.rs`, `tests/article_asset_terminal.rs`, `tests/disable_sources_cli.rs`, `spec/entity/variant.md`, `CHANGELOG.md`, `sdlc/tickets/2219-repair-windows-deadline-test-selection.md` and this ticket. Add an exact claim before any further file is needed. Do not redesign the generic error envelope or provider retrieval.
 
 Study found output-directory rename errors and variant miss formatting still present.2088 already explains FDA redirects, but the nonredirect Failed path drops HTTP, parse or transport reasons. Preserve redirect behavior and fix the missing failed-state explanation. GWAS health probes the retired rsID resource while association search uses the supported v2 route. Authorize the health probe to use the existing supported v2 association-search route and describe the search behavior it actually checks; leave variant-by-rsID retrieval unchanged. This follows the existing ticket evidence and changes no clinical interpretation.
 
@@ -38,3 +38,9 @@ Job2200/1792359750841-38394 ran acceptance-only overlays against qualifieddd365f
 The article output ./ case exits1 with IO Invalid argument errno22; an existing directory exits1 with IO Is a directory errno21. Both omit the destination, superseding the older platform-specific errno examples. Human variant miss quotes the identifier together with attemptedGRCh38/upstreamHTTP404 and suggests argument-free biomcp search variant. Its assertion stopped before the JSON iteration, so JSON baseline execution is not claimed. FDA503 and malformed200 return error/latency without a reason; redirect302 still explains the blocked redirect and a valid recorded table succeeds. Recorded GWAS v2 search succeeds while health hits the retired route and reports410.
 
 Proceed with the scoped shared-source fixes and retained controls. The generic error envelope and variant GWAS retrieval remain unchanged. Run affected cases, including the previously unrun variant JSON iteration, then format/lint/quality checks before the single ready push and fresh review.
+
+## Review and coordinated withdrawal
+
+Fresh review accepted sourcea5c5aac047aefa53bfc620032afb3a61fdb69b5f without findings after checking all four outcomes and raw112-case proof. The baseline variant JSON iteration was not reached; candidate human and JSON iterations both passed. Existing output-file and FDA redirect/valid-response controls passed. No new provider requests or generic error-envelope change.
+
+Coordinator metadata carries the PM-approved2219withdrawal after2225 landed. Its actual Windows1-test proof is retained in that record and2225. This avoids a standalone status-only main push; it changes no output behavior.
