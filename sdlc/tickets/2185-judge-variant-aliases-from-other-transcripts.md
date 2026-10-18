@@ -14,7 +14,7 @@ Variant article search follows the clinical ruling on transcript aliases: an ali
 
 - Evidence: research's spot check: `BRCA1 F1761I` expands to aliases such as `BRCA1 F71I` and `BRCA1 c.211T>A` from other transcripts, which pull papers matched only by those names, for example 34829431; identity checks mark them unverified.
 - Starts from: `sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md`, the clinical review ruling.
-- Changes: `src/entities/article/variant_search.rs`, `src/entities/article/identity_verification.rs`, `src/cli/variant/articles.rs`, `tests/test_variant_article_transcript_aliases.py`, `tests/fixtures/article/**`, `CHANGELOG.md`, `sdlc/tickets/2226-resolve-explicit-paper-transcript-and-genomic-anchors.md` and this ticket. Preserve transcript provenance once in the shared result classification and use it in CLI and MCP output.
+- Changes: `src/entities/article/variant_search.rs`, `src/entities/article/identity_verification.rs`, `src/cli/variant/articles.rs`, `tests/test_variant_article_transcript_aliases.py`, `tests/test_variant_article_exact_fulltext.py`, `tests/fixtures/article/**`, `CHANGELOG.md`, `sdlc/tickets/2226-resolve-explicit-paper-transcript-and-genomic-anchors.md` and this ticket. Preserve transcript provenance once in the shared result classification and use it in CLI and MCP output.
 - Proof: recorded replies for BRCA1 F1761I show alias-only papers such as34829431 in the unverified alias group with their alias and provider-supplied transcript, or the approved missing-provenance wording. Existing real TP53/CHEK2 captures continue to prove the supported paper-linked same-allele CAID/rsID path. Preserve conservative identity decisions for unsupported anchors and keep alias-only papers outside verified evidence. General paper-text transcript/build-coordinate resolution belongs to2226.
 
 ## Progress
@@ -44,3 +44,7 @@ Proceed with the shared row classification and provenance fix, compact MCP consu
 ## Bounded identity proof ruling
 
 PM decision on2026-10-18: Preserve the existing identity verifier. Prove its supported same-allele path with the real TP53/CHEK2 captures plus the recorded unknown-alias regression. General paper-text anchor resolution is not added; unsupported anchors remain unverified. The separate priority3 ticket2226 covers explicit paper transcript/build-coordinate resolution and may move to a later release without blocking2185 or this release.
+
+## Review result
+
+Fresh review accepted source dc37ea4256c9df86d462da9e200aebcc2768310c after fixing an empty-search Markdown regression. The existing exact-fulltext fixture now asserts the retained no-articles message. Job2185/1792359386035-98769 reproduced that regression then passed formatting, Ruff, all-target routine Clippy, one CLI build, all9focused cases and quality checks. Qualified executableSHA25666c5be0f203a876bc3dc74f8464510bdc64e2b61f6d74ed64df00100bc53e2af. The reviewer independently compared all84tracked replies with the retained original capture and reused the passing real TP53/CHEK2 proofs.
