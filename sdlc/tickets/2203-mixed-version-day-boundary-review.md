@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision b645f49, accept
+
 ## Outcome
 
 An agent test review alternates v0.9.2 and current BioMCP on one cache with a small size limit across at least two daily cleans and checks the saved byte total and size enforcement.
