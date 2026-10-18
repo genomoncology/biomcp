@@ -10,6 +10,8 @@ Milestone: 0.9.3
 
 Reviews: revision 5981508, accept
 
+Reviews: revision 39073ba, accept
+
 ## Outcome
 
 A day-cache hit inside its 24-hour window carries no stale note or warning; only a genuinely stale serve does.
