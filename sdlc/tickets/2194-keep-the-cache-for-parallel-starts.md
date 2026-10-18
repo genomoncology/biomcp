@@ -20,3 +20,4 @@ Parallel BioMCP processes starting on one cache use it, without warnings, whenev
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-18 next: Outcome: current-epoch parallel startup uses the cache without warnings; true migration contention quietly falls through. Reproduce on b278f007b: tests/test_http_cache_fail_soft.py -k parallel_current_cache_starts with tests-only patch through job1792322063077-50356; both true CLI gene/article cases failed on WARN WouldBlock. Change production epoch fast path, narrow I/O logging, focused concurrency cases and changelog.

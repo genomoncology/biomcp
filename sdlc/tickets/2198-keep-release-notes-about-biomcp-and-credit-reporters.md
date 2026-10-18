@@ -19,3 +19,4 @@ The 0.9.3 release notes describe user-visible changes to BioMCP, credit every Gi
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-18 next: Outcome: publish user-visible notes with all three reporter credits, remove private tooling prose and correct permissions docs. Baseline extraction exposes internal bullets and credits only291; targeted public-file search confirms private tooling names. Change changelog, guide, permission docs and prose-only comments. Initial job1792322126630-59106 passed153focused tests and mechanical checks; final wording check queued.

@@ -20,3 +20,4 @@ A bad cache setting fails with exit 2 and an invalid-argument message naming the
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-18 next: Outcome: preserve invalid cache settings as invalid arguments before the first request, with cache I/O failures still falling through. Reproduce on b278f007b: build CLI and run tests/test_cache_invalid_settings.py through job1792322055333-48045; all9 expected failures, including exit/code and MCP provider-error misclassification. Change shared client config resolution, dedicated outside-in tests and changelog. GREEN targeted check queued.

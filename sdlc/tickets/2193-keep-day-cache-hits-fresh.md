@@ -20,3 +20,4 @@ A day-cache hit inside its 24-hour window carries no stale note or warning; only
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-18 next: Outcome: day-window hits are fresh while genuinely expired serves retain notes and warnings. Reproduce on b278f007b: cargo nextest run --no-default-features -E test(day_cache), tests-only patch through job1792322157589-61336;3 within-day stale-note cases failed,12passed. Change stale marker selection, shared test tracing helper, recorded GWAS/openFDA cases and changelog. GREEN targeted check queued.
