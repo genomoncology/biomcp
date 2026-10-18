@@ -13,10 +13,10 @@
 
 ### Fixes
 
-- Keep the HTTP cache size budget across short commands, recover missing or interrupted byte totals, and finish required eviction before a command exits. (2195)
 - Asset downloads accept a bare `--output` filename and save it in the current directory, while still refusing missing output directories. (2179)
 - Find protein substitutions in supplement text across one-letter, three-letter and `p.` name forms while keeping exact source locators and literal matching for other text. (2180)
 - Article full text reports no full text promptly when no PMC record exists, instead of retrying an unsupported Europe PMC PMID XML request and reporting a source failure. Supported PMC requests still distinguish missing full text from transient source outages. (2182)
+- Keep the HTTP cache size budget across short commands, recover missing or interrupted byte totals, and finish required eviction before a command exits. (2195)
 - `variant articles --strategy exact` searches the caller's exact phrase across Europe PMC full text, finding PMID 10811118 for `F1761I`, while PubMed keeps its title/abstract search and the debug plan retains per-source yields. (2181)
 - Report HTML and other non-PDF full-text replies as unavailable downloads, including replies labeled as PDF; reserve unusable PDF text for PDF bytes that cannot yield text. (2183)
 - Share HTTP cache setup across parallel sources and provider clients, and wait for local cache leases within the caller deadline (2173).
