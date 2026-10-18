@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision 343b394, accept
+
 ## Outcome
 
 The supplement text cache obeys the same age, size and disk limits as the rest of the cache, shows in `cache stats`, and reads without walking its directory.
