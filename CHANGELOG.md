@@ -10,6 +10,8 @@
 
 ### Internal
 
+- Exercise parallel CLI searches, a persistent MCP server, cache clearing and shared byte totals in the manual Windows runtime checks. (2201)
+
 - Open the next development version after the 0.9.3 release. (2215)
 - Exercise production HTTP cache startup and migration in the existing security, contention, upgrade and startup-cost cases, removing unused blocking test constructors. (2199)
 
