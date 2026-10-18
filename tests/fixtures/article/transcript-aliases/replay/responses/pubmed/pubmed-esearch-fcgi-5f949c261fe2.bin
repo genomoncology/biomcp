@@ -1,0 +1,1 @@
+{"header":{"type":"esearch","version":"0.3"},"esearchresult":{"count":"0","retmax":"0","retstart":"0","idlist":[],"translationset":[],"querytranslation":"(\"BRCA1\"[Title/Abstract] AND \"F619I\"[Title/Abstract])","warninglist":{"phrasesignored":[],"quotedphrasesnotfound":["\"F619I\"[Title/Abstract]"],"outputmessages":["No items found."]}}}

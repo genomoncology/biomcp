@@ -1,0 +1,10 @@
+{
+  "captured_at": "2026-10-18T21:21:40.666672+00:00",
+  "finished_at": "2026-10-18T21:22:04.828931+00:00",
+  "version": "biomcp 0.9.3",
+  "binary_sha256": "54f66769d9193c569d1b65756ad766eafd1a2c5e92d08f8c855cc8964e9a7145",
+  "archive_sha256": "e637062c18c6692f3ec49c5847e69b29f6feee7f7909345970bd504d72174994",
+  "command": ["biomcp", "--json", "--no-cache", "variant", "articles", "BRCA1 F1761I", "--strategy", "union", "--verify-identity", "--debug-plan", "--limit", "10"],
+  "exit_code": 0,
+  "observations": "PMID 34829431 matches only BRCA1 F71I and remains unverified. No source transcript for F71I is supplied by the captured provider response. All ten visible papers are unverified; this capture proves no positive same-allele mapping."
+}

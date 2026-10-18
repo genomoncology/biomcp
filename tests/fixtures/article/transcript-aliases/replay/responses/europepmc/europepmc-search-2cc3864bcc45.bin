@@ -1,0 +1,1 @@
+{"version":"6.9","hitCount":0,"request":{"queryString":"BRCA1 F1714I AND NOT PUB_TYPE:\"retracted publication\"","resultType":"lite","cursorMark":"*","pageSize":25,"sort":"","synonym":false},"resultList":{"result":[]}}

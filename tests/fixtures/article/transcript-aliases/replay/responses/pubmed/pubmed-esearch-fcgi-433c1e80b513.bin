@@ -1,0 +1,1 @@
+{"header":{"type":"esearch","version":"0.3"},"esearchresult":{"count":"0","retmax":"0","retstart":"0","idlist":[],"translationset":[],"querytranslation":"(\"BRCA1\"[Title/Abstract] AND \"c.1855T>A\"[Title/Abstract])","warninglist":{"phrasesignored":[],"quotedphrasesnotfound":["\"c.1855T&gt;A\"[Title/Abstract]"],"outputmessages":["No items found."]}}}

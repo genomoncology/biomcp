@@ -121,12 +121,21 @@ pub struct VariantArticleRow {
     pub article: ArticleSearchResult,
     pub requested_variant: RequestedVariantIdentity,
     pub matched_aliases: Vec<String>,
+    pub match_reason: &'static str,
+    pub alias_matches: Vec<VariantArticleAliasMatch>,
     pub retrieval_routes: Vec<String>,
     pub sources: Vec<String>,
     pub rank: usize,
     pub provenance: Vec<VariantArticleProvenance>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<VariantArticleIdentity>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleAliasMatch {
+    pub alias: String,
+    pub source_transcript: Option<String>,
+    pub reason: &'static str,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -1121,6 +1130,7 @@ pub struct CompactVariantArticleRow {
     pub date: Option<String>,
     pub match_reason: &'static str,
     pub matched_aliases: Vec<String>,
+    pub alias_matches: Vec<VariantArticleAliasMatch>,
     pub routes: Vec<String>,
     pub sources: Vec<String>,
     pub rank: usize,
@@ -2146,6 +2156,58 @@ fn primary_exact_alias(context: &VariantArticleResolutionContext) -> Option<Stri
     })
 }
 
+fn article_alias_matches(
+    aliases: &[String],
+    context: &VariantArticleResolutionContext,
+) -> Vec<VariantArticleAliasMatch> {
+    let normalize = |value: &str| {
+        crate::entities::variant::normalize_protein_change(value)
+            .unwrap_or_else(|| value.to_string())
+    };
+    aliases
+        .iter()
+        .flat_map(|alias| {
+            let change = variant_source_gene(context)
+                .and_then(|gene| alias.strip_prefix(&format!("{gene} ")))
+                .unwrap_or(alias);
+            // SnpEff supplies a transcript and its changes in one record. The
+            // independently deduplicated dbNSFP arrays cannot supply this pairing.
+            let transcripts = context
+                .source_hit
+                .as_ref()
+                .and_then(|hit| hit.snpeff.as_ref())
+                .into_iter()
+                .flat_map(|snpeff| &snpeff.ann)
+                .filter(|annotation| annotation.genename.as_deref() == variant_source_gene(context))
+                .filter(|annotation| {
+                    annotation
+                        .hgvs_p
+                        .iter()
+                        .chain(&annotation.hgvs_c)
+                        .any(|value| normalize(value) == normalize(change))
+                })
+                .filter_map(|annotation| annotation.feature_id.clone())
+                .collect::<BTreeSet<_>>();
+            if transcripts.is_empty() {
+                vec![VariantArticleAliasMatch {
+                    alias: alias.clone(),
+                    source_transcript: None,
+                    reason: "source transcript not stated by the provider",
+                }]
+            } else {
+                transcripts
+                    .into_iter()
+                    .map(|transcript| VariantArticleAliasMatch {
+                        alias: alias.clone(),
+                        source_transcript: Some(transcript),
+                        reason: "source transcript stated by the provider",
+                    })
+                    .collect()
+            }
+        })
+        .collect()
+}
+
 async fn annotation_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
@@ -3036,8 +3098,15 @@ fn rank_candidates(candidates: &mut [ArticleCandidate]) {
             .variant_provenance
             .iter()
             .any(|fact| fact.route != "best_effort_free_text");
-        right_exact
-            .cmp(&left_exact)
+        let confirmed = |candidate: &ArticleCandidate| {
+            candidate
+                .identity
+                .as_ref()
+                .is_some_and(|identity| identity.status == "confirmed")
+        };
+        confirmed(right)
+            .cmp(&confirmed(left))
+            .then_with(|| right_exact.cmp(&left_exact))
             .then_with(|| {
                 route_score(right)
                     .partial_cmp(&route_score(left))
@@ -4295,6 +4364,12 @@ async fn search_variant_articles_identity(
         total_candidates,
         visible_candidates.len(),
     );
+    let mut requested_context = context.clone();
+    requested_context.source_identity = None;
+    requested_context.source_hit = None;
+    requested_context.resolution.normalized_aliases = context.requested.normalized_aliases();
+    let (mut requested_aliases, _) = exact_aliases(&requested_context);
+    requested_aliases.extend(primary_exact_alias(&context));
     let rows = visible_candidates
         .into_iter()
         .enumerate()
@@ -4305,7 +4380,17 @@ async fn search_variant_articles_identity(
                 .flat_map(|fact| fact.query_aliases.iter().cloned())
                 .collect::<BTreeSet<_>>()
                 .into_iter()
-                .collect();
+                .collect::<Vec<_>>();
+            let alias_matches = article_alias_matches(&matched_aliases, &context);
+            let alias_only = strategy != VariantArticleStrategy::Exact
+                && !matched_aliases.is_empty()
+                && !matched_aliases
+                    .iter()
+                    .any(|alias| requested_aliases.contains(alias))
+                && candidate
+                    .identity
+                    .as_ref()
+                    .is_none_or(|identity| identity.status != "confirmed");
             let retrieval_routes = candidate
                 .variant_provenance
                 .iter()
@@ -4324,6 +4409,18 @@ async fn search_variant_articles_identity(
                 article: candidate.row,
                 requested_variant: context.requested.clone(),
                 matched_aliases,
+                match_reason: if alias_only {
+                    "unverified_alias_match"
+                } else if candidate
+                    .variant_provenance
+                    .iter()
+                    .any(|fact| fact.route != "best_effort_free_text")
+                {
+                    "exact_variant"
+                } else {
+                    "best_effort_free_text"
+                },
+                alias_matches,
                 retrieval_routes,
                 sources,
                 rank: offset.saturating_add(index).saturating_add(1),
@@ -4726,10 +4823,6 @@ fn validate_batch_requests(
 }
 
 fn compact_row(row: VariantArticleRow) -> CompactVariantArticleRow {
-    let exact = row
-        .retrieval_routes
-        .iter()
-        .any(|route| route != "best_effort_free_text");
     CompactVariantArticleRow {
         pmid: (!row.article.pmid.trim().is_empty()).then_some(row.article.pmid),
         pmcid: row.article.pmcid,
@@ -4738,12 +4831,9 @@ fn compact_row(row: VariantArticleRow) -> CompactVariantArticleRow {
         semantic_scholar_id: row.article.semantic_scholar_id,
         title: row.article.title,
         date: row.article.date,
-        match_reason: if exact {
-            "exact_variant"
-        } else {
-            "best_effort_free_text"
-        },
+        match_reason: row.match_reason,
         matched_aliases: row.matched_aliases,
+        alias_matches: row.alias_matches,
         routes: row.retrieval_routes,
         sources: row.sources,
         rank: row.rank,
@@ -8446,6 +8536,8 @@ mod tests {
             article: candidate.row,
             requested_variant: RequestedVariantIdentity::default(),
             matched_aliases: vec!["BRAF V600E".into()],
+            match_reason: "exact_variant",
+            alias_matches: Vec::new(),
             retrieval_routes: vec!["exact_lexical".into()],
             sources: vec!["pubtator".into()],
             rank: 1,
