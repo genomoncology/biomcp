@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 5c3ea58, accept
 
+Reviews: revision 1e65533, accept
+
 ## Outcome
 
 An agent test review fills a small dedicated filesystem during cache writes and eviction and checks requests still answer, no temp files leak and the size total stays right.
