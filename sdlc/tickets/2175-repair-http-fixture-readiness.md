@@ -4,7 +4,7 @@ priority: 1
 
 # 2175 — Repair the HTTP fixture readiness failure
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.3
 
@@ -13,6 +13,8 @@ Reviews: revision 28dc42b, accept
 Reviews: revision 58e5e47, accept
 
 Reviews: revision 45237a7, accept
+
+Landed: 38610b4 (fast-forward: Accepted fixture readiness repair is already carried on main. Fifteen full main checks passed since startup hardening, latest 2156/1792285080324-84922 at 7025e1176195a9bfa6e4fcd8dbe84c30862cf1a6, with no readiness recurrence. Complete nonpublishing rehearsal https://github.com/genomoncology/biomcp/actions/runs/39085869827 passed on that candidate including qualification, packaged checks, all five archives and wheels, installed smokes and both containers. Original startup failure cause remains unconfirmed; accepted diagnostics and bounded readiness behavior passed observation. This closure changes ticket records only; tag the rehearsed candidate.)
 
 ## Outcome
 
