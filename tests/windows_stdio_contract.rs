@@ -490,6 +490,9 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     assert_contended_write_fails_open(cache, &provider);
     assert_size_marker(cache);
 
+    // Warm misses and the forced lock miss/refill have already completed.
+    // Only arrivals from the next held requests may satisfy the clear barrier.
+    for _ in provider.arrivals.try_iter() {}
     provider.hold_replies(true);
     let cli = spawn_gene(cache, &provider.base, "BRAF4");
     call_gene(&mut mcp, "during-clear", "BRAF5");
