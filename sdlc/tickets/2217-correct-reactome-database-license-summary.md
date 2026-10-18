@@ -19,3 +19,5 @@ Reactome's source terms distinguish CC0 database data and derived files from CC 
 ## Progress
 
 - 2026-10-18 started
+
+Reproduction and reviewed outcome: current sources.json and licensing table call pathway content CC BY4 with only some exports CC0. Read-only rg of the Reactome registry entry and table reproduces the incorrect wording; actual integration only fetches ContentService JSON/data endpoints. Official license sections1(a)-(c), verified2026-10-18, distinguish CC0 database/derived data from CC BY4 art and separately licensed software. Make that narrow correction, leave commercial_terms/source availability unchanged, and use the existing licensing contract checks without a redundant prose test.
