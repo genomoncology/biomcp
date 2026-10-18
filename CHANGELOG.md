@@ -11,6 +11,7 @@
 - Resolve an rsID in plain PubTator article search through the matching variant entity, preserving text search when no matching entity is available. (2184)
 
 - Include ORCID in restricted source groups and distinguish its non-commercial API terms from public record data reuse. (2216)
+- Correct Reactome licensing guidance to distinguish CC0 database data from CC BY 4.0 art and separately licensed software. (2217)
 - Reconcile HTTP cache byte accounting after explicit cleanup, including reservations left by failed writes. (2218)
 - Preserve configured source-disable reasons in variant literature CLI and MCP responses instead of reporting a provider failure. (2222)
 
