@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision f011fc2, accept
+
 ## Outcome
 
 The release marker job prepares the Linux isolation prerequisites before invoking the existing packaged-release gate. Reuse the existing Linux preparation owner so release and qualification jobs do not drift. Keep refusal without isolation, read-only rehearsal permissions and push-only publication.
