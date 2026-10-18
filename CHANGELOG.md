@@ -10,6 +10,8 @@
 
 ### Internal
 
+- Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
+
 - Open the next development version after the 0.9.3 release. (2215)
 - Exercise production HTTP cache startup and migration in the existing security, contention, upgrade and startup-cost cases, removing unused blocking test constructors. (2199)
 

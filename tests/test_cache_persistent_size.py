@@ -7,9 +7,13 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import threading
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).parent / "golden"))
+from replay_env import retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,8 +50,8 @@ def gene_provider():
 def run_gene(cache, base, index, limit=50000):
     result = subprocess.run(
         [str(BINARY), "--json", "search", "gene", f"BRAF{index}", "--limit", "1"],
-        cwd=ROOT, env=os.environ | {"BIOMCP_CACHE_DIR": str(cache), "BIOMCP_MYGENE_BASE": base,
-            "BIOMCP_CACHE_MODE": "default", "BIOMCP_CACHE_MAX_SIZE": str(limit), "BIOMCP_CACHE_MIN_DISK_FREE": "1B"},
+        cwd=ROOT, env=retained_cache_env(cache.parent, {"BIOMCP_MYGENE_BASE": base}, base,
+            cache_dir=cache, max_size=limit),
         capture_output=True, text=True, timeout=20,
     )
     assert result.returncode == 0, (result.stdout, result.stderr)

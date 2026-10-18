@@ -5,9 +5,13 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 import threading
+
+sys.path.insert(0, str(Path(__file__).parent / "golden"))
+from replay_env import retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -49,7 +53,7 @@ def run(cache: Path, base: str, *arguments: str) -> subprocess.CompletedProcess[
     return subprocess.run(
         [BINARY, *arguments],
         cwd=ROOT,
-        env=os.environ | {"BIOMCP_CACHE_DIR": str(cache), "BIOMCP_MYGENE_BASE": base},
+        env=retained_cache_env(cache.parent, {"BIOMCP_MYGENE_BASE": base}, base, cache_dir=cache),
         text=True,
         capture_output=True,
     )

@@ -51,6 +51,52 @@ DATASET_DIRS = (
 )
 
 
+def isolated_command_env(
+    run_dir: Path, provider_env: dict[str, str], origin: str
+) -> dict[str, str]:
+    """Isolate CLI home, config, cache, datasets and provider credentials."""
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in STRIPPED_SECRETS and key != "COLUMNS"
+    }
+    env.update(provider_env)
+    env.update(
+        {
+            "BIOMCP_TEST_UNPACED_ORIGIN": origin,
+            "BIOMCP_CACHE_MODE": "off",
+            "BIOMCP_CACHE_DIR": str(run_dir / "cache"),
+            "XDG_CACHE_HOME": str(run_dir / "xdg-cache"),
+            "XDG_CONFIG_HOME": str(run_dir / "xdg-config"),
+            "HOME": str(run_dir),
+            "RUST_LOG": "error",
+            "NO_COLOR": "1",
+            "TERM": "dumb",
+        }
+    )
+    for name in DATASET_DIRS:
+        stem = name.removeprefix("BIOMCP_").lower()
+        env[name] = str(run_dir / stem)
+    return env
+
+
+def retained_cache_env(
+    run_dir: Path, provider_env: dict[str, str], origin: str,
+    *, cache_dir: Path | None = None, max_size: int = 10000000,
+) -> dict[str, str]:
+    """Keep fixture responses independently of host cache and free-space policy."""
+    env = isolated_command_env(run_dir, provider_env, origin)
+    env.update({
+        "BIOMCP_CACHE_MODE": "default",
+        "BIOMCP_CACHE_MAX_SIZE": str(max_size),
+        "BIOMCP_CACHE_MAX_AGE": "86400",
+        "BIOMCP_CACHE_MIN_DISK_FREE": "1B",
+    })
+    if cache_dir is not None:
+        env["BIOMCP_CACHE_DIR"] = str(cache_dir)
+    return env
+
+
 @dataclass
 class ReplayRun:
     """One finished command run with its replay accounting."""
@@ -81,29 +127,7 @@ class ReplayEnvironment:
         return run_dir
 
     def command_env(self, run_dir: Path) -> dict[str, str]:
-        env = {
-            key: value
-            for key, value in os.environ.items()
-            if key not in STRIPPED_SECRETS and key != "COLUMNS"
-        }
-        env.update(self.provider_env)
-        env.update(
-            {
-                "BIOMCP_TEST_UNPACED_ORIGIN": self.origin,
-                "BIOMCP_CACHE_MODE": "off",
-                "BIOMCP_CACHE_DIR": str(run_dir / "cache"),
-                "XDG_CACHE_HOME": str(run_dir / "xdg-cache"),
-                "XDG_CONFIG_HOME": str(run_dir / "xdg-config"),
-                "HOME": str(run_dir),
-                "RUST_LOG": "error",
-                "NO_COLOR": "1",
-                "TERM": "dumb",
-            }
-        )
-        for name in DATASET_DIRS:
-            stem = name.removeprefix("BIOMCP_").lower()
-            env[name] = str(run_dir / stem)
-        return env
+        return isolated_command_env(run_dir, self.provider_env, self.origin)
 
     def request_log_entries(self, since: int = 0) -> list[dict]:
         entries = []

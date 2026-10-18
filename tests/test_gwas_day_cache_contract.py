@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -20,6 +21,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).parent / "golden"))
+from replay_env import retained_cache_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -82,16 +86,7 @@ def _run_search_gwas(
     base_url: str, cache_home: Path
 ) -> subprocess.CompletedProcess[str]:
     assert BIOMCP_BIN.exists(), f"missing biomcp binary: {BIOMCP_BIN}"
-    env = os.environ.copy()
-    env.update(
-        {
-            "BIOMCP_GWAS_BASE": base_url,
-            "BIOMCP_CACHE_DIR": str(cache_home),
-            "XDG_CACHE_HOME": str(cache_home / "xdg-cache"),
-            "RUST_LOG": "error",
-        }
-    )
-    env.pop("BIOMCP_CACHE_MODE", None)
+    env = retained_cache_env(cache_home, {"BIOMCP_GWAS_BASE": base_url}, base_url)
     return subprocess.run(
         [str(BIOMCP_BIN), "--json", "search", "gwas", "-g", "BRAF"],
         cwd=REPO_ROOT,
