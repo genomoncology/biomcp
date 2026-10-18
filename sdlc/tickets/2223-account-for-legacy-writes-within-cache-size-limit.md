@@ -23,3 +23,7 @@ PM ruling: priority2 because mixed versions are uncommon, but the configured siz
 ## Progress
 
 - 2026-10-18 started
+
+Actual RED: job2223/1792356413928-86704 on publishede334c5965 plus deterministic existing-module test, copied qualified20de CLI SHA2569291dc4583a51a2d156b9da720684b6d186b7fceeefc84c3baab8d923bb81ebf. Three real CLI commands return valid gene data; restoring the prior saved marker reproduces a legacy untracked write, then the next command leaves52494physical bytes against50000 and fails the size assertion in0.65s. A first fresh-venv setup invocation lacked pytest; corrected invocation reused prepared2156 Python without rebuilding. Product code remains unchanged.
+
+PM decision needed: valid saved v2 marker cannot reliably detect arbitrary legacy nested-bucket writes without inspecting shared content. Recounting after every current write adds a tree walk per miss and still cannot catch an over-budget warm hit. Strict per-command enforcement conflicts with preserving fast startup/hit paths unless the shared-version policy or cache namespace changes. Choose the enforcement boundary/cost before product edits; do not hide the startup scan on another path or invent an unreliable directory-mtime heuristic.
