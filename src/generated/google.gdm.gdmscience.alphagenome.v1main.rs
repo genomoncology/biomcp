@@ -3,7 +3,7 @@
 /// data, laid out in row-major format. To support tensors larger than the
 /// maximum protocol buffer message size, the tensor payload may be split into
 /// multiple chunks.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Tensor {
     /// The shape of the tensor. If empty, the data will be treated as a scalar.
     #[prost(int32, repeated, tag = "1")]
@@ -18,7 +18,7 @@ pub struct Tensor {
 /// Nested message and enum types in `Tensor`.
 pub mod tensor {
     /// The payload for the tensor.
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
     pub enum Payload {
         /// The raw data for the tensor. If present, the tensor is not split into
         /// chunks.
@@ -30,7 +30,7 @@ pub mod tensor {
     }
 }
 /// A single chunk of a tensor.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct TensorChunk {
     /// Flattened tensor data. Data is laid out in row-major order.
     #[prost(bytes = "vec", tag = "1")]
@@ -141,7 +141,7 @@ impl CompressionType {
     }
 }
 /// Message that represents a genomic interval.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Interval {
     /// The chromosome name, e.g., "chr1".
     #[prost(string, tag = "1")]
@@ -157,7 +157,7 @@ pub struct Interval {
     pub strand: i32,
 }
 /// Message that represents a genomic variant/mutation.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Variant {
     /// The chromosome name, e.g., "chr1".
     #[prost(string, tag = "1")]
@@ -176,7 +176,7 @@ pub struct Variant {
     pub alternate_bases: ::prost::alloc::string::String,
 }
 /// A single biological ontology term.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct OntologyTerm {
     /// The type of ontology this term belongs to.
     #[prost(enumeration = "OntologyType", tag = "1")]
@@ -186,7 +186,7 @@ pub struct OntologyTerm {
     pub id: i64,
 }
 /// Message that represents a biological sample that is used in an experiment.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Biosample {
     /// Biosample type matching ENCODE conventions.
     #[prost(enumeration = "BiosampleType", tag = "1")]
@@ -199,7 +199,7 @@ pub struct Biosample {
     pub stage: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Message containing metadata for a gene score.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct GeneScorerMetadata {
     /// ENSEMBL gene identifier without version number, e.g. "ENSG00000100342".
     #[prost(string, tag = "1")]
@@ -270,7 +270,7 @@ pub struct TracksMetadata {
     pub metadata: ::prost::alloc::vec::Vec<TrackMetadata>,
 }
 /// Message containing metadata for a splice junctions.
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct JunctionMetadata {
     /// Name of the junction track, e.g. "Brain_Cerebellum".
     #[prost(string, tag = "1")]
@@ -419,7 +419,7 @@ pub struct ScoreVariantOutput {
     pub variant_data: ::core::option::Option<VariantData>,
 }
 /// Interval scorer message for gene-mask scoring.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct GeneMaskIntervalScorer {
     /// Requested output type.
     #[prost(enumeration = "OutputType", tag = "1")]
@@ -432,7 +432,7 @@ pub struct GeneMaskIntervalScorer {
     pub aggregation_type: i32,
 }
 /// Container message for all interval scorers.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct IntervalScorer {
     /// The interval scorer payload.
     #[prost(oneof = "interval_scorer::Scorer", tags = "1")]
@@ -441,7 +441,7 @@ pub struct IntervalScorer {
 /// Nested message and enum types in `IntervalScorer`.
 pub mod interval_scorer {
     /// The interval scorer payload.
-    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
+    #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Oneof)]
     pub enum Scorer {
         /// Gene mask scorer.
         #[prost(message, tag = "1")]
@@ -449,7 +449,7 @@ pub mod interval_scorer {
     }
 }
 /// Variant scorer message for center mask scoring.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CenterMaskScorer {
     /// The width of the mask around the variant.
     #[prost(int64, optional, tag = "1")]
@@ -462,21 +462,21 @@ pub struct CenterMaskScorer {
     pub requested_output: i32,
 }
 /// Variant scorer message for gene-mask scoring based on log fold change.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct GeneMaskLfcScorer {
     /// Requested output type.
     #[prost(enumeration = "OutputType", tag = "1")]
     pub requested_output: i32,
 }
 /// Variant scorer message for gene-mask scoring based on active allele counts.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct GeneMaskActiveScorer {
     /// Requested output type.
     #[prost(enumeration = "OutputType", tag = "1")]
     pub requested_output: i32,
 }
 /// Variant scorer message for gene-mask scoring for splicing.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct GeneMaskSplicingScorer {
     /// The width of the mask around the variant.
     #[prost(int64, optional, tag = "1")]
@@ -486,16 +486,16 @@ pub struct GeneMaskSplicingScorer {
     pub requested_output: i32,
 }
 /// Variant scorer message for polyadenylation QTLs (paQTLs).
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct PolyadenylationScorer {}
 /// Variant scorer message for splice junction scoring.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct SpliceJunctionScorer {}
 /// Variant scorer message for contact map scoring.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ContactMapScorer {}
 /// Container message for all variant scorers.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct VariantScorer {
     /// The variant scorer payload.
     #[prost(oneof = "variant_scorer::Scorer", tags = "1, 2, 3, 4, 5, 6, 7")]
@@ -504,7 +504,7 @@ pub struct VariantScorer {
 /// Nested message and enum types in `VariantScorer`.
 pub mod variant_scorer {
     /// The variant scorer payload.
-    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
+    #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Oneof)]
     pub enum Scorer {
         /// Center mask scorer.
         #[prost(message, tag = "1")]
@@ -1154,7 +1154,7 @@ pub mod score_ism_variant_response {
     }
 }
 /// Request message for getting metadata for an organism.
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct MetadataRequest {
     /// The organism we should return metadata for.
     #[prost(enumeration = "Organism", tag = "1")]
@@ -1197,7 +1197,7 @@ pub mod dna_model_service_client {
     }
     impl<T> DnaModelServiceClient<T>
     where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T: tonic::client::GrpcService<tonic::body::Body>,
         T::Error: Into<StdError>,
         T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
         <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
@@ -1218,13 +1218,13 @@ pub mod dna_model_service_client {
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
             T: tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
+                http::Request<tonic::body::Body>,
                 Response = http::Response<
-                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                    <T as tonic::client::GrpcService<tonic::body::Body>>::ResponseBody,
                 >,
             >,
             <T as tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
+                http::Request<tonic::body::Body>,
             >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
             DnaModelServiceClient::new(InterceptedService::new(inner, interceptor))
@@ -1278,7 +1278,7 @@ pub mod dna_model_service_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/google.gdm.gdmscience.alphagenome.v1main.DnaModelService/PredictSequence",
             );
@@ -1310,7 +1310,7 @@ pub mod dna_model_service_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/google.gdm.gdmscience.alphagenome.v1main.DnaModelService/PredictInterval",
             );
@@ -1342,7 +1342,7 @@ pub mod dna_model_service_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/google.gdm.gdmscience.alphagenome.v1main.DnaModelService/PredictVariant",
             );
@@ -1374,7 +1374,7 @@ pub mod dna_model_service_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/google.gdm.gdmscience.alphagenome.v1main.DnaModelService/ScoreInterval",
             );
@@ -1406,7 +1406,7 @@ pub mod dna_model_service_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/google.gdm.gdmscience.alphagenome.v1main.DnaModelService/ScoreVariant",
             );
@@ -1438,7 +1438,7 @@ pub mod dna_model_service_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/google.gdm.gdmscience.alphagenome.v1main.DnaModelService/ScoreIsmVariant",
             );
@@ -1468,7 +1468,7 @@ pub mod dna_model_service_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
                 "/google.gdm.gdmscience.alphagenome.v1main.DnaModelService/GetMetadata",
             );
