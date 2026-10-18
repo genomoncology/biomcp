@@ -11,6 +11,8 @@ Depends on: 2202
 
 Reviews: revision 8acd027, accept
 
+Reviews: revision 307cf2a, accept
+
 ## Outcome
 
 Successful explicit cache cleanup reconciles the saved HTTP-content byte total with the content that remains, including after a failed full-filesystem write has legitimately left a conservative overcount. Preserve fail-soft provider answers, bounded maintenance and cross-process lock correctness.
