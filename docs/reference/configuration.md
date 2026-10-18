@@ -48,9 +48,14 @@ writes, statistics, and maintenance physically remove entries older than
 `max_age_secs`; opening the session store removes expired sessions. The
 automatic start-up clean runs at most once a day, and `biomcp cache clean`
 runs it now; `BIOMCP_CACHE_MODE=off` skips the start-up clean entirely.
-Managed directories and files are private to the current OS user. BioMCP
-repairs overly broad permissions inside the managed root and refuses linked
-regular files rather than risking access through another pathname.
+BioMCP creates managed directories and files with access limited to the current
+OS user. On Unix this means 0700 directories and 0600 files. HTTP cache startup
+repairs the root directory every time and secures the existing tree once, when
+its `.tree-secured-v1` marker is missing or invalid. After that marker exists,
+startup does not walk the tree or repair permissions broadened later on its
+children. BioMCP repairs managed paths when it opens them for writing; reads
+do not repair broadened child permissions. It refuses linked regular files
+rather than risking access through another pathname.
 The global `--no-cache` flag bypasses these HTTP and session stores completely
 for one invocation. It does not override explicit output paths or provider
 retention. In particular, it neither deletes nor force-refreshes the GenCC

@@ -110,7 +110,7 @@ excluded solely at their exact generated path.
 
 ### Timing Method
 
-Measured on beelink on 2026-04-23 with `/usr/bin/time -p` using warm-cache
+Measured on the development host on 2026-04-23 with `/usr/bin/time -p` using warm-cache
 steady-state runs. Each command was run once untimed to warm build artifacts and
 the repo-owned spec cache under `.cache/biomcp-specs/`, then once with timing
 enabled. The `make spec-pr` row was refreshed on 2026-04-24 after the spec-v2

@@ -12,7 +12,7 @@
 # allow list is record and planning text only (2115): programs,
 # gate wrappers and configuration there run the full suite.
 #
-# Ticket 2086 adds a second route for exactly the pm landing shape:
+# Ticket 2086 adds a second route for exactly the landing shape:
 # a ticket-branch push whose only changes since its previous tip are
 # under sdlc/, when that previous tip's own ci.yml push run
 # concluded success. The green run is the evidence that closes the
@@ -133,8 +133,8 @@ if ! git merge-base --is-ancestor "$push_before" "$after"; then
 fi
 
 # Only sdlc record and planning text counts on this route, not the
-# wider allow list: the previous tip's run is the proof, records
-# are what pm writes, and a program or configuration change under
+# wider allow list: the previous tip's run proves the code, while
+# a program or configuration change under
 # sdlc/ counts like any other change (2115).
 records_only=true
 while IFS= read -r path; do

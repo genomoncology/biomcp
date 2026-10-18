@@ -472,8 +472,8 @@ def test_open_status_ticket_demands_nothing(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
 
 
-def test_status_token_matches_pm_ticket_grammar() -> None:
-    # pm reads the first Status line in the first 25 lines, strips
+def test_status_token_matches_ticket_grammar() -> None:
+    # The ticket reader uses the first Status line in the first 25 lines, strips
     # emphasis, cuts at the first sentence terminator and lowercases;
     # real tickets spell completion with trailing text and capitals.
     assert _MODULE.status_token("Status: complete.\n") == "complete"
