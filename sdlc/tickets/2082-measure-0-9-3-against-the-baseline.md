@@ -4,7 +4,7 @@ priority: 4
 
 # 2082 — Measure both releases under comparable conditions
 
-Status: COMPLETE.
+Status: OPEN.
 
 Milestone: 0.9.3
 Depends on: 2073
@@ -54,6 +54,8 @@ Depends on: 2182
 Depends on: 2183
 
 Reviews: revision dff1bfc, accept
+
+Reopened: 2026-10-18 — Refresh affected runtime and coverage measurements after additional release fixes; retain unaffected evidence under its measured revision.
 
 ## Outcome
 
