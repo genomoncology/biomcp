@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.3
 
+Reviews: revision ea810da, accept
+
 ## Outcome
 
 The fake-CLI runtime measurement contract uses its own home and cache tree. It must not inspect the operator's real cache or depend on that cache's size or filesystem availability. Preserve the real measurement helper, all sample/order/output assertions and the existing timeout.
