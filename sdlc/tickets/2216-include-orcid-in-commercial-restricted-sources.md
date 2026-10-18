@@ -21,3 +21,5 @@ PM decision: Correct the registry and test group membership; no provider contact
 ## Progress
 
 - 2026-10-18 started
+
+Coordinator pre-code scope: exact test claims `tests/disable_sources_cli.rs` and `tests/test_source_licensing_docs_contract.py`, in addition to the three named registry/docs/changelog files. The current actual parse_disable_spec derives groups from commercial_terms metadata, and ORCID's null row therefore omits it. Add a dedicated real-CLI group case covering ORCID health membership/truthful group reason plus exact author and author-papers refusal with zero local fixture requests; extend the existing explicit-disable health alias table for ORCID, preserving KEGG/Enrichr cases. Add the official API terms/category assertion to the existing registry/docs contract. Capture that owning case RED with the old registry before correcting the entry, then targeted GREEN. No auth/default-availability or second runtime list change. Priority1 execution may proceed through the build job; at most two own build jobs are active, with2199 as the other slot.
