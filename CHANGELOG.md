@@ -69,6 +69,7 @@
 ### Internal
 
 - Improve cache regression coverage, build portability, release qualification and development checks. Reported by Seungwon Lee, GitHub #291. (2063, 2069, 2070, 2071, 2074, 2075, 2076, 2079, 2080, 2081, 2082, 2083, 2086, 2094, 2095, 2096, 2100, 2101, 2102, 2103, 2104, 2105, 2115, 2116, 2117, 2120, 2122, 2125, 2126, 2127, 2129, 2137, 2148, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2164, 2165, 2166, 2167, 2168, 2169, 2171, 2174, 2175, 2176, 2177, 2178, 2186, 2187, 2188, 2189, 2190, 2198)
+- Isolate the runtime measurement contract's home directory so host caches cannot delay its fake CLI samples. (2209)
 
 ## 0.9.2 — 2026-10-11
 

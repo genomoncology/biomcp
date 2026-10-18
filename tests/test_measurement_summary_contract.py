@@ -170,6 +170,9 @@ def test_runtime_retains_alternating_isolated_samples(
 
     clone = tmp_path / "clone"
     clone.mkdir()
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    env = dict(os.environ, HOME=str(fake_home))
     executable(
         clone / "target/release/biomcp",
         """python3 - <<'PYFAKE'
@@ -192,6 +195,7 @@ PYFAKE
             "--only",
             "runtime",
         ],
+        env=env,
         text=True,
         capture_output=True,
         timeout=60,
