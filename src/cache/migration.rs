@@ -116,6 +116,12 @@ pub(crate) fn try_ensure_body_limited_cache_epoch(
 ) -> io::Result<()> {
     fs::create_dir_all(cache_root)?;
     let lock = open_epoch_lock(cache_root)?;
+    // The marker is published only after migration finishes. Current readers
+    // need no exclusive epoch lock; their later shared maintenance lease still
+    // excludes a concurrent cache rebuild.
+    if epoch_state(cache_root, legacy_cache_was_renamed)? == EpochState::Current {
+        return Ok(());
+    }
     fs_lock::try_lock_exclusive(&lock)?;
     #[cfg(test)]
     crate::sources::observe_cache_setup(cache_root, true);
@@ -229,13 +235,18 @@ async fn ensure_body_limited_cache_epoch_until_with(
 ) -> io::Result<()> {
     deadline_io(deadline, tokio::fs::create_dir_all(cache_root)).await?;
     let lock_root = cache_root.to_path_buf();
-    let lock = deadline_blocking_io(deadline, move |cancelled| {
+    let (lock, state) = deadline_blocking_io(deadline, move |cancelled| {
         if cancelled.load(Ordering::Acquire) {
             return Err(deadline_elapsed());
         }
-        open_epoch_lock(&lock_root)
+        let lock = open_epoch_lock(&lock_root)?;
+        let state = epoch_state(&lock_root, legacy_cache_was_renamed)?;
+        Ok((lock, state))
     })
     .await?;
+    if state == EpochState::Current {
+        return Ok(());
+    }
     loop {
         match fs_lock::try_lock_exclusive(&lock) {
             Ok(()) => break,

@@ -633,7 +633,7 @@ impl SharedHttpCache {
             }
             Err(error) => {
                 // A transient cache failure leaves the cell empty for a later request.
-                crate::cache::warn_local_http_cache("initialization", &error);
+                note_http_cache_setup_failure(&error);
                 Ok(None)
             }
         }
@@ -1458,6 +1458,16 @@ impl reqwest_retry::RetryableStrategy for NoTrustFailureStrategy {
     }
 }
 
+fn note_http_cache_setup_failure(error: &BioMcpError) {
+    if matches!(error, BioMcpError::Io(error) if error.kind() == std::io::ErrorKind::WouldBlock) {
+        tracing::debug!(
+            "local HTTP cache initialization skipped while migration or maintenance is active"
+        );
+    } else {
+        crate::cache::warn_local_http_cache("initialization", error);
+    }
+}
+
 fn resolve_http_cache_config() -> Result<Option<crate::cache::ResolvedCacheConfig>, BioMcpError> {
     match crate::cache::resolve_cache_config() {
         Ok(config) => Ok(Some(config)),
@@ -1513,7 +1523,7 @@ where
     let manager = match prepare_http_cache(config, make_manager) {
         Ok(manager) => manager,
         Err(error) => {
-            crate::cache::warn_local_http_cache("initialization", &error);
+            note_http_cache_setup_failure(&error);
             return build_uncached_http_client(kind, provider_policy);
         }
     };
@@ -1641,7 +1651,7 @@ async fn build_http_client_with_config_deadline(
             if deadline.is_exhausted() {
                 return Err(variant_article_deadline_error());
             }
-            crate::cache::warn_local_http_cache("initialization", &error);
+            note_http_cache_setup_failure(&error);
             return build_uncached_http_client(kind, provider_policy);
         }
     };
