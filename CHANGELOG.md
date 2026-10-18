@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
+
 - Report disabled local datasets as disabled in health checks and name the setting instead of reporting missing-file errors. (2221)
 
 - Resolve an rsID in plain PubTator article search through the matching variant entity, preserving text search when no matching entity is available. (2184)

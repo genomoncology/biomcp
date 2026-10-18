@@ -11,9 +11,6 @@ use super::SizeAwareCacheManager;
 
 pub(crate) fn warn_local_http_cache(operation: &'static str, error: &(dyn Error + 'static)) {
     static WARNED: AtomicBool = AtomicBool::new(false);
-    if WARNED.swap(true, Ordering::Relaxed) {
-        return;
-    }
     let mut cause = Some(error);
     let mut local_io = None;
     while let Some(error) = cause {
@@ -24,6 +21,19 @@ pub(crate) fn warn_local_http_cache(operation: &'static str, error: &(dyn Error 
         cause = error.source();
     }
     // Never log error text: cache errors can contain URLs, keys and paths.
+    if local_io.is_some_and(|error| error.kind() == io::ErrorKind::WouldBlock) {
+        tracing::debug!(
+            operation,
+            category = "local_io",
+            io_kind = ?local_io.map(io::Error::kind),
+            os_code = ?local_io.and_then(io::Error::raw_os_error),
+            "local HTTP cache {operation} skipped while another cache operation is active"
+        );
+        return;
+    }
+    if WARNED.swap(true, Ordering::Relaxed) {
+        return;
+    }
     tracing::warn!(
         operation,
         category = if local_io.is_some() { "local_io" } else { "cache_state_or_decode" },

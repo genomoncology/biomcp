@@ -387,10 +387,19 @@ fn assert_contended_write_fails_open(cache: &Path, provider: &GeneFixture) {
     let (answer, warning) =
         successful_output_with_stderr(spawn_gene(cache, &provider.base, "BRAF_LOCK"));
     assert!(!answer["results"].as_array().unwrap().is_empty());
-    assert!(
-        warning.contains("local HTTP cache write failed") && warning.contains("WouldBlock"),
-        "expected contended write warning: {warning}"
-    );
+    if std::env::var_os("BIOMCP_WINDOWS_CONTRACT_BIN").is_some() {
+        // The comparison executable is the released 0.9.3 binary, whose
+        // expected contention diagnostic was still a warning.
+        assert!(
+            warning.contains("local HTTP cache write failed") && warning.contains("WouldBlock"),
+            "expected released-binary contention warning: {warning}"
+        );
+    } else {
+        assert!(
+            !warning.contains("local HTTP cache"),
+            "routine contention must stay quiet at normal verbosity: {warning}"
+        );
+    }
     let keys: Vec<_> = cacache::list_sync(cache.join("http"))
         .map(|entry| entry.expect("read cache index").key)
         .collect();
