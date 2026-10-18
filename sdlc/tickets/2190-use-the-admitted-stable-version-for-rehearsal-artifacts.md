@@ -20,3 +20,7 @@ A full untagged rehearsal builds archives and wheels with the admitted stable re
 ## Coordination
 
 The current full rehearsal39083335506 continues at cc39ee28a2d02a4fa329b1ebbdc76de9d6882568 under the PM direction to run late findings alongside. Main stays fixed while this repair develops and is reviewed. The coordinator reports its result and this confirmed source finding to PM before the next landing.
+
+## Progress
+
+- 2026-10-17 started
