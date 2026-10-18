@@ -64,6 +64,8 @@ Reviews: revision ddc1729, accept
 
 Reopened: 2026-10-18 — The rejected final rehearsal requires two repairs; refresh only measurement rows affected by any production change and keep the prior measurements under their original source identity. Land the final record after both repairs, then rehearse the replacement candidate.
 
+Reviews: revision 075ab15, accept
+
 ## Outcome
 
 Fresh v0.9.2 and release-candidate measurements run on the same build machine with the same corrected harness, toolchain, workloads, provider settings and cache preparation, and the baseline record reports raw samples, honest comparisons and remaining failures.
