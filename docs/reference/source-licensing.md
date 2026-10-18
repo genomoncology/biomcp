@@ -639,7 +639,7 @@ Current group membership comes from the registry:
 - Redistribution / reuse summary: Preserve WHO attribution, review commercial-use conditions, and verify third-party material rights before republishing WHO IVD-derived content
 - Official terms URL: <https://www.who.int/about/policies/publishing/copyright>
 - Reviewed on: `2026-04-18`
-- Notes: BioMCP requires `who_ivd.csv`, auto-downloads it on first diagnostic WHO IVD use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`.
+- Notes: BioMCP requires `who_ivd.csv`, auto-downloads it into `BIOMCP_WHO_IVD_DIR` or the default data directory on first diagnostic WHO IVD use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`.
 
 <!-- /licensing -->
 
@@ -1015,7 +1015,7 @@ Current group membership comes from the registry:
 - Official terms URL: <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/>
 - API key / account URL: <https://www.ncbi.nlm.nih.gov/account/settings/>
 - Reviewed on: `2026-08-05`
-- Notes: BioMCP resolves a PMC OA version-prefix listing through its flat version-prefix S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses.
+- Notes: BioMCP resolves a PMC OA version-prefix listing through its flat version-prefix S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses. BioMCP also resolves recognized PMC JATS/HTML supplement links behind stable BioMCP handles without exposing provider URLs.
 
 <!-- /licensing -->
 
@@ -1309,7 +1309,7 @@ Current group membership comes from the registry:
 - Redistribution / reuse summary: Commercial use requires a license from Mount Sinai Innovation Partners; not for treating or diagnosing human subjects. Users are responsible for their own licenses.
 - Official terms URL: <https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html>
 - Reviewed on: `2026-09-29`
-- Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead.
+- Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead. Academic and non-profit reuse with citation to Enrichr and its libraries; commercial reuse needs the Mount Sinai license; the service must not be used to treat or diagnose human subjects.
 
 <!-- /licensing -->
 

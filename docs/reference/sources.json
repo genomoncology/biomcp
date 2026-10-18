@@ -626,7 +626,7 @@
     "terms_url": "https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html",
     "key_url": null,
     "reviewed_on": "2026-09-29",
-    "notes": "Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead."
+    "notes": "Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead. Academic and non-profit reuse with citation to Enrichr and its libraries; commercial reuse needs the Mount Sinai license; the service must not be used to treat or diagnose human subjects."
   },
   {
     "id": "europe-pmc",
@@ -1408,7 +1408,7 @@
     "terms_url": "https://pmc.ncbi.nlm.nih.gov/tools/openftlist/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-08-05",
-    "notes": "BioMCP resolves a PMC OA version-prefix listing through its flat version-prefix S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
+    "notes": "BioMCP resolves a PMC OA version-prefix listing through its flat version-prefix S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses. BioMCP also resolves recognized PMC JATS/HTML supplement links behind stable BioMCP handles without exposing provider URLs."
   },
   {
     "id": "pubmed",
@@ -1668,7 +1668,7 @@
     "terms_url": "https://www.who.int/about/policies/publishing/copyright",
     "key_url": null,
     "reviewed_on": "2026-04-18",
-    "notes": "BioMCP requires `who_ivd.csv`, auto-downloads it on first diagnostic WHO IVD use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`."
+    "notes": "BioMCP requires `who_ivd.csv`, auto-downloads it into `BIOMCP_WHO_IVD_DIR` or the default data directory on first diagnostic WHO IVD use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`."
   },
   {
     "id": "who-prequalification",
