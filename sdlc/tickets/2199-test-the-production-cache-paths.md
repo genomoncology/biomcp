@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision dc85d0e, accept
+
 ## Outcome
 
 Cache tests drive the code users run.
