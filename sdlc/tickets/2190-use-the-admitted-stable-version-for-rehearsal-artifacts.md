@@ -24,3 +24,15 @@ The current full rehearsal39083335506 continues at cc39ee28a2d02a4fa329b1ebbdc76
 ## Progress
 
 - 2026-10-17 started
+
+## Implementation and checks
+
+The validated admission step exports its stable version. Archive and wheel jobs pass that value through the existing build identity override; native builders and both existing manylinux environment-file paths retain the actual source revision. Ordinary development identity and tagged publication keep their existing behavior. No wrapper, committed version, publication condition or smoke assertion changed.
+
+Developer revision: `0f6f6a0623c06b846d02fb950d48ef6bf9c1c210`. Build-job checks used base `0455496f59c412e03b23655b043ac4b9c3b8fb9a` plus inline patches.
+
+- RED: job `1792284057571-93906` ran `tools/with-build-identity env` and the four native/manylinux archive/wheel regression cases. The real source wrapper emitted `0.9.3+g0455496f`, with actual revision `0455496f`; all four regression cases failed on stable-version mismatch.
+- GREEN: job `1792284093917-38236` ran `pytest tests/test_release_workflow_provenance.py tests/test_build_identity_wrapper_contract.py tests/test_build_identity_rebuild.py tests/test_release_versions_check.py -q`: 178 passed. Ruff and tracked-text checks passed; workflow lint then stopped because its pinned tools were missing. Job `1792284132685-59010` bootstrapped those tools and passed workflow lint and the quality ratchet.
+- Final test-reader adjustment restricts output to identity variables. Job `1792284174889-66455` passed the four affected cases, Ruff, tracked-text, workflow lint and quality ratchet. Its tested patch SHA-256 and committed diff both equal `dde81d1a7aec10bc6a24b0e17032aa842bcfac702640183d0cc62c645403c706`.
+
+The coordinator inspected the diff, job outputs and matching final patch hash. Tests replace compilation with identity readers; existing rebuild contracts cover embedded identity. Review, configured landing gate, actual-main check and the full repaired-candidate rehearsal remain required. Previous timing and coverage observations retain their measured source labels; this workflow repair does not relabel them.
