@@ -149,7 +149,9 @@ fn windows_stdio_stream_stays_json_through_a_managed_write() {
 /// Each process gets the same isolated cache/config; inherited source choices
 /// and credentials must not change this local-only provider contract.
 fn isolated_command(cache: &Path, base: &str) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    let executable = std::env::var_os("BIOMCP_WINDOWS_CONTRACT_BIN")
+        .unwrap_or_else(|| env!("CARGO_BIN_EXE_biomcp").into());
+    let mut command = Command::new(executable);
     for (key, _) in std::env::vars_os() {
         let name = key.to_string_lossy();
         if name.starts_with("BIOMCP_") || name.ends_with("_API_KEY") || name.ends_with("_TOKEN") {
@@ -291,7 +293,11 @@ fn spawn_gene(cache: &Path, base: &str, query: &str) -> ManagedChild {
     )
 }
 
-fn successful_output(mut process: ManagedChild) -> Value {
+fn successful_output(process: ManagedChild) -> Value {
+    successful_output_with_stderr(process).0
+}
+
+fn successful_output_with_stderr(mut process: ManagedChild) -> (Value, String) {
     let child = &mut process.0;
     let deadline = Instant::now() + RESPONSE_TIMEOUT;
     let status = loop {
@@ -320,7 +326,7 @@ fn successful_output(mut process: ManagedChild) -> Value {
         status.success(),
         "status={status}; stdout={stdout}; stderr={stderr}"
     );
-    serde_json::from_str(&stdout).expect("CLI JSON")
+    (serde_json::from_str(&stdout).expect("CLI JSON"), stderr)
 }
 
 fn call_gene(client: &mut StdioMcp, id: &str, query: &str) {
@@ -367,6 +373,41 @@ fn assert_size_marker(cache: &Path) {
     assert!(
         actual > 0 && reserved >= actual,
         "lost size reservations: marker={reserved}, content={actual}"
+    );
+}
+
+// Exercise the real cross-process lock without a production test hook.
+fn assert_contended_write_fails_open(cache: &Path, provider: &GeneFixture) {
+    let lock = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(cache.join("http/.content-bytes.lock"))
+        .expect("existing byte-total lock");
+    lock.lock().expect("hold byte-total lock");
+    let (answer, warning) =
+        successful_output_with_stderr(spawn_gene(cache, &provider.base, "BRAF_LOCK"));
+    assert!(!answer["results"].as_array().unwrap().is_empty());
+    assert!(
+        warning.contains("local HTTP cache write failed") && warning.contains("WouldBlock"),
+        "expected contended write warning: {warning}"
+    );
+    let keys: Vec<_> = cacache::list_sync(cache.join("http"))
+        .map(|entry| entry.expect("read cache index").key)
+        .collect();
+    assert!(
+        !keys.iter().any(|key| key.contains("BRAF_LOCK")),
+        "contended entry persisted: {keys:?}"
+    );
+    println!("held byte-total lock: BRAF_LOCK absent; {warning}");
+    lock.unlock().expect("release byte-total lock");
+    let before = provider.count();
+    successful_output(spawn_gene(cache, &provider.base, "BRAF_LOCK"));
+    assert_eq!(provider.count(), before + 1, "absent entry must refill");
+    successful_output(spawn_gene(cache, &provider.base, "BRAF_LOCK"));
+    assert_eq!(
+        provider.count(),
+        before + 1,
+        "settled refill must be reusable"
     );
 }
 
@@ -426,13 +467,28 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
             .unwrap()
             .is_empty()
     );
+    let after_cli = provider.count();
     call_gene(&mut mcp, "warm", "BRAF3");
     assert_gene_tool(&mcp, "warm");
+    let after_mcp = provider.count();
+    println!(
+        "original warm oracle: CLI BRAF1 misses={}, MCP BRAF3 misses={}, original assertion would {}",
+        after_cli - before,
+        after_mcp - after_cli,
+        if after_mcp == before { "pass" } else { "fail" }
+    );
+    // Concurrent writes may fail open. The sequential calls above settle
+    // these keys; only subsequent reuse promises no provider requests.
+    successful_output(spawn_gene(cache, &provider.base, "BRAF1"));
+    call_gene(&mut mcp, "settled-warm", "BRAF3");
+    assert_gene_tool(&mcp, "settled-warm");
     assert_eq!(
         provider.count(),
-        before,
-        "warm CLI and MCP must reuse cached answers"
+        after_mcp,
+        "settled CLI and MCP must reuse cached answers"
     );
+    assert_contended_write_fails_open(cache, &provider);
+    assert_size_marker(cache);
 
     provider.hold_replies(true);
     let cli = spawn_gene(cache, &provider.base, "BRAF4");

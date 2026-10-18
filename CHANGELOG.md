@@ -17,6 +17,8 @@
 
 ### Internal
 
+- Distinguish concurrent fail-open cache writes from settled CLI and MCP cache reuse in Windows checks, and compare the released executable during manual diagnosis. (2225)
+
 - Isolate cache-retention contracts from host free-space and inherited cache settings, and guard their shared fixture policy. (2220)
 
 - Open the next development version after the 0.9.3 release. (2215)
