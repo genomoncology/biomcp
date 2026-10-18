@@ -137,6 +137,7 @@ pub(super) async fn handle(
             .response
             .results
             .iter()
+            .filter(|row| row.match_reason != "unverified_alias_match")
             .map(|row| row.article.clone())
             .collect::<Vec<_>>();
         let query = [
@@ -148,25 +149,57 @@ pub(super) async fn handle(
         .flatten()
         .collect::<Vec<_>>()
         .join(", ");
-        crate::render::markdown::article_search_markdown_with_footer_and_context(
-            &query,
-            &results,
-            "",
-            &filters,
-            crate::render::markdown::ArticleSearchRenderContext {
-                source_filter: crate::entities::article::ArticleSourceFilter::All,
-                semantic_scholar_enabled: false,
-                warning: (!outcome.response.complete)
-                    .then_some("One or more variant article routes were incomplete."),
-                note: Some(outcome.response.retrieval_path),
-                debug_plan: None,
-                exact_entity_commands: &[],
-                source_status: &[],
-                retry_page: None,
+        let render = |results: &[crate::entities::article::ArticleSearchResult],
+                      header: Option<&str>| {
+            crate::render::markdown::article_search_markdown_with_footer_and_context(
+                &query,
+                results,
+                "",
+                &filters,
+                crate::render::markdown::ArticleSearchRenderContext {
+                    source_filter: crate::entities::article::ArticleSourceFilter::All,
+                    semantic_scholar_enabled: false,
+                    warning: (!outcome.response.complete)
+                        .then_some("One or more variant article routes were incomplete."),
+                    note: Some(outcome.response.retrieval_path),
+                    debug_plan: None,
+                    exact_entity_commands: &[],
+                    source_status: &[],
+                    retry_page: None,
 
-                header: None,
-            },
-        )?
+                    header,
+                },
+            )
+        };
+        let mut markdown = if results.is_empty() {
+            format!("# Variant articles: {id}")
+        } else {
+            render(&results, None)?
+        };
+        let aliases = outcome
+            .response
+            .results
+            .iter()
+            .filter(|row| row.match_reason == "unverified_alias_match")
+            .collect::<Vec<_>>();
+        if !aliases.is_empty() {
+            markdown.push_str("\n\n## Unverified alias match\n\nThese matches may describe a different variant and are not verified evidence.\n\n");
+            for row in &aliases {
+                for alias in &row.alias_matches {
+                    let transcript = alias.source_transcript.as_deref().unwrap_or(alias.reason);
+                    markdown.push_str(&format!(
+                        "- {}: {} ({transcript})\n",
+                        row.article.pmid, alias.alias
+                    ));
+                }
+            }
+            let rows = aliases
+                .iter()
+                .map(|row| row.article.clone())
+                .collect::<Vec<_>>();
+            markdown.push_str(&render(&rows, Some("Alias-only articles"))?);
+        }
+        markdown
     };
     if !json && !outcome.response.complete {
         let unfinished = outcome
