@@ -205,7 +205,10 @@ def test_cache_lock_contention_leaves_time_for_article_provider(provider, lock_n
     with (cache / lock_name).open("wb") as held:
         fcntl.flock(held, fcntl.LOCK_EX)
         before = replay.request_log_line_count()
-        assert_answer(run(ARTICLE), "initialization")
+        result = run(ARTICLE)
+        assert result.returncode == 0, result.stderr
+        assert json.loads(result.stdout)["results"]
+        assert "local HTTP cache" not in result.stderr, result.stderr
         assert replay.request_log_line_count() > before
 
 
@@ -227,3 +230,28 @@ def test_failed_cache_size_marker_write_warns_without_exposing_local_paths(provi
     result = run(GENE)
     assert_answer(result, "initialization")
     assert str(cache) not in result.stderr
+
+
+@pytest.mark.skipif(os.name != "posix", reason="uses a POSIX lock holder")
+@pytest.mark.parametrize("command", [GENE, ARTICLE])
+def test_parallel_current_cache_starts_use_cache_while_epoch_lock_is_held(provider, command):
+    import fcntl
+    from concurrent.futures import ThreadPoolExecutor
+
+    run, cache, _, replay = provider
+    seeded = run(command)
+    assert seeded.returncode == 0, seeded.stderr
+    assert "local HTTP cache" not in seeded.stderr, seeded.stderr
+    expected = json.loads(seeded.stdout)["results"]
+    before = replay.request_log_line_count()
+    # A process holding the epoch lock must not prevent readers of a current
+    # epoch. Holding it across every start makes the old race deterministic.
+    with (cache / ".body-limit-cache-v1.lock").open("r+b") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        with ThreadPoolExecutor(max_workers=12) as workers:
+            results = list(workers.map(lambda _: run(command), range(12)))
+    for result in results:
+        assert result.returncode == 0, result.stderr
+        assert json.loads(result.stdout)["results"] == expected
+        assert "local HTTP cache" not in result.stderr, result.stderr
+    assert replay.request_log_line_count() == before, "all parallel starts must reuse the cache"
