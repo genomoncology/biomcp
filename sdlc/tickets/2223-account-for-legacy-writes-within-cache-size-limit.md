@@ -19,3 +19,7 @@ A current command keeps the configured HTTP cache size limit after an older rele
 - Proof: preserve2203 owned experiment2077 failingcache/results and verified binaries until consumed. Reproduce on currentmain, add a deterministic outside-in regression without requiring a public download in routine tests, fix the narrow cause and run affected checks. Retain existing fast-startup/deadline/provider behavior; do not introduce a full startup scan. After repair,2203 must finish both controlled daily-clean checks and prove exact marker reconciliation.
 
 PM ruling: priority2 because mixed versions are uncommon, but the configured size limit must hold. Keep repair narrow and start-up free of a full tree walk.2203 remains open for the two daily-clean checks that stopped before execution.
+
+## Progress
+
+- 2026-10-18 started
