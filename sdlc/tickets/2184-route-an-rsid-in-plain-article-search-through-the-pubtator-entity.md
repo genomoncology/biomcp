@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision f1d97f4, accept
+
 ## Outcome
 
 `search article <rsID> --source pubtator` uses the PubTator variant entity, as `variant articles` already does.
