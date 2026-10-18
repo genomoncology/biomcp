@@ -71,6 +71,7 @@ def own_http_cache_dir(
     the HTTP client reads and writes the developer's own cache.
     """
     monkeypatch.setenv("BIOMCP_CACHE_DIR", str(tmp_path / "biomcp-cache"))
+    monkeypatch.setenv("BIOMCP_CACHE_MIN_DISK_FREE", "1B")
 
 
 
