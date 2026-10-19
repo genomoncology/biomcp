@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 ## Outcome
 
+Changes: `CHANGELOG.md`, `src/entities/drug/development_codes.rs`, `src/entities/drug/get.rs`, `src/entities/drug/mod.rs`, `src/sources/chembl/molecules.rs`, `src/sources/chembl.rs`, `tests/test_drug_development_codes.py`.
+
 `get drug` resolves development codes such as MK-3475 and CT-011 through ChEMBL molecule synonyms when the free-text best hit has no drug identifiers, and single and batch calls give the same answer.
 
 ## Evidence
@@ -23,3 +25,13 @@ The drug identity guards (no swapped drugs, brand and ingredient rules) stay. An
 ## Proof
 
 Replay tests resolve both codes in single and batch calls to the same drug; an ambiguous synonym refuses.
+
+## Implementation evidence
+
+Fresh developer completed cfe82e693107261c983ec4514d33aa9c84b567ae. Red jobs 2266/1792438800063-90093 and 1792438810408-93337 reproduce missing development-code resolution on actual main and accepted 2264. Green 1792438941463-40070 passed 11 CLI controls; 1792439018785-54853 passed 98 affected Rust tests and mechanics; exact source job 1792439266097-20812 passed the CLI controls and bounded live identity checks. Live sources confirmed MK-3475 as pembrolizumab CHEMBL3137343 and CT-011 as pidilizumab CHEMBL2108680; single and batch agree. No enrichment or clinical inference changed.
+
+Fresh reviewer found and fixed a qualified-name selection gap: red 1792439619425-24250 reproduced accepting a longer preferred card name despite the expected molecule identifier. Final d382080363f21d94a068dd7249beaa92b041c5fd requires both the exact preferred name and expected identifier. Green 1792439635373-29717 passed seven development-code CLI cases, build, formatting, Ruff and warnings-denied Clippy. Review accepts that final revision; original checked source plus exact fix matches the tested candidate.
+
+Only identifier-free, non-combination, letter-prefix/numeric-suffix codes enter the rescue. Incomplete, ambiguous, substring-only and conflicting identity evidence refuses. Provider failures remain provider failures. No full landing gate is claimed.
+
+Keep: experiments/2089-biomcp-2266-development-codes — retain raw source replies privately, red and green checks, final tested patches and hashes.
