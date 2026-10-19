@@ -54,6 +54,7 @@ No helper deletion is valid: three CTGov shell cases and the custom server's oth
 - 2026-10-19 started
 - 2026-10-19 landed f16e27cd40385c61f3de20d269f89c5b799e6bd3; next: Keep the parent open; migrate the condition-first trial consumer next, preserving all reader assertions.
 - 2026-10-19 landed 478bcb9c6127d9c749a0f60b8ad3d4732b7e9c10; next: Keep the parent open; migrate the next named provider consumer after its goldens are landed.
+- 2026-10-19 landed 08d721f8525a35267bcd0a307248c69b1de210fc; next: Keep the parent open for the final supported pathway reader migration after the accepted pathway goldens land; preserve authored fault controls and excluded local datasets under the narrowed PM boundary.
 
 ## Next partial development brief
 
