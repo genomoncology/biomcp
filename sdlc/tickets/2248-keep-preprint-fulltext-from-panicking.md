@@ -59,3 +59,7 @@ Historical source evidence was unavailable, so PM authorized a single bounded pu
 ## Integration check
 
 The eight-change candidate gate 2237/1792427123448-24052 stopped on five preprint registration contracts: replay fixture-origin isolation, source inventory, disable-source routing, environment classification, and public source count. Other tested behavior passed. Repair these registrations without weakening full-text provenance or source isolation. Retain the failed gate and owning repair checks in experiments/789-biomcp-2248-preprint-panic.
+
+## Progress
+
+- 2026-10-19 started
