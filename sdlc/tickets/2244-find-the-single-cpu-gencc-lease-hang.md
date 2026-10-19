@@ -16,6 +16,8 @@ Reviews: revision c73b5cf, accept
 
 The two GenCC lease tests finish on one CPU, so the two-CPU workaround and the one-CPU ban can go.
 
+- Changes: `CHANGELOG.md` `Makefile` `sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/test_support.rs` `tests/test_stress_lane_contract.py`.
+
 ## Evidence
 
 `sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md`. Worked around at `Makefile` near line 229; one-CPU pinning is refused by `tests/test_stress_lane_contract.py` near line 91. Cause unknown.
@@ -36,7 +38,7 @@ Use the configured Linux test host through pm job --machine yellow because CPU a
 
 ## Coordinator implementation brief
 
-- Changes: `CHANGELOG.md` `Makefile` `sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/test_support.rs` `tests/test_stress_lane_contract.py`.
+
 
 Restated outcome: make the existing readiness handshake recognize its actual raw marker with one test worker, then remove the two-CPU workaround without weakening readiness assertions. The coordinator merged accepted2243 scaffold dependency before granting this claim; do not reimplement its bounded joins.
 
