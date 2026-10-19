@@ -31,3 +31,7 @@ Prefer generating lists from the command definitions over hand edits where a lis
 ## Proof
 
 A test compares `biomcp list` entries with the command definitions. Tests cover the `--pdf` suggestion, one condition name across manifest and download, and the batch heading level.
+
+## Progress
+
+- 2026-10-19 started
