@@ -2,7 +2,9 @@
 
 External issue: genomoncology/biomcp#290
 Reporter: mjafin, 2026-10-07
-Status: open (triaged 2026-10-07; no public reply posted — postings need Ian's approval)
+Status: resolved.
+
+Opened as: open (triaged 2026-10-07; no public reply posted — postings need Ian's approval)
 
 ## Report
 
@@ -51,3 +53,8 @@ Hold for the 0.9.2 blocker queue (2016-2021) to clear, then draw a
 ticket number from `pm ticket new` with these criteria. The public
 reply on #290 needs Ian's approval before posting; the 0.9.2 outcome
 promises every external issue an answer.
+
+## Release dispositions (2026-10-19)
+
+- Source-disable request: FIXED by 2061 at 35f42b858 and shipped in 0.9.3. The source registry applies configured exclusions across CLI and MCP and reports the disabled reason.
+- External issue #290: CLOSED after the approved public reply. The open-era status and approval wording above are historical.

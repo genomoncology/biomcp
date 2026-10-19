@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2244, 2259, 2260, 2261, 2247, 2251, 2252, 2253, 2254, 2256, 2111, 2263, 2264, 2265, 2266, 2267, 2268, 2269, 2270, 2271, 2273, 2274
+Depends on: 2244, 2259, 2260, 2261, 2247, 2251, 2252, 2253, 2254, 2256, 2111, 2263, 2264, 2265, 2266, 2267, 2268, 2269, 2270, 2271, 2273, 2274, 2275
 
 ## Outcome
 
@@ -17,9 +17,10 @@ One atomic commit on main carries everything step 1 of 2258 needs: stable 0.9.4 
 ## Changes
 
 - Version files and `CHANGELOG.md`, as `scripts/check-version-sync.sh` and `scripts/check-release-versions.py` define them.
-- Dispositions for both 2026-10-07 review files as mapped in the PM's answer of 2026-10-19 (fixed, moot, process or historical, each with evidence; the history-rewrite finding records Ian's ruling).
+- Dispositions for both 2026-10-07 review files as mapped in the PM's answer of 2026-10-19 (fixed, moot, process or historical, each with evidence; the history-rewrite finding records “not rewritten by Ian’s decision 2026-10-19; current tree clean”).
+- Dispositions in the sixteen historical issue files touched by this release, retaining original evidence and citing landed residual repairs.
+- Current release-process version wording.
 - Stale status lines: the disable-sources toggle issue file (shipped in 0.9.3, reply posted and closed) and the GTR diagnostic-synonym file (resolved by 2242).
-- Remove every machine name from `sdlc/` in this public repository, starting with `sdlc/planning/onboarding.md`. Role words stay.
 
 ## Keeps
 
@@ -27,4 +28,8 @@ No product code. Describe each landed outcome honestly, including studies that c
 
 ## Proof
 
-`check-version-sync.sh`, `check-release-versions.py --tag v0.9.4` and `check-changelog-coverage.py --tag v0.9.4 --revision <sha>` pass without creating a tag. A grep of `sdlc/` for the workspace's machine names finds none.
+`check-version-sync.sh`, `check-release-versions.py --tag v0.9.4` and `check-changelog-coverage.py --tag v0.9.4 --revision <sha>` pass without creating a tag.
+
+## Milestone configuration
+
+Carry the approved milestone-only sdlc/pm.json update with this standalone metadata landing: settle 0.9.3 and activate 0.9.4 and 0.9.5. This update had arrived as inherited PM ancestry on runtime lanes; pm classifies its configuration file as a separate landing, so the runtime batch retains current main configuration and this ticket owns the unchanged update. No gate command changes.

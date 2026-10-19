@@ -114,3 +114,33 @@ Open items:
 1. Release timing. 0.9.1 users cannot run `search drug` on a fresh install until 0.9.2 ships. The reviewer recommends fixing the blockers, then tagging, rather than waiting on the should-fix items.
 2. Issue comments on #288 and #289 saying the fix ships in 0.9.2. This is an outward-facing post.
 3. Leaked names in public history. The reviewer recommends leaving history as it is and cleaning the tree, because rewriting main breaks every clone and the names are already exposed.
+
+## Release dispositions (2026-10-19)
+
+- Finding 1: FIXED by 2018 at 6b504219e and the complete allele-link repair in 2029 at 8eec444db; later spelled-gene coverage is retained in 2034 at 6bf1a550a.
+- Finding 2: FIXED by 2016 at 27478cc1e and subsequent MANE/isoform repairs in 2036 at 2d5c61492 and 2047 at e16d049c5. The same-allele guard follows the recorded clinical ruling and landed in 2261 at d836b949.
+- Finding 3: FIXED by 2017 at d8afa297f and the oncology refusal guidance in 2032 at d18d30e7f. The 2026-10-19 clinical ruling retains the disease-abbreviation behavior.
+- Finding 4: FIXED by 2019 at ad39a9c5d with landing-shape coverage; later complete release bullets are retained in 2053 at a168abf8e.
+- Finding 5: FIXED by 2020 at d1c6d713f; the stray probe is removed from the shipped tree.
+- Finding 6: FIXED by 2020 at d1c6d713f and the residual cleanup in 2243 at 569d9beb1. Public-text cleanup is retained; permitted sdlc names and commit history follow Ian’s ruling below.
+- Finding 7: FIXED by 2020 at d1c6d713f, which restores executable specifications and corrects the review records; later removed inventory machinery is moot.
+- Finding 8: FIXED by the drug-label repairs in 2031 at 548f0b854 and 2043 at 97b237b6f, with the later install regression repairs in 2052 at a6aefbb95. The final landed package contract supplies the package count.
+- Finding 9: FIXED by the ClinVar and date repairs in 2022 at 74c0fe87f and the follow-up fixes in 2038 at 07d660890 and 2052 at a6aefbb95. The deleted source-size inventory no longer governs admission.
+- Finding 10: FIXED by 2053 at a168abf8e and the 0.9.2 changelog closure in 2058 at 90221a07f. Release bullets describe landed behavior.
+- Finding 11: FIXED by 2024 at f6eca26b3 for the ordinary specification path; 2243 at 569d9beb1 completes Python setup for spec-pr and spec-contracts.
+- Finding 12: FIXED by 2021 at 44b33eb8a. WHO failure and partial-sync outcomes reach JSON and MCP callers.
+- Finding 13: FIXED by 2022 at 74c0fe87f with classification-matched evaluation dates and routing guidance. The 2026-10-19 clinical ruling retains that date rule.
+- Finding 14: FIXED by 2023 at 05eeda3f3, with the async fixture repair in 2030 at ae9e6c2e9 and the remaining bounded joins in 2243 at 569d9beb1.
+- Finding 15: FIXED by 2024 at f6eca26b3 with pinned release runners and build identity; the later release workflow repairs and rehearsal are recorded in 2046 at c6b85fc05.
+- Process P1, red-main landings: HISTORICAL. Later green results cannot undo the recorded ordering failures. Current admission follows the repository landing rules.
+- Process P2, hand numbering: HISTORICAL. The recorded allocator correction governs new tickets; historical numbers are retained.
+- Process P3, missing records: FIXED by the review-record work in 2020 at d1c6d713f. Ian’s later 2054 ruling at 52fca2175 retains completed writeups.
+- Process P4, internal detail: DECIDED. Ian’s 2026-10-19 ruling permits names in sdlc records. Public docs and public text omit private project names. Preserve historical records and commit history; add no name check, linter or guard.
+- Process P5, public history: not rewritten by Ian’s decision 2026-10-19; current tree clean
+- Aftermath A1, #288 release availability and replies: MOOT. The fix shipped in 0.9.2 and both #288 and #289 are closed; the proposed unreleased-fix replies no longer apply.
+- Aftermath A2, #290: FIXED by 2061 at 35f42b858 and shipped in 0.9.3; the approved reply was posted and the issue closed.
+- Aftermath A3, sixth-review leftovers: FIXED by 2020 at d1c6d713f and 2243 at 569d9beb1, including the DepMap not-for-clinical-use note. Historical completed records remain under Ian’s 2054 direction.
+- Aftermath A4, Homebrew install test: FIXED by 2064 at 8cecc1c13.
+- Decision D1, release timing: HISTORICAL. The 0.9.2 release shipped; current candidate admission follows the 0.9.4 checklist.
+- Decision D2, #288/#289 replies: MOOT. Both fixes shipped and both issues closed; no additional unreleased-fix post is required.
+- Decision D3, history rewrite: not rewritten by Ian’s decision 2026-10-19; current tree clean

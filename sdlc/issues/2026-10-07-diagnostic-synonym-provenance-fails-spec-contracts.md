@@ -1,6 +1,8 @@
 # Diagnostic synonym provenance fails under the provider-contract fixture
 
-Status: open
+Status: resolved.
+
+Opened as: open
 
 ## Finding
 
@@ -35,3 +37,8 @@ answers; then it jumps the queue. The 0.9.2 bar does not gate on it
 ## Closure in2242
 
 Resolved in2242 under PM ruling: live study found MyDisease returned zero exact matches for Bachmann-Bupp while GTR used an expanded condition name. This does not prove a GTR parser fault. Restore authored deterministic synonym coverage and the raw MCP checks; empty diagnostic JSON/Markdown now names missing synonym resolution. No new fallback provider or claim that the upstream reply supplied expansion.
+
+## Release dispositions (2026-10-19)
+
+- Diagnostic synonym coverage: FIXED by 2242 at b36ad664f. Authored deterministic synonym controls cover the raw MCP surface, and empty diagnostic output names missing synonym resolution.
+- Proposed GTR parser diagnosis: NOT ESTABLISHED. The live study found zero exact MyDisease matches and an expanded GTR condition name; it did not demonstrate a GTR parser bug.

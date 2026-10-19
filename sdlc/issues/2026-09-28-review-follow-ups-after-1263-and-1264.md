@@ -124,3 +124,7 @@ Run IDs for the cited commits, read from the Actions API on 2026-09-29: f86a548e
 ## Residual closure in 2243
 
 Resolved probe-counter residual: 2243 supersedes the earlier keep-both-counters disposition. The armed-window probe remains; the process-wide assertion is removed. Other findings retain their own dispositions.
+
+## Release dispositions (2026-10-19)
+
+- Process-wide probe counter: FIXED by 2243 at 569d9beb1. The test asserts only its armed window; this supersedes the earlier decision to retain the global count. Every other finding retains its individual 2026-09-29 disposition and evidence above.

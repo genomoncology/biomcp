@@ -109,3 +109,8 @@ pre-existing blocking waits outside the article fixtures (noted in the
 ## Residual closure in 2243
 
 Resolved remaining src test waits: 2243 bounds eleven inventoried test joins through a small helper that preserves panic results and diagnoses expiry. Production outcome join and the already bounded article receive remain unchanged. This does not assert a fix for the separately tracked single-CPU handshake issue2244.
+
+## Release dispositions (2026-10-19)
+
+- Article fixture deadlock: FIXED by 2030 at ae9e6c2e9, retaining its async-wait and named-guard evidence.
+- Eleven remaining source-test joins: FIXED by 2243 at 569d9beb1, with bounded joins that preserve panic results. This does not claim a production deadline change or resolve the separate single-CPU readiness finding.

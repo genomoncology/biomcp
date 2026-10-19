@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.4 — 2026-10-19
 
 ### New features
 
@@ -84,9 +84,23 @@
 
 - Synchronize the disease deadline control with provider request arrival before advancing test time. (2276)
 
+- Make parallel cache startup tests distinguish skipped best-effort writes from reuse of admitted responses. (2275)
 - Run the complete pathway specification against recorded replies while preserving source-disable checks and section guidance. (2111)
 - Check recorded provider requests against live status, content type and generic JSON and XML response structures before releases, with explicit opt-in, pacing and complete blocked and disabled counts. Preserve safe POST request metadata and response header names in new recordings. (2259)
 - Keep subprocess readiness markers on their own line so GenCC lease tests finish with one CPU, and exercise that affinity in the stress lane. (2244)
+- Retain the measured development build profile; the bounded comparison identifies library-test compilation as the dominant cost without establishing a specific source fix. (2191)
+- Review provider answers and cache staging under actual full-filesystem pressure, identifying the explicit-cleanup accounting repair recorded in 2218. (2202)
+- Verify daily cleanup repairs mixed-version cache accounting and document the accepted interval before maintenance. (2203)
+- Review disabled-source behavior and licensing guidance, recording reporting defects and the limits of the exercised routes. (2204)
+- Exercise cache eviction and due daily cleanup in one persistent MCP server, preserving answers and settled byte accounting in the bounded workload. (2205)
+- Retain TOML 0.8 after the TOML 1 trial failed the no-worse compile-time criterion under shared load. (2210)
+- Retain thin link-time optimization and one codegen unit because the bounded alternative did not establish no worse runtime performance. (2211)
+- Exercise search-all, update and uninstall through the real binary, with isolated installation tests and an explicit live published-release update check. (2213)
+- Extend the existing measurement rows with stated methods and explicit unavailable observations, distinguishing development snapshots from final release measurements. (2214)
+- Document focused Python setup and invocation without an editable Rust package build, using Ruff from the configured path. (2228)
+- Attribute the uncached article-search gap to approved visible-row metadata recovery and retain that behavior; the later 2235 change performs recovery concurrently. (2231)
+- Preserve bounded GWAS intersection semantics and verify completed-response day-cache reuse; recorded upstream delay explains the observed timeout. (2232)
+
 - Route test cache roots through shared fixture policy guards and reject unmanaged root assignments. (2257)
 - Reuse one replay server per test runner, isolate each test's recordings and request logs, and stop the server when its runner exits. (2260)
 

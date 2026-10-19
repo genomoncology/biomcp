@@ -40,3 +40,8 @@ for article and search-all is the pattern to copy.
 ## Resolved
 
 Single-record get JSON now attaches optional `_meta.notes` inside the CLI and MCP stale-cache scopes. The finalizer covers every get adapter, including author, and reuses the existing cache-age sentences. Empty notes preserve the original JSON bytes. Existing Markdown notes keep their current path.
+
+## Release dispositions (2026-10-19)
+
+- Single-record get JSON notes: FIXED by 2241 at 8cf9c3be7. The shared finalizer carries optional _meta.notes in CLI and MCP stale-cache scopes and preserves fresh output.
+- GWAS no-store exception: retain the separate 1268 correction and its existing evidence; the earlier 1263 explanation above does not override that correction.

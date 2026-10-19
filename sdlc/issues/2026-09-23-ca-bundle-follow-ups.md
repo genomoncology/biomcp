@@ -45,3 +45,12 @@ health probe rejects a local private-CA TLS server without the bundle and
 connects with it. This proves TLS connection behavior, without claiming live
 prediction RPC coverage. AlphaGenome's native `SSL_CERT_FILE`/`SSL_CERT_DIR`
 behavior remains documented.
+
+## Release dispositions (2026-10-19)
+
+- Non-UTF-8 paths: FIXED by 1236, with raw operating-system paths retained for file access; preserve the existing contract evidence cited above.
+- AlphaGenome trust: FIXED by 2240 at 0ecf152ec. The local private-CA health connection proves additive trust behavior; it does not claim a live prediction RPC.
+- Per-call parsing and startup validation: FIXED by 1236 through process-wide cached resolution and validation before accepting server work.
+- Parse-error disclosure: FIXED by 1236 through fixed indexed reasons rather than file-content parser messages.
+- Provider-builder, dedicated handshake, fda_orphan failure-channel and additive-root tests: FIXED by 1236 with the contract evidence already retained above.
+- Fallback warning repetition, mixed-bundle guidance, missing/unreadable/blank fallback controls and inherited RUST_LOG: FIXED by 1236 with the existing fallback and child-process contracts.

@@ -30,3 +30,13 @@ ignore. See
 `sdlc/records/1251-publish-flat-mcp-tool-schemas-and-finish-the-argument-checks.md`.
 
 Resolved by 2238: CLI and typed MCP reject supplied limit or offset in CAID mode before provider access, including explicit default values. Omitted allele calls remain valid; gene paging retains its defaults and continuation behavior. The Parameters wrapper, conformance tool-arguments rerun and hand-restated root list remain separate residuals.
+
+## Release dispositions (2026-10-19)
+
+- Flat roots, wrong-type paging, unknown fields, every-tool catalog coverage and changelog omissions: FIXED by 1251 with the separate evidence in the cited record.
+- Cursor rejection and valid-entity messages: FIXED by 1251; retain its recorded argument-channel distinction.
+- CAID paging: FIXED by 2238 at 28036ce3a. Explicit limit or offset is rejected before provider access; omitted allele paging and gene defaults remain valid.
+- Parameters wrapper: FIXED by 2263 at df2319982. Malformed known-tool arguments return model-visible isError results naming the bad argument; required protocol errors retain their protocol channel.
+- Conformance tools/call arguments: retain the separate 1251 residual; an envelope-only conformance pass does not prove the known-safe tool call requested here.
+- Hand-restated ERepo root list: FIXED by 2263 at df2319982. Published root properties derive from the typed argument source, and the recorded catalog comparison preserves valid-call schemas.
+- Ticket review wording: HISTORICAL. The 1251 disposition supersedes 1240's open-era review text.
