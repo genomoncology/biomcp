@@ -231,6 +231,7 @@ impl EuropePmcClient {
         let mut plan = RequestPlan::get("search")
             .query("query", query)
             .query("format", "json")
+            .query("resultType", "core")
             .query("cursorMark", cursor_mark)
             .query("pageSize", page_size.to_string());
         match sort {
@@ -261,6 +262,7 @@ impl EuropePmcClient {
                     let key = match key.as_str() {
                         "query" => "query",
                         "format" => "format",
+                        "resultType" => "resultType",
                         "cursorMark" => "cursorMark",
                         "pageSize" => "pageSize",
                         "sort" => "sort",
@@ -590,6 +592,8 @@ pub struct EuropePmcResult {
     pub doi: Option<String>,
     #[serde(rename = "journalTitle")]
     pub journal_title: Option<String>,
+    #[serde(rename = "journalInfo", skip_serializing_if = "Option::is_none")]
+    pub journal_info: Option<serde_json::Value>,
     #[serde(rename = "firstPublicationDate")]
     pub first_publication_date: Option<String>,
     #[serde(rename = "firstIndexDate")]
@@ -613,6 +617,18 @@ pub struct EuropePmcResult {
     pub full_text_url_list: Option<serde_json::Value>,
     #[serde(rename = "abstractText")]
     pub abstract_text: Option<String>,
+}
+
+impl EuropePmcResult {
+    pub(crate) fn journal_title(&self) -> Option<&str> {
+        self.journal_title.as_deref().or_else(|| {
+            self.journal_info
+                .as_ref()?
+                .get("journal")?
+                .get("title")?
+                .as_str()
+        })
+    }
 }
 
 #[cfg(test)]

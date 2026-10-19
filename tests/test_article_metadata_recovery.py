@@ -39,6 +39,8 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
             params = parse_qs(target.query)
             if target.path.endswith("/esearch.fcgi"):
                 return self.reply({"esearchresult": {"count": "2", "idlist": PMIDS}})
+            if target.path.endswith("/efetch.fcgi"):
+                return self.bytes(b"<PubmedArticleSet/>")
             if target.path.endswith("/esummary.fcgi"):
                 return self.reply({"result": {"uids": PMIDS, **{
                     pmid: {"uid": pmid, "title": f"Synthetic row {pmid}",
@@ -80,7 +82,7 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
 
         def bytes(self, body: bytes, status: int = 200) -> None:
             self.send_response(status)
-            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Type", "application/xml" if body.startswith(b"<") else "application/json")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)

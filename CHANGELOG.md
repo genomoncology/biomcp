@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Recover missing article abstracts from Europe PMC core records and batched PubMed citations.
+
 - Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
 
 - Return malformed MCP tool arguments as model-visible errors naming the argument, and derive the ERepo tool schema from its typed fields. (2263)
