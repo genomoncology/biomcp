@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 65cde7f, accept
+
 ## Outcome
 
 Restore the graph-cache corruption contract on current main. A corrupt record must behave as a miss, recover through the owning provider route, and be replaced when the isolated fixture permits cache writes. Fix the demonstrated cause; preserve corruption handling, provider evidence and failure assertions.
