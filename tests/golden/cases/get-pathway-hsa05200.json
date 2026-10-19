@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "KEGG",
+        "url": "https://www.kegg.jp/entry/hsa05200"
+      }
+    ],
+    "next_commands": [
+      "biomcp pathway drugs hsa05200"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "KEGG"
+        ]
+      }
+    ]
+  },
+  "enrichment": [],
+  "events": [],
+  "genes": [],
+  "id": "hsa05200",
+  "name": "Pathways in cancer - Homo sapiens (human)",
+  "section_outcomes": {
+    "enrichment": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "events": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "genes": {
+      "outcome": "not_requested",
+      "sources": []
+    }
+  },
+  "source": "KEGG",
+  "species": "Homo sapiens"
+}
