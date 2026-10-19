@@ -14,7 +14,7 @@ Reviews: revision f0dc725, accept
 
 ## Outcome
 
-- Changes: `src/sources/ca_bundle.rs` `src/sources/alphagenome.rs` `tests/tls_ca_bundle_contract.rs` `tests/test_provider_network_policy.py` `docs/reference/configuration.md` `docs/reference/data-sources.md` `docs/troubleshooting.md` `CHANGELOG.md` `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md` and this ticket.
+- Changes: `CHANGELOG.md` `docs/reference/configuration.md` `docs/reference/data-sources.md` `docs/troubleshooting.md` `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `sdlc/tickets/2238-reject-limit-and-offset-in-variant-erepo-caid-mode.md` `sdlc/tickets/2239-cap-the-drug-trial-alias-cache.md` `sdlc/tickets/2241-carry-stale-cache-notes-in-get-json.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/sources/alphagenome.rs` `src/sources/ca_bundle.rs` `tests/test_provider_network_policy.py` `tests/tls_ca_bundle_contract.rs` and this ticket. Carried PM ticket and milestone records are unchanged except this ticket own reviewed proof.
 
 `get variant ... predict` uses `BIOMCP_CA_BUNDLE` like every other source, so it works behind a proxy that re-signs TLS.
 
