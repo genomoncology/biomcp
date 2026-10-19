@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Enforce article disease filters on Semantic Scholar and LitSense2 results using source-backed disease names and exact synonyms, and report unavailable synonym lookups. (2267)
+
 - Repair garbled trademark and registered symbols in all displayed GTR text, including names and methods, while preserving identifiers and other content. (2237)
 
 - Preserve selected drug identity names for interaction matching, require supported drug identity in discovery, rank exact matches first, and explain missing diagnostic synonym resolution. Restore deterministic diagnostic synonym controls. (2242)

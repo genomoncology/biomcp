@@ -132,6 +132,11 @@
       "status": 200,
       "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
     },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50": {
+      "file": "responses/mydisease/mydisease-query-43314306ecc4.bin",
+      "status": 200,
+      "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
+    },
     "GET /mygene/query?fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&from=0&q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&size=50&species=human": {
       "file": "responses/mygene/mygene-query-893da30e4c6a.bin",
       "status": 200,

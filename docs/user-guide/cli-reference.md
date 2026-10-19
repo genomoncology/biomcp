@@ -287,6 +287,8 @@ to Europe PMC. Select either capable source directly when needed; PubTator3,
 Semantic Scholar, and LitSense2 reject author filters rather than interpreting
 the name as free text.
 
+`-d/--disease` filters article results. Semantic Scholar and LitSense2 rank free-text queries, so BioMCP also requires the requested disease, its resolved canonical name, or a source-provided exact synonym in each result's title or abstract text (the matching sentence for LitSense2). MyDisease.info supplies canonical names and exact synonyms. A failed synonym lookup marks that semantic source unavailable and retains results from other sources.
+
 `-k/--keyword` is provider-neutral text, not raw PubMed or Europe PMC grammar.
 Use `--gene`, `--disease`, `--drug`, `--author`, or `--journal` for those fields.
 Article `--gene` accepts one nonempty symbol without whitespace. Recognized field
