@@ -14,7 +14,7 @@ Reviews: revision 0e1bb2a, reject
 
 Changes: `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`, `sdlc/tickets/2256-bound-only-the-mcp-handshake-wait-by-the-startup-timer.md`, `sdlc/tickets/2257-route-every-test-cache-root-through-the-shared-guard.md`, `sdlc/tickets/2258-admit-the-0-9-4-release-candidate.md`, `sdlc/tickets/2260-share-one-replay-server-per-test-run.md`, `tools/check-replay-live`, `scripts/replay_drift.py`, `tests/test_replay_live_drift.py`, `docs/reference/release-process.md`, `sdlc/release-checklist.md`, `tools/replay-server`, `testdata/replay/manifest.json`, `CHANGELOG.md`, `sdlc/tickets/2259-check-replay-recordings-against-live-providers-before-release.md`.
 
-Before every release, one opt-in live check replays each recorded provider request in `testdata/replay` against the live provider and reports every recording whose live reply now differs in status, content type or the response fields BioMCP reads. A drifted recording is re-recorded or its test is fixed before the tag, so a provider change cannot hide behind green replay tests.
+Before every release, one opt-in live check replays each recorded provider request in `testdata/replay` against the live provider and reports every recording whose live reply now differs in status, content type or response structure. A drifted recording is re-recorded or its test is fixed before the tag, so a provider change cannot hide behind green replay tests.
 
 ## Evidence
 
@@ -22,7 +22,7 @@ Routine tests and specs run offline against recorded replies. `make release-live
 
 ## Keeps
 
-Opt-in only, never in routine gates. Pace every provider and respect each provider's terms and the disabled-source groups; no licensed source is called without its key. Compare the fields BioMCP parses, not whole bodies, so timestamps and ordering noise do not count as drift. Record no credentials.
+Opt-in only, never in routine gates. Pace every provider and respect each provider's terms and the disabled-source groups; no licensed source is called without its key. Compare structure without response values: JSON key paths with their observed value types, or XML element paths. Ignore timestamps, other value changes and ordering. Added paths are informational; removed or retyped paths block until the recording is refreshed or its test is fixed. Record no credentials.
 
 ## Proof
 
@@ -43,3 +43,7 @@ Developer stopped clean at 2361055f0023aeb2eb24e50d287acae86a36e826. Controlled 
 Keep: experiments/805-biomcp-2259-live-recording-drift — retain red and green controlled results, inventory, tested patch and hashes.
 
 The carried sibling ticket records are unchanged approved PM briefs; their declaration permits the shared ancestry to land without claiming their implementation. Final live collection remains required on the frozen candidate and the parent remains open until it is complete.
+
+## PM design ruling
+
+The PM rejected source-model projection after fresh review demonstrated false passes for null/mixed type unions and dynamic raw JSON consumers. Replace that approach with one generic response-structure comparison; no source parser scanning or provider-specific consumed-field adapters. Report added, removed and retyped paths per recording. The original eighteen controlled cases do not prove this replacement. Preserve request safety, complete inventory, source/credential/terms restrictions, pacing and observed-only metadata refresh; no live collection during implementation. The final-candidate run remains outstanding.
