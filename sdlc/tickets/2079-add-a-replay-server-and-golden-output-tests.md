@@ -105,3 +105,5 @@ The job retains `pathway-golden-evidence.tar.gz`, SHA256 `77f01441a882b4555d64ed
 PM decision: 2026-10-19. Narrow this release outcome to the exact landed and accepted command batches above. Close this parent after the accepted pathway golden batch lands. Keep authored fault scenarios and excluded local datasets; the remaining inventory moves to 2236 outside 0.9.4. The verified pathway raw archive is retained in the private experiment `774-biomcp-2079-replay-evidence/1792418666605-1603`, SHA256 `77f01441a882b4555d64ed1d7d20ece4d75da98cb4a93eb52db34fae66eeeb4c`, rather than relying on cleanup-managed job storage.
 
 PM decision: 2026-10-19. Carry the unchanged known-bug ticket batch from 239d7adc4 with the declared milestone; final release measurements wait for those bugs, the article recovery fix and the final supported pathway reader migration.
+
+Keep: experiments/774-biomcp-2079-replay-evidence — Retain cited raw proof until the release evidence is explicitly released.
