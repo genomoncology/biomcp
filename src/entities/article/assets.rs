@@ -1889,7 +1889,7 @@ fn article_asset_not_retrievable(
     coverage: &ArticleAssetNamedCoverage,
 ) -> BioMcpError {
     let reason = match coverage.outcome {
-        ArticleAssetNamedOutcome::PmcProofOfWork => "ncbi_interstitial",
+        ArticleAssetNamedOutcome::PmcProofOfWork => "pmc_proof_of_work",
         ArticleAssetNamedOutcome::HealthyAbsent => "healthy_absent",
         ArticleAssetNamedOutcome::AccessOrLicenceDenied => "access_or_licence_denied",
         ArticleAssetNamedOutcome::UnsupportedOrigin => "unsupported_origin",
@@ -3069,6 +3069,10 @@ mod tests {
             assets.is_empty(),
             "a PoW page must not receive an advertised raw-byte asset handle"
         );
+        assert_eq!(
+            serde_json::from_str::<ArticleAssetNamedOutcome>("\"ncbi_interstitial\"").unwrap(),
+            ArticleAssetNamedOutcome::PmcProofOfWork
+        );
         let coverage = &pending
             .first()
             .expect("named linked file remains visible")
@@ -3096,7 +3100,7 @@ mod tests {
             let error = article_asset_bytes_from_resolution("30311380", wanted, resolved.clone())
                 .unwrap_err();
             assert_eq!(error.code(), "article_asset_not_retrievable");
-            assert!(error.to_string().contains("ncbi_interstitial"));
+            assert!(error.to_string().contains("pmc_proof_of_work"));
             assert!(error.to_string().contains("PMC6329583"));
         }
         assert!(matches!(

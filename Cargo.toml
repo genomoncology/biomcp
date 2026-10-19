@@ -74,6 +74,7 @@ zstd = { version = "0.13", optional = true }
 # JSON
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value", "unbounded_depth"] }
+serde_path_to_error = "0.1"
 base64 = "0.22"
 
 # Hashing (download cache keys)

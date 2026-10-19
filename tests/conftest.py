@@ -12,6 +12,21 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+
+@pytest.fixture(scope="session", autouse=True)
+def replay_server_owner() -> Iterator[None]:
+    """Own one lazy replay server per pytest process, including xdist workers."""
+    import sys
+
+    golden = str(REPO_ROOT / "tests/golden")
+    if golden not in sys.path:
+        sys.path.insert(0, golden)
+    from replay_env import replay_session
+
+    with replay_session():
+        yield
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Register the needs_binary marker: the test drives a built
     biomcp binary or the spec runner. The docs-only CI lane excludes

@@ -42,6 +42,9 @@ nav:
   - Sources:
       - Overview: sources/index.md
       - PubMed: sources/pubmed.md
+      - PubTator3: sources/pubtator.md
+      - PMC: sources/pmc.md
+      - Europe PMC: sources/europe-pmc.md
       - ClinicalTrials.gov: sources/clinicaltrials-gov.md
       - ClinGen Allele Registry: sources/clingen-allele-registry.md
       - ClinGen CSpec: sources/clingen-cspec.md
