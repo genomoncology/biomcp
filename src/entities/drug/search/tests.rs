@@ -106,30 +106,7 @@ fn every_allowed_ema_field_independently_admits_a_hit() {
     }
 }
 
-struct EmaSearchFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl EmaSearchFixtureEnv {
-    fn set(&mut self, name: &'static str, value: &str) {
-        self.0.push((name, std::env::var_os(name)));
-        // SAFETY: the test holds serial_test's process-wide environment lock.
-        unsafe { std::env::set_var(name, value) };
-    }
-}
-
-impl Drop for EmaSearchFixtureEnv {
-    fn drop(&mut self) {
-        for (name, prior) in self.0.drain(..).rev() {
-            // SAFETY: the test holds serial_test's process-wide environment lock.
-            unsafe {
-                if let Some(value) = prior {
-                    std::env::set_var(name, value);
-                } else {
-                    std::env::remove_var(name);
-                }
-            }
-        }
-    }
-}
+type EmaSearchFixtureEnv = crate::test_support::FixtureEnv;
 
 fn mychem_fixture_response(status: &str, body: &str) -> Vec<u8> {
     format!(
@@ -214,10 +191,10 @@ async fn unresolved_mychem_paths_each_request_once_and_preserve_positive_cvx_fal
         std::fs::copy(fixture_root.join("cvx").join(file), cvx_root.join(file))
             .unwrap_or_else(|err| panic!("copy CVX fixture {file}: {err}"));
     }
-    let mut env = EmaSearchFixtureEnv(Vec::new());
+    let mut env = EmaSearchFixtureEnv::scratch_cache_only();
     env.set("BIOMCP_MYCHEM_BASE", &base);
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set("BIOMCP_CACHE_DIR", cache_root.to_str().expect("cache path"));
+    env.set_cache_root(cache_root.to_str().expect("cache path"));
     env.set("BIOMCP_EMA_DIR", ema_root.to_str().expect("EMA path"));
     env.set("BIOMCP_CVX_DIR", cvx_root.to_str().expect("CVX path"));
 

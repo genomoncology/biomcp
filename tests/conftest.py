@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cache_fixture import set_cache_root
+
 import os
 import subprocess
 import tempfile
@@ -70,10 +72,8 @@ def own_http_cache_dir(
     BIOMCP_CACHE_DIR is unset, so without this guard a test that builds
     the HTTP client reads and writes the developer's own cache.
     """
-    monkeypatch.setenv("BIOMCP_CACHE_DIR", str(tmp_path / "biomcp-cache"))
-    monkeypatch.setenv("BIOMCP_CACHE_MIN_DISK_FREE", "1B")
-
-
+    for key, value in set_cache_root({}, tmp_path / "biomcp-cache").items():
+        monkeypatch.setenv(key, value)
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addini(

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cache_fixture import set_cache_root
+
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -173,10 +175,9 @@ def test_empty_and_interrupted_no_cache_requests_leave_no_state(tmp_path: Path) 
     process = subprocess.Popen(
         [BINARY, "--no-cache", "search", "gene", "BRAF", "--limit", "1"],
         cwd=ROOT,
-        env=os.environ | {
-            "BIOMCP_CACHE_DIR": str(interrupted_cache),
+        env=set_cache_root(os.environ | {
             "BIOMCP_MYGENE_BASE": f"http://127.0.0.1:{slow.server_port}",
-        },
+        }, interrupted_cache),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,

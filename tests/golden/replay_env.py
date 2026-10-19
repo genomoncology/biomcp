@@ -14,12 +14,17 @@ import json
 import os
 import shlex
 import subprocess
+import sys
 import urllib.request
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Iterator
+
+# The replay fixture is also imported by standalone subprocess probes.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from cache_fixture import set_cache_root  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPLAY_SERVER = REPO_ROOT / "tools" / "replay-server"
@@ -60,12 +65,12 @@ def isolated_command_env(
         for key, value in os.environ.items()
         if key not in STRIPPED_SECRETS and key != "COLUMNS"
     }
+    set_cache_root(env, run_dir / "cache")
     env.update(provider_env)
     env.update(
         {
             "BIOMCP_TEST_UNPACED_ORIGIN": origin,
             "BIOMCP_CACHE_MODE": "off",
-            "BIOMCP_CACHE_DIR": str(run_dir / "cache"),
             "XDG_CACHE_HOME": str(run_dir / "xdg-cache"),
             "XDG_CONFIG_HOME": str(run_dir / "xdg-config"),
             "HOME": str(run_dir),
@@ -90,10 +95,9 @@ def retained_cache_env(
         "BIOMCP_CACHE_MODE": "default",
         "BIOMCP_CACHE_MAX_SIZE": str(max_size),
         "BIOMCP_CACHE_MAX_AGE": "86400",
-        "BIOMCP_CACHE_MIN_DISK_FREE": "1B",
     })
     if cache_dir is not None:
-        env["BIOMCP_CACHE_DIR"] = str(cache_dir)
+        set_cache_root(env, cache_dir)
     return env
 
 

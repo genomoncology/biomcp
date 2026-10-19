@@ -562,30 +562,7 @@ mod tests {
         );
     }
 
-    struct ClinvarFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-    impl ClinvarFixtureEnv {
-        fn set(&mut self, name: &'static str, value: &str) {
-            self.0.push((name, std::env::var_os(name)));
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe { std::env::set_var(name, value) };
-        }
-    }
-
-    impl Drop for ClinvarFixtureEnv {
-        fn drop(&mut self) {
-            for (name, prior) in self.0.drain(..).rev() {
-                // SAFETY: this test holds the serial-test process-wide environment lock.
-                unsafe {
-                    if let Some(value) = prior {
-                        std::env::set_var(name, value);
-                    } else {
-                        std::env::remove_var(name);
-                    }
-                }
-            }
-        }
-    }
+    type ClinvarFixtureEnv = crate::test_support::FixtureEnv;
 
     /// How the direct ClinVar fixture server answers efetch.
     #[derive(Clone, Copy)]
@@ -648,16 +625,13 @@ mod tests {
     #[serial_test::serial(source_env)]
     async fn add_clinvar_labels_a_deadline_miss_when_the_direct_answer_never_arrives() {
         let (base, server) = direct_answer_server(DirectAnswer::HeldOpen).await;
-        let mut env = ClinvarFixtureEnv(Vec::new());
+        let mut env = ClinvarFixtureEnv::scratch_cache_only();
         env.set("BIOMCP_CLINVAR_BASE", &base);
         // A fresh empty cache root keeps shared client construction fast
         // and inside the deadline being asserted; scanning a large default
         // user cache blocks the runtime thread past any short deadline.
         let cache_dir = tempfile::tempdir().expect("temp cache dir");
-        env.set(
-            "BIOMCP_CACHE_DIR",
-            cache_dir.path().to_str().expect("utf-8 temp path"),
-        );
+        env.set_cache_root(cache_dir.path().to_str().expect("utf-8 temp path"));
 
         // The proof bound rides the one scaled watchdog builder, so a loaded
         // gate host stretches the window instead of failing the proof; ten
@@ -700,16 +674,13 @@ mod tests {
             retry_after: Some(30),
         })
         .await;
-        let mut env = ClinvarFixtureEnv(Vec::new());
+        let mut env = ClinvarFixtureEnv::scratch_cache_only();
         env.set("BIOMCP_CLINVAR_BASE", &base);
         // A fresh empty cache root keeps shared client construction fast
         // and inside the deadline being asserted; scanning a large default
         // user cache blocks the runtime thread past any short deadline.
         let cache_dir = tempfile::tempdir().expect("temp cache dir");
-        env.set(
-            "BIOMCP_CACHE_DIR",
-            cache_dir.path().to_str().expect("utf-8 temp path"),
-        );
+        env.set_cache_root(cache_dir.path().to_str().expect("utf-8 temp path"));
 
         // Same scaled proof bound as the held-open leg: the 300 ms caller
         // deadline must cut the 30 s Retry-After retry sleep, and a loaded
@@ -739,16 +710,13 @@ mod tests {
     async fn add_clinvar_names_a_fast_429_refusal_as_rate_limited() {
         let (base, server) =
             direct_answer_server(DirectAnswer::Fast429 { retry_after: None }).await;
-        let mut env = ClinvarFixtureEnv(Vec::new());
+        let mut env = ClinvarFixtureEnv::scratch_cache_only();
         env.set("BIOMCP_CLINVAR_BASE", &base);
         // A fresh empty cache root keeps shared client construction fast
         // and inside the deadline being asserted; scanning a large default
         // user cache blocks the runtime thread past any short deadline.
         let cache_dir = tempfile::tempdir().expect("temp cache dir");
-        env.set(
-            "BIOMCP_CACHE_DIR",
-            cache_dir.path().to_str().expect("utf-8 temp path"),
-        );
+        env.set_cache_root(cache_dir.path().to_str().expect("utf-8 temp path"));
 
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_secs(15)).await;
@@ -770,16 +738,13 @@ mod tests {
     #[serial_test::serial(source_env)]
     async fn add_clinvar_names_a_non_429_provider_failure_distinctly() {
         let (base, server) = direct_answer_server(DirectAnswer::Fast500).await;
-        let mut env = ClinvarFixtureEnv(Vec::new());
+        let mut env = ClinvarFixtureEnv::scratch_cache_only();
         env.set("BIOMCP_CLINVAR_BASE", &base);
         // A fresh empty cache root keeps shared client construction fast
         // and inside the deadline being asserted; scanning a large default
         // user cache blocks the runtime thread past any short deadline.
         let cache_dir = tempfile::tempdir().expect("temp cache dir");
-        env.set(
-            "BIOMCP_CACHE_DIR",
-            cache_dir.path().to_str().expect("utf-8 temp path"),
-        );
+        env.set_cache_root(cache_dir.path().to_str().expect("utf-8 temp path"));
 
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_secs(15)).await;
