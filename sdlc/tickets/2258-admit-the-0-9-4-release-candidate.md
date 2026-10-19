@@ -71,3 +71,11 @@ No checker/runtime/code changes in this collection. Do not publish broad or lice
 The source and fixture batch is frozen at pushed main 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8, shared gate 2277/1792450592155-61493 passed with tree 90d9f94dfa5541a135bc728d88f849e595537d15. The actual-main full check is running before further ordinary landing. Use the accepted current checker for one final complete live inventory on this revision. Disable commercial-restricted sources and semantic-scholar explicitly. The three KEGG rows remain not checked live: commercial-restricted source. The PM approved Semantic Scholar as not checked live: rate limited after the one later 429 diagnostic; its five rows remain unverified, and no further requests to that source are authorized. Do not count any disabled entry as checked or passed. No credentials except an existing NCI_API_KEY may be inherited; never inspect, log, hash or store credentials. No new keys, proxies, authentication, paid access or provider contact.
 
 The full untagged release rehearsal already includes MCP contract conformance; the PM withdrew its mistaken request for an additional separate conformance run. The existing checklist remains the release scope.
+
+## Final live proof
+
+Job 2258/1792451039742-39317 passed the actual frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8: 47 total, 39 checked, 39 passed, eight disabled, zero blocked, zero drift, zero ready. Complete 48-line output and settings are retained. KEGG rows14/15/16 remain commercially restricted; Semantic Scholar40/41/45/46/47 remain rate-limited and unverified under the PM ruling. Neither source was called. Preparation failure1792450988450-21123 made no calls; the final invocation used installed Python3.12.13. The safe collection record names shape-only limits and missing wire details.
+
+Keep: experiments/2096-biomcp-2258-live-collection — retain original observed collection, source inventory, requests, raw hashes and repair provenance.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain complete final per-entry checker output, exact candidate, settings, summary and preparation failure.
