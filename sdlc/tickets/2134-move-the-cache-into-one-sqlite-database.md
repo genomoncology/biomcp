@@ -8,6 +8,9 @@ Milestone: 0.9.4
 
 BioMCP's HTTP cache, saved article full text, citation evidence and provider captures live in one SQLite database under the cache root. A lookup is one indexed read, size limits and eviction need no folder walk, the CLI and the MCP server share the cache safely, and every cache-age note reads as it does today.
 
+- Changes: `src/cache/**` `src/sources/mod.rs` `src/entities/article/graph/citation_evidence.rs` `Cargo.toml` `Cargo.lock` `deny.toml` `docs/reference/configuration.md` `CHANGELOG.md` and the existing download store and focused cache tests. Narrow the download-store and test paths after the initial inventory before editing.
+
+
 ## Evidence
 
 - The HTTP cache is http-cache 0.20 over cacache 13. Its key is `method:uri`, the full unnormalized URL. cacache only appends index buckets, so one long-used machine held 102,376 index files (709 MB) for 212 stored bodies (120 MB) on 2026-10-16.
