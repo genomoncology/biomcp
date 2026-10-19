@@ -1,11 +1,13 @@
 use super::*;
 
 fn discovery_drug() -> Drug {
-    serde_json::from_value(serde_json::json!({
-        "name": "eflornithine",
-        "targets": ["ODC1"]
-    }))
-    .expect("drug fixture")
+    // Retain the captured source's organism rather than assuming a target is human.
+    let response: crate::sources::mychem::MyChemQueryResponse = serde_json::from_str(include_str!(
+        "../../../../tests/fixtures/drug/bortezomib-targets.json"
+    ))
+    .expect("captured drug fixture");
+    let hits = response.hits.iter().collect::<Vec<_>>();
+    crate::transform::drug::merge_mychem_hits(&hits, "bortezomib")
 }
 
 #[test]
@@ -14,15 +16,15 @@ fn drug_command_discovery_matches_default_projection_order() {
     assert_eq!(
         discovery.next_commands,
         vec![
-            "biomcp get drug eflornithine approvals",
-            "biomcp get drug eflornithine label",
-            "biomcp get drug eflornithine regulatory --region us",
-            "biomcp get drug eflornithine all --region us",
-            "biomcp search article --drug eflornithine --type review --limit 5",
-            "biomcp drug trials eflornithine",
-            "biomcp drug adverse-events eflornithine",
-            "biomcp search pgx -d eflornithine",
-            "biomcp get gene ODC1",
+            "biomcp get drug bortezomib approvals",
+            "biomcp get drug bortezomib label",
+            "biomcp get drug bortezomib regulatory --region us",
+            "biomcp get drug bortezomib all --region us",
+            "biomcp search article --drug bortezomib --type review --limit 5",
+            "biomcp drug trials bortezomib",
+            "biomcp drug adverse-events bortezomib",
+            "biomcp search pgx -d bortezomib",
+            "biomcp get gene PSMB5",
         ]
     );
     assert_eq!(
@@ -35,7 +37,7 @@ fn drug_command_discovery_matches_default_projection_order() {
     );
     assert_eq!(
         discovery.all.as_deref(),
-        Some("biomcp get drug eflornithine all --region us")
+        Some("biomcp get drug bortezomib all --region us")
     );
 }
 
@@ -76,16 +78,18 @@ fn drug_command_discovery_respects_loaded_sections_regions_and_who_exclusions() 
     ] {
         let discovery = drug_command_discovery(&discovery_drug(), &["targets".to_string()], region);
         assert!(discovery.next_commands.contains(&format!(
-            "biomcp get drug eflornithine regulatory --region {label}"
+            "biomcp get drug bortezomib regulatory --region {label}"
         )));
-        assert!(discovery.next_commands.contains(&format!(
-            "biomcp get drug eflornithine all --region {label}"
-        )));
+        assert!(
+            discovery
+                .next_commands
+                .contains(&format!("biomcp get drug bortezomib all --region {label}"))
+        );
     }
     let who = drug_command_discovery(&discovery_drug(), &["targets".to_string()], DrugRegion::Who);
     assert!(who.next_commands.iter().all(|command| {
-        !command.contains(" get drug eflornithine safety")
-            && !command.contains(" get drug eflornithine shortage")
+        !command.contains(" get drug bortezomib safety")
+            && !command.contains(" get drug bortezomib shortage")
     }));
 }
 
@@ -115,12 +119,12 @@ fn drug_command_discovery_prioritizes_recovery_and_caps_exact_commands() {
     assert_eq!(
         discovery.next_commands[..6],
         [
-            "biomcp get drug eflornithine approvals",
-            "biomcp get drug eflornithine safety --region us",
-            "biomcp get drug eflornithine targets",
-            "biomcp get drug eflornithine indications",
-            "biomcp get drug eflornithine interactions",
-            "biomcp get drug eflornithine civic",
+            "biomcp get drug bortezomib approvals",
+            "biomcp get drug bortezomib safety --region us",
+            "biomcp get drug bortezomib targets",
+            "biomcp get drug bortezomib indications",
+            "biomcp get drug bortezomib interactions",
+            "biomcp get drug bortezomib civic",
         ]
     );
     assert!(
@@ -175,7 +179,7 @@ fn drug_command_discovery_quotes_identity_and_recovery_is_rendered_once() {
     .expect("drug markdown");
     assert_eq!(
         markdown
-            .matches("Retry: `biomcp get drug eflornithine safety --region eu`")
+            .matches("Retry: `biomcp get drug bortezomib safety --region eu`")
             .count(),
         1
     );
@@ -272,16 +276,16 @@ fn drug_command_discovery_asserts_every_explicit_single_section_projection() {
         ("targets", vec!["approvals", "label", "regulatory"]),
         ("civic", vec!["approvals", "label", "regulatory"]),
     ];
-    let related = expected_related("eflornithine", true, Some("ODC1"));
+    let related = expected_related("bortezomib", true, Some("PSMB5"));
     for (requested, remaining) in cases {
         let discovery =
             drug_command_discovery(&discovery_drug(), &[requested.to_string()], DrugRegion::Us);
-        let sections = expected_sections("eflornithine", &remaining, DrugRegion::Us);
+        let sections = expected_sections("bortezomib", &remaining, DrugRegion::Us);
         assert_projection(
             &discovery,
             Vec::new(),
             sections,
-            Some("biomcp get drug eflornithine all --region us"),
+            Some("biomcp get drug bortezomib all --region us"),
             related.clone(),
         );
     }
@@ -289,13 +293,13 @@ fn drug_command_discovery_asserts_every_explicit_single_section_projection() {
 
 #[test]
 fn drug_command_discovery_asserts_all_and_every_recovery_state() {
-    let all_related = expected_related("eflornithine", true, Some("ODC1"));
+    let all_related = expected_related("bortezomib", true, Some("PSMB5"));
     let all_discovery =
         drug_command_discovery(&discovery_drug(), &["all".to_string()], DrugRegion::Us);
     assert_projection(
         &all_discovery,
         Vec::new(),
-        expected_sections("eflornithine", &["approvals"], DrugRegion::Us),
+        expected_sections("bortezomib", &["approvals"], DrugRegion::Us),
         None,
         all_related,
     );
@@ -318,19 +322,19 @@ fn drug_command_discovery_asserts_all_and_every_recovery_state() {
             let mut drug = discovery_drug();
             drug.section_outcomes.complete(section, outcome.clone());
             let discovery = drug_command_discovery(&drug, &[section.to_string()], DrugRegion::Eu);
-            let recovery = expected_sections("eflornithine", &[section], DrugRegion::Eu);
+            let recovery = expected_sections("bortezomib", &[section], DrugRegion::Eu);
             let remaining = match section {
                 "approvals" => vec!["label", "regulatory", "safety"],
                 "safety" => vec!["approvals", "label", "regulatory"],
                 _ => vec!["approvals", "label", "regulatory"],
             };
-            let sections = expected_sections("eflornithine", &remaining, DrugRegion::Eu);
+            let sections = expected_sections("bortezomib", &remaining, DrugRegion::Eu);
             assert_projection(
                 &discovery,
                 recovery,
                 sections,
-                Some("biomcp get drug eflornithine all --region eu"),
-                expected_related("eflornithine", true, Some("ODC1")),
+                Some("biomcp get drug bortezomib all --region eu"),
+                expected_related("bortezomib", true, Some("PSMB5")),
             );
         }
     }
@@ -345,24 +349,19 @@ fn drug_command_discovery_asserts_complete_region_projections_and_who_exclusions
         (DrugRegion::All, "all"),
     ] {
         let discovery = drug_command_discovery(&discovery_drug(), &["targets".to_string()], region);
-        let sections = expected_sections(
-            "eflornithine",
-            &["approvals", "label", "regulatory"],
-            region,
-        );
+        let sections =
+            expected_sections("bortezomib", &["approvals", "label", "regulatory"], region);
         assert_projection(
             &discovery,
             Vec::new(),
             sections,
-            Some(&format!(
-                "biomcp get drug eflornithine all --region {label}"
-            )),
-            expected_related("eflornithine", true, Some("ODC1")),
+            Some(&format!("biomcp get drug bortezomib all --region {label}")),
+            expected_related("bortezomib", true, Some("PSMB5")),
         );
         if region == DrugRegion::Who {
             assert!(discovery.next_commands.iter().all(|command| {
-                !command.contains(" get drug eflornithine safety")
-                    && !command.contains(" get drug eflornithine shortage")
+                !command.contains(" get drug bortezomib safety")
+                    && !command.contains(" get drug bortezomib shortage")
             }));
         }
     }
@@ -381,12 +380,12 @@ fn drug_command_discovery_asserts_sparse_branches_blank_identity_and_projection_
         &complete_discovery,
         Vec::new(),
         expected_sections(
-            "eflornithine",
+            "bortezomib",
             &["approvals", "label", "regulatory"],
             DrugRegion::Us,
         ),
-        Some("biomcp get drug eflornithine all --region us"),
-        expected_related("eflornithine", false, None),
+        Some("biomcp get drug bortezomib all --region us"),
+        expected_related("bortezomib", false, None),
     );
 
     let mut sparse_blank_target = discovery_drug();
@@ -396,12 +395,12 @@ fn drug_command_discovery_asserts_sparse_branches_blank_identity_and_projection_
         &sparse_discovery,
         Vec::new(),
         expected_sections(
-            "eflornithine",
+            "bortezomib",
             &["approvals", "label", "regulatory"],
             DrugRegion::Us,
         ),
-        Some("biomcp get drug eflornithine all --region us"),
-        expected_related("eflornithine", true, None),
+        Some("biomcp get drug bortezomib all --region us"),
+        expected_related("bortezomib", true, None),
     );
 
     let mut blank = discovery_drug();
@@ -437,7 +436,7 @@ fn drug_command_discovery_asserts_complete_9_10_and_over_10_candidate_arrays() {
         "interactions",
         "civic",
     ];
-    let related = expected_related("eflornithine", true, Some("ODC1"));
+    let related = expected_related("bortezomib", true, Some("PSMB5"));
     for (count, expected_related_count, expected_len) in [(4, 5, 9), (5, 5, 10), (6, 4, 10)] {
         let mut drug = discovery_drug();
         for section in recovery_order.iter().take(count) {
@@ -456,7 +455,7 @@ fn drug_command_discovery_asserts_complete_9_10_and_over_10_candidate_arrays() {
             .take(count)
             .map(|section| DrugCommand {
                 section: (*section).to_string(),
-                command: expected_drug_command("eflornithine", section, DrugRegion::Us),
+                command: expected_drug_command("bortezomib", section, DrugRegion::Us),
             })
             .collect::<Vec<_>>();
         let related_surviving = related[..expected_related_count].to_vec();

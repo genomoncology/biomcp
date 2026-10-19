@@ -1093,7 +1093,12 @@ pub(super) fn related_drug(drug: &Drug) -> Vec<String> {
     out.push(format!("biomcp drug adverse-events {name}"));
     out.push(format!("biomcp search pgx -d {name}"));
 
-    if let Some(target) = drug.targets.first().map(String::as_str) {
+    if let Some(target) = drug
+        .targets
+        .iter()
+        .find(|target| drug.target_is_human(target))
+        .map(String::as_str)
+    {
         let sym = target.trim();
         if !sym.is_empty() {
             out.push(format!("biomcp get gene {sym}"));
