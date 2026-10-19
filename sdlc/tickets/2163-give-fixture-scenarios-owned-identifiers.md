@@ -19,3 +19,7 @@ Recorded article fixture scenarios have named owners and identifiers, so a fixtu
 - Defers: implementation until the next release. A narrow fixture repair needed for a current-release product fix stays in that product ticket; this ticket does not block 0.9.3.
 
 PM decision: 2026-10-17. Ian deferred the broad scenario refactor to keep current-release prevention fixes small.
+
+## Progress
+
+- 2026-10-19 started
