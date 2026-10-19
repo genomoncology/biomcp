@@ -12,6 +12,8 @@ Reviews: revision 6452dd6, accept
 
 Reviews: revision f1d576e, accept
 
+Reviews: revision 50fbb8d, accept
+
 ## Outcome
 
 Look up the approved same-allele transcript spellings and name the matched transcript while preserving headline numbering; distinguish unverified transcript identity from source-resolved missing records.
