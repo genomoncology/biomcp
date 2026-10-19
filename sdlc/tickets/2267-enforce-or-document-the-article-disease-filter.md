@@ -4,7 +4,7 @@ priority: 2
 
 # 2267 — Enforce or document the article disease filter
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -13,6 +13,8 @@ Depends on: 2274
 Reviews: revision ba395a3, accept
 
 Reviews: revision bd3fbcf, accept
+
+Landed: 995dc68
 
 ## Outcome
 
