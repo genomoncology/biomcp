@@ -18,3 +18,6 @@ The release build profile's link settings are chosen from measured release build
 
 - Changes: `sdlc/records/2211-release-linking.md` and this ticket. Freeze the existing measurement helper; temporary profile candidates and build outputs stay outside tracked source. Report measurements and the chosen profile first; any adoption edit to `Cargo.toml` needs coordination with the concurrent cache migration before it begins.
 
+## Progress
+
+- 2026-10-19 started
