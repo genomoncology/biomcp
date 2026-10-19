@@ -82,6 +82,8 @@
 
 ### Internal
 
+- Send the current BioMCP application identity, default Accept header, and uncached policy during replay live checks while preserving recorded request headers and bounded transport controls. (2281)
+
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 
 - Synchronize the disease deadline control with provider request arrival before advancing test time. (2276)

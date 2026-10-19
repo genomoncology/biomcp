@@ -9,6 +9,7 @@ import subprocess
 import sys
 import threading
 import time
+import tomllib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -281,6 +282,28 @@ def test_plaintext_stays_blocked_even_with_restricted_access_authorization(
         assert summary["checked"] == 0
         assert results[0]["details"] == [detail]
     assert not server.requests
+
+
+@pytest.mark.parametrize("accept", [None, "application/xml"])
+def test_live_check_sends_current_product_headers_and_recorded_accept(
+    tmp_path, provider, accept
+):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    if accept:
+        next(iter(routes.values()))["request_headers"] = {"aCcEpT": accept}
+        (replay / "manifest.json").write_text(
+            json.dumps({"schema_version": 1, "routes": routes})
+        )
+    process, _, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == 0
+    assert summary["checked"] == summary["passed"] == 1
+    headers = {name.lower(): value for name, value in server.requests[0][1].items()}
+    version = tomllib.loads((ROOT / "Cargo.toml").read_text())["package"]["version"]
+    assert headers["user-agent"] == f"biomcp-cli/{version}"
+    assert headers["accept"] == (accept or "*/*")
+    assert headers["cache-control"] == "no-store"
+    assert headers["accept-encoding"] == "identity"
 
 
 def test_live_check_reports_removed_nested_json_paths(tmp_path, provider):
