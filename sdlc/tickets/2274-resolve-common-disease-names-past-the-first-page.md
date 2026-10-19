@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 7562c27, accept
 
+Reviews: revision 7562c27, accept
+
 ## Outcome
 
 Changes: `CHANGELOG.md`, `src/entities/disease/resolution.rs`, `src/entities/disease/resolution/paging.rs`, `src/entities/disease/resolution/paging_tests.rs`, `src/entities/disease/resolution/tests.rs`, `testdata/disease-resolution/melanoma-page-one.json`, `testdata/disease-resolution/melanoma-page-two.json`.
