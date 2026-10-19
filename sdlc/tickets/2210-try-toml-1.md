@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 0a3d1ad, accept
+
 ## Outcome
 
 Moving BioMCP to toml 1.x either lands with measured build and dependency numbers no worse than today's, or is recorded as not worth it.
