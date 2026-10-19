@@ -17,6 +17,7 @@ fn warning_drug() -> Drug {
         brand_names: Vec::new(),
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,

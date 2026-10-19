@@ -79,6 +79,7 @@ pub(super) async fn enrich_targets(
                 .filter(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
                 .map(|row| row.target.clone())
                 .collect::<Vec<_>>();
+            drug.record_target_organisms(&targets, "ChEMBL");
             merge_unique_casefold(&mut drug.targets, targets);
 
             let mechanisms = rows
@@ -103,12 +104,19 @@ pub(super) async fn enrich_targets(
                 .iter()
                 .map(|t| t.approved_symbol.clone())
                 .collect::<Vec<_>>();
+            drug.record_target_organisms(&symbols, "Open Targets");
             merge_unique_casefold(&mut drug.targets, symbols);
             opentargets_targets = targets;
         }
     }
 
+    drug.sort_targets_by_organism();
     drug.targets.truncate(12);
+    drug.target_organisms.retain(|row| {
+        drug.targets
+            .iter()
+            .any(|target| target.eq_ignore_ascii_case(&row.target))
+    });
     drug.variant_targets = civic_context
         .map(|context| extract_variant_targets_from_civic(context, &drug.targets))
         .unwrap_or_default();

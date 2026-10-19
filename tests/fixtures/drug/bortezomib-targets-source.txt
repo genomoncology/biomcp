@@ -1,0 +1,4 @@
+Official MyChem response captured 2026-10-19:
+https://mychem.info/v1/query?q=drugbank.name:bortezomib&fields=drugbank.id,drugbank.name,gtopdb.name,gtopdb.interaction_targets&size=1
+Source licensing links remain in the response. The replay reverses target rows
+and separately removes species fields; it invents no target or organism mapping.

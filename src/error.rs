@@ -7,6 +7,7 @@ use std::fmt;
 /// that is merely down. The `sources::disable` module owns how the
 /// reasons are built.
 pub const DISABLED_SOURCE_REASON_PREFIX: &str = "disabled by ";
+pub(crate) const ARTICLE_ASSET_FAILURE_PREFIX: &str = "Article asset sources unavailable: ";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SourceProvider {
@@ -707,6 +708,17 @@ impl BioMcpError {
         {
             return PublicErrorProjection {
                 message: format!("Source unavailable: {source_name} is {reason}."),
+                source: None,
+                recovery: Some(suggestion.as_str()),
+            };
+        }
+        if let Self::SourceUnavailable {
+            reason, suggestion, ..
+        } = self.underlying()
+            && reason.starts_with(ARTICLE_ASSET_FAILURE_PREFIX)
+        {
+            return PublicErrorProjection {
+                message: reason.clone(),
                 source: None,
                 recovery: Some(suggestion.as_str()),
             };

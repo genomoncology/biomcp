@@ -1092,33 +1092,37 @@ async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpErr
             query: Some(name.to_string()),
             ..Default::default()
         };
-        let fallback_name = search_page(&fallback_filters, 2, 0)
-            .await
-            .ok()
-            .and_then(|page| {
-                if page.results.len() != 1 {
-                    return None;
-                }
-                let candidate = page.results[0].name.trim();
-                if candidate.is_empty() || candidate.eq_ignore_ascii_case(name) {
-                    None
-                } else {
-                    Some(candidate.to_string())
-                }
-            });
-
-        if let Some(candidate) = fallback_name
-            && let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
-            && !fallback_resp.hits.is_empty()
-        {
-            lookup_name = candidate;
-            resp = fallback_resp;
-        } else {
+        let fallback_page = search_page(&fallback_filters, 2, 0).await?;
+        let fallback_name = match fallback_page.results.as_slice() {
+            [result] => {
+                let candidate = result.name.trim();
+                (!candidate.is_empty() && !candidate.eq_ignore_ascii_case(name))
+                    .then(|| candidate.to_string())
+            }
+            _ => None,
+        };
+        let Some(candidate) = fallback_name else {
+            return Err(original_not_found());
+        };
+        let fallback_resp = direct_drug_lookup(&candidate).await?;
+        if fallback_resp.hits.is_empty() {
             return Err(original_not_found());
         }
+        lookup_name = candidate;
+        resp = fallback_resp;
     }
 
     let mut selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    if let Some((candidate, candidate_resp)) = super::development_codes::resolve(
+        name,
+        &transform::drug::merge_mychem_hits(&selected, &lookup_name),
+    )
+    .await?
+    {
+        lookup_name = candidate;
+        resp = candidate_resp;
+        selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    }
     if selected.is_empty() {
         // The MyChem full-text query matched only other drugs' records. The
         // query may still be a real brand whose identity openFDA knows, so
