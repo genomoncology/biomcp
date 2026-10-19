@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 ## Outcome
 
+PM ruling: For Boolean-capable Europe PMC and PubMed queries, group the requested symbol and every recorded MyGene alias in one correctly escaped OR clause joined with the variant term. Split only as provider query-length limits require. Keep existing caps for providers without Boolean support, using longest spelling first and source order for ties, and disclose their omissions. Preserve typed Gene and same-DNA identity rules, invocation deadline and provider accounting. No gene-specific exception or silent alias exclusion.
+
 Variant article search queries the unambiguous queried gene's recorded MyGene aliases with their provenance, including source-provided former spellings without relabeling them as official previous symbols. It discloses current-spelling-only only when those MyGene facts are absent, unavailable or disabled.
 
 - Changes: `src/entities/gene.rs` `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_gene_aliases.py` `tests/fixtures/article/gene-aliases/authored.json` `CHANGELOG.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `tests/test_variant_article_alias_coverage.py` `tests/test_variant_article_transcript_aliases.py`.
@@ -61,6 +63,10 @@ Owning regression should also return a clearly authored SUR1-only article contro
 
 Fixture compatibility claim: extend the existing2246alias-coverage fixture with an authored empty MyGene query/base while preserving all its assertions. The existing transcript-alias fixture may explicitly disable the unrelated MyGene alias lookup, preserving its recorded bytes and all transcript/typed-gene identity assertions. These source-controlled fixtures must work in normal gates; a special job-only environment is insufficient. Report any other exact affected fixture path before editing it.
 
-## Query ordering decision
+## Superseded query ordering decision
 
 PM approved queried primary symbol first, followed by MyGene aliases in descending spelling length with source order retained for ties, within the existing query cap. Longer spellings are less ambiguous. Preserve original recorded aliases and disclose omissions; use no gene-specific exception. Typed Gene annotation and same-DNA variant identity remain required.
+
+## Revised query planning decision
+
+The recorded MyGene array proved that longest-first still omitted SUR1 under the combined spelling cap. PM rejected both eleven slots and another example-fitting sort. Boolean grouping removes the cause by covering every recorded gene alias with the same or fewer provider requests. Any observed noise requiring exclusions needs a PM decision; authored query proof does not establish recovered real papers.
