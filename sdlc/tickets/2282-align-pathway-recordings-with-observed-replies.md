@@ -14,7 +14,7 @@ Reviews: revision 79ac5d7, accept
 
 Pathway recordings and response metadata reflect the retained exact-request primary replies. Real source-consumer failures receive a separate bounded defect; no invented fields, weakened checks or assumed clinical facts hide them.
 
-Changes: `testdata/replay/responses/reactome/**`, `testdata/replay/responses/wikipathways/**`, `testdata/replay/manifest.json`, `CHANGELOG.md`, `sdlc/records/2282-pathway-recording-fidelity.md`, `tests/fixtures/pathway/synthetic-reactome-failure/body.json`, `tests/golden/test_search_all_provider_failure.py`, `tests/golden/cases/search-all-braf-melanoma*.json`, `tests/golden/cases/search-all-braf-melanoma*.md`.
+Changes: `testdata/replay/responses/reactome/**`, `testdata/replay/responses/wikipathways/**`, `testdata/replay/manifest.json`, `CHANGELOG.md`, `sdlc/records/2282-pathway-recording-fidelity.md`, `tests/fixtures/pathway/synthetic-reactome-failure/body.json`, `tests/golden/test_search_all_provider_failure.py`, `tests/golden/cases/search-all-braf-melanoma.json`, `tests/golden/cases/search-all-braf-melanoma.md`, `tests/golden/cases/search-all-braf-melanoma-counts-only.json`, `tests/golden/cases/search-all-braf-melanoma-counts-only.md`, `tests/golden/cases/search-all-braf-melanoma-synthetic-reactome-failure.json`, `tests/golden/cases/search-all-braf-melanoma-synthetic-reactome-failure.md`, `tests/golden/cases/search-all-braf-melanoma-counts-only-synthetic-reactome-failure.json`, `tests/golden/cases/search-all-braf-melanoma-counts-only-synthetic-reactome-failure.md`.
 
 ## Evidence
 
