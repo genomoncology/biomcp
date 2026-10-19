@@ -51,7 +51,7 @@ futures = "0.3"
 
 # HTTP
 axum = { version = "0.8.1", default-features = false, features = ["tokio", "http1", "json"] }
-rusqlite = { version = "0.38", features = ["bundled"] }
+rusqlite = { version = "0.40.2", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip", "multipart"] }
 reqwest-middleware = { version = "0.4", features = ["json", "multipart"] }
 reqwest-retry = "0.7"
