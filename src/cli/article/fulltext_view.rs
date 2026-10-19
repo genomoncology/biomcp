@@ -190,14 +190,7 @@ pub(super) fn summary(path: &Path) -> Result<(usize, usize, usize), BioMcpError>
     let lines = text.lines().count();
     let sections = text
         .lines()
-        .filter(|line| {
-            let hashes = line.chars().take_while(|ch| *ch == '#').count();
-            (1..=6).contains(&hashes)
-                && line
-                    .as_bytes()
-                    .get(hashes)
-                    .is_some_and(u8::is_ascii_whitespace)
-        })
+        .filter(|line| crate::transform::article::markdown_heading_level(line).is_some())
         .count();
     Ok((text.len(), lines, sections))
 }
@@ -270,15 +263,9 @@ fn build_outline(text: &str) -> Outline {
     let rows = text.lines().collect::<Vec<_>>();
     let mut all = Vec::new();
     for (index, line) in rows.iter().enumerate() {
-        let hashes = line.chars().take_while(|ch| *ch == '#').count();
-        if !(1..=6).contains(&hashes)
-            || !line
-                .as_bytes()
-                .get(hashes)
-                .is_some_and(u8::is_ascii_whitespace)
-        {
+        let Some(hashes) = crate::transform::article::markdown_heading_level(line) else {
             continue;
-        }
+        };
         let (title, title_truncated) = truncate_bytes(line[hashes..].trim(), 512);
         all.push(Heading {
             ordinal: all.len() + 1,

@@ -33,7 +33,9 @@ fn decode_html_entities(value: &str) -> String {
 
 fn strip_inline_html_tags(value: &str) -> String {
     static HTML_TAG_RE: OnceLock<Regex> = OnceLock::new();
-    let re = HTML_TAG_RE.get_or_init(|| Regex::new(r"(?is)<[^>]+>").expect("valid regex"));
+    let re = HTML_TAG_RE.get_or_init(|| {
+        Regex::new(r"(?is)</?[a-z][a-z0-9]*(?:\s+[^<>]*|/?)>").expect("valid regex")
+    });
     re.replace_all(value, "").to_string()
 }
 

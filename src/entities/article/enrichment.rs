@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+mod abstracts;
 mod visible_metadata;
 
 use crate::entities::SearchPage;
@@ -444,6 +445,7 @@ pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar
         None
     };
     let mut page = finalize_article_candidates(rows, limit, offset, total, filters);
+    statuses.extend(abstracts::enrich(&mut page.results).await);
     if enrichment_sources.contains(&ArticleSource::PubTator)
         || enrichment_sources.contains(&ArticleSource::EuropePmc)
     {
@@ -500,6 +502,7 @@ pub(super) async fn enrich_visible_article_search_page(
             elapsed_ms: started.elapsed().as_millis() as u64,
         });
     }
+    statuses.extend(abstracts::enrich(&mut page.results).await);
     if enrichment_sources.contains(&ArticleSource::PubTator)
         || enrichment_sources.contains(&ArticleSource::EuropePmc)
     {
