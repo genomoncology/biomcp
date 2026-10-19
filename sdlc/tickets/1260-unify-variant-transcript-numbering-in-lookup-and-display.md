@@ -8,6 +8,8 @@ Priority note 2026-10-19: moved into 0.9.4 because every known bug ships fixed. 
 
 From issue `2026-09-11-variant-display-mixes-transcript-numbering.md` (a real clinical-report failure: a report's `c.1187G>A` finds no match because the display mixes protein numbering from one transcript with cDNA numbering from another; the not-found reads as "nothing to see" instead of "wrong transcript"). The 2026-09-27 review ordered a real ticket with an owner and trigger, not a parked line.
 
+Reviews: revision 6452dd6, accept
+
 ## Problem
 
 Variant output names a protein consequence and a cDNA change whose numbering can come from different transcripts (MUTYH c.1187G>A: p.Gly396Asp on the common transcript, p.Gly382Asp as legacy numbering on another). A consumer matching a report identifier against that output fails, and the failure mode is silent.
