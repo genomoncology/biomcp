@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Align article and variant command help and discovery, name blocked PMC assets consistently, suggest explicit PDF fallback after a full-text miss, and keep compact batch headings nested. (2254)
+
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
 - Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)

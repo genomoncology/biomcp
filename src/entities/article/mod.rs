@@ -533,6 +533,7 @@ pub enum ArticleAssetNamedOutcome {
     Retrievable,
     HealthyAbsent,
     AccessOrLicenceDenied,
+    #[serde(alias = "ncbi_interstitial")]
     PmcProofOfWork,
     UnsupportedOrigin,
     SourceUnavailable,

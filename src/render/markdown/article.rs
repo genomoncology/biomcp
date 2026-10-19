@@ -311,9 +311,18 @@ fn article_batch_entities(summary: Option<&ArticleBatchEntitySummary>) -> Option
 }
 
 pub fn article_batch_markdown(items: &[ArticleBatchItem]) -> Result<String, BioMcpError> {
-    let mut out = format!("# Article Batch ({})\n\n", items.len());
+    let nested = items.len() == 1;
+    let mut out = if nested {
+        String::new()
+    } else {
+        format!("# Article Batch ({})\n\n", items.len())
+    };
     for (idx, item) in items.iter().enumerate() {
-        out.push_str(&format!("## {}. {}\n", idx + 1, item.title.trim()));
+        if nested {
+            out.push_str(&format!("### {}\n", item.title.trim()));
+        } else {
+            out.push_str(&format!("## {}. {}\n", idx + 1, item.title.trim()));
+        }
         if let Some(pmid) = &item.pmid {
             out.push_str(&format!("PMID: {}\n", pmid.trim()));
         } else if let Some(pmcid) = &item.pmcid {
