@@ -30,3 +30,7 @@ BioMCP's HTTP cache, saved article full text, citation evidence and provider cap
 - Changes: claims `src/cache/**` `src/sources/mod.rs` (cache wiring only) `src/entities/article/graph/citation_evidence.rs` the full-text download store `Cargo.toml` `Cargo.lock` `deny.toml` `docs/reference/configuration.md` `CHANGELOG.md` and the tests beside them.
 - Proof: the existing cache-age, day-cache, cache-mode, size-limit and disk-floor tests pass unchanged; a test runs the CLI and an MCP server against one cache at once; a test shows a lookup with 100,000 stored replies opens one database and no reply files; on the Linux gate host, `get gene BRAF` wall and system time with a 100,000-reply cache, before and after; a crash-recovery test kills a writer mid-transaction and reopens cleanly.
 - Order: after 2133.
+
+## Progress
+
+- 2026-10-19 started
