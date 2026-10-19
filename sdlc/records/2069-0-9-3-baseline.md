@@ -1,5 +1,197 @@
 # 2069 — The 0.9.3 baseline
 
+## Remaining checklist rows, 2026-10-19
+
+This supplement measures published v0.9.3 at `5641de7d7b79b53872f8599dbb4dba22e611dcaf` and development snapshot `08b74a340658f2c30e158fd00459330baebacd74`. The snapshot is not the final 0.9.4 candidate. Every final-candidate row remains unavailable until that candidate is selected and measured. Earlier sections retain their original v0.9.2 and historical 0.9.3 candidate identities; none is relabeled as a measurement of published v0.9.3.
+
+The corrected helper SHA-256 is `9c427657dcd0c79a1982aae3f692433a88a9b273f131a4ca62b86962aa4bc9c7`. Native collection `2214/1792410458609-44133` uses that one helper, one build host (`build-host-1`, Darwin 25.4.0), Python 3.12.13 and Rust/Cargo 1.95.0. Both products start as clean detached worktrees. Both use the same native routine feature set. The retained Cargo configuration enables the shared compiler cache, disables incremental compilation, selects line-tables-only development debug information and disables dependency debug information; ordinary compiler environment settings are inherited equally. Each prepares the existing gene-render library group once, then records the working build directory and three source-touch/test-group samples. Temporary product worktrees and their builds are removed after collection; raw results remain in the job checkout's `.cache/measurement-2214/raw/`.
+
+| Checklist row | Published v0.9.3 | Frozen development snapshot |
+| --- | ---: | ---: |
+| Reconstructed working checkout `target/`, allocated bytes | 1,477,758,976 | 1,479,127,040 |
+| Python AST test function definitions | 948 | 961 |
+| Definitions in files classified as tooling | 617 | 632 |
+| Tooling share under the stated file classification | 65.08% | 65.76% |
+| Source touch followed by one test group, median seconds | 47.5 | 64.6 |
+| Observed compiled crate/version pairs, Linux x86-64 release | 362 | Unavailable: no release-target build for this snapshot |
+| Observed compiled crate/version pairs, Linux ARM64 release | 360 | Unavailable: no release-target build for this snapshot |
+| Observed compiled crate/version pairs, Windows x86-64 release | 377 | Unavailable: no release-target build for this snapshot |
+| Publishing workflow elapsed seconds | 2,919 | Unavailable: this development snapshot was not published |
+| Release archive download bytes | Five retained archive sizes below | Unavailable: this development snapshot has no release archives |
+| Full-mode nonpublishing rehearsal attempts | 8: 3 failed, 3 cancelled, 2 succeeded | Unavailable: no release rehearsal for this snapshot |
+
+The working-checkout row describes a reproducible native development state after one successful preparation of the selected group. It does not recover the original release-time working directory, whose size was not retained. On this host the helper uses `du -sk target` multiplied by 1024, so these are allocated bytes. It captures the folder before its measured source touches. This row differs from the earlier sizes after the full routine suite or a release build.
+
+### Commands and raw native observations
+
+For each frozen product, prepare once with `tools/with-build-identity cargo nextest run --locked --no-default-features --lib -E 'test(gene_markdown)'`. Both preparations pass the same 16 selected tests. Then run the frozen helper with `--only clone,working-checkout,python-test-functions,release-target-counts`, retaining `<product>-static.txt` and `<product>-python-test-functions.tsv`. Release target logs are supplied in a separate historical-evidence invocation below; unavailable results from the native-only invocation mean no input log was supplied there.
+
+Run the helper three times per product with `--only edit-test-group`. Each sample touches `src/render/markdown/gene.rs` and runs `tools/run-offline -- tools/with-build-identity cargo nextest run --locked --no-default-features --lib -E 'test(gene_markdown)'`. This forces a source timestamp rebuild without changing source contents. The raw helper transcript, nextest output, actual exit status and preceding host load are retained as `<product>-edit-<sample>.txt`, `.log`, `.exit` and `-load.txt`. The first product is `old`; the second is `snapshot`. Preparation durations are excluded.
+
+| Product | Sample | Wall seconds | Preceding one-minute load | Actual result |
+| --- | ---: | ---: | ---: | --- |
+| v0.9.3 | 1 | 44.4 | 10.24 | 0; 16 passed |
+| v0.9.3 | 2 | 47.5 | 10.13 | 0; 16 passed |
+| v0.9.3 | 3 | 58.3 | 8.83 | 0; 16 passed |
+| Development snapshot | 1 | 64.6 | 46.09 | 0; 16 passed |
+| Development snapshot | 2 | 71.3 | 34.13 | 0; 16 passed |
+| Development snapshot | 3 | 55.6 | 42.64 | 0; 16 passed |
+
+The measurements are sequential observations on a shared host, not an exclusive performance experiment. Pre-sample one-minute load spans 8.83 to 46.09. Source-path-specific compiler cache behavior, shared host load and the sequential version order limit interpretation. These values do not establish a causal speed difference or a final-candidate timing verdict. Every sample completes the selected group; no failed sample contributes to either median.
+
+### Retained release evidence
+
+[The published release record](2215-0-9-3-release.md) supplies the publishing duration, archive sizes, eight full-mode attempts, individual outcomes and failure causes. It cites [publishing run 39150372750](https://github.com/genomoncology/biomcp/actions/runs/39150372750), which succeeds on published SHA `5641de7d7b79b53872f8599dbb4dba22e611dcaf` and takes 48 minutes 39 seconds. The helper reads this committed record through `--only release-history --release-record sdlc/records/2215-0-9-3-release.md`; it makes no network call and retains the record's identity, URLs and limitations. Cancelled attempts count as attempts, not successful full rehearsals.
+
+| Archive | Download bytes |
+| --- | ---: |
+| biomcp-darwin-arm64.tar.gz | 16,075,492 |
+| biomcp-darwin-x86_64.tar.gz | 17,273,341 |
+| biomcp-linux-arm64.tar.gz | 16,364,205 |
+| biomcp-linux-x86_64.tar.gz | 17,582,445 |
+| biomcp-windows-x86_64.zip | 17,627,555 |
+
+Historical log retrieval `2214/1792410391753-39378` reads metadata for that completed publishing run and retrieves only its three successful Linux/Windows archive-build job logs using `gh run view --repo genomoncology/biomcp --job <job-id> --log`. The retained run metadata confirms the released SHA. No workflow, platform build or archive download is started. The completed input logs, job metadata and per-fetch exit statuses remain beside the native raw samples. Parser collection `2214/1792410451622-42207` strips actual ANSI escapes and the printable Windows `^[` spelling, then counts distinct emitted `Compiling name vversion` pairs, including BioMCP. A retained log must also contain successful release completion. It does not count resolved dependency graphs, repeated compiler units, or cached work absent from the log.
+
+| Retained archive-build job | Observed pairs | Complete input log SHA-256 |
+| --- | ---: | --- |
+| [Linux x86-64, 117747508662](https://github.com/genomoncology/biomcp/actions/runs/39150372750/job/117747508662) | 362 | `d16891d74f4301ae04f5b6a9ef1a731ecd9bd5c64b3a2fcfab237e14e0906905` |
+| [Linux ARM64, 117747508664](https://github.com/genomoncology/biomcp/actions/runs/39150372750/job/117747508664) | 360 | `fbd3b8016d67c102989a3bbec9b48662a76e1ac9d9d99e76abd372129525008d` |
+| [Windows x86-64, 117747508738](https://github.com/genomoncology/biomcp/actions/runs/39150372750/job/117747508738) | 377 | `77aed8e444553604bbe81572625ec969f7d6cb0abb45d6b2651bacb3798bd814` |
+
+These historical builds use the release workflow's Rust 1.93.1 default-feature commands with their explicit target: `cargo build --release --locked --target <target>`, through the identity wrapper on Windows and the manylinux container on Linux. The archive-build jobs show no Cargo target-cache restoration step. Their counts still describe only emitted compiler work. They ran on their original hosted platforms. The native build host reads their retained evidence. This record makes no cross-host timing or before/after platform-count comparison. To reproduce parsing, pass `--only release-target-counts` with three `--target-build-log <target>=<retained-log-path>` arguments. Input basenames are `x86_64-unknown-linux-gnu.log`, `aarch64-unknown-linux-gnu.log` and `x86_64-pc-windows-msvc.log`; the derived output is `release-target-counts.txt`.
+
+### Python function census and classification inventory
+
+The census parses `test_*.py` and `*_test.py` under `tests/` without importing or running tests. It counts top-level `test_` function definitions and test methods of `Test*` or direct `TestCase` classes, including async definitions. Parametrization does not multiply definitions; dynamic generation is outside this AST count. The existing `python-test-count` section remains a pytest collected-case count. The command contract demonstrates three function definitions versus four collected cases, so the two backends' numbers cannot silently become interchangeable.
+
+The tooling share uses a disclosed file-level convention. A file is classified as tooling when its AST literals or literal path joins produce reference strings beginning with `tools/`, `scripts/`, `.github/workflows/` or `Makefile`; generic `tools/run-offline` and `tools/with-build-identity` references and fixture directories are excluded. All test definitions in a mixed file share its classification. This makes a reviewable inventory, not a claim that every function in a classified file tests tooling. Unclassified files are labeled `other`, not asserted to be runtime-only. The complete inventory below retains both counts, classifications and the union of their triggering path references.
+
+```tsv
+path	v0.9.3_functions	v0.9.3_class	snapshot_functions	snapshot_class	references
+tests/golden/live/test_install_update.py	0	absent	1	other	-
+tests/golden/spec/test_cleanup_cli_behaviors.py	1	other	1	other	-
+tests/golden/spec/test_install_lifecycle.py	0	absent	2	other	-
+tests/golden/spec/test_spec_page_golden.py	4	other	4	other	-
+tests/golden/test_golden_output.py	2	other	2	other	-
+tests/surface/test_architecture_docs_parity_contract.py	2	other	2	other	-
+tests/surface/test_biomcp_ci_path_contract.py	2	tooling	2	tooling	tools/biomcp-ci
+tests/surface/test_biomcp_verify_live.py	9	tooling	9	tooling	scripts/run-specs.sh,tools/biomcp-ci,tools/biomcp-verify-live
+tests/surface/test_complexportal_fixture_contract.py	1	tooling	1	tooling	scripts/run-specs.sh,tools/replay-server
+tests/surface/test_mcp_live_gate_contract.py	2	tooling	2	tooling	Makefile
+tests/surface/test_public_entity_contract_docs.py	3	other	3	other	-
+tests/surface/test_search_all_cli_structure.py	5	other	5	other	-
+tests/surface/test_semantic_scholar_retry_after_contract.py	3	other	3	other	-
+tests/surface/test_source_configuration_docs_contract.py	5	other	5	other	-
+tests/surface/test_ticket_401_surface_ratchets.py	4	tooling	4	tooling	scripts/run-specs.sh,tools/check-quality-ratchet.py
+tests/surface/test_ticket_405_architecture_operator_contracts.py	7	tooling	7	tooling	Makefile,scripts/run-specs.sh
+tests/surface/test_trial_help_contract.py	4	other	4	other	-
+tests/surface/test_variant_normalization_docs_contract.py	4	other	4	other	-
+tests/test_alphagenome_proto_generation.py	6	tooling	6	tooling	.github/workflows/ci.yml,scripts/regenerate-alphagenome-proto,scripts/regenerate-alphagenome-proto --check,tools/alphagenome-proto-generator/
+tests/test_article_rsid_search.py	0	absent	1	other	-
+tests/test_author_surface_docs.py	13	tooling	13	tooling	tools/call
+tests/test_binary_asset_gitattributes_contract.py	4	other	4	other	-
+tests/test_bioasq_benchmark_contract.py	9	other	9	other	-
+tests/test_bioasq_ingest.py	9	other	9	other	-
+tests/test_biomcp_ci_contract.py	10	tooling	10	tooling	tools/biomcp-ci,tools/biomcp-ci must be executable
+tests/test_build_identity_rebuild.py	3	other	3	other	-
+tests/test_build_identity_wrapper_contract.py	3	other	3	other	-
+tests/test_cache_invalid_settings.py	2	tooling	2	tooling	tools/call
+tests/test_cache_persistent_size.py	3	other	4	other	-
+tests/test_capture_receipts.py	43	tooling	43	tooling	tools/check-source-capture-receipts.py
+tests/test_cbioportal_study_download_timeout_contract.py	1	other	1	other	-
+tests/test_central_test_support_helpers.py	5	other	7	other	-
+tests/test_changelog_coverage_check.py	61	tooling	61	tooling	scripts/check-changelog-coverage.py
+tests/test_ci_classify_push_script.py	21	tooling	21	tooling	scripts/ci-classify-push.sh
+tests/test_ci_workflow_contract.py	22	tooling	22	tooling	.github/workflows/ci.yml,Makefile,scripts/ci-classify-push.sh,scripts/install-nextest.sh
+tests/test_citation_contract.py	5	other	5	other	-
+tests/test_cli_surface_contract_ratchet.py	9	tooling	9	tooling	tools/check-quality-ratchet.py,tools/check-quality-ratchet.sh,tools/cli-surface-contract-exceptions.json
+tests/test_cross_entity_pivots_docs_contract.py	2	other	2	other	-
+tests/test_ctgov_trial_search_detail_reuse.py	9	other	9	other	-
+tests/test_directory_submission_contract.py	10	tooling	10	tooling	.github/workflows/release.yml,scripts/check-version-sync.sh
+tests/test_disable_sources_replay_walk.py	2	other	3	other	-
+tests/test_docs_changelog_refresh.py	19	tooling	19	tooling	scripts/check-changelog-coverage.py
+tests/test_docs_live_revision_gate.py	3	tooling	3	tooling	scripts/check-docs-live-revision.py
+tests/test_docs_publication_contract.py	9	tooling	9	tooling	.github/workflows/docs-edge.yml,scripts/copy-markdown-twins.py,scripts/verify-docs-publication.py
+tests/test_documentation_consistency_audit_contract.py	20	tooling	20	tooling	scripts/README.md
+tests/test_documentation_toolchain_contract.py	5	tooling	5	tooling	Makefile
+tests/test_gencc_docs_contract.py	4	other	4	other	-
+tests/test_gwas_day_cache_contract.py	1	other	1	other	-
+tests/test_http_cache_fail_soft.py	10	other	11	other	-
+tests/test_json_list_contract.py	2	other	2	other	-
+tests/test_lint.py	21	tooling	21	tooling	scripts/probe.py,scripts/probe.py:1:# Ticket 1234 planted citation,scripts/production_probe.py,tools/check-source-capture-receipts.py,tools/check-tracked-text
+tests/test_llms_txt_contract.py	2	other	2	other	-
+tests/test_markdown_twins_contract.py	2	other	2	other	-
+tests/test_mcp_2026_protocol.py	7	tooling	7	tooling	tools/call,tools/list
+tests/test_mcp_http_surface.py	13	tooling	13	tooling	tools/call
+tests/test_mcp_stdio_guidance.py	3	tooling	3	tooling	tools/list
+tests/test_mcp_tool_catalog.py	8	tooling	8	tooling	scripts/measure-mcp-tools.py,tools/list UTF-8 bytes,tools/list UTF-8 bytes: ,tools/list UTF-8 bytes: \d+ \(ceiling: ,tools/list cl100k_base tokens,tools/list cl100k_base tokens: 27,tools/list cl100k_base tokens: \d+ \(ceiling:
+tests/test_measurement_coverage_contract.py	1	tooling	1	tooling	scripts/run-specs.sh,tools/measure-0-9-3-baseline
+tests/test_measurement_summary_contract.py	4	tooling	4	tooling	scripts/run-specs.sh,tools/measure-0-9-3-baseline
+tests/test_merge_conflict_markers.py	3	other	3	other	-
+tests/test_nci_filter_transport.py	2	other	2	other	-
+tests/test_no_cache_managed_state.py	5	other	5	other	-
+tests/test_no_climb_tracked_script.py	3	tooling	3	tooling	scripts/check-no-climb-tracked.sh
+tests/test_offline_gate_contract.py	14	tooling	14	tooling	.github/workflows/ci.yml,Makefile,scripts/run-specs.sh prepare-spec,tools/check-offline-network,tools/run-offline -- true
+tests/test_output_footprint_benchmark.py	4	other	4	other	-
+tests/test_png_artifact_contract.py	3	tooling	3	tooling	.github/workflows/ci.yml,Makefile,scripts/release-smoke.sh,tools/check-png-artifact,tools/check-png-artifact target/release/biomcp
+tests/test_prepare_spec_artifacts.py	3	tooling	3	tooling	scripts/prepare-spec-artifacts.py,scripts/run-specs.sh
+tests/test_provider_contract_fixture.py	3	other	3	other	-
+tests/test_provider_network_policy.py	6	other	6	other	-
+tests/test_public_example_accessions.py	3	other	3	other	-
+tests/test_public_install_docs_contract.py	7	other	7	other	-
+tests/test_public_installer_checksum.py	18	tooling	18	tooling	.github/workflows/ci.yml,scripts/verify-public-installer.sh
+tests/test_public_landing_copy_docs_contract.py	3	other	3	other	-
+tests/test_public_search_all_docs_contract.py	12	other	12	other	-
+tests/test_public_skill_docs_contract.py	5	other	5	other	-
+tests/test_python_contract_parallelism.py	5	tooling	5	tooling	.github/workflows/ci.yml,Makefile
+tests/test_python_lane_cache_isolation.py	1	other	2	other	-
+tests/test_quality_ratchet_contract.py	48	tooling	48	tooling	scripts/run-specs.sh,tools/check-mcp-allowlist.py,tools/check-quality-ratchet.py,tools/check-quality-ratchet.sh,tools/check-source-registry.py,tools/dead-code-exceptions.json,tools/source-status-typing-allowlist.json,tools/spec_smoke_args.py,tools/with-build-identity cargo build --bin biomcp
+tests/test_release_candidate.py	16	other	16	other	-
+tests/test_release_container.py	7	other	7	other	-
+tests/test_release_draft_notes.py	2	tooling	2	tooling	.github/workflows/release.yml
+tests/test_release_homebrew.py	4	other	4	other	-
+tests/test_release_mcpb.py	13	other	13	other	-
+tests/test_release_metadata_contract.py	10	tooling	10	tooling	scripts/check-version-sync.sh
+tests/test_release_notes.py	5	other	5	other	-
+tests/test_release_package.py	16	other	16	other	-
+tests/test_release_promotion.py	17	other	17	other	-
+tests/test_release_signing.py	8	other	8	other	-
+tests/test_release_smoke_script.py	2	tooling	2	tooling	scripts/release-smoke.sh
+tests/test_release_targets.py	6	other	6	other	-
+tests/test_release_versions_check.py	8	tooling	8	tooling	scripts/check-release-versions.py
+tests/test_release_workflow_provenance.py	36	tooling	36	tooling	.github/workflows/release.yml,Makefile,scripts/,scripts/check-wheel-glibc-floor.py --elf target/${{ matrix.target }}/release/biomcp 2.28,scripts/should-move-latest.sh,tools/,tools/with-build-identity ,tools/with-build-identity env
+tests/test_routine_cargo_feature_contract.py	8	tooling	8	tooling	.github/workflows/ci.yml,Makefile,scripts/prepare-spec-artifacts.py,scripts/run-specs.sh
+tests/test_sdlc_clean_contract.py	1	other	1	other	-
+tests/test_sdlc_project_lifecycle_contract.py	22	tooling	22	tooling	Makefile
+tests/test_shell_workflow_lint_contract.py	3	tooling	3	tooling	Makefile,tools/bootstrap-lint-tools,tools/check-shell-workflows,tools/lint-inventory.json
+tests/test_short_unix_socket_contract.py	1	other	1	other	-
+tests/test_should_move_latest.py	7	tooling	7	tooling	scripts/should-move-latest.sh
+tests/test_skill_prompt_contract.py	4	other	4	other	-
+tests/test_slow_test_reporting.py	4	tooling	4	tooling	tools/report-slow-tests.py
+tests/test_small_rust_test_boundaries.py	3	other	3	other	-
+tests/test_source_child_stdio_guard.py	13	other	13	other	-
+tests/test_source_external_xml_guard.py	7	other	7	other	-
+tests/test_source_licensing_docs_contract.py	12	other	13	tooling	tools/render-source-licensing.py
+tests/test_source_package_boundary.py	10	tooling	10	tooling	tools/check-artifact-fixtures,tools/check-zero-coupling.py
+tests/test_source_pages_docs_contract.py	11	other	11	other	-
+tests/test_streamable_http_demo.py	5	other	5	other	-
+tests/test_stress_lane_contract.py	7	tooling	7	tooling	Makefile
+tests/test_update_command_docs_contract.py	3	other	3	other	-
+tests/test_upstream_planning_analysis_docs.py	25	tooling	25	tooling	.github/workflows/ci.yml,.github/workflows/contracts.yml,.github/workflows/release.yml,.github/workflows/spec-smoke.yml,Makefile,scripts/README.md,scripts/check-version-sync.sh,scripts/contract-smoke.sh,scripts/geneagent-demo.sh,scripts/genegpt-demo.sh,scripts/prepare-spec-artifacts.py,scripts/regenerate-alphagenome-proto --check,scripts/run-specs.sh,scripts/source-contracts.md,tools/bootstrap-lint-tools,tools/spec_smoke_args.py
+tests/test_variant_article_disabled_sources.py	0	absent	1	tooling	tools/call
+tests/test_variant_article_exact_fulltext.py	1	other	1	other	-
+tests/test_variant_article_live_canary.py	14	other	14	other	-
+tests/test_variant_article_transcript_aliases.py	0	absent	1	tooling	tools/call,tools/replay-server
+tests/test_variant_normalize_json_contract.py	1	other	1	other	-
+tests/test_version_sync_script.py	14	tooling	14	tooling	scripts/check-mcp-registry-server.sh,scripts/check-version-sync.sh
+tests/test_wheel_glibc_floor_check.py	15	tooling	15	tooling	scripts/check-wheel-glibc-floor.py
+tests/test_zero_coupling_ratchet.py	15	tooling	15	tooling	scripts/setup.sh,tools/check-zero-coupling.py
+```
+
+The initial native attempt `2214/1792410304955-14544` stopped after preparing the old group because system Bash rejected an empty-array expansion under `set -u`. It supplied no paired timing result. The corrected helper and system-Bash contract above replace that attempt. Red entry-point proof `2214/1792410142528-79593` failed both new contract cases for missing outputs and an unsupported retained-log option; focused green proof `2214/1792410451622-42207` passes all 15 measurement contracts, including unavailable inputs, incomplete logs, Windows color output, collected-case/function distinctions and the existing coverage contracts. No earlier measurement is relabeled by these corrections.
+
+
 ## Qualification after the release repairs, 2026-10-18
 
 The reviewed repairs landed at `f7c08d7c09479a3cf6c7336f779f4e46e1ce861b`. The disabled-article-source regression now supplies its missing offline OLS4 reply; production warning behavior and the genuine-provider-failure assertion remain intact. The cache repair reads an already-current startup-maintenance stamp before taking the optional exclusive lock and preserves the under-lock recheck. Its existing twelve-process CLI regression reproduced thirteen requests instead of two under bounded lock-contention diagnostics, then passed with the repair in `2208/1792331252385-4021365`. The normal focused proof also passed all 20 fail-soft/persistent-size Python cases and 37 cache-manager Rust cases in `2208/1792331251367-78082`.
