@@ -33,6 +33,7 @@ Use the real byte-total lock to reproduce a successful response and skipped cach
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-19 landed 4bda79411d59bc5c4ed10eacf3f18d0ffcd26f0c; next: Record completed review batch; retain 2079 for its remaining command coverage.
 
 ## Development brief and reproduction
 
