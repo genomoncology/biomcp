@@ -20,7 +20,12 @@ from urllib.parse import parse_qsl, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from replay_drift import ID_ALIASES, reply_shape, shape_drift  # noqa: E402
+from replay_drift import (  # noqa: E402
+    ID_ALIASES,
+    product_headers,
+    reply_shape,
+    shape_drift,
+)
 
 SENSITIVE = re.compile(r"api.?key|token|password|secret|authorization|credential", re.I)
 MAX_REPLY_BYTES = 32 * 1024 * 1024
@@ -133,7 +138,15 @@ def request_metadata(
             raise ValueError("request body does not match recorded request hash")
     elif entry.get("request_body"):
         raise ValueError("unexpected request body")
-    return method, url, body, {**headers, "Accept-Encoding": "identity"}
+    return (
+        method,
+        url,
+        body,
+        {
+            **product_headers(ROOT),
+            **{name.lower(): value for name, value in headers.items()},
+        },
+    )
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):

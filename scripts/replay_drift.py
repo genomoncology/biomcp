@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import tomllib
+from pathlib import Path
 from xml.etree import ElementTree
 
 ID_ALIASES = {
@@ -16,6 +18,18 @@ ID_ALIASES = {
     "gwas": "gwas-catalog",
     "europepmc": "europe-pmc",
 }
+
+
+def product_headers(root: Path) -> dict[str, str]:
+    """Shared client's uncached application profile; urllib transport stays distinct."""
+    version = tomllib.loads((root / "Cargo.toml").read_text())["package"]["version"]
+    return {
+        "user-agent": f"biomcp-cli/{version}",
+        "accept": "*/*",
+        "cache-control": "no-store",
+        # Keep bounded replies directly comparable without a decompressor.
+        "accept-encoding": "identity",
+    }
 
 
 def segment(name: str) -> str:
