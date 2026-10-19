@@ -45,3 +45,4 @@ The source-frozen candidate is pushed main 51f5e03b218c87cedc82bd9e1a67552bd5ab9
 - 2026-10-19 next: Frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 passed full main and enabled live replay. Final same-host paired collection against v0.9.3 is authorized and preparing with the unchanged helper.
 
 Keep: experiments/809-biomcp-2234-paired — retain every raw sample, failed attempt, continuation, cache body/accounting and method input through review and release consumers.
+- 2026-10-19 next: Blocked on build-host disk headroom below v0.9.3 default cache-retention floor plus one full measurement arm. Four valid old timing rows and the known2220 pressure-eviction failure are retained in809; completed BioMCP builds reclaimed. PM routed further safe headroom request. Resume only missing rows after measured headroom, without product or threshold changes.
