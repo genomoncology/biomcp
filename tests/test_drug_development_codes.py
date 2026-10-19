@@ -43,6 +43,8 @@ def development_cli(tmp_path, monkeypatch):
                     chembl_id, name = identity
                     if state["mode"] == "conflicting_card":
                         chembl_id = "CHEMBL9999999"
+                    if state["mode"] == "qualified_card":
+                        name += " unrelated"
                     hit = {"_id": chembl_id, "chembl": {"molecule_chembl_id": chembl_id, "pref_name": name}}
                 body = {"total": 1, "hits": [hit]}
             elif target.path == "/chembl/molecule.json":
@@ -111,7 +113,7 @@ def test_development_codes_resolve_the_same_identity_singly_and_in_batch(develop
                for path, query in requests if path == "/chembl/molecule.json")
 
 
-@pytest.mark.parametrize("mode", ["ambiguous", "substring", "conflicting_card", "incomplete", "unavailable"])
+@pytest.mark.parametrize("mode", ["ambiguous", "substring", "conflicting_card", "qualified_card", "incomplete", "unavailable"])
 def test_development_code_refuses_unconfirmed_identity(development_cli, mode):
     run, state, _requests = development_cli
     state["mode"] = mode

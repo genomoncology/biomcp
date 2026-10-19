@@ -42,7 +42,10 @@ pub(super) async fn resolve(
         .iter()
         .filter_map(|hit| hit.chembl.as_ref()?.molecule_chembl_id.as_deref())
         .collect();
-    if molecule_ids.is_empty()
+    let card = transform::drug::merge_mychem_hits(&selected, candidate);
+    if !card.name.eq_ignore_ascii_case(candidate)
+        || card.chembl_id.as_deref() != Some(identity.molecule_chembl_id.as_str())
+        || molecule_ids.is_empty()
         || molecule_ids
             .iter()
             .any(|id| *id != identity.molecule_chembl_id)
