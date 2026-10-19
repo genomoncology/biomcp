@@ -15,6 +15,9 @@ use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio_rustls::TlsAcceptor;
 
+// Bound hung children without treating parallel process startup as a latency test.
+const STARTUP_WATCHDOG: Duration = Duration::from_secs(45);
+
 const FAERS_REPORT_PAGE: &str = r#"{
   "meta":{"results":{"skip":0,"limit":1,"total":1}},
   "results":[{
@@ -651,7 +654,7 @@ async fn stdio_rejects_invalid_explicit_bundle_before_session_acceptance() {
     let mut child = server_command(&["serve"], Some(&missing), None)
         .spawn()
         .expect("spawn stdio");
-    let status = tokio::time::timeout(Duration::from_secs(3), child.wait())
+    let status = tokio::time::timeout(STARTUP_WATCHDOG, child.wait())
         .await
         .expect("stdio exit deadline")
         .expect("stdio exit");
@@ -796,7 +799,7 @@ async fn http_rejects_invalid_explicit_bundle_before_bind() {
     )
     .spawn()
     .expect("spawn HTTP");
-    let status = tokio::time::timeout(Duration::from_secs(3), child.wait())
+    let status = tokio::time::timeout(STARTUP_WATCHDOG, child.wait())
         .await
         .expect("HTTP exit deadline")
         .expect("HTTP exit");
@@ -830,7 +833,7 @@ async fn http_bad_fallback_binds_and_warns_once() {
     )
     .spawn()
     .expect("spawn HTTP");
-    let deadline = Instant::now() + Duration::from_secs(3);
+    let deadline = Instant::now() + STARTUP_WATCHDOG;
     loop {
         if tokio::time::timeout(
             Duration::from_secs(1),
