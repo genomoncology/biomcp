@@ -37,3 +37,4 @@ Study and reproduce the uncached article-search gap before proposing source edit
 ## Progress
 
 - 2026-10-19 started
+- 2026-10-19 landed 25fb2a977f84e5153d10d831f9732ba1ff8c6ab0; next: Retain 2079 for remaining golden coverage; complete the accepted article-speed and GWAS evidence outcomes after this shared source batch.
