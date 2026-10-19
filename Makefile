@@ -227,8 +227,8 @@ stress: prepare-routine-test-tmp
 	repeat="$${BIOMCP_STRESS_REPEAT:-3}"; \
 	scale="$${BIOMCP_TEST_TIMEOUT_SCALE:-6}"; \
 	for round in $$(seq 1 "$$repeat"); do \
-	  echo "=== stress round $$round/$$repeat (two CPUs, 4 workers, timeout scale $$scale) ==="; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
+	  echo "=== stress round $$round/$$repeat (one CPU, 4 workers, timeout scale $$scale) ==="; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
 	    -E 'test(subprocess_lease_defers_old_generation_cleanup_until_reader_exits) | test(subprocess_lease_child_exits_on_parent_end_of_input) | test(cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work) | test(cancelled_publication_settles_and_the_previous_generation_survives)'; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/golden -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/golden -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
 	done

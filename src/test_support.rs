@@ -291,10 +291,11 @@ pub(crate) fn block_until_stdin_closes() -> String {
 
 /// Write one readiness line on the real stdout fd. libtest captures the
 /// `print!` family, so the parent scans for this exact line instead.
+/// Start a new line because libtest may leave its test-name prefix on stdout.
 pub(crate) fn signal_ready_on_raw_stdout(marker: &str) {
     let mut stdout = std::io::stdout();
     stdout
-        .write_all(format!("{marker}\n").as_bytes())
+        .write_all(format!("\n{marker}\n").as_bytes())
         .expect("write readiness marker");
     stdout.flush().expect("flush readiness marker");
 }

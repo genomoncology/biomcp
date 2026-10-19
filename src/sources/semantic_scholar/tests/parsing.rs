@@ -92,11 +92,14 @@ fn parses_graph_and_recommendation_fixtures() {
             false,
         )
         .unwrap();
-    assert_eq!(citations.data.len(), 1);
+    assert_eq!(citations.data.as_ref().unwrap().len(), 1);
     assert_eq!(citations.offset, None);
     assert_eq!(citations.next, None);
     assert_eq!(
-        citations.data[0].citing_paper.paper_id.as_deref(),
+        citations.data.as_ref().unwrap()[0]
+            .citing_paper
+            .paper_id
+            .as_deref(),
         Some("citing-paper")
     );
 
@@ -164,6 +167,8 @@ fn receipted_20516115_graph_captures_keep_provider_identity_and_all_recommendati
         .unwrap();
     let provider_only = citations
         .data
+        .as_ref()
+        .unwrap()
         .iter()
         .find(|edge| {
             edge.citing_paper.paper_id.as_deref()

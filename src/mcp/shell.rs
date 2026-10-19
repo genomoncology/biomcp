@@ -1,7 +1,6 @@
 use std::collections::BTreeSet;
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
-use std::time::Duration;
 
 use base64::Engine;
 use futures::FutureExt;
@@ -1810,24 +1809,18 @@ pub async fn run_stdio() -> anyhow::Result<()> {
             cancel.cancel();
         }
     });
-    let startup = tokio::time::timeout(Duration::from_secs(5), async {
-        let transport = pre_session::stdio_transport().await?;
-        BioMcpServer::new()
-            .serve_with_ct(transport, shutdown)
-            .await
-            .map_err(anyhow::Error::new)
-    })
-    .await;
-    let running = match startup {
-        Ok(Ok(running)) => running,
-        Ok(Err(err)) => {
+    let transport = pre_session::stdio_transport().await?;
+    let running = match BioMcpServer::new()
+        .serve_with_ct(transport, shutdown)
+        .await
+        .map_err(anyhow::Error::new)
+    {
+        Ok(running) => running,
+        Err(err) => {
             if is_handshake_startup_error(&err) {
                 anyhow::bail!("{}", mcp_stdio_guidance());
             }
             return Err(err);
-        }
-        Err(_) => {
-            anyhow::bail!("{}", mcp_stdio_guidance());
         }
     };
     let _reason = running.waiting().await?;
