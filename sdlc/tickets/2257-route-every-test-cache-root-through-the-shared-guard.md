@@ -31,3 +31,7 @@ An inventory lists every test that sets a cache directory and shows each uses th
 Use a dedicated shared Rust set_cache_root helper, the existing dev-only fixture crate for child cache environment pairs, a shared Python root setter, and one shell fixture policy helper. Preserve explicit policy probes and passed cache configurations; controlled measurement arms and their harness method stay unchanged. Replace independent wrapper mutation/restoration only where equivalent; otherwise retain its provider guard and hold the shared cache guard separately. Keep every assertion and intentional override. The existing central-helper quality check must reject a new uncontrolled root assignment, with narrow exceptions only for the actual shared helper definitions. Complete the fixture-only groups as one coherent change with one final green source push.
 
 Keep: experiments/491-biomcp-2257-cache-fixture-inventory — retain the original static inventory until its complete contents are verified in the execution evidence archive.
+
+## Progress
+
+- 2026-10-19 started
