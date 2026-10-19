@@ -428,14 +428,9 @@ fn protein_change_resolution_without_matching_hits_keeps_the_search_suggestion()
 }
 
 #[test]
-fn protein_change_resolution_notes_the_numbering_when_the_hit_does_not_spell_the_request() {
-    // Recorded TP53 R116Q shape (query_tp53_r116q_20261007.json): the single
-    // hit is ClinVar 12356, whose preferred name sits on NM_000546, TP53's
-    // MANE Select transcript; the request follows a shorter isoform's
-    // numbering (p.Arg116Gln), so the answer must say which numbering
-    // matched instead of resolving silently. ClinVar's accession version
-    // (.6) is current where the SnpEff build lags (.5), so the note names
-    // the current accession.
+fn protein_change_resolution_does_not_infer_numbering_from_merged_tokens() {
+    // Authored reduction of the recorded shape removes the requested
+    // transcript projection while retaining merged alias tokens.
     let hits = vec![
         ProteinHitBuilder::default()
             .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
@@ -451,13 +446,7 @@ fn protein_change_resolution_notes_the_numbering_when_the_hit_does_not_spell_the
     let resolved = resolve_protein_change_hit("TP53 R116Q", "TP53", "R116Q", hits, mane.as_deref())
         .expect("a unique provider hit resolves");
     assert_eq!(mane.as_deref(), Some("NM_000546.6"));
-    let note = protein_change_numbering_note(&resolved, "R116Q", mane.as_deref())
-        .expect("the answer names the numbering that matched");
-    assert_eq!(
-        note,
-        "Numbering note: resolved on NM_000546.6 as p.Arg248Gln; the \
-         requested R116Q follows another transcript's numbering."
-    );
+    assert!(protein_change_numbering_note(&resolved, "R116Q", mane.as_deref()).is_none());
 
     let variant =
         transform::variant::from_myvariant_hit_with_mane(&resolved, mane.as_deref(), Some("R116Q"));
@@ -727,14 +716,10 @@ fn protein_change_resolution_returns_the_mane_named_candidate_of_two_alias_hits(
     assert_eq!(variant.protein_numbering_note, None);
 }
 
-/// The honest note is pinned through the same decision the flow runs once
-/// the canonical facts are in hand: UniProt P04637 has Ser at 116, not Arg,
-/// so the requested R116Q truly follows another transcript's numbering and
-/// the answer must say which numbering matched. Silencing the note (or
-/// swapping it for a refusal) fails this test (the note rule pins the
-/// transcript-naming behavior).
+/// A reduced TP53 hit retains only MANE and merged aliases. A mismatched
+/// canonical residue cannot replace the missing request transcript projection.
 #[test]
-fn protein_change_resolution_pins_the_true_other_transcript_numbering_note() {
+fn protein_change_resolution_refuses_merged_aliases_without_a_versioned_projection() {
     let hits = vec![
         ProteinHitBuilder::default()
             .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
@@ -750,7 +735,7 @@ fn protein_change_resolution_pins_the_true_other_transcript_numbering_note() {
         .expect("a unique provider hit resolves");
 
     let facts = canonical_facts("P04637", Some('S'), 393, "NM_000546.6");
-    let note = refuse_or_note_with_facts(
+    let error = refuse_or_note_with_facts(
         "TP53 R116Q",
         "TP53",
         "R116Q",
@@ -758,14 +743,11 @@ fn protein_change_resolution_pins_the_true_other_transcript_numbering_note() {
         mane.as_deref(),
         &facts,
     )
-    .expect("the true other-transcript numbering prints its note");
-    assert_eq!(
-        note,
-        Some(
-            "Numbering note: resolved on NM_000546.6 as p.Arg248Gln; the \
-             requested R116Q follows another transcript's numbering."
-                .to_string(),
-        )
+    .expect_err("merged tokens cannot establish a request-matching projection");
+    assert!(
+        error
+            .to_string()
+            .contains("versioned transcript projection")
     );
 }
 

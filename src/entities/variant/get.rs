@@ -324,6 +324,52 @@ fn hit_names_requested_change(
         .is_some_and(|protein| protein_changes_equivalent(change, &protein))
 }
 
+/// Both protein spellings must be paired with versioned coding transcript
+/// projections on this source allele. Merged protein aliases prove no identity.
+fn has_same_allele_transcript_projection(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> bool {
+    let Some(snpeff) = hit.snpeff.as_ref() else {
+        return false;
+    };
+    let versioned_coding = |ann: &crate::sources::myvariant::MyVariantSnpeffAnnotation| {
+        ann.feature_id.as_deref().is_some_and(|feature| {
+            feature.rsplit_once('.').is_some_and(|(stem, version)| {
+                (stem.starts_with("NM_") || stem.starts_with("XM_") || stem.starts_with("ENST"))
+                    && !version.is_empty()
+                    && version.bytes().all(|byte| byte.is_ascii_digit())
+                    && stem
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+            })
+        }) && ann
+            .hgvs_c
+            .as_deref()
+            .is_some_and(|coding| coding.starts_with("c.") && coding.len() > 2)
+            && ann
+                .hgvs_p
+                .as_deref()
+                .and_then(super::normalize_protein_change)
+                .is_some()
+    };
+    let Some(selected) =
+        transform::variant::selected_snpeff_annotation_index(hit, mane_transcript, Some(change))
+            .and_then(|index| snpeff.ann.get(index))
+    else {
+        return false;
+    };
+    versioned_coding(selected)
+        && snpeff.ann.iter().any(|ann| {
+            versioned_coding(ann)
+                && ann
+                    .hgvs_p
+                    .as_deref()
+                    .is_some_and(|protein| protein_changes_equivalent(change, protein))
+        })
+}
+
 /// A gene+protein query can resolve to a hit whose headline protein change
 /// does not spell the request (a unique provider hit, or the only named
 /// match): `TP53 R116Q` reaches the `p.Arg248Gln` variant through a shorter
@@ -337,6 +383,9 @@ fn protein_change_numbering_note(
     mane_transcript: Option<&str>,
 ) -> Option<String> {
     super::normalize_protein_change(change)?;
+    if !has_same_allele_transcript_projection(hit, change, mane_transcript) {
+        return None;
+    }
     let protein = transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))?;
     if protein_changes_equivalent(change, &protein) {
         return None;
@@ -378,8 +427,8 @@ struct CanonicalProteinFacts {
     residue: Option<char>,
     /// The canonical sequence's length, so a requested position beyond it
     /// (`BRCA1 Y1866D` against the 1863-residue P38398) is distinguishable
-    /// from an unreadable sequence: a position the protein cannot hold
-    /// proves the request follows another numbering by itself.
+    /// from an unreadable sequence. Transcript projections must establish
+    /// whether another numbering actually belongs to this allele.
     sequence_length: Option<u32>,
     mane_transcript: Option<String>,
 }
@@ -423,8 +472,9 @@ async fn canonical_protein_facts(
 /// match spells the request on the shorter isoform while MANE names
 /// `p.Ser315Tyr`), so `get variant` refuses rather than return the
 /// lookalike. When the check instead
-/// finds a different residue at the position, the request really does
-/// follow another transcript's numbering and the answer says so. When the request names no residue, or the sequence lookup is
+/// finds a different residue at the position, paired versioned transcript
+/// projections must establish the same allele before the answer says the
+/// request follows another transcript's numbering. When the request names no residue, or the sequence lookup is
 /// unavailable, nothing is proven either way — and an unverified
 /// other-transcript claim is exactly the false note this rule removes
 /// so the answer stays silent.
@@ -543,23 +593,15 @@ fn refuse_or_note_with_facts(
     let Some((from, position)) = requested_reference_residue(change) else {
         return Ok(None);
     };
-    let Some(residue) = facts.residue else {
-        // No residue to compare: a requested position the canonical protein
-        // cannot hold proves the request follows another numbering without
-        // one (`BRCA1 Y1866D` past the 1863 residues of P38398),
-        // so the other-transcript note prints; a sequence the record never
-        // carried proves nothing either way and the
-        // answer stays silent.
-        if facts
+    let other_numbering = facts.residue.is_some_and(|residue| residue != from)
+        || facts
             .sequence_length
-            .is_some_and(|length| position > length)
-        {
-            // The note names the headline's own transcript and spelling; a
-            // record that cannot name one refuses like the no-protein-change
-            // case below instead of resolving silently.
-            if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
-                return Ok(Some(note));
-            }
+            .is_some_and(|length| position > length);
+    if other_numbering {
+        let (Some(transcript), Some(protein)) = (
+            transform::variant::canonical_transcript(hit, mane_transcript, Some(change)),
+            transform::variant::canonical_protein_change(hit, mane_transcript, Some(change)),
+        ) else {
             return Err(protein_change_absent_refusal_message(
                 id,
                 gene,
@@ -567,45 +609,23 @@ fn refuse_or_note_with_facts(
                 hit,
                 mane_transcript,
             ));
+        };
+        if !has_same_allele_transcript_projection(hit, change, mane_transcript) {
+            return Err(BioMcpError::InvalidArgument(format!(
+                "No MANE-numbered variant matches '{id}': no request-matching versioned transcript projection with paired coding and protein changes proves the same genomic allele as the answer. BioMCP refuses rather than return the wrong variant.\n\
+Retry `biomcp get variant` with a transcript-qualified HGVS naming '{change}', or search the spelling: biomcp search variant -g {gene} --hgvsp {change}."
+            )));
         }
-        return Ok(None);
-    };
-    if residue != from {
-        // The canonical protein holds a different residue at the requested
-        // position, so the request follows another transcript's numbering —
-        // proven by the record, not guessed. The answer must say so instead
-        // of resolving an isoform spelling silently: the
-        // standard note when the headline names a different change, and an
-        // equivalent headline's own note naming the transcript it resolved
-        // on; a record that cannot name its transcript or its protein change
-        // refuses rather than resolve with nothing to say.
         if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
             return Ok(Some(note));
         }
-        let transcript =
-            transform::variant::canonical_transcript(hit, mane_transcript, Some(change));
-        let protein =
-            transform::variant::canonical_protein_change(hit, mane_transcript, Some(change));
-        return Ok(Some(match (transcript.as_deref(), protein.as_deref()) {
-            (Some(transcript), Some(protein)) => format!(
-                "Numbering note: resolved on {transcript} as {protein}; the requested \
-                 {change} follows another transcript's numbering."
-            ),
-            (Some(transcript), None) => format!(
-                "Numbering note: the requested {change} follows another transcript's \
-                 numbering; the record names no protein change on {transcript}."
-            ),
-            (None, _) => {
-                return Err(protein_change_absent_refusal_message(
-                    id,
-                    gene,
-                    change,
-                    hit,
-                    mane_transcript,
-                ));
-            }
-        }));
+        return Ok(Some(format!(
+            "Numbering note: resolved on {transcript} as {protein}; the requested {change} follows another transcript's numbering."
+        )));
     }
+    let Some(residue) = facts.residue else {
+        return Ok(None);
+    };
     let Some(reference) = super::amino_acid_three_letter(residue) else {
         return Ok(None);
     };
