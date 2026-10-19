@@ -60,3 +60,7 @@ The coordinator adopted accepted2246source02c08e8fcfc480c5719a14978e41977628ca76
 Owning regression should also return a clearly authored SUR1-only article control when that alias is queried, preserving existing typed-gene/same-DNA identity classification. Do not claim recovery of any real extra paper without its recorded identity proof. The old broad Proof wording is interpreted under the later PM ruling: source-backed query expansion is required when facts exist; restriction is fallback only.
 
 Fixture compatibility claim: extend the existing2246alias-coverage fixture with an authored empty MyGene query/base while preserving all its assertions. The existing transcript-alias fixture may explicitly disable the unrelated MyGene alias lookup, preserving its recorded bytes and all transcript/typed-gene identity assertions. These source-controlled fixtures must work in normal gates; a special job-only environment is insufficient. Report any other exact affected fixture path before editing it.
+
+## Query ordering decision
+
+PM approved queried primary symbol first, followed by MyGene aliases in descending spelling length with source order retained for ties, within the existing query cap. Longer spellings are less ambiguous. Preserve original recorded aliases and disclose omissions; use no gene-specific exception. Typed Gene annotation and same-DNA variant identity remain required.
