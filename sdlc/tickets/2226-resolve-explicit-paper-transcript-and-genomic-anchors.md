@@ -4,7 +4,7 @@ priority: 3
 
 # 2226 — Resolve explicit paper transcript and genomic anchors
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -15,6 +15,8 @@ Reviews: revision 9ce8792, accept
 Reviews: revision cf74f5f, accept
 
 Reviews: revision e400124, accept
+
+Landed: dd4b9ce
 
 ## Outcome
 
