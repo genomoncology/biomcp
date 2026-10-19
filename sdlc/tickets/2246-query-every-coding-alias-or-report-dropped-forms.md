@@ -12,6 +12,8 @@ Milestone: 0.9.4
 
 `biomcp variant articles` sends every protein and coding form it resolved for the variant to the literature sources, or names in its output and debug plan each form it did not send and why. Other-transcript forms follow the transcript-alias decision.
 
+- Changes: `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_alias_coverage.py` `tests/fixtures/article/coding-aliases/**` `CHANGELOG.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md`. `src/entities/article/backends/provider_unit.rs`
+
 ## Evidence
 
 Reproduced on 0.9.3: `biomcp --json variant articles 'ABCC8 R1437Q' --limit 5 --debug-plan --verify-identity` resolves twelve protein and coding aliases but queries ten. `c.4310G>A` and `c.4373G>A` are never sent and the omission is not reported. Europe PMC `ABCC8 AND "c.4310G>A"` returns PMID 41948559, an open-access paper that names the variant only that way. Several query slots go to other-transcript protein forms (R1353Q, R1425Q, R1458Q).
@@ -30,7 +32,7 @@ Restate the approved outcome, reproduce on current main before source edits, and
 
 ## Granted implementation brief
 
-- Changes: `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_alias_coverage.py` `tests/fixtures/article/coding-aliases/**` `CHANGELOG.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md`. `src/entities/article/backends/provider_unit.rs`
+
 
 Restated outcome: every resolved protein/coding form is queried or explicitly reported as omitted with its reason in ordinary and debug output. Choose the approved disclosure outcome to preserve existing request caps and deadline. No new identity fallback or query expansion.
 
