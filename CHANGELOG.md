@@ -82,6 +82,8 @@
 
 ### Internal
 
+- Keep recorded disease query pages in canonical replay storage for fixture consumers and source checks. (2277)
+
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 
 - Synchronize the disease deadline control with provider request arrival before advancing test time. (2276)

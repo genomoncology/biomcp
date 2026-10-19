@@ -38,7 +38,7 @@ def semantic_provider(
     }
     disease_pages = []
     if melanoma:
-        disease_pages = [json.loads((ROOT / "testdata/disease-resolution" / name).read_text())
+        disease_pages = [json.loads((ROOT / "testdata/replay/responses/mydisease" / name).read_text())
                          for name in ["melanoma-page-one.json", "melanoma-page-two.json"]]
         titles = {
             "39118875": "Unrelated fixture condition",
