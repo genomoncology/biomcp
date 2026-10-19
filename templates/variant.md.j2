@@ -179,6 +179,7 @@ No COSMIC context reported.
 {% endif -%}
 {% if show_cgi_section -%}
 ## CGI Drug Associations (Cancer Genome Interpreter)
+{{ cgi_source_note }}
 {% if cgi_associations -%}
 | Drug | Association | Tumor Type | Evidence |
 |---|---|---|---|
@@ -186,7 +187,7 @@ No COSMIC context reported.
 | {{ row.drug }} | {{ row.association or "-" }} | {{ row.tumor_type or "-" }} | {{ row.evidence_level or "-" }} |
 {% endfor -%}
 {% else -%}
-No CGI drug associations reported.
+{{ cgi_empty_note }}
 {% endif -%}
 {% endif -%}
 {% if show_civic_section -%}

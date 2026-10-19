@@ -18,6 +18,10 @@ pub(crate) use self::adverse_event::{
     source_search_section_sources as adverse_event_source_search_section_sources,
     subset_section_sources as adverse_event_subset_section_sources,
 };
+pub(crate) const VARIANT_CGI_SOURCE_NOTE: &str =
+    "MyVariant's variant-level CGI subset, loaded 2023-02-27.";
+pub(crate) const VARIANT_CGI_EMPTY_NOTE: &str = "No record in this subset.";
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SectionSource {
     pub key: String,
