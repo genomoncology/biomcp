@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 14f701f, accept
+
 ## Outcome
 
 Each of three suspected user-facing bugs is either shown fixed on current main or fixed in this ticket.
