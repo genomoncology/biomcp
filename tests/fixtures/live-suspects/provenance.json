@@ -1,0 +1,20 @@
+{
+  "kind": "authored controls, not recorded provider replies",
+  "purpose": "Model the observed identity omission, discovery ranking, and diagnostic resolver gap without redistributing full provider payloads. Example DDInter partners and IDs are authored and make no clinical claim.",
+  "licensing": "The complete MyChem response includes DrugBank content; redistribution permission has not been established. No complete provider response or DrugBank narrative is included. Names and identifiers are minimal identity controls.",
+  "sources": [
+    "https://mychem.info/",
+    "https://www.ebi.ac.uk/ols4/",
+    "https://mydisease.info/"
+  ],
+  "files": [
+    "aspirin-authored.json",
+    "ddinter-authored.csv",
+    "discover-authored.json",
+    "discovery-controls-authored.json",
+    "disease-detail-authored.json",
+    "disease-empty-authored.json",
+    "disease-query-authored.json",
+    "provenance.json"
+  ]
+}

@@ -638,6 +638,42 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
         }
     }
 
+    // General discovery leaves ontology aliases unclassified without a
+    // structured drug type. An explicit drug lookup can corroborate one
+    // exact alias with the named DrugBank record, while retaining the
+    // separate drug signal above and refusing competing exact identities.
+    let exact_candidates = result
+        .concepts
+        .iter()
+        .filter(|concept| {
+            matches!(
+                concept.primary_type,
+                crate::entities::discover::DiscoverType::Drug
+                    | crate::entities::discover::DiscoverType::Unknown
+            ) && concept.match_tier == crate::entities::discover::MatchTier::Exact
+                && concept.confidence == crate::entities::discover::DiscoverConfidence::CanonicalId
+        })
+        .collect::<Vec<_>>();
+    if let Some(candidate) = exact_candidates.first()
+        && candidate.primary_type == crate::entities::discover::DiscoverType::Unknown
+        && !candidate.label.trim().is_empty()
+        && exact_candidates.iter().all(|other| {
+            normalized_discover_drug_label(&other.label)
+                == normalized_discover_drug_label(&candidate.label)
+        })
+        && let Some(response) = named_drug_response(&candidate.label).await
+        && transform::drug::select_hits_for_name(&response.hits, &candidate.label)
+            .iter()
+            .any(|hit| {
+                hit.drugbank
+                    .as_ref()
+                    .and_then(|record| record.id.as_deref())
+                    .is_some_and(|id| !id.trim().is_empty())
+            })
+    {
+        return SparseDrugDiscoverRescue::Canonical(candidate.label.clone());
+    }
+
     SparseDrugDiscoverRescue::AliasFallback
 }
 

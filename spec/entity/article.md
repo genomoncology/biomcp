@@ -1415,13 +1415,25 @@ fixtures: BRCA1 F1761I on Sheet1 row 2780, and AXIN2 P245S on ST2 row 85.
 ## An Unreadable Supplement Is Reported, Not Hidden
 
 A file that cannot be extracted says so with its format and reason, so an
-empty search can be told from an unread file. The two-route fixture
+empty search can be told from an unread file. JSON and Markdown mark searches incomplete when files cannot be read. The two-route fixture
 article 22663024 ships a `.xlsx` name over scrubbed bytes that are not a
 workbook: the search reports the file as `unextractable` with the reason,
 and the hits list stays empty.
 
 ```bash run id=supplement-search-unreadable-file
 ../../tools/biomcp-ci --json article supplement-search 22663024 F1761I | jq '(.hits | length == 0) and (.files | length == 1 and .[0].outcome == "unextractable" and .[0].format == "xlsx" and ((.[0].reason // "") | contains("workbook could not be opened")))' | mustmatch 'true'
+```
+
+Named supplements whose bytes are unreachable remain in the search result with
+asset coverage outcome wording and no checksum. The search remains incomplete
+when another readable file supplies a hit. The named-paper fixtures use authored
+provider projections of observed filenames and outcomes, with a readable CSV
+control; they do not redistribute those papers' article bodies.
+
+```bash run id=supplement-search-unreachable-files
+../../tools/biomcp-ci --json article supplement-search 38368708 I448T | jq '.incomplete and (.files | any(.filename == "NIHMS2014154-supplement-Supplementary.docx" and .outcome == "source_unavailable" and (has("sha256") | not)))' | mustmatch 'true'
+../../tools/biomcp-ci --json article supplement-search 27397505 I448T | jq '.incomplete and ([.files[] | select(.outcome == "pmc_proof_of_work")] | length == 5) and (.hits[0].filename == "readable-control.csv")' | mustmatch 'true'
+../../tools/biomcp-ci article supplement-search 27397505 I448T | mustmatch like 'Search incomplete.'
 ```
 
 ## Non-PMC Figshare Assets Manifest
