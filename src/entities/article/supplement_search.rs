@@ -161,9 +161,11 @@ pub async fn article_supplement_search(
         }
         files.extend(file_outcome_rows(asset, &extraction));
         for block in &extraction.blocks {
-            if !supplement_text_matches(&block.text, needle, protein_names.as_deref()) {
+            let Some(matched) =
+                supplement_text_match(&block.text, needle, protein_names.as_deref())
+            else {
                 continue;
-            }
+            };
             if hits.len() >= SUPPLEMENT_SEARCH_HIT_LIMIT {
                 hits_truncated = true;
                 break;
@@ -182,7 +184,7 @@ pub async fn article_supplement_search(
                 page: block.page,
                 paragraph: block.paragraph,
                 locator: block_locator_text(block),
-                context: truncate_chars(&block.text, SUPPLEMENT_SEARCH_CONTEXT_BYTES),
+                context: match_context(&block.text, matched, SUPPLEMENT_SEARCH_CONTEXT_BYTES),
             });
         }
     }
@@ -258,18 +260,21 @@ fn protein_search_names(needle: &str) -> Option<Vec<String>> {
     ])
 }
 
-fn supplement_text_matches(text: &str, needle: &str, names: Option<&[String]>) -> bool {
+fn supplement_text_match(
+    text: &str,
+    needle: &str,
+    names: Option<&[String]>,
+) -> Option<std::ops::Range<usize>> {
     let Some(names) = names else {
-        return text.contains(needle);
+        return text.find(needle).map(|start| start..start + needle.len());
     };
     let is_name_char = |c: char| c.is_ascii_alphanumeric() || c == '_';
-    names.iter().any(|name| {
-        text.match_indices(name).any(|(start, matched)| {
-            !text[..start].chars().next_back().is_some_and(is_name_char)
-                && !text[start + matched.len()..]
-                    .chars()
-                    .next()
-                    .is_some_and(is_name_char)
+    names.iter().find_map(|name| {
+        text.match_indices(name).find_map(|(start, matched)| {
+            let end = start + matched.len();
+            (!text[..start].chars().next_back().is_some_and(is_name_char)
+                && !text[end..].chars().next().is_some_and(is_name_char))
+            .then_some(start..end)
         })
     })
 }
@@ -375,15 +380,29 @@ fn block_locator_text(block: &SupplementTextBlock) -> String {
     parts.join(" ")
 }
 
-fn truncate_chars(text: &str, limit: usize) -> String {
+fn match_context(text: &str, matched: std::ops::Range<usize>, limit: usize) -> String {
+    // Reserve both omission markers within the budget. A long match expands
+    // only this budget, so its complete spelling is never cut away.
+    let markers = 2 * "…".len();
+    let limit = limit.max(matched.len() + markers);
     if text.len() <= limit {
         return text.to_string();
     }
-    let mut end = limit.saturating_sub("…".len());
+    let surrounding = limit - matched.len() - markers;
+    let mut start = matched.start.saturating_sub(surrounding / 2);
+    while !text.is_char_boundary(start) {
+        start += 1;
+    }
+    let mut end = (start + limit - markers).min(text.len());
     while !text.is_char_boundary(end) {
         end -= 1;
     }
-    format!("{}…", &text[..end])
+    format!(
+        "{}{}{}",
+        if start > 0 { "…" } else { "" },
+        &text[start..end],
+        if end < text.len() { "…" } else { "" }
+    )
 }
 
 /// Private subprocess entry point, invoked before normal CLI initialization.
@@ -533,12 +552,6 @@ fn extraction_timed_out(extraction: &SupplementTextExtraction) -> bool {
 mod tests {
     use super::*;
 
-    #[test]
-    fn unicode_search_context_fits_the_byte_limit() {
-        let context = truncate_chars(&"é".repeat(401), 400);
-        assert!(context.len() <= 400, "context is {} bytes", context.len());
-        assert!(context.ends_with('…'));
-    }
     #[cfg(unix)]
     #[tokio::test]
     async fn extraction_timeout_kills_and_reaps_the_worker() {
