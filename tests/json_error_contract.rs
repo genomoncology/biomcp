@@ -949,8 +949,10 @@ fn reversed_search_process_errors_are_golden_and_do_no_work() {
     let fixture = NoProviderContactFixture::start();
     let state_parent = tempfile::tempdir_in(env!("CARGO_MANIFEST_DIR")).expect("state parent");
     let cache = state_parent.path().join("absent-cache");
+    let cache_env = biomcp_mcp_contract_client::child_cache_env(&cache);
     let providers = [
-        ("BIOMCP_CACHE_DIR", cache.to_str().unwrap()),
+        (cache_env[0].0, cache_env[0].1.to_str().unwrap()),
+        (cache_env[1].0, cache_env[1].1.to_str().unwrap()),
         ("BIOMCP_PUBMED_BASE", fixture.base_url.as_str()),
         ("BIOMCP_CTGOV_BASE", fixture.base_url.as_str()),
         ("BIOMCP_OPENFDA_BASE", fixture.base_url.as_str()),

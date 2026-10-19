@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cache_fixture import set_cache_root
+
 import json
 import os
 import select
@@ -279,7 +281,7 @@ def _env_with_base(base: str, cache_dir: str) -> dict[str, str]:
     env = dict(os.environ)
     env["BIOMCP_S2_BASE"] = base
     env["BIOMCP_TEST_UNPACED_ORIGIN"] = base
-    env["BIOMCP_CACHE_DIR"] = cache_dir
+    set_cache_root(env, cache_dir)
     env.pop("S2_API_KEY", None)
     for proxy in ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY", "all_proxy", "ALL_PROXY"):
         env.pop(proxy, None)

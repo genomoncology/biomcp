@@ -983,38 +983,7 @@ mod wire_tests {
     use super::*;
     use std::sync::{Arc, Mutex};
 
-    struct AuthorEnv {
-        previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
-    }
-
-    impl AuthorEnv {
-        fn new() -> Self {
-            Self {
-                previous: Vec::new(),
-            }
-        }
-        fn set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
-            self.previous.push((key, std::env::var_os(key)));
-            // SAFETY: author tests that mutate provider variables use the
-            // same serial-test key as the article test environment.
-            unsafe { std::env::set_var(key, value) };
-        }
-    }
-
-    impl Drop for AuthorEnv {
-        fn drop(&mut self) {
-            for (key, previous) in self.previous.drain(..).rev() {
-                // SAFETY: restoring under the same serial guard.
-                unsafe {
-                    if let Some(value) = previous {
-                        std::env::set_var(key, value);
-                    } else {
-                        std::env::remove_var(key);
-                    }
-                }
-            }
-        }
-    }
+    type AuthorEnv = crate::test_support::FixtureEnv;
 
     async fn spawn_papers_fixture(status: &str, body: String) -> (String, Arc<Mutex<Vec<String>>>) {
         use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
@@ -1077,9 +1046,9 @@ mod wire_tests {
                 "paperId%2CcorpusId%2CexternalIds%2Ctitle%2Cabstract%2C",
             ),
         ] {
-            let mut env = AuthorEnv::new();
+            let mut env = AuthorEnv::scratch_cache_only();
             let cache = crate::test_support::TempDirGuard::new("author-papers-one-page");
-            env.set("BIOMCP_CACHE_DIR", cache.path());
+            env.set_cache_root(cache.path());
             env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
             let client = fixture_client(&base).await;
             let before = requests.lock().unwrap().len();
@@ -1155,9 +1124,9 @@ mod wire_tests {
             "{\"offset\":0,\"next\":null,\"data\":[{\"paperId\":\"x\",\"title\":\"T\",\"corpusId\":\"not-a-number\"}]}".to_string(),
         ] {
             let (base, _requests) = spawn_papers_fixture("200 OK", body).await;
-            let mut env = AuthorEnv::new();
+            let mut env = AuthorEnv::scratch_cache_only();
             let cache = crate::test_support::TempDirGuard::new("author-papers-malformed");
-            env.set("BIOMCP_CACHE_DIR", cache.path());
+            env.set_cache_root(cache.path());
             env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
             let client = fixture_client(&base).await;
             let error = crate::sources::semantic_scholar::with_test_client(
@@ -1179,9 +1148,9 @@ mod wire_tests {
     async fn sanitized_errors_do_not_leak_provider_bodies_urls_or_credentials() {
         let (base, _requests) =
             spawn_papers_fixture("503 Service Unavailable", "secret-provider-body".into()).await;
-        let mut env = AuthorEnv::new();
+        let mut env = AuthorEnv::scratch_cache_only();
         let cache = crate::test_support::TempDirGuard::new("author-papers-unavailable");
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
         let client = fixture_client(&base).await;
         let error = crate::sources::semantic_scholar::with_test_client(
@@ -1214,9 +1183,9 @@ mod wire_tests {
                 std::future::pending::<()>().await;
             }
         });
-        let mut env = AuthorEnv::new();
+        let mut env = AuthorEnv::scratch_cache_only();
         let cache = crate::test_support::TempDirGuard::new("author-papers-stalled");
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         let stalled_base = format!("http://{address}");
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &stalled_base);
         env.set("BIOMCP_TEST_AUTHOR_PAPERS_DEADLINE_MS", "300");

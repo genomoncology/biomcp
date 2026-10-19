@@ -40,6 +40,26 @@
     "notes": "BioMCP calls the hosted gRPC API, not the separately licensed cloud commercial route. The official FAQ restricts API outputs and disallows clinical decision-making."
   },
   {
+    "id": "biorxiv-medrxiv",
+    "name": "bioRxiv/medRxiv",
+    "tier": 3,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "get article <doi> fulltext"
+    ],
+    "bioMcp_auth": "none",
+    "commercial_terms": null,
+    "env_var": null,
+    "provider_access": "public details API and advertised JATS for bioRxiv and medRxiv preprints",
+    "license_summary": "article licenses vary; query access does not grant a common reuse license",
+    "redistribution_summary": "follow each article license and preserve author attribution; do not assume unrestricted reuse",
+    "terms_url": "https://www.medrxiv.org/content/about-medrxiv",
+    "key_url": null,
+    "reviewed_on": "2026-10-19",
+    "notes": "BioMCP retrieves the advertised JATS URL on the official preprint servers and reports the license supplied by the details API. The API license label is not a blanket license for other articles."
+  },
+  {
     "id": "cancer-genome-interpreter",
     "name": "Cancer Genome Interpreter",
     "tier": 3,

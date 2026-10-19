@@ -801,6 +801,9 @@ import json
 import os
 import subprocess
 import tempfile
+import sys
+sys.path.insert(0, "../../tests")
+from cache_fixture import set_cache_root
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -849,14 +852,13 @@ class Handler(BaseHTTPRequestHandler):
 server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_port}"
-env = os.environ.copy()
+env = set_cache_root(os.environ.copy(), tempfile.mkdtemp())
 env.update({
     "BIOMCP_MYVARIANT_BASE": f"{base}/v1",
     "BIOMCP_MYGENE_BASE": base,
     "BIOMCP_UNIPROT_BASE": base,
     "BIOMCP_INTERPRO_BASE": base,
     "BIOMCP_CANCERHOTSPOTS_BASE": base,
-    "BIOMCP_CACHE_DIR": tempfile.mkdtemp(),
 })
 
 def summarize(label, accession, variant):
