@@ -30,13 +30,13 @@ Reviews: revision a1c81a7, accept
 
 ## Outcome
 
-Every command's JSON and Markdown output is checked against committed golden files served by the existing replay server, and format changes use regenerate, inspect and commit.
+The recorded replay and committed JSON/Markdown goldens cover the approved release batches: search all, gene, trial and pathway, and get gene, variant, trial and pathway. Format changes use regenerate, inspect and commit. Remaining selector families, traversal and local-data outputs belong to follow-up 2236 outside this release.
 
 Depends on: 2156
 
 - Starts from: the existing replay server, recording/request-log support and four JSON/Markdown golden pairs for get gene, get variant and the two search-all modes.
 - Keeps: existing goldens, frozen source captures and reader-facing specification claims. Record new replies under the existing replay-data paths.
-- Changes: `tests/golden/test_golden_output.py` `tests/golden/cases/search-pathway-mapk-*.json` `tests/golden/cases/search-pathway-mapk-*.md` `tests/golden/cases/get-pathway-hsa05200.json` `tests/golden/cases/get-pathway-hsa05200.md` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.json` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.md` `testdata/replay/manifest.json` `testdata/replay/responses/kegg/*` `testdata/replay/responses/reactome/*` `CHANGELOG.md` and this ticket for the next bounded partial batch. Preserve source captures, receipts and remaining consumers.
+- Changes: `tests/golden/test_golden_output.py` `tests/golden/cases/search-pathway-mapk-*.json` `tests/golden/cases/search-pathway-mapk-*.md` `tests/golden/cases/get-pathway-hsa05200.json` `tests/golden/cases/get-pathway-hsa05200.md` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.json` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.md` `testdata/replay/manifest.json` `testdata/replay/responses/kegg/*` `testdata/replay/responses/reactome/*` `CHANGELOG.md` `sdlc/tickets/2236-finish-the-remaining-replay-command-coverage.md` and this ticket for the next bounded partial batch. Preserve source captures, receipts and remaining consumers.
 - Proof: each remaining command-family batch has executed JSON and Markdown cases that fail when its output changes. Run the affected cases offline through the build job and the routine merged-candidate gate; report coverage without a new percentage gate. Measure the existing sixty-second golden-suite target rather than infer it; it is a suite target, not an elapsed-time failure rule for an individual test.
 - Defers: broad shared fixture identifiers/scenario restructuring to the next release unless a named current migration needs a narrow change.
 
@@ -93,3 +93,5 @@ Source `49a2cd1d3908bd0269e597878b5bbd1b66b738d7` adds five JSON/Markdown comman
 Job `2079/1792418666605-1603` generated the normal outputs without missing requests, then rejected all ten formats after one combined pathway-name mutation build. Restored source and the qualified normal CLI passed all 27 golden checks in 14.36 seconds. `make lint` passed, including all-target Clippy and the quality ratchet. All twenty published file hashes match the passing outputs. This was local replay rather than kernel network isolation.
 
 The job retains `pathway-golden-evidence.tar.gz`, SHA256 `77f01441a882b4555d64ed1d7d20ece4d75da98cb4a93eb52db34fae66eeeb4c`, beneath `job-runs/biomcp/2079/1792418666605-1603/`. Private scratch and the mutant binary were removed; the shared qualified normal CLI remains available to the consumer lane. Fresh review accepted the unchanged source and verified the archive. The parent stays open for remaining contracted command coverage.
+
+PM decision: 2026-10-19. Narrow this release outcome to the exact landed and accepted command batches above. Close this parent after the accepted pathway golden batch lands. Keep authored fault scenarios and excluded local datasets; the remaining inventory moves to 2236 outside 0.9.4. The verified pathway raw archive is retained in the private experiment `774-biomcp-2079-replay-evidence/1792418666605-1603`, SHA256 `77f01441a882b4555d64ed1d7d20ece4d75da98cb4a93eb52db34fae66eeeb4c`, rather than relying on cleanup-managed job storage.
