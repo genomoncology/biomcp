@@ -29,3 +29,8 @@ session or any DDInter anchor change.
 ## Closure in2242
 
 Resolved in2242: live current-main study preserved the single-ingredient DB00945/CHEMBL25 identity but exposed omitted selected-source name Acetylsalicylic acid in interaction aliases. Retaining that explicit alias fixes the reproduced DDInter20 match without pooling combination ingredients. Authored outside-in controls qualify the fix; the full DrugBank-containing source reply stays private.
+
+## Release dispositions (2026-10-19)
+
+- Single-ingredient interaction identity: FIXED by 2242 at b36ad664f. The reproduced DB00945/CHEMBL25 path retains the selected-source Acetylsalicylic acid alias, with authored outside-in controls.
+- Historical Mac-run evidence: HISTORICAL. The combination-anchor observation remains true; this disposition does not claim that the original single-ingredient Mac run was recreated.

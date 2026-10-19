@@ -122,3 +122,12 @@ material stays under `archive/notes-2026-09-09/`.
 ## Closure in2242
 
 Finding4 resolved in2242: captured live H3K27M discovery reproduced the unsupported get-drug h3k27me3 suggestion. Discovery now requires affirmative drug classification, prioritizes supported exact matches and preserves entered aliases. Clinical ruling distinguishes NCIT C129310 variant from CHEBI85045 histone mark and the distinct vaccine; no gene/transcript/genomic identity is invented. Other findings retain their own dispositions.
+
+## Release dispositions (2026-10-19)
+
+- Finding 1: DECIDED. Retain the 1238 study-record disposition above: existing scoped provenance remains supported, and a standard retrieval envelope is a completeness goal rather than an established defect.
+- Finding 2: DECIDED. Retain the 1238 study-record disposition; the proposed numbering retry was an unvalidated study suggestion. No new numbering policy is approved here.
+- Finding 3: DECIDED. Retain the 1238 study-record disposition; recorded provider replay now supports evaluation without promising stable base-URL overrides as an operator API.
+- Finding 4: FIXED by 2242 at b36ad664f. Supported drug classification, exact-match ranking and entered aliases address the reproduced discovery and suggestion failures. The clinical ruling cited in that ticket supplies the identity decision.
+- Finding 5: DECIDED. Retain the 1238 study-record disposition; no abstention threshold was validated as a requirement. The displayed matching evidence remains the supported behavior.
+- Finding 6: FIXED by 2237 at bdc7a8703, with outside-in coverage of displayed GTR names and methods.
