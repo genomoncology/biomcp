@@ -47,6 +47,8 @@ def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
             key, value = line.removeprefix("export ").split("=", 1)
             providers[key] = shlex.split(value)[0]
         env = isolated_command_env(tmp_path / "isolated", providers, origin)
+        # This replay owns transcript provenance; MyGene expansion has separate controls.
+        env["BIOMCP_DISABLE_SOURCES"] = "mygene-info"
         binary = str(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
         if surface == "mcp":
             with monkeypatch.context() as isolated:

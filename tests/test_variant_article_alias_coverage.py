@@ -31,7 +31,10 @@ def test_resolved_forms_omitted_by_alias_cap_are_named(surface: str, tmp_path: P
         def do_GET(self) -> None:  # noqa: N802
             target = urlsplit(self.path)
             requests.append((target.path, parse_qs(target.query)))
-            if target.path == "/v1/query":
+            if target.path == "/query":
+                # Authored empty MyGene facts keep this control about coding-form coverage.
+                body = {"total": 0, "hits": []}
+            elif target.path == "/v1/query":
                 body = {"total": 1, "hits": [hit]}
             elif target.path.startswith("/v1/variant/"):
                 body = hit
@@ -67,7 +70,7 @@ def test_resolved_forms_omitted_by_alias_cap_are_named(surface: str, tmp_path: P
     origin = f"http://127.0.0.1:{server.server_port}"
     providers = {key: origin for key in (
         "BIOMCP_PUBTATOR_BASE", "BIOMCP_EUROPEPMC_BASE", "BIOMCP_S2_BASE",
-        "BIOMCP_LITVAR_BASE", "BIOMCP_CLINGEN_CAR_BASE",
+        "BIOMCP_LITVAR_BASE", "BIOMCP_CLINGEN_CAR_BASE", "BIOMCP_MYGENE_BASE",
         "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN",
     )}
     providers["BIOMCP_MYVARIANT_BASE"] = origin + "/v1"
@@ -124,7 +127,7 @@ def test_resolved_forms_omitted_by_alias_cap_are_named(surface: str, tmp_path: P
     assert primary["disposition"] == ("omitted" if disabled else "attempted")
     assert primary["reason"] == ("source_disabled" if disabled else "provider_query_attempted")
     if disabled:
-        assert all(path.startswith("/v1/") or path == "/allele" for path, _ in requests)
+        assert all(path.startswith("/v1/") or path in ("/allele", "/query") for path, _ in requests)
     else:
         assert any("R1437Q" in json.dumps(query) for _, query in requests)
     if surface in ("debug", "batch"):

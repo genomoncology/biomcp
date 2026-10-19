@@ -213,6 +213,25 @@ pub(super) async fn handle(
             ));
         }
     }
+    if !json {
+        let coverage = &outcome.response.gene_symbol_coverage;
+        if coverage.status != "not_applicable" {
+            alias_coverage_text.push_str(&format!(
+                "\n\n## Gene symbol query coverage\n\nSource: {} {} field ({}).\n",
+                coverage.source, coverage.source_field, coverage.status
+            ));
+            if let Some(restriction) = coverage.restriction {
+                alias_coverage_text.push_str(restriction);
+                alias_coverage_text.push('\n');
+            }
+            for alias in &coverage.aliases {
+                alias_coverage_text.push_str(&format!(
+                    "- {}: {} ({})\n",
+                    alias.alias, alias.disposition, alias.reason
+                ));
+            }
+        }
+    }
     text.push_str(&alias_coverage_text);
     if !json && !outcome.response.complete {
         let unfinished = outcome
