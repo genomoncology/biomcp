@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2233, 2234
 
 ## Outcome
 
@@ -44,7 +44,7 @@ Issue dispositions need finding-specific landing references for GTR encoding, tr
 
 ## Final collection ownership
 
-The PM assigned 2258 the mandatory observed drift collection on the final candidate. Ticket 2259 owns the accepted checker implementation and may close with its product batch. Before go, this ticket must retain the full collection report, refresh twenty-eight historical missing content types from observed replies, refresh the stale dbSNP declaration from the current product endpoint, name all three KEGG recordings as not checked live: commercial-restricted source, and resolve every other drift or coverage gap through its owning fix. Never count KEGG as checked or call it live from these runs. Partial coverage is not a release pass.
+The PM assigned 2258 the mandatory observed drift collection on the final candidate. Ticket 2259 owns the accepted checker implementation and may close with its product batch. Before go, this ticket must retain the full collection report, refresh historical missing content types from the recomputed inventory of observed replies, refresh the stale dbSNP declaration from the current product endpoint, name all three KEGG recordings as not checked live: commercial-restricted source, and resolve every other drift or coverage gap through its owning fix. Never count KEGG as checked or call it live from these runs. Partial coverage is not a release pass.
 
 ## Shared replay ownership proof
 
@@ -65,3 +65,9 @@ After stable metadata lands, recompute the actual recording inventory. Use obser
 Never call KEGG live; every KEGG recording says not checked live: commercial-restricted source and never counts as checked. Do not print, log, hash or store credentials or a derived value. Reuse authorized source settings; no new paid access. One serial request stream, bounded response size and time, no redirect/proxy/retry loop; obey Retry-After and stop the affected provider.
 
 No checker/runtime/code changes in this collection. Do not publish broad or licensed source replies. Report every blocked, drifted or unsupported entry with the supported next repair or recording action; source/fixture body changes belong to a separately reviewed bounded fix. Partial coverage never means pass. Retain collection proof in a numbered private experiment with OWNER and Keep; the public record contains safe request metadata, counts, hashes and limitations. No tag or publication.
+
+## Final qualification authority
+
+The source and fixture batch is frozen at pushed main 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8, shared gate 2277/1792450592155-61493 passed with tree 90d9f94dfa5541a135bc728d88f849e595537d15. The actual-main full check is running before further ordinary landing. Use the accepted current checker for one final complete live inventory on this revision. Disable commercial-restricted sources and semantic-scholar explicitly. The three KEGG rows remain not checked live: commercial-restricted source. The PM approved Semantic Scholar as not checked live: rate limited after the one later 429 diagnostic; its five rows remain unverified, and no further requests to that source are authorized. Do not count any disabled entry as checked or passed. No credentials except an existing NCI_API_KEY may be inherited; never inspect, log, hash or store credentials. No new keys, proxies, authentication, paid access or provider contact.
+
+The full untagged release rehearsal already includes MCP contract conformance; the PM withdrew its mistaken request for an additional separate conformance run. The existing checklist remains the release scope.
