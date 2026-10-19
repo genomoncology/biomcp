@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Return malformed MCP tool arguments as model-visible errors naming the argument, and derive the ERepo tool schema from its typed fields. (2263)
 - Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
 
 - Derive variant article Markdown source plans and source states from the same route results as JSON, including empty pages and authenticated Semantic Scholar searches. (2252)
