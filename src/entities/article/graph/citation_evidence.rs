@@ -1070,6 +1070,7 @@ pub async fn citation_evidence(
             &cited_pid,
             force_fulltext,
         )
+        .await
     {
         return Ok(cached);
     }
@@ -1272,7 +1273,7 @@ pub async fn citation_evidence(
         },
     };
     if let Some(cache_root) = &cache_root {
-        crate::cache::write_citation_evidence(cache_root, &citing_pid, &cited_pid, &result);
+        crate::cache::write_citation_evidence(cache_root, &citing_pid, &cited_pid, &result).await;
     }
     Ok(result)
 }

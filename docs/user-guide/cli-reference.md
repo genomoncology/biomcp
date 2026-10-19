@@ -85,6 +85,7 @@ biomcp cache path
 biomcp cache stats
 biomcp cache clean [--max-age <duration>] [--max-size <size>] [--dry-run]
 biomcp cache clear [--yes]
+biomcp cache clean-legacy [--yes]
 biomcp ddinter sync
 biomcp ema sync
 biomcp who sync
@@ -141,8 +142,7 @@ provided in separate fields; callers must not parse the rendered health table
 prose. Error rows remain report data; they change the exit status only when
 `--fail-on-error` is requested.
 
-`biomcp cache path` is a local-CLI-only operator command. It prints the managed
-HTTP cache path as plain text, or as a typed `cache_path` object when the global `--json` flag is supplied.
+`biomcp cache path` is a local-CLI-only operator command. It prints the SQLite database path as plain text, or as a typed `cache_path` object when the global `--json` flag is supplied.
 
 `biomcp --json list` emits structured reference data for scripts and agents.
 The root object includes typed `entities` and ordered `entries`; `biomcp --json list <entity>` adds `entity`. Each entry is tagged as a literal command, a
@@ -157,21 +157,16 @@ executable provenance and PATH diagnostics.
 resolved cache path, total blob inventory, referenced blob bytes used for
 enforcement, HTTP entry count, article-session count, orphan count, age range,
 and the resolved cache limits including `min_disk_free`; under `--json`, it
-returns the same contract as a JSON object. Statistics first remove expired
-HTTP entries and ten-minute session records.
+returns the same contract as a JSON object. It also names legacy store sizes without deleting those stores.
 
 `biomcp cache clean [--max-age <duration>] [--max-size <size>] [--dry-run]`
 is the targeted maintenance command for the same cache family. It always removes
 orphan blobs, can optionally evict entries older than a duration or LRU-evict to
 a byte target, and keeps the same structured report under `--json`.
 
-`biomcp cache clear [--yes]` is the destructive sibling for the same managed
-request-state trees. It wipes `<resolved cache_root>/http`, `sessions/`, and the
-`citation-evidence/` sidecar, never
-touches the sibling `downloads/` directory, prompts for confirmation when stdin is a
-TTY, and refuses non-interactive runs with plain stderr unless you pass
-`--yes`. Successful `--json` output uses `{ "bytes_freed": <number|null>,
-"entries_removed": <number> }`.
+`biomcp cache clear [--yes]` removes reusable database entries and article sessions. It preserves saved provider captures, readable `downloads/` files and explicit exports. It prompts when stdin is a TTY and refuses noninteractive runs with plain stderr unless you pass `--yes`. Successful `--json` output uses `{ "bytes_freed": <number|null>, "entries_removed": <number> }`.
+
+`biomcp cache clean-legacy [--yes]` removes retired HTTP, citation and capture stores on explicit request. Upgrade and stop older binaries first. It uses the same confirmation convention and preserves downloads, the current database, blobs and sessions.
 
 `biomcp update` downloads the matching GitHub release archive and requires
 SHA256 checksum verification before atomically replacing a Unix binary owned by

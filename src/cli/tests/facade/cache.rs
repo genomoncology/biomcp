@@ -124,7 +124,7 @@ fn cache_help_keeps_json_but_hides_no_cache_everywhere() {
     }
 }
 
-fn cache_commands() -> [crate::cli::cache::CacheCommand; 4] {
+fn cache_commands() -> [crate::cli::cache::CacheCommand; 5] {
     [
         crate::cli::cache::CacheCommand::Path,
         crate::cli::cache::CacheCommand::Stats,
@@ -134,6 +134,7 @@ fn cache_commands() -> [crate::cli::cache::CacheCommand; 4] {
             dry_run: true,
         },
         crate::cli::cache::CacheCommand::Clear { yes: true },
+        crate::cli::cache::CacheCommand::CleanLegacy { yes: true },
     ]
 }
 

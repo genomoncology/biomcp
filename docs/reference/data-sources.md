@@ -77,12 +77,10 @@ All HTTP-based sources share a common client with:
 - Request timeout: 30 seconds
 - Retries: exponential backoff, up to 3 retries for transient failures
 - Retry-After: numeric 429 hints are honored only within a 5-second per-attempt cap and 15-second total retry-sleep budget
-- Disk cache: `<cache_root>/http` under the resolved cache root (`~/.cache/biomcp/http` on Linux)
+- Disk cache: `<cache_root>/biomcp.db` under the resolved cache root (`~/.cache/biomcp/biomcp.db` on Linux)
 - Response bodies: bounded inside the cache before materialization (8 MiB by default, with source-specific request limits where documented)
 
-The first bounded-client initialization performs a filesystem-locked, one-time
-HTTP-cache epoch migration. It clears entries written before pre-cache body
-limits existed and fails closed if that migration cannot complete.
+The SQLite store starts independently of older file stores. It does not import or delete them. `cache stats` reports their sizes, and `cache clean-legacy` removes them only on explicit request after older processes are stopped. Saved downloads survive this cleanup.
 
 Ordinary HTTP provider clients connect directly and ignore ambient
 `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` settings. Built-in provider bases
@@ -122,8 +120,8 @@ API client:
   preserves provider bytes without transparent decompression and applies the shared
   outbound policy to the approved CDN origin, DNS answers, and every redirect.
 
-Run `biomcp cache path` to print the managed HTTP cache directory on the current
-machine without creating or migrating cache directories.
+Run `biomcp cache path` to print the SQLite database path on the current
+machine without creating cache files.
 
 PMC OA resolves versioned S3 metadata and downloads declared XML/media objects;
 the retired FTP/archive route is removed in August 2026. Each object is capped at

@@ -18,7 +18,9 @@ pub(in crate::cli) async fn handle(
     }
     if files {
         let response = match capture_id {
-            Some(capture_id) => crate::entities::gene::cspec::files_capture(&capture_id, &gene)?,
+            Some(capture_id) => {
+                crate::entities::gene::cspec::files_capture(&capture_id, &gene).await?
+            }
             None => {
                 crate::entities::gene::cspec::retrieve_files(
                     &gene,
@@ -35,12 +37,9 @@ pub(in crate::cli) async fn handle(
         return Ok(CommandOutcome::stdout(text));
     }
     let response = match capture_id {
-        Some(capture_id) => serde_json::to_value(crate::entities::gene::cspec::page_capture(
-            &capture_id,
-            &gene,
-            offset,
-            limit,
-        )?)?,
+        Some(capture_id) => serde_json::to_value(
+            crate::entities::gene::cspec::page_capture(&capture_id, &gene, offset, limit).await?,
+        )?,
         None => {
             crate::entities::gene::cspec::retrieve(&gene, version.as_deref(), offset, limit).await?
         }
@@ -223,7 +222,10 @@ fn render_files(response: &crate::entities::gene::cspec::CspecFilesResponse) -> 
     out
 }
 
-pub(in crate::cli) fn document(capture_id: String, json: bool) -> anyhow::Result<CommandOutcome> {
+pub(in crate::cli) async fn document(
+    capture_id: String,
+    json: bool,
+) -> anyhow::Result<CommandOutcome> {
     if json {
         return Err(BioMcpError::InvalidArgument(
             "CSpec document raw retrieval does not support --json".into(),
@@ -231,6 +233,6 @@ pub(in crate::cli) fn document(capture_id: String, json: bool) -> anyhow::Result
         .into());
     }
     Ok(CommandOutcome::stdout_bytes(
-        crate::entities::gene::cspec::read_capture(&capture_id)?,
+        crate::entities::gene::cspec::read_capture(&capture_id).await?,
     ))
 }

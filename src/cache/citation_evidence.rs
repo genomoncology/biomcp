@@ -1,13 +1,6 @@
-//! Persistent citation-evidence sidecar.
-//!
-//! One file per resolved directed edge under
-//! `<cache root>/citation-evidence/v1/`, published atomically and read before
-//! the graph traversal. The store never changes a command outcome: every read
-//! failure is a miss, and a write failure is reported through tracing only.
+//! Reusable directed citation evidence in the shared SQLite store.
 
-use std::fs::{self, OpenOptions};
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
@@ -16,7 +9,6 @@ use crate::entities::article::graph::citation_evidence::{
     ArticleCitationEvidenceResult, CitationEvidenceStatus,
 };
 
-pub(crate) const CITATION_EVIDENCE_DIR: &str = "citation-evidence";
 const CITATION_EVIDENCE_KEY_VERSION: &str = "v1";
 const CITATION_EVIDENCE_SCHEMA_VERSION: u32 = 1;
 const CITATION_EVIDENCE_CACHE_TTL_MS: u64 = 2_592_000_000;
@@ -50,24 +42,13 @@ fn ttl_ms() -> u64 {
     CITATION_EVIDENCE_CACHE_TTL_MS
 }
 
-fn version_dir(cache_root: &Path) -> PathBuf {
-    cache_root
-        .join(CITATION_EVIDENCE_DIR)
-        .join(CITATION_EVIDENCE_KEY_VERSION)
-}
-
-fn record_path(cache_root: &Path, citing_pid: &str, cited_pid: &str) -> PathBuf {
+fn record_key(citing_pid: &str, cited_pid: &str) -> String {
     let key = format!(
         "{CITATION_EVIDENCE_KEY_VERSION}|{}|{}",
         citing_pid.to_ascii_lowercase(),
         cited_pid.to_ascii_lowercase()
     );
-    let digest = Sha256::digest(key.as_bytes());
-    let name = digest
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<String>();
-    version_dir(cache_root).join(format!("{name}.json"))
+    format!("{:x}", Sha256::digest(key.as_bytes()))
 }
 
 /// The statuses that carry usable evidence. A failure status is never cached:
@@ -87,16 +68,19 @@ const fn is_evidence_status(status: CitationEvidenceStatus) -> bool {
 /// Every miss returns `None`: absent, unreadable, malformed, a different
 /// schema version, a key mismatch, expiry, a bypassed cache, or a forced
 /// full-text call whose stored entry holds provider context only.
-pub(crate) fn read_citation_evidence(
+fn read_citation_evidence_sync(
     cache_root: &Path,
     citing_pid: &str,
     cited_pid: &str,
     force_fulltext: bool,
+    infinite: bool,
 ) -> Option<ArticleCitationEvidenceResult> {
-    if crate::sources::cache_is_bypassed() {
-        return None;
-    }
-    let bytes = fs::read(record_path(cache_root, citing_pid, cited_pid)).ok()?;
+    let key = record_key(citing_pid, cited_pid);
+    let bytes = super::sqlite::Store::open(cache_root)
+        .ok()?
+        .get("citation", &key)
+        .ok()??
+        .body;
     let record: CitationEvidenceRecord = serde_json::from_slice(&bytes).ok()?;
     if record.schema_version != CITATION_EVIDENCE_SCHEMA_VERSION {
         return None;
@@ -106,7 +90,7 @@ pub(crate) fn read_citation_evidence(
     {
         return None;
     }
-    if !crate::sources::cache_is_infinite() && record.expires_at_unix_ms <= now_unix_ms() {
+    if !infinite && record.expires_at_unix_ms <= now_unix_ms() {
         return None;
     }
     if force_fulltext && record.result.status == CitationEvidenceStatus::ContextFromProvider {
@@ -117,7 +101,7 @@ pub(crate) fn read_citation_evidence(
 
 /// Publishes an evidence-bearing result. A bypassed cache, a non-evidence
 /// status, and every write failure leave the caller's outcome untouched.
-pub(crate) fn write_citation_evidence(
+pub(crate) async fn write_citation_evidence(
     cache_root: &Path,
     citing_pid: &str,
     cited_pid: &str,
@@ -126,8 +110,18 @@ pub(crate) fn write_citation_evidence(
     if crate::sources::cache_is_bypassed() || !is_evidence_status(result.status) {
         return;
     }
-    if let Err(error) = publish(cache_root, citing_pid, cited_pid, result) {
-        tracing::warn!(%error, "citation-evidence sidecar write failed");
+    let cache_root = cache_root.to_path_buf();
+    let citing_pid = citing_pid.to_owned();
+    let cited_pid = cited_pid.to_owned();
+    let result = result.clone();
+    match tokio::task::spawn_blocking(move || {
+        publish(&cache_root, &citing_pid, &cited_pid, &result)
+    })
+    .await
+    {
+        Ok(Ok(())) => {}
+        Ok(Err(error)) => super::warn_local_http_cache("citation-write", &error),
+        Err(error) => super::warn_local_http_cache("citation-write", &error),
     }
 }
 
@@ -147,37 +141,46 @@ fn publish(
         result: result.clone(),
     };
     let bytes = serde_json::to_vec(&record).map_err(std::io::Error::other)?;
-    let path = record_path(cache_root, citing_pid, cited_pid);
-    let dir = version_dir(cache_root);
-    // The sidecar is a private managed tree. A regular file in its place
-    // fails here, the record is never published, and the outcome stands.
-    crate::cache::secure_managed_tree(&dir, true, None)?;
-    let temporary = temp_path(&dir);
-    let write_result = (|| -> std::io::Result<()> {
-        let mut file = crate::cache::open_private(
-            OpenOptions::new().write(true).create_new(true),
-            &temporary,
-        )?;
-        file.write_all(&bytes)?;
-        file.flush()?;
-        file.sync_all()?;
-        fs::rename(&temporary, &path)?;
-        let _ = fs::File::open(&dir).and_then(|file| file.sync_all());
-        Ok(())
-    })();
-    if write_result.is_err() {
-        let _ = fs::remove_file(&temporary);
-    }
-    write_result
+    let key = record_key(citing_pid, cited_pid);
+    let mut store = super::sqlite::Store::open(cache_root)?;
+    store.put(
+        "citation",
+        &key,
+        &key,
+        &[],
+        &bytes,
+        Some(record.expires_at_unix_ms.min(i64::MAX as u64) as i64),
+    )?;
+    let mut config = super::resolve_cache_config().map_err(std::io::Error::other)?;
+    config.cache_root = cache_root.to_path_buf();
+    super::sqlite::maintain(
+        &mut store,
+        &config,
+        None,
+        None,
+        false,
+        super::sqlite::Maintenance::Pressure,
+    )?;
+    Ok(())
 }
 
-fn temp_path(dir: &Path) -> PathBuf {
-    let pid = std::process::id();
-    for attempt in 0..100 {
-        let path = dir.join(format!(".record.{pid}.{attempt}.tmp"));
-        if !path.exists() {
-            return path;
-        }
+pub(crate) async fn read_citation_evidence(
+    cache_root: &Path,
+    citing_pid: &str,
+    cited_pid: &str,
+    force_fulltext: bool,
+) -> Option<ArticleCitationEvidenceResult> {
+    if crate::sources::cache_is_bypassed() {
+        return None;
     }
-    dir.join(format!(".record.{pid}.tmp"))
+    let infinite = crate::sources::cache_is_infinite();
+    let root = cache_root.to_path_buf();
+    let citing = citing_pid.to_owned();
+    let cited = cited_pid.to_owned();
+    tokio::task::spawn_blocking(move || {
+        read_citation_evidence_sync(&root, &citing, &cited, force_fulltext, infinite)
+    })
+    .await
+    .ok()
+    .flatten()
 }

@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Store reusable responses, article text, citation evidence and provider captures in one indexed SQLite cache shared by the CLI and MCP server. Preserve readable saved article files and exports. Older binaries keep writing their separate stores until upgraded; `biomcp cache clean-legacy` removes those stores explicitly while preserving saved downloads. (2134)
+
 - Separate unverified transcript-alias article matches from verified evidence, preserving provider transcript provenance and naming missing provenance in CLI and MCP output. (2185)
 
 - Report disabled local datasets as disabled in health checks and name the setting instead of reporting missing-file errors. (2221)

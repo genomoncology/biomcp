@@ -54,7 +54,7 @@ impl WorkerDrive {
 /// put is awaited inline in the request path
 /// (src/cache/manager.rs put at :267); the only background work is
 /// eviction (spawn_eviction_task, src/cache/manager.rs at :441),
-/// and a partially run eviction leaves atomic cacache removals, never
+/// and a partially run eviction leaves committed SQLite transactions, never
 /// corruption. Fire-and-forget puts would be lost under
 /// `shutdown_background` + `process::exit` — do not add them.
 pub(super) fn drive_one_shot<F>(fut: F) -> anyhow::Result<F::Output>

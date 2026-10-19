@@ -221,7 +221,42 @@ pub async fn write_user_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), 
 
 pub async fn save_atomic(id: &str, content: &str) -> Result<PathBuf, BioMcpError> {
     let path = download_path(id)?;
-    save_atomic_to_path(path, content).await
+    let content = if crate::sources::cache_is_bypassed() {
+        content.to_owned()
+    } else {
+        let config = crate::cache::resolve_cache_config()?;
+        let key = cache_key(id);
+        let incoming = content.to_owned();
+        let result = tokio::task::spawn_blocking(move || -> std::io::Result<String> {
+            let mut store = crate::cache::sqlite::Store::open(&config.cache_root)?;
+            if let Some(record) = store.get("fulltext", &key)? {
+                return String::from_utf8(record.body).map_err(std::io::Error::other);
+            }
+            store.put("fulltext", &key, &key, &[], incoming.as_bytes(), None)?;
+            crate::cache::sqlite::maintain(
+                &mut store,
+                &config,
+                None,
+                None,
+                false,
+                crate::cache::sqlite::Maintenance::Pressure,
+            )?;
+            Ok(incoming)
+        })
+        .await;
+        match result {
+            Ok(Ok(saved)) => saved,
+            Ok(Err(error)) => {
+                crate::cache::warn_local_http_cache("fulltext-write", &error);
+                content.to_owned()
+            }
+            Err(error) => {
+                crate::cache::warn_local_http_cache("fulltext-write", &error);
+                content.to_owned()
+            }
+        }
+    };
+    save_atomic_to_path(path, &content).await
 }
 
 async fn save_atomic_to_path(path: PathBuf, content: &str) -> Result<PathBuf, BioMcpError> {
