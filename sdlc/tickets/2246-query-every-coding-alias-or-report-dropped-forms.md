@@ -27,3 +27,15 @@ A replay test for ABCC8 R1437Q shows both coding forms sent and PMID 41948559 re
 ## Coordinator study brief
 
 Restate the approved outcome, reproduce on current main before source edits, and report the exact command/output, proposed precise source/test paths and outside-in failing case. Reuse qualified unchanged current-main CLI when possible; all execution goes through the configured build job. Preserve exact raw source responses and invocation in the next numbered three-digit experiment on the executing host, with OWNER biomcp/2246. No live rerun if an existing deterministic replay already reproduces the same failure; any authored controls must be explicitly identified, not called captured source. Read source redistribution standards before publishing new captures. No product or test claim is granted yet. No source edits, WIP pushes, child agents, mail or status changes during this study. Stop after bounded reproduction and proposal; do not widen the ticket.
+
+## Granted implementation brief
+
+- Changes: `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_alias_coverage.py` `tests/fixtures/article/coding-aliases/**` `CHANGELOG.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md`.
+
+Restated outcome: every resolved protein/coding form is queried or explicitly reported as omitted with its reason in ordinary and debug output. Choose the approved disclosure outcome to preserve existing request caps and deadline. No new identity fallback or query expansion.
+
+Current-main8cf9c3be7 job1792424100327-68113 live+replay ABCC8 R1437Q --limit5 --debug-plan --verify-identity resolved12forms but exact_aliases selected10, omitting c.4310G>A and c.4373G>A without per-form reasons. Both exit0/same5PMIDs, replay99hits/0misses. Exact mechanism is exact_aliases, not fallback_aliases for this resolved case; truncation was ignored as _alias_budget_stopped. Evidence791-biomcp-2246-coding-alias-study retains allraw/private. Do not claim recovery of another paper. Preserve source-provided gene/DNA identity ruling. Distinguish planned or selected forms from actually attempted queries and deadline omissions; never label unexecuted plans sent. One shared coverage value should drive output/debug, not duplicated inferred counts. Clearly identify authored controls or minimized source projections; inspect capture rights before public fixtures.2247 follows this candidate for separate gene-symbol restriction disclosure.
+
+Write failing outside-in tests first, apply the minimal repair, run affected tests and mechanical checks through the configured build job. Preserve private patch and per-file hashes; verify published source matches the tested manifest. No WIP pushes, merges, ticket/status edits, mail or child agents. Push once review-ready and stop after reporting.
+
+Keep: experiments/791-biomcp-2246-coding-alias-study — Retain cited raw proof until release evidence is explicitly released.
