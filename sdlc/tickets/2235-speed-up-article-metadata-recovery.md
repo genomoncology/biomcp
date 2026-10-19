@@ -57,3 +57,5 @@ Five alternating old/fixed live pairs in `1792419506666-17828` all succeeded wit
 PM decision2026-10-19: accept the retained one-wave recovery cost when recorded replies establish an upstream gap; preserve approved recovery and run no further timing pairs. The evidence above satisfies that condition with the inference and limits stated explicitly.
 
 Private durable experiment `777-biomcp-2235-article-metadata-recovery-evidence` retains `focused-checks-and-live-pairs.tar.gz`, SHA256 `a1c195359e4206bcf71d5264ed7eb6a506607fe445991ea9417b3b0b55457db2`, and `initial-study-and-regression.tar.gz`, SHA256 `74f297ad8f8074b8b1246f2f35237e3fb51c48c8de54de17c9ff200bea8d476c`, plus the source patch, published manifest and check log. Temporary old build and uploads were removed. Local duplicate evidence remains for review, then may be removed after retained copies are verified.
+
+Keep: experiments/777-biomcp-2235-article-metadata-recovery-evidence — Retain cited raw proof until the release evidence is explicitly released.
