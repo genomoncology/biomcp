@@ -4,13 +4,15 @@ priority: 2
 
 # 2232 — Finish search all's GWAS query within its deadline
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 156c356, accept
 
 Reviews: revision f3c131f, accept
+
+Landed: fa8ddd6
 
 ## Outcome
 
