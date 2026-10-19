@@ -33,7 +33,7 @@ Depends on: 2159, 2229
 
 - Starts from: the existing replay infrastructure and named article-fulltext, CTGov intervention-alias, provider-contract and ComplexPortal conversion groups.
 - Keeps: CLI/MCP behavior, refusals, source receipts, live canaries and their needed helpers, local study datasets and separately approved frozen-capture runners.
-- Changes: `CHANGELOG.md` `scripts/run-specs.sh` `sdlc/tickets/2111-move-the-remaining-fixture-consumers-onto-the-replay-server.md` `spec/entity/pathway.md` .
+- Changes: `CHANGELOG.md` `scripts/run-specs.sh` `sdlc/tickets/2111-move-the-remaining-fixture-consumers-onto-the-replay-server.md` `spec/entity/pathway.md`.
 - Proof: through the build job, affected existing command/MCP cases pass against recorded replay without missing requests, preserving counts, failures and refusals. No retained consumer refers to each deleted script; script-specific tests disappear with obsolete scripts. Run the routine merged-candidate gate without live canaries.
 - Defers: local study-dataset provisioning and broad shared fixture identifiers to the next release.
 
