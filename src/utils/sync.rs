@@ -13,12 +13,12 @@ mod tests {
     fn poisoned_lock_returns_the_guarded_value() {
         let value = Arc::new(Mutex::new(41));
         let worker_value = Arc::clone(&value);
-        let _ = std::thread::spawn(move || {
+        let worker = std::thread::spawn(move || {
             let mut guard = worker_value.lock().expect("lock should start healthy");
             *guard += 1;
             panic!("poison test lock");
-        })
-        .join();
+        });
+        let _ = crate::test_support::bounded_join(worker);
 
         assert_eq!(*recover_poison(value.lock()), 42);
     }

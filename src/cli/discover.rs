@@ -336,7 +336,7 @@ mod tests {
     where
         F::Output: Send + 'static,
     {
-        std::thread::Builder::new()
+        let worker = std::thread::Builder::new()
             .stack_size(16 * 1024 * 1024)
             .spawn(move || {
                 tokio::runtime::Builder::new_current_thread()
@@ -345,8 +345,8 @@ mod tests {
                     .expect("discover test runtime")
                     .block_on(future)
             })
-            .expect("spawn discover test thread")
-            .join()
+            .expect("spawn discover test thread");
+        crate::test_support::bounded_join(worker)
             .unwrap_or_else(|payload| std::panic::resume_unwind(payload))
     }
 

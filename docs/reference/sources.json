@@ -496,7 +496,7 @@
     "commercial_terms": null,
     "env_var": null,
     "provider_access": "public portal; BioMCP shows DepMap identifiers resolved through Cellosaurus cross-references and fetches no DepMap data",
-    "license_summary": "DepMap's own guidance says DepMap-generated data are generally CC BY 4.0 while other hosted projects may use different licenses; each file's Data Usage and Terms must be checked per download, and a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed)",
+    "license_summary": "DepMap's own guidance says DepMap-generated data are generally CC BY 4.0 while other hosted projects may use different licenses; each file's Data Usage and Terms must be checked per download, and a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed); the same staff guidance states that DepMap data are not for clinical use",
     "redistribution_summary": "BioMCP shows the identifier through a Cellosaurus cross-reference only; no DepMap bytes enter BioMCP output beyond the identifier",
     "terms_url": "https://forum.depmap.org/t/license-for-data-found-in-the-depmap-portal/130",
     "key_url": null,
