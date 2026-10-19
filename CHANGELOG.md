@@ -84,6 +84,7 @@
 
 - Send the current BioMCP application identity, default Accept header, and uncached policy during replay live checks while preserving recorded request headers and bounded transport controls. (2281)
 - Keep recorded disease query pages in canonical replay storage for fixture consumers and source checks. (2277)
+- Align recorded trial references, disease details, and PubMed summaries with observed replies for their declared requests. (2278)
 
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 
