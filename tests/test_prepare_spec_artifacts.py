@@ -60,6 +60,9 @@ def test_runner_rejects_a_missing_prepared_artifact(tmp_path: Path) -> None:
     scripts = workspace / "scripts"
     scripts.mkdir(parents=True)
     shutil.copy2(REPO_ROOT / "scripts" / "run-specs.sh", scripts / "run-specs.sh")
+    fixture_dir = workspace / "spec" / "fixtures"
+    fixture_dir.mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / "spec" / "fixtures" / "cache-policy.sh", fixture_dir / "cache-policy.sh")
     (workspace / "Cargo.toml").write_text(
         "[package]\nname='fixture'\nversion='0.1.0'\n"
     )

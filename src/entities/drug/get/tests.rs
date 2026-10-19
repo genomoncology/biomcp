@@ -1084,9 +1084,9 @@ async fn drug_card_sources_run_at_once_and_keep_the_undelayed_output() {
     let (base, hold_replies, server) = parallel_source_server(HOLD).await;
     let (mut env, _ddinter) =
         crate::entities::drug::test_support::drug_fixture_env(&base, "parallel-drug-ddinter");
-    env.set("BIOMCP_CIVIC_BASE", &format!("{base}/civic"));
-    env.set("BIOMCP_OPENTARGETS_BASE", &format!("{base}/opentargets"));
-    env.set("BIOMCP_CHEMBL_BASE", &format!("{base}/chembl"));
+    env.set("BIOMCP_CIVIC_BASE", format!("{base}/civic"));
+    env.set("BIOMCP_OPENTARGETS_BASE", format!("{base}/opentargets"));
+    env.set("BIOMCP_CHEMBL_BASE", format!("{base}/chembl"));
 
     let started = Instant::now();
     let held_card = super::get("imatinib", &[])

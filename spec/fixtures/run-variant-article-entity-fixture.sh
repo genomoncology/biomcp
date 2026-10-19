@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=cache-policy.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cache-policy.sh"
+
 repo_root="${1:-../..}"
 scenario="${2:-all}"
 repo_root="$(cd "$repo_root" && pwd)"
@@ -393,7 +396,7 @@ base_url="$(cat "$ready_file")"
 binary="${BIOMCP_BIN:-$repo_root/target/debug/biomcp}"
 
 export BIOMCP_CACHE_MODE=off
-export BIOMCP_CACHE_DIR="$fixture_root/cache"
+set_fixture_cache_root "$fixture_root/cache"
 export BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
 export BIOMCP_PUBTATOR_BASE="$base_url"
 export BIOMCP_MYVARIANT_BASE="$base_url/v1"

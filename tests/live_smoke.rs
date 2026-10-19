@@ -24,7 +24,9 @@ fn run_biomcp(args: &[&str]) -> CommandResult {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
     command.args(args);
     command.env("BIOMCP_CACHE_MODE", "off");
-    command.env("XDG_CACHE_HOME", cache_home.path());
+    command.envs(biomcp_mcp_contract_client::child_cache_env(
+        cache_home.path(),
+    ));
     command.env_remove("RUST_LOG");
 
     let output = command.output().expect("biomcp command should run");
