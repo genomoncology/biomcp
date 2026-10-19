@@ -83,6 +83,7 @@
 ### Internal
 
 - Refresh observed replay response headers with exact request provenance, preserve original recording dates, correct the dbSNP endpoint declaration, and mark KEGG recordings unverified. Release qualification remains separate. (2279)
+- Keep recorded disease query pages in canonical replay storage for fixture consumers and source checks. (2277)
 
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 

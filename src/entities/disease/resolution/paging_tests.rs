@@ -1,9 +1,9 @@
 use super::*;
 
 const FIRST_PAGE: &str =
-    include_str!("../../../../testdata/disease-resolution/melanoma-page-one.json");
+    include_str!("../../../../testdata/replay/responses/mydisease/melanoma-page-one.json");
 const SECOND_PAGE: &str =
-    include_str!("../../../../testdata/disease-resolution/melanoma-page-two.json");
+    include_str!("../../../../testdata/replay/responses/mydisease/melanoma-page-two.json");
 const DETAIL: &str = r#"{"_id":"MONDO:0005105","disease_ontology":{"name":"melanoma","synonyms":{"exact":["malignant melanoma"]}}}"#;
 
 #[tokio::test]
