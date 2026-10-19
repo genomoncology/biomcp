@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 7a88ab1, accept
+
 ## Outcome
 
 The disease exact-resolution deadline control completes reliably while proving cancellation of an unresponsive provider. Preserve the bounded paging and provider-failure behavior; repair the actual cause, whether fixture synchronization or runtime cancellation.
