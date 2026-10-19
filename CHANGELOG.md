@@ -21,6 +21,7 @@
 - Identify variant CGI output as MyVariant's variant-level CGI subset, loaded 2023-02-27, and scope empty results to that subset in Markdown and JSON. (2245)
 
 - Resolve versioned transcript variant inputs through source-backed DNA coordinates with their assembly, and name the matched transcript while preserving the displayed numbering. Refuse unverified transcript matches explicitly. (1260)
+- Accept alternative-transcript protein numbering only with paired versioned annotations on the same allele; refuse unsupported aliases while preserving verified transcript matches. (2261)
 
 - Retrieve advertised preprint JATS with its source and license, and preserve structured single and batch answers when full text is unavailable. (2248)
 
