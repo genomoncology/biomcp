@@ -29,3 +29,7 @@ Reproduce the timeout on current main with recorded provider replies and with on
 ## Development brief
 
 Study the actual current search-all and standalone GWAS requests before changing code. Preserve all other sources, overall deadline and day-cache; do not increase the timeout. Reproduce with recorded replies and one live opt-in run as authorized by the outcome. Name exact request differences and any demonstrated defect, then report proposed files and outside-in failing proof before the coordinator declares a source claim. Start from current main 096c11fc416ddc18ee3b05814a6d0b9fede63648; PM commit 4da16647b changes no product code. Clinical semantics require a clinical reviewer, not a developer judgment.
+
+## Progress
+
+- 2026-10-19 started
