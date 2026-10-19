@@ -9,7 +9,11 @@ use sha2::{Digest, Sha256};
 use crate::entities::variant::RequestedVariantIdentity;
 use crate::sources::pubtator::{PubTatorAnnotation, PubTatorExportResponse, PubTatorNormalizedId};
 
-pub(crate) const VERIFIER_VERSION: &str = "article-identity-v2";
+mod paper_anchors;
+
+pub(crate) use paper_anchors::verify_paper_anchors;
+
+pub(crate) const VERIFIER_VERSION: &str = "article-identity-v3";
 pub(crate) const PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION: &str =
     "pubtator-export-biocjson-fulltext-v1";
 const RESPONSE_SUBSET_VERSION: &str = "clinically-relevant-response-v1";
@@ -100,6 +104,15 @@ pub(crate) enum ProviderLinkage {
         relation_type: Option<String>,
         relation_roles: Option<Vec<String>>,
         provenance: ProviderLinkageProvenance,
+    },
+    #[serde(rename = "pubtator_transcript_anchor")]
+    PaperTranscript {
+        literal_anchor: String,
+        query: String,
+        caid: String,
+        paper_linkage: Box<ProviderLinkage>,
+        requested_resolutions: Vec<super::variant_search::CanonicalEquivalenceObservation>,
+        resolution: Box<super::variant_search::CanonicalEquivalenceObservation>,
     },
     #[serde(rename = "clingen_ldh_annotation")]
     Ldh {
@@ -403,11 +416,50 @@ fn typed_variant(annotation: &PubTatorAnnotation) -> Option<(&str, u64, Vec<Stri
     .then_some((hgvs, gene_id, tokens, annotation.id.as_deref()?))
 }
 
+fn document_matches_pmid(
+    document: &crate::sources::pubtator::PubTatorDocument,
+    expected_pmid: &str,
+) -> bool {
+    let pmid_agrees = document
+        .pmid
+        .is_none_or(|pmid| pmid.to_string() == expected_pmid);
+    let pmid_confirms = document
+        .pmid
+        .is_some_and(|pmid| pmid.to_string() == expected_pmid);
+    // A full-text export keys its document by the numeric PMC id while an
+    // abstract-only export keys it by the PMID; either key names the
+    // expected paper only when the document's own pmid field agrees with
+    // the PMID being verified.
+    document
+        .id
+        .as_deref()
+        .and_then(canonical_pmid)
+        .is_some_and(|returned| {
+            (returned == expected_pmid && pmid_agrees)
+                || (pmid_confirms
+                    && document
+                        .pmcid
+                        .as_deref()
+                        .and_then(pmcid_digits)
+                        .is_some_and(|digits| digits == returned))
+        })
+}
+
 pub(crate) fn verify_pubtator(
     requested: &RequestedVariantIdentity,
     expected_pmid: &str,
     response: &PubTatorExportResponse,
     incomplete: bool,
+) -> VariantArticleIdentity {
+    verify_pubtator_document(requested, expected_pmid, response, incomplete, None)
+}
+
+fn verify_pubtator_document(
+    requested: &RequestedVariantIdentity,
+    expected_pmid: &str,
+    response: &PubTatorExportResponse,
+    incomplete: bool,
+    only_document: Option<&crate::sources::pubtator::PubTatorDocument>,
 ) -> VariantArticleIdentity {
     let requested_gene = requested.gene.as_deref().map(normalized);
     let requested_allele = requested_allele(requested);
@@ -429,31 +481,8 @@ pub(crate) fn verify_pubtator(
     let mut semantic_anomaly = canonical_pmid(expected_pmid).is_none();
     let mut missing_typed_gene = false;
 
-    for document in &response.documents {
-        let pmid_agrees = document
-            .pmid
-            .is_none_or(|pmid| pmid.to_string() == expected_pmid);
-        let pmid_confirms = document
-            .pmid
-            .is_some_and(|pmid| pmid.to_string() == expected_pmid);
-        // A full-text export keys its document by the numeric PMC id while an
-        // abstract-only export keys it by the PMID; either key names the
-        // expected paper only when the document's own pmid field agrees with
-        // the PMID being verified.
-        let document_is_expected =
-            document
-                .id
-                .as_deref()
-                .and_then(canonical_pmid)
-                .is_some_and(|returned| {
-                    (returned == expected_pmid && pmid_agrees)
-                        || (pmid_confirms
-                            && document
-                                .pmcid
-                                .as_deref()
-                                .and_then(pmcid_digits)
-                                .is_some_and(|digits| digits == returned))
-                });
+    for document in only_document.map_or(response.documents.as_slice(), std::slice::from_ref) {
+        let document_is_expected = document_matches_pmid(document, expected_pmid);
         if !document_is_expected {
             semantic_anomaly = true;
             continue;
@@ -933,6 +962,7 @@ mod tests {
                 journal: None,
                 authors: vec![],
                 passages: vec![PubTatorPassage {
+                    offset: None,
                     infons: Some(PubTatorInfons {
                         kind: Some("abstract".into()),
                     }),
@@ -1064,6 +1094,7 @@ mod tests {
         let mut split = response(false);
         let gene = split.documents[0].passages[0].annotations.remove(0);
         split.documents[0].passages.push(PubTatorPassage {
+            offset: None,
             infons: Some(PubTatorInfons {
                 kind: Some("title".into()),
             }),
@@ -1213,6 +1244,7 @@ mod tests {
         // naming is the same proof for the one variant annotation.
         let mut repeated = response(false);
         repeated.documents[0].passages.push(PubTatorPassage {
+            offset: None,
             infons: Some(PubTatorInfons {
                 kind: Some("paragraph".into()),
             }),

@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Verify explicit versioned transcript substitutions in article prose when ClinGen resolves the paper anchor to the requested allele, retaining typed gene linkage and resolution provenance. (2226)
+
 - Separate unverified transcript-alias article matches from verified evidence, preserving provider transcript provenance and naming missing provenance in CLI and MCP output. (2185)
 
 - Report disabled local datasets as disabled in health checks and name the setting instead of reporting missing-file errors. (2221)
