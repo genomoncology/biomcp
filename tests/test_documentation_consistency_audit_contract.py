@@ -636,16 +636,16 @@ def test_cache_path_docs_match_resolved_cache_root_contract() -> None:
     assert "--dry-run" in troubleshooting
     assert "--max-age 7d" in troubleshooting
     assert "resolved cache root" in troubleshooting_ws
-    assert "print the managed HTTP cache path" in troubleshooting_ws
+    assert "print the SQLite database path" in troubleshooting_ws
     assert "safe first step" in troubleshooting_ws
     assert "downloads/" in troubleshooting
     assert "manual operator step" not in troubleshooting_ws
 
-    assert "`<cache_root>/http`" in data_sources
-    assert "`~/.cache/biomcp/http` on Linux" in data_sources
+    assert "`<cache_root>/biomcp.db`" in data_sources
+    assert "`~/.cache/biomcp/biomcp.db` on Linux" in data_sources
     assert "`biomcp cache path`" in data_sources
 
-    assert "`http/` for HTTP responses" in faq
+    assert "`biomcp.db` for reusable responses" in faq
     assert "`downloads/` for retrieved text artifacts" in faq
     assert "`biomcp cache path`" in faq
 

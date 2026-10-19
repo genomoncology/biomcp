@@ -215,7 +215,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     }
                 }
                 super::cache::CacheCommand::Stats => {
-                    let report = crate::cli::cache::collect_cache_stats_report()?;
+                    let report = tokio::task::spawn_blocking(crate::cli::cache::collect_cache_stats_report).await??;
                     if json {
                         Ok(crate::render::json::to_pretty(&report)?)
                     } else {
@@ -227,14 +227,14 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     max_size,
                     dry_run,
                 } => {
-                    let report = crate::cli::cache::execute_clean(max_age, max_size, dry_run)?;
+                    let report = tokio::task::spawn_blocking(move ||crate::cli::cache::execute_clean(max_age,max_size,dry_run)).await??;
                     if json {
                         Ok(crate::render::json::to_pretty(&report)?)
                     } else {
                         Ok(crate::cli::cache::render_clean_text(&report))
                     }
                 }
-                super::cache::CacheCommand::Clear { .. } => {
+                super::cache::CacheCommand::Clear { .. } | super::cache::CacheCommand::CleanLegacy { .. } => {
                     Err(crate::error::BioMcpError::InvalidArgument(
                         "cache clear must be executed through run_outcome()".into(),
                     )
@@ -358,21 +358,41 @@ async fn run_outcome_inner(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome
             .await
             .map_err(Into::into),
         Commands::Cache {
-            cmd: super::cache::CacheCommand::Clear { yes },
+            cmd:
+                command @ (super::cache::CacheCommand::Clear { .. }
+                | super::cache::CacheCommand::CleanLegacy { .. }),
         } => {
+            let (yes, legacy) = match command {
+                super::cache::CacheCommand::Clear { yes } => (yes, false),
+                super::cache::CacheCommand::CleanLegacy { yes } => (yes, true),
+                _ => unreachable!(),
+            };
             if !yes && !std::io::stdin().is_terminal() {
                 return Ok(CommandOutcome::stderr_with_exit(
-                    "Error: biomcp cache clear requires a TTY or --yes for non-interactive use."
-                        .to_string(),
+                    format!(
+                        "Error: biomcp cache {} requires a TTY or --yes for non-interactive use.",
+                        if legacy { "clean-legacy" } else { "clear" }
+                    ),
                     1,
                 ));
             }
 
             let config = crate::cache::resolve_cache_config()?;
-            let cache_path = config.cache_root.join("http");
+            let cache_path = if legacy {
+                config.cache_root.clone()
+            } else {
+                config.cache_root.join(crate::cache::sqlite::DATABASE_NAME)
+            };
 
             let report = if yes || crate::cli::cache::prompt_clear_confirmation(&cache_path)? {
-                crate::cli::cache::execute_managed_clear(&config)?
+                tokio::task::spawn_blocking(move || {
+                    if legacy {
+                        crate::cli::cache::execute_legacy_clear(&config)
+                    } else {
+                        crate::cli::cache::execute_managed_clear(&config)
+                    }
+                })
+                .await??
             } else {
                 crate::cache::ClearReport {
                     bytes_freed: None,
@@ -495,7 +515,7 @@ async fn run_outcome_inner(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome
                     command: Some(super::gene::CspecCommand::Document { capture_id }),
                     ..
                 }),
-        } => super::gene::cspec::document(capture_id, json),
+        } => super::gene::cspec::document(capture_id, json).await,
         Commands::Gene {
             cmd: super::GeneCommand::Definition { symbol },
         } => {

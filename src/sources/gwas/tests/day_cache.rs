@@ -342,40 +342,26 @@ async fn a_stored_body_that_fails_to_decode_is_replaced_by_a_fresh_fetch() {
     assert_eq!(healed.total, 1);
 }
 
-/// The stored record the manager writes: bincode `{ response, policy }`,
-/// the same field order every reader of the HTTP cache uses.
-#[derive(serde::Serialize, serde::Deserialize)]
-struct StoredHttpEntry {
-    response: http_cache::HttpResponse,
-    policy: http_cache_semantics::CachePolicy,
-}
-
 /// Rewrite the one stored HTTP-cache entry's body into bytes that
 /// cannot decode, leaving the stored policy untouched so the entry
 /// still serves. The entry is found by listing the scratch cache, so
 /// the test never restates the cache key.
 fn corrupt_the_stored_gwas_body() {
     let cache_root = std::env::var("BIOMCP_CACHE_DIR").expect("scratch cache root");
-    let http_cache = std::path::Path::new(&cache_root).join("http");
-    let mut keys = Vec::new();
-    for entry in cacache::list_sync(&http_cache) {
-        keys.push(entry.expect("list cache entry").key);
-    }
-    assert_eq!(keys.len(), 1, "the first search stored exactly one entry");
-
-    let bytes = cacache::read_sync(&http_cache, &keys[0]).expect("read stored entry");
-    let mut stored: StoredHttpEntry =
-        bincode::deserialize(&bytes).expect("deserialize stored entry");
-    assert!(
-        stored.policy.age(std::time::SystemTime::now()) < crate::sources::DAY_CACHE_TTL,
-        "the seeded entry must sit inside the day window so the serve, not the age check, drives the test"
-    );
-    stored.response.body = b"not json".to_vec();
-    let rewritten = bincode::serialize(&stored).expect("serialize rewritten entry");
-    let mut writer = cacache::WriteOpts::new()
-        .size(rewritten.len())
-        .open_sync(&http_cache, &keys[0])
-        .expect("open rewrite writer");
-    std::io::Write::write_all(&mut writer, &rewritten).expect("rewrite stored body");
-    writer.commit().expect("commit rewritten entry");
+    let connection =
+        rusqlite::Connection::open(std::path::Path::new(&cache_root).join("biomcp.db")).unwrap();
+    let count: i64 = connection
+        .query_row("SELECT count(*) FROM entries", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(count, 1, "the first search stored exactly one entry");
+    use sha2::Digest;
+    connection
+        .execute(
+            "UPDATE entries SET body=?1,body_hash=?2",
+            rusqlite::params![
+                b"not json".as_slice(),
+                format!("{:x}", sha2::Sha256::digest(b"not json"))
+            ],
+        )
+        .unwrap();
 }

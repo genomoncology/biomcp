@@ -302,17 +302,16 @@ end="$(date +%s.%N)"
 awk -v s="$start" -v e="$end" 'BEGIN { d = e - s; if (d > 8.0) { print "deadline run took", d, "seconds"; exit 1 } }'
 ```
 
-### Construction Under A Held Epoch Lock Honors The Deadline
+### Construction Under A Held SQLite Writer Honors The Deadline
 
-Client construction takes the cache epoch lock, and another process can
-hold it. Holding it must not push an invocation past its deadline: the
-runner's `HOLD_EPOCH_LOCK` mode keeps the lock from a side process while a
+Cache construction can encounter a SQLite writer held by another process. Contention must not push an invocation past its deadline: the
+runner's `HOLD_SQLITE_WRITER` mode keeps the lock from a side process while a
 PubMed-only search runs under a 3000 ms forced deadline, and the invocation
 still exits at the deadline naming the deadline in its error.
 
 ```bash
 start="$(date +%s.%N)"
-( HOLD_EPOCH_LOCK=1 bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
+( HOLD_SQLITE_WRITER=1 bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
     --source pubmed -k "deadline-bound federation" --limit 3; exit 0 ) \
   | mustmatch like '"code": "source_unavailable"
 article search deadline exceeded after 3s'

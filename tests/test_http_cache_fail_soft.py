@@ -1,12 +1,11 @@
 """Local cache failures preserve recorded provider answers through the CLI."""
 from __future__ import annotations
 
-import base64
-import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -117,7 +116,7 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
     assert first.returncode == 0, first.stderr
     first_payload = json.loads(first.stdout)
     assert first_payload.get("results") or any(section["results"] for section in first_payload["sections"])
-    assert list((cache / "http/index-v5").rglob("*")), "cold search must fill HTTP cache"
+    assert (cache / "biomcp.db").is_file(), "cold search must fill SQLite cache"
     before = replay.request_log_line_count()
     second = run(command)
     assert second.returncode == 0, second.stderr
@@ -136,20 +135,9 @@ def test_undecodable_cache_entry_refetches_then_keeps_cache_hits(provider):
     run, cache, _, replay = provider
     first = run(GENE)
     assert first.returncode == 0, first.stderr
-    buckets = list((cache / "http/index-v5").rglob("*"))
-    buckets = [path for path in buckets if path.is_file()]
-    assert len(buckets) == 1
-    bucket = buckets[0]
-    entry = json.loads(bucket.read_text().strip().split("\t")[-1])
-    invalid = b"\x00"
-    digest = hashlib.sha512(invalid).digest()
-    hexadecimal = digest.hex()
-    blob = cache / "http/content-v2/sha512" / hexadecimal[:2] / hexadecimal[2:4] / hexadecimal[4:]
-    blob.parent.mkdir(parents=True, exist_ok=True)
-    blob.write_bytes(invalid)
-    entry.update(integrity="sha512-" + base64.b64encode(digest).decode(), size=len(invalid))
-    encoded = json.dumps(entry, separators=(",", ":"))
-    bucket.write_text("\n" + hashlib.sha256(encoded.encode()).hexdigest() + "\t" + encoded)
+    with sqlite3.connect(cache / "biomcp.db") as connection:
+        assert connection.execute("select count(*) from entries where namespace='http'").fetchone()[0] == 1
+        connection.execute("update entries set metadata=? where namespace='http'", (b"invalid",))
     before = replay.request_log_line_count()
     assert_answer(run(GENE), "read")
     assert replay.request_log_line_count() == before + 1
@@ -163,7 +151,8 @@ def test_failed_cache_write_keeps_the_provider_answer(provider):
     run, cache, before_reply, _ = provider
 
     def obstruct_write():
-        (cache / ".biomcp-key-locks").write_bytes(b"blocked lock directory")
+        with sqlite3.connect(cache / "biomcp.db") as connection:
+            connection.execute("create trigger obstruct_cache before insert on entries begin select raise(abort,'fixture write failure'); end")
 
     before_reply[0] = obstruct_write
     result = run(GENE)
@@ -174,15 +163,13 @@ def test_failed_cache_write_keeps_the_provider_answer(provider):
 @pytest.mark.skipif(os.name != "posix", reason="uses a POSIX lock holder")
 @pytest.mark.parametrize("log_level", ["warn", "debug"])
 def test_contended_cache_write_keeps_answer_and_logs_only_at_debug(provider, log_level):
-    import fcntl
-
     run, cache, before_reply, replay = provider
     held = None
 
     def hold_byte_total_lock():
         nonlocal held
-        held = (cache / "http/.content-bytes.lock").open("a+b")
-        fcntl.flock(held, fcntl.LOCK_EX)
+        held = sqlite3.connect(cache / "biomcp.db", check_same_thread=False)
+        held.execute("begin immediate")
 
     before_reply[0] = hold_byte_total_lock
     try:
@@ -199,10 +186,9 @@ def test_contended_cache_write_keeps_answer_and_logs_only_at_debug(provider, log
             assert str(cache) not in messages[0] and "http://" not in messages[0], messages
         else:
             assert not messages, result.stderr
-        # Write preparation may create an empty index bucket before reserving bytes.
-        assert not any(
-            path.read_bytes() for path in (cache / "http/index-v5").rglob("*") if path.is_file()
-        ), "contended write must leave no cached answer"
+        with sqlite3.connect(cache / "biomcp.db") as connection:
+            assert connection.execute("select count(*) from entries").fetchone()[0] == 0
+
     finally:
         before_reply[0] = lambda: None
         if held is not None:
@@ -218,23 +204,6 @@ def test_contended_cache_write_keeps_answer_and_logs_only_at_debug(provider, log
     assert replay.request_log_line_count() == before + 1, "settled refill must be reused"
 
 
-@pytest.mark.parametrize("fault", ["integrity", "missing"])
-def test_unreadable_cached_content_refetches_with_a_safe_warning(provider, fault):
-    run, cache, _, replay = provider
-    first = run(GENE)
-    assert first.returncode == 0, first.stderr
-    blobs = [path for path in (cache / "http/content-v2").rglob("*") if path.is_file()]
-    assert len(blobs) == 1
-    if fault == "integrity":
-        blobs[0].write_bytes(b"corrupt cache content")
-    else:
-        blobs[0].unlink()
-    before = replay.request_log_line_count()
-    result = run(GENE)
-    assert_answer(result, "read")
-    assert str(cache) not in result.stderr
-    assert replay.request_log_line_count() == before + 1
-
 
 def test_no_cache_ignores_an_invalid_cache_tree_without_warning(provider):
     run, cache, _, _ = provider
@@ -246,19 +215,18 @@ def test_no_cache_ignores_an_invalid_cache_tree_without_warning(provider):
     assert (cache / "http").read_bytes() == b"not a directory"
 
 
-@pytest.mark.skipif(os.name != "posix", reason="uses a POSIX lock holder")
-@pytest.mark.parametrize("lock_name", [".body-limit-cache-v1.lock", ".biomcp-operation.lock"])
-def test_cache_lock_contention_leaves_time_for_article_provider(provider, lock_name):
-    import fcntl
-
+@pytest.mark.parametrize("command", [GENE, ARTICLE])
+def test_cache_database_contention_leaves_time_for_provider(provider, command):
     run, cache, _, replay = provider
-    with (cache / lock_name).open("wb") as held:
-        fcntl.flock(held, fcntl.LOCK_EX)
+    seeded = run(command)
+    assert seeded.returncode == 0, seeded.stderr
+    with sqlite3.connect(cache / "biomcp.db") as held:
+        held.execute("begin immediate")
         before = replay.request_log_line_count()
-        result = run(ARTICLE)
+        result = run(command)
         assert result.returncode == 0, result.stderr
         assert json.loads(result.stdout)["results"]
-        assert "local HTTP cache" not in result.stderr, result.stderr
+        assert "WARN" not in result.stderr, result.stderr
         assert replay.request_log_line_count() > before
 
 
@@ -268,18 +236,6 @@ def test_unreadable_cache_configuration_uses_provider(provider):
     config = cache.parent / config_home / "biomcp/cache.toml"
     config.mkdir(parents=True)
     assert_answer(run(GENE), "initialization")
-
-
-def test_failed_cache_size_marker_write_warns_without_exposing_local_paths(provider):
-    run, cache, _, _ = provider
-    first = run(GENE)
-    assert first.returncode == 0, first.stderr
-    marker = cache / "http/.content-bytes-v1"
-    marker.unlink()
-    marker.mkdir()
-    result = run(GENE)
-    assert_answer(result, "initialization")
-    assert str(cache) not in result.stderr
 
 
 @pytest.mark.skipif(os.name != "posix", reason="uses a POSIX lock holder")
@@ -296,7 +252,7 @@ def test_parallel_current_cache_starts_use_cache_while_epoch_lock_is_held(provid
     before = replay.request_log_line_count()
     # A process holding the epoch lock must not prevent readers of a current
     # epoch. Holding it across every start makes the old race deterministic.
-    with (cache / ".body-limit-cache-v1.lock").open("r+b") as held:
+    with (cache / ".body-limit-cache-v1.lock").open("a+b") as held:
         fcntl.flock(held, fcntl.LOCK_EX)
         with ThreadPoolExecutor(max_workers=12) as workers:
             results = list(workers.map(lambda _: run(command), range(12)))
@@ -309,3 +265,21 @@ def test_parallel_current_cache_starts_use_cache_while_epoch_lock_is_held(provid
         replay.request_log_entries(since=before),
         [result.stderr for result in results],
     )
+
+
+@pytest.mark.parametrize("fault", ["integrity", "missing"])
+def test_unreadable_cached_blob_refetches_with_a_safe_warning(provider, fault):
+    run, cache, _, replay = provider
+    first = run(GENE)
+    assert first.returncode == 0, first.stderr
+    digest = "0" * 64
+    with sqlite3.connect(cache / "biomcp.db") as connection:
+        connection.execute("update entries set body=null,blob=? where namespace='http'", (digest,))
+    if fault == "integrity":
+        (cache / "blobs").mkdir(exist_ok=True)
+        (cache / "blobs" / digest).write_bytes(b"corrupt cache content")
+    before = replay.request_log_line_count()
+    result = run(GENE)
+    assert_answer(result, "read")
+    assert str(cache) not in result.stderr
+    assert replay.request_log_line_count() == before + 1

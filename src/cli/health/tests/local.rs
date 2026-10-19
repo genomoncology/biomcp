@@ -1,7 +1,6 @@
 //! Local data and cache readiness tests for `biomcp health`.
 
 use std::io;
-use std::path::PathBuf;
 
 use super::super::HealthStatus;
 use super::super::catalog::{
@@ -17,10 +16,10 @@ use super::super::runner::{ProbeClass, report_from_outcomes};
 use super::{
     assert_cache_dir_affects, assert_millisecond_latency, block_on, fixture_ema_root,
     set_fresh_ema_mtimes, set_stale_ema_mtimes, set_stale_mtime, set_stale_mtime_with_age,
-    test_blob, test_config, test_entry, test_snapshot, write_cvx_files, write_ema_files,
-    write_gtr_files, write_who_files, write_who_ivd_files,
+    test_config, write_cvx_files, write_ema_files, write_gtr_files, write_who_files,
+    write_who_ivd_files,
 };
-use crate::cache::{CachePlannerError, DiskFreeThreshold, FilesystemSpace};
+use crate::cache::{DiskFreeThreshold, FilesystemSpace};
 use crate::error::BioMcpError;
 use crate::test_support::TempDirGuard;
 
@@ -502,15 +501,11 @@ fn gtr_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
 #[test]
 fn check_cache_limits_within_limits_returns_healthy_row() {
     let config = test_config("/tmp/cache", 1_024, DiskFreeThreshold::Percent(10));
-    let snapshot = test_snapshot(
-        "/tmp/cache/http",
-        vec![test_entry("retained", b"live-bytes", 100)],
-        vec![test_blob("retained", b"live-bytes", 1)],
-    );
+    let bytes = 10;
 
     let outcome = check_cache_limits_with(
         || Ok(config),
-        |_| Ok(snapshot.clone()),
+        |_| Ok(bytes),
         |_| {
             Ok(FilesystemSpace {
                 available_bytes: 90,
@@ -528,18 +523,11 @@ fn check_cache_limits_within_limits_returns_healthy_row() {
 #[test]
 fn check_cache_limits_warns_when_referenced_bytes_exceed_max_size() {
     let config = test_config("/tmp/cache", 5, DiskFreeThreshold::Percent(10));
-    let snapshot = test_snapshot(
-        "/tmp/cache/http",
-        vec![
-            test_entry("old", b"abcde", 100),
-            test_entry("new", b"fghij", 200),
-        ],
-        vec![test_blob("old", b"abcde", 1), test_blob("new", b"fghij", 1)],
-    );
+    let bytes = 10;
 
     let outcome = check_cache_limits_with(
         || Ok(config),
-        |_| Ok(snapshot.clone()),
+        |_| Ok(bytes),
         |_| {
             Ok(FilesystemSpace {
                 available_bytes: 90,
@@ -557,15 +545,11 @@ fn check_cache_limits_warns_when_referenced_bytes_exceed_max_size() {
 #[test]
 fn check_cache_limits_warns_when_disk_floor_is_violated() {
     let config = test_config("/tmp/cache", 1_024, DiskFreeThreshold::Percent(20));
-    let snapshot = test_snapshot(
-        "/tmp/cache/http",
-        vec![test_entry("retained", b"live-bytes", 100)],
-        vec![test_blob("retained", b"live-bytes", 1)],
-    );
+    let bytes = 10;
 
     let outcome = check_cache_limits_with(
         || Ok(config),
-        |_| Ok(snapshot.clone()),
+        |_| Ok(bytes),
         |_| {
             Ok(FilesystemSpace {
                 available_bytes: 10,
@@ -586,12 +570,7 @@ fn check_cache_limits_reports_snapshot_errors_as_error_rows() {
 
     let outcome = check_cache_limits_with(
         || Ok(config),
-        |_| {
-            Err(CachePlannerError::Io {
-                path: PathBuf::from("/tmp/cache/http"),
-                source: io::Error::other("boom"),
-            })
-        },
+        |_| Err(io::Error::other("boom")),
         |_| {
             Ok(FilesystemSpace {
                 available_bytes: 90,
