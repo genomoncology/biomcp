@@ -361,3 +361,34 @@ def test_xml_element_paths_ignore_text_order_and_repeated_elements(
     else:
         assert summary["passed"] == 1
         assert results[0]["added_paths"] == ["$/reply/row/extra"]
+
+
+@pytest.mark.parametrize("historical", [False, True])
+@pytest.mark.parametrize(
+    "invalid_xml",
+    [b"<reply>", b'<?xml version="1.0" encoding="unknown-codec"?><reply/>'],
+)
+def test_invalid_xml_keeps_complete_recording_accounting(
+    tmp_path, provider, historical, invalid_xml
+):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "application/xml"
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    (replay / "reply.json").write_bytes(invalid_xml if historical else b"<reply/>")
+    server.content_type = "application/xml"
+    server.body = b"<reply/>" if historical else invalid_xml
+    process, results, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == 1
+    assert not process.stderr
+    assert len(results) == summary["total"] == 1
+    assert summary["checked"] == int(not historical)
+    assert summary["blocked" if historical else "drift"] == 1
+    assert len(server.requests) == int(not historical)
+    assert results[0]["details"] == [
+        "invalid XML response structure"
+        if historical
+        else "live response has unsupported or invalid shape"
+    ]

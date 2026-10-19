@@ -75,7 +75,7 @@ def reply_shape(body: bytes, content_type: str) -> dict[str, set[str]]:
 
             walk(root, "$")
             return shape
-        except (ElementTree.ParseError, RecursionError) as error:
+        except (ElementTree.ParseError, LookupError, RecursionError) as error:
             raise ValueError("invalid XML response structure") from error
     raise ValueError(
         "unsupported response format; structure comparison supports JSON and XML only"
