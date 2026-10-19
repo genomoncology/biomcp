@@ -25,7 +25,7 @@ Reviews: revision 4ad3a87, accept
 
 ## Outcome
 
-The named remaining HTTP fixture consumers use the existing replay server, and an obsolete setup/cleanup script is removed only after its final retained consumer moves.
+The approved trial-reference, condition-first trial-search, gene discovery and supported pathway reader consumers use the existing replay server. Authored fault controls and excluded local datasets keep their current helpers. Remaining selector coverage and helper retirement belong to2236 in the next release.
 
 Depends on: 2159, 2229
 
@@ -91,3 +91,9 @@ This branch has main 08d721f8525a35267bcd0a307248c69b1de210fc and the accepted 2
 Before code, run the existing affected reader cases once and record exact command/output in the report. If the complete page can run through the existing replay runner without coverage loss, restore it to the routine page set; otherwise preserve exact assertions in the existing replay Python lane under the declared files. Use the existing golden runner and receipts, not a new launcher. Run only affected reader/request cases and mechanical checks, reuse a qualified unchanged CLI if appropriate, through the configured build job. Retain raw in experiments/778-biomcp-2111-replay-consumer-evidence. This changes the gate definition and will land separately with its own gate. No WIP push; publish once review-ready.
 
 Keep: experiments/778-biomcp-2111-replay-consumer-evidence — Retain cited raw proof until release evidence is explicitly released.
+
+## Final pathway reader proof
+
+Sourceed5cfafc5358c343907fff529ec081af7c33f731 changes three files: restores the complete pathway page to the routine list, changes its request-log variable to BIOMCP_REPLAY_REQUEST_LOG and adds the changelog bullet. Every existing command, assertion, refusal, source-disable form, request count and provenance expression remains verbatim. No new captures, goldens, helper deletion, provider change or Rust build.
+
+Baseline2111/1792423231581-93017 passed all nine existing pathway cases. Focused replay2111/1792423283298-99439 passed the same nine, with24recorded provider hits, zero misses and one health probe. The driver then exited1 because an additional scratch accounting assertion treated that health probe as a provider hit. Raw failure retained; no assertion or test rerun hides it. Mechanical2111/1792423300742-10520 passed shell syntax, ShellCheck, tracked text, specification lint, zero coupling and whitespace. Tested hashes match the published source. Qualified unchanged08dCLI SHA256798b6e77a538a818d0250816d40c9bf21311cd6d84a0623ff89895133f3267c2 was reused. All invocation scripts, patches and raw jobs are retained in experiments/778-biomcp-2111-replay-consumer-evidence/jobs.
