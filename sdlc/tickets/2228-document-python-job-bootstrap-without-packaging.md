@@ -19,3 +19,7 @@ The repository instructions give one existing Python setup and invocation path t
 ## Keeps
 
 Keep tool installation, dependency versions and gate behavior unchanged. Preserve focused checks and avoid editable project installation for the docs/contract harness. Public instructions name only BioMCP commands and repository paths.
+
+## Progress
+
+- 2026-10-19 started
