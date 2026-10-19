@@ -4,13 +4,15 @@ priority: 3
 
 # 2163 — Give fixture scenarios owned identifiers
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision a9a7245, accept
 
 Reviews: revision 8b79d4c, accept
+
+Landed: b4101cf
 
 ## Outcome
 
