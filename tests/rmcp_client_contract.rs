@@ -1968,33 +1968,55 @@ async fn rmcp_client_rejects_unknown_list_cursors() -> anyhow::Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn rmcp_variant_erepo_rejects_unknown_fields_with_a_protocol_error() -> anyhow::Result<()> {
+async fn rmcp_stdio_returns_argument_errors_to_the_model_and_recovers() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness.spawn_stdio_client(&[]).await?;
-    // Unknown fields fail inside rmcp's Parameters deserialization, before
-    // the handler body, so the rejection is -32602 (ADR 0002), not an
-    // isError tool result.
-    let error = client
+    for (tool, arguments, field) in [
+        ("gene_cspec", json!({}), "gene"),
+        ("gene_cspec", json!({"gene":42}), "gene"),
+        (
+            "gene_cspec",
+            json!({"gene":"BRAF", "limit":"many"}),
+            "limit",
+        ),
+        ("biomcp", json!({}), "command"),
+        ("variant_normalize_car", json!({}), "inputs"),
+        ("variant_articles", json!({}), "items"),
+        (
+            "variant_erepo",
+            json!({"caid":"CA123456", "bogus":true}),
+            "bogus",
+        ),
+        ("variant_erepo", json!({"caids":[42]}), "caids[0]"),
+    ] {
+        let result = client
+            .peer()
+            .call_tool(
+                CallToolRequestParams::new(tool)
+                    .with_arguments(arguments.as_object().expect("argument object").clone()),
+            )
+            .await?;
+        assert_eq!(result.is_error, Some(true), "{tool}: {result:?}");
+        let message = biomcp_mcp_contract_client::first_text(&result.content);
+        assert!(
+            message.contains(field),
+            "{tool}: expected {field} in {message}"
+        );
+    }
+
+    let unknown = client
         .peer()
-        .call_tool(
-            CallToolRequestParams::new("variant_erepo").with_arguments(
-                BTreeMap::from([
-                    ("caid".to_string(), json!("CA123456")),
-                    ("bogus".to_string(), json!("unknown field")),
-                ])
-                .into_iter()
-                .collect(),
-            ),
-        )
+        .call_tool(CallToolRequestParams::new("no_such_tool"))
         .await
-        .expect_err("an unknown field must fail parameter deserialization");
-    match error {
+        .expect_err("unknown tool remains a protocol error");
+    match unknown {
         rmcp::ServiceError::McpError(data) => {
             assert_eq!(data.code, rmcp::model::ErrorCode::INVALID_PARAMS);
-            assert!(data.message.to_lowercase().contains("bogus"));
         }
         other => panic!("expected an MCP protocol error, got: {other:?}"),
     }
+    let success = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
+    assert_eq!(success.is_error, Some(false));
     client.cancel().await?;
     Ok(())
 }
