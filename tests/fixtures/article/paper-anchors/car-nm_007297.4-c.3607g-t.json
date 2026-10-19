@@ -1,0 +1,1227 @@
+{
+  "@context": "http://reg.genome.network/schema/allele.jsonld",
+  "@id": "http://reg.genome.network/allele/CA002402",
+  "communityStandardTitle": [
+    "NM_007294.4(BRCA1):c.3748G>T (p.Glu1250Ter)"
+  ],
+  "externalRecords": {
+    "ClinVarAlleles": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=32711[alleleid]",
+        "alleleId": 32711,
+        "preferredName": "NM_007294.4(BRCA1):c.3748G>T (p.Glu1250Ter)"
+      }
+    ],
+    "ClinVarVariations": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/17672",
+        "RCV": [
+          "RCV000019241",
+          "RCV000048311",
+          "RCV000074586",
+          "RCV000131811",
+          "RCV000465125",
+          "RCV000506391"
+        ],
+        "variationId": 17672
+      }
+    ],
+    "ExAC": [
+      {
+        "@id": "http://exac.broadinstitute.org/variant/17-41243800-C-A",
+        "id": "17-41243800-C-A",
+        "variant": "17:41243800 C / A"
+      }
+    ],
+    "MyVariantInfo_hg19": [
+      {
+        "@id": "http://myvariant.info/v1/variant/chr17:g.41243800C>A?assembly=hg19",
+        "id": "chr17:g.41243800C>A"
+      }
+    ],
+    "MyVariantInfo_hg38": [
+      {
+        "@id": "http://myvariant.info/v1/variant/chr17:g.43091783C>A?assembly=hg38",
+        "id": "chr17:g.43091783C>A"
+      }
+    ],
+    "dbSNP": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/snp/28897686",
+        "rs": 28897686
+      }
+    ],
+    "gnomAD_2": [
+      {
+        "@id": "http://gnomad.broadinstitute.org/variant/17-41243800-C-A?dataset=gnomad_r2_1",
+        "id": "17-41243800-C-A",
+        "variant": "17:41243800 C / A"
+      }
+    ],
+    "gnomAD_4": [
+      {
+        "@id": "http://gnomad.broadinstitute.org/variant/17-43091783-C-A?dataset=gnomad_r4",
+        "id": "17-43091783-C-A",
+        "variant": "17:43091783 C / A"
+      }
+    ]
+  },
+  "genomicAlleles": [
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "A",
+          "end": 43091783,
+          "referenceAllele": "C",
+          "start": 43091782
+        }
+      ],
+      "hgvs": [
+        "NC_000017.11:g.43091783C>A",
+        "CM000679.2:g.43091783C>A"
+      ],
+      "referenceGenome": "GRCh38",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000065"
+    },
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "A",
+          "end": 41243800,
+          "referenceAllele": "C",
+          "start": 41243799
+        }
+      ],
+      "hgvs": [
+        "NC_000017.10:g.41243800C>A",
+        "CM000679.1:g.41243800C>A"
+      ],
+      "referenceGenome": "GRCh37",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000041"
+    },
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "A",
+          "end": 38497326,
+          "referenceAllele": "C",
+          "start": 38497325
+        }
+      ],
+      "hgvs": [
+        "NC_000017.9:g.38497326C>A"
+      ],
+      "referenceGenome": "NCBI36",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000017"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 126201,
+          "referenceAllele": "G",
+          "start": 126200
+        }
+      ],
+      "hgvs": [
+        "NG_005905.2:g.126201G>T",
+        "LRG_292:g.126201G>T"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS000438"
+    }
+  ],
+  "transcriptAlleles": [
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3812,
+          "referenceAllele": "G",
+          "start": 3811
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000354071.8:n.3812G>T"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS913973"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3867,
+          "referenceAllele": "G",
+          "start": 3866
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000461574.2:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000417241.2:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000417241.2:p.Glu1250_Tyr1862delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914104"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3929,
+          "referenceAllele": "G",
+          "start": 3928
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000470026.6:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000419274.2:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000419274.2:p.Glu1250_Tyr1863delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914115"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3735,
+          "referenceAllele": "G",
+          "start": 3734
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000473961.6:c.3622G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000420201.2:p.Glu1208Ter",
+        "hgvsWellDefined": "ENSP00000420201.2:p.Glu1208_Tyr1821delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914123"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3854,
+          "referenceAllele": "G",
+          "start": 3853
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000476777.6:c.3745G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000417554.2:p.Glu1249Ter",
+        "hgvsWellDefined": "ENSP00000417554.2:p.Glu1249_Tyr1861delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914128"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3783,
+          "referenceAllele": "G",
+          "start": 3782
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000477152.6:c.3670G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000419988.2:p.Glu1224Ter",
+        "hgvsWellDefined": "ENSP00000419988.2:p.Glu1224_Tyr1837delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914130"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 886,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 886,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000478531.6:c.785-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000420412.2:n.785-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914132"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3829,
+          "referenceAllele": "G",
+          "start": 3828
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000489037.2:c.3670G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000420781.2:p.Glu1224Ter",
+        "hgvsWellDefined": "ENSP00000420781.2:p.Glu1224_Tyr1837delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914157"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 878,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 878,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000493919.6:c.647-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418819.2:n.647-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914168"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3941,
+          "referenceAllele": "G",
+          "start": 3940
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000494123.6:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000419103.2:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000419103.2:p.Glu1250_Tyr1863delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914169"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3108,
+          "referenceAllele": "G",
+          "start": 3107
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000497488.2:c.2860G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418986.2:p.Glu954Ter",
+        "hgvsWellDefined": "ENSP00000418986.2:p.Glu954_Tyr1567delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914174"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 4395,
+          "referenceAllele": "G",
+          "start": 4394
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000618469.2:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000478114.2:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000478114.2:p.Glu1250_Tyr1863delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914368"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3764,
+          "referenceAllele": "G",
+          "start": 3763
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000634433.2:c.3625G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000489431.2:p.Glu1209Ter",
+        "hgvsWellDefined": "ENSP00000489431.2:p.Glu1209_Tyr1822delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914383"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3861,
+          "referenceAllele": "G",
+          "start": 3860
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000644379.2:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000496570.2:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000496570.2:p.Glu1250_Tyr1885delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAspSerHisIleHisGlyGlnArgAsnAsnSerMetPheSerLysArgProArgGluHisIleSerAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914413"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 1051,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 1051,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000644555.2:c.647-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000494614.2:n.647-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914415"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 4093,
+          "referenceAllele": "G",
+          "start": 4092
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000652672.2:c.3607G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000498906.2:p.Glu1203Ter",
+        "hgvsWellDefined": "ENSP00000498906.2:p.Glu1203_Tyr1816delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS914437"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 756,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 756,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000484087.6:c.665-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000419481.2:n.665-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS905314"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 798,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 798,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000700182.1:c.707-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000514849.1:n.707-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS911031"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3861,
+          "referenceAllele": "G",
+          "start": 3860
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000357654.9:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000350283.3:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000350283.3:p.Glu1250_Tyr1863delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS748973",
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000357654.9:c.3748G>T"
+          },
+          "RefSeq": {
+            "hgvs": "NM_007294.4:c.3748G>T"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000350283.3:p.Glu1250Ter"
+          },
+          "RefSeq": {
+            "hgvs": "NP_009225.1:p.Glu1250Ter"
+          }
+        }
+      }
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3980,
+          "referenceAllele": "G",
+          "start": 3979
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000471181.7:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418960.2:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000418960.2:p.Glu1250_Tyr1884delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAspSerHisIleHisGlyGlnArgAsnAsnSerMetPheSerLysArgProArgGluHisIleSerValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS757017"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 69,
+          "referenceAllele": "G",
+          "start": 68
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000644379.1:c.69G>T"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS767790"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 789,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 789,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000352993.7:c.671-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000312236.5:n.671-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247155"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3812,
+          "referenceAllele": "G",
+          "start": 3811
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000354071.7:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000326002.7:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000326002.7:p.Glu1250_Ser1399delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyIleGlyThrArgPheLeuCysLeuProGlnSerIleTyrArgSerGluLeuAsnValTyrAlaPheGlyGluHisIleLeuGlnIleSerLysTyrSerTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247245"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3867,
+          "referenceAllele": "G",
+          "start": 3866
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000357654.7:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000350283.3:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000350283.3:p.Glu1250_Tyr1863delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS246738"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3849,
+          "referenceAllele": "G",
+          "start": 3848
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000461221.5:c.*3531G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418548.1:n.*3531G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS305785"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 42,
+          "referenceAllele": "G",
+          "start": 41
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000461574.1:c.42G>T"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS247367"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 981,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 981,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000468300.5:c.788-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000417148.1:n.788-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247345"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3980,
+          "referenceAllele": "G",
+          "start": 3979
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000471181.6:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418960.2:p.Glu1250Ter",
+        "hgvsWellDefined": "ENSP00000418960.2:p.Glu1250_Tyr1884delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAspSerHisIleHisGlyGlnArgAsnAsnSerMetPheSerLysArgProArgGluHisIleSerValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247116"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 886,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 886,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000478531.5:c.785-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000420412.1:n.785-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247368"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 409,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 409,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000484087.5:c.410-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000419481.1:n.410-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247305"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 412,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 412,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000487825.5:c.413-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418212.1:n.413-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247188"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 886,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 886,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000491747.6:c.788-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000420705.2:n.788-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247351"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3839,
+          "referenceAllele": "G",
+          "start": 3838
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000493795.5:c.3607G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418775.1:p.Glu1203Ter",
+        "hgvsWellDefined": "ENSP00000418775.1:p.Glu1203_Tyr1816delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247204"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 878,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 878,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000493919.5:c.647-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000418819.1:n.647-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247288"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 148,
+          "endIntronDirection": "-",
+          "endIntronOffset": 27831,
+          "referenceAllele": "G",
+          "start": 148,
+          "startIntronDirection": "-",
+          "startIntronOffset": 27832
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000586385.5:c.5-27832G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000465818.1:n.5-27832G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247162"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 59,
+          "endIntronDirection": "-",
+          "endIntronOffset": 17261,
+          "referenceAllele": "G",
+          "start": 59,
+          "startIntronDirection": "-",
+          "startIntronOffset": 17262
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000591534.5:c.-43-17262G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000467329.1:n.-43-17262G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS247210"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 59,
+          "endIntronDirection": "+",
+          "endIntronOffset": 33488,
+          "referenceAllele": "G",
+          "start": 59,
+          "startIntronDirection": "+",
+          "startIntronOffset": 33487
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "ENST00000591849.5:c.-99+33488G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "ENSP00000465347.1:n.-99+33488G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS246631"
+    },
+    {
+      "@id": "http://reg.genome.network/allele/PA168796",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3980,
+          "referenceAllele": "G",
+          "start": 3979
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007294.3:c.3748G>T",
+        "LRG_292t1:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009225.1:p.Glu1250Ter",
+        "hgvsWellDefined": "NP_009225.1:p.Glu1250_Tyr1863delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS032212"
+    },
+    {
+      "@id": "http://reg.genome.network/allele/PA2829693365",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3888,
+          "referenceAllele": "G",
+          "start": 3887
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007297.3:c.3607G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009228.2:p.Glu1203Ter",
+        "hgvsWellDefined": "NP_009228.2:p.Glu1203_Tyr1816delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS032213"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 806,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 806,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007298.3:c.788-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009229.2:n.788-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS032214"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 981,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 981,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007299.3:c.788-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009230.2:n.788-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS032215"
+    },
+    {
+      "@id": "http://reg.genome.network/allele/PA645443724",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3980,
+          "referenceAllele": "G",
+          "start": 3979
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007300.3:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009231.2:p.Glu1250Ter",
+        "hgvsWellDefined": "NP_009231.2:p.Glu1250_Tyr1884delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAspSerHisIleHisGlyGlnArgAsnAsnSerMetPheSerLysArgProArgGluHisIleSerValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS032216"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3884,
+          "referenceAllele": "G",
+          "start": 3883
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NR_027676.1:n.3884G>T"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS047824"
+    },
+    {
+      "@id": "http://reg.genome.network/allele/PA168796",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3861,
+          "referenceAllele": "G",
+          "start": 3860
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007294.4:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009225.1:p.Glu1250Ter",
+        "hgvsWellDefined": "NP_009225.1:p.Glu1250_Tyr1863delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS696962",
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000357654.9:c.3748G>T"
+          },
+          "RefSeq": {
+            "hgvs": "NM_007294.4:c.3748G>T"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000350283.3:p.Glu1250Ter"
+          },
+          "RefSeq": {
+            "hgvs": "NP_009225.1:p.Glu1250Ter"
+          }
+        }
+      }
+    },
+    {
+      "@id": "http://reg.genome.network/allele/PA2829693365",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3801,
+          "referenceAllele": "G",
+          "start": 3800
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007297.4:c.3607G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009228.2:p.Glu1203Ter",
+        "hgvsWellDefined": "NP_009228.2:p.Glu1203_Tyr1816delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAlaValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS696963"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 894,
+          "endIntronDirection": "-",
+          "endIntronOffset": 750,
+          "referenceAllele": "G",
+          "start": 894,
+          "startIntronDirection": "-",
+          "startIntronOffset": 751
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007299.4:c.788-751G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009230.2:n.788-751G>T"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS696964"
+    },
+    {
+      "@id": "http://reg.genome.network/allele/PA645443724",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3861,
+          "referenceAllele": "G",
+          "start": 3860
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NM_007300.4:c.3748G>T"
+      ],
+      "proteinEffect": {
+        "hgvs": "NP_009231.2:p.Glu1250Ter",
+        "hgvsWellDefined": "NP_009231.2:p.Glu1250_Tyr1884delinsCysLeuSerLysAsnThrGluGluAsnLeuLeuSerLeuLysAsnSerLeuAsnAspCysSerAsnGlnValIleLeuAlaLysAlaSerGlnGluHisHisLeuSerGluGluThrLysCysSerAlaSerLeuPheSerSerGlnCysSerGluLeuGluAspLeuThrAlaAsnThrAsnThrGlnAspProPheLeuIleGlySerSerLysGlnMetArgHisGlnSerGluSerGlnGlyValGlyLeuSerAspLysGluLeuValSerAspAspGluGluArgGlyThrGlyLeuGluGluAsnAsnGlnGluGluGlnSerMetAspSerAsnLeuGlyGluAlaAlaSerGlyCysGluSerGluThrSerValSerGluAspCysSerGlyLeuSerSerGlnSerAspIleLeuThrThrGlnGlnArgAspThrMetGlnHisAsnLeuIleLysLeuGlnGlnGluMetAlaGluLeuGluAlaValLeuGluGlnHisGlySerGlnProSerAsnSerTyrProSerIleIleSerAspSerSerAlaLeuGluAspLeuArgAsnProGluGlnSerThrSerGluLysAspSerHisIleHisGlyGlnArgAsnAsnSerMetPheSerLysArgProArgGluHisIleSerValLeuThrSerGlnLysSerSerGluTyrProIleSerGlnAsnProGluGlyLeuSerAlaAspLysPheGluValSerAlaAspSerSerThrSerLysAsnLysGluProGlyValGluArgSerSerProSerLysCysProSerLeuAspAspArgTrpTyrMetHisSerCysSerGlySerLeuGlnAsnArgAsnTyrProSerGlnGluGluLeuIleLysValValAspValGluGluGlnGlnLeuGluGluSerGlyProHisAspLeuThrGluThrSerTyrLeuProArgGlnAspLeuGluGlyThrProTyrLeuGluSerGlyIleSerLeuPheSerAspAspProGluSerAspProSerGluAspArgAlaProGluSerAlaArgValGlyAsnIleProSerSerThrSerAlaLeuLysValProGlnLeuLysValAlaGluSerAlaGlnSerProAlaAlaAlaHisThrThrAspThrAlaGlyTyrAsnAlaMetGluGluSerValSerArgGluLysProGluLeuThrAlaSerThrGluArgValAsnLysArgMetSerMetValValSerGlyLeuThrProGluGluPheMetLeuValTyrLysPheAlaArgLysHisHisIleThrLeuThrAsnLeuIleThrGluGluThrThrHisValValMetLysThrAspAlaGluPheValCysGluArgThrLeuLysTyrPheLeuGlyIleAlaGlyGlyLysTrpValValSerTyrPheTrpValThrGlnSerIleLysGluArgLysMetLeuAsnGluHisAspPheGluValArgGlyAspValValAsnGlyArgAsnHisGlnGlyProLysArgAlaArgGluSerGlnAspArgLysIlePheArgGlyLeuGluIleCysCysTyrGlyProPheThrAsnMetProThrAspGlnLeuGluTrpMetValGlnLeuCysGlyAlaSerValValLysGluLeuSerSerPheThrLeuGlyThrGlyValHisProIleValValValGlnProAspAlaTrpThrGluAspAsnGlyPheHisAlaIleGlyGlnMetCysGluAlaProValValThrArgGluTrpValLeuAspSerValAlaLeuTyrGlnCysGlnGluLeuAspThrTyrLeuIleProGlnIleProHisSerHisTyrTer"
+      },
+      "referenceSequence": "http://reg.genome.network/refseq/RS696965"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 3925,
+          "referenceAllele": "G",
+          "start": 3924
+        }
+      ],
+      "gene": "http://reg.genome.network/gene/GN001100",
+      "geneNCBI_id": 672,
+      "geneSymbol": "BRCA1",
+      "hgvs": [
+        "NR_027676.2:n.3925G>T"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS701973"
+    }
+  ],
+  "type": "nucleotide"
+}

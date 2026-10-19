@@ -21,7 +21,13 @@ Otherwise a paper matched only by the alias stays unverified, whatever the alias
 
 Example: for BRCA1 F1761I, the aliases c.211T>A and F71I are invalid against NM_007294.4, where c.211 is A and codon 71 is arginine.
 
-## Sources
+## Recorded example for explicit paper anchors
+
+Clinical review on 2026-10-19 confirmed with high confidence that PMID 32272925 explicitly names `NM_007294.3:c.3748G>T` in its Results prose. This does not require interpreting a sparse table or associating neighboring annotations. The [publisher article](https://link.springer.com/article/10.1186/s12920-020-0710-5) states the versioned accession directly.
+
+The [paper-anchor ClinGen query](https://reg.genome.network/allele?hgvs=NM_007294.3%3Ac.3748G%3ET) and [alternative-transcript ClinGen query](https://reg.genome.network/allele?hgvs=NM_007297.4%3Ac.3607G%3ET) both returned `CA002402` and explicitly included both representations on 2026-10-19. The alternative `NM_007297.4:c.3607G>T` is an authoritative equivalence, not wording quoted from the paper. A recorded response must support that equivalence before the product regression uses it. A changed authoritative response separating the representations would change this example.
+
+## General sources
 
 - HGVS general recommendations: a variant is described against a stated reference sequence that contains the changed residue; MANE is preferred.
 - Richards et al. 2015, ACMG/AMP standards: give the reference transcript and weigh all clinically relevant transcripts.

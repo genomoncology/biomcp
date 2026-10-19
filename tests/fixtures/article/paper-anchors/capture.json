@@ -1,0 +1,60 @@
+{
+  "captures": [
+    {
+      "path": "car-nm_007294.3-c.3748g-t.json",
+      "url": "https://reg.genome.network/allele?hgvs=NM_007294.3%3Ac.3748G%3ET",
+      "captured_at": "2026-10-19T11:45:09.003633+00:00",
+      "http_status": 200,
+      "sha256": "fcc99398fadd92ab1c56fe51c7b0ca1cc82f623f44d506796f5e492b6bf08fae",
+      "allele_id": "http://reg.genome.network/allele/CA002402"
+    },
+    {
+      "path": "car-nm_007297.4-c.3607g-t.json",
+      "url": "https://reg.genome.network/allele?hgvs=NM_007297.4%3Ac.3607G%3ET",
+      "captured_at": "2026-10-19T11:45:09.219749+00:00",
+      "http_status": 200,
+      "sha256": "fcc99398fadd92ab1c56fe51c7b0ca1cc82f623f44d506796f5e492b6bf08fae",
+      "allele_id": "http://reg.genome.network/allele/CA002402"
+    },
+    {
+      "path": "car-nm_007297.4-c.3607g-c.json",
+      "url": "https://reg.genome.network/allele?hgvs=NM_007297.4%3Ac.3607G%3EC",
+      "captured_at": "2026-10-19T11:45:09.333794+00:00",
+      "http_status": 200,
+      "sha256": "1d57dcfed34bb6c4d7bc89f3b8e29867abf2b0224851aa4bdfd18274cc9bf1a2",
+      "allele_id": "http://reg.genome.network/allele/CA10594475"
+    },
+    {
+      "path": "car-nm_007294.3-c.3748g-t-projected.json",
+      "url": "https://reg.genome.network/allele?hgvs=NM_007294.3%3Ac.3748G%3ET&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+      "captured_at": "2026-10-19T11:49:08.362138+00:00",
+      "http_status": 200,
+      "sha256": "e497b293de0dd11574a38d6652a8f3568dfbc984234709da59595ad717e44d85",
+      "allele_id": "http://reg.genome.network/allele/CA002402"
+    },
+    {
+      "path": "car-nm_007297.4-c.3607g-t-projected.json",
+      "url": "https://reg.genome.network/allele?hgvs=NM_007297.4%3Ac.3607G%3ET&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+      "captured_at": "2026-10-19T11:49:08.534705+00:00",
+      "http_status": 200,
+      "sha256": "e497b293de0dd11574a38d6652a8f3568dfbc984234709da59595ad717e44d85",
+      "allele_id": "http://reg.genome.network/allele/CA002402"
+    },
+    {
+      "path": "car-nm_007297.4-c.3607g-c-projected.json",
+      "url": "https://reg.genome.network/allele?hgvs=NM_007297.4%3Ac.3607G%3EC&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+      "captured_at": "2026-10-19T11:49:08.640607+00:00",
+      "http_status": 200,
+      "sha256": "f42b7b317f347b8369833b50730791a0df4dd6790da3abf24efa852f53166cf2",
+      "allele_id": "http://reg.genome.network/allele/CA10594475"
+    }
+  ],
+  "paper": {
+    "path": "tests/fixtures/article/transcript-aliases/replay/responses/pubtator/pubtator-publications-export-biocjson-379b0ee3c1d5.bin",
+    "sha256": "76a2e575638197503e676a52c51f73b3adab5ccd7ee0619534402beda63abd01",
+    "pmid": "32272925",
+    "passage_index": 43,
+    "anchor": "NM_007294.3:c.3748G > T"
+  },
+  "unresolved_control": "Simulated HTTP 503 for the paper-anchor CAR query; not a captured provider outage."
+}
