@@ -12,6 +12,8 @@ Reviews: revision 7b3b201, accept
 
 Reviews: revision 5bb1483, accept
 
+Reviews: revision eb234c8, accept
+
 ## Outcome
 
 - Changes: `src/entities/article/enrichment.rs` `src/entities/article/enrichment/visible_metadata.rs` `tests/test_article_metadata_recovery.py` `tests/fixtures/article/metadata-recovery/**` `CHANGELOG.md` and this ticket. Preserve generic article and variant resolution and all source-client behavior.
