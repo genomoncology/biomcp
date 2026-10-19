@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 - Changes: `src/sources/gtr.rs` `tests/test_public_example_accessions.py` `CHANGELOG.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` and this ticket.
 
-Genetic test, lab and manufacturer names from the GTR bundle show ™ and ® correctly instead of "â„¢" and "Â®".
+Every displayed GTR text field, including test, lab and manufacturer names and method text, shows ™ and ® correctly instead of "â„¢" and "Â®".
 
 ## Evidence
 
@@ -20,7 +20,7 @@ Finding 6 of `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-stud
 
 ## Keeps
 
-Change only text decoding of GTR fields. Keep every other field and row unchanged.
+Apply only the two demonstrated text-decoding repairs to displayed GTR text. Keep other content and row identities unchanged.
 
 ## Proof
 
@@ -35,3 +35,5 @@ All builds and tests run through the configured build job. Stage private test/so
 ## Focused proof
 
 Source5d334fff374226f13c5c7ea70ca8a7567ee8ad82 fixes only four name fields. Red1792420579310-52705 failed on garbled trademarks; green1792420629282-59797 passed four CLI regressions, fresh build, formatting, Ruff, boundaries/coupling and all-target Clippy. Read-only published blob comparison matches the tested four-file manifest and patch SHA f556f94df66a5f96528170f5b2d1a102fbe0760293025081d0a9dba62dc91bc8. Experiment779-biomcp-2237-gtr-text retains upstream bytes and raw evidence. Method text corruption is reported to PM as the same discovered class; no claim that it is fixed.
+
+PM decision: 2026-10-19. Extend this same defect class to displayed method text and any other displayed GTR text field with the same corruption. Use the same two replacements and the existing four-file source claim. No separate ticket. The earlier four-name proof remains valid but does not qualify this extension; expand the outside-in regression to demonstrate all affected display fields while preserving unaffected content.
