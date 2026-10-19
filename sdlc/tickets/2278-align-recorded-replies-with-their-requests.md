@@ -10,9 +10,9 @@ Milestone: 0.9.4
 
 ## Outcome
 
-Four supported JSON recordings match the actual primary replies for their declared requests, with safe public projections and complete observed provenance. The source clients and current public contracts consume those replies truthfully.
+Five supported JSON recordings match the actual primary replies for their declared requests, with safe public projections and complete observed provenance. The source clients and current public contracts consume those replies truthfully.
 
-Changes: `testdata/replay/responses/clinicaltrials/**`, `testdata/replay/responses/ctgov/**`, `testdata/replay/responses/mydisease/melanoma-detail.json`, `testdata/replay/responses/pubmed/**`, `testdata/replay/manifest.json`, `CHANGELOG.md`.
+Changes: `testdata/replay/responses/clinicaltrials/**`, `testdata/replay/responses/ctgov/**`, `testdata/replay/responses/mydisease/melanoma-detail.json`, `testdata/replay/responses/mydisease/mydisease-disease-mondo-0007947-bbfa1e3532db.json`, `tests/golden/**`, `testdata/replay/responses/pubmed/**`, `testdata/replay/manifest.json`, `CHANGELOG.md`.
 
 ## Evidence
 
@@ -25,3 +25,11 @@ Use the existing retained observed replies; do not repeat live requests. Verify 
 ## Proof
 
 Demonstrate the four existing structural mismatches using retained replies without new calls. Refreshed recordings pass the checker comparison against those exact observations and relevant strict replay/source consumers. Run affected tests and required lint through pm job only. No full gate; retain exact old/new hashes, request identity, private raw paths and limits. Stop if public redistribution rights or current wire behavior are not supported.
+
+## Exact-request and golden disposition
+
+Read-only investigation found observations 18 and 19 used unfiltered MyDisease detail URLs while current manifest keys and source client require a fields query. The coordinator authorized exactly two corrective primary requests; both succeeded as JSON and remain private in experiment 2098. The lane owns those two upstream declarations, observed Content-Types and capture provenance. No additional source calls are authorized for continuation. The four original structural mismatches and the additional exact-query recording now have supported observations.
+
+Focused job 2278/1792448519432-89492 showed all five structural comparisons become clean, checker controls pass, and six public golden cases pass, but two CTGov references JSON goldens retain unrequested outcomes from the older full-record captures. The actual client succeeds on the exact projected request; requested references/summary, Markdown reference goldens and search-all goldens remain intact. The developer stopped without changing runtime or goldens. The PM explicitly approved updating only those two reference JSON goldens to truthful projected responses, preserving every requested-reference assertion and changing no runtime code. There is no product contract requiring unrequested outcomes.
+
+Continuation adopts the exact retained recordings.patch (SHA256 a7073ed0ca8f6d1c9d8a9086ef405638a6eb8d4a1f1cd3ce798cc961785bf163), updates only the two identified JSON expectations and completes the previously unrun direct disease consumers, affected goldens and lint. Retain original red and new green independently. New provider calls, broader golden edits, runtime changes or inferred clinical facts are not authorized.
