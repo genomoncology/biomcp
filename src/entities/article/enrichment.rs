@@ -2,16 +2,14 @@
 
 use std::collections::HashMap;
 
+mod visible_metadata;
+
 use crate::entities::SearchPage;
 use crate::sources::europepmc::EuropePmcClient;
-use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 
 use super::candidates::finalize_article_candidates;
-use super::detail::{
-    first_europepmc_hit, parse_pmid, resolve_article_from_pmid_with_context,
-    resolve_variant_article_from_pmid,
-};
+use super::detail::{first_europepmc_hit, parse_pmid, resolve_variant_article_from_pmid};
 use super::{
     Article, ArticleSearchFilters, ArticleSearchResult, ArticleSearchTiming, ArticleSource,
     ArticleSourceAvailability, ArticleSourceStatus, SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
@@ -420,76 +418,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         return Vec::new();
     }
 
-    // An expired deadline must not construct clients at all: construction
-    // takes the cache epoch lock and would block past the deadline.
-    if plain_article_search_deadline_elapsed(execution) {
-        return [ArticleSource::PubTator, ArticleSource::EuropePmc]
-            .into_iter()
-            .map(|source| article_search_deadline_status(source, "article metadata fallback"))
-            .collect();
-    }
-
-    let pubtator = match match crate::sources::current_variant_article_deadline() {
-        Some(deadline) => PubTatorClient::new_with_deadline(&deadline).await,
-        None => PubTatorClient::new(),
-    } {
-        Ok(client) => client,
-        Err(err) => {
-            crate::error::warn_external_failure(
-                &err,
-                crate::error::SourceProvider::PUBTATOR3,
-                "initialize visible article metadata fallback",
-            );
-            return Vec::new();
-        }
-    };
-    let europe = match match crate::sources::current_variant_article_deadline() {
-        Some(deadline) => EuropePmcClient::new_with_deadline(&deadline).await,
-        None => EuropePmcClient::new(),
-    } {
-        Ok(client) => client,
-        Err(err) => {
-            crate::error::warn_external_failure(
-                &err,
-                crate::error::SourceProvider::EUROPE_PMC,
-                "initialize visible article metadata fallback",
-            );
-            return Vec::new();
-        }
-    };
-
-    let mut statuses = Vec::new();
-    for (row_idx, pmid) in lookup_positions {
-        // The per-row PubTator/Europe PMC fallback chain is only as bounded as
-        // the invocation deadline: once it elapses, name both consulted
-        // sources and stop issuing further lookups.
-        if plain_article_search_deadline_elapsed(execution) {
-            for source in [ArticleSource::PubTator, ArticleSource::EuropePmc] {
-                statuses.push(article_search_deadline_status(
-                    source,
-                    "article metadata fallback",
-                ));
-            }
-            break;
-        }
-        let lookup_id = rows[row_idx].pmid.clone();
-        let result = resolve_article_from_pmid_with_context(
-            pmid, &lookup_id, &lookup_id, &pubtator, &europe, None, execution, false,
-        )
-        .await;
-        match result {
-            Ok(article) => merge_article_search_row_with_article_base(&mut rows[row_idx], &article),
-            Err(err) => {
-                let hit = europe
-                    .search_by_pmid(&pmid.to_string())
-                    .await
-                    .ok()
-                    .and_then(first_europepmc_hit);
-                settle_visible_row_metadata_fallback(&mut rows[row_idx], &err, hit.as_ref());
-            }
-        }
-    }
-    statuses
+    visible_metadata::enrich(rows, lookup_positions).await
 }
 
 pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar_status(

@@ -4,7 +4,7 @@ priority: 3
 
 # 2079 — Add a replay server and golden output tests
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -30,6 +30,14 @@ Reviews: revision a1c81a7, accept
 
 Reviews: revision dc199db, accept
 
+Reviews: revision 8d4e66e, accept
+
+Reviews: revision fd90050, accept
+
+Reviews: revision c0387f8, accept
+
+Reviews: revision 01dcd9c, accept
+
 ## Outcome
 
 The recorded replay and committed JSON/Markdown goldens cover the approved release batches: search all, gene, trial and pathway, and get gene, variant, trial and pathway. Format changes use regenerate, inspect and commit. Remaining selector families, traversal and local-data outputs belong to follow-up 2236 outside this release.
@@ -38,7 +46,7 @@ Depends on: 2156
 
 - Starts from: the existing replay server, recording/request-log support and four JSON/Markdown golden pairs for get gene, get variant and the two search-all modes.
 - Keeps: existing goldens, frozen source captures and reader-facing specification claims. Record new replies under the existing replay-data paths.
-- Changes: `tests/golden/test_golden_output.py` `tests/golden/cases/search-pathway-mapk-*.json` `tests/golden/cases/search-pathway-mapk-*.md` `tests/golden/cases/get-pathway-hsa05200.json` `tests/golden/cases/get-pathway-hsa05200.md` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.json` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.md` `testdata/replay/manifest.json` `testdata/replay/responses/kegg/*` `testdata/replay/responses/reactome/*` `CHANGELOG.md` `sdlc/tickets/2236-finish-the-remaining-replay-command-coverage.md` `sdlc/planning/milestones.md` and this ticket for the next bounded partial batch. Preserve source captures, receipts and remaining consumers.
+- Changes: `tests/golden/test_golden_output.py` `tests/golden/cases/search-pathway-mapk-*.json` `tests/golden/cases/search-pathway-mapk-*.md` `tests/golden/cases/get-pathway-hsa05200.json` `tests/golden/cases/get-pathway-hsa05200.md` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.json` `tests/golden/cases/get-pathway-r-hsa-5673001-genes-events.md` `testdata/replay/manifest.json` `testdata/replay/responses/kegg/*` `testdata/replay/responses/reactome/*` `CHANGELOG.md` `sdlc/tickets/2236-finish-the-remaining-replay-command-coverage.md` `sdlc/planning/milestones.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `sdlc/tickets/2238-reject-limit-and-offset-in-variant-erepo-caid-mode.md` `sdlc/tickets/2239-cap-the-drug-trial-alias-cache.md` `sdlc/tickets/2240-use-the-ca-bundle-for-alphagenome.md` `sdlc/tickets/2241-carry-stale-cache-notes-in-get-json.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` and this ticket for the next bounded partial batch. Preserve source captures, receipts and remaining consumers.
 - Proof: each remaining command-family batch has executed JSON and Markdown cases that fail when its output changes. Run the affected cases offline through the build job and the routine merged-candidate gate; report coverage without a new percentage gate. Measure the existing sixty-second golden-suite target rather than infer it; it is a suite target, not an elapsed-time failure rule for an individual test.
 - Defers: broad shared fixture identifiers/scenario restructuring to the next release unless a named current migration needs a narrow change.
 
@@ -97,3 +105,7 @@ Job `2079/1792418666605-1603` generated the normal outputs without missing reque
 The job retains `pathway-golden-evidence.tar.gz`, SHA256 `77f01441a882b4555d64ed1d7d20ece4d75da98cb4a93eb52db34fae66eeeb4c`, beneath `job-runs/biomcp/2079/1792418666605-1603/`. Private scratch and the mutant binary were removed; the shared qualified normal CLI remains available to the consumer lane. Fresh review accepted the unchanged source and verified the archive. The parent stays open for remaining contracted command coverage.
 
 PM decision: 2026-10-19. Narrow this release outcome to the exact landed and accepted command batches above. Close this parent after the accepted pathway golden batch lands. Keep authored fault scenarios and excluded local datasets; the remaining inventory moves to 2236 outside 0.9.4. The verified pathway raw archive is retained in the private experiment `774-biomcp-2079-replay-evidence/1792418666605-1603`, SHA256 `77f01441a882b4555d64ed1d7d20ece4d75da98cb4a93eb52db34fae66eeeb4c`, rather than relying on cleanup-managed job storage.
+
+PM decision: 2026-10-19. Carry the unchanged known-bug ticket batch from 239d7adc4 with the declared milestone; final release measurements wait for those bugs, the article recovery fix and the final supported pathway reader migration.
+
+Keep: experiments/774-biomcp-2079-replay-evidence — Retain cited raw proof until the release evidence is explicitly released.

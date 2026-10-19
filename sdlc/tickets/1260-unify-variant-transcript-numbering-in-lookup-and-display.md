@@ -1,5 +1,11 @@
 # Unify variant transcript numbering in lookup and display
 
+Status: OPEN.
+
+Milestone: 0.9.4
+
+Priority note 2026-10-19: moved into 0.9.4 because every known bug ships fixed. MANE preference and naming the matched numbering already landed; the remaining scope is lookup by either transcript cDNA numbering and a not-found answer that says the identifier belongs to a different transcript. Follow sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md, and route clinical questions to a clinical reviewer.
+
 From issue `2026-09-11-variant-display-mixes-transcript-numbering.md` (a real clinical-report failure: a report's `c.1187G>A` finds no match because the display mixes protein numbering from one transcript with cDNA numbering from another; the not-found reads as "nothing to see" instead of "wrong transcript"). The 2026-09-27 review ordered a real ticket with an owner and trigger, not a parked line.
 
 ## Problem
