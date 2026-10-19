@@ -25,6 +25,8 @@
 
 - Check BRAF gene search in JSON and Markdown against a complete recorded provider reply. (2079)
 
+- Run the condition-first trial search specification through recorded replay while preserving its query and table assertions. (2111)
+
 - Keep article batch cancellation checks deterministic while waiting for local provider responses with a paused clock. (2230)
 
 - Retire duplicate trial-reference checks covered by recorded JSON and Markdown goldens, preserving combined-section coverage. (2111)
