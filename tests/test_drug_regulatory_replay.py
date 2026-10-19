@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.needs_binary]
 
 @pytest.fixture
 def replay(tmp_path: Path):
-    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False, "label_extra": False}
+    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False, "label_extra": False, "related_label": False}
 
     class Handler(BaseHTTPRequestHandler):
         def answer(self, payload, status=200):
@@ -46,6 +46,9 @@ def replay(tmp_path: Path):
                 if name == "daratumumab" and rows:
                     rows[1]["products"][0]["active_ingredients"].append({"name": "HYALURONIDASE-FIHJ"})
                     rows.append({"application_number": "BLA999998", "products": [{"active_ingredients": [{"name": "DARATUMUMAB-ABCD"}]}]})
+                    if state["related_label"]:
+                        rows[-1]["products"][0]["brand_name"] = "RELATED"
+                        rows.append({"application_number": "BLA999995", "products": [{"brand_name": "RELATED"}]})
                 if name == "belantamab mafodotin" and rows:
                     rows.extend([{"application_number": "BLA999997", "products": [{"brand_name": "BLENREP",
                         "active_ingredients": [{"name": "BELANTAMAB MAFODOTIN-ABCD"}]}]},
@@ -66,12 +69,14 @@ def replay(tmp_path: Path):
                 self.answer({"meta": {"results": {"skip": 0, "limit": 8, "total": len(rows)}}, "results": rows})
             elif "label" in path.path:
                 ingredient = "BELANTAMAB MAFODOTIN-BLMF" if name == "belantamab mafodotin" else name
+                if state["related_label"]:
+                    ingredient = "DARATUMUMAB-ABCD"
                 substances = ["DARATUMUMAB", "HYALURONIDASE-FIHJ"] if name == "daratumumab and hyaluronidase-fihj" else [ingredient]
                 if state["label_extra"]:
                     substances.append("unrelated")
                 self.answer({"results": [{"set_id": "label-fixture", "effective_time": "20180429",
-                    "openfda": {"generic_name": [ingredient], "substance_name": substances,
-                                "brand_name": state["brands"]}, "warnings": ["Recorded label warning."]}]})
+                    "openfda": {"generic_name": [name if name == "belantamab mafodotin" else ingredient], "substance_name": substances,
+                                "brand_name": ["RELATED"] if state["related_label"] else state["brands"]}, "warnings": ["Recorded label warning."]}]})
             elif "event" in path.path:
                 self.answer({"results": []})
             elif "mechanism" in path.path:
@@ -143,6 +148,13 @@ def test_approvals_find_ingredient_and_brand_records_without_other_drugs(replay,
         state["label_extra"] = True
         contradictory, _ = run("approvals")
         assert contradictory["approvals"] == []
+
+
+def test_related_label_cannot_establish_approval_identity_by_suffix(replay):
+    state, run = replay
+    state["related_label"] = True
+    data, _ = run("approvals")
+    assert {row["application_number"] for row in data["approvals"]} == {"BLA761036"}
 
 
 @pytest.mark.parametrize("name,healthy,expected,sources", [

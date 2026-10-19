@@ -220,7 +220,11 @@ fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, Bio
     }
 }
 
-async fn add_approvals_section(drug: &mut Drug, label_response: Option<&serde_json::Value>) {
+async fn add_approvals_section(
+    drug: &mut Drug,
+    label_response: Option<&serde_json::Value>,
+    identity_brands: &[String],
+) {
     let name = drug.name.trim();
     if name.is_empty() {
         drug.approvals = Some(Vec::new());
@@ -231,7 +235,7 @@ async fn add_approvals_section(drug: &mut Drug, label_response: Option<&serde_js
         return;
     }
 
-    let approvals_fut = super::approvals::fetch(drug, label_response);
+    let approvals_fut = super::approvals::fetch(drug, label_response, identity_brands);
 
     let result = match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
         Ok(result) => result,
@@ -1352,6 +1356,7 @@ async fn populate_us_regional_sections(
     drug: &mut Drug,
     selected_hits: &[MyChemHit],
     label_response: Option<&serde_json::Value>,
+    identity_brands: &[String],
     section_flags: &DrugSections,
 ) -> Result<(), BioMcpError> {
     if section_flags.include_shortage {
@@ -1361,7 +1366,7 @@ async fn populate_us_regional_sections(
     }
 
     if section_flags.include_regulatory || section_flags.include_approvals {
-        add_approvals_section(drug, label_response).await;
+        add_approvals_section(drug, label_response, identity_brands).await;
     } else {
         drug.approvals = None;
     }
@@ -1620,6 +1625,7 @@ async fn get_with_region_owned(
     let (label_lookup, civic, target_sources, adverse_event_fetch) =
         tokio::join!(label_fut, civic_fut, targets_fut, adverse_event_fut);
 
+    let identity_brands = resolved.drug.brand_names.clone();
     if let Some(label_response) = label_lookup.response.as_ref() {
         apply_openfda_metadata(&mut resolved.drug, label_response);
         resolved.drug.label_set_id = extract_label_set_id(label_response);
@@ -1651,6 +1657,7 @@ async fn get_with_region_owned(
             &mut resolved.drug,
             &resolved.selected_hits,
             label_lookup.response.as_ref(),
+            &identity_brands,
             &section_flags,
         )
         .await?;

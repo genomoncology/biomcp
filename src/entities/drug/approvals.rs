@@ -11,6 +11,7 @@ use crate::sources::openfda::{DrugsFdaOpenFda, DrugsFdaProduct, DrugsFdaResult, 
 pub(super) async fn fetch(
     drug: &Drug,
     label_response: Option<&serde_json::Value>,
+    identity_brands: &[String],
 ) -> Result<Vec<DrugApproval>, BioMcpError> {
     let names = std::iter::once(drug.name.as_str())
         .chain(drug.brand_names.iter().map(String::as_str))
@@ -34,10 +35,10 @@ pub(super) async fn fetch(
     let Some(mut response) = OpenFdaClient::new()?.drugsfda_search(&query, 8, 0).await? else {
         return Ok(Vec::new());
     };
-    let linked_labels = linked_label_identities(drug, label_response);
+    let linked_labels = linked_label_identities(drug, label_response, identity_brands);
     response
         .results
-        .retain_mut(|row| filter_row(row, drug, &linked_labels));
+        .retain_mut(|row| filter_row(row, drug, &linked_labels, identity_brands));
     Ok(map_drugsfda_approvals(response))
 }
 
@@ -50,6 +51,7 @@ struct LabelIdentity {
 fn linked_label_identities(
     drug: &Drug,
     response: Option<&serde_json::Value>,
+    identity_brands: &[String],
 ) -> Vec<LabelIdentity> {
     response
         .and_then(|value| value.get("results"))
@@ -100,6 +102,16 @@ fn linked_label_identities(
             }
             let mut ingredient_names = ingredients.clone();
             if !combination {
+                // Metadata added from this label may use a qualified name.
+                // Only the original card's brand or an exact generic links
+                // that label to this product; a shared name core cannot.
+                if !generics.iter().any(|name| equals(name, &drug.name))
+                    && !brands
+                        .iter()
+                        .any(|brand| identity_brands.iter().any(|known| equals(brand, known)))
+                {
+                    return None;
+                }
                 ingredient_names.extend(generics);
             }
             Some(LabelIdentity {
@@ -135,6 +147,7 @@ fn product_matches(
     meta: Option<&DrugsFdaOpenFda>,
     drug: &Drug,
     labels: &[LabelIdentity],
+    identity_brands: &[String],
 ) -> bool {
     let ingredients = product
         .active_ingredients
@@ -180,12 +193,18 @@ fn product_matches(
     generic_agrees
         && product.brand_name.as_deref().is_some_and(|brand| {
             std::iter::once(&drug.name)
-                .chain(&drug.brand_names)
+                .chain(identity_brands)
+                .chain(labels.iter().flat_map(|label| &label.brands))
                 .any(|known| equals(brand, known))
         })
 }
 
-fn filter_row(row: &mut DrugsFdaResult, drug: &Drug, labels: &[LabelIdentity]) -> bool {
+fn filter_row(
+    row: &mut DrugsFdaResult,
+    drug: &Drug,
+    labels: &[LabelIdentity],
+    identity_brands: &[String],
+) -> bool {
     if row.products.is_empty() {
         return !crate::transform::drug::card_names_combination(&drug.name)
             && row.openfda.as_ref().is_some_and(|meta| {
@@ -198,6 +217,6 @@ fn filter_row(row: &mut DrugsFdaResult, drug: &Drug, labels: &[LabelIdentity]) -
     }
     let metadata = row.openfda.as_ref();
     row.products
-        .retain(|product| product_matches(product, metadata, drug, labels));
+        .retain(|product| product_matches(product, metadata, drug, labels, identity_brands));
     !row.products.is_empty()
 }
