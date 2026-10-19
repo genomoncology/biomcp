@@ -21,3 +21,5 @@ The Rust exclusions are 31 live cases and three subprocess helpers. Python exclu
 No demonstrated gap required a fix ticket. All 4,204 tracked files remained unchanged. Cleanup job `2233/1792418181849-127273` verified source identity, retained the evidence and removed only the owned fresh clone and build output.
 
 Retained evidence: `job-runs/biomcp/2233/1792416130767-75930/`, including `log`, `state`, source verification, commands, Python XML, exclusions and artifact hashes under `evidence/`. Log SHA256: `d14d5e69e7717a863b41993f0c102caa1fe4d3b7b46407d04fb107877567b500`.
+
+The initial raw evidence is also retained in the private numbered experiment `170-biomcp-2233-linux-offline-evidence/1792416130767-75930` on the qualifying host. This copy survives job and lane cleanup under the approved retention rule.
