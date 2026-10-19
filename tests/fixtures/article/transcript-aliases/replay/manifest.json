@@ -1,0 +1,425 @@
+{
+ "schema_version": 1,
+ "routes": {
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+F1714I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+F1714I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-2cc3864bcc45.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+F1761I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+F1761I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-befb54dc116a.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+F1782I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+F1782I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-3c9f7f8c3643.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+F252I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+F252I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-c7e186d57192.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+F619I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+F619I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-7641fcebbf7a.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+F657I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+F657I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-177dc1c98e66.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+F71I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+F71I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-92ab6be1269f.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+c.1855T%3EA+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+c.1855T%3EA+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-a7fa1c7a28b7.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+c.1969T%3EA+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+c.1969T%3EA+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-d41feff7e072.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=BRCA1+c.211T%3EA+AND+NOT+PUB_TYPE%3A%22retracted+publication%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+c.211T%3EA+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-6860973efb9e.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+F1714I%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F1714I%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-dad517a09e5c.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+F1761I%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F1761I%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-6874832108fc.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+F1782I%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F1782I%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-a6c0a8718adf.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+F252I%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F252I%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-a9552057c67f.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+F619I%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F619I%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-800bab6c3312.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+F657I%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F657I%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-2fdbedd10a05.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+F71I%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+F71I%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-37ef66b0ce97.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+c.1855T%3EA%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+c.1855T%3EA%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-4bd0d1ce1275.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+c.1969T%3EA%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+c.1969T%3EA%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-168c30f9fb22.bin"
+  },
+  "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=25&query=TITLE_ABS%3A%22BRCA1+c.211T%3EA%22": {
+   "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%22BRCA1+c.211T%3EA%22&format=json&cursorMark=*&pageSize=25",
+   "status": 200,
+   "file": "responses/europepmc/europepmc-search-62c83e761c1e.bin"
+  },
+  "GET /litvar/variant/autocomplete/?query=BRCA1+F1761I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/autocomplete/?query=BRCA1+F1761I",
+   "status": 200,
+   "file": "responses/litvar/litvar-variant-autocomplete-c36a5c8602fc.bin"
+  },
+  "GET /myvariant/query?fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp%2A.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence&from=0&q=dbnsfp.genename%3ABRCA1+AND+dbnsfp.hgvsp%3A%22p.F1761I%22&size=50": {
+   "upstream": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRCA1+AND+dbnsfp.hgvsp%3A%22p.F1761I%22&size=50&from=0&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp*.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence",
+   "status": 200,
+   "file": "responses/myvariant/myvariant-query-a8627598a6c3.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F1714I%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F1714I%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-691c256ce839.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F1761I%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F1761I%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-c71a04f7cc33.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F1782I%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F1782I%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-807c335ec584.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F252I%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F252I%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-a1908c7127fe.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F619I%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F619I%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-5f949c261fe2.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F657I%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F657I%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-00e13a40924e.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F71I%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22F71I%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-54b9612d1883.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22c.1855T%3EA%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22c.1855T%3EA%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-433c1e80b513.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22c.1969T%3EA%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22c.1969T%3EA%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-d69c55d15ffc.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22c.211T%3EA%22%5BTitle%2FAbstract%5D%29": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22BRCA1%22%5BTitle%2FAbstract%5D+AND+%22c.211T%3EA%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-a1d4dd1d5a21.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+F1714I+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+F1714I+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-047b29ecfa52.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+F1761I+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+F1761I+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-f2b570a8d20f.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+F1782I+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+F1782I+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-8ab97a2bef96.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+F252I+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+F252I+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-15572acc6d67.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+F619I+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+F619I+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-5f0e6261f3ed.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+F657I+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+F657I+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-d6655fcd1cad.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+F71I+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+F71I+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-282c383f32a9.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+c.1855T%3EA+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+c.1855T%3EA+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-f8948105f648.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+c.1969T%3EA+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+c.1969T%3EA+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-7a6c09d21d4a.bin"
+  },
+  "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRCA1+c.211T%3EA+NOT+retracted+publication%5Bpt%5D": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=BRCA1+c.211T%3EA+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esearch-fcgi-fa23bae746ef.bin"
+  },
+  "GET /pubmed/esummary.fcgi?db=pubmed&id=42892765%2C42890735%2C42889535%2C42889253%2C42888190%2C42887902%2C42887399%2C42886888%2C42885310%2C42884094%2C42883850%2C42883719%2C42883702%2C42882778%2C42882768%2C42882093%2C42881326%2C42880876%2C42880002%2C42878664%2C42878224%2C42877528%2C42877356%2C42876974%2C42875977%2C42873762%2C42872106%2C42871456%2C42870219%2C42868736%2C42863474%2C42863473%2C42863099%2C42862920%2C42856270%2C42855216%2C42854377%2C42853814%2C42851203%2C42850863%2C42850061%2C42849324%2C42848302%2C42847947%2C42847724%2C42843923%2C42843210%2C42842178%2C42839973%2C42838800%2C42838645%2C42838053%2C42837436%2C42834605%2C42833926%2C42831721%2C42831209%2C42831105%2C42828993%2C42826492%2C42825302%2C42824309%2C42823668%2C42820288%2C42822083%2C42819173%2C42818548%2C42818478%2C42818260%2C42818163%2C42817725%2C42816667%2C42816529%2C42814961%2C42812597%2C42812039%2C42810557%2C42810151%2C42809925%2C42809807%2C42809139%2C42808387%2C42807233%2C42805173%2C42805139%2C42804161%2C42804048%2C42801866%2C42801735%2C42800850%2C42800309%2C42800127%2C42800083%2C42798981%2C42797298%2C42795002%2C42794557%2C42793752%2C42793040%2C42791527&retmode=json": {
+   "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42892765%2C42890735%2C42889535%2C42889253%2C42888190%2C42887902%2C42887399%2C42886888%2C42885310%2C42884094%2C42883850%2C42883719%2C42883702%2C42882778%2C42882768%2C42882093%2C42881326%2C42880876%2C42880002%2C42878664%2C42878224%2C42877528%2C42877356%2C42876974%2C42875977%2C42873762%2C42872106%2C42871456%2C42870219%2C42868736%2C42863474%2C42863473%2C42863099%2C42862920%2C42856270%2C42855216%2C42854377%2C42853814%2C42851203%2C42850863%2C42850061%2C42849324%2C42848302%2C42847947%2C42847724%2C42843923%2C42843210%2C42842178%2C42839973%2C42838800%2C42838645%2C42838053%2C42837436%2C42834605%2C42833926%2C42831721%2C42831209%2C42831105%2C42828993%2C42826492%2C42825302%2C42824309%2C42823668%2C42820288%2C42822083%2C42819173%2C42818548%2C42818478%2C42818260%2C42818163%2C42817725%2C42816667%2C42816529%2C42814961%2C42812597%2C42812039%2C42810557%2C42810151%2C42809925%2C42809807%2C42809139%2C42808387%2C42807233%2C42805173%2C42805139%2C42804161%2C42804048%2C42801866%2C42801735%2C42800850%2C42800309%2C42800127%2C42800083%2C42798981%2C42797298%2C42795002%2C42794557%2C42793752%2C42793040%2C42791527",
+   "status": 200,
+   "file": "responses/pubmed/pubmed-esummary-fcgi-d944dec870d0.bin"
+  },
+  "GET /pubtator/entity/autocomplete/?query=BRCA1+F1761I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=BRCA1+F1761I",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-entity-autocomplete-769f0ec1872a.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=10811118": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=10811118&full=true",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-1919395d29e1.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=28632866": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=28632866&full=true",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-78a33dc6fc7d.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=32272925": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=32272925&full=true",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-379b0ee3c1d5.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=32957588": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=32957588&full=true",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-791c3770b09f.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=34081848": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=34081848&full=true",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-166ec1999262.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=34829431": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=34829431&full=true",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-f1c6d08498fa.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=34930165": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=34930165&full=true",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-f078a95ba504.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=42889535": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=42889535&full=true",
+   "status": 400,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-c4fdc1a94491.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=42890735": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=42890735&full=true",
+   "status": 400,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-8726d748fec8.bin"
+  },
+  "GET /pubtator/publications/export/biocjson?full=true&pmids=42892765": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=42892765&full=true",
+   "status": 400,
+   "file": "responses/pubtator/pubtator-publications-export-biocjson-b38ca1edfb8e.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+F1714I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+F1714I&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-1ac7a464bb08.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+F1761I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+F1761I&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-7c78db6f9d85.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+F1782I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+F1782I&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-d027a50ff132.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+F252I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+F252I&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-020082db7e26.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+F619I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+F619I&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-93c2a6448bac.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+F657I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+F657I&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-8782b40eb517.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+F71I": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+F71I&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-228d5c8ec799.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+c.1855T%3EA": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+c.1855T%3EA&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-749345852d41.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+c.1969T%3EA": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+c.1969T%3EA&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-540510b8f8a4.bin"
+  },
+  "GET /pubtator/search/?page=1&size=25&text=BRCA1+c.211T%3EA": {
+   "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=BRCA1+c.211T%3EA&page=1&size=25",
+   "status": 200,
+   "file": "responses/pubtator/pubtator-search-48d1600cd69c.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F1714I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+F1714I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-a4a46d46e447.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F1761I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+F1761I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-7a79354b2588.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F1782I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+F1782I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 200,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-69b666c3b8ac.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F252I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+F252I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 200,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-47f58f3b5e86.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F619I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+F619I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-cb5273499293.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F657I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+F657I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-5b085c1a3a02.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F71I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+F71I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 200,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-1d41e782ebd5.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+c.1855T%3EA": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+c.1855T%3EA&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-e67970bf4a27.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+c.1969T%3EA": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+c.1969T%3EA&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 200,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-370066cb4bb2.bin"
+  },
+  "GET /s2/graph/v1/paper/search/bulk?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+c.211T%3EA": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=BRCA1+c.211T%3EA&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-bulk-835836fe3ae6.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F1714I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+F1714I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-7c8e0937e967.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F1761I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+F1761I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 200,
+   "file": "responses/s2/s2-graph-v1-paper-search-17da0118a310.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F1782I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+F1782I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-7f22dcc32fb1.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F252I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+F252I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-d518e6b45b74.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F619I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+F619I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-3f2428c4bb23.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F657I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+F657I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-4193508d8097.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+F71I": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+F71I&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-91fa261750a0.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+c.1855T%3EA": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+c.1855T%3EA&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-976a23c081d6.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+c.1969T%3EA": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+c.1969T%3EA&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-0af268e19128.bin"
+  },
+  "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25&query=BRCA1+c.211T%3EA": {
+   "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRCA1+c.211T%3EA&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=25",
+   "status": 429,
+   "file": "responses/s2/s2-graph-v1-paper-search-b1a07608a99c.bin"
+  }
+ }
+}
