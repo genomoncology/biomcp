@@ -142,6 +142,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         brand_names: vec!["Kalydeco".to_string()],
         route: Some("Oral".to_string()),
         targets: vec!["CFTR".to_string()],
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
