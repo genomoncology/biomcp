@@ -64,6 +64,7 @@ Current group membership comes from the registry:
 |---|---|---|---|---|---|---|
 | AlphaFold DB | 1 | indirect_only | not_applicable | AlphaFold DB structural predictions are published for broad open use | reuse is generally open, but preserve model/source provenance and article citations | <https://alphafold.ebi.ac.uk/faq> |
 | AlphaGenome | 2 | direct_api | required_env | restricted: the hosted AlphaGenome API permits non-commercial use under provider terms | hosted API outputs are restricted to non-commercial research; provider exceptions for downloadable artifacts and separate cloud commercial access do not grant this API integration those rights | <https://google-deepmind-alphagenome.readthedocs-hosted.com/faqs.html#what-terms-of-use-apply-to-alphagenome-outputs> |
+| bioRxiv/medRxiv | 3 | direct_api | none | article licenses vary; query access does not grant a common reuse license | follow each article license and preserve author attribution; do not assume unrestricted reuse | <https://www.medrxiv.org/content/about-medrxiv> |
 | Cancer Genome Interpreter | 3 | indirect_only | not_applicable | restricted: custom tool terms restrict external and commercial use | do not assume commercial reuse rights; the official terms restrict some external and commercial use | <https://www.cancergenomeinterpreter.org/conditions> |
 | Cancerhotspots.org | 3 | direct_api | none | public cancer hotspot recurrence resource with provider-specific reuse expectations | BioMCP queries recurrence counts live and does not redistribute a local cancerhotspots dataset | <https://www.cancerhotspots.org/> |
 | cBioPortal | 3 | direct_api | none | public API with study-specific downstream terms | reuse depends on the specific study or consortium behind each dataset | <https://www.cbioportal.org/> |
@@ -1494,3 +1495,19 @@ Current group membership comes from the registry:
 
 <!-- /licensing -->
 
+
+<!-- licensing:biorxiv-medrxiv -->
+### bioRxiv/medRxiv
+
+- BioMCP surfaces: `get article <doi> fulltext`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Commercial terms: `null`
+- Provider access / registration: public details API and advertised JATS for bioRxiv and medRxiv preprints
+- License / terms summary: article licenses vary; query access does not grant a common reuse license
+- Redistribution / reuse summary: follow each article license and preserve author attribution; do not assume unrestricted reuse
+- Official terms URL: <https://www.medrxiv.org/content/about-medrxiv>
+- Reviewed on: `2026-10-19`
+- Notes: BioMCP retrieves the advertised JATS URL on the official preprint servers and reports the license supplied by the details API. The API license label is not a blanket license for other articles.
+
+<!-- /licensing -->
