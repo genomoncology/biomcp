@@ -14,7 +14,7 @@ PM ruling: For Boolean-capable Europe PMC and PubMed queries, group the requeste
 
 Variant article search queries the unambiguous queried gene's recorded MyGene aliases with their provenance, including source-provided former spellings without relabeling them as official previous symbols. It discloses current-spelling-only only when those MyGene facts are absent, unavailable or disabled.
 
-- Changes: `src/entities/article/search.rs`, `src/entities/article/backends/provider_unit.rs`, `src/entities/gene.rs` `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_gene_aliases.py` `tests/fixtures/article/gene-aliases/authored.json` `CHANGELOG.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `tests/test_variant_article_alias_coverage.py` `tests/test_variant_article_transcript_aliases.py`.
+Changes: `CHANGELOG.md`, `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md`, `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`, `src/cli/variant/articles.rs`, `src/entities/article/backends/provider_unit.rs`, `src/entities/article/search.rs`, `src/entities/article/variant_search.rs`, `src/entities/gene.rs`, `tests/fixtures/article/gene-aliases/authored.json`, `tests/test_variant_article_alias_coverage.py`, `tests/test_variant_article_gene_aliases.py`, `tests/test_variant_article_transcript_aliases.py`.
 
 
 ## Evidence
@@ -70,3 +70,9 @@ PM approved queried primary symbol first, followed by MyGene aliases in descendi
 ## Revised query planning decision
 
 The recorded MyGene array proved that longest-first still omitted SUR1 under the combined spelling cap. PM rejected both eleven slots and another example-fitting sort. Boolean grouping removes the cause by covering every recorded gene alias with the same or fewer provider requests. Any observed noise requiring exclusions needs a PM decision; authored query proof does not establish recovered real papers.
+
+## Final grouped-query verification
+
+The one retained MyGene response has aliases including SUR1; an explicitly authored derived control exercises its full recorded alias array. Boolean-capable providers group every recorded alias, use existing query validators to split, and preserve original variant forms independently of the non-Boolean cap. Group provenance does not establish which alternative matched; typed Gene and same-DNA checks remain binding. Job 2247/1792429401198-57850 passed the owning Python and Rust cases plus mechanical lint, with all ten product blobs matching the checked manifest before adopting unchanged main. Tests cover initialized MCP; the separate pre-initialization startup failure is retained and assigned to 2256, not claimed fixed.
+
+Keep: experiments/792-biomcp-2247-previous-symbols — retain the single capture, raw grouping and original-form red/green results, checked patches, source hashes and separate startup-timer failure.
