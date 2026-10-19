@@ -30,3 +30,7 @@ Describe behavior as the code does it; read the code for each claim. Add the age
 ## Proof
 
 A docs check or test lists every reason code in the code and finds each documented. Every changed example runs successfully offline from fixtures or is marked live.
+
+## Progress
+
+- 2026-10-19 started
