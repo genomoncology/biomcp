@@ -1,0 +1,11 @@
+{
+  "provenance": "AUTHORED CONTROL: artificial MyVariant-shaped input and empty literature replies. These strings reproduce the alias-limit boundary, are not captured provider bytes, and make no biological or literature claim.",
+  "hit": {
+    "_id": "chr11:g.17417157C>T",
+    "dbnsfp": {
+      "genename": "ABCC8",
+      "hgvsp": ["R1353Q", "R1425Q", "R1435Q", "R1436Q", "R1437Q", "R1458Q"],
+      "hgvsc": ["c.4058G>A", "c.4274G>A", "c.4304G>A", "c.4307G>A", "c.4310G>A", "c.4373G>A"]
+    }
+  }
+}

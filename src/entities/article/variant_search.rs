@@ -175,8 +175,20 @@ pub struct CanonicalEquivalence {
     aliases: Vec<String>,
 }
 
+/// Whether an alias query was selected and whether provider work actually began.
+/// An attempt does not imply a successful response or an identity match.
+#[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleAliasCoverage {
+    pub alias: String,
+    pub planned: bool,
+    pub attempted: bool,
+    pub disposition: &'static str,
+    pub reason: &'static str,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleResponse {
+    pub alias_coverage: Vec<VariantArticleAliasCoverage>,
     pub requested_variant: RequestedVariantIdentity,
     pub resolution: VariantArticleResolution,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -267,6 +279,9 @@ pub(crate) struct VariantArticleExecutionContext {
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
     pubtator_variant_queries: Arc<Mutex<BTreeSet<String>>>,
     alias_yields: Arc<Mutex<Vec<VariantAliasYieldRecord>>>,
+    query_alias: Option<String>,
+    attempted_aliases: Arc<Mutex<BTreeSet<String>>>,
+    alias_setup_failures: Arc<Mutex<BTreeMap<String, BTreeSet<&'static str>>>>,
     ldh_medium: Arc<AtomicUsize>,
     ldh_direct: Arc<AtomicUsize>,
 }
@@ -309,6 +324,9 @@ impl VariantArticleExecutionContext {
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
             pubtator_variant_queries: Arc::new(Mutex::new(BTreeSet::new())),
             alias_yields: Arc::new(Mutex::new(Vec::new())),
+            query_alias: None,
+            attempted_aliases: Arc::new(Mutex::new(BTreeSet::new())),
+            alias_setup_failures: Arc::new(Mutex::new(BTreeMap::new())),
             ldh_medium: Arc::new(AtomicUsize::new(0)),
             ldh_direct: Arc::new(AtomicUsize::new(0)),
         }
@@ -452,6 +470,21 @@ impl VariantArticleExecutionContext {
             RouteUnitPlan::Applicable(units) => units.saturating_add(1),
             RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable => 1,
         });
+    }
+
+    fn for_alias(&self, alias: &str) -> Self {
+        let mut scoped = self.clone();
+        scoped.query_alias = Some(alias.to_string());
+        scoped
+    }
+
+    pub(crate) fn record_alias_query_attempt(&self) {
+        if let Some(alias) = &self.query_alias {
+            self.attempted_aliases
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .insert(alias.clone());
+        }
     }
 
     pub(crate) async fn begin_provider_unit(
@@ -652,6 +685,14 @@ impl VariantArticleExecutionContext {
         } else {
             ("unavailable", "provider_error")
         };
+        if let Some(alias) = &self.query_alias {
+            self.alias_setup_failures
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .entry(alias.clone())
+                .or_default()
+                .insert(reason_code);
+        }
         self.events
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -1085,6 +1126,7 @@ pub struct VariantArticleAliasYield {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleDebugPlan {
+    pub alias_coverage: Vec<VariantArticleAliasCoverage>,
     pub normalized_aliases: NormalizedVariantAliases,
     pub provider_queries: Vec<ProviderVariantQueryPlan>,
     pub routes: Vec<VariantArticleRoutePlan>,
@@ -1147,6 +1189,7 @@ pub struct VariantArticleItemError {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleBatchItem {
+    pub alias_coverage: Vec<VariantArticleAliasCoverage>,
     pub request_id: String,
     pub requested_variant: RequestedVariantIdentity,
     pub resolution: Option<VariantArticleResolution>,
@@ -1981,6 +2024,13 @@ fn variant_source_gene(context: &VariantArticleResolutionContext) -> Option<&str
 }
 
 fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
+    let mut aliases = all_exact_aliases(context);
+    let truncated = aliases.len() > MAX_EXACT_ALIASES;
+    aliases.truncate(MAX_EXACT_ALIASES);
+    (aliases, truncated)
+}
+
+fn all_exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
     if context.requested.is_authoritative_refseq() {
         let mut aliases = BTreeSet::new();
         if let Some(coding) = context.requested.coding_change.as_deref() {
@@ -2009,7 +2059,7 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
         ) {
             aliases.insert(format!("{accession}:g.{position}{reference}>{alternate}"));
         }
-        return (aliases.into_iter().take(MAX_EXACT_ALIASES).collect(), false);
+        return aliases.into_iter().collect();
     }
     let mut aliases = BTreeSet::new();
     let gene = variant_source_gene(context);
@@ -2055,13 +2105,8 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
     {
         ordered.push(primary);
     }
-    let truncated = ordered.len().saturating_add(aliases.len()) > MAX_EXACT_ALIASES;
-    ordered.extend(
-        aliases
-            .into_iter()
-            .take(MAX_EXACT_ALIASES.saturating_sub(ordered.len())),
-    );
-    (ordered, truncated)
+    ordered.extend(aliases);
+    ordered
 }
 
 fn exact_aliases_with_equivalence(
@@ -2097,6 +2142,112 @@ fn exact_aliases_with_equivalence(
         .iter()
         .any(|alias| !aliases.contains(&tie(alias)));
     (aliases, truncated || aliases_truncated)
+}
+
+fn alias_coverage(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    strategy: VariantArticleStrategy,
+    selected: &[String],
+    equivalence: &CanonicalEquivalence,
+    execution: &VariantArticleExecutionContext,
+) -> Vec<VariantArticleAliasCoverage> {
+    let mut aliases = all_exact_aliases(context);
+    if !context.requested.is_authoritative_refseq() && equivalence.status == "confirmed" {
+        aliases.extend(equivalence.aliases.iter().map(|alias| {
+            match variant_source_gene(context).filter(|_| alias.contains(":g.")) {
+                Some(gene) => format!("{gene} {alias}"),
+                None => alias.clone(),
+            }
+        }));
+    }
+    aliases.extend(selected.iter().cloned());
+    aliases.sort();
+    aliases.dedup();
+    let resolved = context.resolution.status == VariantResolutionStatus::Resolved;
+    let compatible = !matches!(
+        context.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Contradictory
+    );
+    let mut planned = BTreeSet::new();
+    if strategy == VariantArticleStrategy::Exact {
+        planned.extend(selected.iter().cloned());
+    } else if compatible
+        && (strategy == VariantArticleStrategy::Union
+            || (resolved && strategy == VariantArticleStrategy::Lexical))
+    {
+        planned.extend(
+            provider_variant_query_plan_with_aliases(input, context, strategy, selected)
+                .into_iter()
+                .filter(|plan| plan.route == "strict")
+                .map(|plan| plan.query_alias),
+        );
+        if resolved {
+            planned.extend(selected.iter().cloned());
+        } else {
+            planned.extend(fallback_aliases(input, context).0);
+        }
+    }
+    let setup_failures = execution
+        .alias_setup_failures
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let attempted = execution
+        .attempted_aliases
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    aliases
+        .into_iter()
+        .map(|alias| {
+            let was_planned = context.available && planned.contains(&alias);
+            let was_attempted = attempted.contains(&alias);
+            let reason = if was_attempted {
+                "provider_query_attempted"
+            } else if !context.available {
+                "resolution_unavailable"
+            } else if matches!(
+                context.resolution.provider_validation.status,
+                VariantProviderValidationStatus::Contradictory
+            ) {
+                "provider_identity_contradiction"
+            } else if matches!(
+                strategy,
+                VariantArticleStrategy::Annotation | VariantArticleStrategy::Exact
+            ) && !was_planned
+            {
+                "strategy_does_not_query_alias"
+            } else if !selected.contains(&alias) {
+                "alias_limit"
+            } else if !was_planned {
+                "strategy_does_not_query_alias"
+            } else if execution.deadline_exhausted() {
+                "invocation_deadline"
+            } else if execution.route_stopped("strict")
+                || execution.route_stopped("exact_lexical")
+                || execution.route_stopped("exact_name")
+            {
+                "logical_work_cap"
+            } else if let Some(reason) = setup_failures
+                .get(&alias)
+                .and_then(|reasons| reasons.first())
+            {
+                reason
+            } else {
+                "no_provider_query_available"
+            };
+            VariantArticleAliasCoverage {
+                alias,
+                planned: was_planned,
+                attempted: was_attempted,
+                disposition: if was_attempted {
+                    "attempted"
+                } else {
+                    "omitted"
+                },
+                reason,
+            }
+        })
+        .collect()
 }
 
 fn combined_normalized_aliases(
@@ -2312,12 +2463,13 @@ async fn federated_alias_candidates(
     Vec<VariantArticleSourceStatus>,
 ) {
     let searches = aliases.into_iter().map(|alias| async move {
+        let execution = execution.for_alias(&alias);
         let mut filters = article_filters();
         filters.keyword = Some(alias.clone());
         acquire_federated_article_rows_with_context(
             &filters,
             LEXICAL_ALIAS_FETCH_LIMIT,
-            Some(execution),
+            Some(&execution),
             route,
         )
         .await
@@ -2440,6 +2592,14 @@ async fn strict_provider_candidates(
     let mut succeeded = false;
 
     for plan in plans.into_iter().filter(|plan| plan.route == "strict") {
+        // This route resolves PubTator's entity from the original request,
+        // not from each alias spelling. Do not count it as sending that form.
+        let scoped = if plan.provider == "pubtator" {
+            execution.clone()
+        } else {
+            execution.for_alias(&plan.query_alias)
+        };
+        let execution = &scoped;
         if execution.route_stopped("strict") {
             break;
         }
@@ -2752,6 +2912,8 @@ async fn exact_name_candidates(
     let mut incomplete = false;
     let mut succeeded = false;
     for plan in plans {
+        let scoped = execution.for_alias(&plan.query_alias);
+        let execution = &scoped;
         if execution.route_stopped("exact_name") {
             incomplete = true;
             break;
@@ -3578,6 +3740,7 @@ fn build_debug_plan(
     };
     let dropped = observed_total - candidates.len();
     VariantArticleDebugPlan {
+        alias_coverage: Vec::new(),
         normalized_aliases: context.resolution.normalized_aliases.clone(),
         provider_queries,
         routes,
@@ -3732,6 +3895,26 @@ fn variant_article_terminal_state(
     (complete, truncated)
 }
 
+fn terminal_item_error(
+    execution: &VariantArticleExecutionContext,
+    outage_message: String,
+) -> VariantArticleItemError {
+    let expired = execution.deadline_exhausted();
+    VariantArticleItemError {
+        code: if expired {
+            "deadline_exceeded"
+        } else {
+            "source_unavailable"
+        },
+        message: if expired {
+            "the variant article invocation deadline expired before a usable result was available"
+                .into()
+        } else {
+            outage_message
+        },
+    }
+}
+
 /// The early outcome for a request whose variant identity could not be
 /// resolved: an empty, incomplete page whose structured error names the
 /// failing sources instead of pretending a search ran.
@@ -3763,9 +3946,18 @@ fn resolution_unavailable_outcome(
             status.source.clone(),
         )
     });
+    let alias_coverage = alias_coverage(
+        "",
+        &context,
+        strategy,
+        &[],
+        &canonical_equivalence,
+        execution,
+    );
     let debug_plan = include_debug_plan.then(|| {
         let mut plan =
             empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
+        plan.alias_coverage = alias_coverage.clone();
         plan.budgets.item = execution.item_work();
         plan.budgets.request = execution.request_work();
         plan.deadline = execution.deadline_plan();
@@ -3774,6 +3966,7 @@ fn resolution_unavailable_outcome(
     let outage_message = variant_article_outage_message(&source_status);
     VariantArticleOutcome {
         response: VariantArticleResponse {
+            alias_coverage,
             requested_variant: context.requested,
             resolution: context.resolution,
             canonical_equivalence: Some(canonical_equivalence),
@@ -3791,18 +3984,7 @@ fn resolution_unavailable_outcome(
             source_status,
             retrieval_path: "variant resolution unavailable",
             results: Vec::new(),
-            error: Some(VariantArticleItemError {
-                code: if execution.deadline.is_exhausted() {
-                    "deadline_exceeded"
-                } else {
-                    "source_unavailable"
-                },
-                message: if execution.deadline.is_exhausted() {
-                    "the variant article invocation deadline expired before a usable result was available".into()
-                } else {
-                    outage_message
-                },
-            }),
+            error: Some(terminal_item_error(execution, outage_message)),
             debug_plan,
         },
         hard_error: true,
@@ -4451,6 +4633,14 @@ async fn search_variant_articles_identity(
     } else {
         "resolved exact-variant route union"
     };
+    let alias_coverage = alias_coverage(
+        input,
+        &context,
+        strategy,
+        &selected_exact_aliases,
+        &canonical_equivalence,
+        &execution,
+    );
     let debug_plan = include_debug_plan.then(|| {
         let mut plan = build_debug_plan(
             input,
@@ -4472,6 +4662,7 @@ async fn search_variant_articles_identity(
                 candidate_trace,
             },
         );
+        plan.alias_coverage = alias_coverage.clone();
         if verification.verify_identity {
             plan.verification = Some(verification_plan(
                 &context.requested,
@@ -4487,6 +4678,7 @@ async fn search_variant_articles_identity(
         (strategy != VariantArticleStrategy::Exact).then_some(canonical_equivalence);
     Ok(VariantArticleOutcome {
         response: VariantArticleResponse {
+            alias_coverage,
             requested_variant: context.requested,
             resolution: context.resolution,
             canonical_equivalence,
@@ -4504,18 +4696,7 @@ async fn search_variant_articles_identity(
             source_status: statuses,
             retrieval_path,
             results: rows,
-            error: hard_error.then(|| VariantArticleItemError {
-                code: if execution.deadline.is_exhausted() {
-                    "deadline_exceeded"
-                } else {
-                    "source_unavailable"
-                },
-                message: if execution.deadline.is_exhausted() {
-                    "the variant article invocation deadline expired before a usable result was available".into()
-                } else {
-                    outage_message
-                },
-            }),
+            error: hard_error.then(|| terminal_item_error(&execution, outage_message)),
             debug_plan,
         },
         hard_error,
@@ -4740,6 +4921,7 @@ fn empty_debug_plan(
     let item_work =
         VariantArticleWork::new(ITEM_WORK_LIMIT + EXACT_WORK_LIMIT + ITEM_WORK_LIMIT, 0);
     VariantArticleDebugPlan {
+        alias_coverage: Vec::new(),
         normalized_aliases: requested.normalized_aliases(),
         provider_queries: Vec::new(),
         routes: Vec::new(),
@@ -4859,6 +5041,7 @@ fn empty_item(
     let debug_plan =
         include_debug_plan.then(|| empty_debug_plan(&request.requested, false, Vec::new(), offset));
     VariantArticleBatchItem {
+        alias_coverage: Vec::new(),
         request_id: request.request_id,
         requested_variant: request.requested,
         resolution: None,
@@ -4918,6 +5101,7 @@ async fn execute_batch_item(
     let response = outcome.response;
     let error = response.error;
     VariantArticleBatchItem {
+        alias_coverage: response.alias_coverage,
         request_id: request.request_id,
         requested_variant: response.requested_variant,
         resolution: Some(response.resolution),
@@ -5249,6 +5433,13 @@ mod tests {
                     .await
                     .expect("deadline is an in-band terminal state");
                     assert!(outcome.hard_error && outcome.response.pagination.has_more);
+                    assert!(
+                        outcome
+                            .response
+                            .alias_coverage
+                            .iter()
+                            .all(|alias| !alias.attempted)
+                    );
                     assert_eq!(
                         outcome.response.error.as_ref().map(|error| error.code),
                         Some("deadline_exceeded")
@@ -5487,6 +5678,15 @@ mod tests {
                         );
                     }
 
+                    let coverage = alias_coverage(
+                        "BRAF variant",
+                        &context,
+                        strategy,
+                        &aliases,
+                        &unattempted_canonical_equivalence(),
+                        &execution,
+                    );
+                    assert!(coverage.iter().all(|alias| !alias.attempted));
                     let strict_units = if strategy == VariantArticleStrategy::Union
                         || (strategy == VariantArticleStrategy::Lexical && car_units > 0)
                     {
@@ -5498,6 +5698,19 @@ mod tests {
                         execution.record("strict", "pubmed", Instant::now(), "ok", 1);
                     }
                     tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+                    let coverage = alias_coverage(
+                        "BRAF variant",
+                        &context,
+                        strategy,
+                        &aliases,
+                        &unattempted_canonical_equivalence(),
+                        &execution,
+                    );
+                    for alias in coverage.iter().filter(|alias| alias.planned) {
+                        assert!(!alias.attempted);
+                        assert_eq!(alias.disposition, "omitted");
+                        assert_eq!(alias.reason, "invocation_deadline");
+                    }
                     let mut visible = vec![lexical_candidate("1003", &[2])];
                     visible[0].row.source = ArticleSource::PubMed;
                     visible[0].row.matched_sources = vec![ArticleSource::PubMed];
@@ -8361,6 +8574,7 @@ mod tests {
         error: Option<VariantArticleItemError>,
     ) -> VariantArticleBatchItem {
         VariantArticleBatchItem {
+            alias_coverage: Vec::new(),
             request_id: request_id.into(),
             requested_variant: resolved_context().requested,
             resolution: None,
