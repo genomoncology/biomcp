@@ -25,6 +25,8 @@
 
 ### Internal
 
+- Run the complete pathway specification against recorded replies while preserving source-disable checks and section guidance. (2111)
+
 - Check pathway search and KEGG and Reactome details in JSON and Markdown against recorded provider replies. (2079)
 
 - Run gene discovery and identity specifications against recorded replies and reuse the gene-search golden for JSON follow-up checks. (2111)
