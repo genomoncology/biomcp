@@ -59,6 +59,8 @@
 - Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 - Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
 
+- Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
+
 ### Internal
 
 - Keep subprocess readiness markers on their own line so GenCC lease tests finish with one CPU, and exercise that affinity in the stress lane. (2244)
