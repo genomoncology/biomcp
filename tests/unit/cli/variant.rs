@@ -97,8 +97,8 @@ fn erepo_gene_mode_is_bounded_and_mutually_exclusive() {
                 },
         } => {
             assert_eq!(gene.as_deref(), Some("PTEN"));
-            assert_eq!(limit, 25);
-            assert_eq!(offset, 50);
+            assert_eq!(limit, Some(25));
+            assert_eq!(offset, Some(50));
         }
         other => panic!("unexpected command: {other:?}"),
     }

@@ -695,10 +695,23 @@ struct TrialAliasLookup {
     candidates: Vec<TrialAlias>,
 }
 
+const TRIAL_ALIAS_CACHE_CAP: usize = 512;
+
 static TRIAL_ALIAS_CACHE: OnceLock<Mutex<HashMap<String, TrialAliasResolution>>> = OnceLock::new();
 
 fn trial_alias_cache() -> &'static Mutex<HashMap<String, TrialAliasResolution>> {
     TRIAL_ALIAS_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn insert_trial_alias_cache_entry(
+    cache: &mut HashMap<String, TrialAliasResolution>,
+    key: String,
+    resolution: TrialAliasResolution,
+) {
+    if cache.len() >= TRIAL_ALIAS_CACHE_CAP && !cache.contains_key(&key) {
+        cache.clear();
+    }
+    cache.insert(key, resolution);
 }
 
 fn trial_alias_cache_key(name: &str) -> String {
@@ -914,7 +927,7 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
 
     if cacheable {
         let mut cache = crate::utils::sync::recover_poison(trial_alias_cache().lock());
-        cache.insert(cache_key, resolution.clone());
+        insert_trial_alias_cache_entry(&mut cache, cache_key, resolution.clone());
     }
 
     Ok(resolution)
