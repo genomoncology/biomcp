@@ -206,9 +206,9 @@ struct FixtureEnv {
 
 impl FixtureEnv {
     async fn new(label: &str, pages: Vec<GraphPage>, jats: Option<&'static str>) -> Self {
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = crate::test_support::TempDirGuard::new(label);
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         let (fixture, log) = spawn_sidecar_fixture(pages, jats).await;
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);

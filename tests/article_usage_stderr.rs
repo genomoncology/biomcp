@@ -112,7 +112,7 @@ fn run_article_search_at_with_cache(args: &[&str], base: &str, cache: &Path) -> 
         command.env(name, base);
     }
     command.env("BIOMCP_CACHE_MODE", "off");
-    command.env("BIOMCP_CACHE_DIR", cache);
+    command.envs(biomcp_mcp_contract_client::child_cache_env(cache));
     command.env_remove("RUST_LOG");
     command.env_remove("S2_API_KEY");
 

@@ -36,7 +36,7 @@ fn cache_open_repairs_root_refuses_insecure_database_and_rejects_hardlinks() {
 
     let status = Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
-        .env("BIOMCP_CACHE_DIR", &root)
+        .envs(biomcp_mcp_contract_client::child_cache_env(&root))
         .status()
         .expect("run cache stats");
     assert!(status.success());
@@ -61,7 +61,7 @@ fn cache_open_repairs_root_refuses_insecure_database_and_rejects_hardlinks() {
     fs::set_permissions(&file, fs::Permissions::from_mode(0o644)).unwrap();
     let insecure = Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
-        .env("BIOMCP_CACHE_DIR", &root)
+        .envs(biomcp_mcp_contract_client::child_cache_env(&root))
         .output()
         .unwrap();
     assert!(!insecure.status.success());
@@ -70,7 +70,7 @@ fn cache_open_repairs_root_refuses_insecure_database_and_rejects_hardlinks() {
     fs::hard_link(&file, parent.path().join("outside-link")).expect("hard link");
     let failed = Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
-        .env("BIOMCP_CACHE_DIR", &root)
+        .envs(biomcp_mcp_contract_client::child_cache_env(&root))
         .output()
         .expect("run rejected stats");
     assert!(!failed.status.success());
@@ -84,7 +84,7 @@ fn windows_cache_root_is_restricted_to_the_current_user() {
     let root = parent.path().join("managed");
     let status = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
-        .env("BIOMCP_CACHE_DIR", &root)
+        .envs(biomcp_mcp_contract_client::child_cache_env(&root))
         .status()
         .expect("run cache stats");
     assert!(status.success());
@@ -107,7 +107,7 @@ fn windows_managed_tree_rejects_hardlinked_files_without_fsutil() {
 
     let accepted = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
-        .env("BIOMCP_CACHE_DIR", &root)
+        .envs(biomcp_mcp_contract_client::child_cache_env(&root))
         .output()
         .expect("run accepted stats");
     assert!(
@@ -120,7 +120,7 @@ fn windows_managed_tree_rejects_hardlinked_files_without_fsutil() {
 
     let failed = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
-        .env("BIOMCP_CACHE_DIR", &root)
+        .envs(biomcp_mcp_contract_client::child_cache_env(&root))
         .output()
         .expect("run rejected stats");
 
@@ -383,7 +383,7 @@ fn windows_acl_contract_rejects_missing_and_nonexistent_paths() {
 fn run_cache_database_probe(root: &std::path::Path) -> std::process::Output {
     std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
-        .env("BIOMCP_CACHE_DIR", root)
+        .envs(biomcp_mcp_contract_client::child_cache_env(root))
         .output()
         .expect("run cache database probe")
 }

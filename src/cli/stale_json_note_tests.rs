@@ -166,111 +166,40 @@ async fn run(args: &[&str]) -> String {
 /// filesystem's free space can evict the cached reply before the
 /// stale serve. A test that sets its own floor after the
 /// constructor still wins.
-const MIN_DISK_FREE: &str = "1B";
-
 struct StaleNoteEnv {
-    /// Held (never read) so the cache directory outlives the env.
-    // dead-code reason: held-for-drop guard keeps the temp cache root alive
-    #[allow(dead_code)]
-    root: crate::test_support::TempDirGuard,
-    /// (key, previous value) pairs restored on drop, so one test's
-    /// fixture bases never leak into the next.
-    previous: Vec<(&'static str, Option<String>)>,
+    _cache: crate::test_support::FixtureEnv,
 }
 
 impl StaleNoteEnv {
     fn two_bases(mygene: &str, clingen: &str, keys: &[&'static str]) -> Self {
-        let root = crate::test_support::TempDirGuard::new("stale-json-notes");
-        let mut previous = Vec::new();
-        for key in keys
-            .iter()
-            .copied()
-            .chain(["BIOMCP_CACHE_DIR", "BIOMCP_CACHE_MIN_DISK_FREE"])
-        {
-            let value = if key == "BIOMCP_CACHE_DIR" {
-                root.path().to_str().expect("utf-8 cache root").to_string()
-            } else if key == "BIOMCP_CACHE_MIN_DISK_FREE" {
-                MIN_DISK_FREE.to_string()
-            } else if key == "BIOMCP_MYGENE_BASE" {
-                mygene.to_string()
-            } else {
-                clingen.to_string()
-            };
-            // SAFETY: serialized on the source_env key; restored on drop.
-            unsafe {
-                previous.push((key, std::env::var(key).ok()));
-                std::env::set_var(key, value);
-            }
+        let mut env = crate::test_support::FixtureEnv::scratch_cache_only();
+        for key in keys.iter().copied() {
+            env.set(
+                key,
+                if key == "BIOMCP_MYGENE_BASE" {
+                    mygene
+                } else {
+                    clingen
+                },
+            );
         }
-        Self { root, previous }
+        Self { _cache: env }
     }
 
-    /// Distinct bases per source key (the search-all fixture pins
-    /// four federated legs to two different servers).
     fn bases(pairs: &[(&'static str, &str)]) -> Self {
-        let root = crate::test_support::TempDirGuard::new("stale-json-notes");
-        let mut previous = Vec::new();
+        let mut env = crate::test_support::FixtureEnv::scratch_cache_only();
         for (key, base) in pairs.iter().copied() {
-            // SAFETY: serialized on the source_env key; restored on drop.
-            unsafe {
-                previous.push((key, std::env::var(key).ok()));
-                std::env::set_var(key, base);
-            }
+            env.set(key, base);
         }
-        // SAFETY: as above.
-        unsafe {
-            previous.push(("BIOMCP_CACHE_DIR", std::env::var("BIOMCP_CACHE_DIR").ok()));
-            std::env::set_var(
-                "BIOMCP_CACHE_DIR",
-                root.path().to_str().expect("utf-8 cache root"),
-            );
-            previous.push((
-                "BIOMCP_CACHE_MIN_DISK_FREE",
-                std::env::var("BIOMCP_CACHE_MIN_DISK_FREE").ok(),
-            ));
-            std::env::set_var("BIOMCP_CACHE_MIN_DISK_FREE", MIN_DISK_FREE);
-        }
-        Self { root, previous }
+        Self { _cache: env }
     }
 
     fn new(base: &str, keys: &[&'static str]) -> Self {
-        let root = crate::test_support::TempDirGuard::new("stale-json-notes");
-        let mut previous = Vec::new();
-        for key in keys
-            .iter()
-            .copied()
-            .chain(["BIOMCP_CACHE_DIR", "BIOMCP_CACHE_MIN_DISK_FREE"])
-        {
-            // SAFETY: serialized on the source_env key; values restore on drop.
-            unsafe {
-                previous.push((key, std::env::var(key).ok()));
-                std::env::set_var(
-                    key,
-                    if key == "BIOMCP_CACHE_DIR" {
-                        root.path().to_str().expect("utf-8 cache root")
-                    } else if key == "BIOMCP_CACHE_MIN_DISK_FREE" {
-                        MIN_DISK_FREE
-                    } else {
-                        base
-                    },
-                );
-            }
+        let mut env = crate::test_support::FixtureEnv::scratch_cache_only();
+        for key in keys.iter().copied() {
+            env.set(key, base);
         }
-        Self { root, previous }
-    }
-}
-
-impl Drop for StaleNoteEnv {
-    fn drop(&mut self) {
-        for (key, value) in self.previous.drain(..) {
-            // SAFETY: serialized on the source_env key.
-            unsafe {
-                match value {
-                    Some(previous) => std::env::set_var(key, previous),
-                    None => std::env::remove_var(key),
-                }
-            }
-        }
+        Self { _cache: env }
     }
 }
 

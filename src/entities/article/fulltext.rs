@@ -1457,9 +1457,9 @@ mod tests {
     #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn html_and_pdf_attempts_classify_transport_and_conversion_failures() {
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-fulltext-attempt-matrix");
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         let client = crate::sources::test_client().expect("no-retry classification client");
 
         let not_found = TestHttpFixture::spawn(|_| {
@@ -1626,7 +1626,7 @@ mod tests {
             TestHttpReply::Bytes(test_http_response(status, content_type, body))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-fulltext-pmc-bot-challenge");
         for key in [
             "BIOMCP_TEST_UNPACED_ORIGIN",
@@ -1637,7 +1637,7 @@ mod tests {
         ] {
             env.set(key, &fixture.base);
         }
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
 
         let mut article = article_for_fulltext();
         article.semantic_scholar = Some(ArticleSemanticScholar {
@@ -1785,7 +1785,7 @@ mod tests {
             TestHttpReply::Bytes(test_http_response("200 OK", "application/xml", body))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-fulltext-xml-continuation");
         for key in [
             "BIOMCP_TEST_UNPACED_ORIGIN",
@@ -1796,7 +1796,7 @@ mod tests {
         ] {
             env.set(key, &fixture.base);
         }
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
 
         let mut article = article_for_fulltext();
         resolve_fulltext(&mut article, "22663011", PdfDiscoveryAttempt::Ineligible)
@@ -1837,7 +1837,7 @@ mod tests {
             TestHttpReply::Bytes(test_http_response("200 OK", "application/xml", body))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-fulltext-partial-continuation");
         for key in [
             "BIOMCP_TEST_UNPACED_ORIGIN",
@@ -1848,7 +1848,7 @@ mod tests {
         ] {
             env.set(key, &fixture.base);
         }
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
 
         let mut article = article_for_fulltext();
         resolve_fulltext(&mut article, "22663011", PdfDiscoveryAttempt::Ineligible)
@@ -1887,11 +1887,11 @@ mod tests {
             ))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-fulltext-v3-regression");
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         let stale_path = download::save_atomic(
             "article-fulltext-v3:jats_xml:22663011",
             "abstract without article body",
@@ -1925,11 +1925,11 @@ mod tests {
             ))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-fulltext-pdf-precedence");
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
 
         let mut article = article_for_fulltext();
         resolve_fulltext(
