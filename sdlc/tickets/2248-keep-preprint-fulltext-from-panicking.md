@@ -30,7 +30,7 @@ Restate the approved outcome, reproduce on current main before source edits, and
 
 ## Granted implementation brief
 
-- Changes: `src/entities/source_state_registry.rs` `src/entities/article/fulltext.rs` `tests/test_article_preprint_fulltext.py` `tests/fixtures/article/preprint-fulltext/**` `CHANGELOG.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md`. `src/sources/provider_url_policy.rs` `docs/reference/sources.json` `docs/reference/source-licensing.md` `src/error.rs`
+- Changes: `src/entities/source_state_registry.rs` `src/entities/article/fulltext.rs` `tests/test_article_preprint_fulltext.py` `tests/fixtures/article/preprint-fulltext/**` `CHANGELOG.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md`. `src/sources/provider_url_policy.rs` `docs/reference/sources.json` `docs/reference/source-licensing.md` `src/error.rs` `architecture/technical/source-integration.md`
 
 Restated outcome: preprint DOI full text returns actual available JATS text with accurate provenance, or a named structured failure when unavailable; one preprint outcome must not erase unrelated ordered batch items. PM explicitly approved the JATS route within this ticket. Fix the provenance-registry mismatch rather than weakening its invariant.
 
@@ -41,3 +41,5 @@ Write failing outside-in tests first, apply the minimal repair, run affected tes
 Keep: experiments/789-biomcp-2248-preprint-panic — Retain cited raw proof until release evidence is explicitly released.
 
 Claim expansion: Register the approved preprint source, preserve provider identity and generated license facts, and constrain the recorded advertised-JATS origin through the existing URL policy. Inspect actual source/licensing evidence before implementing its route; no weakened generic fetch or provenance invariant.
+
+Claim expansion: update only the article/fulltext provider cell in the existing architecture source-integration mirror to match the approved source-state registry. No architecture redesign.
