@@ -199,6 +199,7 @@ async fn spawn_sidecar_fixture(
 /// restores every provider variable when the struct drops.
 struct FixtureEnv {
     env: TestEnv,
+    _cache_policy: crate::test_support::FixtureEnv,
     cache: crate::test_support::TempDirGuard,
     fixture: TestHttpFixture,
     log: Arc<Mutex<Vec<String>>>,
@@ -206,6 +207,7 @@ struct FixtureEnv {
 
 impl FixtureEnv {
     async fn new(label: &str, pages: Vec<GraphPage>, jats: Option<&'static str>) -> Self {
+        let cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
         let mut env = TestEnv::new();
         let cache = crate::test_support::TempDirGuard::new(label);
         env.set("BIOMCP_CACHE_DIR", cache.path());
@@ -215,6 +217,7 @@ impl FixtureEnv {
         env.set("BIOMCP_NCBI_IDCONV_BASE", &fixture.base);
         Self {
             env,
+            _cache_policy: cache_policy,
             cache,
             fixture,
             log,
