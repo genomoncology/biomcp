@@ -112,8 +112,11 @@ pub(super) async fn enrich_targets(
 
     drug.sort_targets_by_organism();
     drug.targets.truncate(12);
-    drug.target_organisms
-        .retain(|row| drug.targets.contains(&row.target));
+    drug.target_organisms.retain(|row| {
+        drug.targets
+            .iter()
+            .any(|target| target.eq_ignore_ascii_case(&row.target))
+    });
     drug.variant_targets = civic_context
         .map(|context| extract_variant_targets_from_civic(context, &drug.targets))
         .unwrap_or_default();
