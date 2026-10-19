@@ -22,6 +22,8 @@ One atomic commit on main carries everything step 1 of 2258 needs: stable 0.9.4 
 
 ## Changes
 
+- Historical development-cycle changelog contract: `tests/test_docs_changelog_refresh.py`, preserving its ticket inventory, milestone, duplicates and list-shape checks while allowing the current stable release to precede 0.9.3 history.
+
 - Version files and `CHANGELOG.md`, as `scripts/check-version-sync.sh` and `scripts/check-release-versions.py` define them.
 - Dispositions for both 2026-10-07 review files as mapped in the PM's answer of 2026-10-19 (fixed, moot, process or historical, each with evidence; the history-rewrite finding records “not rewritten by Ian’s decision 2026-10-19; current tree clean”).
 - Dispositions in the sixteen historical issue files touched by this release, retaining original evidence and citing landed residual repairs.
@@ -59,3 +61,9 @@ Post-repair proof: M5 job 2262/1792446171402-28234 reconstructs candidate 10b3cd
 Standalone gate 2262/1792446600260-85353 stopped before tests on the existing release-process version fact audit: the runbook combined Cargo and Python labels after one shared version value, while the audit requires each label beside its package-derived version. Developer f75cc9f971366bc76d6fdea4020c79dfa6750a9e changes only that sentence to name Cargo 0.9.4 and Python 0.9.4 separately, preserving stable-candidate and development-cycle meaning. No checker, source, version metadata, changelog, milestone or disposition changed.
 
 Focused M5 job 2262/1792446798109-18318 reconstructs the exact private commit/tree from published c0494ff5f before push. Version sync, stable equality, seventy-five-ticket changelog coverage, the existing runbook regression, fifteen release-version cases, Ruff, full quality ratchet and whitespace checks pass. Raw proof, all quality artifacts and reproducible helper remain in 2095-biomcp-2262-stable-metadata/runbook-repair/1792446798109-18318; the failed gate remains in its landing-gate/1792446600260-85353 folder. Main b7d6f83 remains fully green; no new full gate or tag is claimed for this sentence repair.
+
+## Historical development-cycle contract repair
+
+Gate 2262/1792446928010-37692 passed all 4279 Rust cases and 1568 Python cases, then failed only the fixed 0.9.3 development-cycle section ordering assertion. Developer 37543cb67a0e796e2729d369b55bc826cf3b6258 changes only tests/test_docs_changelog_refresh.py: name and document the historical contract and order the current release ahead of that fixed historical inventory. Every ticket, milestone, duplicate and list-shape assertion remains. The actual stable changelog and all other metadata remain unchanged.
+
+At the PM requirement, focused M5 job 2262/1792447369524-5912 passed all 134 Python changelog/version/release-metadata cases plus the runbook regression and all eight focused Rust version/metadata controls in one pass. Version sync, stable equality, all seventy-five landed ticket citations plus own citation, Ruff, tracked-text, complete quality ratchet, whitespace and clean-tree checks passed. Exact private commit/tree reconstruction from published 1cb582112 matched the final source before green push. Retain raw helper/log/result/state/quality artifacts at 2095-biomcp-2262-stable-metadata/changelog-contract-repair/1792447369524-5912. No runtime, release content, version values, dispositions, milestones, gate command or full gate change is claimed by this test correction.
