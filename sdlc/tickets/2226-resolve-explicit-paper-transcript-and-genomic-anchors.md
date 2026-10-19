@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 Recognize a paper's explicit transcript accession and version or genomic coordinates with a named build as verified identity only when authoritative resolution proves the same requested allele, following the recorded clinical ruling. Unsupported or unresolved anchors remain unverified. This work can move to a later release without blocking the demonstrated alias-label correction or the current release.
 
-- Changes: `src/entities/article/variant_search.rs` `src/entities/article/identity_verification.rs` `tests/test_variant_article_paper_anchors.py` `testdata/sources/clingen_allele_registry/brca1-nm_007294.3-c.3748g-t.json` and the explicit-anchor example in `sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md`. Additional authoritative response/fixture paths must be named before writing. Implement only a demonstrated mechanism after the positive current-main reproduction.
+- Changes: `src/entities/article/variant_search.rs` `src/entities/article/identity_verification.rs` `tests/test_variant_article_paper_anchors.py` `tests/fixtures/article/paper-anchors/*.json` and the explicit-anchor example in `sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md`. The exact capture files are car-nm_007294.3-c.3748g-t.json, car-nm_007297.4-c.3607g-t.json, car-nm_007297.4-c.3607g-c.json and capture.json (source URL, UTC time, HTTP status and response hash). Reuse the existing actual paper capture; an explicitly simulated provider 503 is only a refusal control, never a recorded outage. Additional paths must be named before writing. Implement only a demonstrated mechanism after the positive current-main reproduction.
 
 
 ## Evidence
