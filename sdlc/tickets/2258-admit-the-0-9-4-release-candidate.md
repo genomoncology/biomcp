@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262
+Depends on: 2257, 2244, 2111, 2262, 2276
 
 ## Outcome
 
