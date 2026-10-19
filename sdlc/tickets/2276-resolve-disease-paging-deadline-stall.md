@@ -25,3 +25,7 @@ Inspect the existing stalled process and captured output before any reproduction
 ## Proof
 
 Record the actual cause and one controlled failing proof if a defect is established. Run affected paging and cancellation controls and necessary lint through pm job, then stop for fresh review. No full gate; the coordinator owns the final actual-main check. Retain diagnostics in a numbered private experiment folder with OWNER and Keep.
+
+## Progress
+
+- 2026-10-19 started
