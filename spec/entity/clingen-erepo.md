@@ -13,7 +13,9 @@ a structured `Strong` default, and comment text mentioning `PS4_VeryStrong`; tho
 are three distinct facts. It also covers explicit met and unmet criteria, PTEN's
 missing `unMetCodes` coverage, an exact-search healthy miss, selected versioned
 detail with citation locators, deterministic assertion selection, and equivalent
-CLI/MCP batch output. The compact report keeps the executable documentation
+CLI/MCP batch output. Allele lookups reject supplied `limit` and `offset`,
+including explicit default values, before provider access. Omitted paging keeps
+allele calls valid and preserves gene mode defaults. The compact report keeps the executable documentation
 focused on user-visible evidence truth rather than volatile provider payloads.
 
 The summary-selected `--detail` workflow must consume its source plan and replay

@@ -1,4 +1,4 @@
-//! Operator-supplied certificate authorities for ordinary outbound TLS.
+//! Operator-supplied certificate authorities for outbound TLS.
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -24,7 +24,14 @@ pub(crate) struct CaBundle {
 #[derive(Clone)]
 struct LoadedBundle {
     bundle: CaBundle,
-    certificates: Vec<reqwest::Certificate>,
+    certificates: ParsedCertificates,
+}
+
+#[derive(Clone, Debug)]
+struct ParsedCertificates {
+    reqwest: Vec<reqwest::Certificate>,
+    #[cfg(feature = "alphagenome")]
+    anchors: Vec<rustls::pki_types::TrustAnchor<'static>>,
 }
 
 #[derive(Clone)]
@@ -58,10 +65,21 @@ pub(crate) fn configure(
         return Ok((builder, None));
     };
     let mut builder = builder;
-    for certificate in &loaded.certificates {
+    for certificate in &loaded.certificates.reqwest {
         builder = builder.add_root_certificate(certificate.clone());
     }
     Ok((builder, Some(loaded.bundle.clone())))
+}
+
+/// Adds the cached, validated operator roots to the gRPC client's native roots.
+#[cfg(feature = "alphagenome")]
+pub(crate) fn configure_tonic(
+    config: tonic::transport::ClientTlsConfig,
+) -> Result<tonic::transport::ClientTlsConfig, BioMcpError> {
+    let Some(loaded) = load()? else {
+        return Ok(config);
+    };
+    Ok(config.trust_anchors(loaded.certificates.anchors.iter().cloned()))
 }
 
 pub(crate) fn build_client(
@@ -172,7 +190,7 @@ fn configured_source() -> Option<BundleSource> {
     Some(BundleSource::Fallback(path))
 }
 
-fn parse_certificates(path: &Path, bytes: &[u8]) -> Result<Vec<reqwest::Certificate>, BioMcpError> {
+fn parse_certificates(path: &Path, bytes: &[u8]) -> Result<ParsedCertificates, BioMcpError> {
     #[cfg(test)]
     PARSE_COUNT.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
@@ -206,7 +224,11 @@ fn parse_certificates(path: &Path, bytes: &[u8]) -> Result<Vec<reqwest::Certific
     if certificates.is_empty() {
         return Err(bundle_error(path, "no certificates were found"));
     }
-    Ok(certificates)
+    Ok(ParsedCertificates {
+        reqwest: certificates,
+        #[cfg(feature = "alphagenome")]
+        anchors: trusted.roots,
+    })
 }
 
 fn bundle_error(path: &Path, reason: impl Into<String>) -> BioMcpError {

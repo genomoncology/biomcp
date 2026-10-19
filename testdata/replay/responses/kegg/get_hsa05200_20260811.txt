@@ -1,0 +1,3 @@
+ENTRY       hsa05200                    Pathway
+NAME        Pathways in cancer - Homo sapiens (human)
+///

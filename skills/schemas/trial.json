@@ -208,6 +208,11 @@
     "_meta": {
       "type": ["object", "null"],
       "properties": {
+        "notes": {
+          "description": "Cache-age notes, present only when this command served stale cached data.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "evidence_urls": {
           "type": ["array", "null"],
           "items": {
