@@ -33,3 +33,11 @@ No product code. Describe each landed outcome honestly, including studies that c
 ## Milestone configuration
 
 Carry the approved milestone-only sdlc/pm.json update with this standalone metadata landing: settle 0.9.3 and activate 0.9.4 and 0.9.5. This update had arrived as inherited PM ancestry on runtime lanes; pm classifies its configuration file as a separate landing, so the runtime batch retains current main configuration and this ticket owns the unchanged update. No gate command changes.
+
+## Final metadata proof
+
+Developer 295f6dcc84b5958432af6767001e3826c7baaadb finalizes exactly the approved twenty-seven metadata paths directly atop actual main 17eb1e637c7a5883e70946c7f1db58ac738bbc06. All current runtime and changelog outcomes remain. The final MCP dispositions cite landed 2263 df2319982; historical prose and the approved history-rewrite disposition remain intact. Only milestone values change in pm.json; no runtime, tests, scripts, workflow or gate commands change.
+
+M5 job 2262/1792444864948-83331 reconstructs the private candidate from published main and verifies exact Git tree and commit parity before checks. Version sync, stable v0.9.4 equality, exact-candidate changelog coverage for all seventy-four tickets since v0.9.3, 115 focused metadata tests and whitespace checks pass; no release tag was created. This is metadata proof, not full release qualification.
+
+Keep: experiments/2095-biomcp-2262-stable-metadata — retain raw job 1792444864948-83331, exact private patch and reproducible commit/parity script.
