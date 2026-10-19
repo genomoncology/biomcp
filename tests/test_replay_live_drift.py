@@ -134,7 +134,7 @@ def test_live_check_reports_deliberately_stale_recordings(
     assert detail in results[0]["details"]
 
 
-def test_live_check_ignores_values_order_and_unused_fields_and_paces_calls(
+def test_live_check_ignores_values_and_order_reports_added_paths_and_paces_calls(
     tmp_path, provider
 ):
     server, origin = provider
@@ -144,11 +144,12 @@ def test_live_check_ignores_values_order_and_unused_fields_and_paces_calls(
         "hits": [{"name": "changed", "symbol": "changed", "unused": 2}],
         "timestamp": "changed",
     }
-    process, _, summary = run_check(
+    process, results, summary = run_check(
         tmp_path, replay, "--live", env_values={"NCBI_API_KEY": "private-marker"}
     )
     assert process.returncode == 0
     assert summary["total"] == summary["checked"] == summary["passed"] == 2
+    assert results[0]["added_paths"] == ["$/hits/*/unused", "$/timestamp"]
     assert server.requests[1][0] - server.requests[0][0] >= 1.9
     assert "private-marker" not in process.stdout + process.stderr + str(
         server.requests
@@ -200,7 +201,7 @@ def test_incomplete_or_unsafe_recordings_are_counted_and_never_sent(
         digest = hashlib.sha256(body.encode()).hexdigest()[:16]
         routes = {f"POST /mygene/query#{digest}": {**entry, "request_body": body}}
     else:
-        (replay / "reply.json").write_text('{"unconsumedProviderField":true}')
+        (replay / "reply.json").write_text("unsupported plaintext reply")
     (replay / "manifest.json").write_text(
         json.dumps({"schema_version": 1, "routes": routes})
     )
@@ -256,35 +257,33 @@ def test_recorder_keeps_case_insensitive_response_headers_and_safe_post_metadata
         assert "private-marker" not in json.dumps(entry)
 
 
-def test_kegg_requires_access_authorization_and_detects_stale_text_shape(
+def test_plaintext_stays_blocked_even_with_restricted_access_authorization(
     tmp_path, provider
 ):
     server, origin = provider
     replay, routes = recording(tmp_path, origin, provider="kegg")
     entry = next(iter(routes.values()))
     entry["headers"]["content-type"] = "text/plain"
-    routes = {"GET /kegg/find/pathway/MAPK": entry}
     (replay / "reply.json").write_text("map04010\tMAPK signaling pathway\n")
     (replay / "manifest.json").write_text(
         json.dumps({"schema_version": 1, "routes": routes})
     )
-    process, _, summary = run_check(tmp_path, replay, "--live")
-    assert process.returncode == 1
-    assert summary["blocked"] == 1
+    for args, detail in [
+        ([], "restricted provider needs explicit access authorization or disabling"),
+        (
+            ["--allow-restricted", "kegg"],
+            "unsupported response format; structure comparison supports JSON and XML only",
+        ),
+    ]:
+        process, results, summary = run_check(tmp_path, replay, "--live", *args)
+        assert process.returncode == 1
+        assert summary["blocked"] == 1
+        assert summary["checked"] == 0
+        assert results[0]["details"] == [detail]
     assert not server.requests
-    server.content_type = "text/plain"
-    server.body = b"provider changed to a different format"
-    process, results, summary = run_check(
-        tmp_path, replay, "--live", "--allow-restricted", "kegg"
-    )
-    assert process.returncode == 1
-    assert summary["checked"] == summary["drift"] == 1
-    assert results[0]["details"] == ["live response has unsupported or invalid shape"]
 
 
-def test_projection_reads_models_after_test_constructors_and_provider_transforms(
-    tmp_path, provider
-):
+def test_live_check_reports_removed_nested_json_paths(tmp_path, provider):
     server, origin = provider
     replay, _ = recording(tmp_path, origin, provider="mydisease")
     recorded = {"_id": "MONDO:1", "mondo": {"name": "old label"}}
@@ -294,3 +293,71 @@ def test_projection_reads_models_after_test_constructors_and_provider_transforms
     assert process.returncode == 1
     assert summary["checked"] == summary["drift"] == 1
     assert "missing field $/mondo/name" in results[0]["details"]
+
+
+@pytest.mark.parametrize(
+    ("recorded", "live", "detail"),
+    [
+        ({"symbol": None}, {"symbol": 42}, "changed type $/symbol"),
+        (
+            {"hits": [{"symbol": "x"}]},
+            {"hits": [{"symbol": "y"}, {"symbol": 42}]},
+            "changed type $/hits/*/symbol",
+        ),
+        (
+            {"hits": [{"symbol": None}, {"symbol": "x"}]},
+            {"hits": [{"symbol": "y"}]},
+            "changed type $/hits/*/symbol",
+        ),
+        (
+            {"uniprot": {"providerCode": "x"}},
+            {"uniprot": {"renamed": "x"}},
+            "missing field $/uniprot/providerCode",
+        ),
+        (
+            {"authors": [{"ids": ["a"]}]},
+            {"authors": [{"ids": [42]}]},
+            "changed type $/authors/*/ids/*",
+        ),
+    ],
+)
+def test_all_json_paths_and_observed_type_unions_are_checked(
+    tmp_path, provider, recorded, live, detail
+):
+    server, origin = provider
+    replay, _ = recording(tmp_path, origin)
+    (replay / "reply.json").write_text(json.dumps(recorded))
+    server.body = live
+    process, results, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == 1
+    assert summary["checked"] == summary["drift"] == 1
+    assert detail in results[0]["details"]
+
+
+@pytest.mark.parametrize("removed", [False, True])
+def test_xml_element_paths_ignore_text_order_and_repeated_elements(
+    tmp_path, provider, removed
+):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "application/xml"
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    (replay / "reply.json").write_text(
+        "<reply><row><id>1</id><name>A</name></row></reply>"
+    )
+    server.content_type = "application/xml"
+    server.body = (
+        b"<reply><row><name>B</name></row></reply>"
+        if removed
+        else b"<reply><row><name>B</name><id>2</id><extra/></row><row><id>3</id></row></reply>"
+    )
+    process, results, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == int(removed)
+    assert summary["checked"] == 1
+    if removed:
+        assert "missing field $/reply/row/id" in results[0]["details"]
+    else:
+        assert summary["passed"] == 1
+        assert results[0]["added_paths"] == ["$/reply/row/extra"]

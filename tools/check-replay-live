@@ -188,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
             key.split("/", 1)[1].split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]
         )
         result = {"recording": index, "provider": provider, "file": entry.get("file")}
-        state, details = "blocked", []
+        state, details, added_paths = "blocked", [], []
         source_id = ID_ALIASES.get(provider, provider)
         try:
             if source_id in disabled:
@@ -214,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
                 path = (args.replay_dir / entry["file"]).resolve()
                 if not path.is_relative_to(args.replay_dir.resolve()):
                     raise ValueError("response file is outside recording directory")
-                expected = reply_shape(path.read_bytes(), ROOT, provider, key)
+                expected = reply_shape(path.read_bytes(), content_type)
                 if provider in stopped:
                     raise ValueError("provider stopped after rate limit or Retry-After")
                 if not args.live:
@@ -250,8 +250,11 @@ def main(argv: list[str] | None = None) -> int:
                         if len(actual_body) > MAX_REPLY_BYTES:
                             raise ValueError("live response exceeds size limit")
                         try:
-                            actual = reply_shape(actual_body, ROOT, provider, key)
+                            actual = reply_shape(
+                                actual_body, response.headers.get("Content-Type", "")
+                            )
                             details.extend(shape_drift(expected, actual))
+                            added_paths = sorted(actual.keys() - expected.keys())
                         except (ValueError, UnicodeError):
                             details.append(
                                 "live response has unsupported or invalid shape"
@@ -266,7 +269,15 @@ def main(argv: list[str] | None = None) -> int:
             )
         counts[state] += 1
         print(
-            json.dumps({**result, "state": state, "details": details}, sort_keys=True)
+            json.dumps(
+                {
+                    **result,
+                    "state": state,
+                    "details": details,
+                    "added_paths": added_paths,
+                },
+                sort_keys=True,
+            )
         )
     print(
         json.dumps(
