@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
+
 - Verify explicit versioned transcript substitutions in article prose when ClinGen resolves the paper anchor to the requested allele, retaining typed gene linkage and resolution provenance. (2226)
 
 - Separate unverified transcript-alias article matches from verified evidence, preserving provider transcript provenance and naming missing provenance in CLI and MCP output. (2185)
