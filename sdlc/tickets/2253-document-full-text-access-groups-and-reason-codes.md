@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 ## Outcome
 
+Changes: `docs/user-guide/article.md`, `docs/reference/data-sources.md`, `docs/how-to/find-articles.md`, `README.md`, `docs/sources/europe-pmc.md`, `docs/sources/pmc.md`, `docs/sources/pubtator.md`, `docs/sources/index.md`, `mkdocs.yml`, `tests/test_source_pages_docs_contract.py`, `tests/test_article_fulltext_reason_docs.py`, `CHANGELOG.md`, `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`.
+
 Users and agents can tell from the docs which papers BioMCP can read in full, which only `--pdf` may reach, and which it cannot reach, and every full-text reason code is explained. Examples use papers that work.
 
 ## Evidence
