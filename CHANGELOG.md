@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
 - Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
 
 - Derive variant article Markdown source plans and source states from the same route results as JSON, including empty pages and authenticated Semantic Scholar searches. (2252)

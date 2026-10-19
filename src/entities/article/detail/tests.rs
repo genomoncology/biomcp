@@ -160,6 +160,7 @@ fn maps_pubmed_citation_to_available_indexing_without_flattening() {
     };
 
     let indexing = article_indexing_from_citation(PubMedCitation {
+        abstract_text: None,
         authors: vec![PubMedCitationAuthor {
             name: "Ada First".into(),
             orcid: Some("0000-0002-1825-0097".into()),
