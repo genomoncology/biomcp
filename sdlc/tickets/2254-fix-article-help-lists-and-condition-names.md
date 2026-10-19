@@ -14,7 +14,7 @@ Reviews: revision 2a1c178, accept
 
 ## Outcome
 
-Changes: `src/render/markdown/article/tests.rs`, `src/render/markdown/mod.rs`, `spec/entity/article.md`, `src/cli/article/mod.rs`, `src/cli/variant/mod.rs`, `src/cli/list/literature.rs`, `src/cli/list/molecular.rs`, `src/cli/list/catalog.rs`, `src/entities/article/assets.rs`, `src/entities/article/mod.rs`, `src/cli/system/dispatch.rs`, `src/cli/article/dispatch.rs`, `src/render/markdown/article.rs`, `src/render/markdown/related/article_support.rs`, `tests/article_batch_outcome.rs`, `tests/rmcp_client_contract.rs`, `tests/article_asset_terminal.rs`, `docs/user-guide/supplementary-materials.md`, `docs/user-guide/cli-reference.md`, `CHANGELOG.md`, `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`.
+Changes: `tools/dead-code-exceptions.json`, `src/render/markdown/article/tests.rs`, `src/render/markdown/mod.rs`, `spec/entity/article.md`, `src/cli/article/mod.rs`, `src/cli/variant/mod.rs`, `src/cli/list/literature.rs`, `src/cli/list/molecular.rs`, `src/cli/list/catalog.rs`, `src/entities/article/assets.rs`, `src/entities/article/mod.rs`, `src/cli/system/dispatch.rs`, `src/cli/article/dispatch.rs`, `src/render/markdown/article.rs`, `src/render/markdown/related/article_support.rs`, `tests/article_batch_outcome.rs`, `tests/rmcp_client_contract.rs`, `tests/article_asset_terminal.rs`, `docs/user-guide/supplementary-materials.md`, `docs/user-guide/cli-reference.md`, `CHANGELOG.md`, `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`.
 
 Article and variant help, `biomcp list`, and the CLI reference agree with what the commands accept, and one blocked-download condition has one name.
 
@@ -49,3 +49,7 @@ Keep: experiments/796-biomcp-2254-article-consistency — retain baseline and gr
 Review preserved standalone batch rendering and made nested item context explicit in both dispatch callers. The standalone regression failed before the fix; final mechanical job 2254/1792428072930-17572 passed after focused renderer, CLI and MCP checks. Source accepted at e3a388daab68a1ac42a81b5d0bebdf6330c47990. Raw remains in the retained experiment.
 
 Review preserved standalone batch rendering and made nested item context explicit in both dispatch callers. The standalone regression failed before the fix; final mechanical job 2254/1792428072930-17572 passed after focused renderer, CLI and MCP checks. Source accepted at e3a388daab68a1ac42a81b5d0bebdf6330c47990. Raw remains in the retained experiment.
+
+## Batch quality registration
+
+The shared candidate stopped before tests because the reviewed standalone article_batch_markdown allowance was missing from the explicit exception inventory. Preserve the re-exported standalone contract and separate nested renderer; register its exact existing reason and removal condition in the owning inventory. Keep the failed gate and owning audit result with the retained article-consistency evidence.
