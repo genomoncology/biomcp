@@ -28,7 +28,9 @@ One live opt-in run per item on current main with synced bundles, recorded. For 
 
 ## Coordinator implementation brief
 
-- Changes: `src/transform/drug.rs`, `src/entities/discover.rs`, `src/entities/diagnostic/search.rs`, `src/cli/diagnostic/dispatch.rs`, `spec/fixtures/setup-provider-contract-spec-fixture.sh`, `spec/fixtures/setup-article-fulltext-source-fixture.sh`, `spec/entity/diagnostic.md`, `spec/surface/mcp.md`, `tests/test_live_suspect_regressions.py`, `tests/fixtures/live-suspects/**`, `CHANGELOG.md`, `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md`. Issue closure records will be added by the coordinator after review.
+- Changes: `src/transform/drug.rs`, `src/entities/discover.rs`, `src/entities/diagnostic/search.rs`, `src/cli/diagnostic/dispatch.rs`, `spec/fixtures/setup-provider-contract-spec-fixture.sh`, `spec/fixtures/setup-article-fulltext-source-fixture.sh`, `spec/entity/diagnostic.md`, `spec/surface/mcp.md`, `tests/test_live_suspect_regressions.py`, `tests/fixtures/live-suspects/**`, `CHANGELOG.md` `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`, `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md`. Issue closure records will be added by the coordinator after review.
+
+Issue closure claim: `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`.
 
 Restated outcome: preserve the selected aspirin source identity alias; recommend discovery commands only with affirmative entity evidence and preserve the exact entered H3K27M identity; restore deterministic diagnostic synonym coverage and name unavailable resolution in an empty response.
 
@@ -41,3 +43,9 @@ PM permits closing the diagnostic part with deterministic disease-resolution cov
 Before committing captured public fixtures, inspect source redistribution rules and existing capture standards. Keep complete raw replies privately in the experiment. Do not publish a full DrugBank-containing MyChem reply based only on API accessibility. Use an existing permitted capture or a clearly authored/minimized fixture with truthful provenance; report any unresolved publication question before including that data. Record exact fixture paths in the final manifest.
 
 Write failing outside-in cases first, then minimal fixes. Test only affected cases and mechanical checks through the configured build job, retaining raw evidence outside transient jobs. No additional live reruns requested. No WIP pushes; publish once review-ready.
+
+## Focused repair proof
+
+Source907c1f410287af4ba49651017b7cb5789edb5310 implements the granted identity/discovery/diagnostic changes and eight explicitly authored fixtures, not captured upstream replies. Red1792423169809-80267 had five expected failures and one conservative vaccine pass. Final private-patch1792423468456-55414 passed74focused Rust cases, seven Python checks with two Linux-only skips, eight diagnostic specification blocks, raw MCP JSON/Markdown checks and make lint. An initial compile typo was corrected before green; logs retained. No additional live runs or provider were added. Source licensing review found DrugBank needs a license and upstream rights persist through MyChem; full3.4MBreply remains private and no redistribution permission is inferred. Raw replies, authored fixture provenance, exact commands, patch and manifests remain in experiments/785-biomcp-2242-live-suspects.
+
+Keep: experiments/785-biomcp-2242-live-suspects — Retain cited raw proof until release evidence is explicitly released.
