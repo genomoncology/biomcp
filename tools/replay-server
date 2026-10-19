@@ -80,6 +80,7 @@ EXPLICIT_PROVIDER_ROUTES = {
 ORIGIN_SUBSTITUTION_ROUTES = {
     "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": ("ldh", "https://ldh.genome.network"),
     "BIOMCP_CSPEC_FIXTURE_ORIGIN": ("cspec", "https://cspec.clinicalgenome.org"),
+    "BIOMCP_PREPRINT_FIXTURE_ORIGIN": ("details", "https://api.biorxiv.org"),
     "BIOMCP_CTGOV_CDN_BASE": ("large-docs", "https://cdn.clinicaltrials.gov"),
 }
 
