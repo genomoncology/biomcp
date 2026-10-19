@@ -117,9 +117,29 @@ fn entity_entries(name: &str) -> Vec<CatalogEntry> {
         let identifier = if name == "gene" { "symbol" } else { "id" };
         output.push(template("commands", &format!("get {name} <{identifier}>")));
     }
+    if name == "article" {
+        output.extend([
+            template("helpers", "article supplement-search <id> <needle>"),
+            template("commands", "get article <id> fulltext --outline"),
+            template("commands", "get article <id> fulltext --lines <range>"),
+            template("commands", "get article <id> fulltext --out <directory>"),
+            template(
+                "commands",
+                "get article <id> asset <asset-key> --out <directory>",
+            ),
+            template(
+                "commands",
+                "get article <id> asset <asset-key> --output <file>",
+            ),
+        ]);
+    }
     if name == "variant" {
         output.extend([
             template("helpers", "variant articles <id> --strategy <strategy>"),
+            template(
+                "helpers",
+                "variant articles <id> --verify-identity --confirmed-only",
+            ),
             template("helpers", "variant structure <variant>"),
             template("helpers", "variant normalize <service> <transcript_hgvs>"),
         ]);

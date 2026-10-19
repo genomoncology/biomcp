@@ -260,7 +260,9 @@ pub(super) async fn acquire_federated_article_rows_with_context(
             "federated article acquisition size must be between 1 and {MAX_FEDERATED_FETCH_RESULTS}"
         )));
     }
-    let include_pubmed = pubmed_filter_compatible(filters);
+    let include_boolean =
+        execution.is_none_or(|execution| execution.includes_boolean_alias_sources(route));
+    let include_pubmed = include_boolean && pubmed_filter_compatible(filters);
     let include_litsense2 = litsense2_search_enabled(filters, ArticleSourceFilter::All);
     // Each leg is boxed so callers keep a small state machine: the joined
     // futures carry every provider's request stack inline and previously
@@ -271,11 +273,27 @@ pub(super) async fn acquire_federated_article_rows_with_context(
             "search",
             search_pubtator_page_with_context(filters, fetch_count, 0, execution, route, None),
         )),
-        Box::pin(timed_source_leg(
-            ArticleSource::EuropePmc,
-            "search",
-            search_europepmc_page_with_context(filters, fetch_count, 0, execution, route, None),
-        )),
+        Box::pin(async {
+            if include_boolean {
+                Some(
+                    timed_source_leg(
+                        ArticleSource::EuropePmc,
+                        "search",
+                        search_europepmc_page_with_context(
+                            filters,
+                            fetch_count,
+                            0,
+                            execution,
+                            route,
+                            None,
+                        ),
+                    )
+                    .await,
+                )
+            } else {
+                None
+            }
+        }),
         Box::pin(async {
             if include_pubmed {
                 Some(
@@ -327,9 +345,13 @@ pub(super) async fn acquire_federated_article_rows_with_context(
     );
 
     let (pubtator_leg, pubtator_timing) = pubtator_leg;
-    let (europe_leg, europe_timing) = europe_leg;
     let (semantic_scholar_leg, semantic_scholar_timing) = semantic_scholar_leg;
-    let mut timings = vec![pubtator_timing, europe_timing, semantic_scholar_timing];
+    let mut timings = vec![pubtator_timing];
+    let europe_leg = europe_leg.map(|(outcome, timing)| {
+        timings.push(timing);
+        outcome
+    });
+    timings.push(semantic_scholar_timing);
     let pubmed_leg = pubmed_leg.map(|(outcome, timing)| {
         timings.push(timing);
         outcome
@@ -343,7 +365,10 @@ pub(super) async fn acquire_federated_article_rows_with_context(
     if page_outcome_truncated(&pubtator_leg, fetch_count) {
         truncated_sources.push(ArticleSource::PubTator);
     }
-    if page_outcome_truncated(&europe_leg, fetch_count) {
+    if europe_leg
+        .as_ref()
+        .is_some_and(|outcome| page_outcome_truncated(outcome, fetch_count))
+    {
         truncated_sources.push(ArticleSource::EuropePmc);
     }
     if pubmed_leg
@@ -366,7 +391,12 @@ pub(super) async fn acquire_federated_article_rows_with_context(
     }
     let mut federated = collect_federated_article_rows(
         pubtator_leg,
-        europe_leg,
+        europe_leg.unwrap_or_else(|| {
+            FederatedSourceOutcome::Available(PartialSearchPage {
+                page: SearchPage::offset(Vec::new(), Some(0)),
+                degradation: None,
+            })
+        }),
         pubmed_leg,
         semantic_scholar_leg,
         litsense2_leg.unwrap_or_else(|| FederatedSourceOutcome::Available(Vec::new())),

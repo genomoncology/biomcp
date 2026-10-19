@@ -1,0 +1,78 @@
+{
+  "provenance": "AUTHORED CONTROL: artificial MyGene alias, MyVariant record and SUR1-only article. No captured provider bytes or real paper recovery claim.",
+  "mygene": {
+    "symbol": "ABCC8",
+    "entrezgene": 6833,
+    "alias": [
+      "SUR1"
+    ]
+  },
+  "hit": {
+    "_id": "chr11:g.17417157C>T",
+    "dbnsfp": {
+      "genename": "ABCC8",
+      "hgvsp": [
+        "R1437Q"
+      ],
+      "hgvsc": [
+        "c.4310G>A"
+      ]
+    }
+  },
+  "article": {
+    "id": "99999991",
+    "pmid": "99999991",
+    "source": "MED",
+    "title": "Authored SUR1 R1437Q article control",
+    "authorString": "Authored Control",
+    "pubYear": "2025",
+    "firstPublicationDate": "2025-01-01"
+  },
+  "derived_alias_array": {
+    "provenance": "AUTHORED DERIVED CONTROL: alias strings transcribed from the one MyGene ABCC8 alias-field response recorded on 2026-10-19. This is authored fixture data, not captured provider bytes; the article remains artificial and makes no real-paper recovery claim.",
+    "aliases": [
+      "ABC36",
+      "HHF1",
+      "HI",
+      "HRINS",
+      "MODY12",
+      "MRP8",
+      "PHHI",
+      "PNDM3",
+      "SUR",
+      "SUR1",
+      "SUR1delta2",
+      "TNDM2"
+    ]
+  },
+  "untyped_article": {
+    "PubTator3": [
+      {
+        "id": "99999991",
+        "pmid": 99999991,
+        "passages": [
+          {
+            "infons": {
+              "type": "abstract"
+            },
+            "text": "Authored control: ABCC8 SUR1 R1437Q.",
+            "annotations": [
+              {
+                "id": "v1",
+                "infons": {
+                  "type": "Variant",
+                  "hgvs": "p.R1437Q",
+                  "gene_id": 6833,
+                  "gene_ids": [
+                    6833
+                  ],
+                  "identifier": "Variant:p.R1437Q;CorrespondingGene:6833"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

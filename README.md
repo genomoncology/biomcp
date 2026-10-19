@@ -23,7 +23,7 @@ get compact, evidence-oriented results across live public data plus local study 
 ## Features
 
 - **Search the literature:** `search article` fans out across PubTator3 and
-  Europe PMC, deduplicates PMID/PMCID/DOI identifiers, and can add a Semantic
+  Europe PMC and PubMed when the filters are compatible, deduplicates PMID/PMCID/DOI identifiers, and can add a Semantic
   Scholar leg when your filters support it.
 - **Pivot without rework:** move from a gene, variant, drug, disease, pathway,
   protein, or article straight into the next built-in view instead of
