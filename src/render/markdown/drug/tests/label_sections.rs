@@ -49,6 +49,7 @@ fn label_drug(name: &str, boxed_warning: Option<String>) -> Drug {
         shortage: None,
         approvals: None,
         fda_orphan_designations: None,
+        us_label_effective_date: None,
         us_safety_warnings: None,
         us_boxed_warning: None,
         ema_regulatory: None,

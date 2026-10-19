@@ -347,6 +347,10 @@ fn render_us_safety_block(
     let mut out = String::new();
     let _ = writeln!(out, "{heading}\n");
 
+    if let Some(date) = drug.us_label_effective_date.as_deref() {
+        let _ = writeln!(out, "Label effective date: {date}\n");
+    }
+
     out.push_str("### Top adverse events (FAERS)\n");
     if drug.top_adverse_events.is_empty() {
         out.push_str("No data found (OpenFDA FAERS)\n");

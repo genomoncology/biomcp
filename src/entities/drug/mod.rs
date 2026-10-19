@@ -1,5 +1,6 @@
 //! Drug entity models and workflows exposed through the stable drug facade.
 
+mod approvals;
 pub(crate) mod cell_lines;
 mod get;
 pub(crate) mod interactions;
@@ -121,6 +122,8 @@ pub struct Drug {
     pub approvals: Option<Vec<DrugApproval>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fda_orphan_designations: Option<Box<FdaOrphanDesignations>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub us_label_effective_date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub us_safety_warnings: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
