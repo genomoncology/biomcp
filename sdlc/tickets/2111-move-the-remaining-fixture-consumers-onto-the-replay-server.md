@@ -31,7 +31,7 @@ Depends on: 2159, 2229
 
 - Starts from: the existing replay infrastructure and named article-fulltext, CTGov intervention-alias, provider-contract and ComplexPortal conversion groups.
 - Keeps: CLI/MCP behavior, refusals, source receipts, live canaries and their needed helpers, local study datasets and separately approved frozen-capture runners.
-- Changes: `spec/entity/gene-discovery.md` `spec/entity/gene.md` `scripts/run-specs.sh` `tests/golden/spec/test_spec_page_golden.py` `CHANGELOG.md` and this ticket for the next bounded partial batch. Preserve source captures, receipts and remaining consumers.
+- Changes: `spec/entity/pathway.md` `scripts/run-specs.sh` `tests/golden/spec/test_spec_page_golden.py` `tests/golden/spec/test_pathway_behaviors.py` `CHANGELOG.md` and this ticket for the final supported pathway reader migration. Preserve source captures, receipts and remaining consumers.
 - Proof: through the build job, affected existing command/MCP cases pass against recorded replay without missing requests, preserving counts, failures and refusals. No retained consumer refers to each deleted script; script-specific tests disappear with obsolete scripts. Run the routine merged-candidate gate without live canaries.
 - Defers: local study-dataset provisioning and broad shared fixture identifiers to the next release.
 
@@ -81,3 +81,13 @@ Move the supported gene discovery and identity reader sections together to the r
 Source `5038d6b540c2c8aa9d41d58e647a59f0b5854601` changes the five declared files. Baseline job `2111/1792418649264-93648` passed the affected old reader sections and request checks. Job `2111/1792418679290-4426` passed six focused tests and both preserved Markdown assertions with three recorded hits and no misses. The request assertion checks size and offset independently because replay canonicalizes query ordering. Job `2111/1792418713576-8281` passed Ruff, formatting, ShellCheck, shell syntax, tracked-text and specification lint, zero-coupling checks and 35 coupling tests; final file hashes match the commit.
 
 The tests reused the qualified CLI with SHA256 `e47d903c9a83a1c8d18d9cd208e20ee4a27a03caa1f0e1a72b075a42542d949d`. No Rust build, repeated mutation or network isolation is claimed. Source captures, BRCA1 assertions and remaining consumers are unchanged. Owned transfer scripts, patch and copied binary were removed. Review accepted the source without changes; the parent remains open for other consumers.
+
+## Final supported pathway migration brief
+
+PM approved closing this parent after the supported pathway reader migration joins the already landed trial references, condition-first trial search and gene discovery migrations. Remaining selectors and helper retirement belong to 2236 in the next release. Do not start another slice.
+
+This branch has main 08d721f8525a35267bcd0a307248c69b1de210fc and the accepted 2079 pathway dependency merged by the coordinator. Move the supported existing pathway reader commands together into the existing replay lane; preserve all unique assertions. Preserve long-form normalization, exact MAPK limits 3 and 5, KEGG card, Reactome genes/events, source-disable environment and flag/group/legacy forms, zero-KEGG request assertion, missing query, unknown source, disabled lookup and unsupported-section refusals, and Reactome outcome/provenance assertions. Keep authored fault controls and local datasets on their existing helpers. No source captures, new goldens, repeated mutation builds, helper deletion or provider behavior change.
+
+Before code, run the existing affected reader cases once and record exact command/output in the report. If the complete page can run through the existing replay runner without coverage loss, restore it to the routine page set; otherwise preserve exact assertions in the existing replay Python lane under the declared files. Use the existing golden runner and receipts, not a new launcher. Run only affected reader/request cases and mechanical checks, reuse a qualified unchanged CLI if appropriate, through the configured build job. Retain raw in experiments/778-biomcp-2111-replay-consumer-evidence. This changes the gate definition and will land separately with its own gate. No WIP push; publish once review-ready.
+
+Keep: experiments/778-biomcp-2111-replay-consumer-evidence — Retain cited raw proof until release evidence is explicitly released.
