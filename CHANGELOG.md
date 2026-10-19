@@ -82,6 +82,8 @@
 
 ### Internal
 
+- Align pathway replay structures and response metadata with observed replies, and preserve provider failure coverage in a separate synthetic scenario. (2282)
+
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 
 - Synchronize the disease deadline control with provider request arrival before advancing test time. (2276)

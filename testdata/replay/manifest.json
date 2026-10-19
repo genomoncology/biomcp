@@ -201,7 +201,7 @@
     "GET /reactome/data/participants/R-HSA-5673001": {
       "file": "responses/reactome/participants_r_hsa_5673001_20260811.json",
       "headers": {
-        "content-type": "application/json"
+        "content-type": "application/json;charset=UTF-8"
       },
       "status": 200,
       "upstream": "https://reactome.org/ContentService/data/participants/R-HSA-5673001"
@@ -209,7 +209,7 @@
     "GET /reactome/data/pathway/R-HSA-5673001/containedEvents": {
       "file": "responses/reactome/events_r_hsa_5673001_20260811.json",
       "headers": {
-        "content-type": "application/json"
+        "content-type": "application/json;charset=UTF-8"
       },
       "status": 200,
       "upstream": "https://reactome.org/ContentService/data/pathway/R-HSA-5673001/containedEvents"
@@ -217,20 +217,23 @@
     "GET /reactome/data/query/R-HSA-5673001": {
       "file": "responses/reactome/get_r_hsa_5673001_20260811.json",
       "headers": {
-        "content-type": "application/json"
+        "content-type": "application/json;charset=UTF-8"
       },
       "status": 200,
       "upstream": "https://reactome.org/ContentService/data/query/R-HSA-5673001"
     },
     "GET /reactome/search/query?pageSize=3&query=BRAF&species=Homo+sapiens": {
       "file": "responses/reactome/reactome-search-query-32ff0934f602.bin",
-      "status": 500,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "status": 200,
       "upstream": "https://reactome.org/ContentService/search/query?query=BRAF&species=Homo+sapiens&pageSize=3"
     },
     "GET /reactome/search/query?pageSize=3&query=MAPK+signaling+pathway&species=Homo+sapiens": {
       "file": "responses/reactome/search_mapk_limit3_20260811.json",
       "headers": {
-        "content-type": "application/json"
+        "content-type": "application/json;charset=UTF-8"
       },
       "status": 200,
       "upstream": "https://reactome.org/ContentService/search/query?query=MAPK+signaling+pathway&species=Homo+sapiens&pageSize=3"
@@ -238,7 +241,7 @@
     "GET /reactome/search/query?pageSize=5&query=MAPK+signaling+pathway&species=Homo+sapiens": {
       "file": "responses/reactome/search_mapk_limit5_20260811.json",
       "headers": {
-        "content-type": "application/json"
+        "content-type": "application/json;charset=UTF-8"
       },
       "status": 200,
       "upstream": "https://reactome.org/ContentService/search/query?query=MAPK+signaling+pathway&species=Homo+sapiens&pageSize=5"
@@ -264,8 +267,9 @@
     "GET /wikipathways/findPathwaysByText.json": {
       "file": "responses/wikipathways/wikipathways-findpathwaysbytext-json-ce9c5698da2d.bin",
       "headers": {
-        "etag": "W/\"6ad0f588-23cec7\"",
-        "last-modified": "Thu, 15 Oct 2026 15:47:20 GMT"
+        "content-type": "application/json; charset=utf-8",
+        "etag": "W/\"6ad5aaf0-23cec7\"",
+        "last-modified": "Mon, 19 Oct 2026 05:30:24 GMT"
       },
       "status": 200,
       "upstream": "https://www.wikipathways.org/json/findPathwaysByText.json"
