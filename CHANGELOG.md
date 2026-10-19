@@ -52,6 +52,7 @@
 ### Internal
 
 - Check recorded provider requests against live status, content type and generic JSON and XML response structures before releases, with explicit opt-in, pacing and complete blocked and disabled counts. Preserve safe POST request metadata and response header names in new recordings. (2259)
+- Keep subprocess readiness markers on their own line so GenCC lease tests finish with one CPU, and exercise that affinity in the stress lane. (2244)
 - Route test cache roots through shared fixture policy guards and reject unmanaged root assignments. (2257)
 
 - Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
