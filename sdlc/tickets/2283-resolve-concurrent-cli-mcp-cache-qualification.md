@@ -35,3 +35,11 @@ Keep: experiments/170-biomcp-2233-linux-offline-evidence — retain the untouche
 ## Progress
 
 - 2026-10-19 started
+
+## Coordinator verification
+
+Fresh reviewer /root/review_concurrent_cache_2283 accepted f64031106cdf84e604fa31e4715bd40ec8287675 without findings. The coordinator read the complete product-test diff and retained green job log, checked the test SHA256 against the tested patch, and confirmed the clean branch. Job 2283/1792454062120-44369 passed 29 affected cases and required focused checks. Controlled bypass and key-collision failures remain retained. PM explicitly approved best-effort admission and this test-only correction; final Linux qualification must rerun on the new main tip. The original failure cause remains unknown. This is the only ready repair and lands alone so qualification can resume.
+
+Keep: experiments/2103-biomcp-2283-concurrent-cache — controlled diagnosis, corrected proof, rejected mutations, databases, exact source and job evidence.
+
+Keep: experiments/172-biomcp-2283-concurrent-cache — cancelled ticket-owned queued Linux attempt; no build or test ran.
