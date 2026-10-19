@@ -45,6 +45,7 @@ class Case:
 
 CASES = (
     Case("get-gene-braf", ("get", "gene", "BRAF")),
+    Case("search-gene-braf", ("search", "gene", "BRAF", "--limit", "3")),
     Case("get-variant-braf-v600e", ("get", "variant", "BRAF V600E")),
     Case(
         "get-trial-nct02576665-references",
