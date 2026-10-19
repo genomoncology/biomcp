@@ -29,3 +29,9 @@ A replay test renders both formats for one run and checks they name the same sou
 ## Progress
 
 - 2026-10-19 started
+
+## Verification
+
+The baseline replay reproduced missing Markdown source states. Final job 2252/1792428114066-33654 passed six JSON/Markdown parity cases and Python lint. Job 1792427992444-97476 passed the binary build, existing renderer cases, formatting and all-target lint, then stopped on a malformed audit invocation; corrected audit job 1792428249914-82412 passed. Temporary successful Semantic Scholar replies are explicitly authored, committed captures remain unchanged, and replay misses fail. No live lookup, full gate or claim of integration with the pending gene-alias change.
+
+Keep: experiments/795-biomcp-2252-source-status — retain checked patches, raw baseline and slow/failed attempts, corrected checks and audit output.
