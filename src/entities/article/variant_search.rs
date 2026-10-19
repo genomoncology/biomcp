@@ -2176,12 +2176,12 @@ fn alias_coverage(
         && (strategy == VariantArticleStrategy::Union
             || (resolved && strategy == VariantArticleStrategy::Lexical))
     {
-        planned.extend(
-            provider_variant_query_plan_with_aliases(input, context, strategy, selected)
-                .into_iter()
-                .filter(|plan| plan.route == "strict")
-                .map(|plan| plan.query_alias),
-        );
+        if provider_variant_query_plan_with_aliases(input, context, strategy, selected)
+            .iter()
+            .any(|plan| plan.route == "strict")
+        {
+            planned.extend(selected.iter().cloned());
+        }
         if resolved {
             planned.extend(selected.iter().cloned());
         } else {
@@ -2586,18 +2586,28 @@ async fn strict_provider_candidates(
     Vec<VariantArticleSourceStatus>,
 ) {
     let filters = article_filters();
-    let plans = provider_variant_query_plan_with_aliases(input, context, strategy, exact_aliases);
+    let plans = exact_aliases.iter().flat_map(|alias| {
+        provider_variant_query_plan_with_aliases(
+            input,
+            context,
+            strategy,
+            std::slice::from_ref(alias),
+        )
+        .into_iter()
+        .filter(|plan| plan.route == "strict")
+        .map(move |plan| (alias, plan))
+    });
     let mut candidates = Vec::new();
     let mut incomplete = false;
     let mut succeeded = false;
 
-    for plan in plans.into_iter().filter(|plan| plan.route == "strict") {
+    for (alias, plan) in plans {
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
         let scoped = if plan.provider == "pubtator" {
             execution.clone()
         } else {
-            execution.for_alias(&plan.query_alias)
+            execution.for_alias(alias)
         };
         let execution = &scoped;
         if execution.route_stopped("strict") {
@@ -5940,6 +5950,56 @@ mod tests {
             }),
             "the truncations surface in the route statuses: {statuses:?}"
         );
+    }
+
+    #[tokio::test]
+    async fn strict_alias_coverage_tracks_bare_transcript_forms() {
+        let fixture = TestHttpFixture::spawn(|_| {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"esearchresult":{"idlist":[],"count":"0"}}"#,
+            ))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("strict-alias-coverage");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_PUBMED_BASE", &fixture.base);
+        env.set(
+            "BIOMCP_DISABLE_SOURCES",
+            "europe-pmc,pubtator3,semantic-scholar",
+        );
+        let mut context = resolved_context();
+        context.requested.transcript = Some("NM_004333.6".into());
+        context.requested.coding_change = Some("c.1799T>A".into());
+        let aliases = vec!["NM_004333.6:c.1799T>A".to_string()];
+        let execution = VariantArticleExecutionContext::single();
+        let (_, _, succeeded, _) = strict_provider_candidates(
+            "BRAF NM_004333.6:c.1799T>A",
+            &context,
+            VariantArticleStrategy::Lexical,
+            &aliases,
+            &execution,
+        )
+        .await;
+        assert!(succeeded);
+        let coverage = alias_coverage(
+            "BRAF NM_004333.6:c.1799T>A",
+            &context,
+            VariantArticleStrategy::Lexical,
+            &aliases,
+            &unattempted_canonical_equivalence(),
+            &execution,
+        );
+        let transcript = coverage.iter().find(|row| row.alias == aliases[0]).unwrap();
+        assert!(transcript.planned);
+        assert!(
+            transcript.attempted,
+            "strict query sent the supplied coding form"
+        );
+        assert_eq!(transcript.reason, "provider_query_attempted");
     }
 
     #[test]
