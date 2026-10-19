@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 5aea853, accept
+
 ## Outcome
 
 Changes: `sdlc/tickets/2258-admit-the-0-9-4-release-candidate.md`, `sdlc/tickets/2262-set-stable-0-9-4-metadata-and-dispositions.md`, `Cargo.toml`, `Cargo.lock`, `src/mcp/shell.rs`, `src/mcp/shell/arguments.rs`, `src/mcp/shell/tests/ticket_1120.rs`, `src/mcp/shell/typed_get_tests.rs`, `tests/rmcp_client_contract.rs`, `sdlc/planning/adr/0002-flat-mcp-tool-schemas-for-function-calling.md`, `CHANGELOG.md`, `sdlc/tickets/2263-surface-mcp-argument-parse-errors-to-the-model.md`.
