@@ -1,0 +1,29 @@
+---
+priority: 1
+---
+
+# 2255 — Repair graph-cache corruption recovery
+
+Status: OPEN.
+
+Milestone: 0.9.4
+
+## Outcome
+
+Restore the graph-cache corruption contract on current main. A corrupt record must behave as a miss, recover through the owning provider route, and be replaced when the isolated fixture permits cache writes. Fix the demonstrated cause; preserve corruption handling, provider evidence and failure assertions.
+
+Changes: `sdlc/tickets/2255-repair-graph-cache-corruption-recovery.md`.
+
+## Evidence
+
+Actual-main job 2156/1792428576000-26345 at 3926961f2f2ac9f1b695561690d44cef7177f7ea ran `env -u CARGO_INCREMENTAL make main-gate`. The case `entities::article::graph::tests::cache::a_corrupt_record_is_a_miss_and_is_replaced` failed at cache.rs:506: expected 1, observed 0. The same source passed its preceding landing gate. Rust stopped early; the Python cases passed. The retained failing main run is the reproduction, not a claim that unrelated checks passed.
+
+Keep: experiments/776-biomcp-2156-main-checks — retain the original failed main check while this repair is investigated.
+
+## Keeps
+
+Preserve the existing corruption and replacement assertions. Do not turn an intermittent failure into a retry-until-green test. Use the shared fixture isolation policy if configuration, disk or environment proves responsible. Hold ordinary landings only until the reviewed repair and resulting main pass.
+
+## Proof
+
+Name the exact cause, run the owning regression under the condition that exposed it, and run the affected cache controls. Run mechanical checks for changed source. Record raw evidence in the repair lane's numbered retained experiment; the coordinator reruns main after landing.
