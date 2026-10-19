@@ -1185,7 +1185,6 @@ async fn raw_reversed_search_is_pure_preflight_over_stdio() -> anyhow::Result<()
     let cache = root.path().join("absent-cache");
     let sentinel = root.path().join("not-created");
     let env = [
-        ("BIOMCP_CACHE_DIR", cache.display().to_string()),
         ("BIOMCP_PUBMED_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
@@ -1193,7 +1192,13 @@ async fn raw_reversed_search_is_pure_preflight_over_stdio() -> anyhow::Result<()
         ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_DBSNP_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_GNOMAD_BASE", "http://127.0.0.1:9".to_string()),
-    ];
+    ]
+    .into_iter()
+    .chain(
+        biomcp_mcp_contract_client::child_cache_env(&cache)
+            .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+    )
+    .collect::<Vec<_>>();
     let client = harness.spawn_stdio_client(&env).await?;
     assert_raw_reversed_search_is_pure_preflight(&client, &sentinel).await?;
     assert!(
@@ -1238,7 +1243,6 @@ async fn raw_reversed_search_is_pure_preflight_over_http() -> anyhow::Result<()>
     let cache = root.path().join("absent-cache");
     let sentinel = root.path().join("not-created");
     let env = [
-        ("BIOMCP_CACHE_DIR", cache.display().to_string()),
         ("BIOMCP_PUBMED_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
@@ -1246,7 +1250,13 @@ async fn raw_reversed_search_is_pure_preflight_over_http() -> anyhow::Result<()>
         ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_DBSNP_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_GNOMAD_BASE", "http://127.0.0.1:9".to_string()),
-    ];
+    ]
+    .into_iter()
+    .chain(
+        biomcp_mcp_contract_client::child_cache_env(&cache)
+            .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+    )
+    .collect::<Vec<_>>();
     let (mut child, base_url) = harness.spawn_http_server(&env).await?;
     let result = async {
         let client = harness.http_client(format!("{base_url}/mcp")).await?;
@@ -1290,14 +1300,18 @@ async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
     // default user cache grows with that cache, not with this contract.
     let cache = tempfile::tempdir()?;
     let client = harness
-        .spawn_stdio_client(&[
-            ("BIOMCP_OLS4_BASE", ols_url),
-            ("BIOMCP_MEDLINEPLUS_BASE", medline_url),
-            (
-                "BIOMCP_CACHE_DIR",
-                cache.path().to_string_lossy().into_owned(),
-            ),
-        ])
+        .spawn_stdio_client(
+            &[
+                ("BIOMCP_OLS4_BASE", ols_url),
+                ("BIOMCP_MEDLINEPLUS_BASE", medline_url),
+            ]
+            .into_iter()
+            .chain(
+                biomcp_mcp_contract_client::child_cache_env(cache.path())
+                    .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+            )
+            .collect::<Vec<_>>(),
+        )
         .await?;
 
     let result = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp discover BRCA1").await?;
@@ -1342,10 +1356,10 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
     // search, so a regression that reintroduces the wait fails here
     // instead of hiding behind a raised budget.
     let cache = tempfile::tempdir()?;
-    env.push((
-        "BIOMCP_CACHE_DIR",
-        cache.path().to_string_lossy().into_owned(),
-    ));
+    env.extend(
+        biomcp_mcp_contract_client::child_cache_env(cache.path())
+            .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+    );
     let client = harness.spawn_stdio_client(&env).await?;
     const GENE: &str = r#"Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#;
     const DISEASE: &str = r#"Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#;
@@ -1616,14 +1630,18 @@ async fn raw_mcp_rejects_contradictory_variant_filters_and_non_trial_batch_sourc
     // cache under load.
     let cache = tempfile::tempdir()?;
     let client = harness
-        .spawn_stdio_client(&[
-            ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
-            ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
-            (
-                "BIOMCP_CACHE_DIR",
-                cache.path().to_string_lossy().into_owned(),
-            ),
-        ])
+        .spawn_stdio_client(
+            &[
+                ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
+                ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
+            ]
+            .into_iter()
+            .chain(
+                biomcp_mcp_contract_client::child_cache_env(cache.path())
+                    .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+            )
+            .collect::<Vec<_>>(),
+        )
         .await?;
 
     let variant = biomcp_mcp_contract_client::call_biomcp(
@@ -1657,13 +1675,15 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     let fixture = OpenFdaFixture::start();
     let cache = tempfile::tempdir()?;
     let client = harness
-        .spawn_stdio_client(&[
-            ("BIOMCP_OPENFDA_BASE", fixture.base.clone()),
-            (
-                "BIOMCP_CACHE_DIR",
-                cache.path().to_string_lossy().into_owned(),
-            ),
-        ])
+        .spawn_stdio_client(
+            &[("BIOMCP_OPENFDA_BASE", fixture.base.clone())]
+                .into_iter()
+                .chain(
+                    biomcp_mcp_contract_client::child_cache_env(cache.path())
+                        .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+                )
+                .collect::<Vec<_>>(),
+        )
         .await?;
 
     let raw_subset = biomcp_mcp_contract_client::call_biomcp_json(
@@ -1781,13 +1801,15 @@ async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> 
     let fixture = OpenFdaFixture::start();
     let cache = tempfile::tempdir()?;
     let client = harness
-        .spawn_stdio_client(&[
-            ("BIOMCP_OPENFDA_BASE", fixture.base.clone()),
-            (
-                "BIOMCP_CACHE_DIR",
-                cache.path().to_string_lossy().into_owned(),
-            ),
-        ])
+        .spawn_stdio_client(
+            &[("BIOMCP_OPENFDA_BASE", fixture.base.clone())]
+                .into_iter()
+                .chain(
+                    biomcp_mcp_contract_client::child_cache_env(cache.path())
+                        .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+                )
+                .collect::<Vec<_>>(),
+        )
         .await?;
 
     let json_result = biomcp_mcp_contract_client::call_biomcp_json(
@@ -1845,13 +1867,15 @@ async fn mcp_health_names_local_datasets_without_local_paths() -> anyhow::Result
             "XDG_CACHE_HOME",
             home.path().join("xdg-cache").display().to_string(),
         ),
-        (
-            "BIOMCP_CACHE_DIR",
-            home.path().join("cache").display().to_string(),
-        ),
         ("BIOMCP_HEALTH_PROBE_BASE", probes.base.clone()),
         ("BIOMCP_TEST_UNPACED_ORIGIN", probes.base.clone()),
-    ];
+    ]
+    .into_iter()
+    .chain(
+        biomcp_mcp_contract_client::child_cache_env(home.path().join("cache"))
+            .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+    )
+    .collect::<Vec<_>>();
     let client = harness.spawn_stdio_client(&env).await?;
 
     let root = home.path().display().to_string();
@@ -2118,13 +2142,18 @@ fn refusal_env(
             "XDG_CACHE_HOME",
             home.join("xdg-cache").display().to_string(),
         ),
-        ("BIOMCP_CACHE_DIR", home.join("cache").display().to_string()),
         ("BIOMCP_CACHE_MODE", "off".to_string()),
         ("BIOMCP_MYDISEASE_BASE", fixture.base.clone()),
         ("BIOMCP_MYGENE_BASE", fixture.base.clone()),
         ("BIOMCP_MYVARIANT_BASE", fixture.base.clone()),
         ("BIOMCP_UNIPROT_BASE", fixture.base.clone()),
-    ];
+    ]
+    .into_iter()
+    .chain(
+        biomcp_mcp_contract_client::child_cache_env(home.join("cache"))
+            .map(|(key, value)| (key, value.to_string_lossy().into_owned())),
+    )
+    .collect::<Vec<_>>();
     for name in [
         "BIOMCP_CTGOV_BASE",
         "BIOMCP_OLS4_BASE",

@@ -57,7 +57,7 @@ fn fixture_reply(request: &str, europepmc_hold: Option<&HeldReplyGate>) -> TestH
             return TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/json",
-                br#"{"hitCount":30,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"41800021","pmid":"41800021","title":"single-source deadline page one row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"},{"id":"41800022","pmid":"41800022","title":"single-source deadline page one row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#, 
+                br#"{"hitCount":30,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"41800021","pmid":"41800021","title":"single-source deadline page one row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"},{"id":"41800022","pmid":"41800022","title":"single-source deadline page one row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#,
             ));
         }
         return match europepmc_hold {
@@ -113,7 +113,8 @@ fn deadline_env(
     cache_root: &std::path::Path,
     deadline_ms: &str,
 ) -> TestEnv {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
+    env.set_cache_root(cache_root);
     for (key, value) in [
         ("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()),
         ("BIOMCP_S2_BASE", fixture.base.clone()),
@@ -122,10 +123,6 @@ fn deadline_env(
         (
             "BIOMCP_PUBMED_BASE",
             format!("{}/entrez/eutils", fixture.base),
-        ),
-        (
-            "BIOMCP_CACHE_DIR",
-            cache_root.to_string_lossy().into_owned(),
         ),
         (
             "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS",

@@ -266,6 +266,7 @@ mod tests {
     }
 
     struct TestEnvironment {
+        cache_policy: crate::test_support::FixtureEnv,
         previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
         /// Bypasses every cache for the environment's lifetime without
         /// latching the process mode. Replaces the former
@@ -280,8 +281,12 @@ mod tests {
         fn for_fixture() -> Self {
             let mut environment = Self {
                 previous: Vec::new(),
+                cache_policy: crate::test_support::FixtureEnv::scratch_cache_only(),
                 cache_mode: crate::sources::test_cache_mode::off(),
             };
+            environment
+                .cache_policy
+                .set_cache_root(fixture().cache.path());
             let base = fixture().base.clone();
             for (key, value) in [
                 ("BIOMCP_OLS4_BASE", format!("{base}/ols4")),
@@ -294,10 +299,6 @@ mod tests {
                 ("BIOMCP_PUBMED_BASE", format!("{base}/pubmed")),
                 ("BIOMCP_S2_BASE", format!("{base}/s2")),
                 ("BIOMCP_TEST_UNPACED_ORIGIN", base.clone()),
-                (
-                    "BIOMCP_CACHE_DIR",
-                    fixture().cache.path().to_string_lossy().into_owned(),
-                ),
                 ("UMLS_API_KEY", String::new()),
                 ("NCBI_API_KEY", String::new()),
                 ("S2_API_KEY", String::new()),

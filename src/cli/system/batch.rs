@@ -698,27 +698,8 @@ mod tests {
     async fn dropping_settlement_cancels_cacheable_article_provider_retry_and_admission() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-        struct EnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
-        impl EnvRestore {
-            fn set(&mut self, name: &'static str, value: impl AsRef<std::ffi::OsStr>) {
-                self.0.push((name, std::env::var_os(name)));
-                // SAFETY: this test owns the shared article fixture serial-test key.
-                unsafe { std::env::set_var(name, value) };
-            }
-        }
-        impl Drop for EnvRestore {
-            fn drop(&mut self) {
-                for (name, value) in self.0.drain(..).rev() {
-                    // SAFETY: this test owns the shared article fixture serial-test key.
-                    unsafe {
-                        match value {
-                            Some(value) => std::env::set_var(name, value),
-                            None => std::env::remove_var(name),
-                        }
-                    }
-                }
-            }
-        }
+        type EnvRestore = crate::test_support::FixtureEnv;
+
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("bind retry fixture");
@@ -748,10 +729,10 @@ mod tests {
             }
         });
         let cache = crate::test_support::TempDirGuard::new("article-batch-cancel-cache");
-        let mut env = EnvRestore(Vec::new());
+        let mut env = EnvRestore::scratch_cache_only();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &url);
         env.set("BIOMCP_S2_BASE", &url);
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         let client =
             crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
                 &url,

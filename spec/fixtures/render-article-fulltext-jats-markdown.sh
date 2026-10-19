@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=cache-policy.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cache-policy.sh"
+
 workspace_root="${1:-../..}"
 repo_root="$(git -C "$workspace_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$workspace_root")"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,7 +19,7 @@ fi
 
 cache_dir="$repo_root/.cache/spec-article-fulltext-jats-cache"
 rm -rf "$cache_dir"
-export BIOMCP_CACHE_DIR="$cache_dir"
+set_fixture_cache_root "$cache_dir"
 export BIOMCP_CACHE_MODE="off"
 
 binary="${BIOMCP_BIN:-$repo_root/target/release/biomcp}"

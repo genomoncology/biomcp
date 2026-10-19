@@ -1110,15 +1110,6 @@
       "owner": "1261",
       "reason": "held-for-drop test cache-mode guard restores the override when the environment drops",
       "removal_condition": "Goes when the discover tests stop pinning the cache mode or the guard moves into a shared fixture helper"
-    },
-    {
-      "path": "src/cli/stale_json_note_tests.rs",
-      "scope": "item",
-      "item": "root: crate::test_support::TempDirGuard,",
-      "occurrence": 1,
-      "owner": "1263",
-      "reason": "held-for-drop guard keeps the temp cache root alive",
-      "removal_condition": "Goes when the stale-note tests stop using a private cache directory"
     }
   ]
 }

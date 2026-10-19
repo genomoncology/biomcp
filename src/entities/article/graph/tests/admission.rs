@@ -63,9 +63,9 @@ fn admission_parse(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-admission");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "3000");
 
     let jats_body = "<article><front><article-meta><article-title>T</article-title>\
@@ -223,9 +223,9 @@ async fn citation_evidence_bounds_a_panicking_jats_worker_and_releases_the_permi
         panic!("settlement proof: the pure parse worker panics after admission");
     }
 
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-admission-panic");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "3000");
 
     let jats_body = "<article><front><article-meta><article-title>T</article-title>\
