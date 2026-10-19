@@ -10,7 +10,7 @@ Milestone: 0.9.4
 
 ## Outcome
 
-- Changes: `src/render/json.rs` `src/sources/mod.rs` `src/cli/stale_json_note_tests.rs` `skills/schemas/*.json` `CHANGELOG.md` `sdlc/issues/2026-09-27-get-json-bodies-have-no-notes-channel-for-the-stale-cache-age.md` and this ticket.
+- Changes: `src/cli/outcome.rs` `src/cli/shared.rs` `src/cli/shared/get_notes.rs` `src/cli/stale_json_note_tests.rs` `skills/schemas/*.json` `CHANGELOG.md` `sdlc/issues/2026-09-27-get-json-bodies-have-no-notes-channel-for-the-stale-cache-age.md` and this ticket.
 
 When a single-record `get ... --json` answer is served from a stale cache, the JSON says so in an optional `notes` field, as search, article and GWAS JSON already do.
 
@@ -28,6 +28,8 @@ A replay test serves a stale reply for one get command and finds the note in JSO
 
 ## Coordinator development brief
 
-Add optional _meta.notes using the existing stale sentence wording, omitted when empty. Preserve fresh byte identity and Markdown output. Use a non-draining read if the common metadata builder also serves Markdown so it does not steal later notes. Schema definitions document the same optional field in the affected seven entity schemas. Avoid unrelated configuration/source docs already owned by2240. The isolated get-gene regression compares fresh output and then an expired cache with a stopped provider; require stale notes and unchanged other fields.
+Attach optional _meta.notes at successful get-JSON finalization inside both existing CLI/MCP stale scopes, including author. Reuse the existing sentence collector. Preserve original bytes immediately when notes are empty; append and deduplicate existing notes rather than replacing them. Markdown remains unchanged. A small shared helper avoids per-entity adapters and changing the collector API. This scope does not collide with2238 or2240. The affected JSON schemas document the optional field; no unrelated source/configuration docs change.
 
-All builds and tests run through the configured build job. Stage private test/source patches on a published base without pushing WIP; retain patch and per-file hashes with raw evidence, then verify the final published source matches. Push source once ready for review. The developer may resolve the named issue findings as required by the outcome, but does not edit ticket status or send mail.
+Red job2241/1792420478415-45863 on239d7adc4 plus the test-only patch failed the expected stale-get note assertion: _meta contained evidence_urls and next_commands but no notes. Fresh absence and repeated-byte checks passed before the stale assertion. Preserve that get-gene boundary and add focused coverage for the separate author routing that motivated central finalization, without building a second fake protocol framework.
+
+Private source/test patch staging on a published base through pm job is authorized; retain exact patch and per-file hashes and verify final published correspondence. All builds and tests run through the configured build job. Push source once ready for review. Resolve only the explicitly named issue finding; never edit ticket status or send mail.
