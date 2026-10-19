@@ -21,6 +21,8 @@
 
 ### Internal
 
+- Retire duplicate trial-reference checks covered by recorded JSON and Markdown goldens, preserving combined-section coverage. (2111)
+
 - Stop replay servers when their test runner dies, including abandoned requests, while preserving normal and timeout cleanup. (2229)
 
 - Check populated and empty trial-reference output in JSON and Markdown against recorded provider replies. (2079)
