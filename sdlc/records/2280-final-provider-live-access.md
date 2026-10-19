@@ -2,7 +2,7 @@
 
 The released BioMCP 0.9.3 client successfully fetched Reactome R-HSA-5673001 and WikiPathways WP1 through its normal client. The earlier replay collector received seven HTTP 403 responses containing `error code: 1010`. These results establish a request-behavior difference. They do not prove User-Agent alone caused the denial. The WikiPathways product lookup uses a different endpoint from the recorded search, so that search remains unverified.
 
-The single approved later Semantic Scholar request returned HTTP 429 without Retry-After after 909.815474 seconds since its original denial. Its 174-byte body matches the original hash, `65ab993d12c5c2cc9b68e6da2bb79b326930283e520363ffcdc145f88cd5a148`. Four other requests remain unattempted. The PM approved reporting this source as “not checked live: provider denied”. Neither denial nor unattempted requests count as successful verification. KEGG remains uncalled and commercially restricted.
+The single approved later Semantic Scholar request returned HTTP 429 without Retry-After after 909.815474 seconds since its original denial. Its 174-byte body matches the original hash, `65ab993d12c5c2cc9b68e6da2bb79b326930283e520363ffcdc145f88cd5a148`. Four other requests remain unattempted. The PM approved reporting this source as “not checked live: rate limited”. Neither denial nor unattempted requests count as successful verification. KEGG remains uncalled and commercially restricted.
 
 ## Artifact and job evidence
 
