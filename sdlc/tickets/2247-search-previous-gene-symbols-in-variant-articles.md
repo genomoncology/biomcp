@@ -32,8 +32,14 @@ Depends on: 2246
 
 ## Bounded study and dependency queue
 
-Study reused completed791replay and retained a separately started duplicate chain in792. All41providerplans usedABCC8; none usedSUR1. HGNC59records SUR/HRINS as previousofficialsymbols andSUR1 as alias, not previousofficialsymbol. No newclinicalidentityrule. Choose approved explicitrestriction outcome: report the actual gene spelling searched and state that previous gene symbols and gene aliases were not searched, without adding a provider/client or asserting an unverified official-current status. Ordinary JSON/Markdown/debug/MCP use the same shared coverage value. No promise of extra paper retrieval. Source paths will be variant_search.rs,cli/variant/articles.rs,newfocusedtest,CHANGELOG; the exact claim is granted only after dependency candidate is adopted.
+Study reused completed791replay and retained a separately started duplicate chain in792. All41providerplans usedABCC8; none usedSUR1. HGNC59records SUR/HRINS as previousofficialsymbols andSUR1 as alias, not previousofficialsymbol. No newclinicalidentityrule. PM corrected the implementation outcome: query source-backed aliases and previous symbols using the existing MyGene integration, label that provenance and remain within the invocation deadline; fall back to restriction disclosure only when those MyGene facts are absent or unavailable. Ordinary JSON/Markdown/debug/MCP use the same shared coverage value. No promise of extra paper retrieval. Source paths will be variant_search.rs,cli/variant/articles.rs,newfocusedtest,CHANGELOG; the exact claim is granted only after dependency candidate is adopted.
 
 Implementation waits for the accepted2246candidate because these changes share source files. The coordinator will adopt that candidate; no independent overlapping source writer is authorized.
 
 Keep: experiments/792-biomcp-2247-previous-symbols — Retain cited raw proof until release evidence is explicitly released.
+
+## PM correction and next preparation
+
+PM ruled that disclosure alone leaves the search defect. Reuse the existing MyGene alias-symbol integration (matching_canonical_alias_symbols in src/entities/gene.rs), not a new HGNCclient. Query recorded gene aliases/previous symbols for the queried gene with MyGene provenance, bounded by the deadline; disclose current-spelling-only only when MyGene has none or is unavailable. SUR1is an HGNC-recorded alias, not an HGNCpreviousofficialsymbol; do not relabel source facts. Preserve typed Gene annotation and same-DNA variant identity after retrieval; no gene-token identity fallback.
+
+Read accepted-in-review2246candidate first to plan integration with per-form coverage. Before any source edit, propose exactadditionalfiles and outside-in failingcase for MyGene alias expansion/provenance and unavailable fallback. Reuse791replay; no repeated fullABCC8livechain. If no MyGeneABCC8record exists, one bounded existing-client/MyGene response capture is allowed, recorded privately792 with exactrequest/date/hash. Implementation still waits for2246acceptance and a declared exactclaim.
