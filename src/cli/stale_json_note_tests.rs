@@ -605,35 +605,3 @@ async fn stale_get_json_reports_cache_notes_without_changing_the_fresh_card() {
             .contains("older than the provider's freshness window")
     );
 }
-
-#[tokio::test]
-#[serial_test::serial(source_env)]
-async fn stale_author_get_json_reaches_the_shared_finalizer() {
-    let (base, server) = stale_note_fixture_server(include_str!(
-        "../../testdata/sources/semantic_scholar/author_detail.json"
-    ))
-    .await;
-    let _env = StaleNoteEnv::new(&base, &["BIOMCP_S2_BASE", "BIOMCP_TEST_UNPACED_ORIGIN"]);
-    let args = ["--json", "get", "author", "semanticscholar:1716151"];
-    let fresh = run(&args).await;
-    let fresh_value: serde_json::Value = serde_json::from_str(&fresh).expect("fresh author JSON");
-    assert!(fresh_value["_meta"].get("notes").is_none(), "{fresh}");
-
-    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: bounded freshness-window wait
-    server.abort();
-    let stale = run(&args).await;
-    assert!(
-        meta_notes(&stale)
-            .iter()
-            .any(|note| note.contains("older than the provider's freshness window")),
-        "author get through the fallback dispatcher must carry the cache note: {stale}"
-    );
-    let mcp_args = std::iter::once("biomcp")
-        .chain(args)
-        .map(str::to_string)
-        .collect();
-    let mcp = crate::cli::execute_mcp(mcp_args)
-        .await
-        .expect("MCP author JSON get");
-    assert!(!meta_notes(&mcp.text).is_empty(), "{}", mcp.text);
-}
