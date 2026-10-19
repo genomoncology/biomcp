@@ -12,6 +12,7 @@ use crate::xml::parse_external_xml;
 const PUBMED_EUTILS_BASE: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 const PUBMED_EUTILS_BASE_ENV: &str = "BIOMCP_PUBMED_BASE";
 const PUBMED_EUTILS_API: &str = "pubmed-eutils";
+pub(crate) const PUBMED_CITATION_BATCH_MAX_IDS: usize = 100;
 pub(crate) const PUBMED_CITATION_NODE_LIMIT: u32 = 100_000;
 
 #[derive(Clone)]
@@ -43,6 +44,7 @@ pub(crate) enum PubMedCitationErrorKind {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct PubMedCitation {
+    pub abstract_text: Option<String>,
     pub authors: Vec<PubMedCitationAuthor>,
     pub mesh_headings: Vec<PubMedMeshHeading>,
 }
@@ -207,33 +209,56 @@ impl PubMedClient {
         &self,
         pmid: &str,
     ) -> Result<PubMedCitation, PubMedCitationErrorKind> {
-        let authenticated = self.api_key.is_some();
-        let plan = Self::citation_plan(pmid, self.api_key.as_deref())
+        self.citations(&[pmid.to_string()])
+            .await?
+            .into_iter()
+            .next()
+            .map(|(_, citation)| citation)
+            .ok_or(PubMedCitationErrorKind::NotFound)
+    }
+
+    /// Fetch one bounded group while using the same citation parser as detail.
+    pub(crate) async fn citations(
+        &self,
+        pmids: &[String],
+    ) -> Result<Vec<(String, PubMedCitation)>, PubMedCitationErrorKind> {
+        if pmids.is_empty() || pmids.len() > PUBMED_CITATION_BATCH_MAX_IDS {
+            return Err(PubMedCitationErrorKind::InvalidResponse);
+        }
+        for pmid in pmids {
+            Self::citation_plan(pmid, None)
+                .map_err(|_| PubMedCitationErrorKind::InvalidResponse)?;
+        }
+        let mut plan = Self::citation_plan(&pmids[0], self.api_key.as_deref())
             .map_err(|_| PubMedCitationErrorKind::InvalidResponse)?;
+        for (key, value) in &mut plan.query {
+            if key == "id" {
+                *value = pmids.join(",");
+            }
+        }
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let response = crate::sources::apply_cache_mode_with_auth(req, authenticated)
-            .send_with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::PUBMED,
-            ))
+        let (status, content_type, bytes) = self
+            .send(req, self.api_key.is_some())
             .await
             .map_err(Self::citation_request_error)?;
-        let status = response.status();
-        Self::validate_citation_status(status)?;
-        let content_type = response
-            .headers()
-            .get(reqwest::header::CONTENT_TYPE)
-            .cloned();
-        let bytes = crate::sources::read_limited_source_body(
-            response,
-            crate::error::SourceContext::narrow(crate::error::SourceProvider::PUBMED),
-        )
-        .await
-        .map_err(Self::citation_request_error)?;
         let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes)?;
-        let pmid = pmid.trim().to_string();
-        tokio::task::spawn_blocking(move || parse_citation_xml(&pmid, &xml))
-            .await
-            .map_err(|_| PubMedCitationErrorKind::Parse)?
+        let pmids = pmids
+            .iter()
+            .map(|pmid| pmid.trim().to_string())
+            .collect::<Vec<_>>();
+        tokio::task::spawn_blocking(move || {
+            let mut citations = Vec::with_capacity(pmids.len());
+            for pmid in pmids {
+                match parse_citation_xml(&pmid, &xml) {
+                    Ok(citation) => citations.push((pmid, citation)),
+                    Err(PubMedCitationErrorKind::NotFound) => {}
+                    Err(error) => return Err(error),
+                }
+            }
+            Ok(citations)
+        })
+        .await
+        .map_err(|_| PubMedCitationErrorKind::Parse)?
     }
 
     fn citation_request_error(error: BioMcpError) -> PubMedCitationErrorKind {
@@ -730,7 +755,26 @@ fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, PubMedCit
         .map_err(|_| PubMedCitationErrorKind::Parse)?
         .unwrap_or_default();
 
+    let abstract_text = element_children(citation, "Article")
+        .next()
+        .and_then(|article| element_children(article, "Abstract").next())
+        .map(|abstract_node| {
+            element_children(abstract_node, "AbstractText")
+                .map(|section| {
+                    section
+                        .descendants()
+                        .filter(|node| node.is_text())
+                        .filter_map(|node| node.text())
+                        .collect::<String>()
+                })
+                .filter(|text| !text.trim().is_empty())
+                .collect::<Vec<_>>()
+                .join("\n\n")
+        })
+        .filter(|text| !text.is_empty());
+
     Ok(PubMedCitation {
+        abstract_text,
         authors,
         mesh_headings,
     })

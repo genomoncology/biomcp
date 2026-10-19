@@ -63,6 +63,17 @@ pub(crate) enum ArticleDocumentUnusable {
     Conversion,
 }
 
+/// Recognize the headings exposed by saved fulltext summaries and outlines.
+pub(crate) fn markdown_heading_level(line: &str) -> Option<usize> {
+    let hashes = line.chars().take_while(|ch| *ch == '#').count();
+    ((1..=6).contains(&hashes)
+        && line
+            .as_bytes()
+            .get(hashes)
+            .is_some_and(u8::is_ascii_whitespace))
+    .then_some(hashes)
+}
+
 fn collapse_whitespace(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut last_was_space = false;

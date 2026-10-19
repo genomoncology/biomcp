@@ -8,6 +8,17 @@
 
 - Resolve exact disease names across bounded MyDisease result pages while preserving ambiguity refusals and complete candidate checks. (2274)
 
+- Recover missing article abstracts from Europe PMC core records and batched PubMed citations. (2268)
+
+- Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
+- Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
+
+- Name unavailable article asset providers and keep successful HTML full-text retrieval free of internal serializer warnings. (2271)
+- Resolve drug development codes through exact ChEMBL molecule synonyms. Verify the preferred card carries the same molecule identifier for single and batch calls. (2266)
+
+- Label drug targets with source organisms, list human targets first, and suggest gene lookups only for source-confirmed human targets. (2265)
+- Preserve source failures during disease and drug name fallback resolution instead of reporting that the requested entity was not found. (2264)
 - Return malformed MCP tool arguments as model-visible errors naming the argument, and derive the ERepo tool schema from its typed fields. (2263)
 - Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
 
