@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import csv
 import gzip
+import json
 import os
 import re
 import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
+from replay_env import isolated_command_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -184,3 +190,50 @@ def test_public_gtr_examples_resolve_against_live_gtr_bundle(tmp_path: Path) -> 
                 assert "## Regulatory (FDA Device)" in result.stdout, command
                 assert REGULATORY_UNAVAILABLE_STATE in result.stdout, command
                 assert "No FDA device 510(k) or PMA records matched" not in result.stdout, command
+
+
+def test_gtr_trademark_names_render_without_changing_other_fields(tmp_path: Path) -> None:
+    bundle = _prepare_public_gtr_bundle(tmp_path / "gtr")
+    version_path = bundle / GTR_TEST_VERSION_FILE
+    with gzip.open(version_path, "rt", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh, delimiter="\t"))
+    rows[1]["lab_test_name"] = "Correct ™ ® — Laboratoire Élan 東京"
+    rows[0]["method_categories"] = "Method â„¢ Â®"
+
+    def write_bundle() -> None:
+        with gzip.open(version_path, "wt", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=list(rows[0]), delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+
+    env = isolated_command_env(tmp_path, {}, "")
+    env["BIOMCP_GTR_DIR"] = str(bundle)
+    accessions = [row["test_accession_ver"] for row in rows if row["now_current"] == "1"]
+
+    def read_cards() -> dict[str, dict]:
+        cards = {}
+        for accession in accessions:
+            result = _run_biomcp_command(f"biomcp --json get diagnostic {accession}", env)
+            assert result.returncode == 0, result.stderr
+            cards[accession] = json.loads(result.stdout)
+        return cards
+
+    write_bundle()
+    expected = read_cards()
+    names = {
+        "lab_test_name": ("name", "Ion AmpliSeqâ„¢", "Ion AmpliSeq™"),
+        "manufacturer_test_name": ("manufacturer", "CancerNext-ExpandedÂ®", "CancerNext-Expanded®"),
+        "name_of_laboratory": ("laboratory", "Laboratory â„¢ Â®", "Laboratory ™ ®"),
+        "name_of_institution": ("institution", "Institution Â® â„¢", "Institution ® ™"),
+    }
+    for column, (key, encoded, decoded) in names.items():
+        rows[0][column] = encoded
+        expected[LIVE_GTR_ACCESSION][key] = decoded
+    write_bundle()
+
+    assert read_cards() == expected
+    markdown = _run_biomcp_command(f"biomcp get diagnostic {LIVE_GTR_ACCESSION}", env)
+    assert markdown.returncode == 0, markdown.stderr
+    for _, _, decoded in names.values():
+        assert decoded in markdown.stdout
+    assert "Method â„¢ Â®" in markdown.stdout

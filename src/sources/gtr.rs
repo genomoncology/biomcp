@@ -516,11 +516,11 @@ fn parse_test_version_tsv_with_limit<R: Read>(
             accession.clone(),
             GtrRecord {
                 accession,
-                lab_test_name: field(&record, &positions, "lab_test_name"),
-                manufacturer_test_name: field(&record, &positions, "manufacturer_test_name"),
+                lab_test_name: name_field(&record, &positions, "lab_test_name"),
+                manufacturer_test_name: name_field(&record, &positions, "manufacturer_test_name"),
                 test_type: field(&record, &positions, "test_type"),
-                name_of_laboratory: field(&record, &positions, "name_of_laboratory"),
-                name_of_institution: field(&record, &positions, "name_of_institution"),
+                name_of_laboratory: name_field(&record, &positions, "name_of_laboratory"),
+                name_of_institution: name_field(&record, &positions, "name_of_institution"),
                 clia_number: field(&record, &positions, "CLIA_number"),
                 state_licenses: field(&record, &positions, "state_licenses"),
                 facility_country: field(&record, &positions, "facility_country"),
@@ -648,6 +648,18 @@ fn field(record: &csv::StringRecord, positions: &HashMap<String, usize>, header:
         .and_then(|idx| record.get(*idx))
         .and_then(clean_text)
         .unwrap_or_default()
+}
+
+// The upstream UTF-8 bundle contains these Windows-1252-decoded trademark bytes.
+// Repair only display names so unrelated fields and valid Unicode stay unchanged.
+fn name_field(
+    record: &csv::StringRecord,
+    positions: &HashMap<String, usize>,
+    header: &str,
+) -> String {
+    field(record, positions, header)
+        .replace("â„¢", "™")
+        .replace("Â®", "®")
 }
 
 fn clean_text(value: &str) -> Option<String> {
