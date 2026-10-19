@@ -57,6 +57,10 @@ impl TlsFixture {
     }
 
     async fn start_with_body(body: &'static str) -> Self {
+        Self::start_with_protocol(body, &[]).await
+    }
+
+    async fn start_with_protocol(body: &'static str, alpn: &[u8]) -> Self {
         let dir = tempfile::tempdir().expect("fixture directory");
         let material = tls_material();
         let bundle = dir.path().join("ca.pem");
@@ -66,10 +70,13 @@ impl TlsFixture {
         let key = rustls::pki_types::PrivateKeyDer::Pkcs8(
             rustls::pki_types::PrivatePkcs8KeyDer::from(material.leaf_key_der),
         );
-        let config = rustls::ServerConfig::builder()
+        let mut config = rustls::ServerConfig::builder()
             .with_no_client_auth()
             .with_single_cert(certificates, key)
             .expect("fixture server config");
+        if !alpn.is_empty() {
+            config.alpn_protocols.push(alpn.to_vec());
+        }
 
         let listener = TcpListener::bind(("127.0.0.1", 0))
             .await
@@ -165,6 +172,15 @@ async fn serve(
                 return;
             };
             sessions.fetch_add(1, Ordering::SeqCst);
+            if stream.get_ref().1.alpn_protocol() == Some(b"h2") {
+                // An empty SETTINGS frame completes the connection-only probe.
+                let _ = stream
+                    .write_all(b"\x00\x00\x00\x04\x00\x00\x00\x00\x00")
+                    .await;
+                let mut request = Vec::new();
+                let _ = stream.read_to_end(&mut request).await;
+                return;
+            }
             let mut request = vec![0_u8; 8192];
             if let Ok(size) = stream.read(&mut request).await
                 && let Some(line) = String::from_utf8_lossy(&request[..size]).lines().next()
@@ -246,6 +262,50 @@ fn write_broken_bundles(dir: &Path, good_pem: &[u8], der: &[u8]) -> Vec<PathBuf>
     std::fs::write(&der_file, der).expect("write DER bundle");
 
     vec![empty, mixed, bom, trusted, der_file]
+}
+
+#[cfg(feature = "alphagenome")]
+#[tokio::test]
+async fn alphagenome_uses_operator_ca_bundle() {
+    let fixture = TlsFixture::start_with_protocol("", b"h2").await;
+    for configured in [false, true] {
+        let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_biomcp"));
+        command
+            .env_clear()
+            .env("HOME", fixture._dir.path())
+            .env("BIOMCP_ALPHAGENOME_BASE", &fixture.origin)
+            .env("ALPHAGENOME_API_KEY", "local-fixture-key")
+            .env("RUST_LOG", "warn")
+            .args([
+                "--json",
+                "health",
+                "--api",
+                "AlphaGenome",
+                "--fail-on-error",
+            ]);
+        if configured {
+            command.env("BIOMCP_CA_BUNDLE", &fixture.bundle);
+        }
+        let output = command.output().await.expect("run AlphaGenome health");
+        let report: serde_json::Value =
+            serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
+                panic!(
+                    "health JSON: {error}; stderr={}",
+                    String::from_utf8_lossy(&output.stderr)
+                )
+            });
+        assert_eq!(
+            report["rows"][0]["status"],
+            if configured { "ok" } else { "error" },
+            "configured={configured}; report={report}; stderr={}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(output.status.success(), configured);
+        assert_eq!(
+            fixture.sessions.load(Ordering::SeqCst),
+            usize::from(configured)
+        );
+    }
 }
 
 #[tokio::test]

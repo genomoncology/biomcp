@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Trust the configured `BIOMCP_CA_BUNDLE` for AlphaGenome connections while preserving native TLS roots, so prediction connections can use a private certificate authority. (2240)
+
 - Store reusable responses, article text, citation evidence and provider captures in one indexed SQLite cache shared by the CLI and MCP server. Preserve readable saved article files and exports. Older binaries keep writing their separate stores until upgraded; `biomcp cache clean-legacy` removes those stores explicitly while preserving saved downloads. (2134)
 
 - Verify explicit versioned transcript substitutions in article prose when ClinGen resolves the paper anchor to the requested allele, retaining typed gene linkage and resolution provenance. (2226)
