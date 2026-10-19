@@ -31,3 +31,7 @@ If deterministic evidence proves a permitted cold admission bypass, use a bounde
 Retain the original failure independently. Use one bounded focused diagnosis through pm job, controlled expected-red and corrected-green proof, and affected tests plus required lint. Prefer existing controls and unchanged qualified artifacts. Run focused Linux proof when necessary for the observed platform, also through pm job; this is authorized occasional Linux validation, not another full qualification run. Show the corrected proof still fails for genuine reuse failure or key collision. Final complete Linux qualification follows after reviewed repair lands. Push once only after green and stop for fresh review; no full gate, tag or landing by the developer.
 
 Keep: experiments/170-biomcp-2233-linux-offline-evidence — retain the untouched final failure that raised this repair and its initial comparison evidence.
+
+## Progress
+
+- 2026-10-19 started
