@@ -33,3 +33,5 @@ Retain the original and diagnostic request identity, safe response metadata, bod
 ## Result and authority
 
 The PM explicitly approved the two released-product commands and one later public Semantic Scholar probe after the initial read-only diagnosis. Successful job 2280/1792448958050-39962 establishes product access to one Reactome and one WikiPathways lookup; endpoint and transport limits remain explicit in the record. Semantic Scholar remained 429, with four original requests unattempted. The PM approved the “not checked live: rate limited” unverified disposition and separate 2281 checker correction with seven one-time rechecks. The retained private report and safe public record carry both preparation failures and successful diagnosis. No source/code changes or complete qualification are claimed.
+
+Keep: experiments/2099-biomcp-2280-provider-access — retain diagnostic failures, verified released artifact and bounded provider access evidence.
