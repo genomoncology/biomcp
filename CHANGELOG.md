@@ -25,6 +25,8 @@
 
 ### Internal
 
+- Keep subprocess readiness markers on their own line so GenCC lease tests finish with one CPU, and exercise that affinity in the stress lane. (2244)
+
 - Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
 
 - Run gene discovery and identity specifications against recorded replies and reuse the gene-search golden for JSON follow-up checks. (2111)
