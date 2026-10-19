@@ -6,8 +6,6 @@
 
 ### Fixes
 
-- Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
-
 - Repair garbled trademark and registered symbols in all displayed GTR text, including names and methods, while preserving identifiers and other content. (2237)
 
 - Preserve selected drug identity names for interaction matching, require supported drug identity in discovery, rank exact matches first, and explain missing diagnostic synonym resolution. Restore deterministic diagnostic synonym controls. (2242)
@@ -50,6 +48,8 @@
 - Preserve configured source-disable reasons in variant literature CLI and MCP responses instead of reporting a provider failure. (2222)
 - Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 - Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
+
+- Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
 
 ### Internal
 
