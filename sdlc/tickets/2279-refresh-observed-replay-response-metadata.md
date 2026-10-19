@@ -14,6 +14,8 @@ Reviews: revision 570b42d, accept
 
 Reviews: revision 8bfe1d2, accept
 
+Reviews: revision a42e4ae, accept
+
 ## Outcome
 
 Land the verified partial response metadata independently of the larger release-admission parent. Current observed media types have exact request provenance; original recording dates remain intact. Correct dbSNP request provenance and explicitly retain KEGG as unverified.
