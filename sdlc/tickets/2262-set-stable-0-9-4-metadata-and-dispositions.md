@@ -16,6 +16,8 @@ Reviews: revision 09fa4b5, accept
 
 Reviews: revision 0a39719, accept
 
+Reviews: revision ac378d8, accept
+
 ## Outcome
 
 One atomic commit on main carries everything step 1 of 2258 needs: stable 0.9.4 in every public version file, the dated changelog section `## 0.9.4 — YYYY-MM-DD` citing every ticket landed since v0.9.3 (including the twelve found missing: 2191, 2202, 2203, 2204, 2205, 2210, 2211, 2213, 2214, 2228, 2231, 2232), and an explicit disposition line for each finding in the `sdlc/issues/` files this release touches.
