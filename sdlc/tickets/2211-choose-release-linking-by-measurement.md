@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 9885a40, accept
+
 ## Outcome
 
 The release build profile's link settings are chosen from measured release build time and measured program speed, under the standing rule that program speed matters more than build speed.
