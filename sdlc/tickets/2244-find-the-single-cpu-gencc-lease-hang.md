@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 7a99c77, accept
 
+Reviews: revision c73b5cf, accept
+
 ## Outcome
 
 The two GenCC lease tests finish on one CPU, so the two-CPU workaround and the one-CPU ban can go.
