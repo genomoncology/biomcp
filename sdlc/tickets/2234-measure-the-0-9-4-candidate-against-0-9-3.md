@@ -50,6 +50,7 @@ Keep: experiments/809-biomcp-2234-paired — retain every raw sample, failed att
 - 2026-10-19 next: Preserve valid old-release samples and finish active first old arm, then hold before any candidate/runtime samples. Final Linux raised2283 concurrent cache proof failure on51f5e03; await reviewed repair source and explicit sample reuse disposition. No product or cache-threshold changes.
 
 Keep: experiments/491-biomcp-2234-raw — independently verified backup of the first old-release arm raw archive, SHA256 ec3c8b6d15db08472c5129ba6987d99e4878131a4bcad435ae5641597726c17d.
+- 2026-10-19 next: PM approved unchanged runtime source51f5e03. Candidate paired collection resumed in1792454239309-63056; preserve successful first old arm and failures. Final records await all paired rows and regression disposition. Local raw backup491 verified and kept.
 
 ## Test-only qualification disposition
 
