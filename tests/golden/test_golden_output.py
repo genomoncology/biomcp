@@ -55,6 +55,10 @@ CASES = (
         ("get", "trial", "NCT06131398", "--source", "ctgov", "references"),
     ),
     Case(
+        "search-trial-melanoma-recruiting",
+        ("search", "trial", "-c", "melanoma", "-s", "recruiting", "--limit", "3"),
+    ),
+    Case(
         "search-all-braf-melanoma",
         ("search", "all", "--gene", "BRAF", "--disease", "melanoma"),
     ),

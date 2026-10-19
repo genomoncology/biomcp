@@ -21,6 +21,8 @@
 
 ### Internal
 
+- Check condition-first recruiting trial search in JSON and Markdown against a complete recorded provider reply. (2079)
+
 - Stop replay servers when their test runner dies, including abandoned requests, while preserving normal and timeout cleanup. (2229)
 
 - Check populated and empty trial-reference output in JSON and Markdown against recorded provider replies. (2079)

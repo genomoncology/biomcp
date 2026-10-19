@@ -44,6 +44,14 @@
       "status": 200,
       "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29&countTotal=true&pageSize=3&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge"
     },
+    "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING&pageSize=3&query.cond=melanoma": {
+      "file": "responses/ctgov/ctgov-studies-melanoma-recruiting-limit3.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://clinicaltrials.gov/api/v2/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING&pageSize=3&query.cond=melanoma"
+    },
     "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&pageSize=1&query.cond=Phelan-McDermid+Syndrome": {
       "file": "responses/ctgov/ctgov-studies-c5eab0b2a63e.json",
       "headers": {

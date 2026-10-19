@@ -1,0 +1,56 @@
+{
+  "pagination": {
+    "offset": 0,
+    "limit": 3,
+    "returned": 3,
+    "total": 480,
+    "has_more": true,
+    "next_page_token": "ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd7KrgP4ZmTmRvvE"
+  },
+  "count": 3,
+  "results": [
+    {
+      "nct_id": "NCT06970236",
+      "title": "Resistance Exercise in Patients With Ocular Melanoma",
+      "status": "RECRUITING",
+      "phase": "NA",
+      "conditions": [
+        "Ocular Melanoma"
+      ],
+      "sponsor": "University of Valencia"
+    },
+    {
+      "nct_id": "NCT04114136",
+      "title": "Anti-PD-1 mAb Plus Metabolic Modulator in Solid Tumor Malignancies",
+      "status": "RECRUITING",
+      "phase": "PHASE2",
+      "conditions": [
+        "Melanoma",
+        "NSCLC",
+        "Hepatocellular Carcinoma",
+        "Urothelial Cancer",
+        "Gastric Adenocarcinoma",
+        "HNSCC",
+        "Esophageal Adenocarcinoma",
+        "Microsatellite Instability-High Solid Malignant Tumor"
+      ],
+      "sponsor": "Dan Zandberg"
+    },
+    {
+      "nct_id": "NCT04318717",
+      "title": "Pembrolizumab and Hypofractionated Radiation Therapy for the Treatment of Mucosal Melanoma",
+      "status": "RECRUITING",
+      "phase": "PHASE2",
+      "conditions": [
+        "Mucosal Melanoma of the Head and Neck"
+      ],
+      "sponsor": "Washington University School of Medicine"
+    }
+  ],
+  "_meta": {
+    "next_commands": [
+      "biomcp get trial NCT06970236",
+      "biomcp list trial"
+    ]
+  }
+}
