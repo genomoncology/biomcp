@@ -41,3 +41,5 @@ All builds and tests run through the configured build job. Stage private test/so
 ## Focused proof
 
 Source 795c5e01fcfe7c4bbe324c2c4575126068a2f641 passes the private-CA connection regression after the baseline failed. The first parallel TLS run exposed three existing startup deadlines; review fixed those with one shared watchdog in 2e7f610c130e29eda3020e0920558afc3e4c1733 while preserving behavior assertions. Review job 1792421520545-14590 passed all twenty TLS cases in parallel, focused all-feature Clippy and make lint. Earlier proof also passed six shared-loader cases, six Python policy checks and six AlphaGenome library cases; published correspondence matched all nine files. No live prediction RPC is claimed. Private experiment 780-biomcp-2240-alphagenome-ca retains raw attempts; reviewer-parallel.log SHA256 is 1fc8a1997d1e919da5a4c99d540b28e29d17c8104d494e6c447afbcc0a098f1d.
+
+Keep: experiments/780-biomcp-2240-alphagenome-ca — Retain cited raw proof until the release evidence is explicitly released.
