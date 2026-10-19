@@ -1307,3 +1307,122 @@ fn supplement_search_reports_an_absent_search_and_supports_markdown() {
         "the asset filter still searches the one file: {doc}"
     );
 }
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn article_and_variant_lists_match_their_command_help() {
+    let fixture = ArticleFixture::start();
+    let has_option = |text: &str, option: &str| {
+        text.split(|c: char| !(c.is_ascii_alphanumeric() || c == '-'))
+            .any(|token| token == option)
+    };
+    for (entity, args, expected) in [
+        (
+            "article",
+            vec!["get", "article", "--help"],
+            vec!["--out", "--output", "--outline", "--lines"],
+        ),
+        (
+            "variant",
+            vec!["variant", "articles", "--help"],
+            vec!["--confirmed-only"],
+        ),
+    ] {
+        let help = successful_output(&fixture, &args);
+        let help = String::from_utf8(help.stdout).unwrap();
+        let listing = successful_output(&fixture, &["list", entity]);
+        let machine = successful_output(&fixture, &["--json", "list", entity]);
+        let listing = String::from_utf8(listing.stdout).unwrap();
+        let machine = String::from_utf8(machine.stdout).unwrap();
+        for option in expected {
+            assert!(
+                has_option(&help, option),
+                "command definition lost {option}"
+            );
+            assert!(has_option(&listing, option), "list {entity} omits {option}");
+            assert!(
+                has_option(&machine, option),
+                "JSON list {entity} omits {option}"
+            );
+        }
+    }
+    let listing = successful_output(&fixture, &["list", "article"]);
+    let listing = String::from_utf8(listing.stdout).unwrap();
+    let commands = listing
+        .split("## Commands")
+        .nth(1)
+        .unwrap()
+        .split("## Search")
+        .next()
+        .unwrap();
+    assert!(commands.contains("article supplement-search"));
+    let help = successful_output(&fixture, &["article", "supplement-search", "--help"]);
+    assert!(
+        !String::from_utf8(help.stdout)
+            .unwrap()
+            .lines()
+            .any(|line| line.trim() == "\\")
+    );
+    let help = successful_output(&fixture, &["variant", "articles", "--help"]);
+    assert!(
+        String::from_utf8(help.stdout)
+            .unwrap()
+            .contains("requires --json")
+    );
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn missing_article_fulltext_suggests_pdf_opt_in() {
+    let fixture = ArticleFixture::start();
+    let suggestion = "biomcp get article 22663026 fulltext --pdf";
+    for json in [false, true] {
+        let args = if json {
+            vec!["--json", "get", "article", "22663026", "fulltext"]
+        } else {
+            vec!["get", "article", "22663026", "fulltext"]
+        };
+        let output = successful_output(&fixture, &args);
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(
+            text.contains(suggestion),
+            "missing explicit PDF opt-in: {text}"
+        );
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn blocked_article_download_uses_the_manifest_condition_name() {
+    let fixture = ArticleFixture::start();
+    let manifest = successful_output(
+        &fixture,
+        &["--json", "get", "article", "22663023", "assets"],
+    );
+    let manifest: serde_json::Value = serde_json::from_slice(&manifest.stdout).unwrap();
+    let row = manifest["coverage"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["outcome"] == "pmc_proof_of_work")
+        .unwrap();
+    let output = fixture
+        .biomcp_command(&[
+            "--json",
+            "get",
+            "article",
+            "22663023",
+            "asset",
+            row["asset_key"].as_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    let error: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(
+        error["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains(row["outcome"].as_str().unwrap())
+    );
+}

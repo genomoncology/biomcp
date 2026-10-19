@@ -408,6 +408,7 @@ fn article_graph_markdown_renders_expected_table_headers() {
             coverage_status: crate::entities::article::GraphCoverageStatus::Continuable,
         },
         _meta: crate::entities::article::ArticleGraphMeta {
+            note: None,
             next_commands: vec!["biomcp article citations 22663011 --limit 1 --offset 5".into()],
         },
     };
@@ -534,6 +535,11 @@ fn article_batch_markdown_renders_compact_rows() {
             influential_citation_count: None,
         },
     ];
+
+    let single = article_batch_markdown(&rows[..1]).expect("standalone single-item batch");
+    assert!(
+        single.starts_with("# Article Batch (1)\n\n## 1. Improved survival with vemurafenib\n")
+    );
 
     let markdown = article_batch_markdown(&rows).expect("batch markdown");
     assert!(markdown.contains("# Article Batch (3)"));

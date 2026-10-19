@@ -45,3 +45,13 @@ Issue dispositions need finding-specific landing references for GTR encoding, tr
 ## Final collection ownership
 
 The PM assigned 2258 the mandatory observed drift collection on the final candidate. Ticket 2259 owns the accepted checker implementation and may close with its product batch. Before go, this ticket must retain the full collection report, refresh twenty-eight historical missing content types from observed replies, refresh the stale dbSNP declaration from the current product endpoint, name all three KEGG recordings as not checked live: commercial-restricted source, and resolve every other drift or coverage gap through its owning fix. Never count KEGG as checked or call it live from these runs. Partial coverage is not a release pass.
+
+## Shared replay ownership proof
+
+Combined gate 2247/1792436359063-73075 passed at d836b94937f03ce9f35be43345af96a2f39c913b. Attached monitor 2260/1792436390360-77726 completed successfully: nine distinct servers across 829 samples, peak five total and at most one per direct owner, including the explicit lifetime probe. Observed owners covered pytest workers and runner, Rust test binaries and the specification shell; none were unclassified. Three final counts were zero. Sampling intervals averaged 0.414 seconds and ranged from 0.363 to 1.640 seconds, so shorter-lived processes can escape observation. Prior controlled shared-owner SIGKILL proof remains valid: two borrows reused one server and runner exit -9 removed the child and socket in 0.136 seconds. Raw first and repaired runs remain separately retained under experiment 804.
+
+## Retained research replies
+
+The release defect lanes retain a private, read-only copy of research runs 0031, 0032 and 0033. All 3967 files match the retained source SHA256 manifest. Source replies subject to licensing remain private; only permitted projections belong in public fixtures. This preserves lane inputs independently of the research store.
+
+Keep: experiments/2081-biomcp-2258-research-fixture-retention — retain the private research replies and source checksum manifest used by the release defect lanes.
