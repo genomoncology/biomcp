@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Identify variant CGI output as MyVariant's variant-level CGI subset, loaded 2023-02-27, and scope empty results to that subset in Markdown and JSON. (2245)
+
 - Store reusable responses, article text, citation evidence and provider captures in one indexed SQLite cache shared by the CLI and MCP server. Preserve readable saved article files and exports. Older binaries keep writing their separate stores until upgraded; `biomcp cache clean-legacy` removes those stores explicitly while preserving saved downloads. (2134)
 
 - Verify explicit versioned transcript substitutions in article prose when ClinGen resolves the paper anchor to the requested allele, retaining typed gene linkage and resolution provenance. (2226)
