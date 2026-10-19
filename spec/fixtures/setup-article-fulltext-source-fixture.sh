@@ -33,7 +33,7 @@ server_pid_file="$fixture_root/server-pid"
 
 prepare_fixture_supervisor_owner
 start_fixture_supervisor "article-fulltext-source" "$cache_dir" "$fixture_root" "spec-article-fulltext-source." "$server_pid_file" \
-  python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources" "$repo_root/tests/fixtures/article/supplements" "$owner_arg" 9>&- <<'PY' >"$server_log" 2>&1 &
+  python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources" "$repo_root/tests/fixtures/article/supplements" "$repo_root/tests/fixtures/live-suspects" "$owner_arg" 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -50,6 +50,7 @@ FIXTURE_DIR = Path(sys.argv[2])
 REQUEST_LOG = Path(sys.argv[3])
 SOURCES_DIR = Path(sys.argv[4])
 SUPPLEMENTS_DIR = Path(sys.argv[5])
+DISEASE_FIXTURES = Path(sys.argv[6])
 REQUEST_LOG_LOCK = threading.Lock()
 
 
@@ -1210,36 +1211,11 @@ class Handler(BaseHTTPRequestHandler):
             decoded_path == "/query"
             and "Bachmann-Bupp syndrome" in query.get("q", [""])[0].replace("\\", "")
         ):
-            # The article stage exports BIOMCP_MYDISEASE_BASE, so the raw
-            # MCP diagnostic page's disease-term resolution reads this
-            # fixture instead of the disease-survival fixture that served
-            # it before (ticket 2047). Same reply, same provenance.
-            send_json(self, 200, {
-                "total": 1,
-                "hits": [{
-                    "_id": "MONDO:0033642",
-                    "disease_ontology": {
-                        "name": "Bachmann-Bupp syndrome",
-                        "synonyms": {"exact": [
-                            "neurodevelopmental disorder with alopecia and brain abnormalities"
-                        ]},
-                    },
-                }],
-            })
+            # Authored exact-synonym control shared with the diagnostic fixture.
+            send_json(self, 200, json.loads((DISEASE_FIXTURES / "disease-query-authored.json").read_text()))
             return
         if decoded_path == "/disease/MONDO:0033642":
-            # The detail leg of the diagnostic page's disease-term
-            # resolution (ticket 2047): the same record the survival
-            # fixture serves, kept in the article stage's own fixture.
-            send_json(self, 200, {
-                "_id": "MONDO:0033642",
-                "disease_ontology": {
-                    "name": "Bachmann-Bupp syndrome",
-                    "synonyms": {"exact": [
-                        "neurodevelopmental disorder with alopecia and brain abnormalities"
-                    ]},
-                },
-            })
+            send_json(self, 200, json.loads((DISEASE_FIXTURES / "disease-detail-authored.json").read_text()))
             return
 
         if (

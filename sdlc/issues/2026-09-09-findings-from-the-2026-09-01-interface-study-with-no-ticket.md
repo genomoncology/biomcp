@@ -118,3 +118,7 @@ remains in its tail is the observation that provenance coverage is
 partial — true, tracked by ticket 1242's source-failure rendering work (each failed source names itself in the output), and a 1.0
 completeness goal rather than an open defect. The archived raw
 material stays under `archive/notes-2026-09-09/`.
+
+## Closure in2242
+
+Finding4 resolved in2242: captured live H3K27M discovery reproduced the unsupported get-drug h3k27me3 suggestion. Discovery now requires affirmative drug classification, prioritizes supported exact matches and preserves entered aliases. Clinical ruling distinguishes NCIT C129310 variant from CHEBI85045 histone mark and the distinct vaccine; no gene/transcript/genomic identity is invented. Other findings retain their own dispositions.

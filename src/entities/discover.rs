@@ -1193,6 +1193,7 @@ pub(crate) fn build_result(
 
 fn compare_concepts(left: &DiscoverConcept, right: &DiscoverConcept, query: &str) -> Ordering {
     let left_key = (
+        left.match_tier != MatchTier::Exact || left.primary_type == DiscoverType::Unknown,
         type_rank(left.primary_type, query),
         primary_id_rank(left),
         left.match_tier.rank(),
@@ -1202,6 +1203,7 @@ fn compare_concepts(left: &DiscoverConcept, right: &DiscoverConcept, query: &str
         label_tiebreak(left),
     );
     let right_key = (
+        right.match_tier != MatchTier::Exact || right.primary_type == DiscoverType::Unknown,
         type_rank(right.primary_type, query),
         primary_id_rank(right),
         right.match_tier.rank(),
@@ -1375,7 +1377,9 @@ fn concepts_match(left: &DiscoverConcept, right: &DiscoverConcept) -> bool {
         return true;
     }
 
-    left.primary_type == right.primary_type
+    (left.primary_type == right.primary_type
+        || left.primary_type == DiscoverType::Unknown
+        || right.primary_type == DiscoverType::Unknown)
         && normalize_query(&left.label) == normalize_query(&right.label)
 }
 
@@ -1744,7 +1748,7 @@ fn infer_ols_type(doc: &OlsDoc, query: &str) -> DiscoverType {
     let prefix = doc.ontology_prefix.to_ascii_uppercase();
     match prefix.as_str() {
         "HGNC" => DiscoverType::Gene,
-        "CHEBI" | "DRON" => DiscoverType::Drug,
+        "DRON" => DiscoverType::Drug,
         "MONDO" | "DOID" | "ORDO" => DiscoverType::Disease,
         "HP" => DiscoverType::Symptom,
         "GO" | "WIKIPATHWAYS" => DiscoverType::Pathway,
@@ -1758,7 +1762,7 @@ fn infer_umls_type(concept: &UmlsConcept, query: &str) -> DiscoverType {
     for semantic_type in &concept.semantic_types {
         match semantic_type.trim() {
             "Gene or Genome" => return DiscoverType::Gene,
-            "Pharmacologic Substance" | "Clinical Drug" | "Organic Chemical" => {
+            "Pharmacologic Substance" | "Clinical Drug" => {
                 return DiscoverType::Drug;
             }
             "Disease or Syndrome" | "Neoplastic Process" => return DiscoverType::Disease,
@@ -1774,7 +1778,7 @@ fn infer_umls_type(concept: &UmlsConcept, query: &str) -> DiscoverType {
     for xref in &concept.xrefs {
         match xref.vocab.as_str() {
             "HGNC" | "NCBIGENE" => return DiscoverType::Gene,
-            "RXNORM" | "CHEBI" | "DRON" => return DiscoverType::Drug,
+            "RXNORM" | "DRON" => return DiscoverType::Drug,
             "MONDO" | "DOID" | "ORDO" | "ICD10CM" | "OMIM" => return DiscoverType::Disease,
             "HP" => return DiscoverType::Symptom,
             "GO" | "WIKIPATHWAYS" => return DiscoverType::Pathway,
@@ -1801,13 +1805,6 @@ fn heuristic_type(label: &str, query: &str) -> DiscoverType {
         DiscoverType::Symptom
     } else if text.contains("pathway") || text.contains("signaling") || text.contains("process") {
         DiscoverType::Pathway
-    } else if text.contains("mab")
-        || text.contains("nib")
-        || text.contains("therapy")
-        || text.contains("drug")
-        || text.contains("injection")
-    {
-        DiscoverType::Drug
     } else if looks_like_gene_query(query) && crate::entities::gene::looks_like_symbol(label.trim())
     {
         DiscoverType::Gene
@@ -2226,7 +2223,11 @@ fn generate_commands(
             "biomcp",
             "get",
             "drug",
-            &top.label.to_ascii_lowercase(),
+            &if top.match_tier == MatchTier::Exact {
+                query.trim().to_string()
+            } else {
+                top.label.to_ascii_lowercase()
+            },
         ])),
         DiscoverType::Disease if ambiguous => commands.push(next_command([
             "biomcp",
@@ -3298,12 +3299,12 @@ mod tests {
 
         let drug = resolve_exact_article_keyword_entity_from_ols_docs(
             "imatinib",
-            &[ols_doc("chebi", "imatinib", "CHEBI:45783", &[])],
+            &[ols_doc("dron", "imatinib", "DRON:00010000", &[])],
         )
         .expect("imatinib should resolve as an exact drug");
         assert_eq!(drug.entity_type, DiscoverType::Drug);
         assert_eq!(drug.label, "imatinib");
-        assert_eq!(drug.primary_id.as_deref(), Some("CHEBI:45783"));
+        assert_eq!(drug.primary_id.as_deref(), Some("DRON:00010000"));
 
         let disease = resolve_exact_article_keyword_entity_from_ols_docs(
             "melanoma",
@@ -3319,7 +3320,7 @@ mod tests {
     fn exact_article_keyword_resolver_reports_alias_to_canonical_match() {
         let resolved = resolve_exact_article_keyword_entity_from_ols_docs(
             "Gleevec",
-            &[ols_doc("chebi", "imatinib", "CHEBI:45783", &["Gleevec"])],
+            &[ols_doc("dron", "imatinib", "DRON:00010000", &["Gleevec"])],
         )
         .expect("drug alias should resolve to canonical label");
 
@@ -3398,7 +3399,7 @@ mod tests {
     fn exact_article_keyword_resolver_canonicalizes_ols_aliases() {
         let resolved = resolve_exact_article_keyword_entity_from_ols_docs(
             "Gleevec",
-            &[ols_doc("chebi", "imatinib", "CHEBI:45783", &["Gleevec"])],
+            &[ols_doc("dron", "imatinib", "DRON:00010000", &["Gleevec"])],
         )
         .expect("alias should resolve");
 

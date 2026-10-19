@@ -1,0 +1,30 @@
+{
+  "response": {
+    "docs": [
+      {
+        "iri": "http://example.org/CHEBI:85045",
+        "ontology_prefix": "CHEBI",
+        "obo_id": "CHEBI:85045",
+        "label": "H3K27Me3",
+        "exact_synonyms": []
+      },
+      {
+        "iri": "http://example.org/NCIT:C180377",
+        "ontology_prefix": "NCIT",
+        "obo_id": "NCIT:C180377",
+        "label": "H3K27M Long Peptide Vaccine",
+        "exact_synonyms": []
+      },
+      {
+        "iri": "http://example.org/NCIT:C129310",
+        "ontology_prefix": "NCIT",
+        "obo_id": "NCIT:C129310",
+        "label": "H3 K27M Variant",
+        "exact_synonyms": [
+          "Activating H3 K27M Mutation",
+          "H3K27M"
+        ]
+      }
+    ]
+  }
+}
