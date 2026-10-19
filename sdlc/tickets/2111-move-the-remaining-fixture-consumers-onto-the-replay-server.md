@@ -21,6 +21,8 @@ Reviews: revision 5aaf977, accept
 
 Reviews: revision 464b7ea, accept
 
+Reviews: revision 4ad3a87, accept
+
 ## Outcome
 
 The named remaining HTTP fixture consumers use the existing replay server, and an obsolete setup/cleanup script is removed only after its final retained consumer moves.
