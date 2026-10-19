@@ -5,7 +5,7 @@ priority: 3
 
 # 2111: Move the remaining fixture consumers onto the replay server
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -23,15 +23,23 @@ Reviews: revision 464b7ea, accept
 
 Reviews: revision 4ad3a87, accept
 
+Reviews: revision 71707e7, accept
+
+Reviews: revision aa7adaa, accept
+
+Reviews: revision d754210, accept
+
+Reviews: revision de75878, accept
+
 ## Outcome
 
-The named remaining HTTP fixture consumers use the existing replay server, and an obsolete setup/cleanup script is removed only after its final retained consumer moves.
+The approved trial-reference, condition-first trial-search, gene discovery and supported pathway reader consumers use the existing replay server. Authored fault controls and excluded local datasets keep their current helpers. Remaining selector coverage and helper retirement belong to2236 in the next release.
 
 Depends on: 2159, 2229
 
 - Starts from: the existing replay infrastructure and named article-fulltext, CTGov intervention-alias, provider-contract and ComplexPortal conversion groups.
 - Keeps: CLI/MCP behavior, refusals, source receipts, live canaries and their needed helpers, local study datasets and separately approved frozen-capture runners.
-- Changes: `spec/entity/gene-discovery.md` `spec/entity/gene.md` `scripts/run-specs.sh` `tests/golden/spec/test_spec_page_golden.py` `CHANGELOG.md` and this ticket for the next bounded partial batch. Preserve source captures, receipts and remaining consumers.
+- Changes: `CHANGELOG.md` `scripts/run-specs.sh` `sdlc/tickets/2111-move-the-remaining-fixture-consumers-onto-the-replay-server.md` `spec/entity/pathway.md`.
 - Proof: through the build job, affected existing command/MCP cases pass against recorded replay without missing requests, preserving counts, failures and refusals. No retained consumer refers to each deleted script; script-specific tests disappear with obsolete scripts. Run the routine merged-candidate gate without live canaries.
 - Defers: local study-dataset provisioning and broad shared fixture identifiers to the next release.
 
@@ -54,6 +62,7 @@ No helper deletion is valid: three CTGov shell cases and the custom server's oth
 - 2026-10-19 started
 - 2026-10-19 landed f16e27cd40385c61f3de20d269f89c5b799e6bd3; next: Keep the parent open; migrate the condition-first trial consumer next, preserving all reader assertions.
 - 2026-10-19 landed 478bcb9c6127d9c749a0f60b8ad3d4732b7e9c10; next: Keep the parent open; migrate the next named provider consumer after its goldens are landed.
+- 2026-10-19 landed 08d721f8525a35267bcd0a307248c69b1de210fc; next: Keep the parent open for the final supported pathway reader migration after the accepted pathway goldens land; preserve authored fault controls and excluded local datasets under the narrowed PM boundary.
 
 ## Next partial development brief
 
@@ -80,3 +89,19 @@ Move the supported gene discovery and identity reader sections together to the r
 Source `5038d6b540c2c8aa9d41d58e647a59f0b5854601` changes the five declared files. Baseline job `2111/1792418649264-93648` passed the affected old reader sections and request checks. Job `2111/1792418679290-4426` passed six focused tests and both preserved Markdown assertions with three recorded hits and no misses. The request assertion checks size and offset independently because replay canonicalizes query ordering. Job `2111/1792418713576-8281` passed Ruff, formatting, ShellCheck, shell syntax, tracked-text and specification lint, zero-coupling checks and 35 coupling tests; final file hashes match the commit.
 
 The tests reused the qualified CLI with SHA256 `e47d903c9a83a1c8d18d9cd208e20ee4a27a03caa1f0e1a72b075a42542d949d`. No Rust build, repeated mutation or network isolation is claimed. Source captures, BRCA1 assertions and remaining consumers are unchanged. Owned transfer scripts, patch and copied binary were removed. Review accepted the source without changes; the parent remains open for other consumers.
+
+## Final supported pathway migration brief
+
+PM approved closing this parent after the supported pathway reader migration joins the already landed trial references, condition-first trial search and gene discovery migrations. Remaining selectors and helper retirement belong to 2236 in the next release. Do not start another slice.
+
+This branch has main 08d721f8525a35267bcd0a307248c69b1de210fc and the accepted 2079 pathway dependency merged by the coordinator. Move the supported existing pathway reader commands together into the existing replay lane; preserve all unique assertions. Preserve long-form normalization, exact MAPK limits 3 and 5, KEGG card, Reactome genes/events, source-disable environment and flag/group/legacy forms, zero-KEGG request assertion, missing query, unknown source, disabled lookup and unsupported-section refusals, and Reactome outcome/provenance assertions. Keep authored fault controls and local datasets on their existing helpers. No source captures, new goldens, repeated mutation builds, helper deletion or provider behavior change.
+
+Before code, run the existing affected reader cases once and record exact command/output in the report. If the complete page can run through the existing replay runner without coverage loss, restore it to the routine page set; otherwise preserve exact assertions in the existing replay Python lane under the declared files. Use the existing golden runner and receipts, not a new launcher. Run only affected reader/request cases and mechanical checks, reuse a qualified unchanged CLI if appropriate, through the configured build job. Retain raw in experiments/778-biomcp-2111-replay-consumer-evidence. This changes the gate definition and will land separately with its own gate. No WIP push; publish once review-ready.
+
+Keep: experiments/778-biomcp-2111-replay-consumer-evidence — Retain cited raw proof until release evidence is explicitly released.
+
+## Final pathway reader proof
+
+Sourceed5cfafc5358c343907fff529ec081af7c33f731 changes three files: restores the complete pathway page to the routine list, changes its request-log variable to BIOMCP_REPLAY_REQUEST_LOG and adds the changelog bullet. Every existing command, assertion, refusal, source-disable form, request count and provenance expression remains verbatim. No new captures, goldens, helper deletion, provider change or Rust build.
+
+Baseline2111/1792423231581-93017 passed all nine existing pathway cases. Focused replay2111/1792423283298-99439 passed the same nine, with24recorded provider hits, zero misses and one health probe. The driver then exited1 because an additional scratch accounting assertion treated that health probe as a provider hit. Raw failure retained; no assertion or test rerun hides it. Mechanical2111/1792423300742-10520 passed shell syntax, ShellCheck, tracked text, specification lint, zero coupling and whitespace. Tested hashes match the published source. Qualified unchanged08dCLI SHA256798b6e77a538a818d0250816d40c9bf21311cd6d84a0623ff89895133f3267c2 was reused. All invocation scripts, patches and raw jobs are retained in experiments/778-biomcp-2111-replay-consumer-evidence/jobs.
