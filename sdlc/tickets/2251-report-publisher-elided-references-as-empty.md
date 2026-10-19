@@ -25,3 +25,7 @@ Genuine Semantic Scholar failures still report as Semantic Scholar failures, nev
 ## Proof
 
 A replay test with the elided reply returns an empty result with the Semantic Scholar elision note in JSON and Markdown. A real failure reply names Semantic Scholar.
+
+## Progress
+
+- 2026-10-19 started
