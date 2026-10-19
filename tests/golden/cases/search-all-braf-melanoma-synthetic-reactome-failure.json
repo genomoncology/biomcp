@@ -1,0 +1,407 @@
+{
+  "query": "gene=BRAF disease=melanoma",
+  "searches_dispatched": 9,
+  "searches_with_results": 6,
+  "sections": [
+    {
+      "count": 1,
+      "count_exact": true,
+      "entity": "gene",
+      "error": null,
+      "label": "Genes",
+      "links": [
+        {
+          "command": "biomcp get gene BRAF",
+          "rel": "get.top",
+          "title": "Inspect top gene"
+        },
+        {
+          "command": "biomcp search trial --biomarker BRAF",
+          "rel": "cross.trials",
+          "title": "Gene-linked trials"
+        }
+      ],
+      "note": null,
+      "results": [
+        {
+          "entrez_id": "673",
+          "genomic_coordinates": {
+            "coordinate": "7:140719327-140925199",
+            "genome_build": "GRCh38",
+            "provenance": "MyGene.info provider default",
+            "source": "MyGene.info"
+          },
+          "name": "B-Raf proto-oncogene, serine/threonine kinase",
+          "omim_id": "164757",
+          "symbol": "BRAF",
+          "uniprot_id": "P15056"
+        }
+      ],
+      "returned": 1,
+      "total": 1,
+      "total_lower_bound": null
+    },
+    {
+      "count": 3,
+      "count_exact": true,
+      "entity": "variant",
+      "error": null,
+      "label": "Variants",
+      "links": [
+        {
+          "command": "biomcp get variant \"chr7:g.140449165A>C\"",
+          "rel": "get.top",
+          "title": "Inspect top variant"
+        },
+        {
+          "command": "biomcp search variant --gene BRAF --condition melanoma --max-frequency 0.01",
+          "rel": "filter.hint",
+          "title": "Rare variants only"
+        }
+      ],
+      "note": null,
+      "results": [
+        {
+          "clinvar_stars": 2,
+          "gene": "BRAF",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gerp": 2.67,
+          "hgvs_c": "c.1914T>G",
+          "hgvs_p": "p.Asp638Glu",
+          "id": "chr7:g.140449165A>C",
+          "legacy_name": "BRAF D638E",
+          "revel": 0.954,
+          "significance": "Pathogenic",
+          "significance_source": "MyVariant.info",
+          "transcript": "NM_004333.6"
+        },
+        {
+          "clinvar_stars": 2,
+          "gene": "BRAF",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gerp": 5.68,
+          "hgvs_c": "c.1574T>C",
+          "hgvs_p": "p.Leu525Pro",
+          "id": "chr7:g.140476832A>G",
+          "legacy_name": "BRAF L525P",
+          "revel": 0.876,
+          "significance": "Pathogenic",
+          "significance_source": "MyVariant.info",
+          "transcript": "NM_004333.6"
+        },
+        {
+          "clinvar_stars": 1,
+          "gene": "BRAF",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gerp": 5.47,
+          "hgvs_c": "c.416A>C",
+          "hgvs_p": "p.Gln139Pro",
+          "id": "chr7:g.140534497T>G",
+          "legacy_name": "BRAF Q139P",
+          "revel": 0.286,
+          "significance": "Uncertain significance",
+          "significance_source": "MyVariant.info",
+          "transcript": "NM_004333.6"
+        }
+      ],
+      "returned": 3,
+      "total": 42,
+      "total_lower_bound": null
+    },
+    {
+      "count": 3,
+      "count_exact": true,
+      "entity": "disease",
+      "error": null,
+      "label": "Diseases",
+      "links": [
+        {
+          "command": "biomcp get disease MONDO:0005105",
+          "rel": "get.top",
+          "title": "Inspect top disease"
+        },
+        {
+          "command": "biomcp search trial -c melanoma",
+          "rel": "cross.trials",
+          "title": "Disease-linked trials"
+        }
+      ],
+      "note": null,
+      "results": [
+        {
+          "id": "MONDO:0005105",
+          "name": "melanoma",
+          "synonyms_preview": "malignant melanoma, melanoma (disease) (and 2 more)"
+        },
+        {
+          "id": "MONDO:0005012",
+          "name": "skin melanoma",
+          "synonyms_preview": "cutaneous (skin) melanoma, cutaneous melanoma (and 8 more)"
+        },
+        {
+          "id": "MONDO:0006486",
+          "name": "uveal melanoma",
+          "synonyms_preview": "intraocular melanoma, melanoma (disease) of uvea (and 5 more)"
+        }
+      ],
+      "returned": 3,
+      "total": 90,
+      "total_lower_bound": null
+    },
+    {
+      "count": 2,
+      "count_exact": true,
+      "entity": "drug",
+      "error": null,
+      "label": "Drugs",
+      "links": [
+        {
+          "command": "biomcp get drug dabrafenib",
+          "rel": "get.top",
+          "title": "Inspect top drug"
+        },
+        {
+          "command": "biomcp search adverse-event -d dabrafenib",
+          "rel": "cross.adverse-events",
+          "title": "Top adverse events"
+        }
+      ],
+      "note": null,
+      "results": [
+        {
+          "drug_type": "small-molecule",
+          "drugbank_id": "DB08912",
+          "mechanism": "Protein Kinase Inhibitors",
+          "name": "dabrafenib",
+          "target": "BRAF"
+        },
+        {
+          "drug_type": "small-molecule",
+          "drugbank_id": "DB08881",
+          "mechanism": "Inhibitor of Serine/threonine-protein kinase B-raf",
+          "name": "vemurafenib",
+          "target": "BRAF"
+        }
+      ],
+      "returned": 2,
+      "total": 2,
+      "total_lower_bound": null
+    },
+    {
+      "count": 3,
+      "count_exact": true,
+      "entity": "trial",
+      "error": null,
+      "label": "Trials",
+      "links": [
+        {
+          "command": "biomcp search trial --condition melanoma --biomarker BRAF --limit 3 -s recruiting",
+          "rel": "filter.hint",
+          "title": "Recruiting only"
+        },
+        {
+          "command": "biomcp search trial --condition melanoma --biomarker BRAF --limit 3 -p phase3",
+          "rel": "filter.hint",
+          "title": "Phase 3 trials"
+        }
+      ],
+      "note": null,
+      "results": [
+        {
+          "conditions": [
+            "Malignant Melanoma"
+          ],
+          "nct_id": "NCT03563729",
+          "phase": "PHASE2",
+          "sponsor": "Inge Marie Svane",
+          "status": "RECRUITING",
+          "title": "Melanoma Metastasized to the Brain and Steroids"
+        },
+        {
+          "conditions": [
+            "Unresectable Stage III Melanoma",
+            "Stage IV Melanoma"
+          ],
+          "nct_id": "NCT03235245",
+          "phase": "PHASE2",
+          "sponsor": "European Organisation for Research and Treatment of Cancer - EORTC",
+          "status": "ACTIVE_NOT_RECRUITING",
+          "title": "Immunotherapy With Ipilimumab and Nivolumab Preceded or Not by a Targeted Therapy With Encorafenib and Binimetinib"
+        },
+        {
+          "conditions": [
+            "BRAF V600 Wild Type",
+            "Clinical Stage IV Cutaneous Melanoma AJCC v8",
+            "Intracranial Melanoma",
+            "Metastatic Malignant Neoplasm in the Brain",
+            "Metastatic Melanoma",
+            "Pathologic Stage IV Cutaneous Melanoma AJCC v8",
+            "Refractory Melanoma"
+          ],
+          "nct_id": "NCT03175432",
+          "phase": "PHASE2",
+          "sponsor": "M.D. Anderson Cancer Center",
+          "status": "ACTIVE_NOT_RECRUITING",
+          "title": "Bevacizumab and Atezolizumab With or Without Cobimetinib in Treating Patients With Untreated Melanoma Brain Metastases"
+        }
+      ],
+      "returned": 3,
+      "total": 26,
+      "total_lower_bound": null
+    },
+    {
+      "count": 3,
+      "count_exact": false,
+      "entity": "article",
+      "error": null,
+      "label": "Articles",
+      "links": [
+        {
+          "command": "biomcp search article --gene BRAF --disease melanoma --limit 3 --type research-article",
+          "rel": "filter.hint",
+          "title": "Clinical trials only"
+        },
+        {
+          "command": "biomcp search article --gene BRAF --disease melanoma --limit 3 --type review",
+          "rel": "filter.hint",
+          "title": "Reviews & meta-analyses"
+        }
+      ],
+      "note": null,
+      "results": [
+        {
+          "date": "2026-10-15",
+          "first_index_date": "2026-10-14",
+          "is_retracted": null,
+          "journal": "Internal medicine (Tokyo, Japan)",
+          "matched_sources": [
+            "pubmed"
+          ],
+          "pmid": "42875213",
+          "ranking": {
+            "abstract_anchor_hits": 0,
+            "all_anchors_in_text": false,
+            "all_anchors_in_title": false,
+            "anchor_count": 2,
+            "combined_anchor_hits": 1,
+            "directness_tier": 1,
+            "mode": "lexical",
+            "pubmed_rescue": true,
+            "pubmed_rescue_kind": "unique",
+            "pubmed_source_position": 0,
+            "study_or_review_cue": false,
+            "title_anchor_hits": 1
+          },
+          "source": "pubmed",
+          "title": "Accelerated Systemic Atherosclerosis Following Immune-Related Adverse Events in a Patient with Primary Thoracic Melanoma: A Case of Sequential Coronary and Peripheral Revascularization."
+        },
+        {
+          "citation_count": 35,
+          "date": "2014-01-01",
+          "influential_citation_count": 0,
+          "is_retracted": null,
+          "journal": "Cell Cycle",
+          "matched_sources": [
+            "pubtator"
+          ],
+          "pmid": "24200969",
+          "ranking": {
+            "abstract_anchor_hits": 0,
+            "all_anchors_in_text": true,
+            "all_anchors_in_title": true,
+            "anchor_count": 2,
+            "combined_anchor_hits": 2,
+            "directness_tier": 3,
+            "mode": "lexical",
+            "pubmed_rescue": false,
+            "study_or_review_cue": false,
+            "title_anchor_hits": 2
+          },
+          "score": 96051.58,
+          "source": "pubtator",
+          "title": "Activities of multiple cancer-related pathways are associated with BRAF mutation and predict the resistance to BRAF/MEK inhibitors in melanoma cells."
+        },
+        {
+          "citation_count": 7,
+          "date": "2024-02-06",
+          "doi": "10.1016/j.jaccao.2023.12.003",
+          "first_index_date": "2024-05-22",
+          "influential_citation_count": 0,
+          "is_retracted": false,
+          "journal": "JACC CardioOncol",
+          "matched_sources": [
+            "europepmc"
+          ],
+          "pmcid": "PMC11103020",
+          "pmid": "38774020",
+          "ranking": {
+            "abstract_anchor_hits": 0,
+            "all_anchors_in_text": false,
+            "all_anchors_in_title": false,
+            "anchor_count": 2,
+            "combined_anchor_hits": 0,
+            "directness_tier": 0,
+            "mode": "lexical",
+            "pubmed_rescue": false,
+            "study_or_review_cue": false,
+            "title_anchor_hits": 0
+          },
+          "source": "europepmc",
+          "title": "The United Kingdom's First Cardio-Oncology Service: A Decade of Growth and Evolution."
+        }
+      ],
+      "returned": 3,
+      "total": null,
+      "total_lower_bound": 3
+    },
+    {
+      "count": 0,
+      "count_exact": false,
+      "entity": "pathway",
+      "error": "API request to Reactome failed. Retry the remote source.",
+      "label": "Pathways",
+      "links": [
+        {
+          "command": "biomcp search pathway --query BRAF --limit 3",
+          "rel": "search.retry",
+          "title": "Retry pathway search"
+        }
+      ],
+      "note": null,
+      "results": [],
+      "returned": 0,
+      "total": null,
+      "total_lower_bound": null
+    },
+    {
+      "count": 0,
+      "count_exact": false,
+      "entity": "pgx",
+      "error": null,
+      "label": "PGx",
+      "links": [],
+      "note": null,
+      "results": [],
+      "returned": 0,
+      "total": null,
+      "total_lower_bound": 0
+    },
+    {
+      "count": 0,
+      "count_exact": true,
+      "entity": "gwas",
+      "error": null,
+      "label": "GWAS",
+      "links": [],
+      "note": null,
+      "results": [],
+      "returned": 0,
+      "total": 0,
+      "total_lower_bound": null
+    }
+  ],
+  "wall_time_ms": <WALL_TIME_MS>
+}

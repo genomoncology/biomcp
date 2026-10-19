@@ -87,6 +87,7 @@
 - Keep recorded disease query pages in canonical replay storage for fixture consumers and source checks. (2277)
 - Align recorded trial references, disease details, and PubMed summaries with observed replies for their declared requests. (2278)
 - Record bounded provider access diagnosis and explicit unverified limits before release. (2280)
+- Align pathway replay structures and response metadata with observed replies, and preserve provider failure coverage in a separate synthetic scenario. (2282)
 
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 
