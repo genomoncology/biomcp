@@ -16,3 +16,7 @@ Cancellation must stop an abandoned article provider retry and release admission
 ## Baseline
 
 The failed candidate gate is retained under gate-runs/biomcp/2226/m5/3c13c0ae6f2041aecf4a568f39d0cd87a4fdba68. No candidate source has reached main. The paper-anchor and Python consumer changes do not claim the failing batch implementation. A bounded repair lane owns investigation; no broad audit is authorized.
+
+## Progress
+
+- 2026-10-19 started
