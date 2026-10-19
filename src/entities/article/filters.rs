@@ -5,6 +5,12 @@ use crate::utils::date::validate_since;
 
 use super::{ArticleSearchFilters, ArticleSearchResult};
 
+mod disease;
+pub(super) use disease::{
+    filter_semantic_disease_rows, resolve_semantic_disease_terms,
+    semantic_disease_unavailable_status,
+};
+
 pub(super) fn is_preprint_journal(journal: &str) -> bool {
     let j = journal.to_ascii_lowercase();
     j.contains("biorxiv") || j.contains("medrxiv") || j.contains("arxiv")

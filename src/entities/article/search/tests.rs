@@ -83,7 +83,9 @@ fn merge_federated_pages(
             },
         },
         match litsense2_leg {
-            Ok(rows) => FederatedSourceOutcome::Available(rows),
+            Ok(rows) => FederatedSourceOutcome::Available(PartialSearchPage::complete(
+                SearchPage::offset(rows, None),
+            )),
             Err(err) => FederatedSourceOutcome::Unavailable {
                 error: Some(err),
                 status: source_degraded_status(
@@ -159,7 +161,10 @@ fn raw_federated_acquisition_retains_auxiliary_rows_when_primary_sources_fail() 
                 status: semantic_status,
             },
         ),
-        FederatedSourceOutcome::Available(Vec::new()),
+        FederatedSourceOutcome::Available(PartialSearchPage::complete(SearchPage::offset(
+            Vec::new(),
+            None,
+        ))),
     )
     .expect("partial federated rows");
 

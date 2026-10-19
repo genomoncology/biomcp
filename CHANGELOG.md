@@ -6,9 +6,15 @@
 
 ### Fixes
 
-- Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
+- Enforce article disease filters on Semantic Scholar and LitSense2 results using source-backed disease names and exact synonyms, and report unavailable synonym lookups. (2267)
+
+- Resolve exact disease names across bounded MyDisease result pages while preserving ambiguity refusals and complete candidate checks. (2274)
+
+- Recover missing article abstracts from Europe PMC core records and batched PubMed citations. (2268)
 
 - Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
+- Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
 
 - Name unavailable article asset providers and keep successful HTML full-text retrieval free of internal serializer warnings. (2271)
 - Resolve drug development codes through exact ChEMBL molecule synonyms. Verify the preferred card carries the same molecule identifier for single and batch calls. (2266)

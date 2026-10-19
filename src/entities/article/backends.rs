@@ -13,7 +13,10 @@ use crate::sources::semantic_scholar::{
 };
 use crate::transform;
 
-use super::filters::{matches_result_filters, normalized_date_bounds};
+use super::filters::{
+    filter_semantic_disease_rows, matches_result_filters, normalized_date_bounds,
+    resolve_semantic_disease_terms, semantic_disease_unavailable_status,
+};
 use super::query::{
     build_free_text_article_query, build_pubmed_search_term, build_pubtator_query,
     build_search_query, pubtator_sort,
@@ -82,7 +85,7 @@ pub(super) struct PartialSearchPage {
 }
 
 impl PartialSearchPage {
-    fn complete(page: SearchPage<ArticleSearchResult>) -> Self {
+    pub(super) fn complete(page: SearchPage<ArticleSearchResult>) -> Self {
         Self {
             page,
             degradation: None,
@@ -384,6 +387,7 @@ pub(super) async fn search_europepmc_page_with_context(
         }
     })
     .await?;
+    let europe = europe.with_abstracts(filters.include_abstracts);
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_search_query(filters)?,
@@ -699,6 +703,18 @@ pub(super) async fn search_semantic_scholar_candidates(
     let auth_mode = client.auth_mode();
     let status = semantic_scholar_status(auth_mode);
 
+    let disease_terms =
+        match resolve_semantic_disease_terms(filters, ArticleSource::SemanticScholar).await {
+            Ok(terms) => terms,
+            Err(error) => {
+                let mut outcome = semantic_scholar_unavailable_outcome(auth_mode);
+                outcome.status.message =
+                    semantic_disease_unavailable_status(ArticleSource::SemanticScholar, error)
+                        .message;
+                return Ok(outcome);
+            }
+        };
+
     let query = strict_query
         .map(str::to_string)
         .unwrap_or_else(|| build_free_text_article_query(filters));
@@ -762,7 +778,8 @@ pub(super) async fn search_semantic_scholar_candidates(
         }
     };
 
-    let rows = response;
+    let mut rows = response;
+    filter_semantic_disease_rows(&mut rows, disease_terms.as_ref());
     Ok(SemanticScholarCandidateOutcome { rows, status })
 }
 
@@ -850,13 +867,29 @@ fn semantic_scholar_rows_from_response(
 pub(super) async fn search_litsense2_candidates(
     filters: &ArticleSearchFilters,
     limit: usize,
-) -> Result<Vec<ArticleSearchResult>, BioMcpError> {
+) -> Result<PartialSearchPage, BioMcpError> {
     let query = build_free_text_article_query(filters);
     if query.trim().is_empty() {
-        return Ok(Vec::new());
+        return Ok(PartialSearchPage::complete(SearchPage::offset(
+            Vec::new(),
+            None,
+        )));
     }
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
     let litsense2 = litsense2_client_for_current_deadline().await?;
+    let disease_terms =
+        match resolve_semantic_disease_terms(filters, ArticleSource::LitSense2).await {
+            Ok(terms) => terms,
+            Err(error) => {
+                return Ok(PartialSearchPage {
+                    page: SearchPage::offset(Vec::new(), None),
+                    degradation: Some(semantic_disease_unavailable_status(
+                        ArticleSource::LitSense2,
+                        error,
+                    )),
+                });
+            }
+        };
     let hits = litsense2.sentence_search(&query).await?;
     let deduped = dedupe_litsense2_hits(hits);
 
@@ -871,14 +904,17 @@ pub(super) async fn search_litsense2_candidates(
             .await?,
     );
 
-    Ok(litsense2_rows_from_hits(
+    let mut rows = litsense2_rows_from_hits(
         filters,
-        limit,
+        usize::MAX,
         normalized_date_from.as_deref(),
         normalized_date_to.as_deref(),
         deduped,
         hydrated,
-    ))
+    );
+    filter_semantic_disease_rows(&mut rows, disease_terms.as_ref());
+    rows.truncate(limit);
+    Ok(PartialSearchPage::complete(SearchPage::offset(rows, None)))
 }
 
 fn dedupe_litsense2_hits(hits: Vec<LitSense2SearchHit>) -> Vec<(LitSense2SearchHit, usize)> {

@@ -161,6 +161,7 @@ pub(super) fn article_search_request(
     let filters = crate::entities::article::ArticleSearchFilters {
         gene,
         gene_anchored,
+        include_abstracts: args.full,
         disease,
         drug,
         variant: None,

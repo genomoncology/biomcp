@@ -32,6 +32,7 @@ fn article_filters(
     crate::entities::article::ArticleSearchFilters {
         gene: gene.map(str::to_string),
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: drug.map(str::to_string),
         variant: None,

@@ -318,7 +318,7 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
             .await;
             rows
         } else {
-            enrich_visible_article_search_page(page, &[ArticleSource::PubTator])
+            enrich_visible_article_search_page(page, &[ArticleSource::PubTator], false)
                 .await
                 .page
                 .results

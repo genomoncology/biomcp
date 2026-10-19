@@ -641,7 +641,10 @@ fn both_primaries_failing_prefers_a_deadline_error_over_the_fast_failure() {
                 status: semantic_status,
             },
         ),
-        FederatedSourceOutcome::Available(Vec::new()),
+        FederatedSourceOutcome::Available(PartialSearchPage::complete(SearchPage::offset(
+            Vec::new(),
+            None,
+        ))),
     )
     .expect("both primaries failing still collects rows");
 

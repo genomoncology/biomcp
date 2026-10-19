@@ -52,6 +52,7 @@ pub struct EuropePmcSearchRequestPlan {
 pub struct EuropePmcClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+    include_abstracts: bool,
 }
 
 impl EuropePmcClient {
@@ -59,6 +60,7 @@ impl EuropePmcClient {
         Ok(Self {
             client: crate::sources::shared_client("europe-pmc")?,
             base: crate::sources::env_base(EUROPE_PMC_BASE, EUROPE_PMC_BASE_ENV),
+            include_abstracts: false,
         })
     }
 
@@ -68,7 +70,13 @@ impl EuropePmcClient {
         Ok(Self {
             client: crate::sources::shared_client_with_deadline("europe-pmc", deadline).await?,
             base: crate::sources::env_base(EUROPE_PMC_BASE, EUROPE_PMC_BASE_ENV),
+            include_abstracts: false,
         })
+    }
+
+    pub(crate) fn with_abstracts(mut self, include: bool) -> Self {
+        self.include_abstracts = include;
+        self
     }
 
     async fn get_json<T: DeserializeOwned>(
@@ -261,6 +269,7 @@ impl EuropePmcClient {
                     let key = match key.as_str() {
                         "query" => "query",
                         "format" => "format",
+                        "resultType" => "resultType",
                         "cursorMark" => "cursorMark",
                         "pageSize" => "pageSize",
                         "sort" => "sort",
@@ -282,7 +291,10 @@ impl EuropePmcClient {
         page_size: usize,
         sort: EuropePmcSort,
     ) -> Result<EuropePmcSearchResponse, BioMcpError> {
-        let plan = Self::search_query_plan(query, cursor_mark, page_size, sort)?;
+        let mut plan = Self::search_query_plan(query, cursor_mark, page_size, sort)?;
+        if self.include_abstracts {
+            plan = plan.query("resultType", "core");
+        }
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.get_json(req).await
     }
@@ -590,6 +602,8 @@ pub struct EuropePmcResult {
     pub doi: Option<String>,
     #[serde(rename = "journalTitle")]
     pub journal_title: Option<String>,
+    #[serde(rename = "journalInfo", skip_serializing_if = "Option::is_none")]
+    pub journal_info: Option<serde_json::Value>,
     #[serde(rename = "firstPublicationDate")]
     pub first_publication_date: Option<String>,
     #[serde(rename = "firstIndexDate")]
@@ -613,6 +627,18 @@ pub struct EuropePmcResult {
     pub full_text_url_list: Option<serde_json::Value>,
     #[serde(rename = "abstractText")]
     pub abstract_text: Option<String>,
+}
+
+impl EuropePmcResult {
+    pub(crate) fn journal_title(&self) -> Option<&str> {
+        self.journal_title.as_deref().or_else(|| {
+            self.journal_info
+                .as_ref()?
+                .get("journal")?
+                .get("title")?
+                .as_str()
+        })
+    }
 }
 
 #[cfg(test)]
