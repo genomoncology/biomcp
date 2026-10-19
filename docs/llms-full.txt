@@ -90,7 +90,10 @@ An expanded index of the BioMCP documentation.
 - [OpenTargets](https://biomcp.org/sources/opentargets/): Access details and query guidance for the OpenTargets data source.
 - [PharmacoDB](https://biomcp.org/sources/pharmacodb/): Published drug sensitivity experiments for a cell line or a compound, scoped by dataset.
 - [PharmGKB / CPIC](https://biomcp.org/sources/pharmgkb/): Access details and query guidance for the PharmGKB / CPIC data source.
+- [Europe PMC](https://biomcp.org/sources/europe-pmc/): Article metadata, PMC-backed full-text XML availability, and reuse boundaries.
+- [PMC](https://biomcp.org/sources/pmc/): PMC-backed XML and HTML retrieval, open-access objects, and article-level licenses.
 - [PubMed](https://biomcp.org/sources/pubmed/): Access details and query guidance for the PubMed data source.
+- [PubTator3](https://biomcp.org/sources/pubtator/): Article discovery, entity annotations, and PMC-dependent full-text availability.
 - [Reactome](https://biomcp.org/sources/reactome/): Access details and query guidance for the Reactome data source.
 - [SEER Explorer](https://biomcp.org/sources/seer/): Access details and query guidance for the SEER Explorer data source.
 - [Semantic Scholar](https://biomcp.org/sources/semantic-scholar/): Access details and query guidance for the Semantic Scholar data source.
