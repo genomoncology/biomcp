@@ -35,6 +35,8 @@
 - Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 - Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
 
+- Group recorded MyGene gene aliases in PubMed and Europe PMC variant article queries, and report their source and omissions from bounded provider work. (2247)
+
 ### Internal
 
 - Check pathway search and KEGG and Reactome details in JSON and Markdown against recorded provider replies. (2079)
