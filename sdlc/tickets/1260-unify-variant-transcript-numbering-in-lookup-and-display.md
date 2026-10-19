@@ -54,7 +54,7 @@ Use the three exact versioned inputs as identity/control cases. Require matching
 
 ## Granted implementation and reproduction
 
-- Changes: `src/entities/variant/get.rs`, `src/entities/variant/get/tests.rs`, `src/render/provenance.rs`, `src/entities/variant/mod.rs`, `src/transform/variant.rs`, `src/render/markdown/variant.rs`, `templates/variant.md.j2`, `tests/test_variant_transcript_lookup.py`, `tests/fixtures/variant-transcript-lookup/**`, `CHANGELOG.md`, `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md`.
+- Changes: `src/entities/variant/get.rs`, `src/entities/variant/get/tests.rs`, `src/render/provenance.rs`, `src/entities/variant/mod.rs`, `src/transform/variant.rs`, `src/render/markdown/variant.rs`, `templates/variant.md.j2`, `tests/test_variant_transcript_lookup.py`, `tests/fixtures/variant-transcript-lookup/**`, `CHANGELOG.md`, `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md`. `sdlc/issues/2026-09-11-variant-display-mixes-transcript-numbering.md`
 
 Claim expansion: `src/entities/variant/get/tests.rs` and `src/render/provenance.rs` may initialize the two new optional matched-transcript provenance fields in existing exhaustive test literals. No additional behavior or scope is granted.
 
@@ -65,3 +65,9 @@ First failing outside-in case: legacy versioned input resolves when the fixture 
 Use recorded source-backed responses with truthful provenance, clearly mark any authored controls, and inspect capture redistribution standards before publishing. Keep full raw evidence privately in the experiment. Run focused red/green and mechanical checks through the configured build job. No extra live reruns or WIP push. A different clinical interpretation requires clinical review; implementing the recorded DNA identity rule is authorized.
 
 Keep: experiments/787-biomcp-1260-transcript-lookup — Retain cited raw proof until release evidence is explicitly released.
+
+## Focused lookup repair proof
+
+Source97abbf720885a7be615ffb9e512419007a787333 preserves normalized DNA assembly, accepts source-resolved CAR DNA coordinates, verifies exact DNA identity and retains matched transcript/cDNA provenance without replacing current headline numbering. A normalized direct miss followed by MyVariant exact-alias fallback previously used GRCh37coordinates but labeledGRCh38; the final repair names that source answering build correctly. Unavailable transcript normalization gets unverified wording; source-resolved missing genomic records get missing wording. No gene/protein-token identity fallback, invented transcript-priority table or new clinical interpretation.
+
+Red1792423447454-46057 reproduced lookup failure; red1792423937477-80439 reproduced the incorrect fallback assembly label. Final1792424003685-99460 passed nine CLI cases,85affected Rust cases and make lint. All ten committed product/test/fixture blobs match787/tested-source-manifest.json and tested.patch. Public fixture is explicitly authored; full provider captures stay private in experiments/787-biomcp-1260-transcript-lookup. No live study was repeated.
