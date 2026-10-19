@@ -22,6 +22,7 @@ ABSTRACT = "Synthetic cancer cohort: ≥65 years; ≤0.05; <5, >2; 2·5 ±0.1."
 @pytest.mark.parametrize("source,surface", [
     ("europepmc", "search"), ("europepmc", "get"), ("pubmed", "search"),
     ("pubmed", "get"), ("europepmc", "compact"), ("pubmed", "compact"),
+    ("europepmc", "get-doi"), ("europepmc", "get-pmc"),
 ])
 def test_article_recovers_source_abstract(source: str, surface: str, tmp_path: Path) -> None:
     pmids = ["36780833", "42423773"] if source == "europepmc" else ["22890969", "41790359"]
@@ -55,7 +56,8 @@ def test_article_recovers_source_abstract(source: str, surface: str, tmp_path: P
                 if source != "europepmc":
                     return self.reply({"hitCount": 0, "resultList": {"result": []}})
                 query = params.get("query", [""])[0]
-                ids = [p for p in pmids if p in query] if "EXT_ID:" in query else pmids
+                ids = ([p for p in pmids if p in query] if "EXT_ID:" in query else
+                       pmids[-1:] if query.startswith(("DOI:", "PMCID:")) else pmids)
                 return self.reply({"hitCount": len(ids), "resultList": {"result": [
                     {"id": p, "pmid": p, "source": "MED", "title": f"Synthetic cancer cohort {p}",
                      "abstractText": ABSTRACT if params.get("resultType") == ["core"] else None,
@@ -99,7 +101,9 @@ def test_article_recovers_source_abstract(source: str, surface: str, tmp_path: P
     }, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
-    args = (["get", "article", pmids[-1]] if surface == "get" else
+    detail_id = {"get": pmids[-1], "get-doi": "10.0000/abstract-control",
+                 "get-pmc": "PMC123456"}.get(surface)
+    args = (["get", "article", detail_id] if detail_id else
             ["search", "article", "cancer", "--source", source, "--limit", "2"]
             + (["--full"] if surface == "search" else []))
     try:

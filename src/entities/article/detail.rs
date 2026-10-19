@@ -374,7 +374,15 @@ pub(super) async fn resolve_article_from_pmid_with_context(
             } else if let Some(Ok(search)) = variant_detail_request(
                 execution,
                 "europepmc",
-                europe.clone().with_abstracts(article.abstract_text.as_deref().is_none_or(|text| text.trim().is_empty())).search_by_pmid(&pmid.to_string()),
+                europe
+                    .clone()
+                    .with_abstracts(
+                        article
+                            .abstract_text
+                            .as_deref()
+                            .is_none_or(|text| text.trim().is_empty()),
+                    )
+                    .search_by_pmid(&pmid.to_string()),
             )
             .await
                 && let Some(hit) = first_europepmc_hit(search)
@@ -400,7 +408,10 @@ pub(super) async fn resolve_article_from_pmid_with_context(
                     let Some(search) = variant_detail_request(
                         execution,
                         "europepmc",
-                        europe.clone().with_abstracts(true).search_by_pmid(&pmid.to_string()),
+                        europe
+                            .clone()
+                            .with_abstracts(true)
+                            .search_by_pmid(&pmid.to_string()),
                     )
                     .await
                     else {
@@ -560,7 +571,11 @@ pub(super) async fn get_article_base_with_clients(
             .await
         }
         ArticleIdType::Doi(doi) => {
-            let search = europe.search_by_doi(&doi).await?;
+            let search = europe
+                .clone()
+                .with_abstracts(true)
+                .search_by_doi(&doi)
+                .await?;
             if search.hit_count.unwrap_or(0) == 0 {
                 return Err(article_not_found(&doi, id));
             }
@@ -582,7 +597,11 @@ pub(super) async fn get_article_base_with_clients(
             }
         }
         ArticleIdType::Pmc(pmcid) => {
-            let search = europe.search_by_pmcid(&pmcid).await?;
+            let search = europe
+                .clone()
+                .with_abstracts(true)
+                .search_by_pmcid(&pmcid)
+                .await?;
             if search.hit_count.unwrap_or(0) == 0 {
                 return Err(article_not_found(&pmcid, id));
             }
