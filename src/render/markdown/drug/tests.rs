@@ -23,6 +23,7 @@ fn drug_markdown_header_drops_empty_fields_instead_of_printing_fillers() {
         brand_names: vec!["Phesgo".to_string()],
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -101,6 +102,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         brand_names: Vec::new(),
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -155,6 +157,7 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         brand_names: Vec::new(),
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -279,6 +282,7 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
             "PARP2".to_string(),
             "PARP3".to_string(),
         ],
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: Some("PARP".to_string()),
         target_family_name: Some("poly(ADP-ribose) polymerase".to_string()),
@@ -310,7 +314,7 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
 
     let markdown = drug_markdown(&drug, &["targets".to_string()]).expect("markdown");
     assert!(markdown.contains("Family: PARP (poly(ADP-ribose) polymerase)"));
-    assert!(markdown.contains("Members: PARP1, PARP2, PARP3"));
+    assert!(markdown.contains("Members: PARP1 (organism not supplied), PARP2 (organism not supplied), PARP3 (organism not supplied)"));
 }
 
 #[test]
@@ -331,6 +335,7 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         brand_names: Vec::new(),
         route: None,
         targets: vec!["EGFR".to_string()],
+        target_organisms: Vec::new(),
         variant_targets: vec!["EGFRvIII".to_string()],
         target_family: None,
         target_family_name: None,
@@ -384,6 +389,7 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         brand_names: Vec::new(),
         route: None,
         targets: vec!["ABL1".to_string(), "KIT".to_string(), "PDGFRB".to_string()],
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -416,7 +422,9 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
     let markdown = drug_markdown(&drug, &["targets".to_string()]).expect("markdown");
     assert!(!markdown.contains("Family:"));
     assert!(!markdown.contains("Members:"));
-    assert!(markdown.contains("ABL1, KIT, PDGFRB"));
+    assert!(markdown.contains(
+        "ABL1 (organism not supplied), KIT (organism not supplied), PDGFRB (organism not supplied)"
+    ));
 }
 
 #[test]
@@ -437,6 +445,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
         brand_names: vec!["Keytruda".to_string()],
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -606,6 +615,7 @@ fn test_who_regulatory_drug() -> Drug {
         brand_names: vec!["Herceptin".to_string()],
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -816,6 +826,7 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         brand_names: vec!["Keytruda".to_string()],
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -894,6 +905,7 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         brand_names: vec!["Ozempic".to_string()],
         route: None,
         targets: Vec::new(),
+        target_organisms: Vec::new(),
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
