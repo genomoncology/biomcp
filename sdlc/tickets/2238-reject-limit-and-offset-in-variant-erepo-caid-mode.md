@@ -12,6 +12,8 @@ Reviews: revision 27091d7, accept
 
 Reviews: revision 5e92900, accept
 
+Reviews: revision 68056da, accept
+
 ## Outcome
 
 - Changes: `CHANGELOG.md` `sdlc/issues/2026-09-24-mcp-schema-follow-ups-after-1240.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `sdlc/tickets/2239-cap-the-drug-trial-alias-cache.md` `sdlc/tickets/2240-use-the-ca-bundle-for-alphagenome.md` `sdlc/tickets/2241-carry-stale-cache-notes-in-get-json.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `spec/entity/clingen-erepo.md` `spec/fixtures/run-clingen-erepo-fixture.sh` `src/cli/variant/erepo.rs` `src/cli/variant/mod.rs` `src/entities/variant/erepo.rs` `src/entities/variant/mod.rs` `src/mcp/shell.rs` `src/mcp/shell/typed_get_tests.rs` `tests/unit/cli/variant.rs` and this ticket. Carried PM ticket and milestone records are unchanged except this ticket own reviewed proof.
