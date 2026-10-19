@@ -1,4 +1,5 @@
 use std::io::Cursor;
+use std::time::Duration;
 
 use anyhow::Context;
 use rmcp::{ServerHandler, model::ServerInfo};
@@ -30,9 +31,13 @@ where
     W: AsyncWrite + Unpin,
 {
     let mut reader = BufReader::new(reader);
+    let mut deadline = tokio::time::Instant::now() + Duration::from_secs(5);
     loop {
         let mut frame = Vec::new();
-        if reader.read_until(b'\n', &mut frame).await? == 0 {
+        let bytes = tokio::time::timeout_at(deadline, reader.read_until(b'\n', &mut frame))
+            .await
+            .map_err(|_| anyhow::anyhow!(super::mcp_stdio_guidance()))??;
+        if bytes == 0 {
             anyhow::bail!(super::mcp_stdio_guidance());
         }
 
@@ -74,7 +79,12 @@ where
             continue;
         };
         if modern::has_protocol_metadata(&request) {
-            write_response(&mut writer, &modern::dispatch(&request).await).await?;
+            // A supported pre-initialization invocation has its own budget.
+            // Preserve the remaining handshake wait while it executes.
+            let started = tokio::time::Instant::now();
+            let response = modern::dispatch(&request).await;
+            deadline += started.elapsed();
+            write_response(&mut writer, &response).await?;
         } else if method == Some("server/discover") {
             write_response(&mut writer, &discovery_response(id)).await?;
         } else if method == Some("ping") {

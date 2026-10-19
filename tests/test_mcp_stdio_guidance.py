@@ -4,10 +4,17 @@ import json
 import os
 import select
 import subprocess
+import sys
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).parent / "golden"))
+from replay_env import isolated_command_env  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
@@ -16,7 +23,7 @@ RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release"
 
 
 class StdioMcp:
-    def __init__(self) -> None:
+    def __init__(self, env: dict[str, str] | None = None) -> None:
         assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
         self.process = subprocess.Popen(
             [str(RELEASE_BIN), "serve"],
@@ -26,15 +33,16 @@ class StdioMcp:
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
+            env=env,
         )
 
-    def call(self, request: dict[str, object]) -> dict[str, Any]:
+    def call(self, request: dict[str, object], timeout: float = 3) -> dict[str, Any]:
         assert self.process.stdin is not None
         assert self.process.stdout is not None
         self.process.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
         self.process.stdin.flush()
 
-        ready, _, _ = select.select([self.process.stdout], [], [], 3)
+        ready, _, _ = select.select([self.process.stdout], [], [], timeout)
         assert ready, "timed out waiting for an MCP response"
         line = self.process.stdout.readline()
         if not line:
@@ -145,3 +153,107 @@ def test_pre_handshake_error_does_not_end_the_stream(stdio_mcp: StdioMcp) -> Non
     assert initialized["protocolVersion"] == "2025-11-25"
     assert initialized["serverInfo"]["name"] == "biomcp"
     assert not {"resultType", "ttlMs", "cacheScope", "_meta"} & initialized.keys()
+
+
+@pytest.mark.parametrize("initialized", [False, True])
+def test_slow_tool_call_outlives_startup_wait(
+    initialized: bool, tmp_path: Path,
+) -> None:
+    requests: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            requests.append(self.path)
+            threading.Event().wait(6)
+            payload = json.dumps({"total": 1, "hits": [{
+                "_id": "673", "symbol": "BRAF", "name": "authored slow gene",
+                "entrezgene": "673",
+            }]}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            try:
+                self.wfile.write(payload)
+            except BrokenPipeError:
+                pass  # The unfixed server closes the invocation at startup timeout.
+
+        def log_message(self, *_args: object) -> None:
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    origin = f"http://127.0.0.1:{server.server_port}"
+    env = isolated_command_env(tmp_path, {"BIOMCP_MYGENE_BASE": origin}, origin)
+    client = StdioMcp(env)
+    try:
+        if initialized:
+            _initialize(client)
+        params: dict[str, object] = {
+            "name": "biomcp", "arguments": {
+                "command": "biomcp search gene BRAF --limit 1",
+            },
+        }
+        if not initialized:
+            params["_meta"] = {
+                "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                "io.modelcontextprotocol/clientCapabilities": {},
+            }
+        started = time.monotonic()
+        response = client.call({
+            "jsonrpc": "2.0", "id": "slow", "method": "tools/call", "params": params,
+        }, timeout=15)
+        result = response["result"]
+        assert not result.get("isError"), result
+        assert "authored slow gene" in json.dumps(result)
+        assert time.monotonic() - started >= 6
+        assert len(requests) == 1, requests
+        if not initialized:
+            _initialize(client)
+        assert client.call({"jsonrpc": "2.0", "id": "ping", "method": "ping"})["result"] == {}
+    finally:
+        client.close()
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+def _initialize(client: StdioMcp) -> None:
+    response = client.call({
+        "jsonrpc": "2.0", "id": "initialize", "method": "initialize",
+        "params": {"protocolVersion": "2025-11-25", "capabilities": {},
+                   "clientInfo": {"name": "startup-contract", "version": "1"}},
+    })
+    assert response["result"]["protocolVersion"] == "2025-11-25"
+    assert client.process.stdin is not None
+    client.process.stdin.write(json.dumps({
+        "jsonrpc": "2.0", "method": "notifications/initialized",
+    }) + "\n")
+    client.process.stdin.flush()
+
+
+@pytest.mark.parametrize("send_pings", [False, True])
+def test_client_without_initialize_expires_startup_wait(
+    send_pings: bool, tmp_path: Path,
+) -> None:
+    client = StdioMcp(isolated_command_env(tmp_path, {}, "http://127.0.0.1:9"))
+    started = time.monotonic()
+    try:
+        if send_pings:
+            for request_id in range(3):
+                threading.Event().wait(1)
+                assert client.call({
+                    "jsonrpc": "2.0", "id": request_id, "method": "ping",
+                })["result"] == {}
+        client.process.wait(timeout=max(0.1, 7 - (time.monotonic() - started)))
+        assert 4 <= time.monotonic() - started < 7
+        assert client.process.stdin is not None
+        assert not client.process.stdin.closed
+        assert client.process.returncode == 1
+        assert client.process.stdout is not None
+        assert client.process.stdout.read() == ""
+        assert client.process.stderr is not None
+        assert "expects an MCP client on stdin" in client.process.stderr.read()
+    finally:
+        client.close()
