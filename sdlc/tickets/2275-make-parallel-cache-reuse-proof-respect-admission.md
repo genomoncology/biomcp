@@ -29,3 +29,7 @@ A small valid design may separate parallel startup from a single uncontended adm
 ## Proof
 
 A controlled case on current main demonstrates the old proof confuses an allowed bypass with failed reuse. The corrected outside-in case passes for the supported cache policy and still detects a genuine reuse failure. Run affected cache cases and required lint through the configured build job; no full gate. Record exact limitations, including the unrecovered original cause.
+
+## Progress
+
+- 2026-10-19 started
