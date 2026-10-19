@@ -137,33 +137,7 @@ fn serve_http_rejects_port_zero() {
 async fn dropping_canonical_compact_command_cancels_provider_retry() {
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
 
-    struct EnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
-    impl EnvRestore {
-        fn set(&mut self, name: &'static str, value: impl AsRef<std::ffi::OsStr>) {
-            self.0.push((name, std::env::var_os(name)));
-            // SAFETY: this test owns the shared article fixture serial-test key.
-            unsafe { std::env::set_var(name, value) };
-        }
-
-        fn remove(&mut self, name: &'static str) {
-            self.0.push((name, std::env::var_os(name)));
-            // SAFETY: this test owns the shared article fixture serial-test key.
-            unsafe { std::env::remove_var(name) };
-        }
-    }
-    impl Drop for EnvRestore {
-        fn drop(&mut self) {
-            for (name, value) in self.0.drain(..).rev() {
-                // SAFETY: this test owns the shared article fixture serial-test key.
-                unsafe {
-                    match value {
-                        Some(value) => std::env::set_var(name, value),
-                        None => std::env::remove_var(name),
-                    }
-                }
-            }
-        }
-    }
+    type EnvRestore = crate::test_support::FixtureEnv;
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -219,11 +193,11 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
     });
 
     let cache = crate::test_support::TempDirGuard::new("article-command-cancel-cache");
-    let mut env = EnvRestore(Vec::new());
+    let mut env = EnvRestore::scratch_cache_only();
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
     env.set("BIOMCP_PUBTATOR_BASE", &base);
     env.set("BIOMCP_EUROPEPMC_BASE", &base);
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     env.remove("S2_API_KEY");
 
     let cache_gets = Arc::new(AtomicUsize::new(0));

@@ -489,7 +489,9 @@ fn run_preflight_sentinel(
     command
         .args(args)
         .env("RUST_LOG", "off")
-        .env("BIOMCP_CACHE_DIR", &fixture.cache_dir);
+        .envs(biomcp_mcp_contract_client::child_cache_env(
+            &fixture.cache_dir,
+        ));
     for name in [
         "BIOMCP_PUBTATOR_BASE",
         "BIOMCP_EUROPEPMC_BASE",

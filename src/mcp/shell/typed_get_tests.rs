@@ -111,47 +111,16 @@ impl CtGovAgeMcpEnv {
 }
 
 struct NciTrialMcpEnv {
-    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
-    _cache: tempfile::TempDir,
+    _env: crate::test_support::FixtureEnv,
 }
 
 impl NciTrialMcpEnv {
     fn set(base: &str) -> Self {
-        let cache = tempfile::tempdir().expect("NCI MCP cache directory");
-        let values = [
-            ("BIOMCP_NCI_CTS_BASE", base.to_string()),
-            ("NCI_API_KEY", "fixture-key".to_string()),
-            (
-                "BIOMCP_CACHE_DIR",
-                cache.path().to_string_lossy().into_owned(),
-            ),
-            ("BIOMCP_TEST_UNPACED_ORIGIN", base.to_string()),
-        ];
-        let mut previous = Vec::new();
-        for (name, value) in values {
-            previous.push((name, std::env::var_os(name)));
-            // SAFETY: callers hold the serial-test process-wide environment lock.
-            unsafe { std::env::set_var(name, value) };
-        }
-        Self {
-            previous,
-            _cache: cache,
-        }
-    }
-}
-
-impl Drop for NciTrialMcpEnv {
-    fn drop(&mut self) {
-        // SAFETY: callers hold the serial-test process-wide environment lock.
-        unsafe {
-            for (name, previous) in self.previous.drain(..) {
-                if let Some(previous) = previous {
-                    std::env::set_var(name, previous);
-                } else {
-                    std::env::remove_var(name);
-                }
-            }
-        }
+        let mut env = crate::test_support::FixtureEnv::scratch_cache_only();
+        env.set("BIOMCP_NCI_CTS_BASE", base);
+        env.set("NCI_API_KEY", "fixture-key");
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
+        Self { _env: env }
     }
 }
 

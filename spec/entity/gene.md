@@ -165,8 +165,9 @@ Raw MCP text and JSON plus typed MCP `get` travel through the same section
 contract. The typed request schema remains the existing gene/section request.
 
 ```bash
+source ../fixtures/cache-policy.sh
+set_fixture_cache_root "${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/clingen-mcp-cache"
 BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE" BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen/validity-fail" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 \
-  BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/clingen-mcp-cache" \
   bash ../fixtures/run-section-outcome-mcp.sh ../.. clingen-surfaces \
   | mustmatch like 'RAW TEXT
 Gene-Disease Validity Status
@@ -226,11 +227,13 @@ export BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE"
 BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE" BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 ../../tools/biomcp-ci --json get gene TP53 clingen gencc \
   | jq -e '.clingen.validity[0].disease == "Li-Fraumeni syndrome" and .gencc.status.result == "empty" and .section_outcomes.clingen.sources == ["ClinGen"] and .section_outcomes.gencc.sources == ["GenCC"]' \
   | mustmatch 'true'
-BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache" \
+source ../fixtures/cache-policy.sh
+set_fixture_cache_root "${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache"
   bash ../fixtures/run-section-outcome-mcp.sh ../.. gencc-surfaces \
   | jq -e '.raw_text | contains("## GenCC gene-disease validity") and contains("G2P (GENCC:000112)")' \
   | mustmatch 'true'
-BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache" \
+source ../fixtures/cache-policy.sh
+set_fixture_cache_root "${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache"
   bash ../fixtures/run-section-outcome-mcp.sh ../.. gencc-surfaces \
   | jq -e '.raw_json.gencc == .typed_json.gencc and .raw_json.section_outcomes.gencc == {outcome:"data", sources:["GenCC"]} and .typed_json.section_outcomes.gencc == .raw_json.section_outcomes.gencc and (.raw_json.gencc.assertions | map(.submitter.label)) == ["G2P", "PanelApp Australia", "Labcorp Genetics (formerly Invitae)"]' \
   | mustmatch 'true'

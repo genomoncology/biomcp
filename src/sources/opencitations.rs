@@ -291,10 +291,9 @@ mod tests {
         )
         .await;
         let cache = TempDirGuard::new("opencitations-path");
-        let _env = EnvGuard::set(&[
-            ("BIOMCP_OPENCITATIONS_BASE", Some(&base)),
-            ("BIOMCP_CACHE_DIR", Some(cache.path().to_str().unwrap())),
-        ]);
+        let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+        cache_policy.set_cache_root(cache.path().to_str().unwrap());
+        let _env = EnvGuard::set(&[("BIOMCP_OPENCITATIONS_BASE", Some(&base))]);
 
         let client = OpenCitationsClient::new().unwrap();
         let edges = client.references_by_doi("10.1000/citing").await.unwrap();
@@ -343,10 +342,9 @@ mod tests {
         ] {
             let (base, _state) = origin(status, body).await;
             let cache = TempDirGuard::new("opencitations-malformed");
-            let _env = EnvGuard::set(&[
-                ("BIOMCP_OPENCITATIONS_BASE", Some(&base)),
-                ("BIOMCP_CACHE_DIR", Some(cache.path().to_str().unwrap())),
-            ]);
+            let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+            cache_policy.set_cache_root(cache.path().to_str().unwrap());
+            let _env = EnvGuard::set(&[("BIOMCP_OPENCITATIONS_BASE", Some(&base))]);
             let client = OpenCitationsClient::new().unwrap();
             let result = client.references_by_doi("10.1000/citing").await;
             assert!(result.is_err(), "{label} must fail the attempt");
@@ -358,10 +356,9 @@ mod tests {
     async fn references_accept_an_empty_list_as_no_known_edge() {
         let (base, _state) = origin(200, b"[]".to_vec()).await;
         let cache = TempDirGuard::new("opencitations-empty");
-        let _env = EnvGuard::set(&[
-            ("BIOMCP_OPENCITATIONS_BASE", Some(&base)),
-            ("BIOMCP_CACHE_DIR", Some(cache.path().to_str().unwrap())),
-        ]);
+        let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+        cache_policy.set_cache_root(cache.path().to_str().unwrap());
+        let _env = EnvGuard::set(&[("BIOMCP_OPENCITATIONS_BASE", Some(&base))]);
         let client = OpenCitationsClient::new().unwrap();
         assert_eq!(
             client.references_by_doi("10.1000/citing").await.unwrap(),
@@ -375,10 +372,9 @@ mod tests {
         let oversize = vec![b'x'; crate::sources::DEFAULT_MAX_BODY_BYTES + 1];
         let (base, _state) = origin(200, oversize).await;
         let cache = TempDirGuard::new("opencitations-oversize");
-        let _env = EnvGuard::set(&[
-            ("BIOMCP_OPENCITATIONS_BASE", Some(&base)),
-            ("BIOMCP_CACHE_DIR", Some(cache.path().to_str().unwrap())),
-        ]);
+        let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+        cache_policy.set_cache_root(cache.path().to_str().unwrap());
+        let _env = EnvGuard::set(&[("BIOMCP_OPENCITATIONS_BASE", Some(&base))]);
         let client = OpenCitationsClient::new().unwrap();
         assert!(
             client.references_by_doi("10.1000/citing").await.is_err(),

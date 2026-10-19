@@ -132,7 +132,7 @@ async fn outage_env(base: &str) -> crate::test_support::FixtureEnv {
     env.set("BIOMCP_S2_BASE", base);
     env.set("BIOMCP_PUBTATOR_BASE", base);
     env.set("BIOMCP_EUROPEPMC_BASE", base);
-    env.set("BIOMCP_PUBMED_BASE", &format!("{base}/entrez/eutils"));
+    env.set("BIOMCP_PUBMED_BASE", format!("{base}/entrez/eutils"));
     env
 }
 
