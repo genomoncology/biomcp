@@ -17,11 +17,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
 import replay_env  # noqa: E402
 
+pytestmark = pytest.mark.needs_binary
+
 SOURCE_NOTE = "MyVariant's variant-level CGI subset, loaded 2023-02-27."
 EMPTY_NOTE = "No record in this subset."
 
 
-@pytest.mark.needs_binary
 @pytest.mark.parametrize("empty", [False, True], ids=["recorded-braf", "synthetic-cgi-removed"])
 @pytest.mark.parametrize("json_output", [False, True], ids=["markdown", "json"])
 def test_variant_cgi_names_subset_and_load_date(tmp_path, monkeypatch, empty, json_output):
