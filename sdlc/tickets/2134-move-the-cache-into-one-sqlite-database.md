@@ -27,6 +27,8 @@ PM ruling, 2026-10-19, explicit capture exception: preserve the existing `gene c
 
 Reviewed retention detail: ordinary cache clear preserves provider capture rows, matching the existing published policy and the PM ruling that explicit captures are saved artifacts. Preserve their existing expiry/capacity maintenance behavior and the other retained artifact promises; do not clear every table indiscriminately. Backend-specific deadline, permissions and layout fixtures may change their storage mechanism while keeping their public refusal, deadline and trust assertions. Historical design documents stay historical.
 
+Reviewed new-store trust boundary: create SQLite files with private permissions. An existing insecure database is refused with the established fail-soft provider behavior and a clear diagnostic; do not open/close an ordinary repair descriptor that can release another local connection's POSIX locks. Keep managed-root repair and symlink/hardlink rejection, plus the Windows ACL boundary. The retired arbitrary legacy-file walk is not a new-format repair contract. Verify the new store with the real permissions and escape tests.
+
 ## Evidence
 
 - The HTTP cache is http-cache 0.20 over cacache 13. Its key is `method:uri`, the full unnormalized URL. cacache only appends index buckets, so one long-used machine held 102,376 index files (709 MB) for 212 stored bodies (120 MB) on 2026-10-16.
