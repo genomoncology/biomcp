@@ -22,7 +22,19 @@ BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
 
 @pytest.mark.parametrize("direction", ["references", "citations"])
 @pytest.mark.parametrize("json_output", [True, False])
-@pytest.mark.parametrize("case", ["elided", "empty", "malformed", "failure", "null"])
+@pytest.mark.parametrize(
+    "case",
+    [
+        "elided",
+        "empty",
+        "malformed",
+        "failure",
+        "null",
+        "null_offset",
+        "elided_bad_offset",
+        "missing_data_offset",
+    ],
+)
 def test_graph_page_reports_provider_outcome(
     tmp_path: Path, direction: str, json_output: bool, case: str
 ) -> None:
@@ -47,13 +59,14 @@ def test_graph_page_reports_provider_outcome(
         def do_GET(self) -> None:
             if case == "failure":
                 self.send_json(400, {"error": "provider refused request"})
-            elif case == "elided":
+            elif case in {"elided", "elided_bad_offset"}:
                 key = (
                     "citingPaperInfo" if direction == "references" else "citedPaperInfo"
                 )
                 self.send_json(
                     200,
                     {
+                        **({"offset": 1} if case == "elided_bad_offset" else {}),
                         "data": None,
                         key: {
                             "openAccessPdf": {
@@ -63,6 +76,10 @@ def test_graph_page_reports_provider_outcome(
                         },
                     },
                 )
+            elif case == "missing_data_offset":
+                self.send_json(200, {"offset": 0})
+            elif case == "null_offset":
+                self.send_json(200, {"offset": 0, "data": None})
             elif case == "empty":
                 self.send_json(200, {"offset": 0, "data": []})
             else:
@@ -83,7 +100,14 @@ def test_graph_page_reports_provider_outcome(
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
-    if case in {"failure", "malformed", "null"}:
+    if case in {
+        "failure",
+        "malformed",
+        "null",
+        "null_offset",
+        "elided_bad_offset",
+        "missing_data_offset",
+    }:
         assert result.returncode != 0
         assert "Semantic Scholar" in result.stdout + result.stderr
         assert "BioMCP source" not in result.stdout + result.stderr

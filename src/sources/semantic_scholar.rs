@@ -1015,8 +1015,9 @@ pub struct SemanticScholarTldr {
 pub struct SemanticScholarGraphResponse<T> {
     pub offset: Option<u64>,
     pub next: Option<u64>,
-    #[serde(default, deserialize_with = "deserialize_vec_or_default")]
-    pub data: Vec<T>,
+    // Keep null distinct from an ordinary empty page, and require the data field.
+    #[serde(deserialize_with = "Deserialize::deserialize")]
+    pub data: Option<Vec<T>>,
     #[serde(default, rename = "citingPaperInfo", alias = "citedPaperInfo")]
     pub paper_info: Option<SemanticScholarGraphPaperInfo>,
 }
@@ -1034,7 +1035,7 @@ pub struct SemanticScholarGraphPdfInfo {
 
 impl<T> SemanticScholarGraphResponse<T> {
     pub(crate) fn publisher_elided(&self, field: &str) -> bool {
-        self.data.is_empty()
+        self.data.as_ref().is_none_or(Vec::is_empty)
             && self.next.is_none()
             && self
                 .paper_info
@@ -1046,8 +1047,13 @@ impl<T> SemanticScholarGraphResponse<T> {
                         "The following paper fields have been elided by the publisher: ",
                     )
                 })
-                .and_then(|(_, fields)| fields.split_once('}'))
-                .is_some_and(|(fields, _)| fields.contains(&format!("'{field}'")))
+                .and_then(|(_, fields)| fields.strip_prefix('{'))
+                .and_then(|fields| fields.split_once('}'))
+                .is_some_and(|(fields, _)| {
+                    fields
+                        .split(',')
+                        .any(|value| value.trim() == format!("'{field}'"))
+                })
     }
 }
 

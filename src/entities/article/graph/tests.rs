@@ -65,7 +65,7 @@ fn citations_map_semantic_scholar_edges() {
             paper_info: None,
             offset: Some(0),
             next: Some(10),
-            data: vec![SemanticScholarCitationEdge {
+            data: Some(vec![SemanticScholarCitationEdge {
                 contexts: vec!["Example context".into()],
                 intents: vec!["Background".into()],
                 is_influential: Some(false),
@@ -76,7 +76,7 @@ fn citations_map_semantic_scholar_edges() {
                     "Nature",
                     2024,
                 ),
-            }],
+            }]),
         },
         0,
         10,
@@ -158,7 +158,7 @@ fn references_map_semantic_scholar_edges() {
             paper_info: None,
             offset: Some(7),
             next: None,
-            data: vec![SemanticScholarReferenceEdge {
+            data: Some(vec![SemanticScholarReferenceEdge {
                 contexts: vec!["Example context".into()],
                 intents: vec!["Background".into()],
                 is_influential: Some(false),
@@ -169,7 +169,7 @@ fn references_map_semantic_scholar_edges() {
                     "Cell",
                     2009,
                 ),
-            }],
+            }]),
         },
         7,
         3,
@@ -209,7 +209,7 @@ fn graph_page_validation_fails_closed_for_bad_offsets_and_next_values() {
             paper_info: None,
             offset,
             next,
-            data: Vec::new(),
+            data: Some(Vec::new()),
         };
         assert!(
             article_graph_from_citations(article.clone(), response, 1, 10, "22663011",).is_err()
@@ -234,7 +234,7 @@ fn graph_pages_preserve_provider_order_and_duplicate_edges() {
             paper_info: None,
             offset: Some(4),
             next: Some(8),
-            data: vec![edge.clone(), edge],
+            data: Some(vec![edge.clone(), edge]),
         },
         4,
         4,
@@ -263,7 +263,7 @@ fn empty_pages_follow_provider_next_for_both_directions() {
             paper_info: None,
             offset: Some(9),
             next: None,
-            data: Vec::new(),
+            data: Some(Vec::new()),
         },
         9,
         2,
@@ -276,7 +276,7 @@ fn empty_pages_follow_provider_next_for_both_directions() {
             paper_info: None,
             offset: Some(9),
             next: Some(20),
-            data: Vec::new(),
+            data: Some(Vec::new()),
         },
         9,
         2,
