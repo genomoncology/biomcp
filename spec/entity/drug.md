@@ -62,7 +62,6 @@ expected = {
         "biomcp drug trials \"imatinib mesylate\"",
         "biomcp drug adverse-events \"imatinib mesylate\"",
         "biomcp search pgx -d \"imatinib mesylate\"",
-        "biomcp get gene ABL1",
     ],
     "warfarin": [
         "biomcp get drug warfarin targets",
@@ -74,7 +73,6 @@ expected = {
         "biomcp drug trials warfarin",
         "biomcp drug adverse-events warfarin",
         "biomcp search pgx -d warfarin",
-        "biomcp get gene VKORC1",
     ],
 }
 
@@ -132,7 +130,6 @@ multi_expected = [
     "biomcp drug trials \"imatinib mesylate\"",
     "biomcp drug adverse-events \"imatinib mesylate\"",
     "biomcp search pgx -d \"imatinib mesylate\"",
-    "biomcp get gene ABL1",
 ]
 reset_log()
 multi_json = cli_json("get", "drug", "imatinib", "label", "targets")
@@ -515,7 +512,7 @@ trial/adverse-event pivots that a clinician uses from the same card.
 ../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch like '## Regulatory (EU - EMA)
 ## Targets (ChEMBL / Open Targets)
 biomcp drug trials pembrolizumab'
-../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch '/PDCD1\nMore:/'
+../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch '/PDCD1 \(organism not supplied;[^\n]+\)\nMore:/'
 grep -F 'GET /chembl/mechanism.json?molecule_chembl_id=CHEMBL3137343&limit=15' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'CHEMBL3137343'
 grep -F 'POST /opentargets/api/v4/graphql' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '"chemblId":"CHEMBL3137343"'
 ```

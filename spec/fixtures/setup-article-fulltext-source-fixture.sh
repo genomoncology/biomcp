@@ -690,6 +690,9 @@ PDF_CASE_PACKAGE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
 
 
 ARTICLES = {
+    "99002273": {"pmcid": "PMC99002273", "title": "Authored malformed asset XML", "abstract": "Abstract text.", "paper_id": "parse-failure"},
+    "99002271": {"pmcid": None, "title": "Authored identity outage", "abstract": "Abstract text.", "paper_id": "identity-outage"},
+    "99002272": {"pmcid": None, "title": "Authored discovery outage", "abstract": "Abstract text.", "paper_id": "discovery-outage"},
     "30311380": {
         "pmcid": "PMC6329583",
         "title": "Gene-Specific Criteria for PTEN Variant Curation",
@@ -1577,6 +1580,26 @@ class Handler(BaseHTTPRequestHandler):
                     send_json(self, 200, europepmc_search_payload(pmid))
                     return
 
+        if decoded_path == "/PMC99002273/fullTextXML":
+            send_text(self, 200, "<article>", "application/xml")
+            return
+
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC99002273."]:
+            send_text(self, 200, "<ListBucketResult></ListBucketResult>", "application/xml")
+            return
+
+        if decoded_path == "/" and query.get("ids") == ["99002271"]:
+            send_text(self, 503, "authored identity outage", "text/plain")
+            return
+
+        if decoded_path == "/" and query.get("ids") == ["99002272"]:
+            send_json(self, 200, {"records": []})
+            return
+
+        if decoded_path == "/graph/v1/paper/PMID:99002272":
+            send_text(self, 503, "authored discovery outage", "text/plain")
+            return
+
         if (
             decoded_path == "/"
             and query.get("idtype") == ["pmid"]
@@ -1626,6 +1649,11 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/PMC123456/fullTextXML":
             send_text(self, 200, ARTICLE_XML, "application/xml")
+            return
+
+        # Authored provider failure control: no package at the other routes.
+        if decoded_path == "/PMC123458/supplementaryFiles":
+            send_text(self, 503, "authored Europe PMC outage", "text/plain")
             return
 
         if decoded_path == "/PMC123461/supplementaryFiles":

@@ -20,8 +20,21 @@ ABSTRACT = "Elderly patients (≧65 years, n=91). Control: ≥70, ≤80, <5, >2,
 LOSSY = ABSTRACT.replace("≧", " ")
 
 
-@pytest.mark.parametrize("pubmed", ["available", "empty", "unavailable"])
-def test_article_keeps_pubmed_symbols_and_pubtator_annotations(pubmed: str, tmp_path: Path) -> None:
+# Short, verbatim excerpts from PMID 29625879's FINDINGS paragraph:
+# https://pubmed.ncbi.nlm.nih.gov/29625879/ (EFetch encodes · as &#xb7;).
+MIDDLE_DOT = "8·4 months (95% CI 6·8-10·0); hazard ratio 0·97"
+
+
+@pytest.mark.parametrize("pubmed,pmid,abstract,lossy", [
+    pytest.param(state, "33311791", ABSTRACT, LOSSY, id=state)
+    for state in ("available", "empty", "unavailable")
+] + [
+    pytest.param("available", "29625879", MIDDLE_DOT, MIDDLE_DOT.replace("·", " "),
+                 id="middle-dot"),
+])
+def test_article_keeps_pubmed_symbols_and_pubtator_annotations(
+    pubmed: str, pmid: str, abstract: str, lossy: str, tmp_path: Path,
+) -> None:
     requests: list[str] = []
 
     class Handler(BaseHTTPRequestHandler):
@@ -31,16 +44,16 @@ def test_article_keeps_pubmed_symbols_and_pubtator_annotations(pubmed: str, tmp_
             if path.endswith("efetch.fcgi"):
                 if pubmed == "unavailable":
                     return self.reply(b"Unavailable", 404)
-                text = escape(ABSTRACT) if pubmed == "available" else ""
+                text = escape(abstract).replace("·", "&#xb7;") if pubmed == "available" else ""
                 return self.reply((f"<PubmedArticleSet><PubmedArticle><MedlineCitation>"
-                                   f"<PMID>33311791</PMID><Article><Abstract><AbstractText>"
+                                   f"<PMID>{pmid}</PMID><Article><Abstract><AbstractText>"
                                    f"{text}</AbstractText></Abstract></Article>"
                                    f"</MedlineCitation></PubmedArticle></PubmedArticleSet>").encode())
             if path == "/publications/export/biocjson":
                 return self.reply(json.dumps({"PubTator3": [{
-                    "pmid": 33311791, "passages": [
+                    "pmid": int(pmid), "passages": [
                         {"infons": {"type": "title"}, "text": "Source fidelity control"},
-                        {"infons": {"type": "abstract"}, "text": LOSSY,
+                        {"infons": {"type": "abstract"}, "text": lossy,
                          "annotations": [{"id": "1", "text": "cancer", "infons": {
                              "type": "Disease", "identifier": "MESH:D009369"}}]},
                     ]}]}).encode())
@@ -71,7 +84,7 @@ def test_article_keeps_pubmed_symbols_and_pubtator_annotations(pubmed: str, tmp_
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
     try:
-        result = subprocess.run([binary, "--json", "--no-cache", "get", "article", "33311791"],
+        result = subprocess.run([binary, "--json", "--no-cache", "get", "article", pmid],
                                 env=env, capture_output=True, text=True, timeout=30, check=False)
     finally:
         server.shutdown()
@@ -79,6 +92,6 @@ def test_article_keeps_pubmed_symbols_and_pubtator_annotations(pubmed: str, tmp_
         thread.join(timeout=5)
     assert result.returncode == 0, result.stderr + result.stdout
     article = json.loads(result.stdout)
-    assert article["abstract_text"] == (ABSTRACT if pubmed == "available" else LOSSY)
+    assert article["abstract_text"] == (abstract if pubmed == "available" else lossy)
     assert article["annotations"]["diseases"], article["annotations"]
     assert requests.count("/entrez/eutils/efetch.fcgi") == 1
