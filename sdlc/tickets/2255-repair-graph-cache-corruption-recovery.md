@@ -35,3 +35,9 @@ The failure occurs while asserting the first seed row, before corruption is inse
 ## Progress
 
 - 2026-10-19 started
+
+## Verification
+
+Previous-main job 2255/1792429064983-51930 on 569d9beb142c0ccb70e65d5f8618f5ee8d07a4d7 reproduced the unchanged first seed-row assertion under inherited BIOMCP_CACHE_MIN_DISK_FREE=100%, normal cache mode and a 10485760-byte size limit. The repair reuses the central scratch-cache guard for the fixture lifetime instead of copying policy. Green job 2255/1792429189362-481 passed all twelve owning graph-cache controls under identical inherited pressure and mechanical lint. Existing corruption and replacement assertions are unchanged. The committed source matches the tested manifest and patch. No provider lookup or routine/main gate was repeated by the lane.
+
+Keep: experiments/800-biomcp-2255-cache-retention — retain original-main failure, controlled previous-main red, commands, checked patch, source hashes and green raw results.
