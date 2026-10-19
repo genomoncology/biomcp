@@ -49,3 +49,7 @@ Keep: experiments/788-biomcp-2245-cgi-label — Retain cited raw proof until rel
 Source76131e979d090dd3cd2bdff4740f67efa73137bc changes the six declared files. Red1792423524173-65627 failed the missing source-note contract; green1792423552211-69922 passed all four real CLI replay cases and make lint including warnings-denied Clippy, formatting and quality checks, with zero replay misses. Empty CGI input is a clearly authored projection of the recorded BRAF reply, not a captured KRAS response. No live acquisition, data or routing change. All six final blobs and full source diff match the tested private patchSHA256 c7c28a1acffac0554e307424e0747aa9c862df82408ab58ef5ba46a0e467ce4e. Patch, comparison, hashes and raw results remain in experiments/788-biomcp-2245-cgi-label.
 
 PM authorized carrying bc2b82d3b five unchanged literature bug records with this landing. Their source work runs in separate lanes; this ticket makes no claim that those outcomes are complete.
+
+## Binary marker integration repair
+
+Merged-candidate gate2237/1792425706706-70958 failed the existing binary-dependent-module contract on tests/test_variant_cgi_source.py;1373Pythoncasespassed and10skipped. The source-qualified CLI tests passed, but the new module lacks the required needs_binary declaration for binary-free test selection. Repair only that existing claimed test path, preserve assertions, and run the owning marker contract plus Ruff through the configured build job. No new test or product rebuild is needed. Retain integration proof in788.
