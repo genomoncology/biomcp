@@ -1,0 +1,127 @@
+{
+  "@id": "http://reg.genome.network/allele/CA10594475",
+  "communityStandardTitle": [
+    "NM_007294.4(BRCA1):c.3748G>C (p.Glu1250Gln)"
+  ],
+  "externalRecords": {
+    "dbSNP": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/snp/28897686",
+        "rs": 28897686
+      }
+    ]
+  },
+  "genomicAlleles": [
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "G",
+          "end": 43091783,
+          "referenceAllele": "C",
+          "start": 43091782
+        }
+      ],
+      "hgvs": [
+        "NC_000017.11:g.43091783C>G",
+        "CM000679.2:g.43091783C>G"
+      ],
+      "referenceGenome": "GRCh38",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000065"
+    },
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "G",
+          "end": 41243800,
+          "referenceAllele": "C",
+          "start": 41243799
+        }
+      ],
+      "hgvs": [
+        "NC_000017.10:g.41243800C>G",
+        "CM000679.1:g.41243800C>G"
+      ],
+      "referenceGenome": "GRCh37",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000041"
+    },
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "G",
+          "end": 38497326,
+          "referenceAllele": "C",
+          "start": 38497325
+        }
+      ],
+      "hgvs": [
+        "NC_000017.9:g.38497326C>G"
+      ],
+      "referenceGenome": "NCBI36",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000017"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "C",
+          "end": 126201,
+          "referenceAllele": "G",
+          "start": 126200
+        }
+      ],
+      "hgvs": [
+        "NG_005905.2:g.126201G>C",
+        "LRG_292:g.126201G>C"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS000438"
+    }
+  ],
+  "transcriptAlleles": [
+    {
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000357654.9:c.3748G>C"
+          },
+          "RefSeq": {
+            "hgvs": "NM_007294.4:c.3748G>C"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000350283.3:p.Glu1250Gln"
+          },
+          "RefSeq": {
+            "hgvs": "NP_009225.1:p.Glu1250Gln"
+          }
+        }
+      }
+    },
+    {
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000357654.9:c.3748G>C"
+          },
+          "RefSeq": {
+            "hgvs": "NM_007294.4:c.3748G>C"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000350283.3:p.Glu1250Gln"
+          },
+          "RefSeq": {
+            "hgvs": "NP_009225.1:p.Glu1250Gln"
+          }
+        }
+      }
+    }
+  ]
+}

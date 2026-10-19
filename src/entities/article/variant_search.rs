@@ -35,7 +35,7 @@ use super::identity_verification::{
     PUBTATOR_EXPORT_FULLTEXT_TEMPLATE_VERSION, VariantArticleIdentity,
     VariantArticleVerificationOptions, VariantArticleVerificationPlan, canonical_content_subset,
     canonical_response_subset, combine_identities, verification_plan, verify_captured_abstract,
-    verify_ldh_annotation, verify_pubtator,
+    verify_ldh_annotation, verify_paper_anchors, verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query, europepmc_escape,
@@ -148,7 +148,7 @@ pub enum CanonicalEquivalenceStatus {
     Unavailable,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct CanonicalEquivalenceObservation {
     pub basis: String,
     pub query: String,
@@ -445,9 +445,9 @@ impl VariantArticleExecutionContext {
             .route_unit_plans
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let Some(plan) = plans.get_mut(&(route.into(), source.into())) else {
-            return;
-        };
+        let plan = plans
+            .entry((route.into(), source.into()))
+            .or_insert(RouteUnitPlan::Inapplicable);
         *plan = RouteUnitPlan::Applicable(match *plan {
             RouteUnitPlan::Applicable(units) => units.saturating_add(1),
             RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable => 1,
@@ -1651,7 +1651,7 @@ fn canonical_equivalence_queries(requested: &RequestedVariantIdentity) -> Vec<(S
     queries
 }
 
-fn canonical_observation(
+pub(crate) fn canonical_observation(
     basis: String,
     query: String,
     item: CarNormalizationItem,
@@ -4233,18 +4233,25 @@ async fn search_variant_articles_identity(
                         Ok(response) => {
                             verification_response_subsets
                                 .push(canonical_response_subset(&response));
-                            let fetched = verify_pubtator(
+                            let mut fetched = verify_pubtator(
                                 &context.requested,
                                 &pmid.to_string(),
                                 &response,
                                 false,
                             );
+                            unit.commit("ok", 1, || {});
+                            verification_incomplete |= verify_paper_anchors(
+                                &context.requested,
+                                &pmid.to_string(),
+                                &response,
+                                &canonical_equivalence,
+                                &execution,
+                                &mut fetched,
+                            )
+                            .await;
                             let identity = combine_identities(captured.clone(), fetched);
-                            unit.commit("ok", 1, || {
-                                verification_content_subsets
-                                    .push(canonical_content_subset(&identity));
-                                candidate.identity = Some(identity);
-                            });
+                            verification_content_subsets.push(canonical_content_subset(&identity));
+                            candidate.identity = Some(identity);
                             false
                         }
                         Err(error) => {

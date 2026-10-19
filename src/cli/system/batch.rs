@@ -785,9 +785,16 @@ mod tests {
             }
         };
         let mut settlement = Box::pin(settle_ordered([item]));
-        tokio::select! {
-            () = first_response.notified() => {}
-            result = &mut settlement => panic!("retrying item settled early: {result:?}"),
+        loop {
+            tokio::select! {
+                biased;
+                () = first_response.notified() => break,
+                result = &mut settlement => panic!("retrying item settled early: {result:?}"),
+                // Keep paused time from advancing request timeouts while real
+                // socket readiness is pending. Cancel as soon as the fixture
+                // signals its response, before polling more provider work.
+                _ = tokio::task::yield_now() => {}
+            }
         }
         for _ in 0..10 {
             tokio::task::yield_now().await;
