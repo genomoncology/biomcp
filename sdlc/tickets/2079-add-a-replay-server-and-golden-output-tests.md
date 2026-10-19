@@ -79,3 +79,11 @@ Published verification `2079/1792415580220-38607` matched all four tested file h
 ## Next cohesive development batch
 
 Add the five inventoried pathway command pairs together using the seven unchanged receipted source captures and the existing unchanged WikiPathways bulk response. Preserve every existing specification assertion and source receipt. One combined mutation build must make all ten JSON/Markdown checks fail through changed output; restore source and reuse a qualified normal binary for the passing golden suite. No framework change or live capture is authorized. Keep the parent open.
+
+## Pathway golden proof
+
+Source `49a2cd1d3908bd0269e597878b5bbd1b66b738d7` adds five JSON/Markdown command pairs and seven exact-request replay copies in the declared twenty files. Source captures and receipt hashes are unchanged, as are the existing WikiPathways bulk response and reader specifications. The original receipts disclose minimized provider fields; these recordings do not represent complete provider schemas.
+
+Job `2079/1792418666605-1603` generated the normal outputs without missing requests, then rejected all ten formats after one combined pathway-name mutation build. Restored source and the qualified normal CLI passed all 27 golden checks in 14.36 seconds. `make lint` passed, including all-target Clippy and the quality ratchet. All twenty published file hashes match the passing outputs. This was local replay rather than kernel network isolation.
+
+The job retains `pathway-golden-evidence.tar.gz`, SHA256 `77f01441a882b4555d64ed1d7d20ece4d75da98cb4a93eb52db34fae66eeeb4c`, beneath `job-runs/biomcp/2079/1792418666605-1603/`. Private scratch and the mutant binary were removed; the shared qualified normal CLI remains available to the consumer lane. Fresh review accepted the unchanged source and verified the archive. The parent stays open for remaining contracted command coverage.
