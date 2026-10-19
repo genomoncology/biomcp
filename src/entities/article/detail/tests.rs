@@ -25,8 +25,8 @@ async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
     })
     .await;
     let cache = crate::test_support::TempDirGuard::new("variant-enrichment-partial-commit");
-    let mut env = TestEnv::new();
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let mut env = TestEnv::scratch_cache_only();
+    env.set_cache_root(cache.path());
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
     env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
@@ -79,8 +79,8 @@ async fn all_digit_pmid_past_u32_reports_not_found_with_the_full_identifier() {
     })
     .await;
     let cache = crate::test_support::TempDirGuard::new("article-pmid-past-u32");
-    let mut env = TestEnv::new();
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let mut env = TestEnv::scratch_cache_only();
+    env.set_cache_root(cache.path());
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
     env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);

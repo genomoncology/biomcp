@@ -137,10 +137,9 @@ async fn fda_orphan_caps_forms_concurrency_and_off_bypasses_cache() {
     let (base, state, server) =
         orphan_server(StatusCode::OK, std::time::Duration::from_millis(20)).await;
     let root = TempDirGuard::new("fda-orphan-off");
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-    ]);
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
+    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
     let result = super::super::fda_orphan::fetch_with_mode(
         (0..8).map(|index| format!("candidate {index}")).collect(),
         super::super::fda_orphan::SourceCacheMode::Off,
@@ -169,9 +168,10 @@ async fn fda_orphan_caps_forms_concurrency_and_off_bypasses_cache() {
 async fn fda_orphan_normal_cache_is_fresh_then_refreshes_when_expired() {
     let (base, state, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
     let root = TempDirGuard::new("fda-orphan-normal");
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
     let _env = EnvRestore::set(&[
         ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
         ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
     ]);
     let candidate = "eflornithine hydrochloride";
@@ -241,10 +241,9 @@ async fn fda_orphan_form_cache_is_independent_of_prior_candidate_set() {
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let base = format!("http://{address}");
     let root = TempDirGuard::new("fda-orphan-candidate-independent");
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-    ]);
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
+    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
     let first = super::super::fda_orphan::fetch_with_mode(
         vec!["eflornithine hydrochloride".into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
@@ -279,10 +278,9 @@ async fn fda_orphan_form_cache_is_independent_of_prior_candidate_set() {
 async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
     let root = TempDirGuard::new("fda-orphan-infinite");
     let (base, _state, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-    ]);
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
+    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
     let candidate = "eflornithine hydrochloride";
     let first = super::super::fda_orphan::fetch_with_mode(
         vec![candidate.into()],
@@ -301,10 +299,9 @@ async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
     let bad_root = TempDirGuard::new("fda-orphan-http-failure");
     let (bad_base, _, bad_server) =
         orphan_server(StatusCode::INTERNAL_SERVER_ERROR, std::time::Duration::ZERO).await;
-    let _bad_env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&bad_base)),
-        ("BIOMCP_CACHE_DIR", Some(bad_root.path().to_str().unwrap())),
-    ]);
+    let mut bad_cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    bad_cache_policy.set_cache_root(bad_root.path());
+    let _bad_env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&bad_base))]);
     let failed = super::super::fda_orphan::fetch_with_mode(
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
@@ -329,8 +326,9 @@ async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
 #[serial_test::serial(source_env)]
 async fn parallel_sources_share_one_sqlite_cache_construction() {
     let root = TempDirGuard::new("parallel-shared-cache");
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
     let _env = EnvRestore::set(&[
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
         ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
         ("BIOMCP_CACHE_MODE", None),
     ]);
@@ -386,8 +384,9 @@ async fn parallel_sources_share_one_sqlite_cache_construction() {
 async fn a_later_invocation_retries_cache_setup_after_a_failed_expired_invocation() {
     let root = TempDirGuard::new("retry-shared-cache-setup");
     let cache_root = root.path().join("cache");
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(cache_root.to_str().unwrap());
     let _env = EnvRestore::set(&[
-        ("BIOMCP_CACHE_DIR", Some(cache_root.to_str().unwrap())),
         ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
         ("BIOMCP_CACHE_MODE", None),
     ]);

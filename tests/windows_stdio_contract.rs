@@ -158,8 +158,8 @@ fn isolated_command(cache: &Path, base: &str) -> Command {
             command.env_remove(key);
         }
     }
+    command.envs(biomcp_mcp_contract_client::child_cache_env(cache));
     command.envs([
-        ("BIOMCP_CACHE_DIR", cache.as_os_str()),
         ("HOME", cache.as_os_str()),
         ("USERPROFILE", cache.as_os_str()),
         ("APPDATA", cache.as_os_str()),
