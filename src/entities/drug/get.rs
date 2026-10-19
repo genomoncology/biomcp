@@ -1113,6 +1113,16 @@ async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpErr
     }
 
     let mut selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    if let Some((candidate, candidate_resp)) = super::development_codes::resolve(
+        name,
+        &transform::drug::merge_mychem_hits(&selected, &lookup_name),
+    )
+    .await?
+    {
+        lookup_name = candidate;
+        resp = candidate_resp;
+        selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    }
     if selected.is_empty() {
         // The MyChem full-text query matched only other drugs' records. The
         // query may still be a real brand whose identity openFDA knows, so
