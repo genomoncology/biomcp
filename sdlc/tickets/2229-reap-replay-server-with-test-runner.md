@@ -18,3 +18,7 @@ A replay server exits when the test run that started it dies, including a killed
 - Proof: reproduce an orphan on current main with an isolated runner; kill that runner midway through a replay request and verify that its server exits and its port closes. Cover normal teardown and the existing timeout/failure path without introducing a second replay framework.
 - Keeps: replay routes, captures, request matching and product behavior remain unchanged.
 - Order: land before 2111 moves more consumers. The PM approved this bounded prevention ticket after the second recurrence.
+
+## Progress
+
+- 2026-10-19 started
