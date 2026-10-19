@@ -10,15 +10,17 @@ Milestone: 0.9.4
 
 ## Outcome
 
-Recorded article fixture scenarios have named owners and identifiers, so a fixture repair cannot silently change an unrelated scenario's provider replies.
+The citation forced-failure scenario owns a dedicated named synthetic PMCID and missing-JATS reply. Changing the resolver-order scenario's reply must leave the citation response unchanged.
 
 - Starts from: the article fixtures and test consumers involved in the 2131/2150 regressions; inventory actual shared identifiers before choosing a migration batch.
 - Keeps: source facts, provider behavior, product identity rules and existing assertion strength.
 - Changes: `spec/fixtures/setup-article-fulltext-source-fixture.sh` `CHANGELOG.md` and this ticket for the demonstrated collision. No Rust consumer changes or shared scenario framework are needed for this batch.
 - Proof: a recorded outside-in case demonstrates the inventoried collision before migration, then unrelated named scenarios continue to return their own replies when one is changed. Run affected cases through the build job.
-- Defers: implementation until the next release. A narrow fixture repair needed for a current-release product fix stays in that product ticket; this ticket does not block 0.9.3.
+- Defers: a broad identifier registry and unrelated fixture restructuring. This ticket closes after fixing the demonstrated collision.
 
 PM decision: 2026-10-17. Ian deferred the broad scenario refactor to keep current-release prevention fixes small.
+
+PM decision: 2026-10-19. Narrow this ticket to the demonstrated shared-PMCID collision and close it after the fix. Add a duplicate-identifier assertion only if it fits the existing loader in a few lines; no new machinery. The fix needs no loader registry.
 
 ## Progress
 
@@ -36,3 +38,7 @@ Smallest fix: give the citation forced-failure scenario a named dedicated synthe
 
 The inventory found the older supplement/PDF identifiers already separate. Repeated identifiers in separate fixture instances do not establish a collision. Neither colliding scenario has a consumer in rmcp_client_contract.rs, so do not edit it. Record any remaining demonstrated collision before expanding this batch.
 
+
+## Focused proof
+
+Source f7b3e9001f7ee377da65528705f845c3302e9ffb changes only the declared fixture and changelog. Build job `2163/1792413642942-12763` passed the same isolated reply mutation before and after the fix: the resolver changes from empty to data, while the repaired citation remains fulltext_unavailable with its complete response unchanged. Affected existing citation context, resolver absence, readable output, PDF absence and XML outage assertions passed. Bash syntax, repository ShellCheck and whitespace checks passed. The qualified existing CLI was reused; no build ran. Preliminary jobs stopped during lint setup before behavioral proof. Temporary fixtures were cleaned.
