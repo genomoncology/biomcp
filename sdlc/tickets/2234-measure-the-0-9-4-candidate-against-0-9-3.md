@@ -43,3 +43,5 @@ The source-frozen candidate is pushed main 51f5e03b218c87cedc82bd9e1a67552bd5ab9
 - 2026-10-19 started
 - 2026-10-19 next: Preparation identified the unchanged existing helper (SHA256 9c427657dcd0c79a1982aae3f692433a88a9b273f131a4ca62b86962aa4bc9c7) and compatible v0.9.3 gates. No builds or samples ran. Await frozen candidate; collect paired rows with direct main-gate and populated-cache disk commands, retaining new raw evidence durably. Historical 2214 archives are unavailable at recorded paths; retention issue sent to PM.
 - 2026-10-19 next: Frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 passed full main and enabled live replay. Final same-host paired collection against v0.9.3 is authorized and preparing with the unchanged helper.
+
+Keep: experiments/809-biomcp-2234-paired — retain every raw sample, failed attempt, continuation, cache body/accounting and method input through review and release consumers.
