@@ -105,14 +105,32 @@ async fn exact_resolution_checks_all_four_pages_before_fetching_detail() {
     assert!(requests[4].starts_with("GET /disease/"));
 }
 
-#[tokio::test(start_paused = true)]
+#[tokio::test]
 async fn exact_resolution_deadline_cancels_a_provider_that_never_responds() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let client =
         MyDiseaseClient::new_for_test(format!("http://{}", listener.local_addr().unwrap()))
             .unwrap();
-    let task = tokio::spawn(async move { resolve_exact_disease_terms(&client, "melanoma").await });
-    let (_stream, _) = listener.accept().await.unwrap();
+    let mut task =
+        tokio::spawn(async move { resolve_exact_disease_terms(&client, "melanoma").await });
+    // Paused time can expire the request before the OS reports socket readiness,
+    // leaving a bare accept waiting forever. Synchronize on a real request first.
+    let (mut stream, _) = tokio::select! {
+        result = &mut task => panic!("resolution ended before provider connection: {result:?}"),
+        accepted = listener.accept() => accepted.unwrap(),
+    };
+    use tokio::io::AsyncReadExt;
+    let mut request = [0; 4096];
+    let received = tokio::select! {
+        result = &mut task => panic!("resolution ended before provider request: {result:?}"),
+        received = stream.read(&mut request) => received.unwrap(),
+    };
+    assert!(
+        received > 0,
+        "provider must receive the request before time advances"
+    );
+    tokio::time::pause();
+    let advanced_from = tokio::time::Instant::now();
     tokio::time::advance(std::time::Duration::from_secs(16)).await;
     let error = task
         .await
@@ -121,4 +139,8 @@ async fn exact_resolution_deadline_cancels_a_provider_that_never_responds() {
     assert!(
         matches!(error, BioMcpError::SourceUnavailable { source_name, .. } if source_name == "MyDisease.info")
     );
+    assert_eq!(advanced_from.elapsed(), std::time::Duration::from_secs(16));
+    // Dropping the timed-out request must also close the provider connection.
+    let mut remaining = Vec::new();
+    stream.read_to_end(&mut remaining).await.unwrap();
 }
