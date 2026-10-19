@@ -12,6 +12,8 @@ Reviews: revision ff159bb, accept
 
 Reviews: revision 323c004, accept
 
+Reviews: revision 4a67dce, accept
+
 ## Outcome
 
 `get article` full text for a preprint DOI returns a structured answer, the text or a named reason, and never panics. A batch keeps every unrelated item when one fails.
