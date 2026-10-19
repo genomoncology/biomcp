@@ -34,3 +34,9 @@ A docs check or test lists every reason code in the code and finds each document
 ## Progress
 
 - 2026-10-19 started
+
+## Verification
+
+The updated guide follows the actual full-text ladder, including the accepted preprint JATS route. Changed examples are explicitly live; no provider lookup was repeated. Job 2253/1792427414923-33381 passed the owning documentation contracts, strict documentation build, formatting checks and whitespace checks. The published product patch matches the checked patch after the ticket-only progress commit was adopted.
+
+Keep: experiments/797-biomcp-2253-fulltext-docs — retain the checked patch, command and raw documentation-check output.
