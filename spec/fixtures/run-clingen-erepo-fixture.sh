@@ -131,7 +131,7 @@ batch="$($binary --json variant erepo --input "$tmp/caids.json")"
 gene="$($binary --json variant erepo --gene PTEN --limit 25 --offset 0)"
 gene_second="$($binary --json variant erepo --gene PTEN --limit 25 --offset 25)"
 if "$binary" --json variant erepo CA-MULTI --detail >/dev/null 2>&1; then ambiguous=false; else ambiguous=true; fi
-BINARY="$binary" MCP_FILE="$tmp/mcp.json" uv run --no-sync python - <<'PY'
+BINARY="$binary" MCP_FILE="$tmp/mcp.json" CAIDS_FILE="$tmp/caids.json" REQUESTS="$tmp/requests.jsonl" uv run --no-sync python - <<'PY'
 import json, os, subprocess
 proc = subprocess.Popen([os.environ["BINARY"], "mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
 def request(value):
@@ -143,6 +143,32 @@ result = request({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":
 open(os.environ["MCP_FILE"], "w").write(result["result"]["content"][0]["text"])
 result = request({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"variant_erepo","arguments":{"gene":"PTEN","limit":25}}})
 open(os.environ["MCP_FILE"] + ".gene", "w").write(result["result"]["content"][0]["text"])
+# Explicit default-valued paging is still a supplied argument. Neither
+# transport may silently ignore it for singular or batch allele lookups.
+from pathlib import Path
+before = Path(os.environ["REQUESTS"]).read_text()
+for paging in ({"limit": 1}, {"limit": 25}, {"offset": 5}, {"offset": 0}, {"limit": 1, "offset": 5}):
+    for selector in ({"caid": "CA015543"}, {"caids": ["CA015543", "CA001621"]}):
+        args = {**selector, **paging}
+        result = request({"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "variant_erepo", "arguments": args}})["result"]
+        assert result.get("isError"), args
+        assert "limit and offset require gene mode" in result["content"][0]["text"], result
+        cli = ["CA015543"] if "caid" in selector else ["--input", os.environ["CAIDS_FILE"]]
+        for key, value in paging.items():
+            cli.extend(["--" + key, str(value)])
+        result = subprocess.run([os.environ["BINARY"], "--json", "variant", "erepo", *cli], capture_output=True, text=True)
+        assert result.returncode != 0, cli
+        assert "limit and offset require gene mode" in result.stdout + result.stderr, result
+assert Path(os.environ["REQUESTS"]).read_text() == before, "rejected paging must not call the provider"
+result = request({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "variant_erepo", "arguments": {"caid": "CA015543"}}})["result"]
+assert not result.get("isError"), result
+assert json.loads(result["content"][0]["text"])["items"][0]["caid"] == "CA015543"
+# Omitted gene paging must keep the existing defaults on both transports.
+expected = json.loads(open(os.environ["MCP_FILE"] + ".gene").read())
+result = request({"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "variant_erepo", "arguments": {"gene": "PTEN"}}})["result"]
+assert json.loads(result["content"][0]["text"]) == expected
+result = subprocess.run([os.environ["BINARY"], "--json", "variant", "erepo", "--gene", "PTEN"], capture_output=True, text=True, check=True)
+assert json.loads(result.stdout) == expected
 proc.terminate(); proc.wait()
 PY
 mcp="$(<"$tmp/mcp.json")"

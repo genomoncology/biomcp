@@ -185,11 +185,11 @@ Note: Batch input accepts 1-50 CAids and returns summaries only. Gene search is 
         #[arg(long, conflicts_with_all = ["detail", "assertion", "version"])]
         gene: Option<String>,
         /// Maximum gene-search results, 1-100 (default: 25)
-        #[arg(long, default_value = "25", value_parser = parse_erepo_limit)]
-        limit: usize,
-        /// Skip the first N gene-search results
-        #[arg(long, default_value = "0")]
-        offset: usize,
+        #[arg(long, value_parser = parse_erepo_limit)]
+        limit: Option<usize>,
+        /// Skip the first N gene-search results (default: 0)
+        #[arg(long)]
+        offset: Option<usize>,
         /// Fetch one selected versioned SEPIO detail document
         #[arg(long)]
         detail: bool,

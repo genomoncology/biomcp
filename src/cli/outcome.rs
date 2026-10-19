@@ -571,6 +571,16 @@ async fn run_outcome_inner(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome
     }
 }
 
+async fn run_outcome_with_get_notes(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome> {
+    let get_json = matches!(&cli.command, Commands::Get { .. })
+        && (cli.json || command_requests_json(&cli.command));
+    let mut outcome = Box::pin(run_outcome_inner(cli, mcp)).await?;
+    if get_json && outcome.exit_code == 0 && outcome.bytes.is_none() {
+        super::shared::append_get_json_stale_notes(&mut outcome)?;
+    }
+    Ok(outcome)
+}
+
 async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome> {
     let json = cli.json || command_requests_json(&cli.command);
     let trusted_terminal_chart = is_charted_mcp_study_command(&cli).unwrap_or(false);
@@ -578,9 +588,9 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
     // The stale-cache scope wraps the command so every send inside it can
     // record what it served stale. The markdown note is
     // appended inside the scope, before sanitization; JSON bodies get
-    // their notes through the `_meta.notes` channel at payload build time.
+    // their notes through `_meta.notes` at payload build or get finalization.
     let command = crate::sources::with_stale_serve_notes(async {
-        let mut outcome = Box::pin(run_outcome_inner(cli, false)).await?;
+        let mut outcome = Box::pin(run_outcome_with_get_notes(cli, false)).await?;
         if !json && outcome.bytes.is_none() && !trusted_terminal_chart {
             crate::sources::append_stale_serve_notes_to_text(&mut outcome.text);
         }
@@ -629,13 +639,13 @@ async fn run_outcome_with_worker_stack(
                         // MCP path: the helper scopes the
                         // command with the stale-serve task-local (JSON
                         // bodies drain notes into _meta.notes inside
-                        // run_outcome_inner) and appends the text note
+                        // run_outcome_with_get_notes) and appends the text note
                         // before shell.rs redacts MCP output.
                         let wants_text_note = !(cli.json
                             || command_requests_json(&cli.command)
                             || is_charted_mcp_study_command(&cli).unwrap_or(false));
                         crate::sources::run_command_with_stale_serve_notes(
-                            Box::pin(run_outcome_inner(cli, true)),
+                            Box::pin(run_outcome_with_get_notes(cli, true)),
                             wants_text_note,
                         )
                         .await

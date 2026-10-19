@@ -487,3 +487,6 @@ pub(super) async fn try_alias_fallback_outcome(
 
 mod search_payloads;
 pub(in crate::cli) use self::search_payloads::*;
+
+mod get_notes;
+pub(in crate::cli) use get_notes::append_get_json_stale_notes;

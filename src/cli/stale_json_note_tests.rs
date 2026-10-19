@@ -2,7 +2,7 @@
 //! What this file proves, exactly: the note reaches article search
 //! JSON and search-all JSON through `_meta.notes` (parsed, not
 //! grepped); the ClinGen prefetch inside `get gene` carries a stale
-//! serve's note to the markdown card. Day-cached GWAS replies remain
+//! serve's note to the markdown card and CLI/MCP get JSON. Day-cached GWAS replies remain
 //! free of stale notes inside the day window even when the provider's
 //! shorter freshness window has expired.
 //! Fixtures answer with a one-second freshness window, then stop.
@@ -535,4 +535,73 @@ fn search_all_json_body_carries_notes_only_when_present() {
     let without =
         crate::cli::search_all::json_body(&results, false, Vec::new()).expect("json body builds");
     assert!(without.get("_meta").is_none());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn stale_get_json_reports_cache_notes_without_changing_the_fresh_card() {
+    let (base, server) = stale_note_routes_server(vec![
+        ("/query".to_string(), MYGENE_BODY, 3600),
+        ("/api/genes/look/BRAF".to_string(), CLINGEN_LOOKUP_BODY, 1),
+        (
+            "/kb/gene-validity/download".to_string(),
+            CLINGEN_VALIDITY_BODY,
+            1,
+        ),
+        (
+            "/kb/gene-dosage/download".to_string(),
+            CLINGEN_DOSAGE_BODY,
+            1,
+        ),
+    ])
+    .await;
+    let _env = StaleNoteEnv::new(&base, &["BIOMCP_MYGENE_BASE", "BIOMCP_CLINGEN_BASE"]);
+    let args = ["--json", "get", "gene", "BRAF", "clingen"];
+    let fresh = run(&args).await;
+    let fresh_value: serde_json::Value = serde_json::from_str(&fresh).expect("fresh JSON");
+    assert!(fresh_value["_meta"].get("notes").is_none(), "{fresh}");
+    assert_eq!(
+        run(&args).await,
+        fresh,
+        "fresh cache preserves the JSON bytes"
+    );
+
+    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: bounded freshness-window wait
+    server.abort();
+    let stale = run(&args).await;
+    assert!(
+        meta_notes(&stale)
+            .iter()
+            .any(|note| { note.contains("older than the provider's freshness window") }),
+        "stale get JSON must carry the cache note: {stale}"
+    );
+    let mut stale_value: serde_json::Value = serde_json::from_str(&stale).expect("stale JSON");
+    stale_value["_meta"]
+        .as_object_mut()
+        .expect("metadata")
+        .remove("notes");
+    assert_eq!(stale_value, fresh_value, "only cache notes change");
+
+    let mcp_args = std::iter::once("biomcp")
+        .chain(args)
+        .map(str::to_string)
+        .collect();
+    let mcp = crate::cli::execute_mcp(mcp_args)
+        .await
+        .expect("MCP JSON get");
+    assert!(!meta_notes(&mcp.text).is_empty(), "{}", mcp.text);
+    assert_eq!(mcp.metadata_json.as_deref(), Some(mcp.text.as_str()));
+    let markdown_args = ["biomcp", "get", "gene", "BRAF", "clingen"]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    let markdown = crate::cli::execute_mcp(markdown_args)
+        .await
+        .expect("MCP Markdown get");
+    assert!(markdown.text.contains("Cache note:"), "{}", markdown.text);
+    assert!(
+        markdown
+            .text
+            .contains("older than the provider's freshness window")
+    );
 }

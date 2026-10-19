@@ -1,0 +1,14 @@
+{
+  "name": "pubtator-42891779",
+  "url": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=42891779",
+  "method": "GET",
+  "elapsed_s": 0.150708167,
+  "curl_exit": 0,
+  "response": [
+    "400",
+    "application/json"
+  ],
+  "stderr": "",
+  "body_sha256": "922593f698154883679e4a5f7e7d10c699238d74cb3206e18c47f421588816ba",
+  "body_bytes": 44
+}
