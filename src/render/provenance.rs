@@ -1022,6 +1022,8 @@ mod tests {
             hgvs_p: None,
             legacy_name: None,
             hgvs_c: None,
+            matched_transcript: None,
+            matched_hgvs_c: None,
             protein_numbering_note: None,
             transcript: None,
             rsid: Some("rs7903146".to_string()),

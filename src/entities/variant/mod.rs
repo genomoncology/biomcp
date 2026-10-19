@@ -153,6 +153,11 @@ pub struct Variant {
     pub hgvs_c: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transcript: Option<String>,
+    /// Exact requested transcript and coding spelling confirmed by lookup.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub matched_transcript: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub matched_hgvs_c: Option<String>,
     /// One line naming the transcript whose numbering the headline protein
     /// change uses, when a gene+protein query resolved to a change that does
     /// not spell the request.

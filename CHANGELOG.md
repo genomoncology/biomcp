@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Resolve versioned transcript variant inputs through source-backed DNA coordinates with their assembly, and name the matched transcript while preserving the displayed numbering. Refuse unverified transcript matches explicitly. (1260)
+
 - Store reusable responses, article text, citation evidence and provider captures in one indexed SQLite cache shared by the CLI and MCP server. Preserve readable saved article files and exports. Older binaries keep writing their separate stores until upgraded; `biomcp cache clean-legacy` removes those stores explicitly while preserving saved downloads. (2134)
 
 - Verify explicit versioned transcript substitutions in article prose when ClinGen resolves the paper anchor to the requested allele, retaining typed gene linkage and resolution provenance. (2226)

@@ -89,6 +89,8 @@ pub fn variant_markdown(
         legacy_name => &variant.legacy_name,
         hgvs_c => &variant.hgvs_c,
         transcript => &variant.transcript,
+        matched_transcript => &variant.matched_transcript,
+        matched_hgvs_c => &variant.matched_hgvs_c,
         protein_numbering_note => &variant.protein_numbering_note,
         consequence => &variant.consequence,
         rsid => &variant.rsid,
