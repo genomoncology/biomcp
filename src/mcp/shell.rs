@@ -1514,6 +1514,7 @@ impl BioMcpServer {
             match input.capture_id {
                 Some(capture_id) => {
                     crate::entities::gene::cspec::files_capture(&capture_id, &input.gene)
+                        .await
                         .and_then(|response| crate::render::json::to_pretty(&response))
                 }
                 None => crate::entities::gene::cspec::retrieve_files(
@@ -1531,6 +1532,7 @@ impl BioMcpServer {
                     input.offset,
                     input.limit,
                 )
+                .await
                 .and_then(|response| crate::render::json::to_pretty(&response)),
                 None => crate::entities::gene::cspec::retrieve(
                     &input.gene,

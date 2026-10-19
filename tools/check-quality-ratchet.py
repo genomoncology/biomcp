@@ -2006,7 +2006,12 @@ def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
         return _rust_production_text(path.read_text(encoding="utf-8"))
 
     shared = production_text("mod.rs")
-    migration = shared.find("ensure_body_limited_cache_epoch")
+    database_path = root_dir / "src/cache/sqlite.rs"
+    database = _rust_production_text(database_path.read_text(encoding="utf-8")) if database_path.is_file() else ""
+    isolated_database = (
+        'DATABASE_NAME: &str = "biomcp.db"' in database
+        and "config.cache_root.join(crate::cache::sqlite::DATABASE_NAME)" in shared
+    )
     client = shared.find("ClientBuilder::new(base_client)")
     cache_attachments = (
         shared.find(".with(Cache(", max(client, 0)),
@@ -2014,11 +2019,11 @@ def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
     )
     cache = min((offset for offset in cache_attachments if offset >= 0), default=-1)
     limiter = shared.find(".with(ResponseBodyLimitMiddleware", max(cache, 0))
-    if migration < 0 or client < 0 or cache < 0 or migration > client or client > cache:
+    if not isolated_database:
         findings.append(
-            "src/sources/mod.rs: legacy HTTP cache epoch must be enforced before shared cache construction"
+            "src/sources/mod.rs: HTTP cache must use the isolated SQLite database"
         )
-    if cache < 0 or limiter < 0 or limiter < cache:
+    if client < 0 or cache < client or limiter < cache:
         findings.append(
             "src/sources/mod.rs: response body limiter must remain inside the cache middleware"
         )

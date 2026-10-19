@@ -1,10 +1,10 @@
-//! The citation-evidence sidecar under the managed cache root.
+//! Citation-evidence rows in the shared managed database.
 //!
 //! Every test runs against the loopback fixture with a fresh `TempDirGuard`
-//! cache root. A second call deletes `<cache>/http` so a warm HTTP cache can
-//! never explain a suppressed provider request: only the sidecar can.
+//! cache root. A second call deletes only HTTP rows so a warm HTTP cache
+//! never explains a suppressed provider request: only citation rows can.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use super::super::super::test_support::*;
@@ -78,17 +78,37 @@ fn edge(contexts: Vec<&'static str>) -> Vec<(String, Vec<&'static str>)> {
     vec![(CITED_PID.to_string(), contexts)]
 }
 
-fn sidecar_records(cache_root: &Path) -> Vec<PathBuf> {
-    let mut paths = std::fs::read_dir(cache_root.join("citation-evidence").join("v1"))
-        .map(|entries| {
-            entries
-                .filter_map(|entry| entry.ok())
-                .map(|entry| entry.path())
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    paths.sort();
-    paths
+fn citation_records(cache_root: &Path) -> Vec<String> {
+    let path = cache_root.join(crate::cache::sqlite::DATABASE_NAME);
+    if !path.exists() {
+        return Vec::new();
+    }
+    let db = rusqlite::Connection::open(path).unwrap();
+    let mut statement = db
+        .prepare("SELECT key FROM entries WHERE namespace='citation' ORDER BY key")
+        .unwrap();
+    statement
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap()
+}
+
+fn read_citation_record(root: &Path, key: &str) -> Vec<u8> {
+    crate::cache::sqlite::Store::open(root)
+        .unwrap()
+        .get("citation", key)
+        .unwrap()
+        .unwrap()
+        .body
+}
+
+fn write_citation_record(root: &Path, key: &str, body: &[u8]) {
+    // Preserve the storage integrity envelope while mutating the record schema.
+    crate::cache::sqlite::Store::open(root)
+        .unwrap()
+        .put("citation", key, key, &[], body, None)
+        .unwrap();
 }
 
 fn json(result: &ArticleCitationEvidenceResult) -> String {
@@ -218,9 +238,15 @@ impl FixtureEnv {
         self.log.lock().unwrap().clear();
     }
 
-    /// Removes the HTTP cache so only the sidecar can suppress a request.
+    /// Remove HTTP rows so only citation evidence can suppress a request.
     fn cold_http_cache(&self) {
-        let _ = std::fs::remove_dir_all(self.cache.path().join("http"));
+        let path = self.cache.path().join(crate::cache::sqlite::DATABASE_NAME);
+        if path.exists() {
+            rusqlite::Connection::open(path)
+                .unwrap()
+                .execute("DELETE FROM entries WHERE namespace='http'", [])
+                .unwrap();
+        }
     }
 }
 
@@ -305,7 +331,7 @@ async fn an_expired_entry_refetches() {
     )
     .await
     .expect("first call");
-    assert_eq!(sidecar_records(fx.cache.path()).len(), 1);
+    assert_eq!(citation_records(fx.cache.path()).len(), 1);
 
     fx.cold_http_cache();
     fx.clear_log();
@@ -342,7 +368,7 @@ async fn a_bypassed_cache_reads_and_writes_nothing() {
     .await
     .expect("bypassed call");
     assert_eq!(first.status, CitationEvidenceStatus::ContextFromProvider);
-    assert!(sidecar_records(fx.cache.path()).is_empty());
+    assert!(citation_records(fx.cache.path()).is_empty());
 
     fx.cold_http_cache();
     fx.clear_log();
@@ -358,7 +384,7 @@ async fn a_bypassed_cache_reads_and_writes_nothing() {
     .expect("second bypassed call");
     let logged = fx.logged();
     assert!(logged.contains("s2:graph"), "{logged}");
-    assert!(sidecar_records(fx.cache.path()).is_empty());
+    assert!(citation_records(fx.cache.path()).is_empty());
 }
 
 #[tokio::test]
@@ -378,7 +404,7 @@ async fn infinite_mode_serves_an_expired_entry() {
     )
     .await
     .expect("first call");
-    assert_eq!(sidecar_records(fx.cache.path()).len(), 1);
+    assert_eq!(citation_records(fx.cache.path()).len(), 1);
 
     // The mode takes effect through the test-only guard after the first
     // call, so the once-read process mode is already resolved and only the
@@ -421,7 +447,7 @@ async fn an_off_mode_guard_does_not_latch_the_bypass_for_later_reads() {
         .expect("bypassed call");
         assert_eq!(first.status, CitationEvidenceStatus::ContextFromProvider);
         assert!(
-            sidecar_records(fx.cache.path()).is_empty(),
+            citation_records(fx.cache.path()).is_empty(),
             "off mode must not write the sidecar"
         );
         first
@@ -437,7 +463,7 @@ async fn an_off_mode_guard_does_not_latch_the_bypass_for_later_reads() {
     .await
     .expect("post-guard call");
     assert_eq!(json(&second), json(&first));
-    assert_eq!(sidecar_records(fx.cache.path()).len(), 1);
+    assert_eq!(citation_records(fx.cache.path()).len(), 1);
     let logged = fx.logged();
     assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
     assert!(logged.contains("s2:graph"), "{logged}");
@@ -476,9 +502,9 @@ async fn a_corrupt_record_is_a_miss_and_is_replaced() {
     .await
     .expect("first call");
 
-    let records = sidecar_records(fx.cache.path());
+    let records = citation_records(fx.cache.path());
     assert_eq!(records.len(), 1);
-    std::fs::write(&records[0], b"{not json").expect("corrupt the record");
+    write_citation_record(fx.cache.path(), &records[0], b"{not json");
 
     fx.cold_http_cache();
     fx.clear_log();
@@ -492,7 +518,7 @@ async fn a_corrupt_record_is_a_miss_and_is_replaced() {
     assert_eq!(second.status, CitationEvidenceStatus::ContextFromProvider);
     let logged = fx.logged();
     assert!(logged.contains("s2:graph"), "{logged}");
-    let replaced = std::fs::read_to_string(&records[0]).expect("read replaced record");
+    let replaced = String::from_utf8(read_citation_record(fx.cache.path(), &records[0])).unwrap();
     assert!(replaced.contains("\"schema_version\":1"), "{replaced}");
 }
 
@@ -513,17 +539,17 @@ async fn a_future_schema_version_is_a_miss() {
     .await
     .expect("first call");
 
-    let records = sidecar_records(fx.cache.path());
+    let records = citation_records(fx.cache.path());
     assert_eq!(records.len(), 1);
     let mut record: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(&records[0]).expect("read record"))
+        serde_json::from_slice(&read_citation_record(fx.cache.path(), &records[0]))
             .expect("parse record");
     record["schema_version"] = serde_json::json!(2);
-    std::fs::write(
+    write_citation_record(
+        fx.cache.path(),
         &records[0],
-        serde_json::to_vec(&record).expect("encode record"),
-    )
-    .expect("rewrite record");
+        &serde_json::to_vec(&record).expect("encode record"),
+    );
 
     fx.cold_http_cache();
     fx.clear_log();
@@ -556,9 +582,9 @@ async fn a_non_evidence_status_is_never_cached() {
     .expect("fulltext unavailable outcome");
     assert_eq!(result.status, CitationEvidenceStatus::FulltextUnavailable);
     assert!(
-        sidecar_records(fx.cache.path()).is_empty(),
+        citation_records(fx.cache.path()).is_empty(),
         "{:?}",
-        sidecar_records(fx.cache.path())
+        citation_records(fx.cache.path())
     );
     let logged = fx.logged();
     assert!(logged.contains("fulltext:xml"), "{logged}");
@@ -640,10 +666,8 @@ async fn a_write_failure_leaves_the_outcome_unchanged() {
         Some(JATS_LINKED),
     )
     .await;
-    // A regular file where the sidecar directory belongs fails both the read
-    // and the write.
-    let blocked = fx.cache.path().join("citation-evidence");
-    std::fs::write(&blocked, b"not a directory").expect("block the sidecar directory");
+    let store = crate::cache::sqlite::Store::open(fx.cache.path()).unwrap();
+    store.connection().execute_batch("CREATE TRIGGER refuse_citation BEFORE INSERT ON entries WHEN NEW.namespace='citation' BEGIN SELECT RAISE(ABORT,'fixture write failure'); END;").unwrap();
 
     let result = with_test_client(
         fx.client(),
@@ -652,9 +676,5 @@ async fn a_write_failure_leaves_the_outcome_unchanged() {
     .await
     .expect("outcome survives the write failure");
     assert_eq!(result.status, CitationEvidenceStatus::ContextFromProvider);
-    assert!(blocked.is_file());
-    assert_eq!(
-        std::fs::read(&blocked).expect("read the blocking file"),
-        b"not a directory"
-    );
+    assert!(citation_records(fx.cache.path()).is_empty());
 }

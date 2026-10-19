@@ -40,29 +40,18 @@ internal fixture overrides and release/install variables.
 | `cache.toml` | Persistent cache defaults under the resolved config root |
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
 
-Cache runtime precedence is environment, then `cache.toml`, then built-in default.
-The resolved root contains the managed HTTP response cache in `http/`, the
-ten-minute article-search loop-breaker records in `sessions/`, and the
-thirty-day directed citation-evidence sidecar in `citation-evidence/`. Cache reads,
-writes, statistics, and maintenance physically remove entries older than
-`max_age_secs`; opening the session store removes expired sessions. The
-automatic start-up clean runs at most once a day, and `biomcp cache clean`
-runs it now; `BIOMCP_CACHE_MODE=off` skips the start-up clean entirely.
+Cache runtime precedence is environment, then `cache.toml`, then the built-in default. The cache root contains `biomcp.db`, its SQLite journal files, and `blobs/` for large response bodies. HTTP responses, reusable article full text, directed citation evidence and provider captures share this indexed database. CLI processes and MCP servers can use the same cache root concurrently. Article sessions and asset manifests remain in `sessions/`.
 
-BioMCP 0.9.2 does not update the saved HTTP cache byte total. Sharing a cache with that version can exceed the configured size limit until the next automatic daily clean reconciles the total and applies the limit. Maintenance runs when a command opens the cache; it is not a background timer. To reconcile sooner, run `biomcp cache clean --max-size <size>` with your desired limit.
+`biomcp cache path` prints the database path without creating it. `biomcp cache stats` reports retained entries and configured limits, and names the sizes of legacy stores separately under `legacy_cache_bytes`. `biomcp cache clean` removes expired entries and applies the configured size and disk limits; `--dry-run` previews deletion. HTTP age follows `max_age_secs`; citation evidence and provider captures retain their own lifetimes. Automatic cleanup runs when a process initializes its cache, at most once a day. It does not run on a background timer in an already initialized MCP server.
 
-BioMCP creates managed directories and files with access limited to the current
-OS user. On Unix this means 0700 directories and 0600 files. HTTP cache startup
-repairs the root directory every time and secures the existing tree once, when
-its `.tree-secured-v1` marker is missing or invalid. After that marker exists,
-startup does not walk the tree or repair permissions broadened later on its
-children. BioMCP repairs managed paths when it opens them for writing; reads
-do not repair broadened child permissions. It refuses linked regular files
-rather than risking access through another pathname.
-The global `--no-cache` flag bypasses these HTTP and session stores completely
-for one invocation. It does not override explicit output paths or provider
-retention. In particular, it neither deletes nor force-refreshes the GenCC
-durable dataset; use `biomcp gencc sync` for explicit revalidation.
+Saved article files remain readable at the returned `full_text_path` under `downloads/`. These files and explicit `--out` exports survive both `cache clean` and `cache clear`. Clearing the cache removes reusable database entries and article sessions. A later full-text request can recreate reusable text without removing a saved artifact.
+
+The new database starts empty and does not import, delete or maintain old-version cache stores. Older binaries continue writing their own stores until upgraded. After upgrading every process that uses the cache, run `biomcp cache clean-legacy` to remove `http/`, `http-cacache/`, `citation-evidence/` and `captures/`. This command asks for interactive confirmation; pass `--yes` for a noninteractive cleanup. It preserves saved `downloads/`, the current database and blobs, and sessions. Stop old processes before this explicit cleanup so they cannot recreate those stores.
+
+BioMCP creates private managed directories and files. On Unix, directories have mode 0700 and files have mode 0600. SQLite owns database locking; linked database and blob files are refused. Normal cache lookups and size accounting do not walk response directories.
+
+The global `--no-cache` flag and `BIOMCP_CACHE_MODE=off` bypass ordinary HTTP, reusable full-text and citation caching. Ordinary bypassed requests open no cache database and perform no HTTP maintenance. Explicit CSpec capture creation and capture reads still use the saved-artifact table, including when ordinary caching is bypassed; those operations create no HTTP cache entries. Explicit output files and durable provider datasets also retain their existing behavior. In particular, use `biomcp gencc sync` for explicit GenCC revalidation.
+
 `BIOMCP_CACHE_MAX_AGE` overrides `[cache].max_age_secs`; both values are
 positive integer seconds.
 GWAS Catalog queries, openFDA label searches, and openFDA adverse-event counts

@@ -92,3 +92,91 @@ impl CacheManager for HttpCacheManager {
         }
     }
 }
+
+pub(crate) fn bypass_request(request: &reqwest::Request, extensions: &http::Extensions) -> bool {
+    extensions.get::<http_cache_reqwest::CacheMode>()
+        == Some(&http_cache_reqwest::CacheMode::NoStore)
+        || [
+            "authorization",
+            "proxy-authorization",
+            "cookie",
+            "x-api-key",
+            "api-key",
+            "x-auth-token",
+        ]
+        .iter()
+        .any(|name| request.headers().contains_key(*name))
+        || (!matches!(request.method().as_str(), "GET" | "HEAD")
+            && extensions.get::<http_cache_reqwest::CacheMode>()
+                != Some(&http_cache_reqwest::CacheMode::IgnoreRules))
+}
+
+/// Scope real request bytes and headers around the library's Parts-only key API.
+pub(crate) struct RequestCache(pub(crate) http_cache_reqwest::Cache<HttpCacheManager>);
+
+#[async_trait]
+impl reqwest_middleware::Middleware for RequestCache {
+    async fn handle(
+        &self,
+        mut request: reqwest::Request,
+        extensions: &mut http::Extensions,
+        next: reqwest_middleware::Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        if bypass_request(&request, extensions) {
+            return next.run(request, extensions).await;
+        }
+        let Some(context) = super::sqlite::request_key::RequestContext::from_request(&request)
+        else {
+            // A streaming body has no stable byte identity. Bypass rather than
+            // collapse distinct requests or consume the caller's stream.
+            return next.run(request, extensions).await;
+        };
+        extensions.insert(OriginalCacheUrl(context.original_url.clone()));
+        *request.url_mut() = context.canonical_url.clone();
+        super::sqlite::request_key::REQUEST
+            .scope(
+                context,
+                reqwest_middleware::Middleware::handle(&self.0, request, extensions, next),
+            )
+            .await
+    }
+}
+
+#[derive(Clone)]
+struct OriginalCacheUrl(reqwest::Url);
+
+/// Restore the outer trust policy's approved URL before retry and transport.
+pub(crate) struct RestoreCacheUrl;
+
+#[async_trait]
+impl reqwest_middleware::Middleware for RestoreCacheUrl {
+    async fn handle(
+        &self,
+        mut request: reqwest::Request,
+        extensions: &mut http::Extensions,
+        next: reqwest_middleware::Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        if let Some(original) = extensions.get::<OriginalCacheUrl>() {
+            *request.url_mut() = original.0.clone();
+        }
+        let mut response = next.run(request, extensions).await?;
+        // The pinned adapter folds headers to single values. Preserve all Vary
+        // fields before that conversion so each request value enters our key.
+        let values = response
+            .headers()
+            .get_all(http::header::VARY)
+            .iter()
+            .map(|value| value.to_str())
+            .collect::<Result<Vec<_>, _>>();
+        let vary = values
+            .map(|values| values.join(","))
+            .unwrap_or_else(|_| "*".into());
+        if !vary.is_empty() {
+            response.headers_mut().insert(
+                http::header::VARY,
+                http::HeaderValue::from_str(&vary).unwrap_or(http::HeaderValue::from_static("*")),
+            );
+        }
+        Ok(response)
+    }
+}
