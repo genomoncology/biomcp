@@ -466,5 +466,6 @@ readable but malformed one fails. A missing, unreadable, malformed, or
 certificate-less `BIOMCP_CA_BUNDLE` fails before any request and names the path
 in both text and `--json` errors, so confirm the path holds PEM `CERTIFICATE`
 blocks and is readable by the user running BioMCP. Client certificates, mTLS,
-and `SSL_CERT_DIR` are out of scope. AlphaGenome's gRPC client already reads
-the native OS trust store.
+and `SSL_CERT_DIR` are out of scope for ordinary providers. AlphaGenome's
+gRPC client adds the same validated operator bundle to its native OS roots;
+its native-root loader also reads `SSL_CERT_FILE` and `SSL_CERT_DIR`.
