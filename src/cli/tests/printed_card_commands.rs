@@ -316,30 +316,7 @@ const BRAF_V600E_GNOMAD_REPLY: &str = r#"{"data":{"variant":{"variant_id":"7-140
 const HEADLINE_COORDINATE: &str = "chr7:g.140453136A>T";
 const RESOLVED_GRCH38_COORDINATE: &str = "chr7:g.140753336A>T";
 
-struct RecordedReplyEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl RecordedReplyEnv {
-    fn set(&mut self, name: &'static str, value: &str) {
-        self.0.push((name, std::env::var_os(name)));
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var(name, value) };
-    }
-}
-
-impl Drop for RecordedReplyEnv {
-    fn drop(&mut self) {
-        for (name, prior) in self.0.drain(..).rev() {
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(value) = prior {
-                    std::env::set_var(name, value);
-                } else {
-                    std::env::remove_var(name);
-                }
-            }
-        }
-    }
-}
+type RecordedReplyEnv = crate::test_support::FixtureEnv;
 
 fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<u8>) {
     let target = request.split_whitespace().nth(1).unwrap_or_default();
@@ -473,20 +450,17 @@ fn quoted_coordinate(command: &str) -> Option<&str> {
 async fn braf_v600e_card_prints_follow_ups_on_the_headline_coordinate() {
     let (base, server) = braf_v600e_recorded_reply_server().await;
     let cache_dir = tempfile::tempdir().expect("temp cache dir");
-    let mut env = RecordedReplyEnv(Vec::new());
+    let mut env = RecordedReplyEnv::scratch_cache_only();
     env.set("BIOMCP_CACHE_MODE", "off");
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_dir.path().to_str().expect("utf-8 temp path"),
-    );
-    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+    env.set_cache_root(cache_dir.path().to_str().expect("utf-8 temp path"));
+    env.set("BIOMCP_MYVARIANT_BASE", format!("{base}/v1"));
     env.set("BIOMCP_DBSNP_BASE", &base);
     env.set("BIOMCP_GNOMAD_BASE", &base);
     env.set("BIOMCP_CLINVAR_BASE", &base);
     env.set("BIOMCP_CIVIC_BASE", &base);
     env.set("BIOMCP_CBIOPORTAL_BASE", &base);
     env.set("BIOMCP_CANCERHOTSPOTS_BASE", &base);
-    env.set("BIOMCP_GWAS_BASE", &format!("{base}/gwas/rest/api"));
+    env.set("BIOMCP_GWAS_BASE", format!("{base}/gwas/rest/api"));
 
     let variant = crate::entities::variant::get("BRAF V600E", &["all".to_string()])
         .await

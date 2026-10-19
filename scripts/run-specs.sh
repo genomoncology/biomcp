@@ -198,7 +198,9 @@ run_replay_server() {
   # another lane's cache under the offline sandbox.
   export BIOMCP_TEST_UNPACED_ORIGIN="$origin"
   export BIOMCP_TEST_RETRY_SLEEP_OFF=1
-  export BIOMCP_CACHE_DIR="$ROOT/.cache/spec-replay-http-cache"
+  # shellcheck source=../spec/fixtures/cache-policy.sh
+  source "$ROOT/spec/fixtures/cache-policy.sh"
+  set_fixture_cache_root "$ROOT/.cache/spec-replay-http-cache"
   rm -rf "$BIOMCP_CACHE_DIR"
   mkdir -p "$BIOMCP_CACHE_DIR"
   register_cleanup stop_replay_server

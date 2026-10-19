@@ -33,6 +33,7 @@ def _run_real_nih_spec(
     workspace = tmp_path / "workspace"
     for relative in (
         "scripts/run-specs.sh",
+        "spec/fixtures/cache-policy.sh",
         "spec/entity/nih-reporter-live.md",
         "tools/biomcp-ci",
     ):
