@@ -954,6 +954,7 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
         serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
     let hits = doc["hits"].as_array().expect("hits should be a list");
     assert_eq!(doc["hits_truncated"], false);
+    assert_eq!(doc["incomplete"], false);
     assert_eq!(hits.len(), 1, "one acceptance hit is expected: {doc}");
     assert_eq!(hits[0]["worksheet"], "Sheet1");
     assert_eq!(hits[0]["row"], serde_json::json!(2780));
@@ -1048,6 +1049,117 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
 
 #[test]
 #[serial_test::serial(article_output_fixture)]
+fn supplement_search_replays_named_unreachable_files_and_keeps_readable_hits() {
+    let fixture = ArticleFixture::start();
+    for (pmid, expected, outcome) in [
+        (
+            "38368708",
+            vec!["NIHMS2014154-supplement-Supplementary.docx"],
+            "source_unavailable",
+        ),
+        (
+            "27397505",
+            vec![
+                "mmc3.xlsx",
+                "mmc4.xlsx",
+                "mmc5.xlsx",
+                "mmc7.xlsx",
+                "mmc9.pdf",
+            ],
+            "pmc_proof_of_work",
+        ),
+    ] {
+        let output = successful_output(
+            &fixture,
+            &["--json", "article", "supplement-search", pmid, "I448T"],
+        );
+        let doc: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(doc["incomplete"], true, "{doc}");
+        let files = doc["files"].as_array().unwrap();
+        for name in &expected {
+            let row = files
+                .iter()
+                .find(|row| row["filename"] == *name)
+                .expect("named unread file");
+            assert_eq!(row["outcome"], outcome, "{doc}");
+            assert!(row.get("sha256").is_none());
+        }
+        let output = successful_output(&fixture, &["article", "supplement-search", pmid, "I448T"]);
+        let markdown = String::from_utf8(output.stdout).unwrap();
+        assert!(markdown.contains("Search incomplete"));
+        for name in &expected {
+            assert!(markdown.contains(name));
+        }
+        assert!(markdown.contains(outcome));
+        if pmid == "27397505" {
+            assert_eq!(
+                files.len(),
+                6,
+                "five blocked files and one authored readable control: {doc}"
+            );
+            assert_eq!(doc["hits"][0]["filename"], "readable-control.csv");
+            assert!(markdown.contains("authored readable control"));
+        }
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn supplement_search_names_unreachable_files_and_marks_both_formats_incomplete() {
+    let fixture = ArticleFixture::start();
+    let output = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "22663023",
+            "I448T",
+        ],
+    );
+    let doc: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(
+        doc["incomplete"], true,
+        "unreachable files prevent an absence claim: {doc}"
+    );
+    let files = doc["files"].as_array().unwrap();
+    assert_eq!(files.len(), 1);
+    assert_eq!(
+        files[0]["filename"],
+        "NIHMS265402-supplement-Supplementary_Tables.xls"
+    );
+    assert_eq!(files[0]["outcome"], "pmc_proof_of_work");
+    assert!(
+        files[0].get("sha256").is_none(),
+        "unread bytes have no checksum"
+    );
+    let filtered = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "22663023",
+            "I448T",
+            "--asset",
+            "NIHMS265402-supplement-Supplementary_Tables.xls",
+        ],
+    );
+    let filtered: serde_json::Value = serde_json::from_slice(&filtered.stdout).unwrap();
+    assert_eq!(filtered["files"], doc["files"]);
+    assert_eq!(filtered["incomplete"], true);
+    let output = successful_output(
+        &fixture,
+        &["article", "supplement-search", "22663023", "I448T"],
+    );
+    let markdown = String::from_utf8(output.stdout).unwrap();
+    assert!(markdown.contains("Search incomplete"));
+    assert!(markdown.contains("NIHMS265402-supplement-Supplementary_Tables.xls"));
+    assert!(markdown.contains("pmc_proof_of_work"));
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
 fn supplement_search_reports_an_unreadable_file_with_format_and_reason() {
     let fixture = ArticleFixture::start();
 
@@ -1063,6 +1175,7 @@ fn supplement_search_reports_an_unreadable_file_with_format_and_reason() {
     );
     let doc: serde_json::Value =
         serde_json::from_slice(&search.stdout).expect("supplement search should be JSON");
+    assert_eq!(doc["incomplete"], true);
     let hits = doc["hits"].as_array().expect("hits should be a list");
     assert_eq!(hits.len(), 0, "the scrubbed xlsx bytes hold no text: {doc}");
     let files = doc["files"].as_array().expect("files should be a list");
@@ -1081,7 +1194,7 @@ fn supplement_search_reports_an_unreadable_file_with_format_and_reason() {
 
 #[test]
 #[serial_test::serial(article_output_fixture)]
-fn supplement_search_reports_an_absent_search_and_stays_json_only() {
+fn supplement_search_reports_an_absent_search_and_supports_markdown() {
     let fixture = ArticleFixture::start();
 
     let search = successful_output(
@@ -1110,20 +1223,13 @@ fn supplement_search_reports_an_absent_search_and_stays_json_only() {
         "spaces are literal search text"
     );
 
-    let refused = fixture
-        .biomcp_command(&["article", "supplement-search", "30209399", "F1761I"])
-        .output()
-        .expect("non-JSON supplement search should run");
-    assert!(
-        !refused.status.success(),
-        "supplement search is JSON-only:\n{}",
-        String::from_utf8_lossy(&refused.stdout)
+    let rendered = successful_output(
+        &fixture,
+        &["article", "supplement-search", "30209399", "F1761I"],
     );
-    let stderr = String::from_utf8_lossy(&refused.stderr);
-    assert!(
-        stderr.contains("JSON-only"),
-        "the refusal should tell the caller to add --json:\n{stderr}"
-    );
+    let markdown = String::from_utf8(rendered.stdout).unwrap();
+    assert!(markdown.contains("Search complete"));
+    assert!(markdown.contains("Sheet1 row 2780"));
 
     let filtered = successful_output(
         &fixture,
