@@ -25,6 +25,8 @@
 
 ### Internal
 
+- Run gene discovery and identity specifications against recorded replies and reuse the gene-search golden for JSON follow-up checks. (2111)
+
 - Check BRAF gene search in JSON and Markdown against a complete recorded provider reply. (2079)
 
 - Run the condition-first trial search specification through recorded replay while preserving its query and table assertions. (2111)
