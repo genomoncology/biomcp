@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 5a34545, accept
 
+Reviews: revision d1e841f, accept
+
 ## Outcome
 
 Five supported JSON recordings match the actual primary replies for their declared requests, with safe public projections and complete observed provenance. The source clients and current public contracts consume those replies truthfully.
