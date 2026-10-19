@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 27091d7, accept
+
 ## Outcome
 
 - Changes: `src/cli/variant/mod.rs` `src/cli/variant/erepo.rs` `src/mcp/shell.rs` `src/entities/variant/erepo.rs` `src/entities/variant/mod.rs` `src/mcp/shell/typed_get_tests.rs` `tests/unit/cli/variant.rs` `spec/fixtures/run-clingen-erepo-fixture.sh` `spec/entity/clingen-erepo.md` `CHANGELOG.md` and this ticket.
