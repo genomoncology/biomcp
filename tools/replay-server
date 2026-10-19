@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import threading
@@ -50,6 +51,7 @@ FORWARDED_HEADER_NAMES = (
     "user-agent",
 )
 UPSTREAM_TIMEOUT_SECONDS = 90
+PARENT_CHECK_INTERVAL_SECONDS = 0.1
 CONTENT_TYPE_EXTENSIONS = (
     ("json", ".json"),
     ("csv", ".csv"),
@@ -448,7 +450,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def exit_with_parent(parent_pid: int) -> None:
+    """Close every socket when runner teardown cannot run."""
+    pause = threading.Event()
+    while parent_pid > 1 and os.getppid() == parent_pid:
+        pause.wait(PARENT_CHECK_INTERVAL_SECONDS)
+    # A handler can be blocked reading an incomplete request. Normal server
+    # shutdown waits for those threads, so abandonment must end the process.
+    os._exit(0)
+
+
 def main(argv: list[str] | None = None) -> int:
+    parent_pid = os.getppid()
+    if parent_pid <= 1:
+        return 0
+    threading.Thread(target=exit_with_parent, args=(parent_pid,), daemon=True).start()
     args = parse_args(argv)
     routes = provider_routes(args.root / "src")
     if not routes:
