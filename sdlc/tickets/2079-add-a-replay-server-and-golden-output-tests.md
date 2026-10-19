@@ -22,6 +22,8 @@ Reviews: revision 130ad4b, accept
 
 Reviews: revision 51c30b1, accept
 
+Reviews: revision 43ba915, accept
+
 ## Outcome
 
 Every command's JSON and Markdown output is checked against committed golden files served by the existing replay server, and format changes use regenerate, inspect and commit.
