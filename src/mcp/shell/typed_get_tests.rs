@@ -419,27 +419,20 @@ fn typed_variant_erepo_schema_prevents_selector_mixing_before_calls() {
     // Flat root (ADR 0002): the selector union publishes every field, keeps
     // unknown fields out (deny_unknown_fields on the struct), and the body
     // rejects selector mixing before any provider call.
-    let schema =
-        serde_json::to_value(rmcp::schemars::schema_for!(TypedVariantErepo)).expect("ERepo schema");
+    let schema = serde_json::to_value(BioMcpServer::variant_erepo_tool_attr().input_schema)
+        .expect("ERepo schema");
     assert!(schema.get("oneOf").is_none());
     assert!(schema.get("required").is_none());
     assert_eq!(schema["additionalProperties"], json!(false));
     let properties = schema["properties"].as_object().expect("root properties");
     assert_eq!(
         properties.keys().cloned().collect::<BTreeSet<_>>(),
-        BTreeSet::from_iter(
-            [
-                "caid",
-                "caids",
-                "gene",
-                "detail",
-                "assertion_id",
-                "version",
-                "limit",
-                "offset",
-            ]
-            .map(str::to_owned)
-        )
+        rmcp::schemars::schema_for!(TypedVariantErepo).as_value()["properties"]
+            .as_object()
+            .expect("typed ERepo fields")
+            .keys()
+            .cloned()
+            .collect::<BTreeSet<_>>()
     );
     assert_eq!(schema["properties"]["caid"]["minLength"], json!(1));
     assert_eq!(schema["properties"]["caids"]["minItems"], json!(1));
@@ -481,15 +474,13 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     let _env = CtGovAgeMcpEnv::set(&base);
 
     let typed = BioMcpServer::new()
-        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
-            json!({
-                "entity":"trial", "id":"NCT60000001", "sections":["eligibility", "arms"], "json":true
-            }),
-        )))
+        .get(crate::mcp::shell::arguments::Parameters(TypedGet(json!({
+            "entity":"trial", "id":"NCT60000001", "sections":["eligibility", "arms"], "json":true
+        }))))
         .await
         .unwrap();
     let raw = BioMcpServer::new()
-        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+        .biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
             command: "biomcp get trial NCT60000001 eligibility arms".into(),
             json: true,
         }))
@@ -567,15 +558,13 @@ async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
     .await
     .unwrap();
     let typed = BioMcpServer::new()
-        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
-            json!({
-                "entity":"trial", "id":"NCT60000002", "sections":["references"], "json":true
-            }),
-        )))
+        .get(crate::mcp::shell::arguments::Parameters(TypedGet(json!({
+            "entity":"trial", "id":"NCT60000002", "sections":["references"], "json":true
+        }))))
         .await
         .unwrap();
     let raw = BioMcpServer::new()
-        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+        .biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
             command: "biomcp get trial NCT60000002 references".into(),
             json: true,
         }))
@@ -666,19 +655,17 @@ async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
 
     let typed = tokio::time::timeout(
         std::time::Duration::from_secs(10),
-        BioMcpServer::new().get(rmcp::handler::server::wrapper::Parameters(TypedGet(
-            json!({
-                "entity":"trial", "id":"NCT05879926", "source":"nci",
-                "sections":["all"], "json":true
-            }),
-        ))),
+        BioMcpServer::new().get(crate::mcp::shell::arguments::Parameters(TypedGet(json!({
+            "entity":"trial", "id":"NCT05879926", "source":"nci",
+            "sections":["all"], "json":true
+        })))),
     )
     .await
     .expect("typed NCI get timeout")
     .unwrap();
     let raw = tokio::time::timeout(
         std::time::Duration::from_secs(10),
-        BioMcpServer::new().biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+        BioMcpServer::new().biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
             command: "biomcp get trial NCT05879926 --source nci all".into(),
             json: true,
         })),
@@ -818,7 +805,7 @@ async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() 
         .expect("fallback JSON");
     let fallback_json = serde_json::to_value(fallback_entity).expect("fallback entity JSON");
     let fallback_raw = BioMcpServer::new()
-        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+        .biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
             command: "biomcp get variant rs1154002 clinvar".into(),
             json: true,
         }))
@@ -826,11 +813,9 @@ async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() 
         .map(json_result)
         .expect("raw MCP fallback");
     let fallback_typed = BioMcpServer::new()
-        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
-            json!({
-                "entity":"variant", "id":"rs1154002", "sections":["clinvar"], "json":true
-            }),
-        )))
+        .get(crate::mcp::shell::arguments::Parameters(TypedGet(json!({
+            "entity":"variant", "id":"rs1154002", "sections":["clinvar"], "json":true
+        }))))
         .await
         .map(json_result)
         .expect("typed MCP fallback");
@@ -863,7 +848,7 @@ async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() 
         .expect("inapplicable JSON");
     let inapplicable_json = serde_json::to_value(inapplicable_entity).expect("entity JSON");
     let inapplicable_raw = BioMcpServer::new()
-        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+        .biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
             command: "biomcp get variant rs1154003 clinvar".into(),
             json: true,
         }))
@@ -871,11 +856,9 @@ async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() 
         .map(json_result)
         .expect("raw MCP inapplicable");
     let inapplicable_typed = BioMcpServer::new()
-        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
-            json!({
-                "entity":"variant", "id":"rs1154003", "sections":["clinvar"], "json":true
-            }),
-        )))
+        .get(crate::mcp::shell::arguments::Parameters(TypedGet(json!({
+            "entity":"variant", "id":"rs1154003", "sections":["clinvar"], "json":true
+        }))))
         .await
         .map(json_result)
         .expect("typed MCP inapplicable");
