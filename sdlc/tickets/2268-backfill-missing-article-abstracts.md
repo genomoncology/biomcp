@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision f33558c, accept
 
+Reviews: revision 8224ddd, accept
+
 ## Outcome
 
 Changes: `CHANGELOG.md`, `src/entities/article/enrichment.rs`, `src/entities/article/enrichment/abstracts.rs`, `src/sources/europepmc.rs`, `src/sources/pubmed.rs`, `src/transform/article/anchors.rs`, `src/transform/article/federation.rs`, `tests/test_article_abstract_recovery.py`, `tests/test_article_metadata_recovery.py`.
