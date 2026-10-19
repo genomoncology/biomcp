@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision fe3de71, accept
+
 ## Outcome
 
 Changes: `tests/test_http_cache_fail_soft.py`.
