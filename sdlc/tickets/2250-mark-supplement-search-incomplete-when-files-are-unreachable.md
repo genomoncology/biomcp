@@ -14,6 +14,8 @@ Reviews: revision 46e94c8, accept
 
 `article supplement-search` lists every supplement file it could not read and marks the search incomplete, so "no hits" never reads as "not present".
 
+- Changes: `CHANGELOG.md` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md` `sdlc/tickets/2249-show-the-match-in-supplement-search-context.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md` `spec/entity/article.md` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `src/cli/article/dispatch.rs` `src/cli/list/literature.rs` `src/entities/article/mod.rs` `src/entities/article/supplement_search.rs` `src/render/markdown/article.rs` `src/render/markdown/mod.rs` `tests/article_asset_terminal.rs`.
+
 ## Evidence
 
 Reproduced on 0.9.3: `biomcp --json article supplement-search 38368708 I448T` returns success with no files and no hits, although `get article 38368708 assets --asset-view coverage` lists a blocked DOCX, and searching that file alone errors. The same happens for five unreachable files of 27397505.
@@ -32,7 +34,7 @@ Restate the approved outcome, reproduce on current main before source edits, and
 
 ## Granted implementation brief
 
-- Changes: `CHANGELOG.md` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md` `sdlc/tickets/2249-show-the-match-in-supplement-search-context.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md` `spec/entity/article.md` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `src/cli/article/dispatch.rs` `src/cli/list/literature.rs` `src/entities/article/mod.rs` `src/entities/article/supplement_search.rs` `src/render/markdown/article.rs` `src/render/markdown/mod.rs` `tests/article_asset_terminal.rs`.
+
 
 Restated outcome: retain readable supplement hits and deadlines, list every named unreadable supplement with the same outcome wording as asset coverage, and mark the search incomplete in JSON and Markdown. Minimal Markdown support for this command replaces its obsolete JSON-only refusal. No unrelated article surface changes.
 
