@@ -88,6 +88,8 @@ and printed. Nothing thresholds on it.
 
 ## 6. UTF-8 double-encoding in the GTR bundle
 
+Resolved by ticket 2237: repair the upstream double-encoded trademark and registered symbols in all displayed GTR text, including names and methods. Preserve identifiers and other content.
+
 `Ion AmpliSeq(tm)` renders as `Ion AmpliSeqâ„¢` and `CancerNext-Expanded(R)`
 as `CancerNext-ExpandedÂ®`. These are lab and manufacturer name fields that an
 agent may quote verbatim.
