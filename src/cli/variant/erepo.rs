@@ -39,8 +39,8 @@ pub(super) struct Request {
     pub caid: Option<String>,
     pub input: Option<String>,
     pub gene: Option<String>,
-    pub limit: usize,
-    pub offset: usize,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
     pub detail: bool,
     pub assertion: Option<String>,
     pub version: Option<String>,
@@ -57,6 +57,8 @@ pub(super) async fn handle(request: Request, json: bool) -> anyhow::Result<Comma
         assertion,
         version,
     } = request;
+    let (limit, offset) =
+        crate::entities::variant::resolve_erepo_paging(gene.as_deref(), limit, offset)?;
     if let Some(gene) = gene {
         let response = crate::entities::variant::search_erepo_gene(&gene, limit, offset).await?;
         let text = if json {

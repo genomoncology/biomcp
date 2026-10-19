@@ -1,0 +1,32 @@
+[
+  {
+    "displayName": "RAF activating kinases [plasma membrane]"
+  },
+  {
+    "displayName": "ADP [cytosol]"
+  },
+  {
+    "displayName": "p21 RAS:GTP:activated RAF homo/heterodimer complexes [plasma membrane]"
+  },
+  {
+    "displayName": "p21 RAS:GTP:homo/heterodimerized RAF complex [plasma membrane]"
+  },
+  {
+    "displayName": "ATP [cytosol]"
+  },
+  {
+    "displayName": "S-GCC MRAS:GTP:SHOC2:PP1 [plasma membrane]"
+  },
+  {
+    "displayName": "inactive RAFs:YWHAB dimer [cytosol]"
+  },
+  {
+    "displayName": "H2O [cytosol]"
+  },
+  {
+    "displayName": "Pi [cytosol]"
+  },
+  {
+    "displayName": "dephosphorylated inactive RAFS:YWHAB dimer [cytosol]"
+  }
+]
