@@ -46,9 +46,11 @@ def test_variant_article_markdown_uses_json_source_plan_and_states(
         before = replay.request_log_line_count()
         for surface in ("json", "markdown"):
             env = replay.command_env(replay._next_run_dir())
-            env.pop("BIOMCP_DISABLE_SOURCES", None)
+            # Gene alias discovery has its own controls; keep this recorded
+            # source-status matrix scoped to the original article routes.
+            env["BIOMCP_DISABLE_SOURCES"] = "mygene-info"
             if scenario == "disabled":
-                env["BIOMCP_DISABLE_SOURCES"] = "myvariant-info"
+                env["BIOMCP_DISABLE_SOURCES"] += ",myvariant-info"
             if authenticated:
                 env["S2_API_KEY"] = "fixture-only-key"
             command = [binary, "--no-cache"]
