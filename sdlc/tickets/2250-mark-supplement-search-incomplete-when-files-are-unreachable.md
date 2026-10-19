@@ -12,6 +12,8 @@ Reviews: revision 46e94c8, accept
 
 Reviews: revision 383fc9c, accept
 
+Reviews: revision 0c20107, accept
+
 ## Outcome
 
 `article supplement-search` lists every supplement file it could not read and marks the search incomplete, so "no hits" never reads as "not present".
