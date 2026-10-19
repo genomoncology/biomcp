@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision fdefbfb, accept
+
 ## Outcome
 
 Each `article supplement-search` hit's context includes the matched string with bounded text around it.
