@@ -4,13 +4,15 @@ priority: 2
 
 # 2231 — Recover uncached article search speed
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 96e8831, accept
 
 Reviews: revision 7b02037, accept
+
+Landed: a1903ff
 
 ## Outcome
 
