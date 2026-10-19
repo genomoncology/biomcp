@@ -29,6 +29,8 @@ Reviews: revision aa7adaa, accept
 
 Reviews: revision d754210, accept
 
+Reviews: revision de75878, accept
+
 ## Outcome
 
 The approved trial-reference, condition-first trial-search, gene discovery and supported pathway reader consumers use the existing replay server. Authored fault controls and excluded local datasets keep their current helpers. Remaining selector coverage and helper retirement belong to2236 in the next release.
