@@ -34,7 +34,7 @@ Use the configured Linux test host through pm job --machine yellow because CPU a
 
 ## Coordinator implementation brief
 
-- Changes: `src/test_support.rs` `Makefile` `tests/test_stress_lane_contract.py` `CHANGELOG.md` `sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md` and this ticket.
+- Changes: `CHANGELOG.md` `Makefile` `sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/test_support.rs` `tests/test_stress_lane_contract.py`.
 
 Restated outcome: make the existing readiness handshake recognize its actual raw marker with one test worker, then remove the two-CPU workaround without weakening readiness assertions. The coordinator merged accepted2243 scaffold dependency before granting this claim; do not reimplement its bounded joins.
 
