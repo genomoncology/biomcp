@@ -33,3 +33,7 @@ A controlled case on current main demonstrates the old proof confuses an allowed
 ## Progress
 
 - 2026-10-19 started
+
+## Implementation evidence
+
+Developer 331fc49ef55f16c9d53754feba51d9bd16384d80 changes only the claimed cache test (+8/-1). Current-main expected-red proof 2275/1792443253344-87619 uses existing deterministic SQLite contention: correct cold data, zero admitted responses, release lock, then the original assertion rejects the permitted refetch. The original batch failure cause remains unknown. Initial harness attempt 1792443238120-86025 had a Python scoping error and is not evidence. Green 1792443291780-92328 passes the corrected zero-admission control, rejects forced final warm bypass, and passes all sixteen affected cache cases plus Ruff, tracked-text and quality checks. After the cold CLI exits, one uncontended call into its private cache admits skipped responses, then the original warm request-reuse assertion remains strict. No runtime cache behavior changes. Checked file SHA256 a2b99c8fb9cfb50cb31aa7d5ed751f944c57854441111a9118d351f565f07875 matches the pushed file. Existing private experiment 2090 cache-reuse-diagnosis retains all proof. No full gate ran.
