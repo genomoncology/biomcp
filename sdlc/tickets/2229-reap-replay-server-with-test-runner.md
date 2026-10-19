@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision a5a47e9, accept
+
 ## Outcome
 
 A replay server exits when the test run that started it dies, including a killed runner, timeout, or failed teardown. No server survives an abandoned test run.
