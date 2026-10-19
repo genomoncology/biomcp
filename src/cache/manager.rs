@@ -154,10 +154,16 @@ impl CacheManager for SqliteCacheManager {
                 {
                     continue;
                 }
-                let body = if context.is_some() {
+                let body = if let Some(context) = &context {
                     let Some(row) = store.get("http", &record.key)? else {
                         continue;
                     };
+                    // A publisher can replace this variant after the metadata
+                    // probe. Headers, policy and body must come from one row.
+                    stored = serde_json::from_slice(&row.metadata).map_err(io::Error::other)?;
+                    if context.variant(&stored.vary).as_deref() != Some(row.key.as_str()) {
+                        continue;
+                    }
                     row.body
                 } else {
                     record.body
@@ -298,4 +304,115 @@ mod tests {
     }
     #[path = "stale_marker_tests.rs"]
     mod stale_marker_tests;
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn concurrent_replacement_keeps_http_headers_and_body_from_the_same_row() {
+        use super::*;
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        let _mode = crate::sources::test_cache_mode::infinite();
+        let root = crate::test_support::TempDirGuard::new("sqlite-coherent-response");
+        let manager = SqliteCacheManager::new(
+            root.path().join(sqlite::DATABASE_NAME),
+            test_config(root.path(), 100000000, DiskFreeThreshold::Bytes(1)),
+        )
+        .unwrap();
+        let request = reqwest::Client::new()
+            .get("https://example.test/resource")
+            .build()
+            .unwrap();
+        let context = sqlite::request_key::RequestContext::from_request(&request).unwrap();
+        let key = context.variant("").unwrap();
+        let request = http::Request::get("https://example.test/resource")
+            .body(())
+            .unwrap();
+        let response = http::Response::builder()
+            .header("cache-control", "public,max-age=3600")
+            .body(())
+            .unwrap();
+        let mut stored = StoredResponse {
+            response: HttpResponse {
+                body: Vec::new(),
+                headers: std::collections::HashMap::from([
+                    ("x-generation".into(), "0".into()),
+                    ("x-provider-padding".into(), "x".repeat(256 * 1024)),
+                ]),
+                status: 200,
+                url: reqwest::Url::parse("https://example.test/resource").unwrap(),
+                version: http_cache::HttpVersion::Http11,
+            },
+            policy: CachePolicy::new(&request, &response),
+            vary: String::new(),
+        };
+        let mut store = sqlite::Store::open(root.path()).unwrap();
+        store
+            .put(
+                "http",
+                &key,
+                &context.base,
+                &serde_json::to_vec(&stored).unwrap(),
+                b"0",
+                None,
+            )
+            .unwrap();
+        let stop = Arc::new(AtomicBool::new(false));
+        let stopped = stop.clone();
+        let writer_root = root.path().to_path_buf();
+        let writer = std::thread::spawn(move || {
+            let mut store = sqlite::Store::open(&writer_root).unwrap();
+            let mut generation = 0;
+            let mut replacements = 0;
+            while !stopped.load(Ordering::Relaxed) {
+                generation += 1;
+                let body = generation.to_string();
+                stored
+                    .response
+                    .headers
+                    .insert("x-generation".into(), body.clone());
+                if store
+                    .put(
+                        "http",
+                        &key,
+                        &context.base,
+                        &serde_json::to_vec(&stored).unwrap(),
+                        body.as_bytes(),
+                        None,
+                    )
+                    .is_ok()
+                {
+                    replacements += 1;
+                }
+            }
+            replacements
+        });
+        let mut mismatch = None;
+        let mut hits = 0;
+        for _ in 0..100 {
+            let context = sqlite::request_key::RequestContext::from_request(
+                &reqwest::Client::new()
+                    .get("https://example.test/resource")
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+            if let Ok(Some((response, _))) = sqlite::request_key::REQUEST
+                .scope(context, manager.get("unused"))
+                .await
+            {
+                hits += 1;
+                if response.headers["x-generation"].as_bytes() != response.body {
+                    mismatch = Some(response.headers["x-generation"].clone());
+                    break;
+                }
+            }
+        }
+        stop.store(true, Ordering::Relaxed);
+        assert!(writer.join().unwrap() > 0, "writer must replace a response");
+        assert!(hits > 0, "reader must serve a cached response");
+        assert!(
+            mismatch.is_none(),
+            "headers came from an older cached response: {mismatch:?}"
+        );
+    }
 }

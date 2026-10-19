@@ -92,11 +92,6 @@ impl Store {
         connection
             .busy_timeout(Duration::from_millis(100))
             .map_err(sqlite_error)?;
-        connection
-            .execute_batch(
-                "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA trusted_schema=OFF;",
-            )
-            .map_err(sqlite_error)?;
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(sqlite_error)?;
@@ -107,9 +102,18 @@ impl Store {
             ));
         }
         if version == 0 {
+            // WAL initialization allocates database pages. Select the vacuum
+            // format first so deleted inline bodies can return disk space.
             connection
                 .execute_batch("PRAGMA auto_vacuum=INCREMENTAL;")
                 .map_err(sqlite_error)?;
+        }
+        connection
+            .execute_batch(
+                "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA trusted_schema=OFF;",
+            )
+            .map_err(sqlite_error)?;
+        if version == 0 {
             connection
                 .execute_batch(schema::SCHEMA)
                 .map_err(sqlite_error)?;
@@ -399,7 +403,7 @@ pub(crate) fn maintain(
     }
     if !dry_run {
         store.collect_blobs()?;
-        if report.entries_removed > 0 {
+        if report.bytes_freed > 0 {
             store.release_space()?;
         }
     }
@@ -455,7 +459,7 @@ impl Store {
                 Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok((0, 0)),
                 result => result?,
             };
-            if !metadata.is_dir() || metadata.file_type().is_symlink() {
+            if !metadata.is_dir() || super::private::is_link_or_reparse_point(&metadata) {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     "invalid blob directory",
@@ -492,8 +496,18 @@ impl Store {
 
 impl Store {
     pub(crate) fn release_space(&self) -> Result<()> {
+        // SQLite yields one row per reclaimed page. Step the pragma to
+        // completion; execute_batch stops after its first yielded row.
+        let mut vacuum = self
+            .connection
+            .prepare("PRAGMA incremental_vacuum")
+            .map_err(sqlite_error)?;
+        let mut pages = vacuum.query([]).map_err(sqlite_error)?;
+        while pages.next().map_err(sqlite_error)?.is_some() {}
+        drop(pages);
+        drop(vacuum);
         self.connection
-            .execute_batch("PRAGMA incremental_vacuum; PRAGMA wal_checkpoint(TRUNCATE);")
+            .execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
             .map_err(sqlite_error)
     }
 }

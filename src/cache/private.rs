@@ -472,12 +472,12 @@ fn check_variant_article_deadline() -> io::Result<()> {
 }
 
 #[cfg(unix)]
-fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
+pub(super) fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
     metadata.file_type().is_symlink()
 }
 
 #[cfg(windows)]
-fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
+pub(super) fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
     use std::os::windows::fs::MetadataExt;
     use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_REPARSE_POINT;
 

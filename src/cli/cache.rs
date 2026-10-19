@@ -359,6 +359,7 @@ pub(crate) fn execute_managed_clear(
     })?;
     store.collect_blobs()?;
     store.collect_orphans(false)?;
+    store.release_space()?;
     let sessions = crate::cache::execute_cache_clear(&config.cache_root.join("sessions"))?;
     Ok(crate::cache::ClearReport {
         bytes_freed: sessions.bytes_freed.map(|value| value + bytes),

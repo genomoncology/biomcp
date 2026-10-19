@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 from pathlib import Path
 import sqlite3
@@ -145,3 +146,51 @@ def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path
             assert connection.execute("select count(*) from entries").fetchone()[0] == 2
     finally:
         client.close()
+
+
+@pytest.mark.parametrize("command", [("clear", "--yes"), ("clean", "--max-size", "1B")])
+def test_deleting_inline_replies_releases_database_disk_space(tmp_path, command):
+    env = retained_cache_env(tmp_path, {}, "http://127.0.0.1:9")
+    invoke(env, "cache", "stats")
+    database = tmp_path / "cache/biomcp.db"
+    connection = sqlite3.connect(database)
+    try:
+        connection.executemany(
+            "insert into entries(namespace,key,base_key,metadata,body,bytes,created,last_access) "
+            "values('http',?,?,X'',?,65536,1,1)",
+            ((str(index), str(index), b"x" * 65536) for index in range(128)),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    before = database.stat().st_size
+    result = invoke(env, "cache", *command)
+    assert result["bytes_freed"] == 8388608
+    retained = sum(path.stat().st_size for path in database.parent.glob("biomcp.db*"))
+    assert retained < before // 4, (before, retained)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="uses a directory symlink")
+@pytest.mark.parametrize("command", [("clear", "--yes"), ("clean", "--max-size", "1B")])
+def test_blob_cleanup_refuses_a_linked_directory_without_deleting_outside_files(tmp_path, command):
+    env = retained_cache_env(tmp_path, {}, "http://127.0.0.1:9")
+    invoke(env, "cache", "stats")
+    cache = tmp_path / "cache"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    body = b"saved outside the cache"
+    digest = hashlib.sha256(body).hexdigest()
+    sentinel = outside / digest
+    sentinel.write_bytes(body)
+    (cache / "blobs").symlink_to(outside, target_is_directory=True)
+    with sqlite3.connect(cache / "biomcp.db") as connection:
+        connection.execute(
+            "insert into entries(namespace,key,base_key,metadata,blob,body_hash,bytes,created,last_access) "
+            "values('http','reply','reply',X'',?,?,?,1,1)",
+            (digest, digest, len(body)),
+        )
+    result = subprocess.run([str(BINARY), "--json", "cache", *command], env=env, cwd=ROOT,
+                            capture_output=True, text=True, timeout=20)
+    assert sentinel.is_file(), (result.stdout, result.stderr)
+    assert sentinel.read_bytes() == body
+    assert result.returncode != 0
