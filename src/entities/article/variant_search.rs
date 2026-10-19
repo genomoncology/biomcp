@@ -5813,7 +5813,7 @@ mod tests {
 
     // These controls own other routes; the CLI regression owns MyGene alias lookup.
     fn gene_aliases_disabled_env() -> TestEnv {
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         env.set("BIOMCP_DISABLE_SOURCES", "mygene-info");
         env
     }
@@ -6409,7 +6409,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("strict-partial-degradation");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set(
             "BIOMCP_PUBMED_BASE",
@@ -6468,7 +6468,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("strict-alias-coverage");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_PUBMED_BASE", &fixture.base);
         env.set(
@@ -6592,7 +6592,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("provider-unit-real-captures");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
         env.set("BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN", &fixture.base);
@@ -6697,7 +6697,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("rsid-entity-search");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
 
@@ -6785,7 +6785,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("abcc8-entity-search");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
 
@@ -6897,7 +6897,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("exact-name-route");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -7138,7 +7138,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("yield-per-alias");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -7273,7 +7273,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("no-entity-annotation-run");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -7362,7 +7362,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("rsid-empty-ok-search");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -7459,7 +7459,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("litvar-merge-union");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -7557,7 +7557,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("litvar-non-matching-entry");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_LITVAR_BASE", &fixture.base);
 
@@ -7636,7 +7636,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("litvar-degrades-own-source");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -7827,7 +7827,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("2140-samhd1");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -8041,7 +8041,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("2140-cdkn2a");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -9650,7 +9650,7 @@ mod tests {
         .await;
         let cache = crate::test_support::TempDirGuard::new("samhd1-fulltext-identity");
         let mut env = gene_aliases_disabled_env();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -9820,7 +9820,7 @@ mod tests {
         .await;
             let cache = crate::test_support::TempDirGuard::new("samhd1-unannotated-identity");
             let mut env = gene_aliases_disabled_env();
-            env.set("BIOMCP_CACHE_DIR", cache.path());
+            env.set_cache_root(cache.path());
             env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
             env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
             env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);

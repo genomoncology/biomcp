@@ -53,6 +53,8 @@
 
 ### Internal
 
+- Route test cache roots through shared fixture policy guards and reject unmanaged root assignments. (2257)
+
 - Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
 
 - Check pathway search and KEGG and Reactome details in JSON and Markdown against recorded provider replies. (2079)

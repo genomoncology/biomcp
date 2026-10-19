@@ -2340,7 +2340,9 @@ mod tests {
         ResolvedCacheConfig {
             cache_root: cache_root.into(),
             max_size: 10_000_000_000,
-            min_disk_free: DiskFreeThreshold::Percent(10),
+            min_disk_free: DiskFreeThreshold::Bytes(
+                crate::test_support::FIXTURE_MIN_DISK_FREE_BYTES,
+            ),
             max_age: Duration::from_secs(86_400),
             origins: CacheConfigOrigins {
                 cache_root: ConfigOrigin::Default,

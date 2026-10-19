@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cache_fixture import set_cache_root
+
 import json
 import os
 import subprocess
@@ -22,6 +24,7 @@ AUTH_KEYS = (
 )
 CAPTURED_KEYS = (
     "BIOMCP_CACHE_DIR",
+    "BIOMCP_CACHE_MIN_DISK_FREE",
     "XDG_CACHE_HOME",
     "XDG_CONFIG_HOME",
     "RUST_LOG",
@@ -92,6 +95,7 @@ def test_biomcp_ci_wrapper_sets_repo_cache_env_and_forwards_args(
     assert payload["env"]["XDG_CONFIG_HOME"] == str(expected_cache_root / "config")
     assert payload["env"]["RUST_LOG"] == "error"
     assert payload["env"]["BIOMCP_CACHE_MODE"] is None
+    assert payload["env"]["BIOMCP_CACHE_MIN_DISK_FREE"] == "1B"
     for key in AUTH_KEYS:
         assert payload["env"][key] is None, key
     assert expected_cache_root.is_dir()
@@ -106,7 +110,7 @@ def test_biomcp_ci_wrapper_preserves_an_explicit_fixture_cache(tmp_path: Path) -
         "get",
         "article",
         "22663011",
-        env={"BIOMCP_CACHE_DIR": str(fixture_cache)},
+        env=set_cache_root({}, fixture_cache),
     )
 
     assert result.returncode == 0, result.stderr

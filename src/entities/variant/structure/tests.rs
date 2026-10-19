@@ -266,30 +266,7 @@ const MYGENE_BRAF_REPLY: &str =
 const INTERPRO_P15056_REPLY: &str = r#"{"results":[{"metadata":{"accession":"IPR000719","name":"Protein kinase domain","type":"domain"},"proteins":[{"entry_protein_locations":[{"fragments":[{"start":457,"end":717}]}]}]}]}"#;
 const CANCERHOTSPOTS_EMPTY_REPLY: &str = "[]";
 
-struct StructureReplyEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl StructureReplyEnv {
-    fn set(&mut self, name: &'static str, value: &str) {
-        self.0.push((name, std::env::var_os(name)));
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var(name, value) };
-    }
-}
-
-impl Drop for StructureReplyEnv {
-    fn drop(&mut self) {
-        for (name, prior) in self.0.drain(..).rev() {
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(value) = prior {
-                    std::env::set_var(name, value);
-                } else {
-                    std::env::remove_var(name);
-                }
-            }
-        }
-    }
-}
+type StructureReplyEnv = crate::test_support::FixtureEnv;
 
 fn structure_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<u8>) {
     let target = request.split_whitespace().nth(1).unwrap_or_default();
@@ -421,13 +398,10 @@ async fn structure_recorded_reply_server()
 }
 
 fn structure_reply_env(base: &str, cache_dir: &tempfile::TempDir) -> StructureReplyEnv {
-    let mut env = StructureReplyEnv(Vec::new());
+    let mut env = StructureReplyEnv::scratch_cache_only();
     env.set("BIOMCP_CACHE_MODE", "off");
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_dir.path().to_str().expect("utf-8 temp path"),
-    );
-    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+    env.set_cache_root(cache_dir.path().to_str().expect("utf-8 temp path"));
+    env.set("BIOMCP_MYVARIANT_BASE", format!("{base}/v1"));
     env.set("BIOMCP_MYGENE_BASE", base);
     env.set("BIOMCP_UNIPROT_BASE", base);
     env.set("BIOMCP_INTERPRO_BASE", base);
