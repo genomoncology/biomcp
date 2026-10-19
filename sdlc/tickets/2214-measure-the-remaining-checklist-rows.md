@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 6f362b3, accept
 
+Reviews: revision e7d42f8, accept
+
 ## Outcome
 
 The release measurement covers every row the 0.9.3 checklist named, so the next release compares like with like.
