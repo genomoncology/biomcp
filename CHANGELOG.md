@@ -23,6 +23,8 @@
 
 ### Internal
 
+- Check pathway search and KEGG and Reactome details in JSON and Markdown against recorded provider replies. (2079)
+
 - Check BRAF gene search in JSON and Markdown against a complete recorded provider reply. (2079)
 
 - Run the condition-first trial search specification through recorded replay while preserving its query and table assertions. (2111)
