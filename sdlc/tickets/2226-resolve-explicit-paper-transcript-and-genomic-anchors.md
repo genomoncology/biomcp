@@ -49,6 +49,8 @@ RED job `2226/1792410374016-38223` applied the exact test/capture patch to froze
 
 Causal-proof correction: the initial live captures are full CAR responses, while production asks for a projected fields schema. Keep full responses for the clinical equivalence record, capture the exact production-shaped responses with provenance, and rerun the positive RED while asserting the caller input resolves. The initial RED is provisional until that isolates the missing paper-anchor mechanism. Do not broaden the existing decoder.
 
+Corrected causal RED: job `2226/1792410601017-72760`, frozen main and executable as above, used the exact production-shaped CAR captures and first asserted caller `canonical_equivalence.caid=CA002402`, `exhaustive=true`, and a resolved observation. The same-allele paper identity then failed unverified versus confirmed: one failed, two controls passed in 1.74 seconds, zero fixture misses. Command: `biomcp --json --no-cache variant articles --input INPUT.json --verify-identity --debug-plan --limit 5`, with input `[{"gene":"BRCA1","transcript":"NM_007297.4","coding":"c.3607G>T"}]`. Different canonical `CA10594475` and the simulated unavailable-anchor control stayed unverified and outside confirmed-only results. Production same-allele response SHA256 is `e497b293de0dd11574a38d6652a8f3568dfbc984234709da59595ad717e44d85`; the initial full-shape attempt remains excluded as causal proof.
+
 Implement only the demonstrated literal-versioned-transcript mechanism with bounded authoritative resolution, retained paper locator and provenance, plus active different-allele/unresolved controls. No unsupported build-coordinate parser or general text framework. Preserve typed Gene requirements and conservative summaries.
 
 ## Progress
