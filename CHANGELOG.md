@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Name every resolved variant article alias with its planned and attempted query disposition, including forms omitted by the alias limit or invocation deadline. (2246)
+
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
 - Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)
