@@ -5,15 +5,7 @@ These canaries keep the focus on durable identity, deepen-path guidance, and
 opt-in sections instead of volatile upstream counts or copy-edit trivia. A
 page edit like this one must never cost a Rust compile.
 
-## Symbol-Based Search
-
-Symbol search should still surface the canonical BRAF row in a human-scannable
-table before the user pivots into deeper sections.
-
-```bash
-../../tools/biomcp-ci search gene BRAF --limit 3 | mustmatch like '# Genes: BRAF
-B-Raf proto-oncogene'
-```
+The [gene discovery and identity specification](gene-discovery.md) checks the canonical BRAF search row and identity card against recorded replies.
 
 ## Exact Symbol Ranking and Pagination
 
@@ -70,25 +62,7 @@ gene-get validation must reject it before a second provider request.
 
 ## Search Table Contract
 
-The search surface needs to stay readable for humans and still expose machine
-follow-ups through `_meta.next_commands`.
-
-```bash
-../../tools/biomcp-ci --json search gene BRAF --limit 3 | mustmatch like '"next_commands":'
-../../tools/biomcp-ci --json search gene BRAF --limit 3 | jq -e '._meta.next_commands[0] | test("^biomcp get gene .+$")' >/dev/null
-../../tools/biomcp-ci --json search gene BRAF --limit 3 | jq -e '._meta.next_commands | any(. == "biomcp list gene")' >/dev/null
-```
-
-## Identity Card
-
-The default card should keep the persistent identifier and the progressive
-disclosure hints that let readers deepen into the right follow-up section.
-
-```bash
-../../tools/biomcp-ci get gene BRAF | mustmatch like 'Entrez ID: 673
-biomcp get gene BRAF pathways
-biomcp get gene BRAF diagnostics'
-```
+The recorded [gene-search golden cases](../../tests/golden/cases/search-gene-braf.json) check the JSON follow-up commands.
 
 ## Disabled KEGG Drops Carried Pathway Names
 
@@ -134,12 +108,9 @@ requiring any optional enrichment provider.
 
 ## Observed MyGene Requests
 
-The local fixture records requests emitted by the production client, including
-the bounded search and exact-symbol identity plans.
+The local fixture records the exact-symbol identity plan. The replay specification checks the bounded BRAF search request.
 
 ```bash
-grep -F 'GET /mygene/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
-  | grep -Fq '&size=50&from=0'
 grep -F 'GET /mygene/v3/query?q=symbol%3A%22BRCA1%22' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'symbol%3A%22BRCA1%22'
 ```
 
