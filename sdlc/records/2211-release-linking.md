@@ -77,7 +77,7 @@ Historical live-provider observations in `2069-0-9-3-baseline.md` remain context
 
 ## Attempts and retained evidence
 
-One owned disposable experiment, `2077-biomcp-release-linking`, retains `OWNER` naming `biomcp/2211`. Its `attempt-2/` contains the successful six-build collection, measurement script, frozen helper, settings, preparation logs, runtime script, captured binaries and raw runtime output. The build pairs each contain command settings, native timing output, Cargo timing reports, tracked-status checks, binary hashes and cache/load snapshots. Its `builds.json` and `runtime/samples.json` hold the raw structured observations. These are experiment outputs, not tracked product files.
+One owned disposable experiment, `2077-biomcp-release-linking`, used `OWNER` naming `biomcp/2211`. Review preserved its small evidence in `job-runs/biomcp/2211/1792411663763-42983/release-linking-evidence.tar.gz` on the measurement host, beside the finished job logs. The archive keeps the original experiment-relative paths: scripts, frozen helper, settings, preparation logs, raw runtime output, command settings, native timing output, Cargo timing reports, tracked-status checks, binary hashes and cache/load snapshots. Its `attempt-2/builds.json` and `attempt-2/runtime/samples.json` hold the raw structured observations. All six binary sizes and hashes were verified before cleanup. The disposable experiment folder, clones and binaries were removed after review; the evidence archive and job logs remain. These are experiment outputs, not tracked product files.
 
 Preparation had two separate failures, both retained:
 
