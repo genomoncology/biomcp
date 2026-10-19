@@ -17,8 +17,11 @@
 - Reconcile HTTP cache byte accounting after explicit cleanup, including reservations left by failed writes. (2218)
 - Preserve configured source-disable reasons in variant literature CLI and MCP responses instead of reporting a provider failure. (2222)
 - Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
+- Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
 
 ### Internal
+
+- Stop replay servers when their test runner dies, including abandoned requests, while preserving normal and timeout cleanup. (2229)
 
 - Check populated and empty trial-reference output in JSON and Markdown against recorded provider replies. (2079)
 

@@ -69,8 +69,9 @@ def provider(tmp_path: Path):
                    BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS="3000")
         cache = Path(env["BIOMCP_CACHE_DIR"])
 
-        def run(argv):
-            return subprocess.run([str(BINARY), "--json", *argv], cwd=REPO_ROOT, env=env,
+        def run(argv, *, log_level="warn"):
+            command_env = dict(env, RUST_LOG=log_level)
+            return subprocess.run([str(BINARY), "--json", *argv], cwd=REPO_ROOT, env=command_env,
                                   capture_output=True, text=True, timeout=20)
 
         try:
@@ -88,6 +89,7 @@ def assert_answer(result, cause):
     warnings = [line for line in result.stderr.splitlines() if "local HTTP cache" in line]
     assert len(warnings) == 1, result.stderr
     assert cause in warnings[0], warnings
+    assert "WARN" in warnings[0], warnings
     assert "http://" not in warnings[0]
     assert "https://" not in warnings[0]
     assert "io_kind" in warnings[0] and "os_code" in warnings[0]
@@ -164,7 +166,56 @@ def test_failed_cache_write_keeps_the_provider_answer(provider):
         (cache / ".biomcp-key-locks").write_bytes(b"blocked lock directory")
 
     before_reply[0] = obstruct_write
-    assert_answer(run(GENE), "write")
+    result = run(GENE)
+    assert_answer(result, "write")
+    assert "WouldBlock" not in result.stderr, result.stderr
+
+
+@pytest.mark.skipif(os.name != "posix", reason="uses a POSIX lock holder")
+@pytest.mark.parametrize("log_level", ["warn", "debug"])
+def test_contended_cache_write_keeps_answer_and_logs_only_at_debug(provider, log_level):
+    import fcntl
+
+    run, cache, before_reply, replay = provider
+    held = None
+
+    def hold_byte_total_lock():
+        nonlocal held
+        held = (cache / "http/.content-bytes.lock").open("a+b")
+        fcntl.flock(held, fcntl.LOCK_EX)
+
+    before_reply[0] = hold_byte_total_lock
+    try:
+        result = run(GENE, log_level=log_level)
+        assert result.returncode == 0, (result.stdout, result.stderr)
+        expected = json.loads(result.stdout)["results"]
+        assert expected
+        messages = [line for line in result.stderr.splitlines() if "local HTTP cache" in line]
+        assert not any("WARN" in line for line in messages), result.stderr
+        if log_level == "debug":
+            assert len(messages) == 1, result.stderr
+            assert "DEBUG" in messages[0] and "WouldBlock" in messages[0], messages
+            assert 'operation="write"' in messages[0], messages
+            assert str(cache) not in messages[0] and "http://" not in messages[0], messages
+        else:
+            assert not messages, result.stderr
+        # Write preparation may create an empty index bucket before reserving bytes.
+        assert not any(
+            path.read_bytes() for path in (cache / "http/index-v5").rglob("*") if path.is_file()
+        ), "contended write must leave no cached answer"
+    finally:
+        before_reply[0] = lambda: None
+        if held is not None:
+            held.close()
+    before = replay.request_log_line_count()
+    refill = run(GENE)
+    assert refill.returncode == 0, refill.stderr
+    assert json.loads(refill.stdout)["results"] == expected
+    assert replay.request_log_line_count() == before + 1, "skipped write must refetch"
+    hit = run(GENE)
+    assert hit.returncode == 0, hit.stderr
+    assert json.loads(hit.stdout)["results"] == expected
+    assert replay.request_log_line_count() == before + 1, "settled refill must be reused"
 
 
 @pytest.mark.parametrize("fault", ["integrity", "missing"])

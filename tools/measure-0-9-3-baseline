@@ -21,6 +21,8 @@
 #   --dry-run        print every command without running anything
 #   --only a,b,c     run only the named sections
 #   --expect-tag T   fail unless the clone's HEAD is exactly at tag T
+#   --release-record FILE   reuse a retained release record (no network calls)
+#   --target-build-log TARGET=FILE   reuse a complete release build log
 #
 # The clone must be a clean checkout of the tree to measure (ticket 2069
 # measures tag v0.9.2). Timed build numbers assume the host's documented
@@ -33,11 +35,14 @@ DRY_RUN=0
 ONLY=""
 EXPECT_TAG=""
 CLONE=""
+RELEASE_RECORD=""
+TARGET_BUILD_LOGS=()
 
 usage() {
   cat >&2 <<'USAGEEOF'
 usage: measure-0-9-3-baseline <clone-dir> [--dry-run] [--only a,b,c]
                               [--expect-tag vX.Y.Z]
+                              [--release-record FILE] [--target-build-log TARGET=FILE]
 USAGEEOF
   exit 2
 }
@@ -49,6 +54,8 @@ while (($#)); do
     --only=*) ONLY="${1#*=}" ;;
     --expect-tag) shift; EXPECT_TAG="${1:-}" ;;
     --expect-tag=*) EXPECT_TAG="${1#*=}" ;;
+    --release-record) shift; RELEASE_RECORD="${1:-}" ;;
+    --target-build-log) shift; TARGET_BUILD_LOGS+=("${1:-}") ;;
     -h|--help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 0 ;;
     -*) echo "unknown option: $1" >&2; usage ;;
     *) if [[ -n "$CLONE" ]]; then echo "one clone directory only" >&2; usage; fi
@@ -59,6 +66,16 @@ done
 
 [[ -n "$CLONE" ]] || usage
 [[ -d "$CLONE" ]] || { echo "clone directory not found: $CLONE" >&2; exit 2; }
+# Resolve retained inputs before changing into the measured checkout.
+if [[ -n "$RELEASE_RECORD" ]]; then
+  RELEASE_RECORD="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$RELEASE_RECORD")"
+fi
+for i in "${!TARGET_BUILD_LOGS[@]}"; do
+  entry="${TARGET_BUILD_LOGS[$i]}"
+  [[ "$entry" == *=* ]] || { echo "target build log requires TARGET=FILE" >&2; exit 2; }
+  path="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "${entry#*=}")"
+  TARGET_BUILD_LOGS[$i]="${entry%%=*}=$path"
+done
 
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
 cd "$CLONE"
@@ -197,6 +214,141 @@ if want_section quiet; then
 fi
 
 # ---------------------------------------------------------------- cold dev build
+
+if want_section working-checkout; then
+  say working-checkout "target/ bytes at entry, before any measurement build"
+  show "du -sb target (du -sk * 1024 where -b is absent); existing state, not a clean build"
+  if ((!DRY_RUN)); then
+    if [[ -d target ]]; then
+      result working_checkout_build_folder_bytes "$(du_bytes target)"
+    else
+      result working_checkout_build_folder_bytes "unavailable (no target directory in this checkout)"
+    fi
+  fi
+fi
+
+if want_section release-target-counts; then
+  say release-target-counts "observed compiler work from retained release-target build logs"
+  show "python3 (unique Compiling name/version pairs, including the product; cached crates absent from logs stay uncounted)"
+  if ((!DRY_RUN)); then
+    python3 - ${TARGET_BUILD_LOGS[@]+"${TARGET_BUILD_LOGS[@]}"} <<'PY'
+import re
+import sys
+from pathlib import Path
+
+logs = dict(entry.split("=", 1) for entry in sys.argv[1:])
+targets = {"linux": "x86_64-unknown-linux-gnu",
+           "linux_arm64": "aarch64-unknown-linux-gnu",
+           "windows": "x86_64-pc-windows-msvc"}
+for label, target in targets.items():
+    path = logs.get(target)
+    key = f"crates_compiled_{label}_release"
+    if not path or not Path(path).is_file():
+        print(f"RESULT {key} = unavailable (no retained {target} build log)")
+        continue
+    text = Path(path).read_text(errors="replace")
+    # gh preserves Windows color either as ANSI escapes or printable ^[ codes.
+    text = re.sub(r"(?:\x1b|\^\[)\[[0-?]*[ -/]*[@-~]", "", text)
+    print(f"retained input {target}: {path}")
+    pairs = set(re.findall(r"\bCompiling ([\w-]+) v([^\s]+)", text))
+    if not re.search(r"Finished [`\"]release['`\"] profile", text):
+        print(f"RESULT {key} = unavailable (retained log lacks successful release completion)")
+        continue
+    print(f"RESULT {key} = {len(pairs)}")
+    print(f"METHOD {key}: observed unique Compiling pairs only; cache state and command must be retained with the input; not a resolved graph or total compiler units")
+PY
+  fi
+fi
+
+if want_section python-test-functions; then
+  say python-test-functions "AST test function definitions, separate from parametrized collected cases"
+  show "python3 (test_ functions and methods of Test classes; file-level tooling references; retained TSV inventory)"
+  if ((!DRY_RUN)); then
+    python3 - "$LOGD/python-test-functions.tsv" <<'PY'
+import ast
+import sys
+from pathlib import Path
+
+ignored = {"tools/run-offline", "tools/with-build-identity"}
+rows = []
+for path in sorted(Path("tests").rglob("*.py")):
+    if not (path.name.startswith("test_") or path.name.endswith("_test.py")):
+        continue
+    tree = ast.parse(path.read_text(), filename=str(path))
+    definitions = [node for node in tree.body
+                   if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef) and (node.name.startswith("Test") or any(
+            isinstance(base, ast.Name) and base.id == "TestCase" or
+            isinstance(base, ast.Attribute) and base.attr == "TestCase"
+            for base in node.bases
+        )):
+            definitions.extend(n for n in node.body
+                               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)))
+    count = sum(node.name.startswith("test_") for node in definitions)
+    if not count:
+        continue
+    references = set()
+    for node in ast.walk(tree):
+        value = ""
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            value = node.value
+        elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+            parts = []
+            cursor = node
+            while isinstance(cursor, ast.BinOp) and isinstance(cursor.op, ast.Div):
+                if isinstance(cursor.right, ast.Constant) and isinstance(cursor.right.value, str):
+                    parts.insert(0, cursor.right.value)
+                cursor = cursor.left
+            if isinstance(cursor, ast.Constant) and isinstance(cursor.value, str):
+                parts.insert(0, cursor.value)
+            value = "/".join(parts)
+        if (value.startswith(("tools/", "scripts/", ".github/workflows/")) or value == "Makefile") and "\n" not in value:
+            if value not in ignored and not value.startswith(("scripts/fixtures/", "spec/fixtures/")):
+                references.add(value)
+    rows.append((str(path), "tooling" if references else "other", count, ",".join(sorted(references))))
+total = sum(row[2] for row in rows)
+tooling = sum(row[2] for row in rows if row[1] == "tooling")
+Path(sys.argv[1]).write_text("path\tclassification\tfunctions\treferences\n" + "".join(
+    f"{path}\t{kind}\t{count}\t{refs}\n" for path, kind, count, refs in rows))
+print(f"RESULT python_test_functions = {total}")
+print(f"RESULT python_tooling_test_functions = {tooling}")
+print(f"RESULT python_tooling_test_share_pct = {100 * tooling / total:.2f}" if total else
+      "RESULT python_tooling_test_share_pct = unavailable (no test functions)")
+print("METHOD: file-level convention: tooling path references, excluding generic offline/identity wrappers; mixed files count wholly as tooling. This is a reviewable classification, not semantic proof for every function. AST definitions exclude parametrization expansion and dynamically generated tests.")
+PY
+  fi
+fi
+
+if want_section release-history; then
+  say release-history "retained release record; no new workflows or asset downloads"
+  show "python3 (retained publishing elapsed duration, archive bytes, full-mode attempt rows)"
+  if ((!DRY_RUN)); then
+    python3 - "$RELEASE_RECORD" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1]) if sys.argv[1] else None
+text = path.read_text() if path and path.is_file() else ""
+if text:
+    print(f"retained release record: {path}")
+    print(text)
+duration = re.search(r"elapsed (\d+) minutes (\d+) seconds", text)
+archives = re.findall(r"^\| (biomcp-[^ |]+\.(?:tar\.gz|zip)) \| ([\d,]+) \|", text, re.M)
+attempts = re.findall(r"^\| \[\d+\]\(https://github.com/[^)]+/actions/runs/\d+\) \|", text, re.M)
+unavailable = "unavailable (no matching evidence in retained release record)"
+print(f"RESULT release_workflow_wall_s = {int(duration[1]) * 60 + int(duration[2])}" if duration else
+      f"RESULT release_workflow_wall_s = {unavailable}")
+for name, size in archives:
+    print(f"RESULT release_archive_bytes_{name} = {size.replace(',', '')}")
+if not archives:
+    print(f"RESULT release_archive_bytes = {unavailable}")
+print(f"RESULT full_rehearsals_count = {len(attempts)}" if attempts else
+      f"RESULT full_rehearsals_count = {unavailable}")
+PY
+  fi
+fi
 
 if want_section cold-dev-build; then
   say cold-dev-build "cold dev build of every target (routine feature set)"
@@ -858,6 +1010,21 @@ for case, argv in {
     report(case, values)
 
 PY
+  fi
+fi
+
+if want_section edit-test-group; then
+  say edit-test-group "one Rust edit followed by one existing gene-render test group"
+  runsh 'touch src/render/markdown/gene.rs'
+  timedsh_exit edit_test_group "$LOGD/edit-test-group.exit" \
+    "tools/run-offline -- tools/with-build-identity cargo nextest run --locked --no-default-features --lib -E 'test(gene_markdown)' > $LOGD/edit-test-group.log 2>&1"
+  if ((!DRY_RUN)); then
+    result edit_test_group_exit "$(<"$LOGD/edit-test-group.exit")"
+    if [[ "$(<"$LOGD/edit-test-group.exit")" != 0 ]] || ! grep -qE 'Summary .* [1-9][0-9]* tests? run:' "$LOGD/edit-test-group.log"; then
+      result edit_test_group_collection "incomplete (failed or empty test group; retain log)"
+    else
+      result edit_test_group_collection complete
+    fi
   fi
 fi
 
