@@ -15,6 +15,63 @@ SOURCE_PAGE_SECTION_HEADINGS = (
 )
 
 SOURCE_PAGE_SPECS = {
+    "pubtator.md": {
+        "title": "PubTator3 Article Source Guide | BioMCP",
+        "description": "Understand PubTator3 article discovery, full-text availability, and reuse boundaries in BioMCP.",
+        "api_access": "Optional `NCBI_API_KEY` for NCBI requests.",
+        "official_url": "https://www.ncbi.nlm.nih.gov/research/pubtator3/api",
+        "required_intro_phrases": [
+            "PubTator3"
+        ],
+        "exposes": [
+            "search article --source pubtator",
+            "get article <id> annotations",
+            "article entities <pmid>"
+        ],
+        "example_commands": [
+            "biomcp search article -g BRAF --source pubtator --limit 3",
+            "biomcp get article 24200969 annotations",
+            "biomcp article entities 24200969"
+        ]
+    },
+    "pmc.md": {
+        "title": "PMC Article Source Guide | BioMCP",
+        "description": "Understand PMC article discovery, full-text availability, and reuse boundaries in BioMCP.",
+        "api_access": "Optional `NCBI_API_KEY` for NCBI requests.",
+        "official_url": "https://pmc.ncbi.nlm.nih.gov/",
+        "required_intro_phrases": [
+            "PMC"
+        ],
+        "exposes": [
+            "get article <id> fulltext",
+            "get article <id> assets",
+            "get article <id> fulltext --pdf"
+        ],
+        "example_commands": [
+            "biomcp get article 24200969 fulltext",
+            "biomcp --json get article 24200969 fulltext",
+            "biomcp --json get article 24200969 assets"
+        ]
+    },
+    "europe-pmc.md": {
+        "title": "Europe PMC Article Source Guide | BioMCP",
+        "description": "Understand Europe PMC article discovery, full-text availability, and reuse boundaries in BioMCP.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://europepmc.org/RestfulWebService",
+        "required_intro_phrases": [
+            "Europe PMC"
+        ],
+        "exposes": [
+            "search article --source europepmc",
+            "get article <id>",
+            "get article <id> fulltext"
+        ],
+        "example_commands": [
+            "biomcp search article -g BRAF --source europepmc --limit 3",
+            "biomcp get article 24200969",
+            "biomcp get article 24200969 fulltext"
+        ]
+    },
     "pubmed.md": {
         "title": "PubMed MCP Tool for AI Agents | BioMCP",
         "description": "Search PubMed in BioMCP with PubTator3 annotations, article summaries, and PMC full-text handoff so AI agents can review literature faster.",
@@ -818,6 +875,9 @@ EXPECTED_SOURCE_FILES = [OVERVIEW_FILE, *SOURCE_PAGE_SPECS, "gencc.md"]
 EXPECTED_NAV_BLOCK = """  - Sources:
       - Overview: sources/index.md
       - PubMed: sources/pubmed.md
+      - PubTator3: sources/pubtator.md
+      - PMC: sources/pmc.md
+      - Europe PMC: sources/europe-pmc.md
       - ClinicalTrials.gov: sources/clinicaltrials-gov.md
       - ClinGen Allele Registry: sources/clingen-allele-registry.md
       - ClinGen CSpec: sources/clingen-cspec.md

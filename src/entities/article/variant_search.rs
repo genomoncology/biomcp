@@ -186,8 +186,35 @@ pub struct VariantArticleAliasCoverage {
     pub reason: &'static str,
 }
 
+/// MyGene's recorded alias field and the actual variant-query coverage it enabled.
+#[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleGeneSymbolCoverage {
+    pub source: &'static str,
+    pub source_field: &'static str,
+    pub status: &'static str,
+    pub entrez_id: Option<String>,
+    pub recorded_aliases: Vec<String>,
+    pub restriction: Option<&'static str>,
+    pub aliases: Vec<VariantArticleAliasCoverage>,
+}
+
+impl Default for VariantArticleGeneSymbolCoverage {
+    fn default() -> Self {
+        Self {
+            source: "mygene-info",
+            source_field: "alias",
+            status: "not_applicable",
+            entrez_id: None,
+            recorded_aliases: Vec::new(),
+            restriction: None,
+            aliases: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleResponse {
+    pub gene_symbol_coverage: VariantArticleGeneSymbolCoverage,
     pub alias_coverage: Vec<VariantArticleAliasCoverage>,
     pub requested_variant: RequestedVariantIdentity,
     pub resolution: VariantArticleResolution,
@@ -279,8 +306,13 @@ pub(crate) struct VariantArticleExecutionContext {
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
     pubtator_variant_queries: Arc<Mutex<BTreeSet<String>>>,
     alias_yields: Arc<Mutex<Vec<VariantAliasYieldRecord>>>,
-    query_alias: Option<String>,
+    query_aliases: Vec<String>,
+    boolean_gene_aliases: Arc<Mutex<Vec<String>>>,
+    boolean_variant_aliases: Arc<Mutex<Vec<String>>>,
     attempted_aliases: Arc<Mutex<BTreeSet<String>>>,
+    attempted_alias_sources: Arc<Mutex<BTreeSet<(String, String)>>>,
+    boolean_query_omissions: Arc<Mutex<BTreeSet<(String, String)>>>,
+    gene_symbol_coverage: Arc<Mutex<VariantArticleGeneSymbolCoverage>>,
     alias_setup_failures: Arc<Mutex<BTreeMap<String, BTreeSet<&'static str>>>>,
     ldh_medium: Arc<AtomicUsize>,
     ldh_direct: Arc<AtomicUsize>,
@@ -324,8 +356,13 @@ impl VariantArticleExecutionContext {
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
             pubtator_variant_queries: Arc::new(Mutex::new(BTreeSet::new())),
             alias_yields: Arc::new(Mutex::new(Vec::new())),
-            query_alias: None,
+            query_aliases: Vec::new(),
+            boolean_gene_aliases: Arc::new(Mutex::new(Vec::new())),
+            boolean_variant_aliases: Arc::new(Mutex::new(Vec::new())),
             attempted_aliases: Arc::new(Mutex::new(BTreeSet::new())),
+            attempted_alias_sources: Arc::new(Mutex::new(BTreeSet::new())),
+            boolean_query_omissions: Arc::new(Mutex::new(BTreeSet::new())),
+            gene_symbol_coverage: Arc::new(Mutex::new(VariantArticleGeneSymbolCoverage::default())),
             alias_setup_failures: Arc::new(Mutex::new(BTreeMap::new())),
             ldh_medium: Arc::new(AtomicUsize::new(0)),
             ldh_direct: Arc::new(AtomicUsize::new(0)),
@@ -474,17 +511,39 @@ impl VariantArticleExecutionContext {
 
     fn for_alias(&self, alias: &str) -> Self {
         let mut scoped = self.clone();
-        scoped.query_alias = Some(alias.to_string());
+        scoped.query_aliases = vec![alias.to_string()];
         scoped
     }
 
-    pub(crate) fn record_alias_query_attempt(&self) {
-        if let Some(alias) = &self.query_alias {
-            self.attempted_aliases
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .insert(alias.clone());
-        }
+    fn for_aliases(&self, aliases: &[String]) -> Self {
+        let mut scoped = self.clone();
+        scoped.query_aliases = aliases.to_vec();
+        scoped
+    }
+
+    pub(crate) fn includes_boolean_alias_sources(&self, route: &str) -> bool {
+        route != "exact_lexical"
+            || !self.query_aliases.iter().any(|alias| {
+                self.boolean_gene_aliases
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .contains(alias)
+            })
+    }
+
+    pub(crate) fn record_alias_query_attempt(&self, source: &str) {
+        self.attempted_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .extend(self.query_aliases.iter().cloned());
+        self.attempted_alias_sources
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .extend(
+                self.query_aliases
+                    .iter()
+                    .map(|alias| (source.to_string(), alias.clone())),
+            );
     }
 
     pub(crate) async fn begin_provider_unit(
@@ -685,7 +744,7 @@ impl VariantArticleExecutionContext {
         } else {
             ("unavailable", "provider_error")
         };
-        if let Some(alias) = &self.query_alias {
+        for alias in &self.query_aliases {
             self.alias_setup_failures
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -1084,6 +1143,10 @@ pub struct ProviderVariantQueryPlan {
     pub provider: String,
     pub route: String,
     pub query_alias: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub query_aliases: Vec<String>,
+    #[serde(skip)]
+    coverage_aliases: Vec<String>,
     pub query: String,
     pub query_template_version: String,
 }
@@ -1126,6 +1189,7 @@ pub struct VariantArticleAliasYield {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleDebugPlan {
+    pub gene_symbol_coverage: VariantArticleGeneSymbolCoverage,
     pub alias_coverage: Vec<VariantArticleAliasCoverage>,
     pub normalized_aliases: NormalizedVariantAliases,
     pub provider_queries: Vec<ProviderVariantQueryPlan>,
@@ -1189,6 +1253,7 @@ pub struct VariantArticleItemError {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleBatchItem {
+    pub gene_symbol_coverage: VariantArticleGeneSymbolCoverage,
     pub alias_coverage: Vec<VariantArticleAliasCoverage>,
     pub request_id: String,
     pub requested_variant: RequestedVariantIdentity,
@@ -1636,6 +1701,18 @@ fn unavailable_variant_article_sources(statuses: &[VariantArticleSourceStatus]) 
         .collect()
 }
 
+/// A grouped OR query records alternatives without identifying which one matched.
+fn identified_query_aliases(candidate: &ArticleCandidate) -> Vec<String> {
+    candidate
+        .variant_provenance
+        .iter()
+        .filter(|fact| fact.matched_alias.is_some())
+        .flat_map(|fact| fact.query_aliases.iter().cloned())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect()
+}
+
 fn candidate_with_provenance(
     row: ArticleSearchResult,
     route: &str,
@@ -1877,12 +1954,213 @@ async fn resolve_search_context(
     } else {
         resolve_canonical_equivalence(&context.requested, execution).await
     };
-    let (aliases, truncated) = if strategy == VariantArticleStrategy::Exact {
+    let (mut aliases, mut truncated) = if strategy == VariantArticleStrategy::Exact {
         (vec![input.trim().to_string()], false)
     } else {
         exact_aliases_with_equivalence(&context, &canonical_equivalence)
     };
+    if !matches!(
+        strategy,
+        VariantArticleStrategy::Exact | VariantArticleStrategy::Annotation
+    ) && context.available
+    {
+        truncated |= expand_gene_symbol_aliases(&context, &mut aliases, execution).await;
+    }
     Ok((context, canonical_equivalence, aliases, truncated))
+}
+
+async fn expand_gene_symbol_aliases(
+    context: &VariantArticleResolutionContext,
+    selected: &mut Vec<String>,
+    execution: &VariantArticleExecutionContext,
+) -> bool {
+    let Some((gene, primary)) = context
+        .requested
+        .gene
+        .as_deref()
+        .zip(primary_exact_alias(context))
+    else {
+        return false;
+    };
+    let Some(change) = primary
+        .strip_prefix(gene)
+        .and_then(|rest| rest.strip_prefix(' '))
+    else {
+        return false;
+    };
+    let mut coverage = VariantArticleGeneSymbolCoverage::default();
+    if crate::sources::disable::is_disabled("mygene-info") {
+        coverage.status = "disabled";
+        coverage.restriction = Some("current-spelling-only: MyGene aliases disabled");
+        *execution
+            .gene_symbol_coverage
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = coverage;
+        return false;
+    }
+    let result = if let Some(unit) = execution
+        .begin_provider_unit("gene_aliases", "mygene-info")
+        .await
+    {
+        // Optional alias facts must leave time for article retrieval after a source outage.
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            crate::entities::gene::recorded_gene_aliases(gene),
+        )
+        .await
+        {
+            Ok(result) => {
+                match &result {
+                    Ok(_) => unit.record("ok", 1),
+                    Err(error) => unit.record_error(error),
+                }
+                result
+            }
+            Err(_) => {
+                drop(unit);
+                Err(BioMcpError::Api {
+                    api: "mygene-info".into(),
+                    message: "optional gene alias lookup timed out".into(),
+                })
+            }
+        }
+    } else {
+        coverage.status = "unavailable";
+        coverage.restriction =
+            Some("current-spelling-only: MyGene aliases unavailable within the invocation budget");
+        *execution
+            .gene_symbol_coverage
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = coverage;
+        return false;
+    };
+    match result {
+        Ok(Some((entrez_id, mut aliases))) if !aliases.is_empty() => {
+            coverage.status = "available";
+            coverage.entrez_id = Some(entrez_id);
+            coverage.recorded_aliases = aliases.clone();
+            // Longer spellings are less ambiguous. Stable sorting retains source order for ties.
+            aliases.sort_by_key(|alias| std::cmp::Reverse(alias.len()));
+            coverage.aliases = aliases
+                .into_iter()
+                .map(|symbol| VariantArticleAliasCoverage {
+                    alias: format!("{symbol} {change}"),
+                    planned: false,
+                    attempted: false,
+                    disposition: "omitted",
+                    reason: "alias_limit",
+                })
+                .collect();
+        }
+        Ok(_) => {
+            coverage.status = "absent";
+            coverage.restriction = Some(
+                "current-spelling-only: MyGene has no aliases for one unambiguous Entrez-backed gene",
+            );
+        }
+        Err(error) => {
+            coverage.status =
+                if crate::sources::disable::unavailable_disabled_reason(&error).is_some() {
+                    "disabled"
+                } else {
+                    "unavailable"
+                };
+            coverage.restriction =
+                Some("current-spelling-only: MyGene aliases unavailable or disabled");
+        }
+    }
+    if coverage.status == "available" {
+        *execution
+            .boolean_variant_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = selected.clone();
+        let mut boolean_aliases = vec![primary.clone()];
+        boolean_aliases.extend(
+            coverage
+                .recorded_aliases
+                .iter()
+                .map(|symbol| format!("{symbol} {change}")),
+        );
+        *execution
+            .boolean_gene_aliases
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = boolean_aliases;
+    }
+    let mut ordered = vec![primary];
+    ordered.extend(coverage.aliases.iter().map(|row| row.alias.clone()));
+    for alias in selected.iter() {
+        if !ordered.contains(alias) {
+            ordered.push(alias.clone());
+        }
+    }
+    let truncated = ordered.len() > MAX_EXACT_ALIASES;
+    ordered.truncate(MAX_EXACT_ALIASES);
+    *selected = ordered;
+    for alias in &mut coverage.aliases {
+        alias.planned = selected.contains(&alias.alias);
+    }
+    *execution
+        .gene_symbol_coverage
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = coverage;
+    truncated
+}
+
+fn gene_symbol_coverage(
+    execution: &VariantArticleExecutionContext,
+    aliases: &[VariantArticleAliasCoverage],
+) -> VariantArticleGeneSymbolCoverage {
+    let mut coverage = execution
+        .gene_symbol_coverage
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
+    let attempted_sources = execution
+        .attempted_alias_sources
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut non_boolean_omissions = Vec::new();
+    for row in coverage.aliases.iter().filter(|row| !row.planned) {
+        for (source, reason) in [
+            ("pubtator", "pubtator_alias_limit"),
+            ("semanticscholar", "semanticscholar_alias_limit"),
+        ] {
+            if !attempted_sources.contains(&(source.to_string(), row.alias.clone())) {
+                non_boolean_omissions.push(VariantArticleAliasCoverage {
+                    alias: row.alias.clone(),
+                    planned: false,
+                    attempted: false,
+                    disposition: "omitted",
+                    reason,
+                });
+            }
+        }
+    }
+    for row in &mut coverage.aliases {
+        if let Some(actual) = aliases.iter().find(|actual| actual.alias == row.alias) {
+            *row = actual.clone();
+        }
+    }
+    coverage.aliases.extend(non_boolean_omissions);
+    coverage.aliases.extend(
+        execution
+            .boolean_query_omissions
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .map(|(provider, alias)| VariantArticleAliasCoverage {
+                alias: alias.clone(),
+                planned: false,
+                attempted: false,
+                disposition: "omitted",
+                reason: if provider == "pubmed" {
+                    "pubmed_query_length_limit"
+                } else {
+                    "europepmc_query_length_limit"
+                },
+            }),
+    );
+    coverage
 }
 
 fn unresolved_exact_context(
@@ -2153,6 +2431,15 @@ fn alias_coverage(
     execution: &VariantArticleExecutionContext,
 ) -> Vec<VariantArticleAliasCoverage> {
     let mut aliases = all_exact_aliases(context);
+    aliases.extend(
+        execution
+            .gene_symbol_coverage
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .aliases
+            .iter()
+            .map(|row| row.alias.clone()),
+    );
     if !context.requested.is_authoritative_refseq() && equivalence.status == "confirmed" {
         aliases.extend(equivalence.aliases.iter().map(|alias| {
             match variant_source_gene(context).filter(|_| alias.contains(":g.")) {
@@ -2176,11 +2463,21 @@ fn alias_coverage(
         && (strategy == VariantArticleStrategy::Union
             || (resolved && strategy == VariantArticleStrategy::Lexical))
     {
-        if provider_variant_query_plan_with_aliases(input, context, strategy, selected)
-            .iter()
-            .any(|plan| plan.route == "strict")
+        if provider_variant_query_plan_with_gene_aliases(
+            input, context, strategy, selected, execution,
+        )
+        .iter()
+        .any(|plan| plan.route == "strict")
         {
             planned.extend(selected.iter().cloned());
+            planned.extend(
+                provider_variant_query_plan_with_gene_aliases(
+                    input, context, strategy, selected, execution,
+                )
+                .into_iter()
+                .filter(|plan| plan.route == "strict")
+                .flat_map(|plan| plan.coverage_aliases),
+            );
         }
         if resolved {
             planned.extend(selected.iter().cloned());
@@ -2216,7 +2513,7 @@ fn alias_coverage(
             ) && !was_planned
             {
                 "strategy_does_not_query_alias"
-            } else if !selected.contains(&alias) {
+            } else if !selected.contains(&alias) && !was_planned {
                 "alias_limit"
             } else if !was_planned {
                 "strategy_does_not_query_alias"
@@ -2586,28 +2883,26 @@ async fn strict_provider_candidates(
     Vec<VariantArticleSourceStatus>,
 ) {
     let filters = article_filters();
-    let plans = exact_aliases.iter().flat_map(|alias| {
-        provider_variant_query_plan_with_aliases(
-            input,
-            context,
-            strategy,
-            std::slice::from_ref(alias),
-        )
-        .into_iter()
-        .filter(|plan| plan.route == "strict")
-        .map(move |plan| (alias, plan))
-    });
+    let plans = provider_variant_query_plan_with_gene_aliases(
+        input,
+        context,
+        strategy,
+        exact_aliases,
+        execution,
+    )
+    .into_iter()
+    .filter(|plan| plan.route == "strict");
     let mut candidates = Vec::new();
     let mut incomplete = false;
     let mut succeeded = false;
 
-    for (alias, plan) in plans {
+    for plan in plans {
         // This route resolves PubTator's entity from the original request,
         // not from each alias spelling. Do not count it as sending that form.
         let scoped = if plan.provider == "pubtator" {
             execution.clone()
         } else {
-            execution.for_alias(alias)
+            execution.for_aliases(&plan.coverage_aliases)
         };
         let execution = &scoped;
         if execution.route_stopped("strict") {
@@ -2743,12 +3038,18 @@ async fn strict_provider_candidates(
                     cut,
                 );
                 candidates.extend(rows.into_iter().map(|row| {
-                    candidate_with_provenance(
-                        row,
-                        "strict",
-                        &plan.provider,
-                        vec![plan.query_alias.clone()],
-                    )
+                    let grouped = !plan.query_aliases.is_empty();
+                    let aliases = if grouped {
+                        plan.query_aliases.clone()
+                    } else {
+                        vec![plan.query_alias.clone()]
+                    };
+                    let mut candidate =
+                        candidate_with_provenance(row, "strict", &plan.provider, aliases);
+                    if grouped {
+                        candidate.variant_provenance[0].matched_alias = None;
+                    }
+                    candidate
                 }));
             }
             Ok(_) | Err(_) if execution.route_stopped("strict") => {
@@ -3390,10 +3691,168 @@ fn exact_name_query_plans(name: &str) -> Vec<ProviderVariantQueryPlan> {
         provider: provider.into(),
         route: "exact_name".into(),
         query_alias: name.to_string(),
+        query_aliases: Vec::new(),
+        coverage_aliases: vec![name.to_string()],
         query,
         query_template_version: version.into(),
     })
     .collect()
+}
+
+fn boolean_gene_query(provider: &str, aliases: &[String]) -> String {
+    let change = aliases[0]
+        .split_once(' ')
+        .map(|(_, change)| change)
+        .unwrap_or_default();
+    let quote_pubmed = |value: &str| value.trim().replace('\\', "\\\\").replace('"', "\\\"");
+    let (symbols, change) = if provider == "pubmed" {
+        (
+            aliases
+                .iter()
+                .map(|alias| {
+                    let symbol = alias
+                        .split_once(' ')
+                        .map(|(symbol, _)| symbol)
+                        .unwrap_or(alias);
+                    format!("\"{}\"[Title/Abstract]", quote_pubmed(symbol))
+                })
+                .collect::<Vec<_>>(),
+            format!("\"{}\"[Title/Abstract]", quote_pubmed(change)),
+        )
+    } else {
+        (
+            aliases
+                .iter()
+                .map(|alias| {
+                    let symbol = alias
+                        .split_once(' ')
+                        .map(|(symbol, _)| symbol)
+                        .unwrap_or(alias);
+                    format!("TITLE_ABS:\"{}\"", europepmc_escape(symbol))
+                })
+                .collect::<Vec<_>>(),
+            format!("TITLE_ABS:\"{}\"", europepmc_escape(change)),
+        )
+    };
+    format!("(({}) AND {})", symbols.join(" OR "), change)
+}
+
+fn boolean_query_fits(provider: &str, query: &str) -> bool {
+    if provider == "pubmed" {
+        crate::sources::pubmed::PubMedClient::esearch_plan(
+            &crate::sources::pubmed::PubMedESearchParams {
+                term: query.to_string(),
+                retstart: 0,
+                retmax: LEXICAL_ALIAS_FETCH_LIMIT,
+                date_from: None,
+                date_to: None,
+            },
+            None,
+        )
+        .is_ok()
+    } else {
+        crate::sources::europepmc::EuropePmcClient::search_query_plan(
+            query,
+            "*",
+            LEXICAL_ALIAS_FETCH_LIMIT,
+            crate::sources::europepmc::EuropePmcSort::Relevance,
+        )
+        .is_ok()
+    }
+}
+
+fn boolean_gene_query_plans(
+    provider: &str,
+    aliases: &[String],
+    execution: &VariantArticleExecutionContext,
+) -> Vec<ProviderVariantQueryPlan> {
+    let plan = |group: Vec<String>| ProviderVariantQueryPlan {
+        provider: provider.to_string(),
+        route: "strict".into(),
+        query: boolean_gene_query(provider, &group),
+        query_alias: group[0].clone(),
+        coverage_aliases: group.clone(),
+        query_aliases: group,
+        query_template_version: format!("{provider}-gene-alias-boolean-v1"),
+    };
+    let mut plans = Vec::new();
+    let mut group = Vec::new();
+    for alias in aliases {
+        let mut expanded = group.clone();
+        expanded.push(alias.clone());
+        if boolean_query_fits(provider, &boolean_gene_query(provider, &expanded)) {
+            group = expanded;
+            continue;
+        }
+        if !group.is_empty() {
+            plans.push(plan(std::mem::take(&mut group)));
+        }
+        if boolean_query_fits(
+            provider,
+            &boolean_gene_query(provider, std::slice::from_ref(alias)),
+        ) {
+            group.push(alias.clone());
+        } else {
+            execution
+                .boolean_query_omissions
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .insert((provider.to_string(), alias.clone()));
+        }
+    }
+    if !group.is_empty() {
+        plans.push(plan(group));
+    }
+    plans
+}
+
+fn provider_variant_query_plan_with_gene_aliases(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    strategy: VariantArticleStrategy,
+    exact_aliases: &[String],
+    execution: &VariantArticleExecutionContext,
+) -> Vec<ProviderVariantQueryPlan> {
+    let mut plans =
+        provider_variant_query_plan_with_aliases(input, context, strategy, exact_aliases);
+    let aliases = execution
+        .boolean_gene_aliases
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
+    if aliases.is_empty()
+        || matches!(
+            strategy,
+            VariantArticleStrategy::Annotation | VariantArticleStrategy::Exact
+        )
+    {
+        return plans;
+    }
+    plans.retain(|plan| {
+        !(plan.route == "strict" && matches!(plan.provider.as_str(), "pubmed" | "europepmc"))
+    });
+    // The non-Boolean symbol cap must not evict original coding or protein forms here.
+    let variant_aliases = execution
+        .boolean_variant_aliases
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
+    let boolean_forms =
+        provider_variant_query_plan_with_aliases(input, context, strategy, &variant_aliases)
+            .into_iter()
+            .filter(|plan| {
+                plan.route == "strict"
+                    && matches!(plan.provider.as_str(), "pubmed" | "europepmc")
+                    && !plan
+                        .coverage_aliases
+                        .iter()
+                        .any(|alias| aliases.contains(alias))
+            });
+    let mut grouped = boolean_gene_query_plans("pubmed", &aliases, execution);
+    grouped.extend(boolean_gene_query_plans("europepmc", &aliases, execution));
+    grouped.extend(boolean_forms);
+    grouped.extend(plans);
+    grouped
 }
 
 fn provider_variant_query_plan_with_aliases(
@@ -3420,16 +3879,20 @@ fn provider_variant_query_plan_with_aliases(
     let mut queries = Vec::new();
     if strategy != VariantArticleStrategy::Annotation && !gene.is_empty() {
         for alias in aliases {
-            let alias = alias
-                .strip_prefix(gene)
-                .and_then(|remainder| remainder.strip_prefix(' '))
-                .unwrap_or(&alias);
+            let original_alias = alias.clone();
+            let (query_gene, alias) = alias
+                .split_once(' ')
+                .filter(|(symbol, _)| crate::sources::is_valid_gene_symbol(symbol))
+                .unwrap_or((gene, &alias));
+            let gene = query_gene;
             let query_alias = format!("{gene} {alias}");
             queries.extend([
                 ProviderVariantQueryPlan {
                     provider: "pubmed".into(),
                     route: "strict".into(),
                     query_alias: query_alias.clone(),
+                    query_aliases: Vec::new(),
+                    coverage_aliases: vec![original_alias.clone()],
                     query: build_pubmed_variant_strict_query(gene, alias),
                     query_template_version: "pubmed-title-abstract-v1".into(),
                 },
@@ -3437,6 +3900,8 @@ fn provider_variant_query_plan_with_aliases(
                     provider: "europepmc".into(),
                     route: "strict".into(),
                     query_alias: query_alias.clone(),
+                    query_aliases: Vec::new(),
+                    coverage_aliases: vec![original_alias.clone()],
                     query: build_europepmc_variant_strict_query(gene, alias),
                     query_template_version: "europepmc-title-abstract-v1".into(),
                 },
@@ -3444,6 +3909,8 @@ fn provider_variant_query_plan_with_aliases(
                     provider: "semanticscholar".into(),
                     route: "strict".into(),
                     query_alias: query_alias.clone(),
+                    query_aliases: Vec::new(),
+                    coverage_aliases: vec![original_alias.clone()],
                     query: query_alias.clone(),
                     query_template_version: "semantic-scholar-bulk-phrase-v1".into(),
                 },
@@ -3451,6 +3918,8 @@ fn provider_variant_query_plan_with_aliases(
                     provider: "pubtator".into(),
                     route: "strict".into(),
                     query_alias: query_alias.clone(),
+                    query_aliases: Vec::new(),
+                    coverage_aliases: vec![original_alias.clone()],
                     query: format!("@VARIANT_{query_alias}"),
                     query_template_version: "pubtator-entity-v1".into(),
                 },
@@ -3462,6 +3931,8 @@ fn provider_variant_query_plan_with_aliases(
             provider: "federated".into(),
             route: "discovery".into(),
             query_alias: input.trim().to_string(),
+            query_aliases: Vec::new(),
+            coverage_aliases: vec![input.trim().to_string()],
             query: input.trim().to_string(),
             query_template_version: "federated-free-text-v1".into(),
         });
@@ -3485,7 +3956,13 @@ fn materialize_discovery_route_plans(
     let strict_applicable = compatible
         && (strategy == VariantArticleStrategy::Union
             || (strategy == VariantArticleStrategy::Lexical && resolved));
-    let strict = provider_variant_query_plan_with_aliases(input, context, strategy, exact_aliases);
+    let strict = provider_variant_query_plan_with_gene_aliases(
+        input,
+        context,
+        strategy,
+        exact_aliases,
+        execution,
+    );
     for source in federated {
         let units = strict_applicable.then(|| {
             strict
@@ -3506,7 +3983,17 @@ fn materialize_discovery_route_plans(
         execution.set_route_unit_plan(
             "exact_lexical",
             source,
-            exact_applicable.then_some(exact_aliases.len()),
+            exact_applicable.then(|| {
+                exact_aliases
+                    .iter()
+                    .filter(|alias| {
+                        !matches!(source, "pubmed" | "europepmc")
+                            || execution
+                                .for_alias(alias)
+                                .includes_boolean_alias_sources("exact_lexical")
+                    })
+                    .count()
+            }),
         );
     }
 
@@ -3708,8 +4195,13 @@ fn build_debug_plan(
         .collect::<Vec<_>>();
     let item_work = execution.item_work();
     let request_work = execution.request_work();
-    let mut provider_queries =
-        provider_variant_query_plan_with_aliases(input, context, strategy, canonical_aliases);
+    let mut provider_queries = provider_variant_query_plan_with_gene_aliases(
+        input,
+        context,
+        strategy,
+        canonical_aliases,
+        execution,
+    );
     for plan in &mut provider_queries {
         if plan.provider == "pubtator"
             && plan.route == "strict"
@@ -3750,6 +4242,7 @@ fn build_debug_plan(
     };
     let dropped = observed_total - candidates.len();
     VariantArticleDebugPlan {
+        gene_symbol_coverage: VariantArticleGeneSymbolCoverage::default(),
         alias_coverage: Vec::new(),
         normalized_aliases: context.resolution.normalized_aliases.clone(),
         provider_queries,
@@ -3967,6 +4460,7 @@ fn resolution_unavailable_outcome(
     let debug_plan = include_debug_plan.then(|| {
         let mut plan =
             empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
+        plan.gene_symbol_coverage = gene_symbol_coverage(execution, &alias_coverage);
         plan.alias_coverage = alias_coverage.clone();
         plan.budgets.item = execution.item_work();
         plan.budgets.request = execution.request_work();
@@ -3976,6 +4470,7 @@ fn resolution_unavailable_outcome(
     let outage_message = variant_article_outage_message(&source_status);
     VariantArticleOutcome {
         response: VariantArticleResponse {
+            gene_symbol_coverage: gene_symbol_coverage(execution, &alias_coverage),
             alias_coverage,
             requested_variant: context.requested,
             resolution: context.resolution,
@@ -4573,16 +5068,13 @@ async fn search_variant_articles_identity(
         .into_iter()
         .enumerate()
         .map(|(index, candidate)| {
-            let matched_aliases = candidate
-                .variant_provenance
-                .iter()
-                .flat_map(|fact| fact.query_aliases.iter().cloned())
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect::<Vec<_>>();
+            let matched_aliases = identified_query_aliases(&candidate);
             let alias_matches = article_alias_matches(&matched_aliases, &context);
             let alias_only = strategy != VariantArticleStrategy::Exact
-                && !matched_aliases.is_empty()
+                && (!matched_aliases.is_empty()
+                    || candidate.variant_provenance.iter().any(|fact| {
+                        fact.matched_alias.is_none() && !fact.query_aliases.is_empty()
+                    }))
                 && !matched_aliases
                     .iter()
                     .any(|alias| requested_aliases.contains(alias))
@@ -4672,6 +5164,7 @@ async fn search_variant_articles_identity(
                 candidate_trace,
             },
         );
+        plan.gene_symbol_coverage = gene_symbol_coverage(&execution, &alias_coverage);
         plan.alias_coverage = alias_coverage.clone();
         if verification.verify_identity {
             plan.verification = Some(verification_plan(
@@ -4688,6 +5181,7 @@ async fn search_variant_articles_identity(
         (strategy != VariantArticleStrategy::Exact).then_some(canonical_equivalence);
     Ok(VariantArticleOutcome {
         response: VariantArticleResponse {
+            gene_symbol_coverage: gene_symbol_coverage(&execution, &alias_coverage),
             alias_coverage,
             requested_variant: context.requested,
             resolution: context.resolution,
@@ -4931,6 +5425,7 @@ fn empty_debug_plan(
     let item_work =
         VariantArticleWork::new(ITEM_WORK_LIMIT + EXACT_WORK_LIMIT + ITEM_WORK_LIMIT, 0);
     VariantArticleDebugPlan {
+        gene_symbol_coverage: VariantArticleGeneSymbolCoverage::default(),
         alias_coverage: Vec::new(),
         normalized_aliases: requested.normalized_aliases(),
         provider_queries: Vec::new(),
@@ -5051,6 +5546,7 @@ fn empty_item(
     let debug_plan =
         include_debug_plan.then(|| empty_debug_plan(&request.requested, false, Vec::new(), offset));
     VariantArticleBatchItem {
+        gene_symbol_coverage: VariantArticleGeneSymbolCoverage::default(),
         alias_coverage: Vec::new(),
         request_id: request.request_id,
         requested_variant: request.requested,
@@ -5111,6 +5607,7 @@ async fn execute_batch_item(
     let response = outcome.response;
     let error = response.error;
     VariantArticleBatchItem {
+        gene_symbol_coverage: response.gene_symbol_coverage,
         alias_coverage: response.alias_coverage,
         request_id: request.request_id,
         requested_variant: response.requested_variant,
@@ -5313,6 +5810,13 @@ mod tests {
     use crate::entities::variant::{
         SourceVariantIdentity, VariantArticleResolutionBasis, VariantProviderValidation,
     };
+
+    // These controls own other routes; the CLI regression owns MyGene alias lookup.
+    fn gene_aliases_disabled_env() -> TestEnv {
+        let mut env = TestEnv::scratch_cache_only();
+        env.set("BIOMCP_DISABLE_SOURCES", "mygene-info");
+        env
+    }
 
     fn resolved_context() -> VariantArticleResolutionContext {
         let requested = RequestedVariantIdentity::from_variant_input("BRAF p.V600E")
@@ -5904,7 +6408,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("strict-partial-degradation");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set(
@@ -5963,7 +6467,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("strict-alias-coverage");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_PUBMED_BASE", &fixture.base);
@@ -6087,7 +6591,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("provider-unit-real-captures");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
@@ -6192,7 +6696,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("rsid-entity-search");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -6280,7 +6784,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("abcc8-entity-search");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
@@ -6392,7 +6896,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("exact-name-route");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -6633,7 +7137,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("yield-per-alias");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -6768,7 +7272,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("no-entity-annotation-run");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -6857,7 +7361,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("rsid-empty-ok-search");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -6954,7 +7458,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("litvar-merge-union");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -7052,7 +7556,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("litvar-non-matching-entry");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_LITVAR_BASE", &fixture.base);
@@ -7131,7 +7635,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("litvar-degrades-own-source");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -7322,7 +7826,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("2140-samhd1");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -7536,7 +8040,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("2140-cdkn2a");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -8634,6 +9138,7 @@ mod tests {
         error: Option<VariantArticleItemError>,
     ) -> VariantArticleBatchItem {
         VariantArticleBatchItem {
+            gene_symbol_coverage: VariantArticleGeneSymbolCoverage::default(),
             alias_coverage: Vec::new(),
             request_id: request_id.into(),
             requested_variant: resolved_context().requested,
@@ -9144,7 +9649,7 @@ mod tests {
         })
         .await;
         let cache = crate::test_support::TempDirGuard::new("samhd1-fulltext-identity");
-        let mut env = TestEnv::scratch_cache_only();
+        let mut env = gene_aliases_disabled_env();
         env.set_cache_root(cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
@@ -9314,7 +9819,7 @@ mod tests {
         })
         .await;
             let cache = crate::test_support::TempDirGuard::new("samhd1-unannotated-identity");
-            let mut env = TestEnv::scratch_cache_only();
+            let mut env = gene_aliases_disabled_env();
             env.set_cache_root(cache.path());
             env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
             env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
