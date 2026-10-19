@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 62e69dd, accept
+
 ## Outcome
 
 Changes: `src/entities/article/graph/citation_evidence.rs`, `src/sources/semantic_scholar/tests/parsing.rs`, `src/sources/semantic_scholar.rs`, `src/entities/article/graph.rs`, `src/entities/article/mod.rs`, `src/render/markdown/article.rs`, `tests/surface/test_article_graph_empty_contract.py`, `src/entities/article/graph/tests.rs`, `src/cli/article/tests/exact_lookup.rs`, `src/render/markdown/article/tests.rs`, `CHANGELOG.md`, `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`.
