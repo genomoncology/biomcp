@@ -29,3 +29,7 @@ A stdio test sends a supported pre-initialization tool call whose replayed provi
 ## Implementation boundary
 
 Restate the outcome as a cumulative startup wait budget: fast pre-initialization traffic must not reset the wait indefinitely, and supported modern tool dispatch must not consume that wait budget. Preserve the existing initialized session and silent-client behavior. Prove the delayed supported call outside-in with authored local provider replies and retain prior failure evidence.
+
+## Progress
+
+- 2026-10-19 started
