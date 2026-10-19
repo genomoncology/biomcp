@@ -8,7 +8,7 @@ fn fulltext_fixture_output_stays_out_of_source_inventory_and_cleans_up() {
     let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let fixture = provision_article_fulltext_fixture(repo_root).expect("start fulltext fixture");
     let workspace = fixture.cache_dir.parent().unwrap().to_path_buf();
-    let cache_lock = fixture.cache_dir.join(".biomcp-key-locks/0a.lock");
+    let cache_lock = fixture.cache_dir.join("blobs/fixture-only");
     std::fs::create_dir_all(cache_lock.parent().unwrap()).unwrap();
     std::fs::write(&cache_lock, b"fixture cache lock").unwrap();
     assert!(fixture.request_log.is_file());

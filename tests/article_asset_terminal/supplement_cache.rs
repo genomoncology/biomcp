@@ -1,27 +1,37 @@
 use super::*;
-use std::io::Write;
-
-#[derive(serde::Deserialize, serde::Serialize)]
-struct StoredResponse {
-    response: http_cache::HttpResponse,
-    policy: http_cache_semantics::CachePolicy,
-}
+use sha2::{Digest, Sha256};
 
 pub(super) fn key(sha256: &str) -> String {
     format!("biomcp:article-supplement-text:v1:{sha256}")
 }
 
 pub(super) fn read(cache: &Path, key: &str) -> serde_json::Value {
-    let bytes = cacache::read_sync(cache, key).expect("extraction must use the managed cache");
-    let stored: StoredResponse = bincode::deserialize(&bytes).unwrap();
-    serde_json::from_slice(&stored.response.body).unwrap()
+    let db = rusqlite::Connection::open(cache).unwrap();
+    let bytes: Vec<u8> = db
+        .query_row(
+            "SELECT body FROM entries WHERE namespace='http' AND key=?1",
+            [key],
+            |r| r.get(0),
+        )
+        .expect("extraction must use managed SQLite");
+    serde_json::from_slice(&bytes).unwrap()
 }
 
 pub(super) fn write(cache: &Path, key: &str, value: &serde_json::Value) {
-    let bytes = cacache::read_sync(cache, key).unwrap();
-    let mut stored: StoredResponse = bincode::deserialize(&bytes).unwrap();
-    stored.response.body = serde_json::to_vec(value).unwrap();
-    cacache::write_sync(cache, key, bincode::serialize(&stored).unwrap()).unwrap();
+    let db = rusqlite::Connection::open(cache).unwrap();
+    let body = serde_json::to_vec(value).unwrap();
+    db.execute("UPDATE entries SET body=?2,body_hash=?3,bytes=length(metadata)+length(?2) WHERE namespace='http' AND key=?1", rusqlite::params![key,body,format!("{:x}",Sha256::digest(&body))]).unwrap();
+}
+
+fn exists(cache: &Path, key: &str) -> bool {
+    let db = rusqlite::Connection::open(cache).unwrap();
+    db.query_row(
+        "SELECT count(*) FROM entries WHERE namespace='http' AND key=?1",
+        [key],
+        |r| r.get::<_, i64>(0),
+    )
+    .unwrap()
+        > 0
 }
 
 #[test]
@@ -38,7 +48,7 @@ fn supplement_text_obeys_cache_stats_age_and_size_limits() {
     let search = successful_output(&fixture, &args);
     let doc: serde_json::Value = serde_json::from_slice(&search.stdout).unwrap();
     let key = key(doc["hits"][0]["sha256"].as_str().unwrap());
-    let cache = fixture.root.join("cache/http");
+    let cache = fixture.root.join("cache/biomcp.db");
     // Unrelated files in the retired extraction directory are never traversed
     // by a keyed hit. Broad cache maintenance owns that directory now.
     #[cfg(unix)]
@@ -63,33 +73,32 @@ fn supplement_text_obeys_cache_stats_age_and_size_limits() {
             "a keyed lookup must not walk the extraction directory"
         );
     }
-    let text = cacache::read_sync(&cache, &key).expect("extraction must use the managed cache");
+    let text = read(&cache, &key);
     let stats = successful_output(&fixture, &["--json", "cache", "stats"]);
     let stats: serde_json::Value = serde_json::from_slice(&stats.stdout).unwrap();
-    let entries = cacache::list_sync(&cache).map(Result::unwrap).count();
-    assert_eq!(stats["http_entry_count"], entries);
-    assert!(stats["blob_bytes"].as_u64().unwrap() >= text.len() as u64);
-
-    let mut writer = cacache::WriteOpts::new()
-        .time(1)
-        .open_sync(&cache, &key)
+    let db = rusqlite::Connection::open(&cache).unwrap();
+    let entries: i64 = db
+        .query_row(
+            "SELECT count(*) FROM entries WHERE namespace='http'",
+            [],
+            |r| r.get(0),
+        )
         .unwrap();
-    writer.write_all(&text).unwrap();
-    writer.commit().unwrap();
-    successful_output(&fixture, &["cache", "clean", "--max-age", "1s"]);
+    assert_eq!(stats["http_entry_count"], entries);
     assert!(
-        cacache::read_sync(&cache, &key).is_err(),
-        "old extraction must expire"
+        stats["blob_bytes"].as_u64().unwrap() >= serde_json::to_vec(&text).unwrap().len() as u64
     );
+    db.execute(
+        "UPDATE entries SET created=1 WHERE namespace='http' AND key=?1",
+        [&key],
+    )
+    .unwrap();
+    drop(db);
+    successful_output(&fixture, &["cache", "clean", "--max-age", "1s"]);
+    assert!(!exists(&cache, &key), "old extraction must expire");
 
     successful_output(&fixture, &args);
-    assert!(
-        cacache::read_sync(&cache, &key).is_ok(),
-        "search repopulates extraction"
-    );
+    assert!(exists(&cache, &key), "search repopulates extraction");
     successful_output(&fixture, &["cache", "clean", "--max-size", "1B"]);
-    assert!(
-        cacache::read_sync(&cache, &key).is_err(),
-        "extraction must share size eviction"
-    );
+    assert!(!exists(&cache, &key), "extraction must share size eviction");
 }

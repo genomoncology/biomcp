@@ -405,8 +405,8 @@ jobs:
         run: |
           cargo test --locked --no-default-features --test windows_stdio_contract -- --nocapture
           cargo test --locked --no-default-features --test windows_lock_contract
-          cargo test --locked --no-default-features --lib body_limit_epoch_lock_contention_preserves_variant_article_time
-          cargo test --locked --no-default-features --lib construction_under_a_held_epoch_lock_honors_the_deadline
+          cargo test --locked --no-default-features --lib sqlite_busy_deadline_finishes_without_late_publication
+          cargo test --locked --no-default-features --lib construction_under_a_held_sqlite_writer_honors_the_deadline
       - name: Compile Windows CSpec and managed-state boundaries
         if: ${{ !inputs.windows_only }}
         run: |

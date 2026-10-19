@@ -319,7 +319,8 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
         name
         for path in (REPO_ROOT / "src").rglob("*.rs")
         for name in re.findall(
-            r"#\[(?:tokio::)?test(?:\([^\n]*\))?\]\s*(?:async\s+)?fn\s+(\w+)",
+            r"#\[(?:tokio::)?test(?:\([^\n]*\))?\]\s*"
+            r"(?:#\[[^\n]*\]\s*)*(?:async\s+)?fn\s+(\w+)",
             path.read_text(encoding="utf-8"),
         )
     }
@@ -330,8 +331,8 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
     for test in (
         "windows_stdio_contract",
         "windows_lock_contract",
-        "body_limit_epoch_lock_contention_preserves_variant_article_time",
-        "construction_under_a_held_epoch_lock_honors_the_deadline",
+        "sqlite_busy_deadline_finishes_without_late_publication",
+        "construction_under_a_held_sqlite_writer_honors_the_deadline",
     ):
         assert test in windows_runs, f"Windows must run the {test} regression"
     comparison = next(

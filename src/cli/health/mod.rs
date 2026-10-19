@@ -302,12 +302,8 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::Duration;
 
-    use crate::cache::{
-        CacheBlob, CacheConfigOrigins, CacheEntry, CacheSnapshot, ConfigOrigin, DiskFreeThreshold,
-        ResolvedCacheConfig,
-    };
+    use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
     use crate::test_support::TempDirGuard;
-    use ssri::Integrity;
 
     fn block_on<F: Future>(future: F) -> F::Output {
         tokio::runtime::Builder::new_current_thread()
@@ -450,40 +446,6 @@ mod tests {
                 Ok(_) => break,
                 Err(actual) => observed = actual,
             }
-        }
-    }
-
-    fn test_integrity(bytes: &[u8]) -> Integrity {
-        Integrity::from(bytes)
-    }
-
-    fn test_entry(key: &str, bytes: &[u8], time_ms: u128) -> CacheEntry {
-        CacheEntry {
-            key: key.to_string(),
-            integrity: test_integrity(bytes),
-            time_ms,
-            size_bytes: bytes.len() as u64,
-        }
-    }
-
-    fn test_blob(label: &str, bytes: &[u8], refcount: usize) -> CacheBlob {
-        CacheBlob {
-            integrity: test_integrity(bytes),
-            path: PathBuf::from(format!("content-v2/mock/{label}.blob")),
-            size_bytes: bytes.len() as u64,
-            refcount,
-        }
-    }
-
-    fn test_snapshot(
-        cache_path: impl Into<PathBuf>,
-        entries: Vec<CacheEntry>,
-        blobs: Vec<CacheBlob>,
-    ) -> CacheSnapshot {
-        CacheSnapshot {
-            cache_path: cache_path.into(),
-            entries,
-            blobs,
         }
     }
 
