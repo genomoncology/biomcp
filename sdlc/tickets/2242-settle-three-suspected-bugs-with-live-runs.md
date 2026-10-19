@@ -16,6 +16,8 @@ Reviews: revision 42b787d, accept
 
 Each of three suspected user-facing bugs is either shown fixed on current main or fixed in this ticket.
 
+- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `spec/entity/diagnostic.md` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `spec/fixtures/setup-provider-contract-spec-fixture.sh` `spec/surface/mcp.md` `src/cli/diagnostic/dispatch.rs` `src/entities/diagnostic/search.rs` `src/entities/discover.rs` `src/transform/drug.rs` `tests/fixtures/live-suspects/aspirin-authored.json` `tests/fixtures/live-suspects/ddinter-authored.csv` `tests/fixtures/live-suspects/discover-authored.json` `tests/fixtures/live-suspects/discovery-controls-authored.json` `tests/fixtures/live-suspects/disease-detail-authored.json` `tests/fixtures/live-suspects/disease-empty-authored.json` `tests/fixtures/live-suspects/disease-query-authored.json` `tests/fixtures/live-suspects/provenance.json` `tests/test_live_suspect_regressions.py`.
+
 ## Evidence
 
 1. `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md`: `biomcp drug interactions aspirin` may resolve plain aspirin to a five-ingredient combination product and report "not covered".
@@ -32,7 +34,7 @@ One live opt-in run per item on current main with synced bundles, recorded. For 
 
 ## Coordinator implementation brief
 
-- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `spec/entity/diagnostic.md` `spec/fixtures/setup-article-fulltext-source-fixture.sh` `spec/fixtures/setup-provider-contract-spec-fixture.sh` `spec/surface/mcp.md` `src/cli/diagnostic/dispatch.rs` `src/entities/diagnostic/search.rs` `src/entities/discover.rs` `src/transform/drug.rs` `tests/fixtures/live-suspects/aspirin-authored.json` `tests/fixtures/live-suspects/ddinter-authored.csv` `tests/fixtures/live-suspects/discover-authored.json` `tests/fixtures/live-suspects/discovery-controls-authored.json` `tests/fixtures/live-suspects/disease-detail-authored.json` `tests/fixtures/live-suspects/disease-empty-authored.json` `tests/fixtures/live-suspects/disease-query-authored.json` `tests/fixtures/live-suspects/provenance.json` `tests/test_live_suspect_regressions.py`.
+
 
 Issue closure claim: `sdlc/issues/2026-09-28-aspirin-mac-run-never-tested-the-single-ingredient-anchor.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`.
 
