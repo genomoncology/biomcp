@@ -1241,6 +1241,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         shortage: None,
         approvals: None,
         fda_orphan_designations: None,
+        us_label_effective_date: None,
         us_safety_warnings: None,
         us_boxed_warning: None,
         ema_regulatory: None,

@@ -555,7 +555,8 @@ fn drug_sections_from_response(
     }
 
     let mut targets = Vec::new();
-    if let Some(mechanisms) = drug.mechanisms_of_action {
+    let mechanisms_missing = drug.mechanisms_of_action.is_none();
+    if let Some(mechanisms) = drug.mechanisms_of_action.flatten() {
         for row in mechanisms
             .rows
             .into_iter()
@@ -576,7 +577,7 @@ fn drug_sections_from_response(
                     .filter(|v| !v.is_empty()),
             });
         }
-    } else {
+    } else if mechanisms_missing {
         warn_missing_field("DrugSections", "data.drug.mechanismsOfAction");
     }
 
@@ -1027,7 +1028,19 @@ struct DrugSectionsData {
 #[serde(rename_all = "camelCase")]
 struct DrugNode {
     indications: Option<DrugIndications>,
-    mechanisms_of_action: Option<DrugMechanismsOfAction>,
+    #[serde(default, deserialize_with = "deserialize_mechanisms")]
+    mechanisms_of_action: Option<Option<DrugMechanismsOfAction>>,
+}
+
+// A present null means the provider has no mechanisms. An omitted field
+// remains a schema warning, and malformed objects remain decoding errors.
+fn deserialize_mechanisms<'de, D>(
+    deserializer: D,
+) -> Result<Option<Option<DrugMechanismsOfAction>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<DrugMechanismsOfAction>::deserialize(deserializer).map(Some)
 }
 
 #[derive(Debug, Deserialize)]

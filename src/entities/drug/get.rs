@@ -22,7 +22,7 @@ use super::label::{
 };
 use super::metadata::{
     apply_openfda_metadata, apply_top_adverse_event_preview, fetch_shortage_entries,
-    fetch_top_adverse_event_preview, map_drugsfda_approvals, merge_unique_casefold, orphan_aliases,
+    fetch_top_adverse_event_preview, merge_unique_casefold, orphan_aliases,
 };
 use super::search::search_page;
 use super::targets::{TargetSources, enrich_indications, enrich_targets, fetch_target_sources};
@@ -203,7 +203,10 @@ fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, Bio
     match result {
         Ok(rows) => {
             let outcome = if rows.is_empty() {
-                SectionOutcome::empty("OpenFDA Drugs@FDA")
+                SectionOutcome::empty_with_reason(
+                    "OpenFDA Drugs@FDA",
+                    "Drugs@FDA found no exact-name match. Suffixed names (e.g. belantamab mafodotin-blmf) require source-confirmed identity; FDA approvals are not ruled out.",
+                )
             } else {
                 SectionOutcome::data("OpenFDA Drugs@FDA")
             };
@@ -220,7 +223,11 @@ fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, Bio
     }
 }
 
-async fn add_approvals_section(drug: &mut Drug) {
+async fn add_approvals_section(
+    drug: &mut Drug,
+    label_response: Option<&serde_json::Value>,
+    identity_brands: &[String],
+) {
     let name = drug.name.trim();
     if name.is_empty() {
         drug.approvals = Some(Vec::new());
@@ -231,25 +238,10 @@ async fn add_approvals_section(drug: &mut Drug) {
         return;
     }
 
-    let escaped = OpenFdaClient::escape_query_value(name);
-    let query = if name.chars().any(|c| c.is_whitespace()) {
-        format!(
-            "openfda.generic_name:\"{escaped}\" OR openfda.brand_name:\"{escaped}\" OR products.brand_name:\"{escaped}\""
-        )
-    } else {
-        format!(
-            "openfda.generic_name:*{escaped}* OR openfda.brand_name:*{escaped}* OR products.brand_name:*{escaped}*"
-        )
-    };
-
-    let approvals_fut = async {
-        let client = OpenFdaClient::new()?;
-        client.drugsfda_search(&query, 8, 0).await
-    };
+    let approvals_fut = super::approvals::fetch(drug, label_response, identity_brands);
 
     let result = match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
-        Ok(Ok(resp)) => Ok(resp.map(map_drugsfda_approvals).unwrap_or_default()),
-        Ok(Err(err)) => Err(err),
+        Ok(result) => result,
         Err(_) => Err(BioMcpError::SourceUnavailable {
             source_name: "OpenFDA Drugs@FDA".to_string(),
             reason: "request timed out".to_string(),
@@ -1367,6 +1359,7 @@ async fn populate_us_regional_sections(
     drug: &mut Drug,
     selected_hits: &[MyChemHit],
     label_response: Option<&serde_json::Value>,
+    identity_brands: &[String],
     section_flags: &DrugSections,
 ) -> Result<(), BioMcpError> {
     if section_flags.include_shortage {
@@ -1376,7 +1369,7 @@ async fn populate_us_regional_sections(
     }
 
     if section_flags.include_regulatory || section_flags.include_approvals {
-        add_approvals_section(drug).await;
+        add_approvals_section(drug, label_response, identity_brands).await;
     } else {
         drug.approvals = None;
     }
@@ -1390,6 +1383,11 @@ async fn populate_us_regional_sections(
         None
     };
 
+    drug.us_label_effective_date = if section_flags.include_safety {
+        label_response.and_then(super::label::extract_label_effective_date)
+    } else {
+        None
+    };
     drug.us_safety_warnings = if section_flags.include_safety {
         label_response.and_then(extract_label_warnings_text)
     } else {
@@ -1583,7 +1581,10 @@ async fn get_with_region_owned(
     let fetch_label_response = !section_only
         || section_flags.include_label
         || section_flags.include_interactions
-        || (region.includes_us() && section_flags.include_safety);
+        || (region.includes_us()
+            && (section_flags.include_safety
+                || section_flags.include_approvals
+                || section_flags.include_regulatory));
 
     let mut resolved = resolve_drug_identity(&name).await?;
 
@@ -1627,6 +1628,7 @@ async fn get_with_region_owned(
     let (label_lookup, civic, target_sources, adverse_event_fetch) =
         tokio::join!(label_fut, civic_fut, targets_fut, adverse_event_fut);
 
+    let identity_brands = resolved.drug.brand_names.clone();
     if let Some(label_response) = label_lookup.response.as_ref() {
         apply_openfda_metadata(&mut resolved.drug, label_response);
         resolved.drug.label_set_id = extract_label_set_id(label_response);
@@ -1658,6 +1660,7 @@ async fn get_with_region_owned(
             &mut resolved.drug,
             &resolved.selected_hits,
             label_lookup.response.as_ref(),
+            &identity_brands,
             &section_flags,
         )
         .await?;
@@ -1665,6 +1668,7 @@ async fn get_with_region_owned(
         resolved.drug.shortage = None;
         resolved.drug.approvals = None;
         resolved.drug.fda_orphan_designations = None;
+        resolved.drug.us_label_effective_date = None;
         resolved.drug.us_safety_warnings = None;
         resolved.drug.us_boxed_warning = None;
     }

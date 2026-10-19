@@ -13,6 +13,7 @@ use crate::entities::variant::{GnomadPopulationStatus, Variant};
 use serde::Serialize;
 use std::collections::HashSet;
 mod adverse_event;
+mod drug_regulatory;
 pub(crate) use self::adverse_event::{
     report_section_sources as adverse_event_report_section_sources,
     source_search_section_sources as adverse_event_source_search_section_sources,
@@ -410,34 +411,9 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         "Brand Names",
         ["DrugBank"],
     );
-    let mut regulatory_sources = Vec::new();
-    if drug
-        .section_outcomes
-        .get("approvals")
-        .is_some_and(|outcome| !outcome.sources().is_empty())
-    {
-        regulatory_sources.push("OpenFDA Drugs@FDA".to_string());
+    if let Some(regulatory) = drug_regulatory::section_source(drug) {
+        out.push(regulatory);
     }
-    if drug
-        .fda_orphan_designations
-        .as_ref()
-        .is_some_and(|value| !value.sources.is_empty())
-    {
-        regulatory_sources.push("FDA Orphan Drug Designations and Approvals".to_string());
-    }
-    if drug.ema_regulatory.is_some() {
-        regulatory_sources.push("EMA".to_string());
-    }
-    if drug.who_prequalification.is_some() {
-        regulatory_sources.push("WHO Prequalification".to_string());
-    }
-    push_section(
-        &mut out,
-        !regulatory_sources.is_empty(),
-        "regulatory",
-        "Regulatory",
-        regulatory_sources.iter().map(String::as_str),
-    );
     push_section(
         &mut out,
         has_opt_text(&drug.mechanism) || !drug.mechanisms.is_empty(),
@@ -1129,6 +1105,7 @@ mod tests {
             shortage: None,
             approvals: None,
             fda_orphan_designations: None,
+            us_label_effective_date: None,
             us_safety_warnings: None,
             us_boxed_warning: None,
             ema_regulatory: None,
@@ -1185,6 +1162,7 @@ mod tests {
             shortage: None,
             approvals: None,
             fda_orphan_designations: None,
+            us_label_effective_date: None,
             us_safety_warnings: None,
             us_boxed_warning: None,
             ema_regulatory: None,
@@ -1262,6 +1240,7 @@ mod tests {
             shortage: None,
             approvals: None,
             fda_orphan_designations: None,
+            us_label_effective_date: None,
             us_safety_warnings: None,
             us_boxed_warning: None,
             ema_regulatory: None,

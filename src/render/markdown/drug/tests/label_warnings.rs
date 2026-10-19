@@ -46,6 +46,7 @@ fn warning_drug() -> Drug {
         shortage: None,
         approvals: None,
         fda_orphan_designations: None,
+        us_label_effective_date: None,
         us_safety_warnings: Some("Immune-mediated adverse reactions.".to_string()),
         us_boxed_warning: Some("WARNING: SERIOUS SKIN REACTIONS".to_string()),
         ema_regulatory: None,
