@@ -16,10 +16,11 @@ import shlex
 import subprocess
 import sys
 import urllib.request
-from contextlib import contextmanager
-from dataclasses import dataclass, field
+from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from threading import RLock
 from typing import Iterator
 
 # The replay fixture is also imported by standalone subprocess probes.
@@ -120,7 +121,10 @@ class ReplayEnvironment:
     work_dir: Path
     record: bool
     process: subprocess.Popen = field(repr=False)
+    greeting: str = ""
     _run_counter: int = 0
+    _log_start: int = 0
+    _log_end: int | None = None
 
     def _next_run_dir(self) -> Path:
         self._run_counter += 1
@@ -139,7 +143,7 @@ class ReplayEnvironment:
             lines = self.request_log.read_text(encoding="utf-8").splitlines()
         else:
             lines = []
-        for line in lines[since:]:
+        for line in lines[self._log_start + since:self._log_end]:
             entries.append(json.loads(line))
         return entries
 
@@ -166,7 +170,8 @@ class ReplayEnvironment:
     def request_log_line_count(self) -> int:
         if not self.request_log.is_file():
             return 0
-        return len(self.request_log.read_text(encoding="utf-8").splitlines())
+        end = len(self.request_log.read_text(encoding="utf-8").splitlines())
+        return min(end, self._log_end if self._log_end is not None else end) - self._log_start
 
     def misses(self, since: int = 0) -> list[dict]:
         return [
@@ -185,7 +190,9 @@ def _read_env_file(path: Path) -> dict[str, str]:
 
 
 @contextmanager
-def replay_environment(record: bool = False) -> Iterator[ReplayEnvironment]:
+def _standalone_replay_environment(
+    record: bool = False, *, root: Path | None = None, shared: bool = False,
+) -> Iterator[ReplayEnvironment]:
     """Yield a running replay server with every provider base pointed at it."""
     with TemporaryDirectory(prefix="biomcp-golden-replay.") as work:
         work_dir = Path(work)
@@ -194,7 +201,7 @@ def replay_environment(record: bool = False) -> Iterator[ReplayEnvironment]:
         argv = [
             str(REPLAY_SERVER),
             "--root",
-            str(REPO_ROOT),
+            str(root if root is not None else REPO_ROOT),
             "--env-file",
             str(env_file),
             "--request-log",
@@ -202,6 +209,8 @@ def replay_environment(record: bool = False) -> Iterator[ReplayEnvironment]:
         ]
         if record:
             argv.append("--record")
+        if shared:
+            argv.append("--allow-fixture-root-switch")
         process = subprocess.Popen(
             argv,
             stdout=subprocess.PIPE,
@@ -227,6 +236,7 @@ def replay_environment(record: bool = False) -> Iterator[ReplayEnvironment]:
                 work_dir=work_dir,
                 record=record,
                 process=process,
+                greeting=ready.strip(),
             )
         finally:
             process.terminate()
@@ -235,3 +245,84 @@ def replay_environment(record: bool = False) -> Iterator[ReplayEnvironment]:
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait(timeout=10)
+
+
+class _ReplaySession:
+    """Own one listener; serialize borrowed fixture roots and log slices."""
+
+    def __init__(self) -> None:
+        self.root = REPO_ROOT
+        self.stack = ExitStack()
+        self.lock = RLock()
+        self.environment: ReplayEnvironment | None = None
+        self.selection = (self.root, False)
+
+    def select(self, root: Path, record: bool) -> None:
+        if (root, record) == self.selection:
+            return
+        assert self.environment is not None
+        request = urllib.request.Request(
+            self.environment.origin + "/__replay/root",
+            data=json.dumps({"root": str(root), "record": record}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(request, timeout=5) as response:
+            if response.status != 200:
+                raise RuntimeError("replay fixture selection failed")
+        self.selection = (root, record)
+
+    @contextmanager
+    def borrow(self, root: Path, record: bool) -> Iterator[ReplayEnvironment]:
+        with self.lock:
+            if self.environment is None:
+                self.environment = self.stack.enter_context(
+                    _standalone_replay_environment(root=self.root, shared=True)
+                )
+            server = self.environment
+            previous = self.selection
+            self.select(root, record)
+            try:
+                with TemporaryDirectory(prefix="test-", dir=server.work_dir) as work:
+                    environment = replace(
+                        server, work_dir=Path(work), provider_env=server.provider_env.copy(),
+                        record=record, _run_counter=0,
+                        _log_start=server.request_log_line_count(),
+                    )
+                    try:
+                        yield environment
+                    finally:
+                        environment._log_end = server.request_log_line_count()
+            finally:
+                self.select(*previous)
+
+
+_SESSION: _ReplaySession | None = None
+
+
+@contextmanager
+def replay_session() -> Iterator[None]:
+    """Keep a lazily started replay server until this runner finishes."""
+    global _SESSION
+    if _SESSION is not None:
+        raise RuntimeError("a replay session already owns this process")
+    session = _ReplaySession()
+    _SESSION = session
+    try:
+        yield
+    finally:
+        _SESSION = None
+        session.stack.close()
+
+
+@contextmanager
+def replay_environment(
+    record: bool = False, *, root: Path | None = None,
+) -> Iterator[ReplayEnvironment]:
+    """Borrow an isolated view, or own a standalone lifetime probe."""
+    selected_root = root if root is not None else REPO_ROOT
+    if _SESSION is None:
+        with _standalone_replay_environment(record, root=selected_root) as environment:
+            yield environment
+    else:
+        with _SESSION.borrow(selected_root, record) as environment:
+            yield environment

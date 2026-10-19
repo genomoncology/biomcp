@@ -145,7 +145,7 @@ Transcript normalization examples:
 ## Helpers
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
-- `variant articles <id> [--strategy <union|annotation|exact|lexical>]` - exact-route union by default; `--verify-identity` adds bounded optional evidence and diagnostic route isolation is opt-in; `--strategy exact` searches one caller-supplied name with no resolution or expansion
+- `variant articles <id> [--strategy <union|annotation|exact|lexical>]` - exact-route union by default; `--verify-identity` adds bounded optional evidence; `--confirmed-only` requires verification and keeps only confirmed matches and diagnostic route isolation is opt-in; `--strategy exact` searches one caller-supplied name with no resolution or expansion
 - `--json variant articles --input <path|-> [--debug-plan]` - ordered compact literature for 1-10 structured variants
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 - `variant erepo <CAid> [--detail --assertion <UUID> --version <exact-docVersion>]` - versioned ClinGen expert assertion facts

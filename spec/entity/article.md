@@ -608,7 +608,7 @@ on the matching card without hiding middle collaborators.
 ...
 ## 22663011 — ok
 ...
-## 1. Europe full text winner
+### Europe full text winner
 ...
 PMID: 22663011
 ...
@@ -616,7 +616,7 @@ Authors: Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last
 ...
 ## 22663012 — ok
 ...
-## 1. PMC HTML fallback winner
+### PMC HTML fallback winner
 ...
 PMID: 22663012
 ...
@@ -1270,7 +1270,7 @@ output="$(../../tools/biomcp-ci get article 22663023 asset NIHMS265402-supplemen
 code=$?
 set -e
 mustmatch like "article_asset_not_retrievable
-ncbi_interstitial
+pmc_proof_of_work
 NIHMS265402-supplement-Supplementary_Tables.xls
 https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/" <<<"$output"
 exit "$code"
@@ -1283,7 +1283,7 @@ output="$(../../tools/biomcp-ci --json get article 22663023 asset "$key" 2>/dev/
 code=$?
 set -e
 jq -r '.error | [.code, .message] | join("\n")' <<<"$output" | mustmatch like "article_asset_not_retrievable
-ncbi_interstitial
+pmc_proof_of_work
 NIHMS265402-supplement-Supplementary_Tables.xls
 https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/"
 exit "$code"

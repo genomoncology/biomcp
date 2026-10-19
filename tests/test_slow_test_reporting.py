@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import os
-import shutil
 import subprocess
 import sys
 
@@ -19,16 +18,15 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_python_slow_warning_preserves_test_result(
     tmp_path: Path, workers: int, fails: bool, load_available: bool
 ) -> None:
-    conftest = (ROOT / "tests/conftest.py").read_text()
+    plugins = ["-p", "conftest"]
     if not load_available:
-        conftest += (
-            "\ndef pytest_sessionstart(session):\n"
+        plugins += ["-p", "unavailable_load"]
+        (tmp_path / "unavailable_load.py").write_text(
+            "import os\n\ndef pytest_sessionstart(session):\n"
             "    def unavailable():\n"
             '        raise OSError("load unavailable")\n'
             "    os.getloadavg = unavailable\n"
         )
-    (tmp_path / "conftest.py").write_text(conftest)
-    shutil.copy2(ROOT / "tests/cache_fixture.py", tmp_path / "cache_fixture.py")
     (tmp_path / "pytest.ini").write_text("[pytest]\nslow_test_warning_seconds = 0.01\n")
     (tmp_path / "test_case.py").write_text(
         "import threading\n"
@@ -36,10 +34,17 @@ def test_python_slow_warning_preserves_test_result(
         "    threading.Event().wait(0.03)\n"
         f"    assert {not fails}\n"
     )
+    # Load the real harness in place so all support dependencies stay together.
+    pythonpath = os.pathsep.join(
+        filter(None, [str(ROOT / "tests"), os.environ.get("PYTHONPATH")])
+    )
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "-n", str(workers), "-q", str(tmp_path)],
+        [
+            sys.executable, "-m", "pytest", *plugins,
+            "-n", str(workers), "-q", str(tmp_path),
+        ],
         cwd=tmp_path,
-        env={**os.environ, "PYTEST_ADDOPTS": ""},
+        env={**os.environ, "PYTEST_ADDOPTS": "", "PYTHONPATH": pythonpath},
         capture_output=True,
         text=True,
         timeout=30,
