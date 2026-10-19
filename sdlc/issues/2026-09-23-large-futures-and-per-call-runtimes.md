@@ -29,7 +29,7 @@ Fix: make `with_no_cache` a plain function returning `NO_CACHE.scope(no_cache, f
 ## Smaller items
 
 - Retries fire on POST requests.
-- `TRIAL_ALIAS_CACHE` grows without limit.
+- `TRIAL_ALIAS_CACHE` growth was resolved by ticket 2239 with a fixed entry cap.
 
 ## Resolved
 

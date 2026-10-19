@@ -1,0 +1,10 @@
+{
+  "stId": "R-HSA-5673001",
+  "displayName": "RAF/MAP kinase cascade",
+  "speciesName": "Homo sapiens",
+  "summation": [
+    {
+      "text": "The RAS-RAF-MEK-ERK pathway regulates processes such as proliferation, differentiation, survival, senescence and cell motility in response to growth factors, hormones and cytokines, among others. Binding of these stimuli to receptors in the plasma membrane promotes the GEF-mediated activation of RAS at the plasma membrane and initiates the three-tiered kinase cascade of the conventional MAPK cascades.  GTP-bound RAS recruits RAF (the MAPK kinase kinase), and promotes its dimerization and activation (reviewed in Cseh et al, 2014; Roskoski, 2010; McKay and Morrison, 2007; Wellbrock et al, 2004).  Activated RAF phosphorylates the MAPK kinase proteins MEK1 and MEK2 (also known as MAP2K1 and MAP2K2), which in turn phophorylate the proline-directed kinases ERK1 and 2 (also known as MAPK3 and MAPK1) (reviewed in Roskoski, 2012a, b; Kryiakis and Avruch, 2012).  Activated ERK proteins may undergo dimerization and have identified targets in both the nucleus and the cytosol; consistent with this, a proportion of activated ERK protein relocalizes to the nucleus in response to stimuli (reviewed in Roskoski 2012b; Turjanski et al, 2007; Plotnikov et al, 2010; Cargnello et al, 2011).  Although initially seen as a linear cascade originating at the plasma membrane and culminating in the nucleus, the RAS/RAF MAPK cascade is now also known to be activated from various intracellular location.  Temporal and spatial specificity of the cascade is achieved in part through the interaction of pathway components with numerous scaffolding proteins (reviewed in McKay and Morrison, 2007; Brown and Sacks, 2009). <br> The importance of the RAS/RAF MAPK cascade is highlighted by the fact that components of this pathway are mutated with high frequency in a large number of human cancers.  Activating mutations in RAS are found in approximately one third of human cancers, while ~8% of tumors express an activated form of BRAF (Roberts and Der, 2007; Davies et al, 2002; Cantwell-Dorris et al, 2011)."
+    }
+  ]
+}
