@@ -37,3 +37,4 @@ Begin by reading the existing release measurement records and retained helpers. 
 ## Progress
 
 - 2026-10-19 started
+- 2026-10-19 next: Preparation identified the unchanged existing helper (SHA256 9c427657dcd0c79a1982aae3f692433a88a9b273f131a4ca62b86962aa4bc9c7) and compatible v0.9.3 gates. No builds or samples ran. Await frozen candidate; collect paired rows with direct main-gate and populated-cache disk commands, retaining new raw evidence durably. Historical 2214 archives are unavailable at recorded paths; retention issue sent to PM.
