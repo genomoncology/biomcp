@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""Inventory recorded requests; opt in to a paced, credential-free drift check."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import ipaddress
+import json
+import os
+import re
+import runpy
+import sys
+import time
+import urllib.error
+import urllib.request
+from collections import Counter
+from pathlib import Path
+from urllib.parse import parse_qsl, urlsplit
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from replay_drift import ID_ALIASES, reply_shape, shape_drift  # noqa: E402
+
+SENSITIVE = re.compile(r"api.?key|token|password|secret|authorization|credential", re.I)
+MAX_REPLY_BYTES = 32 * 1024 * 1024
+
+
+def default_interval() -> float:
+    # Use the most conservative existing unkeyed provider policy. Keep one
+    # serial schedule instead of copying the Rust provider policy table.
+    text = (ROOT / "src/sources/rate_limit.rs").read_text()
+    function = re.search(r"fn s2_min_interval\([^}]+\}\s*else\s*\{([^}]+)", text)
+    seconds = re.search(
+        r"Duration::from_secs\((\d+)\)", function[1] if function else ""
+    )
+    if not seconds:
+        raise ValueError("cannot derive unkeyed provider pacing")
+    return float(seconds[1])
+
+
+def disabled_ids(registry: list[dict], raw: str) -> set[str]:
+    records = {record["id"]: record for record in registry}
+    disabled = set()
+    for token in filter(None, re.split(r"[,|]", raw.lower())):
+        token = token.strip()
+        if token in records:
+            disabled.add(token)
+        elif token in {"commercial-restricted", "license-required", "non-commercial"}:
+            disabled.update(
+                record["id"]
+                for record in registry
+                if record.get("commercial_terms")
+                and (
+                    token == "commercial-restricted"
+                    or record["commercial_terms"] == token
+                )
+            )
+        else:
+            raise ValueError("unknown disabled source or group")
+    if os.environ.get("BIOMCP_DISABLE_KEGG") == "1":
+        disabled.add("kegg")
+    return disabled
+
+
+def credential_free(value: object) -> bool:
+    if isinstance(value, dict):
+        return all(
+            not SENSITIVE.search(str(key)) and credential_free(child)
+            for key, child in value.items()
+        )
+    if isinstance(value, list):
+        return all(credential_free(child) for child in value)
+    return True
+
+
+def request_metadata(
+    key: str, entry: dict, provider: str, routes: dict
+) -> tuple[str, str, bytes | None, dict]:
+    method, path = key.split(" ", 1)
+    if method not in {"GET", "HEAD", "POST"}:
+        raise ValueError("unsupported request method")
+    url = entry["upstream"]
+    parsed = urlsplit(url)
+    if (
+        parsed.username
+        or parsed.password
+        or parsed.fragment
+        or any(SENSITIVE.search(name) for name, _ in parse_qsl(parsed.query))
+    ):
+        raise ValueError("credential-bearing URL is forbidden")
+    try:
+        loopback = ipaddress.ip_address(parsed.hostname or "").is_loopback
+    except ValueError:
+        loopback = parsed.hostname == "localhost"
+    allowed = [base for name, base in routes.items() if name == provider]
+    if not loopback and (
+        parsed.scheme != "https"
+        or not any(
+            url.split("?", 1)[0] == base.split("?", 1)[0]
+            or url.split("?", 1)[0].startswith(base.split("?", 1)[0].rstrip("/") + "/")
+            for base in allowed
+        )
+    ):
+        raise ValueError("upstream is outside the provider's declared endpoint")
+    headers = entry.get("request_headers", {})
+    if not isinstance(headers, dict) or any(
+        name.lower() not in {"accept", "content-type"}
+        or not isinstance(value, str)
+        or "\n" in value
+        or "\r" in value
+        for name, value in headers.items()
+    ):
+        raise ValueError(
+            "only nonsecret accept/content-type request headers are supported"
+        )
+    body = None
+    if method == "POST":
+        raw = entry.get("request_body")
+        if not isinstance(raw, str):
+            raise ValueError("recording has no reconstructable request body")
+        try:
+            safe = credential_free(json.loads(raw))
+        except ValueError:
+            safe = False
+        if not safe:
+            raise ValueError("request body is not credential-free JSON")
+        body = raw.encode()
+        if (
+            "#" not in path
+            or hashlib.sha256(body).hexdigest()[:16] != path.rsplit("#", 1)[1]
+        ):
+            raise ValueError("request body does not match recorded request hash")
+    elif entry.get("request_body"):
+        raise ValueError("unexpected request body")
+    return method, url, body, {**headers, "Accept-Encoding": "identity"}
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="send eligible requests to their live providers",
+    )
+    parser.add_argument("--replay-dir", type=Path, default=ROOT / "testdata/replay")
+    parser.add_argument("--disable-sources", default="")
+    parser.add_argument(
+        "--allow-restricted",
+        default="",
+        help="comma-separated sources whose access is explicitly authorized",
+    )
+    args = parser.parse_args(argv)
+    try:
+        registry = json.loads((ROOT / "docs/reference/sources.json").read_text())
+        disabled = disabled_ids(
+            registry,
+            args.disable_sources + "," + os.environ.get("BIOMCP_DISABLE_SOURCES", ""),
+        )
+        records = {entry["id"]: entry for entry in registry}
+        authorized = set(filter(None, args.allow_restricted.split(",")))
+        if authorized - records.keys():
+            raise ValueError("unknown restricted source authorization")
+        helper = runpy.run_path(str(ROOT / "tools/replay-server"))
+        routes = {
+            helper["prefix_for"](name): url
+            for name, url in helper["provider_routes"](ROOT / "src/sources").items()
+        }
+        manifest = json.loads((args.replay_dir / "manifest.json").read_text())
+        if manifest.get("schema_version") != 1:
+            raise ValueError("unsupported manifest schema")
+        interval = default_interval()
+    except (ValueError, OSError, KeyError):
+        print(json.dumps({"error": "invalid inventory or policy configuration"}))
+        return 2
+    counts: Counter = Counter(total=len(manifest["routes"]))
+    stopped = set()
+    last_start = None
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+    for index, (key, entry) in enumerate(sorted(manifest["routes"].items()), 1):
+        # Never print URLs, request bodies, response bodies or raw exceptions.
+        provider = (
+            key.split("/", 1)[1].split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]
+        )
+        result = {"recording": index, "provider": provider, "file": entry.get("file")}
+        state, details = "blocked", []
+        source_id = ID_ALIASES.get(provider, provider)
+        try:
+            if source_id in disabled:
+                state = "disabled"
+            else:
+                record = records.get(source_id)
+                if not record:
+                    raise ValueError("provider has no source policy")
+                if record.get("commercial_terms") and source_id not in authorized:
+                    raise ValueError(
+                        "restricted provider needs explicit access authorization or disabling"
+                    )
+                if record.get("bioMcp_auth") == "required_env":
+                    raise ValueError(
+                        "provider requires credentials; this checker never sends credentials"
+                    )
+                method, url, body, headers = request_metadata(
+                    key, entry, provider, routes
+                )
+                content_type = entry.get("headers", {}).get("content-type")
+                if not content_type:
+                    raise ValueError("recording has no historical content-type")
+                path = (args.replay_dir / entry["file"]).resolve()
+                if not path.is_relative_to(args.replay_dir.resolve()):
+                    raise ValueError("response file is outside recording directory")
+                expected = reply_shape(path.read_bytes(), ROOT, provider, key)
+                if provider in stopped:
+                    raise ValueError("provider stopped after rate limit or Retry-After")
+                if not args.live:
+                    state = "ready"
+                else:
+                    if last_start is not None:
+                        time.sleep(max(0, interval - (time.monotonic() - last_start)))  # noqa: TID251 -- provider pacing
+                    last_start = time.monotonic()
+                    request = urllib.request.Request(
+                        url, data=body, headers=headers, method=method
+                    )
+                    try:
+                        response = opener.open(request, timeout=90)
+                    except urllib.error.HTTPError as error:
+                        response = error
+                    with response:
+                        counts["checked"] += 1
+                        if response.status == 429 or response.headers.get(
+                            "Retry-After"
+                        ):
+                            stopped.add(provider)
+                        if response.status != entry["status"]:
+                            details.append("changed status")
+                        if (
+                            response.headers.get("Content-Type", "")
+                            .split(";", 1)[0]
+                            .strip()
+                            .lower()
+                            != content_type.split(";", 1)[0].strip().lower()
+                        ):
+                            details.append("changed content-type")
+                        actual_body = response.read(MAX_REPLY_BYTES + 1)
+                        if len(actual_body) > MAX_REPLY_BYTES:
+                            raise ValueError("live response exceeds size limit")
+                        try:
+                            actual = reply_shape(actual_body, ROOT, provider, key)
+                            details.extend(shape_drift(expected, actual))
+                        except (ValueError, UnicodeError):
+                            details.append(
+                                "live response has unsupported or invalid shape"
+                            )
+                    state = "drift" if details else "passed"
+        except (ValueError, KeyError, OSError) as error:
+            # Only our fixed validation messages are safe to expose.
+            details = (
+                [str(error)]
+                if type(error) is ValueError
+                else ["request or recording unavailable"]
+            )
+        counts[state] += 1
+        print(
+            json.dumps({**result, "state": state, "details": details}, sort_keys=True)
+        )
+    print(
+        json.dumps(
+            {
+                "summary": {
+                    name: counts[name]
+                    for name in (
+                        "total",
+                        "checked",
+                        "passed",
+                        "ready",
+                        "disabled",
+                        "blocked",
+                        "drift",
+                    )
+                }
+            },
+            sort_keys=True,
+        )
+    )
+    return 1 if counts["blocked"] or counts["drift"] else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

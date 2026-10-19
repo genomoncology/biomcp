@@ -290,11 +290,11 @@ class ReplayServer:
                 request, timeout=UPSTREAM_TIMEOUT_SECONDS
             ) as response:
                 status = response.status
-                response_headers = dict(response.headers.items())
+                response_headers = {name.lower(): value for name, value in response.headers.items()}
                 response_body = response.read()
         except urllib.error.HTTPError as error:
             status = error.code
-            response_headers = dict(error.headers.items())
+            response_headers = {name.lower(): value for name, value in error.headers.items()}
             response_body = error.read()
         recorded = {
             name: response_headers[name]
@@ -310,6 +310,28 @@ class ReplayServer:
         }
         if recorded:
             entry["headers"] = recorded
+        # Retain only reconstructable, nonsecret JSON bodies. Credentials
+        # remain absent from the manifest even when a caller supplies them.
+        if method in BODY_KEY_METHODS and body:
+            try:
+                payload = json.loads(body)
+
+                def nonsecret(value):
+                    if isinstance(value, dict):
+                        return all(
+                            not re.search(r"api.?key|token|password|secret|authorization|credential", str(name), re.I)
+                            and nonsecret(child) for name, child in value.items()
+                        )
+                    return not isinstance(value, list) or all(nonsecret(child) for child in value)
+
+                if nonsecret(payload):
+                    entry["request_body"] = body.decode("utf-8")
+                    entry["request_headers"] = {
+                        name.lower(): value for name, value in headers.items()
+                        if name.lower() in {"accept", "content-type"}
+                    }
+            except (ValueError, UnicodeError):
+                pass
         self.store.add(key, entry, response_body)
         return status, recorded, response_body
 

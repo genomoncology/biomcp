@@ -51,6 +51,8 @@
 
 ### Internal
 
+- Check recorded provider requests against live status, content type and consumed field shapes before releases, with explicit opt-in, pacing and complete blocked and disabled counts. Preserve safe POST request metadata and response header names in new recordings. (2259)
+
 - Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
 
 - Check pathway search and KEGG and Reactome details in JSON and Markdown against recorded provider replies. (2079)
