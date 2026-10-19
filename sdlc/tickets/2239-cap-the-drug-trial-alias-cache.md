@@ -41,3 +41,6 @@ All builds and tests run through the configured build job. Stage private test/so
 ## Focused proof
 
 Source5aa6e7445efae13a2a3e68316e2ba18e723091ab implements one fixed entry cap using the existing clear-at-cap policy. Replacement preserves other entries. Red1792420611032-54653 failed at513entries; green1792420726147-86471 passed nine alias tests, formatting, warning-denied all-target Clippy and quality checks. Published correspondence1792420941080-45022 matched every changed file and the exact patch. The bound counts entries rather than bytes; rollover may cause later provider lookups. Durable build-host experiment783-biomcp-2239-drug-alias-cache-proof retains biomcp-2239-retained-proof.tar.gz, SHA25616c308ddfe668d459fc1693608cb6d4c72f479c3819f7af88c72af078714917f. The original private local experiment490 remains a duplicate until review is finished.
+
+Keep: experiments/490-biomcp-2239-drug-alias-cache-proof — Retain cited raw proof until the release evidence is explicitly released.
+Keep: experiments/783-biomcp-2239-drug-alias-cache-proof — Retain cited raw proof until the release evidence is explicitly released.
