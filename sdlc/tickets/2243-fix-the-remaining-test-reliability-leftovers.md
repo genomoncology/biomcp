@@ -12,7 +12,10 @@ Reviews: revision e684e17, accept
 
 ## Outcome
 
-- Changes: `CHANGELOG.md` `Makefile` `docs/reference/source-licensing.md` `docs/reference/sources.json` `sdlc/issues/2026-09-27-lifecycle-tests-fail-in-copied-workspaces.md` `sdlc/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md` `sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md` `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md` `sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `src/cache/manager.rs` `src/cli/discover.rs` `src/cli/outcome/probe_tests.rs` `src/cli/tests/facade/cache.rs` `src/cli/update/tests.rs` `src/cli/worker.rs` `src/sources/gencc/tests.rs` `src/test_support.rs` `src/utils/sync.rs` `tests/test_routine_cargo_feature_contract.py` .
+- Changes: `CHANGELOG.md` `Makefile` `tests/test_upstream_planning_analysis_docs.py` `docs/reference/source-licensing.md` `docs/reference/sources.json` `sdlc/issues/2026-09-27-lifecycle-tests-fail-in-copied-workspaces.md` `sdlc/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md` `sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md` `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md` `sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `src/cache/manager.rs` `src/cli/discover.rs` `src/cli/outcome/probe_tests.rs` `src/cli/tests/facade/cache.rs` `src/cli/update/tests.rs` `src/cli/worker.rs` `src/sources/gencc/tests.rs` `src/test_support.rs` `src/utils/sync.rs` `tests/test_routine_cargo_feature_contract.py` .
+
+Gate repair claim: `tests/test_upstream_planning_analysis_docs.py` may adapt its spec-pr/spec-contracts recipe contract to the approved Python setup while retaining selected-binary and actual runner execution assertions. Gate2243/1792424083178-89156 failed only test_makefile_spec_split_contract_is_documented_and_executable;1353passed/10skipped. Root grants this exact additional test path; keep all other assertions.
+
 
 Known test-reliability leftovers are gone: spec targets sync Python, no test asserts on a process-wide counter, and no test waits on a channel or thread without a bound.
 
