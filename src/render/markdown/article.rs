@@ -310,10 +310,28 @@ fn article_batch_entities(summary: Option<&ArticleBatchEntitySummary>) -> Option
     }
 }
 
+// dead-code reason: standalone batch rendering is exercised by native renderer contracts
+#[allow(dead_code)]
 pub fn article_batch_markdown(items: &[ArticleBatchItem]) -> Result<String, BioMcpError> {
-    let mut out = format!("# Article Batch ({})\n\n", items.len());
+    render_article_batch(items, false)
+}
+
+pub fn article_batch_item_markdown(item: &ArticleBatchItem) -> Result<String, BioMcpError> {
+    render_article_batch(std::slice::from_ref(item), true)
+}
+
+fn render_article_batch(items: &[ArticleBatchItem], nested: bool) -> Result<String, BioMcpError> {
+    let mut out = if nested {
+        String::new()
+    } else {
+        format!("# Article Batch ({})\n\n", items.len())
+    };
     for (idx, item) in items.iter().enumerate() {
-        out.push_str(&format!("## {}. {}\n", idx + 1, item.title.trim()));
+        if nested {
+            out.push_str(&format!("### {}\n", item.title.trim()));
+        } else {
+            out.push_str(&format!("## {}. {}\n", idx + 1, item.title.trim()));
+        }
         if let Some(pmid) = &item.pmid {
             out.push_str(&format!("PMID: {}\n", pmid.trim()));
         } else if let Some(pmcid) = &item.pmcid {

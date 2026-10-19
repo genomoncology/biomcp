@@ -493,7 +493,7 @@ pub(in crate::cli) async fn handle_command(
                 futures,
                 json,
                 |item| serde_json::to_value(item).map_err(crate::error::BioMcpError::Json),
-                |item| crate::render::markdown::article_batch_markdown(std::slice::from_ref(item)),
+                crate::render::markdown::article_batch_item_markdown,
             )
             .await;
         }
