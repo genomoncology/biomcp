@@ -54,7 +54,7 @@ Use the three exact versioned inputs as identity/control cases. Require matching
 
 ## Granted implementation and reproduction
 
-- Changes: `src/entities/variant/get.rs`, `src/entities/variant/get/tests.rs`, `src/render/provenance.rs`, `src/entities/variant/mod.rs`, `src/transform/variant.rs`, `src/render/markdown/variant.rs`, `templates/variant.md.j2`, `tests/test_variant_transcript_lookup.py`, `tests/fixtures/variant-transcript-lookup/**`, `CHANGELOG.md`, `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md`. `sdlc/issues/2026-09-11-variant-display-mixes-transcript-numbering.md`
+- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-11-variant-display-mixes-transcript-numbering.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `src/entities/variant/get.rs` `src/entities/variant/get/tests.rs` `src/entities/variant/mod.rs` `src/render/markdown/variant.rs` `src/render/provenance.rs` `src/transform/variant.rs` `templates/variant.md.j2` `tests/fixtures/variant-transcript-lookup/authored.json` `tests/test_variant_transcript_lookup.py`.
 
 Claim expansion: `src/entities/variant/get/tests.rs` and `src/render/provenance.rs` may initialize the two new optional matched-transcript provenance fields in existing exhaustive test literals. No additional behavior or scope is granted.
 
