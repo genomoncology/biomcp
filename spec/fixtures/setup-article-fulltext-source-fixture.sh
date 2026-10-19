@@ -1628,6 +1628,11 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, ARTICLE_XML, "application/xml")
             return
 
+        # Authored provider failure control: no package at the other routes.
+        if decoded_path == "/PMC123458/supplementaryFiles":
+            send_text(self, 503, "authored Europe PMC outage", "text/plain")
+            return
+
         if decoded_path == "/PMC123461/supplementaryFiles":
             send_bytes(self, 200, EUROPE_PMC_SUPPLEMENTARY_ZIP, "application/zip")
             return

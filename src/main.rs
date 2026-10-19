@@ -89,7 +89,8 @@ fn init_tracing() {
             // reqwest-retry's with_retry_log_level exists only for
             // the default strategy; a custom one logs at WARN,
             // which pollutes every CLI error surface. Downgrade it unless the operator asked.
-            EnvFilter::new("warn,reqwest_retry=error")
+            // Readability emits serializer namespace warnings for successfully rendered HTML.
+            EnvFilter::new("warn,reqwest_retry=error,html5ever::serialize=error")
         }))
         .with_writer(std::io::stderr)
         .with_ansi(std::io::stderr().is_terminal())

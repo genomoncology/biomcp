@@ -1387,7 +1387,11 @@ fn finish_resolution(
     }
 
     if assets.is_empty() && pending.is_empty() {
-        return Err(final_asset_source_error(requested_id, any_failed));
+        return Err(final_asset_source_error(
+            requested_id,
+            any_failed,
+            &source_attempts,
+        ));
     }
 
     assign_asset_keys(requested_id, &mut assets, &mut pending);
@@ -1917,24 +1921,57 @@ fn no_supported_asset_source(requested_id: &str) -> BioMcpError {
     BioMcpError::NotFound {
         entity: "article asset source".to_string(),
         id: requested_id.to_string(),
-        suggestion: "No supported article asset source found: no PMC OA, Europe PMC, or supported Figshare package."
+        suggestion: "No supported article assets found: no open-access asset package from PMC Open Access, Europe PMC, or a supported Figshare route."
             .to_string(),
     }
 }
 
-fn final_asset_source_error(requested_id: &str, failed: bool) -> BioMcpError {
+fn final_asset_source_error(
+    requested_id: &str,
+    failed: bool,
+    attempts: &[ArticleAssetSourceAttempt],
+) -> BioMcpError {
     if failed {
-        asset_sources_unavailable()
+        asset_sources_unavailable(attempts)
     } else {
         no_supported_asset_source(requested_id)
     }
 }
 
-fn asset_sources_unavailable() -> BioMcpError {
+fn asset_sources_unavailable(attempts: &[ArticleAssetSourceAttempt]) -> BioMcpError {
+    let mut providers = BTreeSet::new();
+    for attempt in attempts {
+        if matches!(
+            attempt.outcome,
+            ArticleAssetSourceOutcome::SourceUnavailable
+                | ArticleAssetSourceOutcome::TimedOut
+                | ArticleAssetSourceOutcome::Degraded
+        ) {
+            providers.insert(attempt.provider.source.as_str());
+        }
+    }
+    if providers.is_empty() {
+        providers.extend(
+            attempts
+                .iter()
+                .map(|attempt| attempt.provider.source.as_str()),
+        );
+    }
+    let providers = providers.into_iter().collect::<Vec<_>>().join(", ");
+    let package_absence = if attempts.iter().any(|attempt| {
+        attempt.source_document == ArticleAssetSourceDocument::PmcOaArchive
+            && attempt.outcome == ArticleAssetSourceOutcome::HealthyAbsent
+    }) {
+        " PMC Open Access returned no open-access asset package."
+    } else {
+        ""
+    };
     BioMcpError::SourceUnavailable {
         source_name: "article asset providers".to_string(),
-        reason: "Asset availability could not be confirmed because a consulted source failed."
-            .to_string(),
+        reason: format!(
+            "{}{providers} could not confirm asset availability (source_unavailable). No retrievable assets were returned by the consulted sources.{package_absence}",
+            crate::error::ARTICLE_ASSET_FAILURE_PREFIX
+        ),
         suggestion: "Retry later or inspect the article at its source.".to_string(),
     }
 }
@@ -2942,11 +2979,11 @@ mod tests {
     #[test]
     fn final_source_classification_distinguishes_absence_from_failure() {
         assert!(matches!(
-            final_asset_source_error("22663011", false),
+            final_asset_source_error("22663011", false, &[]),
             BioMcpError::NotFound { .. }
         ));
         assert!(matches!(
-            final_asset_source_error("22663011", true),
+            final_asset_source_error("22663011", true, &[]),
             BioMcpError::SourceUnavailable { .. }
         ));
     }
