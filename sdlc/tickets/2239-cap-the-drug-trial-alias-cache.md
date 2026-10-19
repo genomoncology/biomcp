@@ -14,7 +14,7 @@ Reviews: revision bbec55e, accept
 
 ## Outcome
 
-- Changes: `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` `CHANGELOG.md` `sdlc/issues/2026-09-23-large-futures-and-per-call-runtimes.md` and this ticket.
+- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-23-large-futures-and-per-call-runtimes.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `sdlc/tickets/2238-reject-limit-and-offset-in-variant-erepo-caid-mode.md` `sdlc/tickets/2240-use-the-ca-bundle-for-alphagenome.md` `sdlc/tickets/2241-carry-stale-cache-notes-in-get-json.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` and this ticket. Carried PM ticket and milestone records are unchanged except this ticket own reviewed proof.
 
 The in-memory drug trial-alias cache in a long-running `biomcp serve` stays bounded.
 
