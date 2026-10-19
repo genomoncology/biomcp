@@ -546,7 +546,7 @@ pub(super) async fn get_article_base_with_clients(
         return Err(BioMcpError::InvalidArgument("ID is too long.".into()));
     }
 
-    match parse_article_id(id) {
+    let mut article = match parse_article_id(id) {
         ArticleIdType::Pmid(pmid) => {
             resolve_article_from_pmid(
                 pmid,
@@ -604,6 +604,25 @@ pub(super) async fn get_article_base_with_clients(
             }
         }
         ArticleIdType::Invalid => Err(BioMcpError::InvalidArgument(INVALID_ARTICLE_ID_MSG.into())),
+    }?;
+    prefer_pubmed_abstract(&mut article).await;
+    Ok(article)
+}
+
+/// PubTator may drop comparison characters before exporting an abstract.
+/// Keep its annotations, but prefer the publisher text in PubMed when available.
+async fn prefer_pubmed_abstract(article: &mut Article) {
+    let Some(pmid) = article.pmid.as_deref() else {
+        return;
+    };
+    let Ok(pubmed) = PubMedClient::new() else {
+        return;
+    };
+    if let Ok(Ok(citation)) =
+        tokio::time::timeout(ARTICLE_INDEXING_TIMEOUT, pubmed.citation(pmid)).await
+        && let Some(abstract_text) = citation.abstract_text
+    {
+        article.abstract_text = Some(abstract_text);
     }
 }
 

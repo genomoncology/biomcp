@@ -385,7 +385,7 @@ pub(super) async fn acquire_federated_article_rows_with_context(
     }
     if litsense2_leg
         .as_ref()
-        .is_some_and(|outcome| matches!(outcome, FederatedSourceOutcome::Available(rows) if rows.len() >= fetch_count))
+        .is_some_and(|outcome| matches!(outcome, FederatedSourceOutcome::Available(partial) if partial.page.results.len() >= fetch_count))
     {
         truncated_sources.push(ArticleSource::LitSense2);
     }
@@ -399,7 +399,12 @@ pub(super) async fn acquire_federated_article_rows_with_context(
         }),
         pubmed_leg,
         semantic_scholar_leg,
-        litsense2_leg.unwrap_or_else(|| FederatedSourceOutcome::Available(Vec::new())),
+        litsense2_leg.unwrap_or_else(|| {
+            FederatedSourceOutcome::Available(PartialSearchPage::complete(SearchPage::offset(
+                Vec::new(),
+                None,
+            )))
+        }),
     )?;
     federated.truncated_sources = truncated_sources;
     federated.timings = timings;
@@ -457,7 +462,7 @@ fn collect_federated_article_rows(
     europe_leg: FederatedSourceOutcome<PartialSearchPage>,
     pubmed_leg: Option<FederatedSourceOutcome<PartialSearchPage>>,
     semantic_scholar_leg: FederatedSourceOutcome<super::backends::SemanticScholarCandidateOutcome>,
-    litsense2_leg: FederatedSourceOutcome<Vec<ArticleSearchResult>>,
+    litsense2_leg: FederatedSourceOutcome<PartialSearchPage>,
 ) -> Result<FederatedArticleRows, BioMcpError> {
     let mut source_status = Vec::new();
     let (semantic_scholar_rows, semantic_scholar_status) = match semantic_scholar_leg {
@@ -465,7 +470,10 @@ fn collect_federated_article_rows(
         FederatedSourceOutcome::Unavailable { status, .. } => (Vec::new(), status),
     };
     let litsense2_rows = match litsense2_leg {
-        FederatedSourceOutcome::Available(rows) => rows,
+        FederatedSourceOutcome::Available(partial) => {
+            source_status.extend(partial.degradation);
+            partial.page.results
+        }
         FederatedSourceOutcome::Unavailable { status, .. } => {
             source_status.push(status);
             Vec::new()
@@ -834,9 +842,9 @@ async fn search_relevance_page(
                 search_litsense2_candidates(filters, fetch_count),
             )
             .await;
-            let rows = result?;
+            let partial = result?;
             let enrichment = enrich_and_finalize_article_candidates(
-                rows,
+                partial.page.results,
                 limit,
                 offset,
                 None,
@@ -844,7 +852,11 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing, None))
+            Ok(finish_single_backend_page(
+                enrichment,
+                timing,
+                partial.degradation,
+            ))
         }
         BackendPlan::TypeCapable => {
             unreachable!("type-capable search is handled by search_page")

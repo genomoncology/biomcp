@@ -9,6 +9,9 @@ mod pty_helpers;
 #[path = "article_asset_terminal/supplement_cache.rs"]
 mod supplement_cache;
 
+#[path = "article_asset_terminal/source_outcomes.rs"]
+mod source_outcomes;
+
 struct ArticleFixture {
     root: PathBuf,
     workspace: PathBuf,
@@ -69,6 +72,7 @@ impl ArticleFixture {
             env!("CARGO_BIN_EXE_biomcp"),
         ]);
         command.args(args);
+        command.env_remove("RUST_LOG");
         command
     }
 }
