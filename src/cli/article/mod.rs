@@ -424,7 +424,7 @@ See also: biomcp list article")]
         fulltext: bool,
     },
     /// Search supplement text for literal text or a protein substitution
-    #[command(after_help = "\\
+    #[command(after_help = "\
 EXAMPLES:
   biomcp --json article supplement-search 30209399 F1761I
   biomcp --json article supplement-search 28944238 P245S

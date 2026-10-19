@@ -8,6 +8,17 @@
 
 - Enforce article disease filters on Semantic Scholar and LitSense2 results using source-backed disease names and exact synonyms, and report unavailable synonym lookups. (2267)
 
+- Resolve exact disease names across bounded MyDisease result pages while preserving ambiguity refusals and complete candidate checks. (2274)
+
+- Return malformed MCP tool arguments as model-visible errors naming the argument, and derive the ERepo tool schema from its typed fields. (2263)
+- Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
+
+- Derive variant article Markdown source plans and source states from the same route results as JSON, including empty pages and authenticated Semantic Scholar searches. (2252)
+
+- Explain article full-text access groups, preprint JATS, retrieval reason codes, and source boundaries with corrected live examples. (2253)
+
+- Align article and variant command help and discovery, name blocked PMC assets consistently, suggest explicit PDF fallback after a full-text miss, and keep compact batch headings nested. (2254)
+
 - Repair garbled trademark and registered symbols in all displayed GTR text, including names and methods, while preserving identifiers and other content. (2237)
 
 - Preserve selected drug identity names for interaction matching, require supported drug identity in discovery, rank exact matches first, and explain missing diagnostic synonym resolution. Restore deterministic diagnostic synonym controls. (2242)
@@ -15,6 +26,7 @@
 - Identify variant CGI output as MyVariant's variant-level CGI subset, loaded 2023-02-27, and scope empty results to that subset in Markdown and JSON. (2245)
 
 - Resolve versioned transcript variant inputs through source-backed DNA coordinates with their assembly, and name the matched transcript while preserving the displayed numbering. Refuse unverified transcript matches explicitly. (1260)
+- Accept alternative-transcript protein numbering only with paired versioned annotations on the same allele; refuse unsupported aliases while preserving verified transcript matches. (2261)
 
 - Retrieve advertised preprint JATS with its source and license, and preserve structured single and batch answers when full text is unavailable. (2248)
 
@@ -23,6 +35,8 @@
 - Keep the matched spelling visible in bounded supplement-search context, including Unicode text and long matches. (2249)
 
 - Name every resolved variant article alias with its planned and attempted query disposition, including forms omitted by the alias limit or invocation deadline. (2246)
+
+- Group recorded MyGene gene aliases in PubMed and Europe PMC variant article queries, and report their source and omissions from bounded provider work. (2247)
 
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
@@ -51,10 +65,13 @@
 - Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 - Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
 
+- Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
+
 ### Internal
 
 - Keep subprocess readiness markers on their own line so GenCC lease tests finish with one CPU, and exercise that affinity in the stress lane. (2244)
 - Route test cache roots through shared fixture policy guards and reject unmanaged root assignments. (2257)
+- Reuse one replay server per test runner, isolate each test's recordings and request logs, and stop the server when its runner exits. (2260)
 
 - Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
 

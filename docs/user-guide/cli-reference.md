@@ -567,21 +567,30 @@ biomcp get pgx warfarin annotations
 
 ### Article
 
+These examples use live services. Full-text availability can change.
+
 ```bash
 biomcp get article 22663011
 biomcp get article 22663011 indexing
 biomcp get article 22663011 all
-biomcp get article 22663011 fulltext
-biomcp get article 22663011 fulltext --pdf
-biomcp get article 22663011 fulltext --outline
-biomcp get article 22663011 fulltext --lines 210:340
+biomcp get article 24200969 fulltext
+biomcp get article 24200969 fulltext --pdf
+biomcp get article 24200969 fulltext --outline
+biomcp get article 24200969 fulltext --lines 210:340
 biomcp --json get article 22663011 --asset-view coverage --asset-limit 25 --asset-offset 0 assets
 biomcp --json get article <id> assets
 biomcp get article <id> asset <asset-key>
+biomcp get article 24200969 fulltext --out ./papers
+biomcp get article <id> asset <asset-key> --out ./papers
+biomcp get article <id> asset <asset-key> --output ./supplement.xlsx
 biomcp get article 22663011 tldr
 biomcp batch article 22663011,24200969 --mode compact
 biomcp batch article 22663011,24200969 --mode detail --sections fulltext --pdf
 ```
+
+`--out DIR` exports full text or one raw asset into an existing directory.
+`--output FILE` saves one raw asset to an exact file path. The two destinations
+are mutually exclusive; full-text exports require `fulltext` as the sole section.
 
 Article detail and batch return every author supplied by the selected source in
 source order. JSON carries `authors`, returned `author_count`,
@@ -957,10 +966,16 @@ biomcp pathway articles R-HSA-5673001
 biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056
 biomcp article entities 22663011
+biomcp article supplement-search 30209399 F1761I
+biomcp --json article supplement-search 30209399 F1761I --asset <asset-key>
 biomcp article citations 22663011 --limit 3 --offset 0
 biomcp article references 22663011 --limit 3 --offset 0
 biomcp article recommendations 22663011 --limit 3
 ```
+
+`article supplement-search <id> <needle> [--asset <asset-key>]` searches
+supplement text and reports exact locators and source checksums. Markdown is
+the default; add `--json` for structured output. This is a text match.
 
 The two PharmacoDB row helpers each demand a scope. `cell-line drug-response`
 requires `--dataset`, and `drug cell-lines` requires exactly one of

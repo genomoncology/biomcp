@@ -151,10 +151,9 @@ pub(super) async fn handle(
         .join(", ");
         let render = |results: &[crate::entities::article::ArticleSearchResult],
                       header: Option<&str>| {
-            crate::render::markdown::article_search_markdown_with_footer_and_context(
+            crate::render::markdown::variant_article_search_markdown(
                 &query,
                 results,
-                "",
                 &filters,
                 crate::render::markdown::ArticleSearchRenderContext {
                     source_filter: crate::entities::article::ArticleSourceFilter::All,
@@ -169,6 +168,7 @@ pub(super) async fn handle(
 
                     header,
                 },
+                &outcome.response.source_status,
             )
         };
         let mut markdown = if results.is_empty() && !outcome.response.results.is_empty() {
@@ -213,25 +213,31 @@ pub(super) async fn handle(
             ));
         }
     }
-    text.push_str(&alias_coverage_text);
-    if !json && !outcome.response.complete {
-        let unfinished = outcome
-            .response
-            .source_status
-            .iter()
-            .filter(|status| {
-                !matches!(
-                    status.status,
-                    crate::entities::article::variant_search::VariantArticleSourceStatusKind::Ok
-                        | crate::entities::article::variant_search::VariantArticleSourceStatusKind::Skipped
-                )
-            })
-            .map(|status| format!("- {}/{}: {:?}", status.route, status.source, status.status).to_ascii_lowercase())
-            .collect::<Vec<_>>();
-        if !unfinished.is_empty() {
-            text.push_str("\n\n## Incomplete coverage\n\n");
-            text.push_str(&unfinished.join("\n"));
+    if !json {
+        let coverage = &outcome.response.gene_symbol_coverage;
+        if coverage.status != "not_applicable" {
+            alias_coverage_text.push_str(&format!(
+                "\n\n## Gene symbol query coverage\n\nSource: {} {} field ({}).\n",
+                coverage.source, coverage.source_field, coverage.status
+            ));
+            if let Some(restriction) = coverage.restriction {
+                alias_coverage_text.push_str(restriction);
+                alias_coverage_text.push('\n');
+            }
+            for alias in &coverage.aliases {
+                alias_coverage_text.push_str(&format!(
+                    "- {}: {} ({})\n",
+                    alias.alias, alias.disposition, alias.reason
+                ));
+            }
         }
+    }
+    text.push_str(&alias_coverage_text);
+    if !json && settled_empty_page {
+        text.push_str("\n\n");
+        text.push_str(&crate::render::markdown::variant_article_sources_markdown(
+            &outcome.response.source_status,
+        )?);
     }
     if !outcome.hard_error {
         return Ok(CommandOutcome::stdout(text)
@@ -259,7 +265,7 @@ pub(super) async fn handle(
                 "myvariant" => "MyVariant.info",
                 other => other,
             };
-            format!("{}/{} ({:?})", status.route, source, status.status)
+            format!("{}/{}", status.route, source)
         })
         .collect::<Vec<_>>()
         .join(", ");
@@ -274,7 +280,12 @@ pub(super) async fn handle(
         "Provider work failed"
     };
     Ok(CommandOutcome::stderr_with_exit(
-        format!("{cause}; unfinished variant article routes: {sources}. Retry the request.{alias_coverage_text}"),
+        format!(
+            "{cause}; unfinished variant article routes: {sources}. Retry the request.{alias_coverage_text}\n\n{}",
+            crate::render::markdown::variant_article_sources_markdown(
+                &outcome.response.source_status,
+            )?
+        ),
         1,
     )
     .with_variant_articles_mcp_disposition(VariantArticlesMcpDisposition::StructuredError))

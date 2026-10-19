@@ -8,11 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-<<<<<<< HEAD
 Depends on: 2274
 
-=======
->>>>>>> 6be8dacef (File research's sixteen 0.9.3 findings)
 ## Outcome
 
 `search article -d` either filters every source's rows to the disease or is documented and labeled as ranking only; help and output agree with the behavior.

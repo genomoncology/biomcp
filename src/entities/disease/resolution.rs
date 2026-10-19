@@ -4,12 +4,12 @@ use super::fallback::resolve_disease_hit_via_discover_fallback;
 use super::*;
 
 mod ambiguity;
+mod paging;
 pub(crate) use ambiguity::{
     AbbreviationAmbiguity, clinical_reading_label, clinical_reading_phrase,
     resolve_abbreviated_disease_ambiguity,
 };
 
-const EXACT_RESOLUTION_QUERY_SIZE: usize = 50;
 const MAX_EXACT_SYNONYMS: usize = 20;
 const MAX_PROVIDER_TERM_BYTES: usize = 256;
 /// Two-letter abbreviations never name one disease through `get disease`:
@@ -219,6 +219,18 @@ pub(crate) async fn resolve_exact_disease_terms(
     client: &MyDiseaseClient,
     disease: &str,
 ) -> Result<ExactDiseaseTerms, BioMcpError> {
+    tokio::time::timeout(
+        std::time::Duration::from_secs(15),
+        resolve_exact_disease_terms_inner(client, disease),
+    )
+    .await
+    .map_err(|_| source_resolution_error())?
+}
+
+async fn resolve_exact_disease_terms_inner(
+    client: &MyDiseaseClient,
+    disease: &str,
+) -> Result<ExactDiseaseTerms, BioMcpError> {
     let requested = disease.trim();
     if requested.len() > 512 || normalized_term(requested).is_none() {
         return Err(source_resolution_error());
@@ -232,24 +244,10 @@ pub(crate) async fn resolve_exact_disease_terms(
         return detail_terms(requested, &id, detail);
     }
 
-    let response = client
-        .query(
-            requested,
-            EXACT_RESOLUTION_QUERY_SIZE,
-            0,
-            None,
-            None,
-            None,
-            None,
-        )
-        .await
-        .map_err(|_| source_resolution_error())?;
-    if response.total > response.hits.len() {
-        return Err(source_resolution_error());
-    }
+    let hits = paging::complete_exact_candidates(client, requested).await?;
 
     let mut exact_hits = std::collections::HashMap::new();
-    for hit in response.hits {
+    for hit in hits {
         if !exact_hit_matches(requested, &hit) {
             continue;
         }

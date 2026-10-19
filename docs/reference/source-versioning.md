@@ -5,6 +5,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | Source | Base URL | Version status | Rationale | Last reviewed |
 |---|---|---|---|---|
 | AlphaGenome | `https://gdmscience.googleapis.com:443` | Unversioned | Google endpoint is service-versioned server-side; no stable path segment exposed | 2026-02-15 |
+| bioRxiv / medRxiv | `https://api.biorxiv.org` | Unversioned API; versioned preprints | The details route has no API version segment; BioMCP selects the latest matching preprint version and follows its advertised JATS XML URL | 2026-10-19 |
 | cBioPortal | `https://www.cbioportal.org/api` | Unversioned | Public API path is stable without explicit version segment | 2026-02-15 |
 | Cancerhotspots.org | `https://www.cancerhotspots.org` | Unversioned | Website-backed recurrence endpoint is stable without explicit URL versioning | 2026-06-11 |
 | CDC WONDER VAERS | `https://wonder.cdc.gov/controller/datarequest/D8` | Unversioned | CDC WONDER exposes the VAERS D8 database through a stable dataset ID and XML POST contract; BioMCP freezes the request/response shape in fixtures instead of relying on a versioned path segment | 2026-04-18 |

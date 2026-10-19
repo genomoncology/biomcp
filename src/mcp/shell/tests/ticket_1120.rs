@@ -68,7 +68,7 @@ async fn raw_biomcp_tool_preserves_an_omitted_ctgov_total_as_null() {
     let _env = CtGovMcpFixtureEnv::set(&base);
 
     let result = BioMcpServer::new()
-        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+        .biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
             command: "biomcp search trial --condition melanoma --count-only".into(),
             json: true,
         }))
@@ -103,7 +103,7 @@ async fn raw_biomcp_reports_reversed_search_before_the_generic_fallback() {
         ),
     ] {
         let result = BioMcpServer::new()
-            .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            .biomcp(crate::mcp::shell::arguments::Parameters(ShellCommand {
                 command: command.into(),
                 json: true,
             }))

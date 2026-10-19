@@ -310,10 +310,28 @@ fn article_batch_entities(summary: Option<&ArticleBatchEntitySummary>) -> Option
     }
 }
 
+// dead-code reason: standalone batch rendering is exercised by native renderer contracts
+#[allow(dead_code)]
 pub fn article_batch_markdown(items: &[ArticleBatchItem]) -> Result<String, BioMcpError> {
-    let mut out = format!("# Article Batch ({})\n\n", items.len());
+    render_article_batch(items, false)
+}
+
+pub fn article_batch_item_markdown(item: &ArticleBatchItem) -> Result<String, BioMcpError> {
+    render_article_batch(std::slice::from_ref(item), true)
+}
+
+fn render_article_batch(items: &[ArticleBatchItem], nested: bool) -> Result<String, BioMcpError> {
+    let mut out = if nested {
+        String::new()
+    } else {
+        format!("# Article Batch ({})\n\n", items.len())
+    };
     for (idx, item) in items.iter().enumerate() {
-        out.push_str(&format!("## {}. {}\n", idx + 1, item.title.trim()));
+        if nested {
+            out.push_str(&format!("### {}\n", item.title.trim()));
+        } else {
+            out.push_str(&format!("## {}. {}\n", idx + 1, item.title.trim()));
+        }
         if let Some(pmid) = &item.pmid {
             out.push_str(&format!("PMID: {}\n", pmid.trim()));
         } else if let Some(pmcid) = &item.pmcid {
@@ -372,6 +390,9 @@ pub fn article_graph_markdown(
         markdown_cell(kind),
         markdown_cell(&article_related_label(&result.article))
     );
+    if let Some(note) = &result._meta.note {
+        out.push_str(&format!("{}\n\n", markdown_cell(note)));
+    }
     out.push_str("| Identifier | Title | Intents | Influential | Context |\n");
     out.push_str("| --- | --- | --- | --- | --- |\n");
     if result.edges.is_empty() {
@@ -636,6 +657,50 @@ pub fn article_search_markdown_with_footer_and_context(
     filters: &ArticleSearchFilters,
     context: ArticleSearchRenderContext<'_>,
 ) -> Result<String, BioMcpError> {
+    article_search_markdown(query, results, pagination_footer, filters, context, None)
+}
+
+pub(crate) fn variant_article_search_markdown(
+    query: &str,
+    results: &[ArticleSearchResult],
+    filters: &ArticleSearchFilters,
+    context: ArticleSearchRenderContext<'_>,
+    source_status: &[crate::entities::article::variant_search::VariantArticleSourceStatus],
+) -> Result<String, BioMcpError> {
+    article_search_markdown(query, results, "", filters, context, Some(source_status))
+}
+
+pub(crate) fn variant_article_sources_markdown(
+    source_status: &[crate::entities::article::variant_search::VariantArticleSourceStatus],
+) -> Result<String, BioMcpError> {
+    let routes = source_status
+        .iter()
+        .map(|row| format!("{}/{}", row.route, row.source))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let mut text = format!(
+        "Source plan: routes [{routes}]\n\n## Source status\n\n| Route | Source | Status |\n|---|---|---|\n"
+    );
+    for row in source_status {
+        let status = serde_json::to_value(row.status)?;
+        let status = status
+            .as_str()
+            .expect("source status serializes as a string");
+        text.push_str(&format!("| {} | {} | {status} |\n", row.route, row.source));
+    }
+    Ok(text)
+}
+
+fn article_search_markdown(
+    query: &str,
+    results: &[ArticleSearchResult],
+    pagination_footer: &str,
+    filters: &ArticleSearchFilters,
+    context: ArticleSearchRenderContext<'_>,
+    variant_source_status: Option<
+        &[crate::entities::article::variant_search::VariantArticleSourceStatus],
+    >,
+) -> Result<String, BioMcpError> {
     let rows = results
         .iter()
         .map(|row| ArticleSearchRenderRow {
@@ -668,8 +733,17 @@ pub fn article_search_markdown_with_footer_and_context(
     let (retry_limit, retry_offset) = context.retry_page.unwrap_or((10, 0));
     let source_status_rows =
         article_source_status_rows(context.source_status, filters, retry_limit, retry_offset);
-    let source_plan =
-        crate::entities::article::article_source_plan(filters, context.source_filter)?;
+    let variant_source_metadata = variant_source_status
+        .map(variant_article_sources_markdown)
+        .transpose()?;
+    let source_plan = if variant_source_status.is_none() {
+        Some(crate::entities::article::article_source_plan(
+            filters,
+            context.source_filter,
+        )?)
+    } else {
+        None
+    };
     let source_names = |values: &[crate::entities::article::ArticleSource]| {
         values
             .iter()
@@ -685,8 +759,9 @@ pub fn article_search_markdown_with_footer_and_context(
     let tmpl = env()?.get_template("article_search.md.j2")?;
     let body = tmpl.render(context! {
         header => header,
-        candidate_sources => source_names(&source_plan.candidate_sources),
-        enrichment_sources => source_names(&source_plan.enrichment_sources),
+        candidate_sources => source_plan.as_ref().map(|plan| source_names(&plan.candidate_sources)),
+        enrichment_sources => source_plan.as_ref().map(|plan| source_names(&plan.enrichment_sources)),
+        variant_source_metadata => variant_source_metadata,
         count => results.len(),
         rows => rows,
         semantic_scholar_enabled => context.semantic_scholar_enabled,
