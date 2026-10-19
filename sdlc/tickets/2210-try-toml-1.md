@@ -21,6 +21,7 @@ Moving BioMCP to toml 1.x either lands with measured build and dependency number
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-19 landed 4cd12af48608fce4ff735410997ea3aa179f1111; next: Record completed review batch; retain 2079 for its remaining command coverage.
 
 ## Trial brief
 
