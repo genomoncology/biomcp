@@ -1,6 +1,7 @@
 //! Drug entity models and workflows exposed through the stable drug facade.
 
 pub(crate) mod cell_lines;
+mod development_codes;
 mod get;
 pub(crate) mod interactions;
 pub(crate) mod label;
