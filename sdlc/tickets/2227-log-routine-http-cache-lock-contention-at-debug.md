@@ -4,11 +4,13 @@ priority: 3
 
 # 2227 — Log routine HTTP cache lock contention at debug
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 446e256, accept
+
+Landed: 3221bf7
 
 ## Outcome
 
