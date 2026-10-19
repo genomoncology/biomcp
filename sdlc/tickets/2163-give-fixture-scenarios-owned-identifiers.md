@@ -29,6 +29,7 @@ PM decision: 2026-10-19. Narrow this ticket to the demonstrated shared-PMCID col
 ## Progress
 
 - 2026-10-19 started
+- 2026-10-19 landed fb5ab13f5d9008428b52ab4f79c08788c8ea61f1; next: Complete the approved demonstrated fixture collision fix using its shared source gate.
 
 ## Current collision and development brief
 
