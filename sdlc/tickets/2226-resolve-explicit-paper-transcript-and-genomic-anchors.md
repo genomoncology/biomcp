@@ -12,6 +12,8 @@ Reviews: revision 1d6752b, accept
 
 Reviews: revision 9ce8792, accept
 
+Reviews: revision cf74f5f, accept
+
 ## Outcome
 
 Recognize a paper's explicit transcript accession and version as verified identity only when authoritative resolution proves the same requested allele, following the recorded clinical ruling. Unsupported or unresolved anchors remain unverified. This work can move to a later release without blocking the demonstrated alias-label correction or the current release.
