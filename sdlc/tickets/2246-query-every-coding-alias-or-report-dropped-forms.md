@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 `biomcp variant articles` sends every protein and coding form it resolved for the variant to the literature sources, or names in its output and debug plan each form it did not send and why. Other-transcript forms follow the transcript-alias decision.
 
-- Changes: `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_alias_coverage.py` `tests/fixtures/article/coding-aliases/**` `CHANGELOG.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md`. `src/entities/article/backends/provider_unit.rs`
+- Changes: `CHANGELOG.md` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md` `sdlc/tickets/2249-show-the-match-in-supplement-search-context.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md` `src/cli/variant/articles.rs` `src/entities/article/backends/provider_unit.rs` `src/entities/article/variant_search.rs` `tests/fixtures/article/coding-aliases/authored.json` `tests/test_variant_article_alias_coverage.py`.
 
 ## Evidence
 
@@ -43,3 +43,9 @@ Write failing outside-in tests first, apply the minimal repair, run affected tes
 Keep: experiments/791-biomcp-2246-coding-alias-study — Retain cited raw proof until release evidence is explicitly released.
 
 Claim expansion: Track actual request polling after provider setup and admission, so disabled/deadline-blocked plans are not called attempted. No changes to scheduling, caps, identity or provider selection.
+
+## Focused alias coverage proof
+
+Source1b777757706d149180ea1ce6108a08dbb1ffb448 changes six product/test/fixture files. Shared per-form coverage appears in ordinaryJSON, per-batch items and debug plans, and in Markdown including hard errors. The provider-unit hook marks an attempt immediately before an admitted query future is polled, without changing alias selection, query limits, deadlines or identity rules. Strict PubTator entity lookup resolves the original request and does not count as sending alternate text spellings; literal lexical PubTator queries do count. The final qualification includes that attribution correction and a small shared terminal-error helper extraction required by the existing function-length ratchet.
+
+Red1792424562961-75975 reproduced missing per-form omission disclosure. Final1792425146818-45854 passed six CLI cases,13focused Rust cases and make lint. Earlier focused checks also exercised existing exact-name/transcript safeguards and CLI/MCP behavior; finalclaims rely on the retained exactsource manifests. Both published commit and all six changed blobs match the testedSHA256manifest. Public fixture is explicitly authored MyVariant-shaped data with empty literature controls; private patch, source manifest and verification script remain in experiments/791-biomcp-2246-coding-alias-study. No newqueries, paper-recovery claim, gene-symbol expansion or identity change.
