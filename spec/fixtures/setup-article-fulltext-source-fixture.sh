@@ -1002,6 +1002,18 @@ def pubtator_payload(pmid):
     }
 
 
+# Authored projections of the named-file coverage observed on 2026-10-19.
+# These are deterministic controls, not captured article bodies. The readable
+# CSV is an authored mixed-result control; the challenge body is the existing
+# recorded PMC interstitial, not a new capture from either paper.
+UNREACHABLE_SUPPLEMENT_CASES = {
+    "38368708": ("PMC11431181", ["NIHMS2014154-supplement-Supplementary.docx"]),
+    "27397505": ("PMC4967469", ["mmc3.xlsx", "mmc4.xlsx", "mmc5.xlsx", "mmc7.xlsx", "mmc9.pdf"]),
+}
+for pmid, (pmcid, names) in UNREACHABLE_SUPPLEMENT_CASES.items():
+    ARTICLES[pmid] = {"pmcid": pmcid, "title": "Authored unreadable supplement replay", "abstract": "Abstract text.", "paper_id": "replay-" + pmid}
+
+
 def europepmc_search_payload(pmid):
     article = ARTICLES[pmid]
     result = {
@@ -1166,6 +1178,25 @@ class Handler(BaseHTTPRequestHandler):
         # providers share this listener.
         decoded_path = unquote(parsed.path).removeprefix("/paced-s2")
         query = parse_qs(parsed.query)
+
+        for pmid, (pmcid, names) in UNREACHABLE_SUPPLEMENT_CASES.items():
+            if decoded_path == f"/articles/{pmcid}/":
+                links = "".join(f'<a href="/articles/instance/{pmcid[3:]}/bin/{name}" data-ga-action="click_feat_suppl">{name}</a>' for name in names)
+                if pmid == "27397505":
+                    links += f'<a href="/articles/instance/{pmcid[3:]}/bin/readable-control.csv" data-ga-action="click_feat_suppl">readable-control.csv</a>'
+                send_text(self, 200, f'<html><body><main><article><h1>Authored replay</h1><section class="sm xbox font-sm" id="SD1"><div class="media p"><div class="caption">{links}</div></div></section></article></main></body></html>', "text/html")
+                return
+            if decoded_path.startswith(f"/articles/instance/{pmcid[3:]}/bin/"):
+                if decoded_path.endswith("readable-control.csv"):
+                    send_bytes(self, 200, b"variant,context\nI448T,authored readable control\n", "text/csv")
+                elif pmid == "27397505":
+                    send_bytes(self, 200, POW_INTERSTITIAL, "text/html")
+                else:
+                    send_text(self, 503, "authored unavailable route", "text/plain")
+                return
+            if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == [pmcid + "."]:
+                send_text(self, 200, "<ListBucketResult></ListBucketResult>", "application/xml")
+                return
 
         candidate_route = {
             "/search/": ("pubtator", "text"),
