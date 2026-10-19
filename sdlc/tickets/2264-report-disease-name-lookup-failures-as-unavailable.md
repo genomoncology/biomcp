@@ -12,6 +12,8 @@ Reviews: revision 37ff9be, accept
 
 Reviews: revision 47117ca, accept
 
+Reviews: revision 11a005c, accept
+
 ## Outcome
 
 Changes: `CHANGELOG.md`, `sdlc/tickets/2265-label-drug-target-species.md`, `sdlc/tickets/2266-resolve-drug-development-codes.md`, `sdlc/tickets/2268-backfill-missing-article-abstracts.md`, `sdlc/tickets/2269-report-article-metadata-and-section-completeness-truthfully.md`, `sdlc/tickets/2270-fix-drug-approvals-and-regulatory-rollups.md`, `sdlc/tickets/2271-name-the-real-source-for-article-asset-misses.md`, `sdlc/tickets/2272-offer-full-fda-approval-history.md`, `src/entities/disease/fallback.rs`, `src/entities/disease/fallback/tests.rs`, `src/entities/drug/get.rs`, `tests/test_disease_name_outcomes.py`.
