@@ -41,3 +41,4 @@ Study the actual current search-all and standalone GWAS requests before changing
 - 2026-10-19 started
 
 The clinical reviewer confirmed the existing semantic approvals in record 0928 and ticket 2089. The observed pages do not establish absence of an association in the entire Catalog, and no clinical rule requires a nonempty result for this bounded BRAF-plus-melanoma query. No retrieval-semantic change is authorized.
+- 2026-10-19 landed 62ddad1387963215f2218064384cab995bc2c1ac; next: Retain 2079 for remaining golden coverage; complete the accepted article-speed and GWAS evidence outcomes after this shared source batch.
