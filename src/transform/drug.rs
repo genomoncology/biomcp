@@ -1086,7 +1086,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
             && Some(hit_index) == anchor_index
             && let Some(drugbank) = hit.drugbank.as_ref()
         {
-            for synonym in &drugbank.synonyms {
+            for synonym in drugbank.name.iter().chain(drugbank.synonyms.iter()) {
                 let synonym = synonym.trim();
                 if synonym.is_empty() {
                     continue;

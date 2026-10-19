@@ -456,7 +456,13 @@ fn search_page_from_data(
         _ => Some(known_total),
     };
     let results = results.into_iter().skip(offset).take(limit).collect();
-    Ok(SearchPage::offset(results, total))
+    let mut page = SearchPage::offset(results, total);
+    if page.total == Some(0) && disease_terms.is_some_and(|terms| terms.canonical_id.is_none()) {
+        page.partial_note = Some(
+            "MyDisease.info supplied no unique exact disease identity; synonym resolution is unavailable. Only literal disease matching was used.".to_string(),
+        );
+    }
+    Ok(page)
 }
 
 pub fn search_query_summary(filters: &DiagnosticSearchFilters) -> String {

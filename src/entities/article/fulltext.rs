@@ -31,6 +31,7 @@ enum XmlWaterfallWinner {
     NcbiEfetchPmc,
     PmcOaArchive,
     EuropePmcMed,
+    PreprintJats,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,6 +40,7 @@ enum XmlFulltextAttempt {
     NcbiEfetchPmc,
     PmcOaArchive,
     EuropePmcMed,
+    PreprintJats,
 }
 
 impl XmlFulltextAttempt {
@@ -48,6 +50,7 @@ impl XmlFulltextAttempt {
             Self::NcbiEfetchPmc => XmlWaterfallWinner::NcbiEfetchPmc,
             Self::PmcOaArchive => XmlWaterfallWinner::PmcOaArchive,
             Self::EuropePmcMed => XmlWaterfallWinner::EuropePmcMed,
+            Self::PreprintJats => XmlWaterfallWinner::PreprintJats,
         }
     }
 }
@@ -151,6 +154,7 @@ fn xml_source_metadata(winner: XmlWaterfallWinner) -> ArticleFulltextSource {
         XmlWaterfallWinner::NcbiEfetchPmc => ("NCBI EFetch PMC XML", "NCBI EFetch"),
         XmlWaterfallWinner::PmcOaArchive => ("PMC OA Archive XML", "PMC OA"),
         XmlWaterfallWinner::EuropePmcMed => ("Europe PMC MED XML", "Europe PMC"),
+        XmlWaterfallWinner::PreprintJats => ("bioRxiv/medRxiv JATS XML", "bioRxiv/medRxiv"),
     };
     ArticleFulltextSource {
         kind: ArticleFulltextKind::JatsXml,
@@ -299,7 +303,110 @@ fn xml_fulltext_attempts(
     if article.pmid.as_deref().is_some() {
         attempts.push(XmlFulltextAttempt::EuropePmcMed);
     }
+    if article.doi.as_deref().is_some_and(|doi| {
+        doi.strip_prefix("10.1101/").is_some_and(|suffix| {
+            !suffix.is_empty() && suffix.chars().all(|c| c.is_ascii_digit() || c == '.')
+        })
+    }) {
+        attempts.push(XmlFulltextAttempt::PreprintJats);
+    }
     attempts
+}
+
+#[derive(serde::Deserialize)]
+struct PreprintDetails {
+    #[serde(default)]
+    collection: Vec<PreprintVersion>,
+}
+
+#[derive(serde::Deserialize)]
+struct PreprintVersion {
+    doi: String,
+    version: String,
+    jatsxml: String,
+    license: Option<String>,
+}
+
+async fn preprint_response(
+    client: &reqwest_middleware::ClientWithMiddleware,
+    url: Url,
+) -> Result<Option<Vec<u8>>, BioMcpError> {
+    let context = crate::error::SourceContext::retry(crate::error::SourceProvider::BIORXIV_MEDRXIV);
+    let response = crate::sources::apply_cache_mode(client.get(url))
+        .send_with_source_context(context)
+        .await?;
+    if documented_fulltext_absence(response.status()) {
+        return Ok(None);
+    }
+    if !response.status().is_success() {
+        return Err(BioMcpError::Api {
+            api: "bioRxiv/medRxiv".into(),
+            message: format!("Preprint source returned HTTP {}", response.status()),
+        }
+        .with_source_context(context));
+    }
+    crate::sources::read_limited_source_body(response, context)
+        .await
+        .map(Some)
+}
+
+async fn fetch_preprint_jats(doi: &str) -> Result<Option<(String, PreprintVersion)>, BioMcpError> {
+    use crate::sources::provider_url_policy::ProviderUrlPolicy;
+    let policy = ProviderUrlPolicy::preprint_jats()?;
+    let client = crate::sources::provider_url_client("biorxiv-medrxiv", &policy)?;
+    let fixture = std::env::var("BIOMCP_PREPRINT_FIXTURE_ORIGIN").ok();
+    let base = fixture.as_deref().unwrap_or("https://api.biorxiv.org");
+    for server in ["medrxiv", "biorxiv"] {
+        let url = Url::parse(&format!("{base}/details/{server}/{doi}"))
+            .map_err(|err| BioMcpError::InvalidArgument(err.to_string()))?;
+        policy.validate_url(&url)?;
+        let Some(bytes) = preprint_response(&client, url).await? else {
+            continue;
+        };
+        let details: PreprintDetails =
+            serde_json::from_slice(&bytes).map_err(|err| BioMcpError::Api {
+                api: "bioRxiv/medRxiv".into(),
+                message: format!("Invalid preprint details: {err}"),
+            })?;
+        let Some(version) = details
+            .collection
+            .into_iter()
+            .filter(|row| row.doi.eq_ignore_ascii_case(doi))
+            .max_by_key(|row| row.version.parse::<u32>().unwrap_or(0))
+        else {
+            continue;
+        };
+        let advertised = Url::parse(&version.jatsxml).map_err(|err| BioMcpError::Api {
+            api: "bioRxiv/medRxiv".into(),
+            message: format!("Invalid advertised JATS URL: {err}"),
+        })?;
+        policy.validate_url(&advertised)?;
+        let expected_host = format!("www.{server}.org");
+        if advertised.host_str() != Some(expected_host.as_str())
+            || !advertised.path().ends_with(".source.xml")
+        {
+            return Err(BioMcpError::Api {
+                api: "bioRxiv/medRxiv".into(),
+                message: "Unexpected advertised JATS location".into(),
+            });
+        }
+        let url = if let Some(base) = fixture.as_deref() {
+            Url::parse(base)
+                .and_then(|base| base.join(advertised.path()))
+                .map_err(|err| BioMcpError::InvalidArgument(err.to_string()))?
+        } else {
+            advertised
+        };
+        let Some(bytes) = preprint_response(&client, url).await? else {
+            return Ok(None);
+        };
+        let xml = String::from_utf8(bytes).map_err(|err| BioMcpError::Api {
+            api: "bioRxiv/medRxiv".into(),
+            message: format!("Invalid JATS encoding: {err}"),
+        })?;
+        return Ok(Some((xml, version)));
+    }
+    Ok(None)
 }
 
 pub(super) fn pdf_discovery_attempt(
@@ -631,7 +738,18 @@ pub(super) async fn resolve_fulltext(
 
     for attempt in xml_fulltext_attempts(article, resolved_pmcid.as_deref()) {
         let source = xml_source_metadata(attempt.winner());
+        let mut preprint_metadata = None;
         let fetched = match attempt {
+            XmlFulltextAttempt::PreprintJats => {
+                fetch_preprint_jats(article.doi.as_deref().expect("preprint attempt"))
+                    .await
+                    .map(|value| {
+                        value.map(|(xml, metadata)| {
+                            preprint_metadata = Some(metadata);
+                            (xml, None)
+                        })
+                    })
+            }
             XmlFulltextAttempt::EuropePmcPmc => match europe.as_ref() {
                 Some(client) => client
                     .get_full_text_xml("PMC", resolved_pmcid.as_deref().expect("PMC attempt"))
@@ -760,19 +878,29 @@ pub(super) async fn resolve_fulltext(
         );
         let source_identifier = match attempt.winner() {
             XmlWaterfallWinner::EuropePmcMed => article.pmid.as_deref(),
+            XmlWaterfallWinner::PreprintJats => article.doi.as_deref(),
             _ => resolved_pmcid.as_deref(),
         }
         .and_then(clean_manifest_string)
         .unwrap_or_else(|| requested_id.trim().to_string());
-        let package_url = oa_manifest
+        let package_url = preprint_metadata
             .as_ref()
-            .map(|manifest| manifest.package_url.clone());
+            .map(|metadata| metadata.jatsxml.clone())
+            .or_else(|| {
+                oa_manifest
+                    .as_ref()
+                    .map(|manifest| manifest.package_url.clone())
+            });
         let oa_retracted = oa_manifest.as_ref().and_then(|manifest| manifest.retracted);
-        let license = article.europepmc_license.clone().or_else(|| {
-            oa_manifest
-                .as_ref()
-                .and_then(|manifest| manifest.license.clone())
-        });
+        let license = preprint_metadata
+            .as_ref()
+            .and_then(|metadata| metadata.license.clone())
+            .or_else(|| article.europepmc_license.clone())
+            .or_else(|| {
+                oa_manifest
+                    .as_ref()
+                    .and_then(|manifest| manifest.license.clone())
+            });
         let manifest = ArticleFulltextManifest {
             source_kind: ArticleFulltextManifestKind::JatsXml,
             provider: manifest_provider(&source),
