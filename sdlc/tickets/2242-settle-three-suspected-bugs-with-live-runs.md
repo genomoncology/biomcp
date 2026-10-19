@@ -12,6 +12,8 @@ Reviews: revision 14f701f, accept
 
 Reviews: revision 42b787d, accept
 
+Reviews: revision 0382362, accept
+
 ## Outcome
 
 Each of three suspected user-facing bugs is either shown fixed on current main or fixed in this ticket.
