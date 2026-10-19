@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision d8a56bc, accept
 
+Reviews: revision 38aa6c0, accept
+
 ## Outcome
 
 The CGI section of variant output names its source as MyVariant's variant-level CGI subset and its load date, so an empty result reads as "no record in that subset", not "CGI has nothing on this gene".
