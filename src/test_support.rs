@@ -50,6 +50,8 @@ impl TempDirGuard {
     }
 }
 
+pub(crate) const FIXTURE_MIN_DISK_FREE_BYTES: u64 = 1;
+
 /// One shared environment guard for source-fixture tests:
 /// every `set` restores on drop, and the guard itself always points the
 /// shared HTTP client's cache at a fresh scratch directory with cache mode
@@ -81,37 +83,43 @@ impl FixtureEnv {
 
     fn scratch_cache(cache_mode: Option<crate::sources::TestCacheModeGuard>) -> Self {
         let cache_dir = TempDirGuard::new("fixture-cache");
-        let saved = vec![
-            ("BIOMCP_CACHE_DIR", std::env::var_os("BIOMCP_CACHE_DIR")),
-            (
-                "BIOMCP_CACHE_MIN_DISK_FREE",
-                std::env::var_os("BIOMCP_CACHE_MIN_DISK_FREE"),
-            ),
-        ];
-        // SAFETY: callers hold the serial-test process-wide environment lock.
-        unsafe {
-            std::env::set_var(
-                "BIOMCP_CACHE_DIR",
-                cache_dir.path().to_string_lossy().as_ref(),
-            );
-            // Pin the smallest legal disk-free floor beside the scratch
-            // dir, so the host filesystem's free space cannot evict a
-            // test's cached entry; a test that sets its own floor after
-            // this guard still wins.
-            std::env::set_var("BIOMCP_CACHE_MIN_DISK_FREE", "1B");
-        }
-        Self {
-            saved,
+        let mut env = Self {
+            saved: Vec::new(),
             _cache_dir: cache_dir,
             _cache_mode: cache_mode,
+        };
+        let root = env._cache_dir.path().to_path_buf();
+        env.set_cache_root(root);
+        env
+    }
+
+    /// Select a fixture root and pin its disk floor without changing cache mode.
+    pub(crate) fn set_cache_root(&mut self, root: impl AsRef<std::ffi::OsStr>) {
+        self.save_and_set("BIOMCP_CACHE_DIR", root);
+        self.save_and_set(
+            "BIOMCP_CACHE_MIN_DISK_FREE",
+            format!("{FIXTURE_MIN_DISK_FREE_BYTES}B"),
+        );
+    }
+
+    pub(crate) fn set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
+        if key == "BIOMCP_CACHE_DIR" {
+            self.set_cache_root(value);
+        } else {
+            self.save_and_set(key, value);
         }
     }
 
-    pub(crate) fn set(&mut self, key: &'static str, value: &str) {
+    fn save_and_set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
         self.saved.push((key, std::env::var_os(key)));
-        // SAFETY: this test holds the serial-test process-wide environment
-        // lock.
+        // SAFETY: callers hold the serial-test process-wide environment lock.
         unsafe { std::env::set_var(key, value) };
+    }
+
+    pub(crate) fn remove(&mut self, key: &'static str) {
+        self.saved.push((key, std::env::var_os(key)));
+        // SAFETY: callers hold the serial-test process-wide environment lock.
+        unsafe { std::env::remove_var(key) };
     }
 }
 

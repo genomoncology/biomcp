@@ -44,6 +44,9 @@ def _start_runner(tmp_path: Path, launcher: str) -> subprocess.Popen:
         for directory in ("scripts", "tools", "bin", "testdata"):
             (cwd / directory).mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / "scripts/run-specs.sh", cwd / "scripts/run-specs.sh")
+        fixture_dir = cwd / "spec/fixtures"
+        fixture_dir.mkdir(parents=True)
+        shutil.copy2(ROOT / "spec/fixtures/cache-policy.sh", fixture_dir / "cache-policy.sh")
         (cwd / "tools/replay-server").symlink_to(ROOT / "tools/replay-server")
         (cwd / "src").symlink_to(ROOT / "src", target_is_directory=True)
         (cwd / "testdata/replay").symlink_to(ROOT / "testdata/replay", target_is_directory=True)

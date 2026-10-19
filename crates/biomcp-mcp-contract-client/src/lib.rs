@@ -962,16 +962,14 @@ pub fn provision_article_fulltext_fixture(
 }
 
 pub fn article_fulltext_fixture_env(fixture: &ArticleFulltextFixture) -> Vec<EnvVar> {
-    let mut env = vec![
-        (
-            "BIOMCP_CACHE_DIR",
-            fixture.cache_dir.to_string_lossy().into_owned(),
-        ),
-        (
-            "BIOMCP_S2_PDF_FIXTURE_ORIGIN",
-            fixture.publisher_url.clone(),
-        ),
-    ];
+    let mut env: Vec<EnvVar> = child_cache_env(&fixture.cache_dir)
+        .map(|(key, value)| (key, value.to_string_lossy().into_owned()))
+        .into_iter()
+        .collect();
+    env.extend([(
+        "BIOMCP_S2_PDF_FIXTURE_ORIGIN",
+        fixture.publisher_url.clone(),
+    )]);
     for name in [
         "BIOMCP_TEST_UNPACED_ORIGIN",
         "BIOMCP_PUBTATOR_BASE",
@@ -1115,7 +1113,7 @@ impl ContractHarness {
             .env("XDG_CONFIG_HOME", root.join("config"))
             .env("XDG_CACHE_HOME", root.join("cache"))
             .env("XDG_DATA_HOME", root.join("data"))
-            .env("BIOMCP_CACHE_DIR", root.join("cache/biomcp"));
+            .envs(child_cache_env(root.join("cache/biomcp")));
         for (key, value) in extra_env {
             command.env(key, value);
         }
@@ -1272,4 +1270,14 @@ pub fn terminate_process(pid: Option<u32>) -> anyhow::Result<()> {
         anyhow::ensure!(status.success(), "failed to terminate child process {pid}");
     }
     Ok(())
+}
+
+/// Cache isolation for fixture subprocesses; caller policy overrides follow these pairs.
+pub fn child_cache_env(
+    root: impl AsRef<std::ffi::OsStr>,
+) -> [(&'static str, std::ffi::OsString); 2] {
+    [
+        ("BIOMCP_CACHE_DIR", root.as_ref().to_owned()),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", "1B".into()),
+    ]
 }

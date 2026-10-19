@@ -85,30 +85,7 @@ async fn article_disease_link_fixture_server(
     (base, requests, task)
 }
 
-struct ArticleDiseaseLinkEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
-
-impl ArticleDiseaseLinkEnv {
-    fn set(&mut self, key: &'static str, value: &str) {
-        self.0.push((key, std::env::var_os(key)));
-        // SAFETY: this test holds the serial-test process-wide environment lock.
-        unsafe { std::env::set_var(key, value) };
-    }
-}
-
-impl Drop for ArticleDiseaseLinkEnv {
-    fn drop(&mut self) {
-        for (key, previous) in self.0.drain(..).rev() {
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe {
-                if let Some(value) = previous {
-                    std::env::set_var(key, value);
-                } else {
-                    std::env::remove_var(key);
-                }
-            }
-        }
-    }
-}
+type ArticleDiseaseLinkEnv = crate::test_support::FixtureEnv;
 
 /// The four live-defect rows of `article entities 37887282`:
 /// each MeSH descriptor crosswalks to several MONDO records, and the 0.9.2
@@ -125,15 +102,12 @@ async fn article_entities_disease_rows_link_the_named_disease_or_search() {
     let (base, requests, server) =
         article_disease_link_fixture_server(recorded!("pubtator", "export_37887282.json")).await;
     let cache = crate::test_support::TempDirGuard::new("article-disease-links-cache");
-    let mut env = ArticleDiseaseLinkEnv(Vec::new());
+    let mut env = ArticleDiseaseLinkEnv::scratch_cache_only();
     env.set("BIOMCP_PUBTATOR_BASE", &base);
     env.set("BIOMCP_EUROPEPMC_BASE", &base);
     env.set("BIOMCP_MYDISEASE_BASE", &base);
     env.set("BIOMCP_MYGENE_BASE", &base);
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache.path().to_str().expect("utf-8 cache root"),
-    );
+    env.set_cache_root(cache.path().to_str().expect("utf-8 cache root"));
 
     let markdown = crate::cli::execute(vec![
         "biomcp".to_string(),
@@ -194,15 +168,12 @@ async fn article_entities_skin_neoplasms_row_keeps_its_search_command() {
     let (base, requests, server) =
         article_disease_link_fixture_server(recorded!("pubtator", "export_22663011.json")).await;
     let cache = crate::test_support::TempDirGuard::new("article-disease-links-cache");
-    let mut env = ArticleDiseaseLinkEnv(Vec::new());
+    let mut env = ArticleDiseaseLinkEnv::scratch_cache_only();
     env.set("BIOMCP_PUBTATOR_BASE", &base);
     env.set("BIOMCP_EUROPEPMC_BASE", &base);
     env.set("BIOMCP_MYDISEASE_BASE", &base);
     env.set("BIOMCP_MYGENE_BASE", &base);
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache.path().to_str().expect("utf-8 cache root"),
-    );
+    env.set_cache_root(cache.path().to_str().expect("utf-8 cache root"));
 
     let markdown = crate::cli::execute(vec![
         "biomcp".to_string(),
