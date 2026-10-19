@@ -29,3 +29,7 @@ Work the checklist as written; copy it into the record and tick each item with e
 ## Proof
 
 The release record lists every checklist item in section 1 with its evidence, and the go request goes to the PM with the commit, the rehearsal run, the gate evidence and the GitHub issues 0.9.4 fixes.
+
+## Progress
+
+- 2026-10-19 started
