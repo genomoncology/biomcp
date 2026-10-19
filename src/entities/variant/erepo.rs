@@ -140,6 +140,19 @@ pub(crate) struct ERepoPmid {
     pub locator: String,
 }
 
+pub(crate) fn resolve_paging(
+    gene: Option<&str>,
+    limit: Option<usize>,
+    offset: Option<usize>,
+) -> Result<(usize, usize), BioMcpError> {
+    if gene.is_none() && (limit.is_some() || offset.is_some()) {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo limit and offset require gene mode; use --gene (MCP: gene)".into(),
+        ));
+    }
+    Ok((limit.unwrap_or(25), offset.unwrap_or(0)))
+}
+
 pub(crate) async fn retrieve(
     caids: Vec<String>,
     detail: bool,

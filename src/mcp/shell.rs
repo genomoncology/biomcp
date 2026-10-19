@@ -70,11 +70,11 @@ struct TypedVariantErepo {
     caids: Option<Vec<String>>,
     #[serde(default)]
     gene: Option<String>,
-    #[serde(default = "default_cspec_limit")]
-    #[schemars(range(min = 1, max = 100))]
-    limit: usize,
     #[serde(default)]
-    offset: usize,
+    #[schemars(range(min = 1, max = 100))]
+    limit: Option<usize>,
+    #[serde(default)]
+    offset: Option<usize>,
     #[serde(default)]
     detail: bool,
     #[serde(default)]
@@ -472,8 +472,8 @@ fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
         "detail":{"type":"boolean"},
         "assertion_id":{"type":"string"},
         "version":{"type":"string"},
-        "limit":{"type":"integer","minimum":1,"maximum":100,"default":25},
-        "offset":{"type":"integer","minimum":0,"default":0},
+        "limit":{"type":"integer","minimum":1,"maximum":100,"description":"Gene mode only; defaults to 25 in gene mode."},
+        "offset":{"type":"integer","minimum":0,"description":"Gene mode only; defaults to 0 in gene mode."},
     });
     *schema = serde_json::from_value(json!({
         "type":"object",
@@ -1421,26 +1421,28 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedVariantErepo>,
     ) -> Result<CallToolResult, McpError> {
+        let (limit, offset) = match crate::entities::variant::resolve_erepo_paging(
+            input.gene.as_deref(),
+            input.limit,
+            input.offset,
+        ) {
+            Ok(paging) => paging,
+            Err(error) => return Ok(Self::tool_error(Self::bio_mcp_error_text(&error))),
+        };
         if let Some(gene) = input.gene {
             if input.caid.is_some()
                 || input.caids.is_some()
                 || input.detail
                 || input.assertion_id.is_some()
                 || input.version.is_some()
-                || input.limit == 0
-                || input.limit > 100
+                || limit == 0
+                || limit > 100
             {
                 return Ok(Self::tool_error(
                     "variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100",
                 ));
             }
-            return match crate::entities::variant::search_erepo_gene(
-                &gene,
-                input.limit,
-                input.offset,
-            )
-            .await
-            {
+            return match crate::entities::variant::search_erepo_gene(&gene, limit, offset).await {
                 Ok(response) => Ok(CallToolResult::success(vec![Content::text(
                     crate::render::json::to_pretty(&response).map_err(|error| {
                         McpError::internal_error(
