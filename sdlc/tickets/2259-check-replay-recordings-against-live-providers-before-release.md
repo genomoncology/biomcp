@@ -47,3 +47,9 @@ The carried sibling ticket records are unchanged approved PM briefs; their decla
 ## PM design ruling
 
 The PM rejected source-model projection after fresh review demonstrated false passes for null/mixed type unions and dynamic raw JSON consumers. Replace that approach with one generic response-structure comparison; no source parser scanning or provider-specific consumed-field adapters. Report added, removed and retyped paths per recording. The original eighteen controlled cases do not prove this replacement. Preserve request safety, complete inventory, source/credential/terms restrictions, pacing and observed-only metadata refresh; no live collection during implementation. The final-candidate run remains outstanding.
+
+## Replacement implementation proof
+
+Fresh developer stopped clean at 6217e7f8c0cf67c9231e9b4b2a9f266de0322798. Generic JSON key-path/type unions and XML element paths replace source-model scanning and provider-specific projections. Job 2259/1792433264101-34336 retained nine meaningful red controls on 8a277bd96, then twenty-five green checks, Ruff, formatting and whitespace. The committed replacement matches retained green patch SHA256 518e9cfe0ac30fb71f5d6d83e1edafabac749dbb7b5bd91c1500a6a26d3547ea under archive 805/structure-replacement. No live calls ran.
+
+The complete inventory still has forty-four recordings: thirteen ready, thirty-one blocked and zero checked live. Forty-one payloads are JSON; three restricted KEGG payloads are plaintext and unsupported by the generic JSON/XML comparison. Twenty-eight recordings lack observed historical content types. Parent remains open for final observed collection, unsupported plaintext disposition and any demonstrated stale-route or provider changes before go.
