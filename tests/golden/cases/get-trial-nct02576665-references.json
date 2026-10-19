@@ -47,14 +47,6 @@
         ]
       },
       {
-        "key": "outcomes",
-        "label": "Outcomes",
-        "outcome": "data",
-        "sources": [
-          "ClinicalTrials.gov"
-        ]
-      },
-      {
         "key": "references",
         "label": "References",
         "outcome": "data",
@@ -117,15 +109,6 @@
     }
   ],
   "nct_id": "NCT02576665",
-  "outcomes": {
-    "primary": [
-      {
-        "measure": "Changes from baseline in immune activity in tumor and peripheral blood",
-        "time_frame": "Baseline to Weeks 9-10"
-      }
-    ],
-    "secondary": []
-  },
   "phase": "PHASE1",
   "references": [
     {

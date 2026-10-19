@@ -40,7 +40,33 @@
         "content-type": "application/json"
       },
       "status": 200,
-      "upstream": "https://clinicaltrials.gov/api/v2/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped"
+      "upstream": "https://clinicaltrials.gov/api/v2/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped",
+      "recording_provenance": {
+        "original_sha256": "902041a836bbf764ad158ca9f6ad395b5b3db49358714ca4f8a70f1f71c8b6cf",
+        "observed_at": "2026-10-19T22:12:56.998927+00:00",
+        "observed_status": 200,
+        "observed_content_type": "application/json",
+        "source_revision": "6556ebe9df772dc4dbae544c7a620a45b7f00c52",
+        "collection_settings": {
+          "deadline_seconds": 90,
+          "interval_seconds": 2,
+          "max_response_bytes": 33554432,
+          "proxy": false,
+          "redirects": false,
+          "retries": 0
+        },
+        "observed_response_sha256": "ed3e6e199d9a37239c15992a11463e491b6b02d4d213c24cc19d91cfc5702e1a",
+        "sha256": "ed3e6e199d9a37239c15992a11463e491b6b02d4d213c24cc19d91cfc5702e1a",
+        "request": {
+          "body": null,
+          "headers": {
+            "Accept-Encoding": "identity"
+          },
+          "method": "GET",
+          "url": "https://clinicaltrials.gov/api/v2/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped"
+        },
+        "projection": "Exact observed JSON response for the declared request; preserve all source values."
+      }
     },
     "GET /ctgov/studies/NCT06131398?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped": {
       "file": "responses/ctgov/ctgov-studies-nct06131398-references.json",
@@ -48,7 +74,33 @@
         "content-type": "application/json"
       },
       "status": 200,
-      "upstream": "https://clinicaltrials.gov/api/v2/studies/NCT06131398?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped"
+      "upstream": "https://clinicaltrials.gov/api/v2/studies/NCT06131398?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped",
+      "recording_provenance": {
+        "original_sha256": "ae0d35b732fe4f6236a4d251860ce12c0d731972dd6ad77d128a5cb8b9f7fc82",
+        "observed_at": "2026-10-19T22:12:59.008603+00:00",
+        "observed_status": 200,
+        "observed_content_type": "application/json",
+        "source_revision": "6556ebe9df772dc4dbae544c7a620a45b7f00c52",
+        "collection_settings": {
+          "deadline_seconds": 90,
+          "interval_seconds": 2,
+          "max_response_bytes": 33554432,
+          "proxy": false,
+          "redirects": false,
+          "retries": 0
+        },
+        "observed_response_sha256": "a25e648feb9e174189437c51855315102a4fba6d18d34d012eef5a3f7a17f57c",
+        "sha256": "a25e648feb9e174189437c51855315102a4fba6d18d34d012eef5a3f7a17f57c",
+        "request": {
+          "body": null,
+          "headers": {
+            "Accept-Encoding": "identity"
+          },
+          "method": "GET",
+          "url": "https://clinicaltrials.gov/api/v2/studies/NCT06131398?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped"
+        },
+        "projection": "Exact observed JSON response for the declared request; preserve all source values."
+      }
     },
     "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&pageSize=1&query.cond=melanoma&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29": {
       "file": "responses/ctgov/ctgov-studies-7e5e28576744.json",
@@ -227,15 +279,74 @@
       "file": "responses/mydisease/melanoma-detail.json",
       "note": "Ontology identity fields from recorded melanoma query hit.",
       "status": 200,
-      "upstream": "https://mydisease.info/v1/disease/MONDO:0005105"
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "original_sha256": "2ba1b70a2a5136815fd826e5335c91d47dc378e3e53607bccfa0c5fb769489ed",
+        "observed_at": "2026-10-19T22:22:03.000063+00:00",
+        "observed_status": 200,
+        "observed_content_type": "application/json; charset=UTF-8",
+        "source_revision": "5c3d7794febb31612e628d2e9caa2688c9a4ebfd",
+        "collection_settings": {
+          "proxy": false,
+          "redirects": false,
+          "retries": 0,
+          "deadline_seconds": 90,
+          "max_response_bytes": 33554432
+        },
+        "observed_response_sha256": "783e1b57a05aa8fa6f0bcf226fcb5666fd948165e576389f269eaef66d6d9394",
+        "sha256": "a746d0129eb9e602c62200343c64c52836f41965203817b5619e481fbc2e33f8",
+        "request": {
+          "method": "GET",
+          "url": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+          "headers": {
+            "Accept-Encoding": "identity",
+            "User-Agent": "biomcp-cli/0.9.4",
+            "Cache-Control": "no-store",
+            "Accept": "*/*"
+          },
+          "body": null
+        },
+        "projection": "Retain only previously recorded public fields actually returned by the exact filtered detail response; omit additional datasets and fields."
+      }
     },
     "GET /mydisease/disease/MONDO:0007947?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
       "file": "responses/mydisease/mydisease-disease-mondo-0007947-bbfa1e3532db.json",
       "headers": {
-        "content-type": "application/json"
+        "content-type": "application/json; charset=UTF-8"
       },
       "status": 200,
-      "upstream": "https://mydisease.info/v1/disease/MONDO:0007947"
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0007947?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "recording_provenance": {
+        "original_sha256": "16ae4d118757377f3770224924415437026c837a3fffc33b16350046af903c75",
+        "observed_at": "2026-10-19T22:22:03.484827+00:00",
+        "observed_status": 200,
+        "observed_content_type": "application/json; charset=UTF-8",
+        "source_revision": "5c3d7794febb31612e628d2e9caa2688c9a4ebfd",
+        "collection_settings": {
+          "proxy": false,
+          "redirects": false,
+          "retries": 0,
+          "deadline_seconds": 90,
+          "max_response_bytes": 33554432
+        },
+        "observed_response_sha256": "59613822af2ce1b1dc4a3b3dd5f934f7dcc2565619713208b717573c2eb38880",
+        "sha256": "e72c886ad0ed5e16b1964bb89fa0a9fd72802a65af94079b20e1cc7916dff18d",
+        "request": {
+          "method": "GET",
+          "url": "https://mydisease.info/v1/disease/MONDO:0007947?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+          "headers": {
+            "Accept-Encoding": "identity",
+            "User-Agent": "biomcp-cli/0.9.4",
+            "Cache-Control": "no-store",
+            "Accept": "*/*"
+          },
+          "body": null
+        },
+        "projection": "Retain only previously recorded public fields actually returned by the exact filtered detail response; omit additional datasets and fields."
+      }
     },
     "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=15": {
       "file": "responses/mydisease/mydisease-query-ff316c61dfb5.bin",
@@ -405,7 +516,33 @@
         "status": 200
       },
       "status": 200,
-      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42875213%2C42870784%2C42869554%2C42869017%2C42860695%2C42859986%2C42856236%2C42852354%2C42849920%2C42849799%2C42841061%2C42840607%2C42835050%2C42828389%2C42826365%2C42823486%2C42822592%2C42818226%2C42816143%2C42816108%2C42808945%2C42806361%2C42805360%2C42797500%2C42795795%2C42795023%2C42794996%2C42794517%2C42794461%2C42785774%2C42772593%2C42771837%2C42770269%2C42761815%2C42760578%2C42756379%2C42756300%2C42748471%2C42738290%2C42738249%2C42733341%2C42731732%2C42729668%2C42727358%2C42726853%2C42725334%2C42716723%2C42716382%2C42716012%2C42715459%2C42714248%2C42710135%2C42705003%2C42703371%2C42700516%2C42688875%2C42678759%2C42675868%2C42674934%2C42674721%2C42671758%2C42667537%2C42663979%2C42660910%2C42657315%2C42650005%2C42645086%2C42634895%2C42631649%2C42630564%2C42626950%2C42625684%2C42625217%2C42619042%2C42615072%2C42614357%2C42613908%2C42603991%2C42601381%2C42600747%2C42588746%2C42585631%2C42583475%2C42578969%2C42550831%2C42567454%2C42562950%2C42561142%2C42552625%2C42549405%2C42536437%2C42532763%2C42527077%2C42523965%2C42523496%2C42512373%2C42511909%2C42511802%2C42511588%2C42511497"
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42875213%2C42870784%2C42869554%2C42869017%2C42860695%2C42859986%2C42856236%2C42852354%2C42849920%2C42849799%2C42841061%2C42840607%2C42835050%2C42828389%2C42826365%2C42823486%2C42822592%2C42818226%2C42816143%2C42816108%2C42808945%2C42806361%2C42805360%2C42797500%2C42795795%2C42795023%2C42794996%2C42794517%2C42794461%2C42785774%2C42772593%2C42771837%2C42770269%2C42761815%2C42760578%2C42756379%2C42756300%2C42748471%2C42738290%2C42738249%2C42733341%2C42731732%2C42729668%2C42727358%2C42726853%2C42725334%2C42716723%2C42716382%2C42716012%2C42715459%2C42714248%2C42710135%2C42705003%2C42703371%2C42700516%2C42688875%2C42678759%2C42675868%2C42674934%2C42674721%2C42671758%2C42667537%2C42663979%2C42660910%2C42657315%2C42650005%2C42645086%2C42634895%2C42631649%2C42630564%2C42626950%2C42625684%2C42625217%2C42619042%2C42615072%2C42614357%2C42613908%2C42603991%2C42601381%2C42600747%2C42588746%2C42585631%2C42583475%2C42578969%2C42550831%2C42567454%2C42562950%2C42561142%2C42552625%2C42549405%2C42536437%2C42532763%2C42527077%2C42523965%2C42523496%2C42512373%2C42511909%2C42511802%2C42511588%2C42511497",
+      "recording_provenance": {
+        "original_sha256": "c7c60348363a12e5d80e29b44001c84022a3248868faf9996ed6aa86d5d5cd89",
+        "observed_at": "2026-10-19T22:13:49.799247+00:00",
+        "observed_status": 200,
+        "observed_content_type": "application/json; charset=UTF-8",
+        "source_revision": "6556ebe9df772dc4dbae544c7a620a45b7f00c52",
+        "collection_settings": {
+          "deadline_seconds": 90,
+          "interval_seconds": 2,
+          "max_response_bytes": 33554432,
+          "proxy": false,
+          "redirects": false,
+          "retries": 0
+        },
+        "observed_response_sha256": "eb83a558d348e95d3b6fee5b068dcde5af5f98df20e058b7129a3e931c348068",
+        "sha256": "eb83a558d348e95d3b6fee5b068dcde5af5f98df20e058b7129a3e931c348068",
+        "request": {
+          "body": null,
+          "headers": {
+            "Accept-Encoding": "identity"
+          },
+          "method": "GET",
+          "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=42875213%2C42870784%2C42869554%2C42869017%2C42860695%2C42859986%2C42856236%2C42852354%2C42849920%2C42849799%2C42841061%2C42840607%2C42835050%2C42828389%2C42826365%2C42823486%2C42822592%2C42818226%2C42816143%2C42816108%2C42808945%2C42806361%2C42805360%2C42797500%2C42795795%2C42795023%2C42794996%2C42794517%2C42794461%2C42785774%2C42772593%2C42771837%2C42770269%2C42761815%2C42760578%2C42756379%2C42756300%2C42748471%2C42738290%2C42738249%2C42733341%2C42731732%2C42729668%2C42727358%2C42726853%2C42725334%2C42716723%2C42716382%2C42716012%2C42715459%2C42714248%2C42710135%2C42705003%2C42703371%2C42700516%2C42688875%2C42678759%2C42675868%2C42674934%2C42674721%2C42671758%2C42667537%2C42663979%2C42660910%2C42657315%2C42650005%2C42645086%2C42634895%2C42631649%2C42630564%2C42626950%2C42625684%2C42625217%2C42619042%2C42615072%2C42614357%2C42613908%2C42603991%2C42601381%2C42600747%2C42588746%2C42585631%2C42583475%2C42578969%2C42550831%2C42567454%2C42562950%2C42561142%2C42552625%2C42549405%2C42536437%2C42532763%2C42527077%2C42523965%2C42523496%2C42512373%2C42511909%2C42511802%2C42511588%2C42511497"
+        },
+        "projection": "Exact observed JSON response for the declared request; preserve all source values."
+      }
     },
     "GET /pubtator/entity/autocomplete/?query=BRAF": {
       "file": "responses/pubtator/pubtator-entity-autocomplete-bdb9ec97d8e3.bin",
