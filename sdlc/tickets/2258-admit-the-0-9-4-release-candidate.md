@@ -35,6 +35,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 - 2026-10-19 started
 - 2026-10-19 next: Frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 passes full main and live replay (39 checked/passed, eight explicitly unverified). Final Linux and paired measurements run before record review and full untagged rehearsal; no tag.
 - 2026-10-19 next: Release admission held by final Linux concurrent cache-entry assertion;2283 is the sole repair lane. Main M5 full gate and live39/39 enabled coverage remain passed on51f5e03; candidate measurement arms await repaired source. No tag.
+- 2026-10-19 next: PM approved test-only2283 under existing best-effort admission policy. Fresh review accepts; sole repair landing gate runs. Measurements resumed on unchanged product51f5e03. Final Linux whole run follows repair tip; live39/39 proof remains applicable to unchanged runtime/checker/recordings. No tag.
 
 ## Preparation evidence
 
