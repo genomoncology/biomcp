@@ -452,7 +452,6 @@ STUDIES = {
     "nct70000003": VERIFICATION_EMPTIED_STUDY_TWO,
 }
 CTGOV_SEARCH = {
-    "melanoma": source_bytes("ctgov/search_melanoma_recruiting_limit3_20260811.json"),
     "phelan-50": source_bytes("ctgov/search_phelan_limit50_20260811.json"),
     "phelan-5": source_bytes("ctgov/search_phelan_limit5_20260811.json"),
     "phelan-next": source_bytes("ctgov/search_phelan_next_20260811.json"),
@@ -527,9 +526,6 @@ class Handler(BaseHTTPRequestHandler):
             requested_facility = " ".join(query.get("query.locn", [])).lower()
             if "university of michigan" in requested_facility:
                 send_json(self, 200, {"studies": [], "totalCount": 0})
-                return
-            if condition == "melanoma" and query.get("filter.overallStatus") == ["RECRUITING"]:
-                send_bytes(self, 200, CTGOV_SEARCH["melanoma"], "application/json")
                 return
             if condition == "Phelan-McDermid Syndrome":
                 if query.get("pageToken"):
