@@ -257,3 +257,32 @@ def test_client_without_initialize_expires_startup_wait(
         assert "expects an MCP client on stdin" in client.process.stderr.read()
     finally:
         client.close()
+
+
+def test_client_not_reading_ping_responses_expires_startup_wait(tmp_path: Path) -> None:
+    client = StdioMcp(isolated_command_env(tmp_path, {}, "http://127.0.0.1:9"))
+    assert client.process.stdin is not None
+
+    def send_pings() -> None:
+        try:
+            while True:
+                client.process.stdin.write(
+                    '{"jsonrpc":"2.0","id":1,"method":"ping"}\n' * 200,
+                )
+                client.process.stdin.flush()
+        except (BrokenPipeError, ValueError):
+            pass
+
+    writer = threading.Thread(target=send_pings, daemon=True)
+    writer.start()
+    started = time.monotonic()
+    try:
+        client.process.wait(timeout=7)
+        assert 4 <= time.monotonic() - started < 7
+        assert client.process.returncode == 1
+        assert not client.process.stdin.closed
+        assert client.process.stderr is not None
+        assert "expects an MCP client on stdin" in client.process.stderr.read()
+    finally:
+        client.close()
+        writer.join(timeout=2)
