@@ -16,7 +16,7 @@ Reviews: revision 9822256, accept
 
 Changes: `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`, `sdlc/tickets/2256-bound-only-the-mcp-handshake-wait-by-the-startup-timer.md`, `sdlc/tickets/2257-route-every-test-cache-root-through-the-shared-guard.md`, `sdlc/tickets/2258-admit-the-0-9-4-release-candidate.md`, `sdlc/tickets/2260-share-one-replay-server-per-test-run.md`, `tools/check-replay-live`, `scripts/replay_drift.py`, `tests/test_replay_live_drift.py`, `docs/reference/release-process.md`, `sdlc/release-checklist.md`, `tools/replay-server`, `testdata/replay/manifest.json`, `CHANGELOG.md`, `sdlc/tickets/2259-check-replay-recordings-against-live-providers-before-release.md`.
 
-Before every release, one opt-in live check replays each recorded provider request in `testdata/replay` against the live provider and reports every recording whose live reply now differs in status, content type or response structure. A drifted recording is re-recorded or its test is fixed before the tag, so a provider change cannot hide behind green replay tests.
+Provide the accepted opt-in provider-recording drift checker with complete inventory, generic response-structure comparison, safe requests, pacing, explicit source restrictions and release instructions. Ticket 2258 owns its mandatory observed collection on the final candidate and every resulting refresh or fix before go. Implementation acceptance does not claim live coverage passed.
 
 ## Evidence
 
@@ -61,3 +61,7 @@ The complete inventory still has forty-four recordings: thirteen ready, thirty-o
 PM ruling: do not call KEGG live from these runs because its commercial restrictions apply. List each of the three KEGG plaintext recordings by name in the drift and release records as not checked live: commercial-restricted source, and never count them as checked. No plaintext adapter is required for this approved disposition; every other unresolved coverage gap blocks release.
 
 Read-only endpoint triage found no product dbSNP endpoint bug: current DbSnpClient calls api.ncbi.nlm.nih.gov/variation/v0/refsnp/113488022. Only the replay declaration incorrectly names E-utilities. The replay bytes and current source fixture both hash to 98dd1bc691723fce26da3202455f9b1857510490fbc09912d444638833c518aa; capture-receipts.json binds those bytes to the current endpoint at 2026-10-15T15:57:39Z. Refresh the declared upstream from an observed current-endpoint response during final collection, as PM ordered; do not invent provenance or file an unsupported product defect.
+
+## Final PM ownership ruling
+
+The PM approved closing 2259 with the accepted checker implementation in the nine-ticket product batch. This supersedes earlier parent-open notes. Ticket 2258 owns the observed final collection and report, the twenty-eight header refreshes, the dbSNP observed upstream refresh, the three named KEGG exemptions and every follow-up fix before go. The release bar is unchanged: partial coverage is never a release pass.
