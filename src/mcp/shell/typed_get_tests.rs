@@ -482,9 +482,9 @@ fn typed_variant_erepo_schema_prevents_selector_mixing_before_calls() {
     assert_eq!(schema["properties"]["gene"]["minLength"], json!(1));
     assert_eq!(schema["properties"]["limit"]["minimum"], json!(1));
     assert_eq!(schema["properties"]["limit"]["maximum"], json!(100));
-    assert_eq!(schema["properties"]["limit"]["default"], json!(25));
+    assert!(schema["properties"]["limit"].get("default").is_none());
     assert_eq!(schema["properties"]["offset"]["minimum"], json!(0));
-    assert_eq!(schema["properties"]["offset"]["default"], json!(0));
+    assert!(schema["properties"]["offset"].get("default").is_none());
 }
 
 #[tokio::test]

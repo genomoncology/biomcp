@@ -115,7 +115,7 @@ def test_alphagenome_is_the_single_documented_non_reqwest_provider_transport() -
     reference = (ROOT / "docs/reference/data-sources.md").read_text()
     assert "authenticated gRPC/Tonic provider transport" in reference
     normalized = " ".join(reference.split())
-    assert "does not use `BIOMCP_CA_BUNDLE`" in normalized
+    assert "adds the same validated `BIOMCP_CA_BUNDLE` to its native roots" in normalized
     assert "`SSL_CERT_FILE` and `SSL_CERT_DIR`" in normalized
 
 
