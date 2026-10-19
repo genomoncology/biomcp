@@ -46,6 +46,7 @@ PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every b
 - 2026-10-19 landed a646ba83da934317591a5a5e57f4cb7db24c72fe; next: Record completed review batch; retain 2079 for its remaining command coverage.
 - 2026-10-19 next: Continue the remaining command JSON and Markdown golden coverage; the CTGov trial-reference batch is landed and qualified through the shared gate.
 - 2026-10-19 landed 1d61826ab61846f0a570d7e22607b324906c06df; next: Keep the parent open; choose the next missing golden coverage needed by a named remaining replay consumer.
+- 2026-10-19 landed fe24bfc32968b2609cebd38a1b0dd19a52b2e9bb; next: Retain 2079 for remaining golden coverage; complete the accepted article-speed and GWAS evidence outcomes after this shared source batch.
 
 ## Next bounded batch
 
