@@ -25,3 +25,7 @@ Render Markdown from the same source-status data as JSON; no second computation.
 ## Proof
 
 A replay test renders both formats for one run and checks they name the same sources and states, with and without the Semantic Scholar key.
+
+## Progress
+
+- 2026-10-19 started
