@@ -21,6 +21,8 @@
 
 ### Internal
 
+- Give the citation full-text failure fixture its own PMC identifier so resolver fixture changes preserve the citation scenario's reply. (2163)
+
 - Stop replay servers when their test runner dies, including abandoned requests, while preserving normal and timeout cleanup. (2229)
 
 - Check populated and empty trial-reference output in JSON and Markdown against recorded provider replies. (2079)
