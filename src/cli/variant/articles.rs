@@ -201,6 +201,19 @@ pub(super) async fn handle(
         }
         markdown
     };
+    let mut alias_coverage_text = String::new();
+    if !json && !outcome.response.alias_coverage.is_empty() {
+        alias_coverage_text.push_str(
+            "\n\n## Alias query coverage\n\nAn attempted query may fail or return no articles.\n\n",
+        );
+        for coverage in &outcome.response.alias_coverage {
+            alias_coverage_text.push_str(&format!(
+                "- {}: {} ({}; planned: {})\n",
+                coverage.alias, coverage.disposition, coverage.reason, coverage.planned
+            ));
+        }
+    }
+    text.push_str(&alias_coverage_text);
     if !json && settled_empty_page {
         text.push_str("\n\n");
         text.push_str(&crate::render::markdown::variant_article_sources_markdown(
@@ -249,7 +262,7 @@ pub(super) async fn handle(
     };
     Ok(CommandOutcome::stderr_with_exit(
         format!(
-            "{cause}; unfinished variant article routes: {sources}. Retry the request.\n\n{}",
+            "{cause}; unfinished variant article routes: {sources}. Retry the request.{alias_coverage_text}\n\n{}",
             crate::render::markdown::variant_article_sources_markdown(
                 &outcome.response.source_status,
             )?

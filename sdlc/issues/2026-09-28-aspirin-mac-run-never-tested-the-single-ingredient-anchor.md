@@ -25,3 +25,7 @@ to record here first (a future ticket).
 
 Open. Owner: the biomcp queue. Revisit trigger: the next Mac
 session or any DDInter anchor change.
+
+## Closure in2242
+
+Resolved in2242: live current-main study preserved the single-ingredient DB00945/CHEMBL25 identity but exposed omitted selected-source name Acetylsalicylic acid in interaction aliases. Retaining that explicit alias fixes the reproduced DDInter20 match without pooling combination ingredients. Authored outside-in controls qualify the fix; the full DrugBank-containing source reply stays private.

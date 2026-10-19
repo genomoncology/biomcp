@@ -143,6 +143,41 @@ impl ProviderUrlPolicy {
         Ok(policy)
     }
 
+    /// Preprint metadata and advertised JATS stay on the official API and servers.
+    pub(crate) fn preprint_jats() -> Result<Self, BioMcpError> {
+        let fixture = std::env::var("BIOMCP_PREPRINT_FIXTURE_ORIGIN")
+            .ok()
+            .map(|raw| {
+                Url::parse(&raw).map_err(|_| policy_error("invalid preprint fixture origin"))
+            })
+            .transpose()?;
+        let selected = fixture.as_ref().and_then(selected_loopback_test_origin);
+        if fixture.is_some() && selected.is_none() {
+            return Err(policy_error(
+                "preprint fixture origin must be exact loopback",
+            ));
+        }
+        let mut allowed_origins = [
+            "https://api.biorxiv.org",
+            "https://www.medrxiv.org",
+            "https://www.biorxiv.org",
+        ]
+        .iter()
+        .map(|raw| AllowedOrigin::parse(raw))
+        .collect::<Result<Vec<_>, _>>()?;
+        let unsafe_test_origins = selected.into_iter().collect::<Vec<_>>();
+        allowed_origins.extend(unsafe_test_origins.clone());
+        Ok(Self {
+            source: "bioRxiv/medRxiv",
+            provider: SourceProvider::BIORXIV_MEDRXIV,
+            origin_rule: OriginRule::Allowlist,
+            allowed_origins,
+            credential_origins: Vec::new(),
+            unsafe_test_origins,
+            pmc_linked_numeric_id: None,
+        })
+    }
+
     /// Policy for authenticated ORCID Public API calls. The canonical HTTPS
     /// origin is the only credential origin; a base override selects the
     /// request origin and may be a loopback test fixture only.

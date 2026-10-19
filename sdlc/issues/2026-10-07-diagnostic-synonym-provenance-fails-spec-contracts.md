@@ -31,3 +31,7 @@ pre-change page swapped in.
 Queue after 2022 and 2023 unless the bisect shows user-visible wrong
 answers; then it jumps the queue. The 0.9.2 bar does not gate on it
 (CI never ran this lane), but the final report should name it.
+
+## Closure in2242
+
+Resolved in2242 under PM ruling: live study found MyDisease returned zero exact matches for Bachmann-Bupp while GTR used an expanded condition name. This does not prove a GTR parser fault. Restore authored deterministic synonym coverage and the raw MCP checks; empty diagnostic JSON/Markdown now names missing synonym resolution. No new fallback provider or claim that the upstream reply supplied expansion.
