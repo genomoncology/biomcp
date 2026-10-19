@@ -617,6 +617,12 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
             .then(|| (200, r#"{"total":0,"hits":[]}"#.to_string()))
     })
     .await;
+    let (ols_base, ols_requests, ols_server) = json_server(|request| {
+        request
+            .contains("/search?")
+            .then(|| (200, r#"{"response":{"numFound":0,"docs":[]}}"#.to_string()))
+    })
+    .await;
     let (nci_base, nci_requests, nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
@@ -624,11 +630,10 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
     restore.set("NCI_API_KEY", "fixture-key");
     restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
     restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
-    // The discover fallback must stay off the network when the direct
-    // resolution has nothing to hold.
-    restore.set("BIOMCP_OLS4_BASE", "://unavailable-discover-fixture");
-    restore.set("BIOMCP_UMLS_BASE", "://unavailable-discover-fixture");
-    restore.set("BIOMCP_MEDLINEPLUS_BASE", "://unavailable-discover-fixture");
+    // Successful empty replies establish absence; an unavailable OLS4
+    // would instead report that disease grounding failed.
+    restore.set("BIOMCP_OLS4_BASE", &ols_base);
+    restore.remove("UMLS_API_KEY");
 
     let page = super::super::search_page(
         &TrialSearchFilters {
@@ -645,6 +650,7 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
     tokio::task::yield_now().await;
     nci_server.abort();
     disease_server.abort();
+    ols_server.abort();
     drop(restore);
 
     let note = page
@@ -656,6 +662,10 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
         "{note}"
     );
     assert!(note.contains("'ungroundable fixture condition'"), "{note}");
+    assert!(
+        !ols_requests.lock().expect("lock OLS4 requests").is_empty(),
+        "the no-match control must reach the OLS4 fallback"
+    );
     let requests = nci_requests
         .lock()
         .expect("lock NCI fixture requests")
