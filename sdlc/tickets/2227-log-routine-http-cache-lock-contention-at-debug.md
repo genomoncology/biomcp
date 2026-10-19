@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 446e256, accept
+
 ## Outcome
 
 Ordinary nonblocking HTTP cache-write lock contention returns the provider answer and logs at debug level. Preserve visible warnings for genuine cache I/O failures.
