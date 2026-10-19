@@ -33,6 +33,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 ## Progress
 
 - 2026-10-19 started
+- 2026-10-19 next: Frozen source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 passes full main and live replay (39 checked/passed, eight explicitly unverified). Final Linux and paired measurements run before record review and full untagged rehearsal; no tag.
 
 ## Preparation evidence
 
