@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision bcaf048, accept
 
+Reviews: revision bbec55e, accept
+
 ## Outcome
 
 - Changes: `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` `CHANGELOG.md` `sdlc/issues/2026-09-23-large-futures-and-per-call-runtimes.md` and this ticket.
