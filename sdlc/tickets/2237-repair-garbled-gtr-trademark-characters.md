@@ -12,6 +12,8 @@ Reviews: revision 50cf524, accept
 
 Reviews: revision 999a212, accept
 
+Reviews: revision c663ebc, accept
+
 ## Outcome
 
 - Changes: `CHANGELOG.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `src/sources/gtr.rs` `tests/test_public_example_accessions.py`.
