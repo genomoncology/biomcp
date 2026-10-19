@@ -24,7 +24,10 @@ pytestmark = pytest.mark.needs_binary
     ("BRCA1", "Q1878R", ("NM_007294.3", "c.5570A>G", "p.Gln1857Arg"),
      ("NM_007300.3", "c.5633A>G", "p.Gln1878Arg"), "chr17:g.41197717T>C", 1863, "A", False),
 ])
-@pytest.mark.parametrize("projection", ["paired", "merged_tokens_only", "unversioned", "no_coding"])
+@pytest.mark.parametrize("projection", ["paired", "canonical", "merged_tokens_only", "unversioned", "no_coding",
+                                       "deletion_tokens_only", "deletion_unversioned_headline",
+                                       "unpaired_mane_row", "conflicting_rows",
+                                       "conflicting_rows_reversed"])
 def test_other_transcript_acceptance_requires_versioned_same_allele_projection(
     tmp_path, gene, change, target, requested, allele, length, residue, clinvar, projection,
 ):
@@ -33,14 +36,30 @@ def test_other_transcript_acceptance_requires_versioned_same_allele_projection(
     def annotation(row):
         return dict(zip(("feature_id", "hgvs_c", "hgvs_p"), row, strict=True))
 
+    if projection in {"deletion_tokens_only", "deletion_unversioned_headline"}:
+        change = change[:-1] + "_" + change[0] + str(int(change[1:-1]) + 1) + "del"
+        protein = target[2][2:-3]
+        residue_name, position = protein[:3], int(protein[3:])
+        target = (*target[:2], f"p.{protein}_{residue_name}{position + 1}del")
     rows = [annotation(target)]
-    if projection != "merged_tokens_only":
+    if projection == "unpaired_mane_row":
+        rows.append({"feature_id": target[0].split(".")[0], "hgvs_p": requested[2]})
+    if projection not in {"merged_tokens_only", "deletion_tokens_only", "unpaired_mane_row"}:
         row = annotation(requested)
         if projection == "unversioned":
             row["feature_id"] = requested[0].split(".")[0]
         if projection == "no_coding":
             row.pop("hgvs_c")
+        if projection in {"conflicting_rows", "conflicting_rows_reversed"}:
+            row["feature_id"] = target[0]
         rows.append(row)
+    if projection == "conflicting_rows_reversed":
+        rows.reverse()
+    if projection == "canonical":
+        change = target[2]
+    if projection == "deletion_unversioned_headline":
+        rows = [{"feature_id": requested[0].split(".")[0], "hgvs_c": requested[1],
+                 "hgvs_p": "p." + change}]
     hit = {"_id": allele, "dbnsfp": {"genename": gene, "hgvsp": [f"p.{change}", target[2]]},
            "snpeff": {"ann": rows}}
     mane = "NM_000546.6" if gene == "TP53" else "NM_007294.4"
@@ -85,12 +104,12 @@ def test_other_transcript_acceptance_requires_versioned_same_allele_projection(
                                 env=env, capture_output=True, text=True, timeout=30)
         message = result.stdout + result.stderr
         assert not unexpected, unexpected
-        if projection == "paired":
+        if projection in {"paired", "canonical"}:
             assert result.returncode == 0, message
             payload = json.loads(result.stdout)
             assert payload["id"] == allele
             assert payload["hgvs_p"] == target[2]
-            assert "follows another transcript's numbering" in message
+            assert ("follows another transcript's numbering" in message) == (projection == "paired")
         else:
             assert result.returncode != 0, message
             assert "No MANE-numbered variant matches" in message

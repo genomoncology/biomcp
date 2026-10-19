@@ -324,6 +324,32 @@ fn hit_names_requested_change(
         .is_some_and(|protein| protein_changes_equivalent(change, &protein))
 }
 
+fn has_conflicting_transcript_projection(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    annotation: &crate::sources::myvariant::MyVariantSnpeffAnnotation,
+) -> bool {
+    let (Some(feature), Some(coding), Some(protein)) = (
+        annotation.feature_id.as_deref(),
+        annotation.hgvs_c.as_deref(),
+        annotation.hgvs_p.as_deref(),
+    ) else {
+        return false;
+    };
+    hit.snpeff.as_ref().is_some_and(|snpeff| {
+        snpeff.ann.iter().any(|other| {
+            other.feature_id.as_deref() == Some(feature)
+                && other.hgvs_c.as_deref().is_some_and(|other_coding| {
+                    other_coding.starts_with("c.")
+                        && other.hgvs_p.as_deref().is_some_and(|other_protein| {
+                            super::normalize_protein_change(other_protein).is_some()
+                                && (other_coding != coding
+                                    || !protein_changes_equivalent(protein, other_protein))
+                        })
+                })
+        })
+    })
+}
+
 /// Both protein spellings must be paired with versioned coding transcript
 /// projections on this source allele. Merged protein aliases prove no identity.
 fn has_same_allele_transcript_projection(
@@ -360,9 +386,12 @@ fn has_same_allele_transcript_projection(
     else {
         return false;
     };
-    versioned_coding(selected)
+    let consistent_projection = |ann: &crate::sources::myvariant::MyVariantSnpeffAnnotation| {
+        versioned_coding(ann) && !has_conflicting_transcript_projection(hit, ann)
+    };
+    consistent_projection(selected)
         && snpeff.ann.iter().any(|ann| {
-            versioned_coding(ann)
+            consistent_projection(ann)
                 && ann
                     .hgvs_p
                     .as_deref()
@@ -494,11 +523,44 @@ async fn refuse_or_note_numbering_mismatch(
     mane_transcript: Option<&str>,
     prefetched: Option<CanonicalProteinFacts>,
 ) -> Result<Option<String>, BioMcpError> {
-    if transform::variant::mane_annotation_names_change(hit, change, mane_transcript) {
+    let protein = transform::variant::canonical_protein_change(hit, mane_transcript, Some(change));
+    let different_headline = protein
+        .as_deref()
+        .is_some_and(|protein| !protein_changes_equivalent(change, protein));
+    let conflicting_headline =
+        transform::variant::selected_snpeff_annotation_index(hit, mane_transcript, Some(change))
+            .and_then(|index| hit.snpeff.as_ref()?.ann.get(index))
+            .is_some_and(|annotation| has_conflicting_transcript_projection(hit, annotation));
+    // Every renumbered answer needs paired source evidence, including
+    // non-substitutions and records with an unpaired MANE alias row.
+    if conflicting_headline
+        || (different_headline
+            && !has_same_allele_transcript_projection(hit, change, mane_transcript))
+    {
+        return Err(transcript_projection_refusal_message(id, gene, change));
+    }
+    if !different_headline
+        && transform::variant::mane_annotation_names_change(hit, change, mane_transcript)
+    {
         return Ok(None);
     }
     let Some((_, position)) = requested_reference_residue(change) else {
-        return Ok(None);
+        if !has_same_allele_transcript_projection(hit, change, mane_transcript) {
+            return Err(transcript_projection_refusal_message(id, gene, change));
+        }
+        return if different_headline {
+            Ok(protein_change_numbering_note(hit, change, mane_transcript))
+        } else if protein.is_none() {
+            Err(protein_change_absent_refusal_message(
+                id,
+                gene,
+                change,
+                hit,
+                mane_transcript,
+            ))
+        } else {
+            Ok(None)
+        };
     };
     let facts = match prefetched {
         Some(facts) => facts,
@@ -580,6 +642,13 @@ fn unchecked_numbering_note(transcript: &str, protein: &str, change: &str) -> St
     )
 }
 
+fn transcript_projection_refusal_message(id: &str, gene: &str, change: &str) -> BioMcpError {
+    BioMcpError::InvalidArgument(format!(
+        "No MANE-numbered variant matches '{id}': no request-matching versioned transcript projection with paired coding and protein changes proves the same genomic allele as the answer. BioMCP refuses rather than return the wrong variant.\n\
+Retry `biomcp get variant` with a transcript-qualified HGVS naming '{change}', or search the spelling: biomcp search variant -g {gene} --hgvsp {change}."
+    ))
+}
+
 /// The numbering decision once the canonical protein facts are in hand —
 /// pure, so the recorded shapes pin it offline.
 fn refuse_or_note_with_facts(
@@ -611,10 +680,7 @@ fn refuse_or_note_with_facts(
             ));
         };
         if !has_same_allele_transcript_projection(hit, change, mane_transcript) {
-            return Err(BioMcpError::InvalidArgument(format!(
-                "No MANE-numbered variant matches '{id}': no request-matching versioned transcript projection with paired coding and protein changes proves the same genomic allele as the answer. BioMCP refuses rather than return the wrong variant.\n\
-Retry `biomcp get variant` with a transcript-qualified HGVS naming '{change}', or search the spelling: biomcp search variant -g {gene} --hgvsp {change}."
-            )));
+            return Err(transcript_projection_refusal_message(id, gene, change));
         }
         if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
             return Ok(Some(note));
