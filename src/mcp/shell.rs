@@ -1996,7 +1996,8 @@ mod tests {
             format!("{base}/vaccines.csv"),
         );
         let _who_dir = WhoMcpFixtureEnv::set("BIOMCP_WHO_DIR", who_dir.path());
-        let _cache = WhoMcpFixtureEnv::set("BIOMCP_CACHE_DIR", cache.path());
+        let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+        cache_policy.set_cache_root(cache.path());
 
         let result = BioMcpServer::new()
             .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {

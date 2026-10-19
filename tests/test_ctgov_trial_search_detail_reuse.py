@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cache_fixture import set_cache_root
+
 from contextlib import contextmanager
 import fcntl
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -250,8 +252,7 @@ def _run_reference(
             *([section] if isinstance(section, str) else section),
         ],
         cwd=REPO_ROOT,
-        env=os.environ
-        | {"BIOMCP_CTGOV_BASE": base, "BIOMCP_CACHE_DIR": str(cache)},
+        env=set_cache_root(os.environ | {"BIOMCP_CTGOV_BASE": base}, cache),
         text=True,
         capture_output=True,
         timeout=30,

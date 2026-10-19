@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import sys
 
@@ -27,6 +28,7 @@ def test_python_slow_warning_preserves_test_result(
             "    os.getloadavg = unavailable\n"
         )
     (tmp_path / "conftest.py").write_text(conftest)
+    shutil.copy2(ROOT / "tests/cache_fixture.py", tmp_path / "cache_fixture.py")
     (tmp_path / "pytest.ini").write_text("[pytest]\nslow_test_warning_seconds = 0.01\n")
     (tmp_path / "test_case.py").write_text(
         "import threading\n"

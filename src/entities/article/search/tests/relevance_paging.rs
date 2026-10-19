@@ -20,10 +20,10 @@ async fn europepmc_relevance_offset_page_lines_up_with_cursor_page() {
     })
     .await;
     let cache = TempDirGuard::new("europepmc-relevance-paging");
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
 
     let mut filters = empty_filters();
     filters.keyword = Some("BRAF melanoma".into());

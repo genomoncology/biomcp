@@ -7,7 +7,9 @@ XDG_CACHE_ROOT="${CACHE_ROOT}/xdg-cache"
 XDG_CONFIG_ROOT="${CACHE_ROOT}/config"
  mkdir -p "$CACHE_ROOT" "$XDG_CACHE_ROOT" "$XDG_CONFIG_ROOT"
 
-export BIOMCP_CACHE_DIR="$CACHE_ROOT"
+ # shellcheck source=../spec/fixtures/cache-policy.sh
+source "$REPO_ROOT/spec/fixtures/cache-policy.sh"
+set_fixture_cache_root "$CACHE_ROOT"
 export XDG_CACHE_HOME="$XDG_CACHE_ROOT"
 export XDG_CONFIG_HOME="$XDG_CONFIG_ROOT"
 export RUST_LOG="${RUST_LOG:-error}"

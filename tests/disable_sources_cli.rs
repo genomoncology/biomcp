@@ -211,7 +211,9 @@ impl<'a> Binary<'a> {
         let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
         command
             .args(args)
-            .env("BIOMCP_CACHE_DIR", self.cache.path())
+            .envs(biomcp_mcp_contract_client::child_cache_env(
+                self.cache.path(),
+            ))
             .env("BIOMCP_MYGENE_BASE", format!("{base}/mygene/v3"))
             .env("BIOMCP_OLS4_BASE", format!("{base}/ols4"))
             .env(
@@ -705,10 +707,10 @@ impl ReplayServer {
         let cache = scratch.path().join("cache");
         std::fs::create_dir_all(&cache).expect("scratch cache dir");
         env.push(("BIOMCP_CACHE_MODE".to_string(), "off".to_string()));
-        env.push((
-            "BIOMCP_CACHE_DIR".to_string(),
-            cache.to_string_lossy().into_owned(),
-        ));
+        env.extend(
+            biomcp_mcp_contract_client::child_cache_env(cache)
+                .map(|(key, value)| (key.to_string(), value.to_string_lossy().into_owned())),
+        );
         env.push(("BIOMCP_TEST_UNPACED_ORIGIN".to_string(), origin.clone()));
         ReplayServer {
             _scratch: scratch,
@@ -1116,14 +1118,16 @@ fn mcp_override_refusal_names_the_original_flag_setting() {
         biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
     serve_runtime().block_on(async {
         let env = vec![
-            (
-                "BIOMCP_CACHE_DIR".to_string(),
-                cache.path().to_string_lossy().into_owned(),
-            ),
             ("BIOMCP_CACHE_MODE".to_string(), "off".to_string()),
             ("BIOMCP_DISABLE_SOURCES".to_string(), String::new()),
             ("BIOMCP_DISABLE_KEGG".to_string(), "0".to_string()),
-        ];
+        ]
+        .into_iter()
+        .chain(
+            biomcp_mcp_contract_client::child_cache_env(cache.path())
+                .map(|(key, value)| (key.to_string(), value.to_string_lossy().into_owned())),
+        )
+        .collect::<Vec<_>>();
         let (client, _) = harness
             .spawn_stdio_client_with_args(&["--disable-sources", "civic"], &env)
             .await

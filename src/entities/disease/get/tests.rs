@@ -150,10 +150,7 @@ async fn stale_serve_fixture_server()
 }
 
 fn stale_serve_env(env: &mut DiseaseCardFixtureEnv, cache_root: &std::path::Path, base: &str) {
-    env.set(
-        "BIOMCP_CACHE_DIR",
-        cache_root.to_str().expect("utf-8 cache root"),
-    );
+    env.set_cache_root(cache_root.to_str().expect("utf-8 cache root"));
     env.set("BIOMCP_MYDISEASE_BASE", base);
     env.set("BIOMCP_CTGOV_BASE", base);
     env.set("BIOMCP_OLS4_BASE", "://unavailable-ols-fixture");
