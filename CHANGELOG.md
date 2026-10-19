@@ -65,6 +65,7 @@
 
 - Keep subprocess readiness markers on their own line so GenCC lease tests finish with one CPU, and exercise that affinity in the stress lane. (2244)
 - Route test cache roots through shared fixture policy guards and reject unmanaged root assignments. (2257)
+- Reuse one replay server per test runner, isolate each test's recordings and request logs, and stop the server when its runner exits. (2260)
 
 - Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
 

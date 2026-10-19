@@ -32,12 +32,38 @@ with replay_environment() as replay:
         replay.run(Path(sys.executable), ('-c', 'import sys; sys.stdin.read()'), timeout=0.1)
 """
 
+SHARED_PYTHON_RUNNER = """
+import json, sys, urllib.request
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / 'tests/golden'))
+from replay_env import replay_environment, replay_session
+with replay_session():
+    with replay_environment() as first:
+        first_pid, first_origin = first.process.pid, first.origin
+        first_dir = first._next_run_dir()
+        assert first.request_log_entries() == []
+        with urllib.request.urlopen(first.origin + '/healthz', timeout=5) as response:
+            assert response.status == 200
+        assert first.request_log_line_count() == 1
+    with replay_environment() as second:
+        assert second.process.pid == first_pid
+        assert second.origin == first_origin
+        assert second._next_run_dir() != first_dir
+        assert second.request_log_entries() == []
+    with replay_environment() as replay:
+        print(json.dumps({'origin': replay.origin, 'pid': replay.process.pid}), flush=True)
+        action = sys.stdin.readline().strip()
+        if action == 'timeout':
+            replay.run(Path(sys.executable), ('-c', 'import sys; sys.stdin.read()'), timeout=0.1)
+"""
+
 
 def _start_runner(tmp_path: Path, launcher: str) -> subprocess.Popen:
     env = isolated_command_env(tmp_path, {}, "")
     env["TMPDIR"] = str(tmp_path)
-    if launcher == "python":
-        argv = [sys.executable, "-c", PYTHON_RUNNER]
+    if launcher in ("python", "python-shared"):
+        script = SHARED_PYTHON_RUNNER if launcher == "python-shared" else PYTHON_RUNNER
+        argv = [sys.executable, "-c", script]
         cwd = ROOT
     else:
         cwd = tmp_path / "spec-runner"
@@ -124,7 +150,7 @@ def _cleanup(runner: subprocess.Popen) -> None:
         stream.close()
 
 
-@pytest.mark.parametrize("launcher", ["python", "bash"])
+@pytest.mark.parametrize("launcher", ["python", "python-shared", "bash"])
 def test_runner_death_stops_replay_during_an_incomplete_request(
     tmp_path: Path, launcher: str,
 ) -> None:
@@ -153,10 +179,11 @@ def test_runner_death_stops_replay_during_an_incomplete_request(
 
 
 @pytest.mark.parametrize("action", ["normal", "timeout"])
+@pytest.mark.parametrize("launcher", ["python", "python-shared"])
 def test_replay_teardown_stops_server_on_normal_exit_and_command_timeout(
-    tmp_path: Path, action: str,
+    tmp_path: Path, action: str, launcher: str,
 ) -> None:
-    runner = _start_runner(tmp_path, "python")
+    runner = _start_runner(tmp_path, launcher)
     identity = None
     try:
         identity = _identity(runner)
@@ -174,3 +201,117 @@ def test_replay_teardown_stops_server_on_normal_exit_and_command_timeout(
         _cleanup(runner)
         if identity is not None:
             _assert_stopped(identity)
+
+
+def test_shared_replay_restores_fixture_roots_and_isolates_request_logs(tmp_path: Path) -> None:
+    from replay_env import replay_environment
+
+    roots = []
+    for name in ("first", "second"):
+        root = tmp_path / name
+        replay_dir = root / "testdata/replay"
+        replay_dir.mkdir(parents=True)
+        (replay_dir / "reply.txt").write_text(name)
+        (replay_dir / "manifest.json").write_text(json.dumps({
+            "schema_version": 1,
+            "routes": {"GET /mygene/ownership-probe": {
+                "status": 200, "file": "reply.txt",
+                "headers": {"content-type": "text/plain"},
+            }},
+        }))
+        roots.append(root)
+    identities = []
+    views = []
+    for root in roots:
+        with replay_environment(root=root) as replay:
+            views.append(replay)
+            identities.append(replay.process.pid)
+            assert replay.request_log_entries() == []
+            with urllib.request.urlopen(replay.origin + "/mygene/ownership-probe", timeout=5) as response:
+                assert response.read().decode() == root.name
+            assert replay.request_log_line_count() == 1
+            assert replay.misses() == []
+    assert len(set(identities)) == 1
+    assert [view.request_log_line_count() for view in views] == [1, 1]
+    assert [len(view.request_log_entries()) for view in views] == [1, 1]
+    with replay_environment() as replay:
+        assert replay.process.pid == identities[0]
+        assert replay.request_log_entries() == []
+        with pytest.raises(urllib.error.HTTPError) as error:
+            urllib.request.urlopen(replay.origin + "/mygene/ownership-probe", timeout=5)
+        assert error.value.code == 404
+        assert len(replay.misses()) == 1
+
+
+def test_shared_replay_records_only_explicit_contexts_against_local_upstream(
+    tmp_path: Path,
+) -> None:
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    calls = []
+
+    class Upstream(BaseHTTPRequestHandler):
+        def do_GET(self):
+            calls.append(self.path)
+            body = b'{"local": true}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *_args):
+            pass
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+    thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+    thread.start()
+    root = tmp_path / "fixture"
+    (root / "src").mkdir(parents=True)
+    (root / "src/probe.rs").write_text(
+        f'const PROBE_BASE: &str = "http://127.0.0.1:{upstream.server_port}";\n'
+        'const PROBE_BASE_ENV: &str = "BIOMCP_PROBE_BASE";\n'
+    )
+    (root / "testdata/replay").mkdir(parents=True)
+    (root / "testdata/replay/manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": {}})
+    )
+    script = """
+import json, sys, urllib.error, urllib.request
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / 'tests/golden'))
+import replay_env
+replay_env.REPO_ROOT = Path(sys.argv[1])
+results = []
+with replay_env.replay_session():
+    for record, query in [(False, 'one'), (True, 'one'), (False, 'two')]:
+        with replay_env.replay_environment(record=record) as replay:
+            try:
+                response = urllib.request.urlopen(replay.origin + '/probe/value?' + query, timeout=5)
+            except urllib.error.HTTPError as error:
+                response = error
+            with response:
+                response.read()
+                status = response.status
+            results.append({'pid': replay.process.pid, 'status': status,
+                            'logs': replay.request_log_entries(), 'record': replay.record})
+print(json.dumps(results))
+"""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", script, str(root)], cwd=ROOT,
+            env=isolated_command_env(tmp_path / "command", {}, ""),
+            capture_output=True, text=True, timeout=20,
+        )
+        assert result.returncode == 0, result.stderr
+        results = json.loads(result.stdout)
+        assert len({row["pid"] for row in results}) == 1
+        assert [row["status"] for row in results] == [404, 200, 404]
+        assert [row["record"] for row in results] == [False, True, False]
+        assert [len(row["logs"]) for row in results] == [1, 1, 1]
+        assert [row["logs"][0]["result"] for row in results] == ["miss", "recorded", "miss"]
+        assert calls == ["/value?one"]
+    finally:
+        upstream.shutdown()
+        upstream.server_close()
+        thread.join(timeout=5)

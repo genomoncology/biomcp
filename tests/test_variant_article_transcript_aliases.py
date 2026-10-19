@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-import shlex
 import subprocess
 import sys
 
@@ -14,7 +13,7 @@ import pytest
 from test_mcp_2026_protocol import RawStdioMcp
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "golden"))
-from replay_env import REPO_ROOT, isolated_command_env  # noqa: E402
+from replay_env import REPO_ROOT, isolated_command_env, replay_environment  # noqa: E402
 
 pytestmark = [pytest.mark.needs_binary]
 CAPTURE = REPO_ROOT / "tests/fixtures/article/transcript-aliases/replay"
@@ -30,22 +29,11 @@ def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
     (fixture_root / "src").symlink_to(REPO_ROOT / "src", target_is_directory=True)
     (fixture_root / "testdata").mkdir()
     (fixture_root / "testdata/replay").symlink_to(CAPTURE, target_is_directory=True)
-    env_file = tmp_path / "replay.env"
-    request_log = tmp_path / "requests.jsonl"
-    server = subprocess.Popen(
-        [sys.executable, str(REPO_ROOT / "tools/replay-server"),
-         "--root", str(fixture_root), "--env-file", str(env_file),
-         "--request-log", str(request_log)],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-    )
-    try:
-        ready = server.stdout.readline().strip()
+    with replay_environment(root=fixture_root) as replay:
+        ready = replay.greeting
         assert ready.startswith("READY "), ready
         origin = ready.split(" ", 1)[1]
-        providers = {}
-        for line in env_file.read_text().splitlines():
-            key, value = line.removeprefix("export ").split("=", 1)
-            providers[key] = shlex.split(value)[0]
+        providers = replay.provider_env
         env = isolated_command_env(tmp_path / "isolated", providers, origin)
         # This replay owns transcript provenance; MyGene expansion has separate controls.
         env["BIOMCP_DISABLE_SOURCES"] = "mygene-info"
@@ -81,7 +69,7 @@ def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
                 payload = result.stdout
             else:
                 payload = json.loads(result.stdout)
-        requests = [json.loads(line) for line in request_log.read_text().splitlines()]
+        requests = replay.request_log_entries()
         misses = [row for row in requests if row.get("result") in ("miss", "record-error")]
         assert not misses, misses
         if surface == "markdown":
@@ -104,10 +92,3 @@ def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
                      if fact["alias"] == "BRCA1 F1714I"]
             assert known
             assert {fact["source_transcript"] for fact in known} == {"NM_007297.3"}
-    finally:
-        server.terminate()
-        try:
-            server.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            server.kill()
-            server.wait(timeout=10)
