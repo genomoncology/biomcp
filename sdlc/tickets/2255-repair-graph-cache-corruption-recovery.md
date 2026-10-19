@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 Restore the graph-cache corruption contract on current main. A corrupt record must behave as a miss, recover through the owning provider route, and be replaced when the isolated fixture permits cache writes. Fix the demonstrated cause; preserve corruption handling, provider evidence and failure assertions.
 
-Changes: `sdlc/tickets/2255-repair-graph-cache-corruption-recovery.md`.
+Changes: `src/entities/article/graph/tests/cache.rs`, `CHANGELOG.md`, `sdlc/tickets/2255-repair-graph-cache-corruption-recovery.md`.
 
 ## Evidence
 
@@ -27,3 +27,7 @@ Preserve the existing corruption and replacement assertions. Do not turn an inte
 ## Proof
 
 Name the exact cause, run the owning regression under the condition that exposed it, and run the affected cache controls. Run mechanical checks for changed source. Record raw evidence in the repair lane's numbered retained experiment; the coordinator reruns main after landing.
+
+## Repair boundary
+
+The failure occurs while asserting the first seed row, before corruption is inserted. Inspect the graph fixture against the shared scratch-cache policy and prove any inherited disk-floor cause under a controlled threshold on both prior main 569d9beb142c0ccb70e65d5f8618f5ee8d07a4d7 and current main. Reuse the shared fixture guard rather than copying its settings. Preserve every existing corruption and replacement assertion.
