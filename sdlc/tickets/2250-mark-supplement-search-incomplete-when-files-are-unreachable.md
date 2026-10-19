@@ -30,7 +30,7 @@ Restate the approved outcome, reproduce on current main before source edits, and
 
 ## Granted implementation brief
 
-- Changes: `src/entities/article/supplement_search.rs` `src/entities/article/mod.rs` `src/cli/article/dispatch.rs` `src/render/markdown/article.rs` `src/render/markdown/mod.rs` `tests/article_asset_terminal.rs` `spec/entity/article.md` `src/cli/list/literature.rs` `CHANGELOG.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md`.
+- Changes: `src/entities/article/supplement_search.rs` `src/entities/article/mod.rs` `src/cli/article/dispatch.rs` `src/render/markdown/article.rs` `src/render/markdown/mod.rs` `tests/article_asset_terminal.rs` `spec/entity/article.md` `src/cli/list/literature.rs` `CHANGELOG.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md`. `spec/fixtures/setup-article-fulltext-source-fixture.sh`
 
 Restated outcome: retain readable supplement hits and deadlines, list every named unreadable supplement with the same outcome wording as asset coverage, and mark the search incomplete in JSON and Markdown. Minimal Markdown support for this command replaces its obsolete JSON-only refusal. No unrelated article surface changes.
 
@@ -39,3 +39,5 @@ Current-main8cf9c3be7 deterministic job1792424084240-92557: existing22663023 cov
 Write failing outside-in tests first, apply the minimal repair, run affected tests and mechanical checks through the configured build job. Preserve private patch and per-file hashes; verify published source matches the tested manifest. No WIP pushes, merges, ticket/status edits, mail or child agents. Push once review-ready and stop after reporting.
 
 Keep: experiments/790-biomcp-unreadable-supplement-search — Retain cited raw proof until release evidence is explicitly released.
+
+Claim expansion: Extend the existing fixture for the named-paper and multi-file replay without changing other scenarios.
