@@ -23,7 +23,7 @@ Depends on: 2159, 2229
 
 - Starts from: the existing replay infrastructure and named article-fulltext, CTGov intervention-alias, provider-contract and ComplexPortal conversion groups.
 - Keeps: CLI/MCP behavior, refusals, source receipts, live canaries and their needed helpers, local study datasets and separately approved frozen-capture runners.
-- Changes: `tests/test_ctgov_trial_search_detail_reuse.py` `CHANGELOG.md` and this ticket for this partial batch. The parent remains open for the other named consumers; no server, launcher or script is removed in this batch.
+- Changes: `spec/entity/trial-condition-search.md` `spec/entity/trial.md` `scripts/run-specs.sh` `spec/fixtures/setup-ctgov-intervention-alias-spec-fixture.sh` `CHANGELOG.md` and this ticket for the next partial batch. Preserve all reader assertions, source captures and whole setup/cleanup scripts. The parent remains open for other consumers.
 - Proof: through the build job, affected existing command/MCP cases pass against recorded replay without missing requests, preserving counts, failures and refusals. No retained consumer refers to each deleted script; script-specific tests disappear with obsolete scripts. Run the routine merged-candidate gate without live canaries.
 - Defers: local study-dataset provisioning and broad shared fixture identifiers to the next release.
 
@@ -45,3 +45,11 @@ No helper deletion is valid: three CTGov shell cases and the custom server's oth
 
 - 2026-10-19 started
 - 2026-10-19 landed f16e27cd40385c61f3de20d269f89c5b799e6bd3; next: Keep the parent open; migrate the condition-first trial consumer next, preserving all reader assertions.
+
+## Next partial development brief
+
+Restated outcome: run the existing Condition-First Search specification through the existing replay runner, retaining its heading, query echo and table-header assertions unchanged. New main trial-search goldens own the full JSON and Markdown results, including three trials, total 480 and the continuation token. Their mutation proof is already accepted; do not repeat it.
+
+Read-only inventory on current main found the old trial page absent from routine and live page lists. This is an inactive contract case, with no JSON arithmetic/request-log block to delete. Extract only the Condition-First prose and command/assertions into the declared new page, leave a link under the old heading and add only that page to SPEC_ROUTINE_PATHS. The runner already starts replay, exports BIOMCP_CTGOV_BASE and supplies the prepared CLI and isolated cache; no new lifecycle, launcher or endpoint override is needed. Do not add the entire old page to the routine set.
+
+Remove only the now-unused melanoma response entry and its three-line dispatch branch from the old fixture. Three retained Python consumers still need that fixture's other replies, so keep its setup/cleanup and full receipted source capture. Preserve pagination, aliases, eligibility and other unique assertions. Run the affected old consumers on current main before editing and report the exact command/output. Then execute the extracted specification through the real runner, the existing affected consumers and mechanical checks with a qualified CLI, without a Rust rebuild. The runner edit changes the gate definition, so this slice lands separately. Keep the parent open.
