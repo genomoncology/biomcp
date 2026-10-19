@@ -51,6 +51,24 @@ def test_routine_feature_probe_runs_without_a_prepared_checkout(tmp_path: Path) 
     assert not routine_tmp.exists()
 
 
+@pytest.mark.parametrize("target", ["spec-pr", "spec-contracts"])
+def test_alternate_spec_targets_sync_python_before_the_runner(
+    tmp_path: Path, target: str,
+) -> None:
+    shutil.copy2(REPO_ROOT / "Makefile", tmp_path / "Makefile")
+    env = {key: value for key, value in os.environ.items()
+           if key not in ("MAKEFLAGS", "MAKEOVERRIDES")}
+    result = subprocess.run(
+        ["make", "--dry-run", target], cwd=tmp_path, env=env,
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    sync = "uv sync --extra dev --no-install-project"
+    runner = f"bash scripts/run-specs.sh {target}"
+    assert sync in result.stdout, result.stdout
+    assert result.stdout.index(sync) < result.stdout.index(runner), result.stdout
+
+
 def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     makefile = _read("Makefile")
     lint = _read("bin/lint")
