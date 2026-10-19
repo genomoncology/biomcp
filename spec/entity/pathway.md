@@ -55,7 +55,7 @@ legacy `BIOMCP_DISABLE_KEGG=1` alias behaves the same way. The comma and pipe
 forms agree, and an unknown name fails with the valid names.
 
 ```bash
-log="$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"
+log="$BIOMCP_REPLAY_REQUEST_LOG"
 before_kegg_requests="$(grep -Fc '/kegg/' "$log" || true)"
 kegg_disabled_json="$(BIOMCP_DISABLE_SOURCES=kegg ../../tools/biomcp-ci --json search pathway 'MAPK signaling pathway' --limit 5)"
 jq -e 'all(.results[]?; .source != "KEGG")' <<<"$kegg_disabled_json" | mustmatch 'true'
