@@ -261,21 +261,37 @@
     },
     "POST /opentargets/graphql#43750647d0c40094": {
       "file": "responses/opentargets/opentargets-graphql-43750647d0c40094-701220c8c35c.bin",
+      "request_body": "{\"query\":\"\\nquery TargetClinicalContext($ensemblId: String!, $size: Int!) {\\n  target(ensemblId: $ensemblId) {\\n    associatedDiseases(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        disease {\\n          id\\n          name\\n        }\\n      }\\n    }\\n    drugAndClinicalCandidates {\\n      rows {\\n        drug {\\n          id\\n          name\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"ensemblId\":\"ENSG00000157764\",\"size\":5}}",
+      "request_headers": {
+        "content-type": "application/json"
+      },
       "status": 200,
       "upstream": "https://api.platform.opentargets.org/api/v4/graphql"
     },
     "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#417154d125173f55": {
       "file": "responses/s2/s2-graph-v1-paper-batch-88bd002daeb4.bin",
+      "request_body": "{\"ids\":[\"PMID:38774020\",\"PMID:36806928\",\"PMID:39873164\"]}",
+      "request_headers": {
+        "content-type": "application/json"
+      },
       "status": 429,
       "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract"
     },
     "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#4b3c9bf52bd3513b": {
       "file": "responses/s2/s2-graph-v1-paper-batch-3f9def8611a3.bin",
+      "request_body": "{\"ids\":[\"PMID:24200969\",\"PMID:38774020\",\"PMID:42875213\"]}",
+      "request_headers": {
+        "content-type": "application/json"
+      },
       "status": 429,
       "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract"
     },
     "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#57e763ad0ff60785": {
       "file": "responses/s2/s2-graph-v1-paper-batch-4f6e0d394f64.bin",
+      "request_body": "{\"ids\":[\"PMID:24200969\",\"PMID:24469106\",\"PMID:42370653\",\"PMID:38774020\",\"PMID:36806928\",\"PMID:39873164\",\"PMID:42875213\",\"PMID:42870784\",\"PMID:42869554\"]}",
+      "request_headers": {
+        "content-type": "application/json"
+      },
       "status": 200,
       "upstream": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract"
     }
