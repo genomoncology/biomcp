@@ -10,7 +10,9 @@ Milestone: 0.9.4
 
 ## Outcome
 
-Changes: `src/mcp/shell.rs`, `src/mcp/shell/pre_session.rs`, `tests/test_mcp_stdio_guidance.py`, `CHANGELOG.md`, `sdlc/tickets/2256-bound-only-the-mcp-handshake-wait-by-the-startup-timer.md`.
+PM extended the outcome: after startup timeout and guidance, the failing stdio server must exit promptly with the same failure status even while the client keeps stdin open. A hung client must not retain a server process.
+
+Changes: `src/main.rs`, `src/mcp/shell.rs`, `src/mcp/shell/pre_session.rs`, `tests/test_mcp_stdio_guidance.py`, `CHANGELOG.md`, `sdlc/tickets/2256-bound-only-the-mcp-handshake-wait-by-the-startup-timer.md`.
 
 The MCP server's five-second startup timer limits only the wait for a client's initialize request. A supported tool call dispatched before initialization runs under its own invocation budget and is never aborted with the initialize-handshake error.
 
@@ -24,7 +26,7 @@ A client that never initializes still times out at five seconds. Initialized ses
 
 ## Proof
 
-A stdio test sends a supported pre-initialization tool call whose replayed provider reply takes longer than five seconds and receives the tool result. A silent client still gets the handshake timeout.
+A stdio test sends a supported pre-initialization tool call whose replayed provider reply takes longer than five seconds and receives the tool result. A silent client receives the handshake guidance and the server exits with the failure status while stdin remains open.
 
 ## Implementation boundary
 
@@ -33,3 +35,7 @@ Restate the outcome as a cumulative startup wait budget: fast pre-initialization
 ## Progress
 
 - 2026-10-19 started
+
+## Startup failure cleanup boundary
+
+The controlled silent-client test reproduced guidance without process exit because the runtime awaited its blocking stdin reader. Scope cleanup to fatal stdio-server errors; preserve healthy initialized sessions, tool-error replies, HTTP behavior and the rest of the CLI. The open-pipe process-exit assertion must pass without closing the test input as a workaround.
