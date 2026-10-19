@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
+
 - Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
 
 - Derive variant article Markdown source plans and source states from the same route results as JSON, including empty pages and authenticated Semantic Scholar searches. (2252)
