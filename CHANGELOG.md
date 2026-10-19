@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Explain article full-text access groups, preprint JATS, retrieval reason codes, and source boundaries with corrected live examples. (2253)
+
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
 - Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)
