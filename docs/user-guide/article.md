@@ -274,10 +274,10 @@ alone with `--source semanticscholar`.
 
 ## Request specific sections
 
-Full text section:
+Full text section (live example; provider availability can change):
 
 ```bash
-biomcp get article 22663011 fulltext
+biomcp get article 24200969 fulltext
 ```
 
 This uses the default article full-text ladder: XML first, then PMC HTML when
@@ -286,6 +286,21 @@ BioMCP accepts a winner only when JATS or PMC HTML structure contains a nonblank
 article-body block; title/front/abstract-only and metadata-only responses remain
 healthy partial results and the ladder continues. A source abstract fills a
 missing or blank article abstract but never replaces a nonblank base abstract.
+
+### Which papers can BioMCP read?
+
+| Access group | What to expect |
+|---|---|
+| A paper with a PMC copy | BioMCP tries Europe PMC XML, NCBI EFetch XML, PMC OA XML, and PMC HTML where eligible. Author manuscripts and papers readable in PMC outside the OA subset may still resolve through the other routes. A PMCID identifies a candidate copy; it does not guarantee retrieval. |
+| A bioRxiv or medRxiv preprint with an eligible `10.1101/` DOI | After the PMC/MED XML attempts, BioMCP asks the preprint details API for the latest matching version and fetches its advertised JATS XML. This runs before PMC HTML and does not require `--pdf` or a PMC copy. |
+| A paper free only on its publisher's site | `--pdf` may reach the open PDF URL supplied by Semantic Scholar after the XML and PMC HTML routes miss. A free web page alone does not provide a supported full-text route. Missing PDF links, access restrictions, and bot protection can still prevent retrieval. |
+| A paywalled paper with no accessible PMC or preprint copy and no open PDF | BioMCP cannot retrieve the body. Search results and abstracts may still be available. |
+
+Europe PMC's full-text XML endpoint serves PMC records. PubTator3's full-text passages also depend on a PMC copy; its abstract annotations and LitVar2's variant-linked paper lists do not establish body availability. LitVar2 supplies discovery, not a separate body-download route. The preprint JATS route is a separate exception to the PMC-backed XML workflow.
+
+BioMCP does not bypass paywalls or bot challenges. A readable copy does not grant reuse rights: article licenses vary, including within PMC and the preprint servers. Check `full_text_manifest.reuse` and the [source terms](../reference/source-licensing.md).
+
+**For agents:** Request `fulltext` only for selected papers. Inspect `section_outcomes.fulltext` and `full_text_coverage` before claiming you read the body. Use the saved Markdown when retrieval succeeds; distinguish an abstract-only result from full text. Request `--pdf` explicitly when appropriate, retain the reported source and license, and report an access failure without inferring article contents.
 
 When full text resolves, BioMCP prints a local `Saved to:` path for cached
 Markdown and surfaces the winning source label (`Europe PMC XML`, `PMC HTML`,
@@ -365,19 +380,23 @@ state (`0600` files on Unix); routine managed-state maintenance also repairs
 older permissive files.
 
 Opt in to the final PDF rung only when you want the last-resort open-access PDF
-path after XML and PMC HTML fail to provide an article body (including when they
+path after XML (including eligible preprint JATS) and PMC HTML fail to provide an article body (including when they
 provide only an abstract or metadata):
 
+Live fallback example; success depends on the provider returning an accessible PDF:
+
 ```bash
-biomcp get article 22663011 fulltext --pdf
+biomcp get article 24200969 fulltext --pdf
 ```
 
 Batch detail requests take the same fallback for many papers in one process,
 where the single in-process Semantic Scholar limiter spaces every paper lookup
 and every PDF download instead of one fresh limiter per CLI call:
 
+Live batch example; each paper can have a different retrieval outcome:
+
 ```bash
-biomcp --json batch article 22663011,22663026,22663028 --mode detail --sections fulltext --pdf
+biomcp --json batch article 24200969,27083046 --mode detail --sections fulltext --pdf
 ```
 
 Typed MCP `get article` carries the same option as the boolean `pdf` field
@@ -390,15 +409,31 @@ host names, no credentials, DNS answers that cannot resolve to private or
 internal addresses, and redirects revalidated by the same rules) — and labels
 the winner as `Semantic Scholar PDF`. A successful lookup with no listed PDF
 is a healthy absence; a failed lookup contributes unavailable state only when
-PDF fallback was requested. Each PDF-step failure names the part that failed
-in its attempt `reason`: `open_pdf_link_unavailable` (the link could not be
-asked for), `open_pdf_link_absent` (no open PDF listed), `open_pdf_link_rejected`
-(the link was refused before contact), `open_pdf_download_failed`,
-`open_pdf_download_absent`, or `open_pdf_text_unusable`. `--pdf` is only
+PDF fallback was requested. The [attempt reasons](#full-text-attempt-reasons) below distinguish PDF-link discovery, download, and extraction failures. `--pdf` is only
 valid with the `fulltext` section; `biomcp get article 22663011 --pdf` and
 `biomcp batch article 22663011 --pdf` are rejected instead of silently doing
 nothing, and each batch item still reports the full-text source it used and
 the named PDF-step failure when the fallback did not deliver.
+
+### Full-text attempt reasons
+
+Each `full_text_coverage.attempts[].reason` describes one attempted source, not the final result of the entire ladder. A later source can succeed after an earlier miss or failure.
+
+| Reason | Meaning |
+|---|---|
+| `body_detected` | The source returned a usable article body and won the ladder. |
+| `abstract_without_body` | The source returned an abstract but no usable article-body block; the ladder continues. |
+| `metadata_without_body` | The source returned bibliographic metadata without a usable body or abstract; the ladder continues. |
+| `no_content` | The source had no content for this request, including a documented not-found response. This is a healthy absence. |
+| `unusable_content` | Content arrived but could not be parsed or rendered into a usable article document. |
+| `bot_challenge` | A content route returned a detected bot challenge instead of article content. BioMCP does not solve it; eligible later routes can still run. |
+| `source_unavailable` | A source request or client failed, so this attempt cannot establish whether a body exists. |
+| `open_pdf_link_unavailable` | The Semantic Scholar lookup for an open PDF failed. |
+| `open_pdf_link_absent` | The lookup succeeded but supplied no open PDF URL. |
+| `open_pdf_link_rejected` | The PDF URL failed outbound safety checks before retrieval. |
+| `open_pdf_download_failed` | The PDF request failed or returned unsupported download content. |
+| `open_pdf_download_absent` | The PDF URL returned a documented absence. |
+| `open_pdf_text_unusable` | The downloaded PDF could not yield usable extracted text. |
 
 Indexing section:
 

@@ -513,7 +513,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
 
     assert (
-        "| Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata |"
+        "| Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + bioRxiv/medRxiv JATS + opt-in Semantic Scholar PDF metadata |"
         in data_sources
     )
     assert "Optional (`NCBI_API_KEY`, `S2_API_KEY`)" in data_sources

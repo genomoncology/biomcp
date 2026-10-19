@@ -4,11 +4,21 @@ priority: 2
 
 # 2253 — Document full-text access groups and reason codes
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
+Reviews: revision 0514689, accept
+
+Reviews: revision 00ef5a9, accept
+
+Reviews: revision 1842a43, accept
+
+Reviews: revision 6ffed27, accept
+
 ## Outcome
+
+Changes: `tests/test_upstream_planning_analysis_docs.py`, `tests/test_documentation_consistency_audit_contract.py`, `docs/reference/source-versioning.md`, `docs/llms-full.txt`, `docs/user-guide/article.md`, `docs/reference/data-sources.md`, `docs/how-to/find-articles.md`, `README.md`, `docs/sources/europe-pmc.md`, `docs/sources/pmc.md`, `docs/sources/pubtator.md`, `docs/sources/index.md`, `mkdocs.yml`, `tests/test_source_pages_docs_contract.py`, `tests/test_article_fulltext_reason_docs.py`, `CHANGELOG.md`, `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`.
 
 Users and agents can tell from the docs which papers BioMCP can read in full, which only `--pdf` may reach, and which it cannot reach, and every full-text reason code is explained. Examples use papers that work.
 
@@ -28,3 +38,15 @@ Describe behavior as the code does it; read the code for each claim. Add the age
 ## Proof
 
 A docs check or test lists every reason code in the code and finds each documented. Every changed example runs successfully offline from fixtures or is marked live.
+
+## Progress
+
+- 2026-10-19 started
+
+## Verification
+
+The updated guide follows the actual full-text ladder, including the accepted preprint JATS route. Changed examples are explicitly live; no provider lookup was repeated. Job 2253/1792427414923-33381 passed the owning documentation contracts, strict documentation build, formatting checks and whitespace checks. The published product patch matches the checked patch after the ticket-only progress commit was adopted.
+
+Keep: experiments/797-biomcp-2253-fulltext-docs — retain the checked patch, command and raw documentation-check output.
+
+Coordinator repair grant: shared gate 2247/1792431202813-16176 failed the two existing documentation wording contracts, source-versioning URL coverage and full agent index coverage. Update those exact expectations and documentation copies to the reviewed provider behavior and three new source guides. Preserve existing checks and all unrelated descriptions. Keep the complete failed gate and focused repair proof in experiment 797.
