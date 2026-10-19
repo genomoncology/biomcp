@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 156c356, accept
+
 ## Outcome
 
 - Changes: `sdlc/records/2232-search-all-gwas.md` and this ticket during the study phase; no product edits are authorized before the exact source claim is declared.
