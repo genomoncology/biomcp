@@ -114,6 +114,12 @@
       "status": 200,
       "upstream": "https://mychem.info/v1/query?q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A*melanoma*&size=6&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name"
     },
+    "GET /mydisease/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
+      "file": "responses/mydisease/melanoma-detail.json",
+      "note": "Ontology identity fields from recorded melanoma query hit.",
+      "status": 200,
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0005105"
+    },
     "GET /mydisease/disease/MONDO:0007947?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
       "file": "responses/mydisease/mydisease-disease-mondo-0007947-bbfa1e3532db.json",
       "headers": {
@@ -133,9 +139,14 @@
       "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=5&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
     },
     "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50": {
-      "file": "responses/mydisease/mydisease-query-43314306ecc4.bin",
+      "file": "../disease-resolution/melanoma-page-one.json",
       "status": 200,
       "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50&from=0&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
+    },
+    "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=50&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50": {
+      "file": "../disease-resolution/melanoma-page-two.json",
+      "status": 200,
+      "upstream": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=50&from=50&fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name"
     },
     "GET /mygene/query?fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&from=0&q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&size=50&species=human": {
       "file": "responses/mygene/mygene-query-893da30e4c6a.bin",

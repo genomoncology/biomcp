@@ -1,7 +1,7 @@
 """Disease filters remove unrelated semantic-source rows at the CLI boundary.
 
 The reported query and bibliographic titles reproduce captured search output.
-Provider replies and ontology identity controls use synthetic scaffolding.
+Ontology paging uses recorded MyDisease replies; article rows and identity controls use synthetic scaffolding.
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import threading
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -26,13 +27,24 @@ TITLES = {
 
 
 @contextmanager
-def semantic_provider(tmp_path: Path, *, aliases: bool = False, lookup_failure: bool = False):
+def semantic_provider(
+    tmp_path: Path, *, aliases: bool = False, lookup_failure: bool = False, melanoma: bool = False,
+):
     titles = TITLES if not aliases else {
         "39118875": "Unrelated fixture condition",
         "42510157": "Fixture canonical condition: a study",
         "90000001": "Study without the label in the title",
         "90000002": "Study of prefixture aliasing",
     }
+    disease_pages = []
+    if melanoma:
+        disease_pages = [json.loads((ROOT / "testdata/disease-resolution" / name).read_text())
+                         for name in ["melanoma-page-one.json", "melanoma-page-two.json"]]
+        titles = {
+            "39118875": "Unrelated fixture condition",
+            "42510157": "Melanoma treatment fixture",
+            "90000001": "Naevocarcinoma treatment fixture",
+        }
     texts = dict(titles)
     if aliases:
         texts["90000001"] = "Background context. " * 30 + "Fixture exact synonym."
@@ -55,6 +67,12 @@ def semantic_provider(tmp_path: Path, *, aliases: bool = False, lookup_failure: 
                     for pmid, title in titles.items()
                 }}})
             if self.path.startswith("/query"):
+                if melanoma:
+                    offset = int(parse_qs(urlparse(self.path).query)["from"][0])
+                    assert offset in {0, 50}, self.path
+                    if lookup_failure and offset == 50:
+                        return self.reply({"hits": "invalid second provider page"})
+                    return self.reply(disease_pages[offset // 50])
                 if lookup_failure:
                     return self.reply({"hits": "invalid provider response"})
                 if aliases:
@@ -68,6 +86,10 @@ def semantic_provider(tmp_path: Path, *, aliases: bool = False, lookup_failure: 
             if self.path.startswith("/entity/autocomplete/"):
                 return self.reply([])
             if self.path.startswith("/disease/"):
+                if melanoma:
+                    assert "MONDO:0005105" in self.path or "MONDO%3A0005105" in self.path
+                    return self.reply(next(hit for hit in disease_pages[0]["hits"]
+                                           if hit["_id"] == "MONDO:0005105"))
                 return self.reply({"_id": "MONDO:0000001", "mondo": {
                     "name": "fixture canonical condition",
                     "synonym": ["fixture alias", "fixture exact synonym"],
@@ -170,4 +192,30 @@ def test_failed_disease_synonyms_report_unavailable_semantic_source(source: str,
     assert page["results"] == []
     status = next(row for row in page["_meta"]["source_status"] if row["source"] == source)
     assert status["status"] == "unavailable"
+    assert "disease synonym lookup unavailable" in status["message"]
+
+
+@pytest.mark.parametrize("source", ["semanticscholar", "litsense2"])
+def test_melanoma_filter_uses_complete_recorded_disease_pages(source: str, tmp_path: Path) -> None:
+    with semantic_provider(tmp_path, melanoma=True) as (env, _):
+        result = search(env, source, ["-d", "melanoma"])
+    assert result.returncode == 0, result.stderr + result.stdout
+    page = json.loads(result.stdout)
+    assert page["complete"] is True
+    assert {row["pmid"] for row in page["results"]} == {"42510157", "90000001"}
+    statuses = page["_meta"].get("source_status", [])
+    assert all(row["status"] not in {"unavailable", "degraded"} for row in statuses)
+
+
+@pytest.mark.parametrize("source", ["all", "semanticscholar", "litsense2"])
+def test_failed_later_disease_page_preserves_other_article_sources(source: str, tmp_path: Path) -> None:
+    with semantic_provider(tmp_path, melanoma=True, lookup_failure=True) as (env, _):
+        result = search(env, source, ["-d", "melanoma"])
+    assert result.returncode == (0 if source == "all" else 1), result.stderr + result.stdout
+    page = json.loads(result.stdout)
+    assert page["complete"] is False
+    assert [row["pmid"] for row in page["results"]] == (["42494071"] if source == "all" else [])
+    status_source = "semanticscholar" if source == "all" else source
+    status = next(row for row in page["_meta"]["source_status"] if row["source"] == status_source)
+    assert status["status"] == ("degraded" if source == "all" else "unavailable")
     assert "disease synonym lookup unavailable" in status["message"]
