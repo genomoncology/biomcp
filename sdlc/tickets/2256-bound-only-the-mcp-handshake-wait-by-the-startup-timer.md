@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision cf355f4, accept
+
 ## Outcome
 
 PM extended the outcome: after startup timeout and guidance, the failing stdio server must exit promptly with the same failure status even while the client keeps stdin open. A hung client must not retain a server process.
