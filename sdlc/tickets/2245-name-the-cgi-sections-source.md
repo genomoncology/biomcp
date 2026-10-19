@@ -26,7 +26,7 @@ Replay tests for a variant with CGI rows and one without show the source label a
 
 ## Coordinator implementation brief
 
-- Changes: `templates/variant.md.j2`, `src/render/provenance.rs`, `src/render/markdown/variant.rs`, `src/cli/variant/dispatch.rs`, `tests/test_variant_cgi_source.py`, `CHANGELOG.md`, `sdlc/tickets/2245-name-the-cgi-sections-source.md`.
+- Changes: `CHANGELOG.md` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `src/cli/variant/dispatch.rs` `src/render/markdown/variant.rs` `src/render/provenance.rs` `templates/variant.md.j2` `tests/test_variant_cgi_source.py`.
 
 Restated outcome: identify the CGI data as MyVariant variant-level CGI subset, loaded 2023-02-27; an empty response says no record in that subset, not no CGI evidence for the gene. Change labels and source notes only in Markdown/JSON, preserving row content and routing.
 
