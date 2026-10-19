@@ -14,7 +14,7 @@ PM ruling: For Boolean-capable Europe PMC and PubMed queries, group the requeste
 
 Variant article search queries the unambiguous queried gene's recorded MyGene aliases with their provenance, including source-provided former spellings without relabeling them as official previous symbols. It discloses current-spelling-only only when those MyGene facts are absent, unavailable or disabled.
 
-- Changes: `src/entities/gene.rs` `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_gene_aliases.py` `tests/fixtures/article/gene-aliases/authored.json` `CHANGELOG.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `tests/test_variant_article_alias_coverage.py` `tests/test_variant_article_transcript_aliases.py`.
+- Changes: `src/entities/article/search.rs`, `src/entities/article/backends/provider_unit.rs`, `src/entities/gene.rs` `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_gene_aliases.py` `tests/fixtures/article/gene-aliases/authored.json` `CHANGELOG.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `tests/test_variant_article_alias_coverage.py` `tests/test_variant_article_transcript_aliases.py`.
 
 
 ## Evidence
