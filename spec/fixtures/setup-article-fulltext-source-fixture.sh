@@ -103,6 +103,8 @@ SEMANTIC_SCHOLAR_20516115_RECOMMENDATIONS = source_bytes("semantic_scholar/pmid2
 CITING_A1 = "a1c1" * 10
 CITING_A2 = "a2c2" * 10
 CITING_A3 = "a3c3" * 10
+# The citation forced-failure scenario owns this synthetic PMC identity.
+CITATION_FORCED_FAILURE_PMCID = "PMC12923959"
 CITING_A4 = "a4c4" * 10
 CITING_A5 = "a5c5" * 10
 CITING_A6 = "a6c6" * 10
@@ -139,7 +141,7 @@ CITATION_BATCH_ROWS = {
     for seed, paper_id, title, ext in (
         ("PMID:39991290", CITING_A1, "ETP-ALL cohort analysis", {"PubMed": "39991290", "PubMedCentral": "PMC12923956"}),
         ("PMID:40001001", CITING_A2, "Model life-cycle expertise study", {"PubMed": "40001001"}),
-        ("PMID:40001002", CITING_A3, "Forced full-text failure carrier", {"PubMed": "40001002", "PubMedCentral": "PMC123459"}),
+        ("PMID:40001002", CITING_A3, "Forced full-text failure carrier", {"PubMed": "40001002", "PubMedCentral": CITATION_FORCED_FAILURE_PMCID}),
         ("PMID:40001003", CITING_A4, "Ambiguous reference document", {"PubMed": "40001003", "PubMedCentral": "PMC12923960"}),
         ("PMID:40001004", CITING_A5, "Grouped marker document", {"PubMed": "40001004", "PubMedCentral": "PMC12923961"}),
         ("PMID:40001005", CITING_A6, "Three-page bound traversal", {"PubMed": "40001005"}),
@@ -1646,6 +1648,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/PMC123473/supplementaryFiles":
             send_bytes(self, 200, EUROPE_PMC_AXIN2_ST2_ZIP, "application/zip")
+            return
+
+        if decoded_path == f"/{CITATION_FORCED_FAILURE_PMCID}/fullTextXML":
+            send_text(self, 404, "not found", "text/plain")
             return
 
         if decoded_path == "/PMC123459/fullTextXML":

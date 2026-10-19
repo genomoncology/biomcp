@@ -8,6 +8,8 @@
 
 - Store reusable responses, article text, citation evidence and provider captures in one indexed SQLite cache shared by the CLI and MCP server. Preserve readable saved article files and exports. Older binaries keep writing their separate stores until upgraded; `biomcp cache clean-legacy` removes those stores explicitly while preserving saved downloads. (2134)
 
+- Verify explicit versioned transcript substitutions in article prose when ClinGen resolves the paper anchor to the requested allele, retaining typed gene linkage and resolution provenance. (2226)
+
 - Separate unverified transcript-alias article matches from verified evidence, preserving provider transcript provenance and naming missing provenance in CLI and MCP output. (2185)
 
 - Report disabled local datasets as disabled in health checks and name the setting instead of reporting missing-file errors. (2221)
@@ -22,6 +24,16 @@
 - Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
 
 ### Internal
+
+- Keep article batch cancellation checks deterministic while waiting for local provider responses with a paused clock. (2230)
+
+- Retire duplicate trial-reference checks covered by recorded JSON and Markdown goldens, preserving combined-section coverage. (2111)
+
+- Give the citation full-text failure fixture its own PMC identifier so resolver fixture changes preserve the citation scenario's reply. (2163)
+
+- Check condition-first recruiting trial search in JSON and Markdown against a complete recorded provider reply. (2079)
+
+- Stop replay servers when their test runner dies, including abandoned requests, while preserving normal and timeout cleanup. (2229)
 
 - Check populated and empty trial-reference output in JSON and Markdown against recorded provider replies. (2079)
 

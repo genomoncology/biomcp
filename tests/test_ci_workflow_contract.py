@@ -622,11 +622,13 @@ def test_nextest_installs_through_the_checksummed_script() -> None:
 # three that had slipped past the path scan. New ones surface as a
 # red docs-only CI run — fail-loud, never a silent skip — and must
 # join this list.
-# Modules that mention a cargo argv but only write FAKE cargo
-# executables into scratch PATH fixtures (verified by reading them):
-# they never run real cargo, so the docs-only lane may run them.
-CARGO_FAKE_FIXTURE_MODULES = {
+# Modules that mention a product binary or cargo but substitute fixture
+# executables (verified by reading them). They need no built binary or
+# real cargo, so the docs-only lane may run them.
+FAKE_TOOL_FIXTURE_MODULES = {
     "test_lint.py",
+    # The copied spec runner uses sys.executable as BIOMCP_BIN.
+    "test_replay_server_lifetime.py",
 }
 
 CARGO_DRIVER_MODULES = {
@@ -656,9 +658,12 @@ def test_the_binary_dependent_modules_carry_the_marker() -> None:
         text = path.read_text(encoding="utf-8")
         import ast
 
-        needs = bool(NEEDS_BINARY_MODULES_PATTERN.search(text))
+        needs = (
+            path.name not in FAKE_TOOL_FIXTURE_MODULES
+            and bool(NEEDS_BINARY_MODULES_PATTERN.search(text))
+        )
         if not needs and re.search(r"[\"\']cargo[\"\']", text):
-            needs = path.name not in CARGO_FAKE_FIXTURE_MODULES
+            needs = path.name not in FAKE_TOOL_FIXTURE_MODULES
         if path.name in CARGO_DRIVER_MODULES:
             needs = True
         if needs:

@@ -385,6 +385,7 @@ pub struct PubTatorDocument {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PubTatorPassage {
+    pub offset: Option<u64>,
     pub infons: Option<PubTatorInfons>,
     pub text: Option<String>,
     #[serde(default)]

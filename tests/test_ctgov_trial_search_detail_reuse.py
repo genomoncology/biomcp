@@ -29,27 +29,6 @@ FIXTURE_ENV = REPO_ROOT / ".cache/spec-ctgov-intervention-alias-env"
 FIXTURE_LOCK = REPO_ROOT / ".cache/spec-routine-fixtures.lock"
 REFERENCE_BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
 REFERENCE_CAPTURES = REPO_ROOT / "testdata/sources/ctgov"
-REFERENCE_FIELDS = [
-    "BriefSummary",
-    "BriefTitle",
-    "CompletionDate",
-    "Condition",
-    "EnrollmentCount",
-    "InterventionDescription",
-    "InterventionName",
-    "InterventionOtherName",
-    "InterventionType",
-    "LeadSponsorName",
-    "NCTId",
-    "OverallStatus",
-    "Phase",
-    "ReferenceCitation",
-    "ReferencePMID",
-    "ReferenceType",
-    "StartDate",
-    "StudyType",
-    "WhyStopped",
-]
 DETAIL_ROUTE_FIELDS = {
     "overview": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
     "arms": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
@@ -302,10 +281,10 @@ def test_every_detail_route_uses_one_exact_request(
         assert parse_qs(parsed.query) == {"fields": [DETAIL_ROUTE_FIELDS[route]]}
 
 
-@pytest.mark.parametrize("section", ["references", "all"])
-def test_recorded_references_and_empty_result_keep_section_behavior(
-    tmp_path: Path, section: str
+def test_recorded_references_and_empty_result_keep_all_section_behavior(
+    tmp_path: Path,
 ) -> None:
+    section = "all"
     with _reference_trial_server() as (base, replies, requests):
         for nct_id in replies:
             result = _run_reference(base, tmp_path, nct_id, section)
@@ -355,11 +334,8 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
             parsed = urlparse(request)
             assert parsed.path.startswith("/api/v2/studies/NCT")
             fields = parse_qs(parsed.query)["fields"][0].split(",")
-            if section == "references":
-                assert fields == REFERENCE_FIELDS
-            else:
-                assert {"ReferencePMID", "ReferenceType", "ReferenceCitation"} <= set(fields)
-                assert "PrimaryOutcomeMeasure" in fields
+            assert {"ReferencePMID", "ReferenceType", "ReferenceCitation"} <= set(fields)
+            assert "PrimaryOutcomeMeasure" in fields
 
 
 def test_synthetic_partial_reply_preserves_complete_changed_references(
