@@ -47,11 +47,11 @@ impl AlphaGenomeClient {
                 api: ALPHAGENOME_API.to_string(),
                 message: format!("Invalid endpoint URL {endpoint_url}: {err}"),
             })?
-            .tls_config(
+            .tls_config(crate::sources::ca_bundle::configure_tonic(
                 tonic::transport::ClientTlsConfig::new()
                     .with_enabled_roots()
                     .domain_name(tls_domain),
-            )
+            )?)
             .map_err(|err| BioMcpError::Api {
                 api: ALPHAGENOME_API.to_string(),
                 message: format!("TLS config failed: {err}"),

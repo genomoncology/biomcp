@@ -28,3 +28,5 @@ updated. Residuals: the rmcp Parameters wrapper, the conformance
 --tool-args rerun, the erepo hand-restated root list, the CAID limit
 ignore. See
 `sdlc/records/1251-publish-flat-mcp-tool-schemas-and-finish-the-argument-checks.md`.
+
+Resolved by 2238: CLI and typed MCP reject supplied limit or offset in CAID mode before provider access, including explicit default values. Omitted allele calls remain valid; gene paging retains its defaults and continuation behavior. The Parameters wrapper, conformance tool-arguments rerun and hand-restated root list remain separate residuals.
