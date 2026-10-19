@@ -1001,30 +1001,6 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
         "incompatible cached format must be reparsed"
     );
 
-    let mut cached = supplement_cache::read(&cache, &key);
-    let mut block = cached["extraction"]["blocks"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|block| block["row"] == 2780)
-        .unwrap()
-        .clone();
-    block["text"] = serde_json::json!(format!("F1761I{}", "é".repeat(400)));
-    cached["extraction"]["blocks"] = serde_json::json!([block]);
-    supplement_cache::write(&cache, &key, &cached);
-    let unicode = successful_output(
-        &fixture,
-        &[
-            "--json",
-            "article",
-            "supplement-search",
-            "30209399",
-            "F1761I",
-        ],
-    );
-    let unicode: serde_json::Value = serde_json::from_slice(&unicode.stdout).unwrap();
-    assert!(unicode["hits"][0]["context"].as_str().unwrap().len() <= 400);
-
     for needle in ["P245S", "Pro245Ser", "p.Pro245Ser"] {
         let search = successful_output(
             &fixture,
@@ -1044,6 +1020,86 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
         assert_eq!(hits[0]["locator"], "ST2 row 85");
         let context = hits[0]["context"].as_str().expect("context should be text");
         assert!(context.contains("AXIN2") && context.contains("p.Pro245Ser"));
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn supplement_search_context_retains_the_match_with_bounded_surroundings() {
+    let fixture = ArticleFixture::start();
+    let seeded = successful_output(
+        &fixture,
+        &[
+            "--json",
+            "article",
+            "supplement-search",
+            "30209399",
+            "F1761I",
+        ],
+    );
+    let seeded: serde_json::Value = serde_json::from_slice(&seeded.stdout).unwrap();
+    let cache = fixture.root.join("cache/biomcp.db");
+    let key = supplement_cache::key(seeded["hits"][0]["sha256"].as_str().unwrap());
+    let mut cached = supplement_cache::read(&cache, &key);
+    let mut block = cached["extraction"]["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|block| block["row"] == 2780)
+        .unwrap()
+        .clone();
+    // Authored controls exercise context selection through the real CLI.
+    let long_match = "界".repeat(200);
+    for (prefix, matched, suffix, query) in [
+        (String::new(), "F1761I", " tail".repeat(200), "F1761I"),
+        ("lead ".repeat(200), "F1761I", String::new(), "F1761I"),
+        ("lead ".repeat(200), "F1761I", " tail".repeat(200), "F1761I"),
+        ("é界 ".repeat(200), "F1761I", " 界é".repeat(200), "F1761I"),
+        (
+            "lead ".repeat(200),
+            "Phe1761Ile",
+            " tail".repeat(200),
+            "F1761I",
+        ),
+        (
+            "lead ".repeat(200),
+            "F1761I",
+            " tail".repeat(200),
+            "p.Phe1761Ile",
+        ),
+        (
+            "é界 ".repeat(200),
+            long_match.as_str(),
+            " 界é".repeat(200),
+            long_match.as_str(),
+        ),
+    ] {
+        block["text"] = serde_json::json!(format!("{prefix}{matched}{suffix}"));
+        cached["extraction"]["blocks"] = serde_json::json!([block.clone()]);
+        supplement_cache::write(&cache, &key, &cached);
+        let output = successful_output(
+            &fixture,
+            &["--json", "article", "supplement-search", "30209399", query],
+        );
+        let doc: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(doc["hits"].as_array().unwrap().len(), 1, "{doc}");
+        assert_eq!(doc["hits"][0]["locator"], "Sheet1 row 2780");
+        assert_eq!(doc["incomplete"], false);
+        let context = doc["hits"][0]["context"].as_str().unwrap();
+        assert!(
+            context.contains(matched),
+            "context omitted {matched}: {context}"
+        );
+        assert!(context.len() <= 400.max(matched.len() + 2 * "…".len()));
+        assert_eq!(context.starts_with('…'), !prefix.is_empty());
+        assert_eq!(context.ends_with('…'), !suffix.is_empty());
+        let output = successful_output(
+            &fixture,
+            &["article", "supplement-search", "30209399", query],
+        );
+        let markdown = String::from_utf8(output.stdout).unwrap();
+        assert!(markdown.contains(matched));
+        assert!(markdown.contains("Sheet1 row 2780"));
     }
 }
 

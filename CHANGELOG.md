@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Keep the matched spelling visible in bounded supplement-search context, including Unicode text and long matches. (2249)
+
 - Name unreachable supplement files and mark incomplete searches in JSON and Markdown while retaining readable hits. (2250)
 
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
