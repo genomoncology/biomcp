@@ -10,6 +10,22 @@
       "status": 200,
       "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc"
     },
+    "GET /ctgov/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped": {
+      "file": "responses/ctgov/ctgov-studies-nct02576665-references.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://clinicaltrials.gov/api/v2/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped"
+    },
+    "GET /ctgov/studies/NCT06131398?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped": {
+      "file": "responses/ctgov/ctgov-studies-nct06131398-references.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://clinicaltrials.gov/api/v2/studies/NCT06131398?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped"
+    },
     "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING%2CACTIVE_NOT_RECRUITING%2CENROLLING_BY_INVITATION%2CNOT_YET_RECRUITING&pageSize=1&query.cond=melanoma&query.term=%28AREA%5BKeyword%5D%22BRAF%22+OR+AREA%5BInterventionName%5D%22BRAF%22+OR+AREA%5BCondition%5D%22BRAF%22%29": {
       "file": "responses/ctgov/ctgov-studies-7e5e28576744.json",
       "headers": {
