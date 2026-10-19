@@ -23,3 +23,7 @@ Keep the recovery source, the 60-second deadline, the row order and the truthful
 ## Proof
 
 From recorded replies, show why the two PubTator lookups fail for these PMIDs: an upstream gap, or a request BioMCP shapes wrongly. Fix it if it is BioMCP's. Make the remaining recovery attempts run concurrently or as one Europe PMC request. A replay test shows the same rows, order and warnings with one recovery round trip. Five alternating live pairs show the metadata stage back near v0.9.2.
+
+## Progress
+
+- 2026-10-19 started
