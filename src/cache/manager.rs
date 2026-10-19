@@ -408,7 +408,10 @@ mod tests {
             }
         }
         stop.store(true, Ordering::Relaxed);
-        assert!(writer.join().unwrap() > 0, "writer must replace a response");
+        assert!(
+            crate::test_support::bounded_join(writer).unwrap() > 0,
+            "writer must replace a response"
+        );
         assert!(hits > 0, "reader must serve a cached response");
         assert!(
             mismatch.is_none(),
