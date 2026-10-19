@@ -10,6 +10,8 @@ From issue `2026-09-11-variant-display-mixes-transcript-numbering.md` (a real cl
 
 Reviews: revision 6452dd6, accept
 
+Reviews: revision f1d576e, accept
+
 ## Problem
 
 Variant output names a protein consequence and a cDNA change whose numbering can come from different transcripts (MUTYH c.1187G>A: p.Gly396Asp on the common transcript, p.Gly382Asp as legacy numbering on another). A consumer matching a report identifier against that output fails, and the failure mode is silent.
