@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=cache-policy.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cache-policy.sh"
+
 ROOT="${1:?repo root required}"
 ROOT="$(cd "$ROOT" && pwd)"
 CACHE_DIR="$ROOT/.cache"
@@ -97,7 +100,7 @@ if [[ ! -s "$PORT_FILE" ]]; then
 fi
 
 base="http://127.0.0.1:$(cat "$PORT_FILE")"
-BIOMCP_CACHE_DIR="$FIXTURE_ROOT/cache" \
+set_fixture_cache_root "$FIXTURE_ROOT/cache"
 BIOMCP_S2_BASE="$base" \
 BIOMCP_PUBTATOR_BASE="$base" \
 BIOMCP_EUROPEPMC_BASE="$base" \

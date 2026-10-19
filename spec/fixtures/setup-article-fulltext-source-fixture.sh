@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=cache-policy.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cache-policy.sh"
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
 # shellcheck source=fixture-supervisor.sh
@@ -2268,7 +2271,7 @@ publisher_url="$(cat "$fixture_root/publisher-url")"
 test -n "$publisher_url"
 
 printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url" >"$env_file"
-printf 'export BIOMCP_CACHE_DIR=%q\n' "$fixture_root/cache" >>"$env_file"
+print_fixture_cache_exports "$fixture_root/cache" >>"$env_file"
 printf 'export BIOMCP_PUBTATOR_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_MYGENE_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_MYDISEASE_BASE=%q\n' "$base_url" >>"$env_file"
