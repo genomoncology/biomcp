@@ -118,7 +118,20 @@ def test_explicit_legacy_cleanup_preserves_saved_files_and_current_cache(tmp_pat
 
 def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path, gene_provider, monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
+    from http.server import BaseHTTPRequestHandler
+    from urllib.parse import parse_qs, urlsplit
     from test_mcp_2026_protocol import RawStdioMcp
+
+    requests = []
+    send_response = BaseHTTPRequestHandler.send_response
+    provider_port = urlsplit(gene_provider).port
+
+    def observe_response(handler, *args, **kwargs):
+        if handler.server.server_port == provider_port:
+            requests.append(handler.path)
+        return send_response(handler, *args, **kwargs)
+
+    monkeypatch.setattr(BaseHTTPRequestHandler, "send_response", observe_response)
 
     env = retained_cache_env(tmp_path, {"BIOMCP_MYGENE_BASE": gene_provider}, gene_provider)
     for name in set(os.environ) - set(env):
@@ -133,17 +146,40 @@ def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path
         })
         assert "result" in initialized, initialized
         client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        def mcp_gene(query):
+            result = client.call(query, "tools/call", {
+                "name": "biomcp", "arguments": {"command": f"--json search gene {query} --limit 1"},
+            })["result"]
+            assert not result.get("isError"), result
+            return json.loads(result["content"][0]["text"])["results"]
+
         with ThreadPoolExecutor(max_workers=1) as workers:
             cli = workers.submit(invoke, env, "search", "gene", "BRAF-cli", "--limit", "1")
-            mcp = client.call("gene", "tools/call", {
-                "name": "biomcp", "arguments": {"command": "--json search gene BRAF-mcp --limit 1"},
-            })["result"]
-            assert not mcp.get("isError"), mcp
-            assert cli.result()["results"]
-        assert invoke(env, "search", "gene", "BRAF-mcp", "--limit", "1")["results"]
+            mcp = mcp_gene("BRAF-mcp")
+            expected = cli.result()["results"]
+            assert [(gene["symbol"], gene["entrez_id"]) for gene in expected] == [("BRAF", "673")]
+            assert mcp == expected
+        queries = ("BRAF-cli", "BRAF-mcp")
+        assert {parse_qs(urlsplit(path).query)["q"][0] for path in requests} == {r"BRAF\-cli", r"BRAF\-mcp"}
+        # Cold concurrent writes may explicitly skip admission under bounded
+        # contention. With both calls finished, admit each response once without
+        # a competing operation; the same initialized MCP and CLI must reuse it.
+        for query in queries:
+            assert invoke(env, "search", "gene", query, "--limit", "1")["results"] == expected
         with sqlite3.connect(tmp_path / "cache/biomcp.db") as connection:
+            entries = connection.execute("select key,base_key,metadata from entries").fetchall()
+            assert len(entries) == 2, entries
+            assert len({key for key, _, _ in entries}) == 2, entries
+            assert len({base_key for _, base_key, _ in entries}) == 2, entries
+            urls = [json.loads(metadata)["response"]["url"] for _, _, metadata in entries]
+            assert {parse_qs(urlsplit(url).query)["q"][0] for url in urls} == {r"BRAF\-cli", r"BRAF\-mcp"}
+            assert all(url.startswith(gene_provider + "/query?") for url in urls), urls
             assert connection.execute("pragma integrity_check").fetchone() == ("ok",)
-            assert connection.execute("select count(*) from entries").fetchone()[0] == 2
+        admitted_requests = list(requests)
+        for query in queries:
+            assert mcp_gene(query) == expected
+            assert invoke(env, "search", "gene", query, "--limit", "1")["results"] == expected
+        assert requests == admitted_requests, "both processes must reuse the admitted responses"
     finally:
         client.close()
 
