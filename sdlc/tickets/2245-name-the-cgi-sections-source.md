@@ -23,3 +23,15 @@ Only the section label and empty-state wording change, in Markdown and as a sour
 ## Proof
 
 Replay tests for a variant with CGI rows and one without show the source label and the subset-specific empty wording. Changelog bullet.
+
+## Coordinator implementation brief
+
+- Changes: `templates/variant.md.j2`, `src/render/provenance.rs`, `src/render/markdown/variant.rs`, `src/cli/variant/dispatch.rs`, `tests/test_variant_cgi_source.py`, `CHANGELOG.md`, `sdlc/tickets/2245-name-the-cgi-sections-source.md`.
+
+Restated outcome: identify the CGI data as MyVariant variant-level CGI subset, loaded 2023-02-27; an empty response says no record in that subset, not no CGI evidence for the gene. Change labels and source notes only in Markdown/JSON, preserving row content and routing.
+
+Unchanged-main reproduction on08d721f8525a35267bcd0a307248c69b1de210fc: job2245/1792423332921-20221 failed the intended source-scope/load-date contract. Four CLI calls succeeded without replay misses. Recorded BRAF response contains32rows and the existing transform emits10; the clearly authored CGI-removed copy emits0. Empty Markdown says No CGI drug associations reported, and neither JSON result names the subset/date. Exact invocation, outputs and executable identity are retained in experiments/788-biomcp-2245-cgi-label. The empty input is synthetic, not a recorded KRAS response. No new live acquisition is needed.
+
+Write four failing outside-in replay cases for populated/empty JSON/Markdown using existing replay helper; keep authored projection provenance explicit. Use one shared note rather than duplicated source facts. No new entity-model fields are needed. 1260 shares provenance/render/template files for matched-transcript additions; changes are semantically separate and the coordinator will resolve them at landing. Run focused red/green and mechanical checks through configured build job, retain patch/manifests/raw in788, publish once review-ready without WIP pushes.
+
+Keep: experiments/788-biomcp-2245-cgi-label — Retain cited raw proof until release evidence is explicitly released.
