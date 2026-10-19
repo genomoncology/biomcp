@@ -12,6 +12,8 @@ Reviews: revision 064045b, accept
 
 Reviews: revision 20b6051, accept
 
+Reviews: revision b1483d0, accept
+
 ## Outcome
 
 Changes: `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`, `sdlc/tickets/2256-bound-only-the-mcp-handshake-wait-by-the-startup-timer.md`, `sdlc/tickets/2257-route-every-test-cache-root-through-the-shared-guard.md`, `sdlc/tickets/2258-admit-the-0-9-4-release-candidate.md`, `sdlc/tickets/2259-check-replay-recordings-against-live-providers-before-release.md`, `tests/golden/replay_env.py`, `tests/conftest.py`, `tests/golden/conftest.py`, `tests/test_variant_article_transcript_aliases.py`, `tests/disable_sources_cli.rs`, `tests/test_replay_server_lifetime.py`, `tests/test_slow_test_reporting.py`, `tools/replay-server`, `CHANGELOG.md`, `sdlc/tickets/2260-share-one-replay-server-per-test-run.md`.
