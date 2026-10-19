@@ -22,6 +22,8 @@
 
 - Name every resolved variant article alias with its planned and attempted query disposition, including forms omitted by the alias limit or invocation deadline. (2246)
 
+- Group recorded MyGene gene aliases in PubMed and Europe PMC variant article queries, and report their source and omissions from bounded provider work. (2247)
+
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
 - Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)
@@ -48,8 +50,6 @@
 - Preserve configured source-disable reasons in variant literature CLI and MCP responses instead of reporting a provider failure. (2222)
 - Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 - Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
-
-- Group recorded MyGene gene aliases in PubMed and Europe PMC variant article queries, and report their source and omissions from bounded provider work. (2247)
 
 ### Internal
 
