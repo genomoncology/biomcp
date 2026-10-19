@@ -57,3 +57,7 @@ Coordinator owning-audit repair grant: landing job 2257/1792432359521-28124 stop
 ## Discovery failure
 
 Gate 2257/1792432639728-12031 passed lint, compiled and archived the test binaries, then stalled in the unit binary's --list --format terse invocation before running Rust cases. The coordinator observed that child sleeping for more than five minutes with 0.02 CPU seconds, retained both lane logs and process identity under experiment 802/discovery-stall, and stopped only the verified job process group. The gate exited 143; this is cancelled discovery proof, not a passing or slow-case run. A fresh developer owns one narrow startup/discovery repair within the declared fixture paths; preserve every test assertion and production behavior.
+
+## Discovery diagnosis
+
+Fresh diagnostic job 2257/1792433189245-24862 made no source changes or rebuilds. The retained archived unit binary listed all 4,119 tests; the original binary produced identical output; fresh cargo-nextest archive extraction and discovery passed. A sample of a fresh archive child showed a synchronous operating-system loader notification wait before Rust startup, and signature verification passed. The cancelled original child was not sampled, so its precise cause remains unproven; no fixture-code cause was demonstrated and no speculative source repair was made. Archive 802/discovery-repair retains raw outputs, sample, hashes and exited-process proof. Resume the landing after this successful exact-artifact discovery prerequisite; do not claim the cancelled run passed.
