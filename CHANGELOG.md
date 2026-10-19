@@ -14,6 +14,14 @@
 
 - Resolve versioned transcript variant inputs through source-backed DNA coordinates with their assembly, and name the matched transcript while preserving the displayed numbering. Refuse unverified transcript matches explicitly. (1260)
 
+- Retrieve advertised preprint JATS with its source and license, and preserve structured single and batch answers when full text is unavailable. (2248)
+
+- Name unreachable supplement files and mark incomplete searches in JSON and Markdown while retaining readable hits. (2250)
+
+- Keep the matched spelling visible in bounded supplement-search context, including Unicode text and long matches. (2249)
+
+- Name every resolved variant article alias with its planned and attempted query disposition, including forms omitted by the alias limit or invocation deadline. (2246)
+
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
 - Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)
