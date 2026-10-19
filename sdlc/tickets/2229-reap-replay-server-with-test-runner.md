@@ -19,6 +19,16 @@ A replay server exits when the test run that started it dies, including a killed
 - Keeps: replay routes, captures, request matching and product behavior remain unchanged.
 - Order: land before 2111 moves more consumers. The PM approved this bounded prevention ticket after the second recurrence.
 
+## Development brief
+
+Restated outcome: tie each replay server to its owning test run so a killed runner cannot leave a live server, including during an incomplete request. Keep replay behavior and consumers unchanged.
+
+Reproduction on main `08b74a340658f2c30e158fd00459330baebacd74`: job `2229/1792409825690-58547` ran the inline Python runner-kill driver; the complete executable invocation is retained in that job. The driver entered the real `replay_environment`, sent a partial POST, killed its runner, and requested `GET /healthz`. Output: `runner_exit=-9`, server reparented to PID 1, `health_after_runner_death=200`. Owned cleanup confirmed `cleanup_port_closed=true` and `cleanup_server_gone=true`.
+
+Exact implementation paths: `tools/replay-server`, `tests/test_replay_server_lifetime.py`, `CHANGELOG.md`, plus the already-recorded 2111 dependency. Check actual Bash process-substitution ownership before finalizing parent monitoring. Existing context finally, Bash traps and Rust Drop do not handle a killed runner.
+
+Outside-in red test: kill a child runner inside a real replay context during a partial request, then require its server process to disappear and port to close. Cover normal exit and timeout unwinding in the same focused module. Put prevention in the shared server; change launchers only if their real ownership demands it. Run focused checks through the build job; no product CLI rebuild is needed for this Python helper change.
+
 ## Progress
 
 - 2026-10-19 started
