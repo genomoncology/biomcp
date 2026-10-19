@@ -52,6 +52,7 @@ pub struct EuropePmcSearchRequestPlan {
 pub struct EuropePmcClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+    include_abstracts: bool,
 }
 
 impl EuropePmcClient {
@@ -59,6 +60,7 @@ impl EuropePmcClient {
         Ok(Self {
             client: crate::sources::shared_client("europe-pmc")?,
             base: crate::sources::env_base(EUROPE_PMC_BASE, EUROPE_PMC_BASE_ENV),
+            include_abstracts: false,
         })
     }
 
@@ -68,7 +70,13 @@ impl EuropePmcClient {
         Ok(Self {
             client: crate::sources::shared_client_with_deadline("europe-pmc", deadline).await?,
             base: crate::sources::env_base(EUROPE_PMC_BASE, EUROPE_PMC_BASE_ENV),
+            include_abstracts: false,
         })
+    }
+
+    pub(crate) fn with_abstracts(mut self, include: bool) -> Self {
+        self.include_abstracts = include;
+        self
     }
 
     async fn get_json<T: DeserializeOwned>(
@@ -231,7 +239,6 @@ impl EuropePmcClient {
         let mut plan = RequestPlan::get("search")
             .query("query", query)
             .query("format", "json")
-            .query("resultType", "core")
             .query("cursorMark", cursor_mark)
             .query("pageSize", page_size.to_string());
         match sort {
@@ -284,7 +291,10 @@ impl EuropePmcClient {
         page_size: usize,
         sort: EuropePmcSort,
     ) -> Result<EuropePmcSearchResponse, BioMcpError> {
-        let plan = Self::search_query_plan(query, cursor_mark, page_size, sort)?;
+        let mut plan = Self::search_query_plan(query, cursor_mark, page_size, sort)?;
+        if self.include_abstracts {
+            plan = plan.query("resultType", "core");
+        }
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.get_json(req).await
     }

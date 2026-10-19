@@ -21,16 +21,19 @@ ABSTRACT = "Synthetic cancer cohort: ≥65 years; ≤0.05; <5, >2; 2·5 ±0.1."
 
 @pytest.mark.parametrize("source,surface", [
     ("europepmc", "search"), ("europepmc", "get"), ("pubmed", "search"),
-    ("pubmed", "get"),
+    ("pubmed", "get"), ("europepmc", "compact"), ("pubmed", "compact"),
 ])
 def test_article_recovers_source_abstract(source: str, surface: str, tmp_path: Path) -> None:
     pmids = ["36780833", "42423773"] if source == "europepmc" else ["22890969", "41790359"]
     fetches: list[list[str]] = []
+    core_requests: list[str] = []
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
             target = urlsplit(self.path)
             params = parse_qs(target.query)
+            if params.get("resultType") == ["core"]:
+                core_requests.append(self.path)
             if target.path.endswith("esearch.fcgi"):
                 return self.reply({"esearchresult": {"count": "2", "idlist": pmids}})
             if target.path.endswith("esummary.fcgi"):
@@ -96,8 +99,9 @@ def test_article_recovers_source_abstract(source: str, surface: str, tmp_path: P
     }, origin)
     env.pop("BIOMCP_DISABLE_SOURCES", None)
     binary = os.environ.get("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
-    args = (["search", "article", "cancer", "--source", source, "--limit", "2", "--full"]
-            if surface == "search" else ["get", "article", pmids[-1]])
+    args = (["get", "article", pmids[-1]] if surface == "get" else
+            ["search", "article", "cancer", "--source", source, "--limit", "2"]
+            + (["--full"] if surface == "search" else []))
     try:
         result = subprocess.run([binary, "--json", "--no-cache", *args], env=env,
                                 capture_output=True, text=True, timeout=30, check=False)
@@ -107,7 +111,11 @@ def test_article_recovers_source_abstract(source: str, surface: str, tmp_path: P
         thread.join(timeout=5)
     assert result.returncode == 0, result.stderr + result.stdout
     reply = json.loads(result.stdout)
-    if surface == "search":
+    if surface == "compact":
+        assert len(reply["results"]) == 2
+        assert not core_requests
+        assert not fetches
+    elif surface == "search":
         assert len(reply["results"]) == 2
         assert all(row.get("abstract_snippet") == ABSTRACT for row in reply["results"]), reply
         if source == "europepmc":

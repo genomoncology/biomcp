@@ -445,7 +445,9 @@ pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar
         None
     };
     let mut page = finalize_article_candidates(rows, limit, offset, total, filters);
-    statuses.extend(abstracts::enrich(&mut page.results).await);
+    if filters.include_abstracts {
+        statuses.extend(abstracts::enrich(&mut page.results).await);
+    }
     if enrichment_sources.contains(&ArticleSource::PubTator)
         || enrichment_sources.contains(&ArticleSource::EuropePmc)
     {
@@ -488,6 +490,7 @@ pub(super) async fn enrich_and_finalize_article_candidates(
 pub(super) async fn enrich_visible_article_search_page(
     mut page: SearchPage<ArticleSearchResult>,
     enrichment_sources: &[ArticleSource],
+    include_abstracts: bool,
 ) -> ArticleEnrichmentOutcome {
     let mut timings = Vec::new();
     let mut statuses = Vec::new();
@@ -502,7 +505,9 @@ pub(super) async fn enrich_visible_article_search_page(
             elapsed_ms: started.elapsed().as_millis() as u64,
         });
     }
-    statuses.extend(abstracts::enrich(&mut page.results).await);
+    if include_abstracts {
+        statuses.extend(abstracts::enrich(&mut page.results).await);
+    }
     if enrichment_sources.contains(&ArticleSource::PubTator)
         || enrichment_sources.contains(&ArticleSource::EuropePmc)
     {

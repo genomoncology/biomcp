@@ -359,6 +359,7 @@ pub(super) fn article_filters(
     crate::entities::article::ArticleSearchFilters {
         gene: input.gene_anchor().map(str::to_string),
         gene_anchored: matches!(input.anchor, Anchor::Gene) && input.gene.is_some(),
+        include_abstracts: false,
         disease: input.article_disease_filter().map(str::to_string),
         drug: input.drug.clone(),
         variant: None,

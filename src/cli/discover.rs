@@ -78,6 +78,7 @@ pub(crate) async fn run_inline_article_search(
     let filters = ArticleSearchFilters {
         gene: None,
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,
@@ -375,6 +376,7 @@ mod tests {
         ArticleSearchFilters {
             gene: None,
             gene_anchored: false,
+            include_abstracts: false,
             disease: None,
             drug: None,
             variant: None,

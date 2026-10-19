@@ -1295,6 +1295,7 @@ fn article_filters() -> ArticleSearchFilters {
     ArticleSearchFilters {
         gene: None,
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,

@@ -387,6 +387,7 @@ pub(super) async fn search_europepmc_page_with_context(
         }
     })
     .await?;
+    let europe = europe.with_abstracts(filters.include_abstracts);
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_search_query(filters)?,
@@ -583,6 +584,7 @@ pub(super) async fn search_pubtator_page_with_context(
         }
     })
     .await?;
+    let europe = europe.with_abstracts(filters.include_abstracts);
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_pubtator_query(filters, &pubtator).await?,

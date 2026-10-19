@@ -999,7 +999,7 @@ async fn search_page_dispatch(
             .await;
             let partial = result?;
             let enrichment =
-                enrich_visible_article_search_page(partial.page, enrichment_sources).await;
+                enrich_visible_article_search_page(partial.page, enrichment_sources, filters.include_abstracts).await;
             Ok(finish_single_backend_page(
                 enrichment,
                 timing,
@@ -1015,7 +1015,7 @@ async fn search_page_dispatch(
             .await;
             let partial = result?;
             let enrichment =
-                enrich_visible_article_search_page(partial.page, enrichment_sources).await;
+                enrich_visible_article_search_page(partial.page, enrichment_sources, filters.include_abstracts).await;
             Ok(finish_single_backend_page(
                 enrichment,
                 timing,

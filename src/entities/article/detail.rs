@@ -374,7 +374,7 @@ pub(super) async fn resolve_article_from_pmid_with_context(
             } else if let Some(Ok(search)) = variant_detail_request(
                 execution,
                 "europepmc",
-                europe.search_by_pmid(&pmid.to_string()),
+                europe.clone().with_abstracts(article.abstract_text.as_deref().is_none_or(|text| text.trim().is_empty())).search_by_pmid(&pmid.to_string()),
             )
             .await
                 && let Some(hit) = first_europepmc_hit(search)
@@ -400,7 +400,7 @@ pub(super) async fn resolve_article_from_pmid_with_context(
                     let Some(search) = variant_detail_request(
                         execution,
                         "europepmc",
-                        europe.search_by_pmid(&pmid.to_string()),
+                        europe.clone().with_abstracts(true).search_by_pmid(&pmid.to_string()),
                     )
                     .await
                     else {

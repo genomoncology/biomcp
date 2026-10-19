@@ -319,6 +319,7 @@ pub(super) fn related_article_filters() -> crate::entities::article::ArticleSear
     crate::entities::article::ArticleSearchFilters {
         gene: None,
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,
