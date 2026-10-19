@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision a9a7245, accept
+
 ## Outcome
 
 The citation forced-failure scenario owns a dedicated named synthetic PMCID and missing-JATS reply. Changing the resolver-order scenario's reply must leave the citation response unchanged.
