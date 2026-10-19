@@ -12,6 +12,8 @@ Reviews: revision eb5b7e2, accept
 
 Reviews: revision 4d6e043, accept
 
+Reviews: revision 6bf7b62, accept
+
 ## Outcome
 
 Changes: `src/cli/variant/articles.rs`, `src/render/markdown/article.rs`, `src/render/markdown/mod.rs`, `templates/article_search.md.j2`, `tests/test_variant_article_source_status.py`, `CHANGELOG.md`, `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`.
