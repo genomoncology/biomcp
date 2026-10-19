@@ -57,7 +57,7 @@ fn fixture_reply(request: &str, europepmc_hold: Option<&HeldReplyGate>) -> TestH
             return TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/json",
-                br#"{"hitCount":30,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"41800021","pmid":"41800021","title":"single-source deadline page one row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"},{"id":"41800022","pmid":"41800022","title":"single-source deadline page one row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#, 
+                br#"{"hitCount":30,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"41800021","pmid":"41800021","title":"single-source deadline page one row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"},{"id":"41800022","pmid":"41800022","title":"single-source deadline page one row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#,
             ));
         }
         return match europepmc_hold {
@@ -113,7 +113,8 @@ fn deadline_env(
     cache_root: &std::path::Path,
     deadline_ms: &str,
 ) -> TestEnv {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
+    env.set_cache_root(cache_root);
     for (key, value) in [
         ("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()),
         ("BIOMCP_S2_BASE", fixture.base.clone()),
@@ -122,10 +123,6 @@ fn deadline_env(
         (
             "BIOMCP_PUBMED_BASE",
             format!("{}/entrez/eutils", fixture.base),
-        ),
-        (
-            "BIOMCP_CACHE_DIR",
-            cache_root.to_string_lossy().into_owned(),
         ),
         (
             "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS",
@@ -415,7 +412,7 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
 
 #[serial_test::serial(source_env)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
+async fn construction_under_a_held_sqlite_writer_honors_the_deadline() {
     // An optional cache lock must leave the invocation time to ask its provider.
     // Process-state independence: the shared client is built
     // once per process, so the test first builds it and then clears the
@@ -423,26 +420,20 @@ async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
     // every other shared-client test — nextest gives each test a fresh
     // process, plain `cargo test` does not.
     let fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, None)).await;
-    let cache = TempDirGuard::new("article-search-deadline-epoch-lock");
+    let cache = TempDirGuard::new("article-search-deadline-sqlite-lock");
     std::fs::create_dir_all(cache.path()).expect("cache root");
     let _env = deadline_env(&fixture, cache.path(), "1200");
     crate::sources::shared_client("mygene-info")
         .expect("shared client builds before the lock is held");
     crate::sources::reset_shared_http_client_for_tests();
-    let lock_path = cache.path().join(".body-limit-cache-v1.lock");
-    let held = std::fs::OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .read(true)
-        .write(true)
-        .open(&lock_path)
-        .expect("epoch lock file");
-    held.lock().expect("hold epoch lock");
+    let held = rusqlite::Connection::open(cache.path().join("biomcp.db")).unwrap();
+    held.execute_batch("BEGIN IMMEDIATE")
+        .expect("hold SQLite writer");
 
     let budget = std::time::Duration::from_millis(1200);
     let started = std::time::Instant::now();
     let result = tokio::time::timeout(
-        crate::test_support::watchdog(60),
+        crate::test_support::watchdog_millis(60_000),
         search_page(&deadline_filters(), 3, 0, ArticleSourceFilter::PubMed),
     )
     .await
@@ -458,7 +449,8 @@ async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
         !page.results.is_empty(),
         "the provider answer survives cache contention"
     );
-    held.unlock().expect("release epoch lock");
+    held.execute_batch("ROLLBACK")
+        .expect("release SQLite writer");
 }
 
 #[test]
@@ -649,7 +641,10 @@ fn both_primaries_failing_prefers_a_deadline_error_over_the_fast_failure() {
                 status: semantic_status,
             },
         ),
-        FederatedSourceOutcome::Available(Vec::new()),
+        FederatedSourceOutcome::Available(PartialSearchPage::complete(SearchPage::offset(
+            Vec::new(),
+            None,
+        ))),
     )
     .expect("both primaries failing still collects rows");
 

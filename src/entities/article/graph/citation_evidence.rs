@@ -363,7 +363,11 @@ fn validate_evidence_page<T>(
             "graph response continuation did not advance",
         ));
     }
-    if response.data.len() > CITATION_EVIDENCE_PAGE_SIZE {
+    let data = response
+        .data
+        .as_ref()
+        .ok_or_else(|| provider_decode_error("graph response returned null data"))?;
+    if data.len() > CITATION_EVIDENCE_PAGE_SIZE {
         return Err(provider_decode_error(
             "graph response returned more rows than the page size",
         ));
@@ -449,7 +453,7 @@ async fn directed_edge_contexts(
         };
         let next = validate_evidence_page(&response, offset)?;
         let mut matching = Vec::new();
-        for edge in &response.data {
+        for edge in response.data.iter().flatten() {
             let edge_id =
                 valid_paper_id(edge.cited_paper.paper_id.as_deref()).ok_or_else(|| {
                     provider_decode_error("reference edge omitted a valid cited paper ID")
@@ -1070,6 +1074,7 @@ pub async fn citation_evidence(
             &cited_pid,
             force_fulltext,
         )
+        .await
     {
         return Ok(cached);
     }
@@ -1272,7 +1277,7 @@ pub async fn citation_evidence(
         },
     };
     if let Some(cache_root) = &cache_root {
-        crate::cache::write_citation_evidence(cache_root, &citing_pid, &cited_pid, &result);
+        crate::cache::write_citation_evidence(cache_root, &citing_pid, &cited_pid, &result).await;
     }
     Ok(result)
 }

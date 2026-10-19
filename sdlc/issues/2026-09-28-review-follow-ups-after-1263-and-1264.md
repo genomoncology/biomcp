@@ -120,3 +120,11 @@ Licensing and records — the pass record's stale counts and dates: fixed in c1b
 Main's run history — corrected 2026-09-29: the earlier disposition here claimed no commit went straight to main after 9eea4a86, and that was false (the 1265 chain, the fix-ups, and the record commits landed first-parent on main; the 2026-09-29 resolution review listed them). The standing rule since the 2026-09-29 rounds: ticket branches carry the work, the branch's green CI run is the merge condition, and only Ian pushes record commits directly.
 
 Run IDs for the cited commits, read from the Actions API on 2026-09-29: f86a548e and 4de8e686 branch-head runs predate the retrievable window (no ID cited); 535747d9 → CI 36530006688 and 36530006673 (both failures in full-features at make full-feature-check; logs expired; chased by the 1271-1274 tickets whose final state is 3d293ad7 → CI 36566765215, success).
+
+## Residual closure in 2243
+
+Resolved probe-counter residual: 2243 supersedes the earlier keep-both-counters disposition. The armed-window probe remains; the process-wide assertion is removed. Other findings retain their own dispositions.
+
+## Release dispositions (2026-10-19)
+
+- Process-wide probe counter: FIXED by 2243 at 569d9beb1. The test asserts only its armed window; this supersedes the earlier decision to retain the global count. Every other finding retains its individual 2026-09-29 disposition and evidence above.

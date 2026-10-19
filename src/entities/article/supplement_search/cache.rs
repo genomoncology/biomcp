@@ -24,10 +24,18 @@ fn key(sha256: &str) -> String {
     format!("biomcp:article-supplement-text:v1:{sha256}")
 }
 
-fn manager() -> Option<(SizeAwareCacheManager, ResolvedCacheConfig)> {
+async fn manager() -> Option<(SizeAwareCacheManager, ResolvedCacheConfig)> {
     let config = crate::cache::resolve_cache_config().ok()?;
-    let manager =
-        SizeAwareCacheManager::new(config.cache_root.join("http"), config.clone()).ok()?;
+    let prepare = config.clone();
+    let manager = tokio::task::spawn_blocking(move || {
+        SizeAwareCacheManager::new(
+            prepare.cache_root.join(crate::cache::sqlite::DATABASE_NAME),
+            prepare,
+        )
+    })
+    .await
+    .ok()?
+    .ok()?;
     Some((manager, config))
 }
 
@@ -35,7 +43,7 @@ pub(super) async fn read_cached_supplement_text(
     sha256: &str,
     format: SupplementFormat,
 ) -> Option<SupplementTextExtraction> {
-    let (manager, config) = manager()?;
+    let (manager, config) = manager().await?;
     let (response, policy) = match manager.get(&key(sha256)).await {
         Ok(Some(value)) => value,
         Ok(None) => return None,
@@ -69,7 +77,7 @@ pub(super) async fn write_cached_supplement_text(
         tracing::warn!("Supplement text cache entry exceeded its size budget");
         return;
     }
-    let Some((manager, config)) = manager() else {
+    let Some((manager, config)) = manager().await else {
         return;
     };
     let cache_control = format!("max-age={}", config.max_age.as_secs());

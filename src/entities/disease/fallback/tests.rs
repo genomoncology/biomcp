@@ -298,38 +298,6 @@ fn contains_all_query_tokens_ignores_generic_suffix_terms() {
 }
 
 #[tokio::test]
-async fn fallback_search_page_swallows_discover_errors() {
-    let candidates = rank_disease_fallback_candidates(
-        "Arnold Chiari syndrome",
-        &[test_discover_disease_concept(
-            "Arnold-Chiari malformation",
-            Some("MESH:D001139"),
-            &["Arnold Chiari syndrome"],
-            &[("MESH", "D001139")],
-            crate::entities::discover::MatchTier::Exact,
-            crate::entities::discover::DiscoverConfidence::CanonicalId,
-        )],
-    );
-
-    let page = collect_fallback_search_page(
-        "Arnold Chiari syndrome",
-        10,
-        0,
-        candidates,
-        |_source_id| async {
-            Err(BioMcpError::Api {
-                api: "mydisease.info".into(),
-                message: "lookup failed".into(),
-            })
-        },
-    )
-    .await
-    .expect("fallback should degrade to no rows");
-
-    assert!(page.is_none());
-}
-
-#[tokio::test]
 async fn fallback_search_page_applies_offset_and_limit_after_dedupe() {
     let candidates = rank_disease_fallback_candidates(
         "Arnold Chiari syndrome",

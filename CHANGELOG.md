@@ -1,10 +1,67 @@
 # Changelog
 
-## Unreleased
+## 0.9.4 — 2026-10-19
 
 ### New features
 
 ### Fixes
+
+- Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)
+
+- Label drug targets with source organisms, list human targets first, and suggest gene lookups only for source-confirmed human targets. (2265)
+- Enforce article disease filters on Semantic Scholar and LitSense2 results using source-backed disease names and exact synonyms, and report unavailable synonym lookups. (2267)
+
+- Resolve exact disease names across bounded MyDisease result pages while preserving ambiguity refusals and complete candidate checks. (2274)
+
+- Recover missing article abstracts from Europe PMC core records and batched PubMed citations. (2268)
+
+- Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
+- Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
+
+- Name unavailable article asset providers and keep successful HTML full-text retrieval free of internal serializer warnings. (2271)
+- Resolve drug development codes through exact ChEMBL molecule synonyms. Verify the preferred card carries the same molecule identifier for single and batch calls. (2266)
+
+- Preserve source failures during disease and drug name fallback resolution instead of reporting that the requested entity was not found. (2264)
+- Return malformed MCP tool arguments as model-visible errors naming the argument, and derive the ERepo tool schema from its typed fields. (2263)
+- Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
+
+- Derive variant article Markdown source plans and source states from the same route results as JSON, including empty pages and authenticated Semantic Scholar searches. (2252)
+
+- Explain article full-text access groups, preprint JATS, retrieval reason codes, and source boundaries with corrected live examples. (2253)
+
+- Align article and variant command help and discovery, name blocked PMC assets consistently, suggest explicit PDF fallback after a full-text miss, and keep compact batch headings nested. (2254)
+
+- Repair garbled trademark and registered symbols in all displayed GTR text, including names and methods, while preserving identifiers and other content. (2237)
+
+- Preserve selected drug identity names for interaction matching, require supported drug identity in discovery, rank exact matches first, and explain missing diagnostic synonym resolution. Restore deterministic diagnostic synonym controls. (2242)
+
+- Identify variant CGI output as MyVariant's variant-level CGI subset, loaded 2023-02-27, and scope empty results to that subset in Markdown and JSON. (2245)
+
+- Resolve versioned transcript variant inputs through source-backed DNA coordinates with their assembly, and name the matched transcript while preserving the displayed numbering. Refuse unverified transcript matches explicitly. (1260)
+- Accept alternative-transcript protein numbering only with paired versioned annotations on the same allele; refuse unsupported aliases while preserving verified transcript matches. (2261)
+
+- Retrieve advertised preprint JATS with its source and license, and preserve structured single and batch answers when full text is unavailable. (2248)
+
+- Name unreachable supplement files and mark incomplete searches in JSON and Markdown while retaining readable hits. (2250)
+
+- Keep the matched spelling visible in bounded supplement-search context, including Unicode text and long matches. (2249)
+
+- Name every resolved variant article alias with its planned and attempted query disposition, including forms omitted by the alias limit or invocation deadline. (2246)
+
+- Group recorded MyGene gene aliases in PubMed and Europe PMC variant article queries, and report their source and omissions from bounded provider work. (2247)
+
+- Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
+
+- Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)
+
+- Bound the in-memory drug trial-alias cache in long-running MCP servers while preserving resolved answers. (2239)
+
+- Trust the configured `BIOMCP_CA_BUNDLE` for AlphaGenome connections while preserving native TLS roots, so prediction connections can use a private certificate authority. (2240)
+
+- Include cache-age notes in single-record get JSON when a cached reply is stale, preserving fresh JSON and Markdown output. (2241)
+
+- Store reusable responses, article text, citation evidence and provider captures in one indexed SQLite cache shared by the CLI and MCP server. Preserve readable saved article files and exports. Older binaries keep writing their separate stores until upgraded; `biomcp cache clean-legacy` removes those stores explicitly while preserving saved downloads. (2134)
 
 - Verify explicit versioned transcript substitutions in article prose when ClinGen resolves the paper anchor to the requested allele, retaining typed gene linkage and resolution provenance. (2226)
 
@@ -21,7 +78,50 @@
 - Explain directory output destinations and failed variant lookups with complete search commands, report FDA health failure reasons, and check GWAS health through supported association search. (2200)
 - Log routine HTTP cache lock contention at debug level while keeping provider answers and warnings for genuine cache I/O failures. (2227)
 
+- Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
+
 ### Internal
+
+- Send the current BioMCP application identity, default Accept header, and uncached policy during replay live checks while preserving recorded request headers and bounded transport controls. (2281)
+- Refresh observed replay response headers with exact request provenance, preserve original recording dates, correct the dbSNP endpoint declaration, and mark KEGG recordings unverified. Release qualification remains separate. (2279)
+- Keep recorded disease query pages in canonical replay storage for fixture consumers and source checks. (2277)
+- Align recorded trial references, disease details, and PubMed summaries with observed replies for their declared requests. (2278)
+- Record bounded provider access diagnosis and explicit unverified limits before release. (2280)
+- Align pathway replay structures and response metadata with observed replies, and preserve provider failure coverage in a separate synthetic scenario. (2282)
+
+- Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
+
+- Synchronize the disease deadline control with provider request arrival before advancing test time. (2276)
+
+- Make parallel cache startup tests distinguish skipped best-effort writes from reuse of admitted responses. (2275)
+- Run the complete pathway specification against recorded replies while preserving source-disable checks and section guidance. (2111)
+- Check recorded provider requests against live status, content type and generic JSON and XML response structures before releases, with explicit opt-in, pacing and complete blocked and disabled counts. Preserve safe POST request metadata and response header names in new recordings. (2259)
+- Keep subprocess readiness markers on their own line so GenCC lease tests finish with one CPU, and exercise that affinity in the stress lane. (2244)
+- Retain the measured development build profile; the bounded comparison identifies library-test compilation as the dominant cost without establishing a specific source fix. (2191)
+- Review provider answers and cache staging under actual full-filesystem pressure, identifying the explicit-cleanup accounting repair recorded in 2218. (2202)
+- Verify daily cleanup repairs mixed-version cache accounting and document the accepted interval before maintenance. (2203)
+- Review disabled-source behavior and licensing guidance, recording reporting defects and the limits of the exercised routes. (2204)
+- Exercise cache eviction and due daily cleanup in one persistent MCP server, preserving answers and settled byte accounting in the bounded workload. (2205)
+- Retain TOML 0.8 after the TOML 1 trial failed the no-worse compile-time criterion under shared load. (2210)
+- Retain thin link-time optimization and one codegen unit because the bounded alternative did not establish no worse runtime performance. (2211)
+- Exercise search-all, update and uninstall through the real binary, with isolated installation tests and an explicit live published-release update check. (2213)
+- Extend the existing measurement rows with stated methods and explicit unavailable observations, distinguishing development snapshots from final release measurements. (2214)
+- Document focused Python setup and invocation without an editable Rust package build, using Ruff from the configured path. (2228)
+- Attribute the uncached article-search gap to approved visible-row metadata recovery and retain that behavior; the later 2235 change performs recovery concurrently. (2231)
+- Preserve bounded GWAS intersection semantics and verify completed-response day-cache reuse; recorded upstream delay explains the observed timeout. (2232)
+
+- Route test cache roots through shared fixture policy guards and reject unmanaged root assignments. (2257)
+- Reuse one replay server per test runner, isolate each test's recordings and request logs, and stop the server when its runner exits. (2260)
+
+- Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
+
+- Check pathway search and KEGG and Reactome details in JSON and Markdown against recorded provider replies. (2079)
+
+- Run gene discovery and identity specifications against recorded replies and reuse the gene-search golden for JSON follow-up checks. (2111)
+
+- Check BRAF gene search in JSON and Markdown against a complete recorded provider reply. (2079)
+
+- Run the condition-first trial search specification through recorded replay while preserving its query and table assertions. (2111)
 
 - Keep article batch cancellation checks deterministic while waiting for local provider responses with a paused clock. (2230)
 
@@ -45,6 +145,8 @@
 - Exercise parallel CLI searches, a persistent MCP server, cache clearing and shared byte totals in the manual Windows runtime checks. (2201)
 - Derive licensing reference facts and source notes from the source registry so corrections cannot leave stale guidance. (2224)
 - Distinguish concurrent fail-open cache writes from settled CLI and MCP cache reuse in Windows checks, and compare the released executable during manual diagnosis. (2225)
+
+- Isolate citation cache contracts from host disk pressure through the shared cache fixture policy. (2255)
 
 ## 0.9.3 — 2026-10-17
 

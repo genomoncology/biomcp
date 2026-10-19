@@ -39,6 +39,11 @@ pub(super) fn list_article() -> String {
 - `get article <id> indexing` - opt-in PubMed citation authors, affiliations, ORCID, and MeSH headings
 - `get article <id> fulltext` - download/cache full text via XML -> PMC HTML; abstract-only and metadata-only partials continue, and JSON reports `full_text_coverage`
 - `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML do not provide an article body; failed opt-in discovery remains unavailable
+- `get article <id> fulltext --outline` - show bounded heading ranges
+- `get article <id> fulltext --lines <START:END>` - show an inclusive cached line range
+- `get article <id> fulltext --out <DIR>` - export full text into an existing directory
+- `get article <id> asset <asset-key> --out <DIR>` - export raw asset bytes into an existing directory
+- `get article <id> asset <asset-key> --output <FILE>` - save raw asset bytes to an exact file
 - `get article <id> assets` - JSON-only merged article asset manifest (PMC OA, Europe PMC, recognized JATS/PMC HTML links, and eligible Figshare siblings)
 - `get article <id> asset <asset-key>` - return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands
 - Asset quick reference:
@@ -46,6 +51,7 @@ get article <id> assets
 get article <id> asset <asset-key>
 raw bytes
 - `get article <id> all` - include all article sections, including PubMed indexing
+- `article supplement-search <id> <needle> [--asset <asset-key>]` - search supplement text with exact locators; add `--json` for structured output
 - `article authors <id>` - provider-exact Semantic Scholar authors for a PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
 - `article entities <pmid> [--limit <N>] [--full]` - annotated entities with identifiers and next commands; `--full` adds passage positions in JSON
 - `batch article <id1,id2,...> [--mode compact|detail] [--sections <s1,s2,...>]` - multi-article lookup; detail is the default and compact accepts up to 20 IDs
@@ -151,7 +157,7 @@ Worked examples:
 - `get article <id> fulltext` tries XML first, then PMC HTML, and never falls back to PDF. Abstract-only and metadata-only responses remain partials, so the ladder continues; requested JSON reports final `full_text_coverage` and sanitized attempts.
 - `get article <id> assets` merges PMC OA, Europe PMC supplementary files, recognized JATS/PMC HTML links, and eligible Figshare metadata; named linked misses remain typed coverage rather than disappearing.
 - `get article <id> asset <asset-key>` streams the exact advertised bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
-- `article supplement-search <id> <needle> [--asset <asset-key>]` extracts supplement text (xlsx, xls, csv, docx, pdf, zip) and reports each hit with an exact locator and the source checksum; unreadable files report format and reason; JSON-only, text match only.
+- `article supplement-search <id> <needle> [--asset <asset-key>]` extracts supplement text (xlsx, xls, csv, docx, pdf, zip) and reports each hit with an exact locator and the source checksum; unreadable files report format and reason and mark the search incomplete in JSON and Markdown; text match only; add `--json` for structured output.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.
 - `--pdf` requires the `fulltext` section and is rejected for other article requests.
 - `batch article --mode detail --sections fulltext --pdf` takes the same fallback for many papers in one process, and each item reports the full-text source it used or the named PDF-step failure.

@@ -1037,6 +1037,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         .position(|hit| best_name_from_hit(hit).is_some());
 
     let mut targets: Vec<String> = Vec::new();
+    let mut target_organisms = Vec::new();
     let mut indications: Vec<String> = Vec::new();
     let mut pharm_classes: Vec<String> = Vec::new();
     let mut interactions: Vec<DrugInteraction> = Vec::new();
@@ -1086,7 +1087,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
             && Some(hit_index) == anchor_index
             && let Some(drugbank) = hit.drugbank.as_ref()
         {
-            for synonym in &drugbank.synonyms {
+            for synonym in drugbank.name.iter().chain(drugbank.synonyms.iter()) {
                 let synonym = synonym.trim();
                 if synonym.is_empty() {
                     continue;
@@ -1128,6 +1129,11 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                 let Some(sym) = t.symbol.as_deref().map(str::trim).filter(|v| !v.is_empty()) else {
                     continue;
                 };
+                target_organisms.push(crate::entities::drug::DrugTargetOrganism {
+                    target: sym.to_string(),
+                    organism: t.species.clone().filter(|value| !value.trim().is_empty()),
+                    source: "Guide to PHARMACOLOGY".to_string(),
+                });
                 let sym = sym.to_string();
                 if targets_seen.insert(sym.clone()) {
                     targets.push(sym);
@@ -1175,11 +1181,12 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         }
     }
 
-    targets.sort();
+    crate::entities::drug::DrugTargetOrganism::sort_targets(&mut targets, &mut target_organisms);
     indications.sort();
     interactions.sort_by(|a, b| a.drug.cmp(&b.drug));
     pharm_classes.truncate(6);
     targets.truncate(8);
+    target_organisms.retain(|row| targets.contains(&row.target));
     indications.truncate(6);
 
     if mechanisms.is_empty() {
@@ -1215,6 +1222,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         brand_names,
         route: None,
         targets,
+        target_organisms,
         variant_targets: Vec::new(),
         target_family: None,
         target_family_name: None,
@@ -1233,6 +1241,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         shortage: None,
         approvals: None,
         fda_orphan_designations: None,
+        us_label_effective_date: None,
         us_safety_warnings: None,
         us_boxed_warning: None,
         ema_regulatory: None,

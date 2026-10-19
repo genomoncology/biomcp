@@ -79,7 +79,10 @@ fn federated_collection_keeps_available_rows_when_semantic_scholar_is_unavailabl
             error: None,
             status: semantic_status.clone(),
         },
-        FederatedSourceOutcome::Available(Vec::new()),
+        FederatedSourceOutcome::Available(PartialSearchPage::complete(SearchPage::offset(
+            Vec::new(),
+            None,
+        ))),
     )
     .expect("available primary source rows should survive semantic scholar failure");
 

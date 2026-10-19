@@ -42,3 +42,32 @@ Do not tag 0.9.2. No open branch is ready to land as it stands. The clinical log
 ## Landing order
 
 2024 first, because of the deadline. Then 2023 before 2020. The rest follow in any order, each rebased on main with a review covering its head and a green merged-tree run before main moves. 1305 lands last, with bullets checked against main at that point.
+
+## Residual closure in 2243
+
+Resolved finding17 Python-sync residual: 2243 makes spec-pr and spec-contracts depend on sync-python-dev and pins the ordering through the existing contract test. Other findings retain their own dispositions.
+
+## Release dispositions (2026-10-19)
+
+- Finding 1: FIXED by 2029 at 8eec444db and 2034 at 6bf1a550a, preserving allele-specific article links.
+- Finding 2: FIXED by 2020 at d1c6d713f, which restores executable specification fences and corrects the review disposition. Ian’s later 2054 ruling retains finished writeups.
+- Finding 3: FIXED by 2031 at 548f0b854 and 2043 at 97b237b6f, with subsequent drug regression repairs in 2052 at a6aefbb95.
+- Finding 4: FIXED by 2031 at 548f0b854 and the later drug-label repairs. The final package boundary no longer carries the deleted size inventory.
+- Finding 5: FIXED by 2024 at f6eca26b3 and the release workflow corrections in 2046 at c6b85fc05, with actual platform qualification recorded there.
+- Finding 6: FIXED by 2020 at d1c6d713f and the residual cleanup in 2243 at 569d9beb1. The current tree carries no encoded-name workaround.
+- Finding 7: FIXED by 2023 at 05eeda3f3, which gives deadline exhaustion precedence; the earlier fixture-environment diagnosis remains historical.
+- Finding 8: FIXED by 2053 at a168abf8e and 2058 at 90221a07f with the final truthful 0.9.2 changelog.
+- Finding 9: FIXED by 2242 at b36ad664f with deterministic synonym controls and honest missing-synonym output. The live study did not establish a GTR parser bug.
+- Finding 10: FIXED by the review-record corrections in 2020 at d1c6d713f and the reviewed landings of the named branches. Ian’s 2054 ruling retains completed writeups; the original branch observations remain historical.
+- Finding 11: MOOT. The named branches landed and their branch-only grammar and duplicate-status conflicts no longer exist. This does not change the original observed failures.
+- Finding 12: MOOT. The named branches landed. The obsolete source-size inventory was deleted at 8c2d822af, so recounting it is no longer an admission requirement.
+- Finding 13: FIXED by 2016 at 27478cc1e and the MANE/isoform follow-ups in 2036 at 2d5c61492 and 2047 at e16d049c5. The same-allele guard landed in 2261 at d836b949 under the recorded 2026-10-19 clinical ruling.
+- Finding 14: FIXED by 2017 at d8afa297f and 2032 at d18d30e7f. The 2026-10-19 clinical ruling requires no further abbreviation change.
+- Finding 15: FIXED by 2022 at 74c0fe87f and the hint/date follow-ups retained in 2038 at 07d660890 and 2052 at a6aefbb95.
+- Finding 16: FIXED by 2023 at 05eeda3f3 and its subsequent reviewed deadline repairs. The deleted inventory makes its old removal-condition wording moot.
+- Finding 17: FIXED by 2021 at 44b33eb8a and the 2020/2038 cleanup, with 2243 at 569d9beb1 completing alternate-target Python setup. The obsolete inventory is deleted.
+- Finding 18: HISTORICAL. Later passing checks do not repair the recorded early main updates. Current landings require the repository’s merged-tree checks.
+- Finding 19: NOT A BUG. The review found the changelog gate sound; its listed surviving mutations did not invalidate that result.
+- Finding 20: HISTORICAL. Preserve the recorded failure and date gap; Ian’s 2054 direction keeps completed writeups rather than deleting or rewriting their history.
+- Finding 21: DECIDED. Ian’s 2026-10-19 ruling permits names in sdlc records. Public docs and public text omit private project names. Preserve historical records and commit history; add no name check, linter or guard.
+- Finding 22: NOT A BUG. This is a passing-suite observation at the reviewed snapshot, not qualification of a later candidate.

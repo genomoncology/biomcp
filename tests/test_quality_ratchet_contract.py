@@ -1349,7 +1349,7 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     sources = tmp_path / "src/sources"
     sources.mkdir(parents=True)
     (sources / "mod.rs").write_text(
-        "ensure_body_limited_cache_epoch(cache_root)\n"
+        "config.cache_root.join(crate::cache::sqlite::DATABASE_NAME)\n"
         f"ClientBuilder::new(base_client){cache_attachment}\n"
         ".with(ResponseBodyLimitMiddleware {})\n",
         encoding="utf-8",
@@ -1406,6 +1406,10 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
         encoding="utf-8",
     )
 
+    database=sources.parent / "cache/sqlite.rs"
+    database.parent.mkdir(parents=True)
+    database.write_text('pub(crate) const DATABASE_NAME: &str = "biomcp.db";', encoding="utf-8")
+
     assert ratchet.check_remote_resource_bounds(tmp_path)["status"] == "pass"
 
     (sources / "mod.rs").write_text(
@@ -1432,7 +1436,7 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
 
     assert payload["status"] == "fail"
     assert any("inside the cache" in finding for finding in payload["findings"])
-    assert any("legacy HTTP cache" in finding for finding in payload["findings"])
+    assert any("isolated SQLite database" in finding for finding in payload["findings"])
     assert any("declared archive length" in finding for finding in payload["findings"])
     assert any(
         "cBioPortal archive expansion" in finding for finding in payload["findings"]

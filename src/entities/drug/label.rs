@@ -497,6 +497,18 @@ fn label_set_id_from_result(top: &serde_json::Value) -> Option<&str> {
         .filter(|v| !v.is_empty())
 }
 
+pub(super) fn extract_label_effective_date(response: &serde_json::Value) -> Option<String> {
+    let raw = response
+        .get("results")?
+        .as_array()?
+        .first()?
+        .get("effective_time")?
+        .as_str()?;
+    chrono::NaiveDate::parse_from_str(raw, "%Y%m%d")
+        .ok()
+        .map(|date| date.format("%Y-%m-%d").to_string())
+}
+
 pub(super) fn extract_label_set_id(label_response: &serde_json::Value) -> Option<String> {
     let top = label_response
         .get("results")

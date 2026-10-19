@@ -1,9 +1,8 @@
 [package]
 name = "biomcp-cli"
-# Main carries the next development version between releases (2132):
-# 0.9.4-dev until the 0.9.4 release commit drops the suffix. A build
-# from main then reports 0.9.4-dev+g<sha>, never the released number.
-version = "0.9.4-dev"
+# Main carries a development suffix between releases.
+# The release commit sets the stable version before qualification.
+version = "0.9.4"
 edition = "2024"
 # The minimum Rust the code needs (ticket 2125): the std file locks
 # 2072 introduced are 1.89 or later; release lanes pin 1.93.1.
@@ -51,13 +50,12 @@ futures = "0.3"
 
 # HTTP
 axum = { version = "0.8.1", default-features = false, features = ["tokio", "http1", "json"] }
-cacache = { version = "13.1.0", default-features = false, features = ["mmap"] }
-bincode = "1.3"
+rusqlite = { version = "0.40.2", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip", "multipart"] }
 reqwest-middleware = { version = "0.4", features = ["json", "multipart"] }
 reqwest-retry = "0.7"
 http-cache = { version = "0.20", default-features = false }
-http-cache-reqwest = "0.15"
+http-cache-reqwest = { version = "0.15", default-features = false }
 http-cache-semantics = "2"
 http = "1"
 http-body-util = "0.1"
@@ -75,11 +73,11 @@ zstd = { version = "0.13", optional = true }
 # JSON
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value", "unbounded_depth"] }
+serde_path_to_error = "0.1"
 base64 = "0.22"
 
 # Hashing (download cache keys)
 md5 = "0.7"
-sha1 = "0.10"
 
 # Random ids (GenCC generation temp names)
 uuid = { version = "1", features = ["v4"] }
@@ -95,7 +93,6 @@ roxmltree = "0.20"
 calamine = { version = "0.36", default-features = false }
 # default-features = false drops the scraper CLI's getopts binary.
 scraper = { version = "0.27", default-features = false, features = ["errors"] }
-ssri = "9"
 toml = "0.8"
 
 # MCP
@@ -194,3 +191,7 @@ lto = "thin"
 codegen-units = 1
 panic = "unwind"
 strip = true
+
+[target.'cfg(windows)'.dev-dependencies]
+# The comparison harness retains the released file-store fixture.
+cacache = { version = "13.1.0", default-features = false, features = ["mmap", "tokio-runtime"] }

@@ -1,12 +1,13 @@
+// sleep reason: existing fixture delays remain until signal-based fixture work
+#![allow(clippy::disallowed_methods)]
 use std::collections::BTreeMap;
 use std::sync::{
     Arc, Mutex,
-    atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
 use super::super::{
-    RequestBuilderSourceContextExt, SharedHttpCache, SharedHttpClientKind, VariantArticleDeadline,
-    build_http_client_with_config_and_manager, build_uncached_http_client,
+    SharedHttpClientKind, VariantArticleDeadline, build_uncached_http_client,
     finish_cached_http_client, provider_url_policy, with_variant_article_deadline,
 };
 use crate::test_support::TempDirGuard;
@@ -39,6 +40,20 @@ impl EnvRestore {
             }
         }
         Self(prior)
+    }
+}
+
+impl Drop for EnvRestore {
+    fn drop(&mut self) {
+        for (name, value) in &self.0 {
+            // SAFETY: source_env serializes these environment mutations.
+            unsafe {
+                match value {
+                    Some(value) => std::env::set_var(name, value),
+                    None => std::env::remove_var(name),
+                }
+            }
+        }
     }
 }
 
@@ -122,10 +137,9 @@ async fn fda_orphan_caps_forms_concurrency_and_off_bypasses_cache() {
     let (base, state, server) =
         orphan_server(StatusCode::OK, std::time::Duration::from_millis(20)).await;
     let root = TempDirGuard::new("fda-orphan-off");
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-    ]);
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
+    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
     let result = super::super::fda_orphan::fetch_with_mode(
         (0..8).map(|index| format!("candidate {index}")).collect(),
         super::super::fda_orphan::SourceCacheMode::Off,
@@ -154,9 +168,10 @@ async fn fda_orphan_caps_forms_concurrency_and_off_bypasses_cache() {
 async fn fda_orphan_normal_cache_is_fresh_then_refreshes_when_expired() {
     let (base, state, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
     let root = TempDirGuard::new("fda-orphan-normal");
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
     let _env = EnvRestore::set(&[
         ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
         ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
     ]);
     let candidate = "eflornithine hydrochloride";
@@ -226,10 +241,9 @@ async fn fda_orphan_form_cache_is_independent_of_prior_candidate_set() {
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let base = format!("http://{address}");
     let root = TempDirGuard::new("fda-orphan-candidate-independent");
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-    ]);
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
+    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
     let first = super::super::fda_orphan::fetch_with_mode(
         vec!["eflornithine hydrochloride".into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
@@ -264,10 +278,9 @@ async fn fda_orphan_form_cache_is_independent_of_prior_candidate_set() {
 async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
     let root = TempDirGuard::new("fda-orphan-infinite");
     let (base, _state, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-    ]);
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
+    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
     let candidate = "eflornithine hydrochloride";
     let first = super::super::fda_orphan::fetch_with_mode(
         vec![candidate.into()],
@@ -286,10 +299,9 @@ async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
     let bad_root = TempDirGuard::new("fda-orphan-http-failure");
     let (bad_base, _, bad_server) =
         orphan_server(StatusCode::INTERNAL_SERVER_ERROR, std::time::Duration::ZERO).await;
-    let _bad_env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&bad_base)),
-        ("BIOMCP_CACHE_DIR", Some(bad_root.path().to_str().unwrap())),
-    ]);
+    let mut bad_cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    bad_cache_policy.set_cache_root(bad_root.path());
+    let _bad_env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&bad_base))]);
     let failed = super::super::fda_orphan::fetch_with_mode(
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
@@ -301,226 +313,22 @@ async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
         failed.outcome,
         super::super::fda_orphan::FdaOrphanOutcome::Unavailable
     );
-    assert!(
-        cacache::metadata(
-            bad_root.path().join("http"),
-            orphan_cache_key(&bad_base, candidate)
-        )
-        .await
-        .unwrap()
-        .is_none()
+    let connection = rusqlite::Connection::open(bad_root.path().join("biomcp.db")).unwrap();
+    assert_eq!(
+        connection
+            .query_row("SELECT count(*) FROM entries", [], |r| r.get::<_, i64>(0))
+            .unwrap(),
+        0
     );
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn fda_orphan_contended_key_lock_cancels_without_a_late_write() {
-    let root = TempDirGuard::new("fda-orphan-lock-deadline");
-    let (base, _, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-    ]);
-    let candidate = "eflornithine hydrochloride";
-    let key = orphan_cache_key(&base, candidate);
-    let held = crate::cache::lock_cache_key_async(
-        root.path().to_path_buf(),
-        key.clone(),
-        Arc::new(|_| {}),
-        false,
-    )
-    .await
-    .unwrap();
-    let started = std::time::Instant::now();
-    let result = super::super::fda_orphan::fetch_with_mode_and_deadline(
-        vec![candidate.into()],
-        super::super::fda_orphan::SourceCacheMode::Normal,
-        std::time::Duration::from_millis(40),
-    )
-    .await
-    .expect("fda orphan fetch");
-    assert_eq!(
-        result.outcome,
-        super::super::fda_orphan::FdaOrphanOutcome::Unavailable
-    );
-    assert!(started.elapsed() < std::time::Duration::from_millis(500)); // watchdog: shared client drains under half a second
-    drop(held);
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-    assert!(
-        cacache::metadata(root.path().join("http"), &key)
-            .await
-            .unwrap()
-            .is_none()
-    );
-    server.abort();
-}
-
-#[tokio::test]
-#[serial_test::serial(source_env)]
-async fn fda_orphan_missing_post_write_metadata_fails_closed() {
-    let root = TempDirGuard::new("fda-orphan-finalization");
-    let (base, _, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
-    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
-    let manager = crate::cache::SizeAwareCacheManager::new_with_cache_observers(
-        root.path().join("http"),
-        super::test_cache_config(root.path()),
-        |_, _| {},
-        |path, key| {
-            cacache::remove_sync(path, key).unwrap();
-        },
-    );
-    let result = super::super::fda_orphan::fetch_with_manager_for_test(
-        vec!["eflornithine hydrochloride".into()],
-        super::super::fda_orphan::SourceCacheMode::Normal,
-        std::time::Duration::from_secs(2),
-        Arc::new(manager),
-    )
-    .await
-    .expect("fda orphan fetch");
-    server.abort();
-    assert_eq!(
-        result.outcome,
-        super::super::fda_orphan::FdaOrphanOutcome::Unavailable
-    );
-}
-
-impl Drop for EnvRestore {
-    fn drop(&mut self) {
-        for (name, value) in &self.0 {
-            // SAFETY: see `EnvRestore::set`.
-            unsafe {
-                match value {
-                    Some(value) => std::env::set_var(name, value),
-                    None => std::env::remove_var(name),
-                }
-            }
-        }
-    }
-}
-
-async fn accept_with_timeout(listener: &tokio::net::TcpListener) -> bool {
-    tokio::time::timeout(std::time::Duration::from_millis(250), listener.accept())
-        .await
-        .is_ok()
-}
-
-#[tokio::test(start_paused = true)]
-async fn middleware_put_settles_after_publication_before_releasing_key_lock() {
-    let root = TempDirGuard::new("middleware-put-publication");
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let address = listener.local_addr().unwrap();
-    let origin = reqwest::Url::parse(&format!("http://{address}")).unwrap();
-    let policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
-        provider_url_policy::ProviderUrlConsumer::GithubRelease,
-        &origin,
-    )
-    .unwrap();
-    let armed = Arc::new(tokio::sync::Notify::new());
-    let release = Arc::new(tokio::sync::Notify::new());
-    let manager = crate::cache::SizeAwareCacheManager::new(
-        root.path().join("http"),
-        super::test_cache_config(root.path()),
-    )
-    .unwrap()
-    .with_safe_return_observer({
-        let (armed, release) = (Arc::clone(&armed), Arc::clone(&release));
-        move || {
-            let (armed, release) = (Arc::clone(&armed), Arc::clone(&release));
-            async move {
-                armed.notify_one();
-                release.notified().await
-            }
-        }
-    });
-    let client =
-        finish_cached_http_client(SharedHttpClientKind::Default, Some(&policy), manager).unwrap();
-    let server = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.unwrap();
-        let mut request = [0; 1024];
-        let _ = stream.read(&mut request).await.unwrap();
-        stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nCache-Control: public, max-age=60\r\nConnection: close\r\n\r\nok").await.unwrap();
-    });
-    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
-    let driving = Arc::new(AtomicBool::new(true));
-    let driver = tokio::spawn({
-        let driving = Arc::clone(&driving);
-        async move {
-            while driving.load(Ordering::SeqCst) {
-                tokio::task::yield_now().await
-            }
-        }
-    });
-    let request = with_variant_article_deadline(deadline.clone(), async {
-        client
-            .get(origin)
-            .send_with_source_context(crate::error::SourceContext::narrow(
-                crate::error::SourceProvider::OLS4,
-            ))
-            .await
-    });
-    tokio::pin!(request);
-    tokio::select! {
-        () = armed.notified() => {}
-        result = &mut request => panic!("settled before publication pause: {result:?}"),
-    }
-    driving.store(false, Ordering::SeqCst);
-    driver.await.unwrap();
-    tokio::time::advance(std::time::Duration::from_secs(11)).await;
-    assert!(deadline.is_exhausted());
-    assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
-            .unwrap()
-            .is_none()
-    );
-    assert!(deadline.run(std::future::pending::<()>()).await.is_err());
-    release.notify_one();
-    let result = request.await;
-    assert!(result.is_ok(), "post-arm request must settle: {result:?}");
-    assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
-            .unwrap()
-            .is_some()
-    );
-    server.await.unwrap();
-}
-
-#[tokio::test(start_paused = true)]
-async fn contended_maintenance_deadline_publishes_no_partial_client_or_cache_tree() {
-    let root = TempDirGuard::new("client-maintenance-deadline");
-    std::fs::create_dir_all(root.path().join("http-cacache")).unwrap();
-    std::fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
-    let held = crate::cache::try_lock_cache_maintenance(root.path())
-        .unwrap()
-        .unwrap();
-    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
-    let cache = SharedHttpCache {
-        config: Some(super::test_cache_config(root.path())),
-        ..SharedHttpCache::default()
-    };
-    assert!(cache.initialize(Some(&deadline)).await.unwrap().is_none());
-    assert!(
-        !deadline.is_exhausted(),
-        "cache contention preserves provider time"
-    );
-    assert!(!root.path().join("http").exists());
-    assert_eq!(
-        std::fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
-        b"legacy"
-    );
-    drop(held);
-    assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
-            .unwrap()
-            .is_some()
-    );
-}
-
-#[tokio::test]
-#[serial_test::serial(source_env)]
-async fn parallel_sources_share_one_cache_construction_and_epoch_acquisition() {
+async fn parallel_sources_share_one_sqlite_cache_construction() {
     let root = TempDirGuard::new("parallel-shared-cache");
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(root.path().to_str().unwrap());
     let _env = EnvRestore::set(&[
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
         ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
         ("BIOMCP_CACHE_MODE", None),
     ]);
@@ -566,8 +374,8 @@ async fn parallel_sources_share_one_cache_construction_and_epoch_acquisition() {
     );
     assert_eq!(
         counts[1].load(Ordering::SeqCst),
-        1,
-        "one successful epoch-lock acquisition for parallel sources"
+        0,
+        "SQLite initialization takes no legacy epoch lock"
     );
 }
 
@@ -576,8 +384,9 @@ async fn parallel_sources_share_one_cache_construction_and_epoch_acquisition() {
 async fn a_later_invocation_retries_cache_setup_after_a_failed_expired_invocation() {
     let root = TempDirGuard::new("retry-shared-cache-setup");
     let cache_root = root.path().join("cache");
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(cache_root.to_str().unwrap());
     let _env = EnvRestore::set(&[
-        ("BIOMCP_CACHE_DIR", Some(cache_root.to_str().unwrap())),
         ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
         ("BIOMCP_CACHE_MODE", None),
     ]);
@@ -595,191 +404,9 @@ async fn a_later_invocation_retries_cache_setup_after_a_failed_expired_invocatio
         .await
         .expect("later invocation gets a cached client");
     assert!(
-        cache_root.join("http/.tree-secured-v1").is_file(),
+        cache_root.join("biomcp.db").is_file(),
         "later invocation retries setup without retaining the first deadline"
     );
-    super::super::reset_shared_http_client_for_tests();
-}
-
-#[tokio::test]
-async fn legacy_cache_upgrade_waits_for_local_source_lease() {
-    let root = TempDirGuard::new("legacy-local-source-lease");
-    std::fs::create_dir_all(root.path().join("http-cacache")).unwrap();
-    std::fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
-    let shared = crate::cache::lock_cache_shared(root.path()).unwrap();
-    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
-    let cache = SharedHttpCache {
-        config: Some(super::test_cache_config(root.path())),
-        ..SharedHttpCache::default()
-    };
-    // Local leases protect in-process readers. The production path waits
-    // for them, while external maintenance contention fails soft.
-    let initialization = cache.initialize(Some(&deadline));
-    tokio::pin!(initialization);
-    assert!(
-        futures::poll!(&mut initialization).is_pending(),
-        "legacy upgrade must wait for the local source"
-    );
-    assert!(!root.path().join("http").exists());
-    assert_eq!(
-        std::fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
-        b"legacy"
-    );
-    drop(shared);
-    assert!(initialization.await.unwrap().is_some());
-    assert!(root.path().join(".body-limit-cache-v1").is_file());
-    assert!(!root.path().join("http-cacache").exists());
-}
-
-#[tokio::test]
-async fn expired_invocation_cannot_build_a_cache_fallback_client() {
-    let root = TempDirGuard::new("expired-cache-fallback");
-    let deadline = VariantArticleDeadline::from_now(std::time::Duration::ZERO);
-    let cache = SharedHttpCache {
-        config: Some(super::test_cache_config(root.path())),
-        ..SharedHttpCache::default()
-    };
-    assert!(cache.initialize(Some(&deadline)).await.is_err());
-    assert!(!root.path().join("http").exists());
-}
-
-#[tokio::test(start_paused = true)]
-#[serial_test::serial(source_env)]
-async fn lazy_cache_initialization_settles_before_deadline_releases_its_locks() {
-    let root = TempDirGuard::new("lazy-cache-settlement");
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let origin =
-        reqwest::Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
-    let policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
-        provider_url_policy::ProviderUrlConsumer::GithubRelease,
-        &origin,
-    )
-    .unwrap();
-    let _env = EnvRestore::set(&[
-        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
-        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
-        ("BIOMCP_CACHE_MODE", None),
-        (
-            "BIOMCP_TEST_UNPACED_ORIGIN",
-            Some(origin.as_str().trim_end_matches('/')),
-        ),
-    ]);
-    super::super::reset_shared_http_client_for_tests();
-    let entered = Arc::new(tokio::sync::Notify::new());
-    let release = Arc::new(tokio::sync::Notify::new());
-    *super::super::CACHE_EPOCH_MUTATION_PAUSE.write().unwrap() = Some((
-        root.path().to_path_buf(),
-        Arc::clone(&entered),
-        Arc::clone(&release),
-    ));
-    let client = super::super::operator_provider_url_client(&policy).unwrap();
-    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
-    // Keep virtual time still while Tokio's real filesystem workers settle.
-    let driving = Arc::new(AtomicBool::new(true));
-    let driver = tokio::spawn({
-        let driving = Arc::clone(&driving);
-        async move {
-            while driving.load(Ordering::SeqCst) {
-                tokio::task::yield_now().await;
-            }
-        }
-    });
-    let request = with_variant_article_deadline(deadline.clone(), async {
-        client
-            .get(origin.clone())
-            .send_with_source_context(crate::error::SourceContext::narrow(
-                crate::error::SourceProvider::OLS4,
-            ))
-            .await
-    });
-    tokio::pin!(request);
-    tokio::select! {
-        () = entered.notified() => {}
-        result = &mut request => panic!("request finished before initialization pause: {result:?}"),
-    }
-    driving.store(false, Ordering::SeqCst);
-    driver.await.unwrap();
-    assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
-            .unwrap()
-            .is_none()
-    );
-    tokio::time::advance(std::time::Duration::from_secs(11)).await;
-    let pending = futures::poll!(&mut request).is_pending();
-    let held = crate::cache::try_lock_cache_maintenance(root.path())
-        .unwrap()
-        .is_none();
-    release.notify_one();
-    assert!(
-        pending,
-        "deadline must wait for admitted cache initialization to settle"
-    );
-    let result = request.await;
-    assert!(
-        held,
-        "initialization must retain its maintenance lock until settlement"
-    );
-    result.expect_err("expired initialization cannot return a provider answer");
-    assert!(
-        super::super::shared_http_clients()
-            .unwrap()
-            .cache
-            .ready
-            .get()
-            .is_none()
-    );
-    {
-        let acceptance = listener.accept();
-        tokio::pin!(acceptance);
-        assert!(
-            futures::poll!(&mut acceptance).is_pending(),
-            "expired initialization must not contact the provider"
-        );
-    }
-    assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
-            .unwrap()
-            .is_some()
-    );
-
-    // A retry may finish setup, but its subsequent transport still expires.
-    let later = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
-    driving.store(true, Ordering::SeqCst);
-    let driver = tokio::spawn({
-        let driving = Arc::clone(&driving);
-        async move {
-            while driving.load(Ordering::SeqCst) {
-                tokio::task::yield_now().await;
-            }
-        }
-    });
-    let retry = with_variant_article_deadline(later.clone(), async {
-        client
-            .get(origin.clone())
-            .send_with_source_context(crate::error::SourceContext::narrow(
-                crate::error::SourceProvider::OLS4,
-            ))
-            .await
-    });
-    tokio::pin!(retry);
-    let (_connection, _) = tokio::select! {
-        accepted = listener.accept() => accepted.unwrap(),
-        result = &mut retry => panic!("retry finished before provider accepted: {result:?}"),
-    };
-    driving.store(false, Ordering::SeqCst);
-    driver.await.unwrap();
-    assert!(
-        super::super::shared_http_clients()
-            .unwrap()
-            .cache
-            .ready
-            .get()
-            .is_some()
-    );
-    tokio::time::advance(std::time::Duration::from_secs(11)).await;
-    retry
-        .await
-        .expect_err("successful cache setup must preserve the transport deadline");
     super::super::reset_shared_http_client_for_tests();
 }
 
@@ -822,86 +449,41 @@ async fn cache_origin(State(state): State<CacheOriginState>, headers: HeaderMap)
 async fn cached_test_client(
     mode: CacheOriginMode,
     name: &str,
-    safe_return_pause: Option<(Arc<tokio::sync::Notify>, Arc<tokio::sync::Notify>)>,
 ) -> (
     reqwest_middleware::ClientWithMiddleware,
     String,
     Arc<AtomicUsize>,
-    Arc<AtomicUsize>,
-    Arc<AtomicUsize>,
     Arc<AtomicBool>,
-    Arc<AtomicBool>,
-    Arc<AtomicU64>,
-    crate::test_support::TempDirGuard,
+    TempDirGuard,
     tokio::task::JoinHandle<()>,
 ) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let address = listener.local_addr().unwrap();
-    let base = format!("http://{address}");
+    let base = format!("http://{}", listener.local_addr().unwrap());
     let requests = Arc::new(AtomicUsize::new(0));
-    let saw_validator = Arc::new(AtomicBool::new(false));
+    let validator = Arc::new(AtomicBool::new(false));
+    let state = CacheOriginState {
+        mode,
+        requests: requests.clone(),
+        saw_validator: validator.clone(),
+    };
     let app = Router::new()
         .route("/resource", get(cache_origin))
-        .with_state(CacheOriginState {
-            mode,
-            requests: Arc::clone(&requests),
-            saw_validator: Arc::clone(&saw_validator),
-        });
+        .with_state(state);
     let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
-    let root = crate::test_support::TempDirGuard::new(name);
-    let gets = Arc::new(AtomicUsize::new(0));
-    let puts = Arc::new(AtomicUsize::new(0));
-    let armed = Arc::new(AtomicBool::new(false));
-    let after_put_delay_ms = Arc::new(AtomicU64::new(0));
-    let get_count = Arc::clone(&gets);
-    let put_count = Arc::clone(&puts);
-    let fault = Arc::clone(&armed);
-    let delay = Arc::clone(&after_put_delay_ms);
-    let client = build_http_client_with_config_and_manager(
-        SharedHttpClientKind::Default,
+    let root = TempDirGuard::new(name);
+    let manager = crate::cache::SizeAwareCacheManager::new_with_deadline(
+        root.path().join("biomcp.db"),
         super::test_cache_config(root.path()),
-        None,
-        move |path, config| {
-            let mut manager = crate::cache::SizeAwareCacheManager::new_with_cache_observers(
-                path,
-                config,
-                move |_, _| {
-                    get_count.fetch_add(1, Ordering::SeqCst);
-                },
-                move |path, key| {
-                    put_count.fetch_add(1, Ordering::SeqCst);
-                    std::thread::sleep(std::time::Duration::from_millis(
-                        delay.load(Ordering::SeqCst),
-                    ));
-                    if fault.swap(false, Ordering::SeqCst) {
-                        assert!(cacache::metadata_sync(path, key).unwrap().is_some());
-                        cacache::remove_sync(path, key).unwrap();
-                    }
-                },
-            );
-            if let Some((publication_armed, publication_release)) = safe_return_pause.clone() {
-                manager = manager.with_safe_return_observer(move || {
-                    let publication_armed = Arc::clone(&publication_armed);
-                    let publication_release = Arc::clone(&publication_release);
-                    async move {
-                        publication_armed.notify_one();
-                        publication_release.notified().await;
-                    }
-                });
-            }
-            Ok(manager)
-        },
+        &VariantArticleDeadline::from_now(std::time::Duration::from_secs(3)),
     )
+    .await
     .unwrap();
+    let client = finish_cached_http_client(SharedHttpClientKind::Default, None, manager).unwrap();
     (
         client,
         format!("{base}/resource"),
         requests,
-        gets,
-        puts,
-        armed,
-        saw_validator,
-        after_put_delay_ms,
+        validator,
         root,
         server,
     )
@@ -909,382 +491,117 @@ async fn cached_test_client(
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn cached_client_post_write_failure_matrix_keeps_provider_answers() {
+async fn sqlite_cached_client_preserves_fresh_hits_and_conditional_revalidation() {
     for mode in [
-        CacheOriginMode::Initial,
+        CacheOriginMode::Fresh,
         CacheOriginMode::Revalidate304,
         CacheOriginMode::Revalidate200,
     ] {
-        let (client, url, requests, gets, puts, armed, validator, _, root, server) =
-            cached_test_client(mode, "post-write-client-failure", None).await;
+        let (client, url, requests, validator, _root, server) =
+            cached_test_client(mode, "sqlite-revalidation").await;
         let _env = EnvRestore::set(&[(
             "BIOMCP_TEST_UNPACED_ORIGIN",
             Some(url.trim_end_matches("/resource")),
         )]);
-        if !matches!(mode, CacheOriginMode::Initial) {
-            client.get(&url).send().await.unwrap();
-            assert_eq!(requests.load(Ordering::SeqCst), 1);
-            gets.store(0, Ordering::SeqCst);
-            puts.store(0, Ordering::SeqCst);
-        }
-        armed.store(true, Ordering::SeqCst);
-        let answer = client
-            .get(&url)
-            .send()
-            .await
-            .expect("post-write cache fault must keep the provider answer");
+        assert_eq!(
+            client.get(&url).send().await.unwrap().text().await.unwrap(),
+            "cached-body"
+        );
+        let second = client.get(&url).send().await.unwrap();
         assert!(
-            !answer.headers().contains_key("x-biomcp-cache-stale-age"),
-            "successful provider revalidation must not be reported as a stale serve"
+            !second
+                .headers()
+                .contains_key(crate::cache::manager::STALE_SERVE_AGE_HEADER)
         );
         let expected = if matches!(mode, CacheOriginMode::Revalidate200) {
             "replacement-sensitive-body"
         } else {
             "cached-body"
         };
-        assert_eq!(answer.text().await.unwrap(), expected);
+        assert_eq!(second.text().await.unwrap(), expected);
         assert_eq!(
             requests.load(Ordering::SeqCst),
-            if matches!(mode, CacheOriginMode::Initial) {
+            if matches!(mode, CacheOriginMode::Fresh) {
                 1
             } else {
                 2
             }
         );
-        assert_eq!(gets.load(Ordering::SeqCst), 1);
-        assert_eq!(puts.load(Ordering::SeqCst), 1);
         assert_eq!(
             validator.load(Ordering::SeqCst),
-            !matches!(mode, CacheOriginMode::Initial)
-        );
-        assert!(
-            crate::cache::try_lock_cache_maintenance(root.path())
-                .unwrap()
-                .is_some()
+            !matches!(mode, CacheOriginMode::Fresh)
         );
         server.abort();
     }
 }
 
-#[tokio::test(start_paused = true)]
+#[tokio::test]
 #[serial_test::serial(source_env)]
-async fn provider_deadline_waits_for_post_publish_cache_finalization() {
-    let publication_armed = Arc::new(tokio::sync::Notify::new());
-    let publication_release = Arc::new(tokio::sync::Notify::new());
-    let (client, url, requests, gets, puts, armed, _, _, root, server) = cached_test_client(
-        CacheOriginMode::Initial,
-        "deadline-post-write-finalization",
-        Some((
-            Arc::clone(&publication_armed),
-            Arc::clone(&publication_release),
-        )),
-    )
-    .await;
+async fn sqlite_request_no_store_bypasses_reads_and_publication() {
+    let (client, url, requests, _, root, server) =
+        cached_test_client(CacheOriginMode::Initial, "sqlite-request-bypass").await;
     let _env = EnvRestore::set(&[(
         "BIOMCP_TEST_UNPACED_ORIGIN",
         Some(url.trim_end_matches("/resource")),
     )]);
-    armed.store(true, Ordering::SeqCst);
-    let deadline =
-        crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(10));
-    let driving = Arc::new(AtomicBool::new(true));
-    let driver = tokio::spawn({
-        let driving = Arc::clone(&driving);
-        async move {
-            while driving.load(Ordering::SeqCst) {
-                tokio::task::yield_now().await
-            }
-        }
-    });
-    let request_deadline = deadline.clone();
-    let mut request = tokio::spawn(crate::sources::with_variant_article_deadline(
-        deadline.clone(),
-        async move {
+    for _ in 0..2 {
+        assert_eq!(
             client
                 .get(&url)
-                .with_extension(request_deadline)
+                .with_extension(CacheMode::NoStore)
                 .send()
                 .await
-        },
-    ));
-    tokio::select! {
-        () = publication_armed.notified() => {}
-        result = &mut request => panic!("settled before publication pause: {result:?}"),
+                .unwrap()
+                .text()
+                .await
+                .unwrap(),
+            "cached-body"
+        );
     }
-    assert!(!deadline.is_exhausted());
-    driving.store(false, Ordering::SeqCst);
-    driver.await.unwrap();
-    tokio::time::advance(std::time::Duration::from_millis(11)).await;
-    assert!(deadline.is_exhausted());
-    publication_release.notify_one();
-    let result = request.await.unwrap();
-
-    let answer = result.expect("post-publication cache failure keeps the provider answer");
-    assert_eq!(answer.text().await.unwrap(), "cached-body");
-    assert_eq!(requests.load(Ordering::SeqCst), 1);
-    assert_eq!(gets.load(Ordering::SeqCst), 1);
-    assert_eq!(puts.load(Ordering::SeqCst), 1);
+    assert_eq!(requests.load(Ordering::SeqCst), 2);
     assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
+        crate::cache::sqlite::Store::open(root.path())
             .unwrap()
-            .is_some()
+            .variants("http", "irrelevant")
+            .unwrap()
+            .is_empty()
+    );
+    let connection = rusqlite::Connection::open(root.path().join("biomcp.db")).unwrap();
+    assert_eq!(
+        connection
+            .query_row("SELECT count(*) FROM entries", [], |r| r.get::<_, i64>(0))
+            .unwrap(),
+        0
     );
     server.abort();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn cached_client_fresh_hit_and_request_no_store_bypass_writes() {
-    let (client, url, requests, gets, puts, armed, _, _, _root, server) =
-        cached_test_client(CacheOriginMode::Fresh, "fresh-client-hit", None).await;
+async fn sqlite_busy_deadline_finishes_without_late_publication() {
+    let (client, url, _, _, root, server) =
+        cached_test_client(CacheOriginMode::Fresh, "sqlite-busy-deadline").await;
     let _env = EnvRestore::set(&[(
         "BIOMCP_TEST_UNPACED_ORIGIN",
         Some(url.trim_end_matches("/resource")),
     )]);
-    assert_eq!(
-        client.get(&url).send().await.unwrap().text().await.unwrap(),
-        "cached-body"
-    );
-    gets.store(0, Ordering::SeqCst);
-    puts.store(0, Ordering::SeqCst);
-    armed.store(true, Ordering::SeqCst);
-    assert_eq!(
-        client.get(&url).send().await.unwrap().text().await.unwrap(),
-        "cached-body"
-    );
-    assert_eq!(requests.load(Ordering::SeqCst), 1);
-    assert_eq!(gets.load(Ordering::SeqCst), 1);
-    assert_eq!(puts.load(Ordering::SeqCst), 0);
-    server.abort();
-
-    let (client, url, requests, gets, puts, armed, _, _, _root, server) =
-        cached_test_client(CacheOriginMode::Initial, "no-store-client-request", None).await;
-    let _env = EnvRestore::set(&[(
-        "BIOMCP_TEST_UNPACED_ORIGIN",
-        Some(url.trim_end_matches("/resource")),
-    )]);
-    armed.store(true, Ordering::SeqCst);
-    let response = client
-        .get(&url)
-        .with_extension(CacheMode::NoStore)
-        .send()
-        .await
+    let mut connection = rusqlite::Connection::open(root.path().join("biomcp.db")).unwrap();
+    let held = connection
+        .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
         .unwrap();
-    assert_eq!(response.text().await.unwrap(), "cached-body");
-    assert_eq!(requests.load(Ordering::SeqCst), 1);
-    assert_eq!(gets.load(Ordering::SeqCst), 0);
-    assert_eq!(puts.load(Ordering::SeqCst), 0);
+    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_millis(40));
+    let start = std::time::Instant::now();
+    let response = with_variant_article_deadline(deadline, client.get(&url).send()).await;
+    assert!(response.is_err());
+    assert!(start.elapsed() < std::time::Duration::from_millis(500));
+    drop(held);
+    assert_eq!(
+        connection
+            .query_row("SELECT count(*) FROM entries", [], |r| r.get::<_, i64>(0))
+            .unwrap(),
+        0
+    );
     server.abort();
-}
-
-#[cfg(unix)]
-mod cache_security {
-    use std::os::unix::fs::{PermissionsExt, symlink};
-
-    use super::super::*;
-
-    #[tokio::test]
-    async fn concurrent_constructor_reuses_cache_during_an_existing_shared_operation() {
-        let root = TempDirGuard::new("parallel-http-cache-construction");
-        crate::cache::ensure_body_limited_cache_epoch(root.path(), false)
-            .expect("seed cache epoch");
-        let existing = crate::cache::lock_cache_shared(root.path()).expect("shared operation");
-        let cache = SharedHttpCache {
-            config: Some(test_cache_config(root.path())),
-            ..SharedHttpCache::default()
-        };
-        assert!(cache.initialize(None).await.unwrap().is_some());
-        drop(existing);
-    }
-
-    #[tokio::test]
-    async fn build_http_client_repairs_unrelated_permissive_cache_state() {
-        let root = TempDirGuard::new("http-cache-permission-repair");
-        let cache_root = root.path().join("cache-root");
-        let sentinel = cache_root.join("http/unrelated/sentinel");
-        std::fs::create_dir_all(sentinel.parent().expect("sentinel parent")).expect("cache tree");
-        std::fs::write(&sentinel, b"cached response").expect("sentinel");
-        std::fs::write(
-            cache_root.join(".body-limit-cache-v1"),
-            b"bounded-response-body-v1\n",
-        )
-        .expect("current cache epoch");
-        std::fs::set_permissions(&sentinel, std::fs::Permissions::from_mode(0o644))
-            .expect("permissive sentinel");
-
-        let cache = SharedHttpCache {
-            config: Some(test_cache_config(&cache_root)),
-            ..SharedHttpCache::default()
-        };
-        assert!(cache.initialize(None).await.unwrap().is_some());
-        assert_eq!(
-            std::fs::metadata(&sentinel)
-                .expect("sentinel metadata")
-                .permissions()
-                .mode()
-                & 0o777,
-            0o600
-        );
-    }
-
-    #[tokio::test]
-    async fn build_http_client_bypasses_directory_symlink_inside_content_tree() {
-        let root = TempDirGuard::new("http-cache-content-link");
-        let cache_root = root.path().join("cache-root");
-        let outside = root.path().join("outside");
-        std::fs::create_dir_all(cache_root.join("http/content-v2/sha256")).expect("content tree");
-        std::fs::write(
-            cache_root.join(".body-limit-cache-v1"),
-            b"bounded-response-body-v1\n",
-        )
-        .expect("current cache epoch");
-        std::fs::create_dir(&outside).expect("outside directory");
-        symlink(&outside, cache_root.join("http/content-v2/sha256/aa"))
-            .expect("content directory symlink");
-
-        let cache = SharedHttpCache {
-            config: Some(test_cache_config(&cache_root)),
-            ..SharedHttpCache::default()
-        };
-        assert!(cache.initialize(None).await.unwrap().is_none());
-        assert_eq!(
-            std::fs::read_dir(&outside)
-                .expect("outside directory")
-                .count(),
-            0
-        );
-    }
-}
-
-/// Start-up cost proofs: a command's cache start-up must not walk the
-/// HTTP cache tree, so the number of cache files it touches does not
-/// grow with the cache, and the one-time tree-secure walk runs only
-/// until its marker exists.
-mod startup_cost {
-    use std::path::Path;
-
-    use super::super::*;
-    use crate::test_support::{
-        TempDirGuard, reset_startup_cache_file_visits, startup_cache_file_visits,
-    };
-
-    const TREE_SECURE_MARKER_FILE: &str = ".tree-secured-v1";
-
-    /// Seed the body-limit epoch marker an installed cache holds, so the
-    /// settling start-up below keeps the seeded entries instead of
-    /// rebuilding the epoch and wiping them.
-    fn seed_epoch_marker(cache_root: &Path) {
-        std::fs::write(
-            cache_root.join(".body-limit-cache-v1"),
-            b"bounded-response-body-v1\n",
-        )
-        .expect("seed cache epoch marker");
-    }
-
-    fn seed_cache_entries(cache_root: &Path, count: usize) {
-        seed_epoch_marker(cache_root);
-        let cache_path = cache_root.join("http");
-        for index in 0..count {
-            cacache::write_sync(
-                &cache_path,
-                format!("startup-walk-key-{index}"),
-                b"seed bytes",
-            )
-            .expect("seed cache entry");
-        }
-    }
-
-    async fn build_once(cache_root: &Path) {
-        let cache = SharedHttpCache {
-            config: Some(test_cache_config(cache_root)),
-            ..SharedHttpCache::default()
-        };
-        assert!(cache.initialize(None).await.unwrap().is_some());
-    }
-
-    #[tokio::test]
-    async fn start_up_touches_no_more_cache_files_as_the_cache_grows() {
-        let small = TempDirGuard::new("startup-cost-small");
-        let large = TempDirGuard::new("startup-cost-large");
-        seed_cache_entries(small.path(), 200);
-        seed_cache_entries(large.path(), 3_000);
-
-        // The first start-up settles the one-time markers: the tree-secure
-        // walk, the day's clean, and the kept size totals. Steady state —
-        // what every later command pays — is the second start-up.
-        build_once(small.path()).await;
-        build_once(large.path()).await;
-
-        reset_startup_cache_file_visits();
-        build_once(small.path()).await;
-        let small_visits = startup_cache_file_visits();
-
-        reset_startup_cache_file_visits();
-        build_once(large.path()).await;
-        let large_visits = startup_cache_file_visits();
-
-        assert_eq!(
-            small_visits, large_visits,
-            "start-up cache file touches must not grow with the cache: \n  200-entry cache: {small_visits}\n  3000-entry cache: {large_visits}"
-        );
-        assert!(
-            large_visits < 100,
-            "steady-state start-up must touch a bounded handful of cache files, touched {large_visits}"
-        );
-    }
-
-    // Cache-off immutability is owned by the CLI contract
-    // test_no_cache_bypasses_prepopulated_cache_without_updating_it.
-
-    #[cfg(unix)]
-    #[tokio::test]
-    async fn the_tree_secure_marker_walks_only_until_it_exists() {
-        use std::os::unix::fs::PermissionsExt;
-
-        let root = TempDirGuard::new("startup-cost-tree-marker");
-        let cache_http = root.path().join("http");
-        let sentinel = |name: &str| {
-            let path = cache_http.join("unrelated").join(name);
-            std::fs::create_dir_all(path.parent().expect("sentinel parent"))
-                .expect("sentinel tree");
-            std::fs::write(&path, b"cached response").expect("sentinel");
-            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644))
-                .expect("permissive sentinel");
-            path
-        };
-
-        let first = sentinel("first");
-        seed_epoch_marker(root.path());
-        build_once(root.path()).await;
-        assert_eq!(
-            std::fs::metadata(&first)
-                .expect("first sentinel metadata")
-                .permissions()
-                .mode()
-                & 0o777,
-            0o600,
-            "a cache without the marker is walked and repaired once"
-        );
-        assert_eq!(
-            std::fs::read(cache_http.join(TREE_SECURE_MARKER_FILE)).expect("tree-secure marker"),
-            b"http-tree-secured-v1\n",
-            "the one-time walk records its marker"
-        );
-
-        // A file broadened after the marker is repaired when it is written
-        // through, not by every command's start-up.
-        let second = sentinel("second");
-        build_once(root.path()).await;
-        assert_eq!(
-            std::fs::metadata(&second)
-                .expect("second sentinel metadata")
-                .permissions()
-                .mode()
-                & 0o777,
-            0o644,
-            "a present marker must keep start-up off the tree"
-        );
-    }
 }
 
 #[tokio::test]
@@ -1398,4 +715,10 @@ async fn ordinary_client_allows_exact_override_but_ignores_proxy_and_cross_origi
         !accept_with_timeout(&escaped).await,
         "redirect target received credentials"
     );
+}
+
+async fn accept_with_timeout(listener: &tokio::net::TcpListener) -> bool {
+    tokio::time::timeout(std::time::Duration::from_millis(50), listener.accept())
+        .await
+        .is_ok()
 }

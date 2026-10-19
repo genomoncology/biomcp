@@ -78,6 +78,7 @@ pub(crate) async fn run_inline_article_search(
     let filters = ArticleSearchFilters {
         gene: None,
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,
@@ -266,6 +267,7 @@ mod tests {
     }
 
     struct TestEnvironment {
+        cache_policy: crate::test_support::FixtureEnv,
         previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
         /// Bypasses every cache for the environment's lifetime without
         /// latching the process mode. Replaces the former
@@ -280,8 +282,12 @@ mod tests {
         fn for_fixture() -> Self {
             let mut environment = Self {
                 previous: Vec::new(),
+                cache_policy: crate::test_support::FixtureEnv::scratch_cache_only(),
                 cache_mode: crate::sources::test_cache_mode::off(),
             };
+            environment
+                .cache_policy
+                .set_cache_root(fixture().cache.path());
             let base = fixture().base.clone();
             for (key, value) in [
                 ("BIOMCP_OLS4_BASE", format!("{base}/ols4")),
@@ -294,10 +300,6 @@ mod tests {
                 ("BIOMCP_PUBMED_BASE", format!("{base}/pubmed")),
                 ("BIOMCP_S2_BASE", format!("{base}/s2")),
                 ("BIOMCP_TEST_UNPACED_ORIGIN", base.clone()),
-                (
-                    "BIOMCP_CACHE_DIR",
-                    fixture().cache.path().to_string_lossy().into_owned(),
-                ),
                 ("UMLS_API_KEY", String::new()),
                 ("NCBI_API_KEY", String::new()),
                 ("S2_API_KEY", String::new()),
@@ -336,7 +338,7 @@ mod tests {
     where
         F::Output: Send + 'static,
     {
-        std::thread::Builder::new()
+        let worker = std::thread::Builder::new()
             .stack_size(16 * 1024 * 1024)
             .spawn(move || {
                 tokio::runtime::Builder::new_current_thread()
@@ -345,8 +347,8 @@ mod tests {
                     .expect("discover test runtime")
                     .block_on(future)
             })
-            .expect("spawn discover test thread")
-            .join()
+            .expect("spawn discover test thread");
+        crate::test_support::bounded_join(worker)
             .unwrap_or_else(|payload| std::panic::resume_unwind(payload))
     }
 
@@ -374,6 +376,7 @@ mod tests {
         ArticleSearchFilters {
             gene: None,
             gene_anchored: false,
+            include_abstracts: false,
             disease: None,
             drug: None,
             variant: None,

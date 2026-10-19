@@ -62,11 +62,15 @@ body += (
     "Molecular genetics\tSequence analysis\tODC1\tMONDO:0033642\n"
 )
 path.write_bytes(gzip.compress(body.encode("utf-8")))
+with (path.parent / "test_condition_gene.txt").open("a") as conditions:
+    for accession in ("GTR000596648.2", "GTR000596649.1"):
+        conditions.write(f"{accession}\tcondition\tneurodevelopmental disorder with alopecia and brain abnormalities\n")
+
 PY
 prepare_fixture_supervisor_owner
 
 start_fixture_supervisor "provider-contract" "$cache_dir" "$fixture_root" "spec-provider-contract." "$server_pid_file" \
-  python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
+  python3 - "$workspace_root" "$ready_file" "$request_log" "$script_dir/../../tests/fixtures/live-suspects" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, parse_qsl, urlparse
@@ -78,6 +82,7 @@ ROOT = Path(sys.argv[1])
 READY = Path(sys.argv[2])
 REQUEST_LOG = Path(sys.argv[3])
 SOURCES = ROOT / "testdata/sources"
+DISEASE_FIXTURES = Path(sys.argv[4])
 WORKER_NAMESPACE = re.compile(
     r"^/__biomcp_provider_worker/(request-log\.[A-Za-z0-9]{6,})(/.*)$"
 )
@@ -462,6 +467,17 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/healthz":
             send(self, 200, b'{"status":"ok"}')
             return
+        if parsed.path == "/mydisease/query":
+            query = parse_qs(parsed.query).get("q", [""])[0].replace("\\", "")
+            if "resolver failure syndrome" in query:
+                send(self, 503, b'{"error":"authored resolver failure"}')
+                return
+            name = "disease-query-authored.json" if "Bachmann-Bupp syndrome" in query else "disease-empty-authored.json"
+            send(self, 200, (DISEASE_FIXTURES / name).read_bytes())
+            return
+        if parsed.path == "/mydisease/disease/MONDO:0033642":
+            send(self, 200, (DISEASE_FIXTURES / "disease-detail-authored.json").read_bytes())
+            return
         if parsed.path == "/mychem/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
             if query == "fixture-provider-failure":
@@ -826,6 +842,7 @@ done
 curl --fail --silent "$base_url/healthz" >/dev/null
 
 {
+  printf 'export BIOMCP_MYDISEASE_BASE=%q\n' "$base_url/mydisease"
   printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/mychem/v1"
   printf 'export BIOMCP_MYGENE_BASE=%q\n' "$base_url/mygene/v3"
   printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url/openfda"

@@ -13,12 +13,12 @@ mod tests {
     fn poisoned_lock_returns_the_guarded_value() {
         let value = Arc::new(Mutex::new(41));
         let worker_value = Arc::clone(&value);
-        let _ = std::thread::spawn(move || {
+        let worker = std::thread::spawn(move || {
             let mut guard = worker_value.lock().expect("lock should start healthy");
             *guard += 1;
             panic!("poison test lock");
-        })
-        .join();
+        });
+        let _ = crate::test_support::bounded_join(worker);
 
         assert_eq!(*recover_poison(value.lock()), 42);
     }
@@ -28,10 +28,10 @@ mod tests {
         let ddinter = include_str!("../sources/ddinter.rs");
         let gencc = include_str!("../sources/gencc/store.rs");
         let drug_get = include_str!("../entities/drug/get.rs");
-        let cache_clear = include_str!("../cache/clear.rs");
+        let cache_sqlite = include_str!("../cache/sqlite.rs");
         assert_eq!(ddinter.matches("recover_poison(").count(), 3);
         assert_eq!(gencc.matches("recover_poison(").count(), 2);
         assert_eq!(drug_get.matches("recover_poison(").count(), 2);
-        assert_eq!(cache_clear.matches("recover_poison(").count(), 3);
+        assert_eq!(cache_sqlite.matches("recover_poison(").count(), 1);
     }
 }

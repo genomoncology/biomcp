@@ -30,9 +30,9 @@ Rows omitted (`--counts-only`).
 - `biomcp search article --gene BRAF --disease melanoma --limit 3 --type research-article`
 - `biomcp search article --gene BRAF --disease melanoma --limit 3 --type review`
 
-## Pathways (unknown)
-Error: API request to Reactome failed. Retry the remote source.
-- `biomcp search pathway --query BRAF --limit 3`
+## Pathways (at least 3)
+Rows omitted (`--counts-only`).
+- `biomcp get pathway R-HSA-167224`
 
 ## PGx (at least 0)
 Rows omitted (`--counts-only`).

@@ -35,7 +35,7 @@ def test_the_build_is_not_pinned_but_the_tests_are() -> None:
     assert "ROUTINE_TEST_ARCHIVE" in recipe, (
         "the recipe must fail loudly when the prepared archive is missing"
     )
-    pinned_count = recipe.count("taskset -c 0,1 tools/run-offline")
+    pinned_count = recipe.count("taskset -c 0 tools/run-offline")
     assert pinned_count >= 2, "both the cargo and pytest invocations must be pinned"
     guard_line = next(
         line for line in recipe.splitlines() if "ROUTINE_TEST_ARCHIVE" in line
@@ -81,15 +81,11 @@ def test_the_repeat_count_defaults_to_three() -> None:
     assert 'repeat="$${BIOMCP_STRESS_REPEAT:-3}"' in recipe
 
 
-def test_the_lane_avoids_single_cpu_pinning() -> None:
-    """Pinning to exactly one CPU deadlocks the pipe handshake child;
-    see
-    sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md.
-    Catches any single-number pinning in any spelling, not just the
-    literal `taskset -c 0 `."""
+def test_the_lane_exercises_single_cpu_pinning() -> None:
+    """The lease readiness handshake must work with one available CPU."""
     recipe = stress_recipe()
-    for pin in re.finditer(r"taskset\s+(?:-c|--cpus)[ =]\s*(\d+)", recipe):
-        after = recipe[pin.end() : pin.end() + 1]
-        assert after in (",", "-", "\n", ""), (
-            f"never pin the lane to exactly one CPU: {pin.group(0)!r}"
-        )
+    pins = re.findall(r"taskset\s+(?:-c|--cpus)[ =]\s*(\S+)", recipe)
+    assert len(pins) == 2, "both test invocations must exercise CPU affinity"
+    assert all(pin.isdecimal() for pin in pins), (
+        "the stress lane must pin each test invocation to exactly one CPU"
+    )

@@ -211,7 +211,9 @@ impl<'a> Binary<'a> {
         let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
         command
             .args(args)
-            .env("BIOMCP_CACHE_DIR", self.cache.path())
+            .envs(biomcp_mcp_contract_client::child_cache_env(
+                self.cache.path(),
+            ))
             .env("BIOMCP_MYGENE_BASE", format!("{base}/mygene/v3"))
             .env("BIOMCP_OLS4_BASE", format!("{base}/ols4"))
             .env(
@@ -702,13 +704,6 @@ impl ReplayServer {
                 .unwrap_or_else(|| panic!("unexpected env file line: {line:?}"));
             env.push((name.to_string(), value.to_string()));
         }
-        let cache = scratch.path().join("cache");
-        std::fs::create_dir_all(&cache).expect("scratch cache dir");
-        env.push(("BIOMCP_CACHE_MODE".to_string(), "off".to_string()));
-        env.push((
-            "BIOMCP_CACHE_DIR".to_string(),
-            cache.to_string_lossy().into_owned(),
-        ));
         env.push(("BIOMCP_TEST_UNPACED_ORIGIN".to_string(), origin.clone()));
         ReplayServer {
             _scratch: scratch,
@@ -716,6 +711,17 @@ impl ReplayServer {
             request_log,
             child,
         }
+    }
+
+    fn test_env(&self) -> (tempfile::TempDir, Vec<(String, String)>) {
+        let cache = tempfile::tempdir().expect("isolated replay test cache");
+        let mut env = self.env.clone();
+        env.push(("BIOMCP_CACHE_MODE".to_string(), "off".to_string()));
+        env.extend(
+            biomcp_mcp_contract_client::child_cache_env(cache.path())
+                .map(|(key, value)| (key.to_string(), value.to_string_lossy().into_owned())),
+        );
+        (cache, env)
     }
 
     fn line_count(&self) -> usize {
@@ -750,6 +756,30 @@ impl Drop for ReplayServer {
     }
 }
 
+static SHARED_REPLAY: std::sync::OnceLock<std::sync::Mutex<Option<ReplayServer>>> =
+    std::sync::OnceLock::new();
+
+extern "C" fn stop_shared_replay() {
+    if let Some(server) = SHARED_REPLAY.get() {
+        let mut server = server
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        drop(server.take());
+    }
+}
+
+fn shared_replay() -> std::sync::MutexGuard<'static, Option<ReplayServer>> {
+    let server = SHARED_REPLAY.get_or_init(|| {
+        // Static values do not drop at process exit. The runner owns normal
+        // teardown here; the server's parent guard covers an abandoned runner.
+        assert_eq!(unsafe { libc::atexit(stop_shared_replay) }, 0);
+        std::sync::Mutex::new(Some(ReplayServer::start()))
+    });
+    server
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 fn serve_runtime() -> tokio::runtime::Runtime {
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -759,10 +789,11 @@ fn serve_runtime() -> tokio::runtime::Runtime {
 
 #[test]
 fn serve_flag_disables_civic_on_the_stdio_server() {
-    let replay = ReplayServer::start();
+    let replay_guard = shared_replay();
+    let replay = replay_guard.as_ref().expect("runner-owned replay server");
     let harness =
         biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
-    let env = replay.env.clone();
+    let (_cache, env) = replay.test_env();
     let rt = serve_runtime();
     rt.block_on(async move {
         let (client, pid) = harness
@@ -870,14 +901,15 @@ fn serve_http_waits_for_delayed_startup_and_preserves_exit_diagnostics() {
 
 #[test]
 fn serve_http_flag_matches_the_env_variable_form() {
-    let replay = ReplayServer::start();
+    let replay_guard = shared_replay();
+    let replay = replay_guard.as_ref().expect("runner-owned replay server");
     let harness =
         biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
-    let env = replay.env.clone();
+    let (_cache, env) = replay.test_env();
     let rt = serve_runtime();
     rt.block_on(async move {
         let flag_instructions =
-            serve_http_civic_description(&harness, &replay, &env, &["--disable-sources", "civic"])
+            serve_http_civic_description(&harness, replay, &env, &["--disable-sources", "civic"])
                 .await
                 .expect("serve-http accepts the parsed flag");
         assert!(
@@ -889,7 +921,7 @@ fn serve_http_flag_matches_the_env_variable_form() {
 
         let mut env_form = env.clone();
         env_form.push(("BIOMCP_DISABLE_SOURCES".to_string(), "civic".to_string()));
-        let env_instructions = serve_http_civic_description(&harness, &replay, &env_form, &[])
+        let env_instructions = serve_http_civic_description(&harness, replay, &env_form, &[])
             .await
             .expect("serve-http reads the environment variable");
         assert!(
@@ -1116,14 +1148,16 @@ fn mcp_override_refusal_names_the_original_flag_setting() {
         biomcp_mcp_contract_client::ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"));
     serve_runtime().block_on(async {
         let env = vec![
-            (
-                "BIOMCP_CACHE_DIR".to_string(),
-                cache.path().to_string_lossy().into_owned(),
-            ),
             ("BIOMCP_CACHE_MODE".to_string(), "off".to_string()),
             ("BIOMCP_DISABLE_SOURCES".to_string(), String::new()),
             ("BIOMCP_DISABLE_KEGG".to_string(), "0".to_string()),
-        ];
+        ]
+        .into_iter()
+        .chain(
+            biomcp_mcp_contract_client::child_cache_env(cache.path())
+                .map(|(key, value)| (key.to_string(), value.to_string_lossy().into_owned())),
+        )
+        .collect::<Vec<_>>();
         let (client, _) = harness
             .spawn_stdio_client_with_args(&["--disable-sources", "civic"], &env)
             .await

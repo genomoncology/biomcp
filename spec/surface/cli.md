@@ -177,11 +177,11 @@ version output exposes the executable/build identity for debugging.
 
 ```bash
 path="$(../../tools/biomcp-ci cache path)"
-mustmatch '/^\/.*\/\.cache\/biomcp-specs\/http$/' <<<"$path"
+mustmatch '/^\/.*\/\.cache\/biomcp-specs\/biomcp\.db$/' <<<"$path"
 json_path="$(../../tools/biomcp-ci --json cache path)"
-jq -e '.kind == "cache_path" and (.path | endswith("/.cache/biomcp-specs/http"))' <<<"$json_path" | mustmatch 'true'
+jq -e '.kind == "cache_path" and (.path | endswith("/.cache/biomcp-specs/biomcp.db"))' <<<"$json_path" | mustmatch 'true'
 json_path_after="$(../../tools/biomcp-ci cache path --json)"
-jq -e '.kind == "cache_path" and (.path | endswith("/.cache/biomcp-specs/http"))' <<<"$json_path_after" | mustmatch 'true'
+jq -e '.kind == "cache_path" and (.path | endswith("/.cache/biomcp-specs/biomcp.db"))' <<<"$json_path_after" | mustmatch 'true'
 version="$(../../tools/biomcp-ci version --verbose)"
 mustmatch '/^biomcp 0\.[0-9]+\.[0-9]+/' <<<"$version"
 mustmatch like "Executable:" <<<"$version"

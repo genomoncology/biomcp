@@ -124,7 +124,7 @@ fn cache_help_keeps_json_but_hides_no_cache_everywhere() {
     }
 }
 
-fn cache_commands() -> [crate::cli::cache::CacheCommand; 4] {
+fn cache_commands() -> [crate::cli::cache::CacheCommand; 5] {
     [
         crate::cli::cache::CacheCommand::Path,
         crate::cli::cache::CacheCommand::Stats,
@@ -134,13 +134,14 @@ fn cache_commands() -> [crate::cli::cache::CacheCommand; 4] {
             dry_run: true,
         },
         crate::cli::cache::CacheCommand::Clear { yes: true },
+        crate::cli::cache::CacheCommand::CleanLegacy { yes: true },
     ]
 }
 
 #[test]
 fn no_cache_is_rejected_by_public_run_before_cache_dispatch() {
     for cmd in cache_commands() {
-        let error = std::thread::Builder::new()
+        let worker = std::thread::Builder::new()
             .stack_size(8 * 1024 * 1024)
             .spawn(move || {
                 tokio::runtime::Builder::new_current_thread()
@@ -154,8 +155,8 @@ fn no_cache_is_rejected_by_public_run_before_cache_dispatch() {
                         disable_sources: None,
                     }))
             })
-            .expect("run test worker")
-            .join()
+            .expect("run test worker");
+        let error = crate::test_support::bounded_join(worker)
             .expect("run test worker panicked")
             .expect_err("run must reject --no-cache with cache commands");
         assert!(error.to_string().contains("--no-cache"), "{error}");

@@ -837,7 +837,7 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     let started = std::time::Instant::now();
     drop(Store::open_until(started + Duration::from_secs(1)).unwrap());
     assert!(started.elapsed() >= Duration::from_millis(50));
-    release.join().unwrap();
+    crate::test_support::bounded_join(release).unwrap();
     let held = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -851,7 +851,7 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     let started = std::time::Instant::now();
     drop(Store::open_until(started + Duration::from_secs(1)).unwrap());
     assert!(started.elapsed() >= Duration::from_millis(50));
-    release.join().unwrap();
+    crate::test_support::bounded_join(release).unwrap();
     let held = std::fs::OpenOptions::new()
         .read(true)
         .write(true)

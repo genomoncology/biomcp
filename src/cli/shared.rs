@@ -319,6 +319,7 @@ pub(super) fn related_article_filters() -> crate::entities::article::ArticleSear
     crate::entities::article::ArticleSearchFilters {
         gene: None,
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,
@@ -487,3 +488,6 @@ pub(super) async fn try_alias_fallback_outcome(
 
 mod search_payloads;
 pub(in crate::cli) use self::search_payloads::*;
+
+mod get_notes;
+pub(in crate::cli) use get_notes::append_get_json_stale_notes;

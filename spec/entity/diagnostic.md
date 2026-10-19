@@ -71,6 +71,8 @@ id="$(../../tools/biomcp-ci search diagnostic --gene BRCA1 --limit 1 | awk -F'|'
 
 ## Exact Disease Synonym Expansion
 
+This authored fixture supplies an exact MyDisease identity. The live source
+returned no identity for this query; this control does not reproduce that reply.
 GTR disease search resolves one exact MyDisease identity, then matches the
 canonical name and bounded exact synonyms without broadening to ontology
 parents or fuzzy candidates. The per-row provenance is shared by JSON and the
@@ -100,7 +102,7 @@ unavailable resolver is reported safely instead of being presented as a true
 zero-result search.
 
 ```bash
-request_log="$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG"
+request_log="$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"
 before="$(awk '/^GET \/mydisease\// { count++ } END { print count + 0 }' "$request_log")"
 ../../tools/biomcp-ci search diagnostic --disease HIV --source who-ivd --limit 1 >/dev/null
 ../../tools/biomcp-ci search diagnostic --gene BRCA1 --source gtr --limit 1 >/dev/null

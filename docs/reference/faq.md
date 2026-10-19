@@ -9,8 +9,8 @@ See [API keys](../getting-started/api-keys.md).
 
 ## Where are cached files stored?
 
-Run `biomcp cache path` to print the managed HTTP cache directory on your
-machine. BioMCP uses platform cache directories underneath that resolved root.
+Run `biomcp cache path` to print the SQLite database path on your
+machine. Its parent is the resolved platform cache root.
 
 Typical locations:
 
@@ -19,7 +19,8 @@ Typical locations:
 
 The cache generally contains:
 
-- `http/` for HTTP responses,
+- `biomcp.db` for reusable responses and saved provider captures,
+- `blobs/` for bodies larger than 1 MiB,
 - `downloads/` for retrieved text artifacts.
 
 ## Why do invalid dates fail immediately?

@@ -89,7 +89,8 @@ fn init_tracing() {
             // reqwest-retry's with_retry_log_level exists only for
             // the default strategy; a custom one logs at WARN,
             // which pollutes every CLI error surface. Downgrade it unless the operator asked.
-            EnvFilter::new("warn,reqwest_retry=error")
+            // Readability emits serializer namespace warnings for successfully rendered HTML.
+            EnvFilter::new("warn,reqwest_retry=error,html5ever::serialize=error")
         }))
         .with_writer(std::io::stderr)
         .with_ansi(std::io::stderr().is_terminal())
@@ -147,7 +148,10 @@ async fn async_main() -> std::process::ExitCode {
                 Ok(()) => std::process::ExitCode::SUCCESS,
                 Err(err) => {
                     eprintln!("Error: {}", human_error(&err));
-                    std::process::ExitCode::from(1)
+                    // A pending Tokio stdin read cannot be cancelled. Terminate
+                    // this failed stdio server before runtime shutdown waits
+                    // for the client to close its input pipe.
+                    std::process::exit(1);
                 }
             }
         }

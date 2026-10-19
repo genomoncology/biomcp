@@ -164,7 +164,7 @@ async fn empty_enrichment_plan_makes_no_provider_requests() {
         TestHttpReply::Bytes(test_http_response("200 OK", "application/json", b"[null]"))
     })
     .await;
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     for key in [
         "BIOMCP_TEST_UNPACED_ORIGIN",
         "BIOMCP_S2_BASE",
@@ -288,9 +288,9 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
         }
     })
     .await;
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("article-pubtator-empty");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
     env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
 
@@ -318,7 +318,7 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
             .await;
             rows
         } else {
-            enrich_visible_article_search_page(page, &[ArticleSource::PubTator])
+            enrich_visible_article_search_page(page, &[ArticleSource::PubTator], false)
                 .await
                 .page
                 .results

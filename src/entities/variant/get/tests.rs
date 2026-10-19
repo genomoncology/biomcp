@@ -266,6 +266,8 @@ fn indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count()
 fn braf_variant_stub() -> Variant {
     Variant {
         section_outcomes: super::super::default_variant_section_outcomes(),
+        matched_transcript: None,
+        matched_hgvs_c: None,
         protein_numbering_note: None,
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
@@ -373,7 +375,9 @@ fn transcript_hgvs_get_and_normalize_share_normalized_genomic_identity() {
     };
 
     assert_eq!(
-        normalized_get_variant_id(&response).expect("normalization should yield gettable ID"),
+        normalized_get_variant_id(&response)
+            .expect("normalization should yield gettable ID")
+            .0,
         "chr7:g.140753336A>T"
     );
 }

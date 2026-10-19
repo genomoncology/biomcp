@@ -121,7 +121,7 @@ pub(in crate::cli) async fn handle_search(
     let results = page.results;
     let pagination =
         super::super::PaginationMeta::offset(args.offset, args.limit, results.len(), total);
-    let text = if json {
+    let mut text = if json {
         diagnostic_search_json(results, total, args.limit, args.offset, args.full)?
     } else {
         let footer = super::super::pagination_footer_offset(&pagination);
@@ -132,5 +132,14 @@ pub(in crate::cli) async fn handle_search(
             &footer,
         )?
     };
+    if let Some(note) = page.partial_note {
+        if json {
+            let mut value: serde_json::Value = serde_json::from_str(&text)?;
+            value["note"] = serde_json::Value::String(note);
+            text = crate::render::json::to_pretty(&value)?;
+        } else {
+            text.push_str(&format!("\nNote: {note}\n"));
+        }
+    }
     Ok(CommandOutcome::stdout(text))
 }

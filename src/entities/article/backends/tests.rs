@@ -104,10 +104,10 @@ async fn pubtator_search_commits_transformed_page_before_one_terminal_event() {
     })
     .await;
     let cache = crate::test_support::TempDirGuard::new("provider-unit-pubtator-search");
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let execution = super::super::variant_search::VariantArticleExecutionContext::single();
 
     let partial = search_pubtator_page_with_context(
@@ -661,10 +661,10 @@ async fn europepmc_cursor_walk_stops_on_an_absent_cursor_after_a_page_with_rows(
     })
     .await;
     let cache = crate::test_support::TempDirGuard::new("europepmc-cursor-stop");
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let mut filters = empty_filters();
     filters.keyword = Some("cursorstopfixture".into());
 

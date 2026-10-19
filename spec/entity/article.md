@@ -302,17 +302,16 @@ end="$(date +%s.%N)"
 awk -v s="$start" -v e="$end" 'BEGIN { d = e - s; if (d > 8.0) { print "deadline run took", d, "seconds"; exit 1 } }'
 ```
 
-### Construction Under A Held Epoch Lock Honors The Deadline
+### Construction Under A Held SQLite Writer Honors The Deadline
 
-Client construction takes the cache epoch lock, and another process can
-hold it. Holding it must not push an invocation past its deadline: the
-runner's `HOLD_EPOCH_LOCK` mode keeps the lock from a side process while a
+Cache construction can encounter a SQLite writer held by another process. Contention must not push an invocation past its deadline: the
+runner's `HOLD_SQLITE_WRITER` mode keeps the lock from a side process while a
 PubMed-only search runs under a 3000 ms forced deadline, and the invocation
 still exits at the deadline naming the deadline in its error.
 
 ```bash
 start="$(date +%s.%N)"
-( HOLD_EPOCH_LOCK=1 bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
+( HOLD_SQLITE_WRITER=1 bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
     --source pubmed -k "deadline-bound federation" --limit 3; exit 0 ) \
   | mustmatch like '"code": "source_unavailable"
 article search deadline exceeded after 3s'
@@ -609,7 +608,7 @@ on the matching card without hiding middle collaborators.
 ...
 ## 22663011 — ok
 ...
-## 1. Europe full text winner
+### Europe full text winner
 ...
 PMID: 22663011
 ...
@@ -617,7 +616,7 @@ Authors: Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last
 ...
 ## 22663012 — ok
 ...
-## 1. PMC HTML fallback winner
+### PMC HTML fallback winner
 ...
 PMID: 22663012
 ...
@@ -1271,7 +1270,7 @@ output="$(../../tools/biomcp-ci get article 22663023 asset NIHMS265402-supplemen
 code=$?
 set -e
 mustmatch like "article_asset_not_retrievable
-ncbi_interstitial
+pmc_proof_of_work
 NIHMS265402-supplement-Supplementary_Tables.xls
 https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/" <<<"$output"
 exit "$code"
@@ -1284,7 +1283,7 @@ output="$(../../tools/biomcp-ci --json get article 22663023 asset "$key" 2>/dev/
 code=$?
 set -e
 jq -r '.error | [.code, .message] | join("\n")' <<<"$output" | mustmatch like "article_asset_not_retrievable
-ncbi_interstitial
+pmc_proof_of_work
 NIHMS265402-supplement-Supplementary_Tables.xls
 https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/"
 exit "$code"
@@ -1416,13 +1415,25 @@ fixtures: BRCA1 F1761I on Sheet1 row 2780, and AXIN2 P245S on ST2 row 85.
 ## An Unreadable Supplement Is Reported, Not Hidden
 
 A file that cannot be extracted says so with its format and reason, so an
-empty search can be told from an unread file. The two-route fixture
+empty search can be told from an unread file. JSON and Markdown mark searches incomplete when files cannot be read. The two-route fixture
 article 22663024 ships a `.xlsx` name over scrubbed bytes that are not a
 workbook: the search reports the file as `unextractable` with the reason,
 and the hits list stays empty.
 
 ```bash run id=supplement-search-unreadable-file
 ../../tools/biomcp-ci --json article supplement-search 22663024 F1761I | jq '(.hits | length == 0) and (.files | length == 1 and .[0].outcome == "unextractable" and .[0].format == "xlsx" and ((.[0].reason // "") | contains("workbook could not be opened")))' | mustmatch 'true'
+```
+
+Named supplements whose bytes are unreachable remain in the search result with
+asset coverage outcome wording and no checksum. The search remains incomplete
+when another readable file supplies a hit. The named-paper fixtures use authored
+provider projections of observed filenames and outcomes, with a readable CSV
+control; they do not redistribute those papers' article bodies.
+
+```bash run id=supplement-search-unreachable-files
+../../tools/biomcp-ci --json article supplement-search 38368708 I448T | jq '.incomplete and (.files | any(.filename == "NIHMS2014154-supplement-Supplementary.docx" and .outcome == "source_unavailable" and (has("sha256") | not)))' | mustmatch 'true'
+../../tools/biomcp-ci --json article supplement-search 27397505 I448T | jq '.incomplete and ([.files[] | select(.outcome == "pmc_proof_of_work")] | length == 5) and (.hits[0].filename == "readable-control.csv")' | mustmatch 'true'
+../../tools/biomcp-ci article supplement-search 27397505 I448T | mustmatch like 'Search incomplete.'
 ```
 
 ## Non-PMC Figshare Assets Manifest

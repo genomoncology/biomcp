@@ -98,6 +98,7 @@ pub(super) async fn handle_related_command(
             let filters = crate::entities::article::ArticleSearchFilters {
                 gene: Some(symbol.clone()),
                 gene_anchored: true,
+                include_abstracts: false,
                 ..super::super::related_article_filters()
             };
             let query = if offset > 0 {

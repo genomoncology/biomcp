@@ -97,8 +97,8 @@ fn erepo_gene_mode_is_bounded_and_mutually_exclusive() {
                 },
         } => {
             assert_eq!(gene.as_deref(), Some("PTEN"));
-            assert_eq!(limit, 25);
-            assert_eq!(offset, 50);
+            assert_eq!(limit, Some(25));
+            assert_eq!(offset, Some(50));
         }
         other => panic!("unexpected command: {other:?}"),
     }
@@ -771,7 +771,8 @@ async fn refused_zero_row_search_outcome(args: &[&str]) -> crate::cli::CommandOu
     // SAFETY: this helper owns the source_env serial-test key.
     let _myvariant = unsafe { SearchEnvRestore::set("BIOMCP_MYVARIANT_BASE", &base) };
     // SAFETY: this helper owns the source_env serial-test key.
-    let _cache = unsafe { SearchEnvRestore::set("BIOMCP_CACHE_DIR", cache.path()) };
+    let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+    cache_policy.set_cache_root(cache.path());
     // SAFETY: this helper owns the source_env serial-test key.
     let _routing = unsafe { SearchEnvRestore::set("BIOMCP_VARIANT_QUERY_GENE_ROUTING", "off") };
 

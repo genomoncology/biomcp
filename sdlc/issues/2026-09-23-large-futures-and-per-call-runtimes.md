@@ -29,7 +29,7 @@ Fix: make `with_no_cache` a plain function returning `NO_CACHE.scope(no_cache, f
 ## Smaller items
 
 - Retries fire on POST requests.
-- `TRIAL_ALIAS_CACHE` grows without limit.
+- `TRIAL_ALIAS_CACHE` growth was resolved by ticket 2239 with a fixed entry cap.
 
 ## Resolved
 
@@ -40,3 +40,11 @@ inline-put invariant recorded; XML nesting past 64 deep is rejected
 before parse (the deviation from the post-parse design is recorded —
 the bomb proved roxmltree recurses). See
 `sdlc/records/1243-shrink-the-large-futures-and-share-the-runtime.md`.
+
+## Release dispositions (2026-10-19)
+
+- Stack-depth finding: FIXED by 1243; retain the recorded future-size measurements and probe evidence above.
+- Per-call runtime finding: FIXED by 1243 through the shared server runtime and the recorded CLI shutdown behavior.
+- XML nesting finding: FIXED by 1243 through the pre-parse depth bound supported by the recorded XML bomb.
+- POST retry finding: retain the 1243 disposition and its source contract; this release adds no retry-policy claim.
+- Trial-alias cache growth: FIXED by 2239 at 82483055f with the fixed entry cap and persistent-server coverage.

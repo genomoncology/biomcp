@@ -66,7 +66,7 @@ provider-side request logs are outside that promise.
 If `--no-cache` works while cached mode fails repeatedly, `biomcp cache clean`
 is the safe first step before any manual wipe. If you override the cache root
 with `BIOMCP_CACHE_DIR` or `cache.toml`, run `biomcp cache path` first to print
-the managed HTTP cache path under the resolved cache root.
+the SQLite database path under the resolved cache root.
 
 ```bash
 biomcp cache clean
@@ -75,18 +75,15 @@ biomcp cache clean --max-age 7d
 ```
 
 If targeted cleanup still does not recover the cache, use
-`biomcp cache clear --yes` for a full wipe of the managed `http/`, ten-minute
-article-session, and thirty-day citation-evidence trees tied to
-the resolved cache root you printed with `biomcp cache path`. `cache clear`
-never touches the sibling `downloads/` directory, so the choice is explicit:
-start with `cache clean` for targeted GC, escalate to `cache clear --yes` only
-when you need the destructive full wipe.
+`biomcp cache clear --yes` to remove reusable entries from the database and ten-minute article sessions. It preserves saved provider captures, `downloads/` and explicit exports. The database remains available for subsequent requests.
+
+`cache stats` reports legacy store sizes by name. After upgrading and stopping older binaries, use `biomcp cache clean-legacy` to remove those stores explicitly. This command also preserves saved downloads and the current database.
 
 If a cache command reports that it cannot secure managed local state, inspect
 the configured root for symlinks, hard links, unsupported file types, or an ACL
 that the current account cannot change. BioMCP fails before reading or writing
 provider responses or article queries; do not bypass this check by making the
-directory world-readable.
+directory world-readable. Existing Unix SQLite files must have mode `0600`; BioMCP refuses broader database permissions while ordinary optional-cache requests can still retrieve provider results.
 
 For the `gene gencc section`, `--no-cache` does not bypass the private GenCC
 dataset. Check `biomcp health --api GenCC` for the quota-exempt HEAD probe and
@@ -469,5 +466,6 @@ readable but malformed one fails. A missing, unreadable, malformed, or
 certificate-less `BIOMCP_CA_BUNDLE` fails before any request and names the path
 in both text and `--json` errors, so confirm the path holds PEM `CERTIFICATE`
 blocks and is readable by the user running BioMCP. Client certificates, mTLS,
-and `SSL_CERT_DIR` are out of scope. AlphaGenome's gRPC client already reads
-the native OS trust store.
+and `SSL_CERT_DIR` are out of scope for ordinary providers. AlphaGenome's
+gRPC client adds the same validated operator bundle to its native OS roots;
+its native-root loader also reads `SSL_CERT_FILE` and `SSL_CERT_DIR`.

@@ -507,7 +507,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | gene | constraint | canonical | fallback | gnomAD | `constraint` outcome and provenance projection |
 | gene | disgenet | canonical | additive | DisGeNET | `disgenet` outcome and provenance projection |
 | gene | funding | canonical | additive | NIH Reporter | `funding` outcome and provenance projection |
-| article | fulltext | canonical | fallback | Europe PMC / NCBI EFetch / PMC OA / PMC / Semantic Scholar | `fulltext` outcome and provenance projection |
+| article | fulltext | canonical | fallback | Europe PMC / NCBI EFetch / NCBI ID Converter / bioRxiv/medRxiv / PMC OA / PMC / Semantic Scholar | `fulltext` outcome and provenance projection |
 | article | indexing | canonical | fallback | PubMed | `indexing` outcome and provenance projection |
 | article | tldr | canonical | fallback | Semantic Scholar | `tldr` outcome and provenance projection |
 | cell_line | variants | canonical | additive | Cellosaurus | `variants` outcome and provenance projection |

@@ -1,468 +1,142 @@
-//! Cache CLI tests.
+//! The cache CLI observes committed reusable entries and preserves saved artifacts.
+use super::*;
+use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
+use crate::test_support::TempDirGuard;
 
-use std::cell::{Cell, RefCell};
-use std::path::{Path, PathBuf};
-use std::time::Duration;
-
-use ssri::Integrity;
-
-use super::{
-    CacheStatsAgeRange, CacheStatsOrigin, CacheStatsReport, build_cache_stats_report,
-    collect_cache_stats_report_with, render_path_for_config,
-};
-use crate::cache::{
-    CacheBlob, CacheConfigOrigins, CacheEntry, CacheSnapshot, ConfigOrigin, DiskFreeThreshold,
-    ProviderCaptureProvider, ProviderCaptureStore, ResolvedCacheConfig,
-};
-
-#[test]
-fn render_path_for_config_appends_http_to_resolved_cache_root() {
-    let config = test_config(
-        "/tmp/resolved-cache",
-        10_000_000_000,
-        86_400,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-
-    assert_eq!(render_path_for_config(&config), "/tmp/resolved-cache/http");
-}
-
-#[test]
-fn render_path_for_config_keeps_relative_cache_roots_relative() {
-    let config = test_config(
-        "relative-cache",
-        10_000_000_000,
-        86_400,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::File,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-
-    assert_eq!(
-        render_path_for_config(&config),
-        PathBuf::from("relative-cache/http").display().to_string()
-    );
-}
-
-#[test]
-fn cache_stats_report_separates_provider_capture_namespace_bytes() {
-    let root = crate::test_support::TempDirGuard::new("cache-stats-provider-captures");
-    let manifest = ProviderCaptureStore::new(root.path())
-        .capture_bytes(
-            ProviderCaptureProvider::Cspec,
-            "application/octet-stream",
-            b"exact provider bytes",
-        )
-        .expect("capture provider bytes");
-    let report = build_cache_stats_report(
-        &test_snapshot(root.path().join("http"), Vec::new(), Vec::new()),
-        &test_config(
-            root.path(),
-            10_000_000_000,
-            86_400,
-            CacheConfigOrigins {
-                cache_root: ConfigOrigin::Default,
-                max_size: ConfigOrigin::Default,
-                min_disk_free: ConfigOrigin::Default,
-                max_age: ConfigOrigin::Default,
-            },
-        ),
-    )
-    .expect("build managed cache stats");
-
-    assert!(
-        report.provider_capture_bytes >= manifest.byte_length,
-        "stats must separately account for a valid provider capture"
-    );
-}
-
-#[test]
-fn render_path_for_config_does_not_create_or_migrate_directories() {
-    let root = crate::test_support::TempDirGuard::new("cache-cli-path");
-    let env_cache = root.path().join("env-cache");
-    let legacy = env_cache.join("http-cacache");
-    std::fs::create_dir_all(&legacy).expect("create legacy cache dir");
-    let config = test_config(
-        env_cache.clone(),
-        10_000_000_000,
-        86_400,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Env,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-
-    let rendered = render_path_for_config(&config);
-    assert_eq!(rendered, env_cache.join("http").display().to_string());
-    assert!(legacy.exists());
-    assert!(!env_cache.join("http").exists());
-}
-
-#[test]
-fn explicit_cache_maintenance_waits_for_an_active_cache_operation() {
-    let root = crate::test_support::TempDirGuard::new("cache-maintenance-coordination");
-    let config = test_config(
-        root.path(),
-        10_000_000_000,
-        86_400,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-    let operation = crate::cache::lock_cache_shared(root.path()).expect("hold operation lock");
-    let (started_tx, started_rx) = std::sync::mpsc::channel();
-    let (finished_tx, finished_rx) = std::sync::mpsc::channel();
-    let maintenance = std::thread::spawn(move || {
-        started_tx.send(()).expect("report maintenance start");
-        let result = super::execute_managed_clear(&config);
-        finished_tx.send(()).expect("report maintenance finish");
-        result
-    });
-    started_rx
-        .recv_timeout(Duration::from_secs(5))
-        .expect("maintenance thread started");
-    assert!(
-        finished_rx
-            .recv_timeout(Duration::from_millis(200))
-            .is_err(),
-        "maintenance must wait for the active cache operation"
-    );
-    drop(operation);
-    maintenance
-        .join()
-        .expect("maintenance thread")
-        .expect("managed clear");
-}
-
-#[test]
-fn managed_clear_removes_the_citation_evidence_sidecar_and_sums_its_bytes() {
-    let root = crate::test_support::TempDirGuard::new("cache-clear-citation-evidence");
-    let record = root
-        .path()
-        .join(crate::cache::CITATION_EVIDENCE_DIR)
-        .join("v1")
-        .join("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.json");
-    std::fs::create_dir_all(record.parent().expect("record parent")).expect("sidecar tree");
-    let body = b"{\"schema_version\":1}";
-    std::fs::write(&record, body).expect("sidecar record");
-    let config = test_config(
-        root.path(),
-        10_000_000_000,
-        86_400,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-
-    let report = super::execute_managed_clear(&config).expect("managed clear");
-
-    assert!(
-        !root
-            .path()
-            .join(crate::cache::CITATION_EVIDENCE_DIR)
-            .exists()
-    );
-    assert_eq!(report.bytes_freed, Some(body.len() as u64));
-    // The sidecar root, its v1 shard, and the record.
-    assert_eq!(report.entries_removed, 3);
-}
-
-fn test_integrity(bytes: &[u8]) -> Integrity {
-    Integrity::from(bytes)
-}
-
-fn test_entry(key: &str, bytes: &[u8], time_ms: u128) -> CacheEntry {
-    CacheEntry {
-        key: key.to_string(),
-        integrity: test_integrity(bytes),
-        time_ms,
-        size_bytes: bytes.len() as u64,
-    }
-}
-
-fn test_blob(label: &str, bytes: &[u8], refcount: usize) -> CacheBlob {
-    CacheBlob {
-        integrity: test_integrity(bytes),
-        path: PathBuf::from(format!("content-v2/mock/{label}.blob")),
-        size_bytes: bytes.len() as u64,
-        refcount,
-    }
-}
-
-fn test_snapshot(
-    cache_path: impl Into<PathBuf>,
-    entries: Vec<CacheEntry>,
-    blobs: Vec<CacheBlob>,
-) -> CacheSnapshot {
-    CacheSnapshot {
-        cache_path: cache_path.into(),
-        entries,
-        blobs,
-    }
-}
-
-fn test_config(
-    cache_root: impl Into<PathBuf>,
-    max_size: u64,
-    max_age_secs: u64,
-    origins: CacheConfigOrigins,
-) -> ResolvedCacheConfig {
+fn config(root: &std::path::Path) -> ResolvedCacheConfig {
     ResolvedCacheConfig {
-        cache_root: cache_root.into(),
-        max_size,
-        min_disk_free: DiskFreeThreshold::Percent(10),
-        max_age: Duration::from_secs(max_age_secs),
-        origins,
+        cache_root: root.to_path_buf(),
+        max_size: 10000000,
+        min_disk_free: DiskFreeThreshold::Bytes(1),
+        max_age: Duration::from_secs(86400),
+        origins: CacheConfigOrigins {
+            cache_root: ConfigOrigin::File,
+            max_size: ConfigOrigin::Env,
+            min_disk_free: ConfigOrigin::Default,
+            max_age: ConfigOrigin::Default,
+        },
     }
 }
 
 #[test]
-fn build_cache_stats_report_empty_snapshot_has_zero_counts_null_age_and_default_origins() {
-    let root = crate::test_support::TempDirGuard::new("cache-stats-empty");
-    let cache_path = root.path().join("http");
-    let snapshot = test_snapshot(&cache_path, Vec::new(), Vec::new());
-    let config = test_config(
-        root.path(),
-        10_000_000_000,
-        86_400,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-
-    let report = build_cache_stats_report(&snapshot, &config).expect("empty snapshot report");
-
+fn cache_path_names_database_without_creating_it() {
+    let root = TempDirGuard::new("sqlite-cache-path");
+    let child = root.path().join("missing");
     assert_eq!(
-        report,
-        CacheStatsReport {
-            path: cache_path.display().to_string(),
-            blob_bytes: 0,
-            referenced_blob_bytes: 0,
-            blob_count: 0,
-            orphan_count: 0,
-            http_entry_count: 0,
-            session_count: 0,
-            provider_capture_bytes: 0,
-            age_range: None,
-            max_size_bytes: 10_000_000_000,
-            max_size_origin: CacheStatsOrigin::Default,
-            min_disk_free: "10%".into(),
-            min_disk_free_origin: CacheStatsOrigin::Default,
-            max_age_secs: 86_400,
-            max_age_origin: CacheStatsOrigin::Default,
-        }
+        render_path_for_config(&config(&child)),
+        child.join("biomcp.db").display().to_string()
     );
-
-    let json = crate::render::json::to_pretty(&report).expect("json");
-    let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
-    assert!(value["age_range"].is_null());
-    assert_eq!(value["referenced_blob_bytes"], 0);
-    assert_eq!(value["max_size_origin"], "default");
-    assert_eq!(value["min_disk_free"], "10%");
-    assert_eq!(value["min_disk_free_origin"], "default");
-    assert_eq!(value["max_age_origin"], "default");
-    assert!(
-        report
-            .to_markdown()
-            .contains("| Referenced blob bytes | 0 |")
-    );
-    assert!(report.to_markdown().contains("| Age range | none |"));
+    assert!(!child.exists());
 }
 
 #[test]
-fn build_cache_stats_report_counts_orphans_and_includes_all_blob_bytes() {
-    let root = crate::test_support::TempDirGuard::new("cache-stats-orphans");
-    let snapshot = test_snapshot(
-        root.path().join("http"),
-        vec![test_entry("retained", b"live-bytes", 100)],
-        vec![
-            test_blob("retained", b"live-bytes", 1),
-            test_blob("orphan", b"orphan-bytes", 0),
-        ],
+fn cache_stats_observe_committed_http_and_artifact_rows_and_legacy_sizes() {
+    let root = TempDirGuard::new("sqlite-cache-stats");
+    let config = config(root.path());
+    let mut store = crate::cache::sqlite::Store::open(root.path()).unwrap();
+    store
+        .put("http", "reply", "reply", b"metadata", b"payload", None)
+        .unwrap();
+    store
+        .put("citation", "edge", "edge", &[], b"evidence", None)
+        .unwrap();
+    let capture = crate::cache::ProviderCaptureStore::new(root.path())
+        .capture_bytes(
+            crate::cache::ProviderCaptureProvider::Cspec,
+            "text/plain",
+            b"source bytes",
+        )
+        .unwrap();
+    std::fs::create_dir(root.path().join("http")).unwrap();
+    std::fs::write(root.path().join("http/old"), b"legacy").unwrap();
+    let report = collect_cache_stats_for_config(&config).unwrap();
+    assert_eq!(report.http_entry_count, 1);
+    assert!(report.provider_capture_bytes >= capture.byte_length);
+    assert_eq!(report.legacy_cache_bytes["http"], 6);
+    assert_eq!(report.max_size_origin, CacheStatsOrigin::Env);
+    assert_eq!(report.max_age_origin, CacheStatsOrigin::Default);
+    assert_eq!(
+        report.path,
+        root.path().join("biomcp.db").display().to_string()
     );
-    let config = test_config(
-        root.path(),
-        1_024,
-        3_600,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-
-    let report = build_cache_stats_report(&snapshot, &config).expect("report");
     assert_eq!(
         report.blob_bytes,
-        b"live-bytes".len() as u64 + b"orphan-bytes".len() as u64
+        report.referenced_blob_bytes + report.provider_capture_bytes
     );
-    assert_eq!(report.referenced_blob_bytes, b"live-bytes".len() as u64);
-    assert_eq!(report.blob_count, 2);
-    assert_eq!(report.orphan_count, 1);
+    assert!(report.age_range.is_some());
+    let json = serde_json::to_value(&report).unwrap();
+    assert_eq!(json["max_size_origin"], "env");
+    assert!(report.to_markdown().contains("| Legacy cache bytes |"));
 }
 
 #[test]
-fn build_cache_stats_report_uses_index_entry_timestamps_only_for_age_range() {
-    let root = crate::test_support::TempDirGuard::new("cache-stats-age-range");
-    let snapshot = test_snapshot(
-        root.path().join("http"),
-        vec![
-            test_entry("older", b"shared", 100),
-            test_entry("newer", b"other", 500),
-        ],
-        vec![
-            test_blob("shared", b"shared", 1),
-            test_blob("other", b"other", 1),
-            test_blob("orphan", b"orphan", 0),
-        ],
-    );
-    let config = test_config(
-        root.path(),
-        2_048,
-        7_200,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Default,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::Default,
-        },
-    );
-
-    let report = build_cache_stats_report(&snapshot, &config).expect("report");
+fn managed_clear_removes_reusable_rows_and_preserves_saved_and_legacy_files() {
+    let root = TempDirGuard::new("sqlite-cache-clear");
+    let config = config(root.path());
+    let mut store = crate::cache::sqlite::Store::open(root.path()).unwrap();
+    store
+        .put("citation", "edge", "edge", &[], b"evidence", None)
+        .unwrap();
+    let capture = crate::cache::ProviderCaptureStore::new(root.path())
+        .capture_bytes(
+            crate::cache::ProviderCaptureProvider::Cspec,
+            "text/plain",
+            b"saved capture",
+        )
+        .unwrap();
+    for name in ["downloads", "citation-evidence"] {
+        std::fs::create_dir(root.path().join(name)).unwrap();
+        std::fs::write(root.path().join(name).join("keep"), b"saved").unwrap();
+    }
+    let report = execute_managed_clear(&config).unwrap();
+    assert_eq!(report.bytes_freed, Some(8));
+    assert_eq!(report.entries_removed, 1);
+    assert!(store.get("citation", "edge").unwrap().is_none());
     assert_eq!(
-        report.age_range,
-        Some(CacheStatsAgeRange {
-            oldest_ms: 100,
-            newest_ms: 500,
-        })
+        crate::cache::ProviderCaptureStore::new(root.path())
+            .read(&capture.capture_id)
+            .unwrap(),
+        b"saved capture"
     );
-    assert!(
-        report
-            .to_markdown()
-            .lines()
-            .any(|line| line == "| Age range | 100 .. 500 |")
-    );
+    for name in ["downloads", "citation-evidence"] {
+        assert_eq!(
+            std::fs::read(root.path().join(name).join("keep")).unwrap(),
+            b"saved"
+        );
+    }
 }
 
 #[test]
-fn cache_stats_report_json_serializes_env_and_file_origins_lowercase() {
-    let root = crate::test_support::TempDirGuard::new("cache-stats-origins");
-    let snapshot = test_snapshot(root.path().join("http"), Vec::new(), Vec::new());
-    let config = test_config(
-        root.path(),
-        5_000,
-        7_200,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Env,
-            min_disk_free: ConfigOrigin::File,
-            max_age: ConfigOrigin::File,
-        },
-    );
-
-    let report = build_cache_stats_report(&snapshot, &config).expect("report");
-    let json = crate::render::json::to_pretty(&report).expect("json");
-    let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
-    assert_eq!(value["max_size_origin"], "env");
-    assert_eq!(value["min_disk_free_origin"], "file");
-    assert_eq!(value["max_age_origin"], "file");
-}
-
-#[test]
-fn cache_stats_report_markdown_is_heading_free_and_stable() {
-    let report = CacheStatsReport {
-        path: "/tmp/cache/http".into(),
-        blob_bytes: 42,
-        referenced_blob_bytes: 24,
-        blob_count: 3,
-        orphan_count: 1,
-        http_entry_count: 1,
-        session_count: 2,
-        provider_capture_bytes: 0,
-        age_range: Some(CacheStatsAgeRange {
-            oldest_ms: 100,
-            newest_ms: 500,
-        }),
-        max_size_bytes: 5_000,
-        max_size_origin: CacheStatsOrigin::Env,
-        min_disk_free: "10%".into(),
-        min_disk_free_origin: CacheStatsOrigin::Default,
-        max_age_secs: 7_200,
-        max_age_origin: CacheStatsOrigin::File,
-    };
-
+fn reusable_size_limits_and_clean_preserve_saved_captures() {
+    let root = TempDirGuard::new("sqlite-capture-retention");
+    let mut config = config(root.path());
+    config.max_size = 1;
+    let captures = crate::cache::ProviderCaptureStore::new(root.path());
+    let capture = captures
+        .capture_bytes(
+            crate::cache::ProviderCaptureProvider::Cspec,
+            "text/plain",
+            b"saved capture",
+        )
+        .unwrap();
+    let mut store = crate::cache::sqlite::Store::open(root.path()).unwrap();
+    store
+        .put("http", "reply", "reply", b"", b"reusable", None)
+        .unwrap();
+    for mode in [
+        crate::cache::sqlite::Maintenance::Pressure,
+        crate::cache::sqlite::Maintenance::Clean,
+    ] {
+        crate::cache::sqlite::maintain(&mut store, &config, None, None, false, mode).unwrap();
+        assert_eq!(
+            captures.read(&capture.capture_id).unwrap(),
+            b"saved capture"
+        );
+        assert!(store.get("http", "reply").unwrap().is_none());
+    }
+    execute_managed_clear(&config).unwrap();
     assert_eq!(
-        report.to_markdown(),
-        "\
-| Path | /tmp/cache/http |
-| Blob bytes | 42 |
-| Referenced blob bytes | 24 |
-| Blob files | 3 |
-| Orphan blobs | 1 |
-| HTTP cache entries | 1 |
-| Article sessions | 2 |
-| Provider capture bytes | 0 |
-| Age range | 100 .. 500 |
-| Max size | 5000 bytes (env) |
-| Min disk free | 10% (default) |
-| Max age | 7200 s (file) |
-"
+        captures.read(&capture.capture_id).unwrap(),
+        b"saved capture"
     );
-}
-
-#[test]
-fn collect_cache_stats_report_calls_snapshot_once_for_resolved_http_path() {
-    let root = crate::test_support::TempDirGuard::new("cache-stats-collector");
-    let expected_path = root.path().join("http");
-    let config = test_config(
-        root.path(),
-        5_000,
-        7_200,
-        CacheConfigOrigins {
-            cache_root: ConfigOrigin::Default,
-            max_size: ConfigOrigin::Env,
-            min_disk_free: ConfigOrigin::Default,
-            max_age: ConfigOrigin::File,
-        },
-    );
-    let calls = Cell::new(0);
-    let seen_path = RefCell::new(None);
-
-    let report = collect_cache_stats_report_with(
-        || Ok(config),
-        |path: &Path| {
-            calls.set(calls.get() + 1);
-            *seen_path.borrow_mut() = Some(path.to_path_buf());
-            Ok(test_snapshot(
-                path.to_path_buf(),
-                vec![test_entry("entry", b"blob", 100)],
-                vec![test_blob("blob", b"blob", 1)],
-            ))
-        },
-    )
-    .expect("collector report");
-
-    assert_eq!(calls.get(), 1);
-    assert_eq!(seen_path.borrow().as_ref(), Some(&expected_path));
-    assert_eq!(report.path, expected_path.display().to_string());
 }

@@ -46,7 +46,7 @@ const ASSET_MANIFEST_CACHE_SCHEMA: u8 = 3;
 enum SourceAttempt<T> {
     Success(T),
     Absent,
-    Failed,
+    Failed(Option<&'static str>),
     TimedOut,
 }
 
@@ -266,16 +266,20 @@ async fn bounded_source_attempt<T>(
 }
 
 fn source_attempt_record<T>(
-    provider: ArticleFulltextProvider,
+    mut provider: ArticleFulltextProvider,
     source_document: ArticleAssetSourceDocument,
     attempt: &SourceAttempt<T>,
     degraded: bool,
 ) -> ArticleAssetSourceAttempt {
+    if let SourceAttempt::Failed(Some(source)) = attempt {
+        provider.source = (*source).to_string();
+        provider.label = (*source).to_string();
+    }
     let outcome = match attempt {
         SourceAttempt::Success(_) if degraded => ArticleAssetSourceOutcome::Degraded,
         SourceAttempt::Success(_) => ArticleAssetSourceOutcome::Data,
         SourceAttempt::Absent => ArticleAssetSourceOutcome::HealthyAbsent,
-        SourceAttempt::Failed => ArticleAssetSourceOutcome::SourceUnavailable,
+        SourceAttempt::Failed(_) => ArticleAssetSourceOutcome::SourceUnavailable,
         SourceAttempt::TimedOut => ArticleAssetSourceOutcome::TimedOut,
     };
     ArticleAssetSourceAttempt {
@@ -362,7 +366,7 @@ pub(super) async fn attach_not_included(article: &mut Article, requested_id: &st
             package,
             pmc_manifest.as_ref(),
         ),
-        SourceAttempt::Absent | SourceAttempt::Failed | SourceAttempt::TimedOut => return,
+        SourceAttempt::Absent | SourceAttempt::Failed(_) | SourceAttempt::TimedOut => return,
     };
     article.not_included = manifest.not_included;
 }
@@ -379,6 +383,7 @@ pub(super) async fn resolve_article_assets(
         }
     };
 
+    let identity_failed = any_failed;
     let mut assets = Vec::<ResolvedAsset>::new();
     let mut candidates = Vec::<LinkedCandidate>::new();
     let mut nonretrievable = Vec::<PendingCoverage>::new();
@@ -458,14 +463,25 @@ pub(super) async fn resolve_article_assets(
                     if let Some(xml_entry) = package.entries.iter().find(|entry| entry.is_xml) {
                         match std::str::from_utf8(&xml_entry.bytes) {
                             Ok(xml) => {
-                                any_failed |= append_jats_candidates(
-                                    &mut candidates,
-                                    xml,
-                                    jats_route(provider()),
-                                )
-                                .is_err();
+                                any_failed |= record_asset_parse(
+                                    append_jats_candidates(
+                                        &mut candidates,
+                                        xml,
+                                        jats_route(provider()),
+                                    ),
+                                    &mut source_attempts,
+                                    provider(),
+                                    ArticleAssetSourceDocument::PmcOaArchive,
+                                );
                             }
-                            Err(_) => any_failed = true,
+                            Err(_) => {
+                                any_failed |= record_asset_parse(
+                                    Err(()),
+                                    &mut source_attempts,
+                                    provider(),
+                                    ArticleAssetSourceDocument::PmcOaArchive,
+                                );
+                            }
                         }
                     }
                     let package_root = package
@@ -539,7 +555,7 @@ pub(super) async fn resolve_article_assets(
                 Some(observation.manifest)
             }
             SourceAttempt::Absent => None,
-            SourceAttempt::Failed => {
+            SourceAttempt::Failed(_) => {
                 any_failed = true;
                 None
             }
@@ -610,40 +626,42 @@ pub(super) async fn resolve_article_assets(
                 }
             }
             SourceAttempt::Absent => {}
-            SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::Failed(_) => any_failed = true,
             SourceAttempt::TimedOut => any_failed = true,
         }
 
         match europe_xml {
             SourceAttempt::Success(xml) => {
-                any_failed |= append_jats_candidates(
-                    &mut candidates,
-                    &xml,
-                    jats_route(ArticleFulltextProvider {
-                        label: "Europe PMC XML".to_string(),
-                        source: "Europe PMC".to_string(),
-                    }),
-                )
-                .is_err();
+                let provider = ArticleFulltextProvider {
+                    label: "Europe PMC XML".to_string(),
+                    source: "Europe PMC".to_string(),
+                };
+                any_failed |= record_asset_parse(
+                    append_jats_candidates(&mut candidates, &xml, jats_route(provider.clone())),
+                    &mut source_attempts,
+                    provider,
+                    ArticleAssetSourceDocument::JatsXml,
+                );
             }
             SourceAttempt::Absent => {}
-            SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::Failed(_) => any_failed = true,
             SourceAttempt::TimedOut => any_failed = true,
         }
         match ncbi_xml {
             SourceAttempt::Success(xml) => {
-                any_failed |= append_jats_candidates(
-                    &mut candidates,
-                    &xml,
-                    jats_route(ArticleFulltextProvider {
-                        label: "NCBI EFetch PMC XML".to_string(),
-                        source: "NCBI EFetch".to_string(),
-                    }),
-                )
-                .is_err();
+                let provider = ArticleFulltextProvider {
+                    label: "NCBI EFetch PMC XML".to_string(),
+                    source: "NCBI EFetch".to_string(),
+                };
+                any_failed |= record_asset_parse(
+                    append_jats_candidates(&mut candidates, &xml, jats_route(provider.clone())),
+                    &mut source_attempts,
+                    provider,
+                    ArticleAssetSourceDocument::JatsXml,
+                );
             }
             SourceAttempt::Absent => {}
-            SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::Failed(_) => any_failed = true,
             SourceAttempt::TimedOut => any_failed = true,
         }
         match html {
@@ -662,11 +680,18 @@ pub(super) async fn resolve_article_assets(
                         additional_routes: Vec::new(),
                         relative_to_bin: false,
                     })),
-                    Err(_) => any_failed = true,
+                    Err(_) => {
+                        any_failed |= record_asset_parse(
+                            Err(()),
+                            &mut source_attempts,
+                            linked_provider(),
+                            ArticleAssetSourceDocument::PmcHtml,
+                        );
+                    }
                 }
             }
             SourceAttempt::Absent => {}
-            SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::Failed(_) => any_failed = true,
             SourceAttempt::TimedOut => any_failed = true,
         }
 
@@ -725,6 +750,13 @@ pub(super) async fn resolve_article_assets(
         fold_figshare_observation(figshare, &mut assets, &mut nonretrievable, &mut any_failed);
     }
 
+    if identity_failed && assets.is_empty() && nonretrievable.is_empty() {
+        return Err(asset_sources_unavailable(
+            &source_attempts,
+            Some(crate::error::SourceProvider::NCBI_ID_CONVERTER.label()),
+        ));
+    }
+
     finish_resolution(
         requested_id,
         &article,
@@ -750,7 +782,7 @@ fn fold_figshare_observation(
             *any_failed |= found.failed;
         }
         SourceAttempt::Absent => {}
-        SourceAttempt::Failed => *any_failed = true,
+        SourceAttempt::Failed(_) => *any_failed = true,
         SourceAttempt::TimedOut => *any_failed = true,
     }
 }
@@ -1252,6 +1284,26 @@ fn rejected_identity(candidate: &LinkedCandidate) -> String {
     format!("rejected:{}", sha256_hex(candidate.href.trim().as_bytes()))
 }
 
+fn record_asset_parse(
+    result: Result<(), ()>,
+    attempts: &mut [ArticleAssetSourceAttempt],
+    provider: ArticleFulltextProvider,
+    source_document: ArticleAssetSourceDocument,
+) -> bool {
+    if result.is_err() {
+        for attempt in attempts {
+            if attempt.provider.source == provider.source
+                && attempt.source_document == source_document
+            {
+                attempt.outcome = ArticleAssetSourceOutcome::Degraded;
+            }
+        }
+        true
+    } else {
+        false
+    }
+}
+
 fn append_jats_candidates(
     candidates: &mut Vec<LinkedCandidate>,
     xml: &str,
@@ -1387,7 +1439,11 @@ fn finish_resolution(
     }
 
     if assets.is_empty() && pending.is_empty() {
-        return Err(final_asset_source_error(requested_id, any_failed));
+        return Err(final_asset_source_error(
+            requested_id,
+            any_failed,
+            &source_attempts,
+        ));
     }
 
     assign_asset_keys(requested_id, &mut assets, &mut pending);
@@ -1734,12 +1790,12 @@ fn provider_slug(provider: &str) -> String {
 async fn observe_pmc_package(pmcid: &str) -> SourceAttempt<PmcPackageObservation> {
     let client = match PmcOaClient::new() {
         Ok(client) => client,
-        Err(_) => return SourceAttempt::Failed,
+        Err(_) => return SourceAttempt::Failed(None),
     };
     let manifest = match client.oa_archive_manifest(pmcid).await {
         Ok(Some(manifest)) => manifest,
         Ok(None) => return SourceAttempt::Absent,
-        Err(_) => return SourceAttempt::Failed,
+        Err(_) => return SourceAttempt::Failed(None),
     };
     match client.archive_package(manifest.clone()).await {
         Ok(package) => SourceAttempt::Success(PmcPackageObservation {
@@ -1758,7 +1814,7 @@ async fn observe_pmc_package(pmcid: &str) -> SourceAttempt<PmcPackageObservation
 async fn observe_europe_package(pmcid: &str) -> SourceAttempt<EuropePackageObservation> {
     let client = match EuropePmcClient::new() {
         Ok(client) => client,
-        Err(_) => return SourceAttempt::Failed,
+        Err(_) => return SourceAttempt::Failed(None),
     };
     match client.get_supplementary_package(pmcid).await {
         Ok(Some(package)) => SourceAttempt::Success(EuropePackageObservation {
@@ -1766,31 +1822,31 @@ async fn observe_europe_package(pmcid: &str) -> SourceAttempt<EuropePackageObser
             pmc_manifest: None,
         }),
         Ok(None) => SourceAttempt::Absent,
-        Err(_) => SourceAttempt::Failed,
+        Err(_) => SourceAttempt::Failed(None),
     }
 }
 
 async fn observe_europe_xml(pmcid: &str) -> SourceAttempt<String> {
     let client = match EuropePmcClient::new() {
         Ok(client) => client,
-        Err(_) => return SourceAttempt::Failed,
+        Err(_) => return SourceAttempt::Failed(None),
     };
     match client.get_full_text_xml("PMC", pmcid).await {
         Ok(Some(xml)) => SourceAttempt::Success(xml),
         Ok(None) => SourceAttempt::Absent,
-        Err(_) => SourceAttempt::Failed,
+        Err(_) => SourceAttempt::Failed(None),
     }
 }
 
 async fn observe_ncbi_xml(pmcid: &str) -> SourceAttempt<String> {
     let client = match NcbiEfetchClient::new() {
         Ok(client) => client,
-        Err(_) => return SourceAttempt::Failed,
+        Err(_) => return SourceAttempt::Failed(None),
     };
     match client.get_full_text_xml(pmcid).await {
         Ok(Some(xml)) => SourceAttempt::Success(xml),
         Ok(None) => SourceAttempt::Absent,
-        Err(_) => SourceAttempt::Failed,
+        Err(_) => SourceAttempt::Failed(None),
     }
 }
 
@@ -1798,7 +1854,7 @@ async fn observe_pmc_html(pmcid: &str) -> SourceAttempt<String> {
     match crate::sources::pmc_article::html(pmcid).await {
         Ok(Some(html)) => SourceAttempt::Success(html),
         Ok(None) => SourceAttempt::Absent,
-        Err(_) => SourceAttempt::Failed,
+        Err(_) => SourceAttempt::Failed(None),
     }
 }
 
@@ -1808,14 +1864,14 @@ async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePack
         Ok(None) => return SourceAttempt::Absent,
         Err(_) => {
             tracing::warn!("Article asset identity resolution failed");
-            return SourceAttempt::Failed;
+            return SourceAttempt::Failed(None);
         }
     };
     let pmc = match PmcOaClient::new() {
         Ok(client) => client,
         Err(_) => {
             tracing::warn!("PMC OA client unavailable for article assets");
-            return SourceAttempt::Failed;
+            return SourceAttempt::Failed(None);
         }
     };
     let mut failed = false;
@@ -1843,7 +1899,7 @@ async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePack
         Ok(client) => client,
         Err(_) => {
             tracing::warn!("Europe PMC client unavailable for article assets");
-            return SourceAttempt::Failed;
+            return SourceAttempt::Failed(None);
         }
     };
     match europe_pmc.get_supplementary_package(&pmcid).await {
@@ -1853,10 +1909,10 @@ async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePack
             pmc_manifest: pmc_manifest.take(),
         }),
         Ok(None) if !failed => SourceAttempt::Absent,
-        Ok(None) => SourceAttempt::Failed,
+        Ok(None) => SourceAttempt::Failed(None),
         Err(_) => {
             tracing::warn!("Europe PMC supplementary request failed for article assets");
-            SourceAttempt::Failed
+            SourceAttempt::Failed(None)
         }
     }
 }
@@ -1889,7 +1945,7 @@ fn article_asset_not_retrievable(
     coverage: &ArticleAssetNamedCoverage,
 ) -> BioMcpError {
     let reason = match coverage.outcome {
-        ArticleAssetNamedOutcome::PmcProofOfWork => "ncbi_interstitial",
+        ArticleAssetNamedOutcome::PmcProofOfWork => "pmc_proof_of_work",
         ArticleAssetNamedOutcome::HealthyAbsent => "healthy_absent",
         ArticleAssetNamedOutcome::AccessOrLicenceDenied => "access_or_licence_denied",
         ArticleAssetNamedOutcome::UnsupportedOrigin => "unsupported_origin",
@@ -1917,24 +1973,54 @@ fn no_supported_asset_source(requested_id: &str) -> BioMcpError {
     BioMcpError::NotFound {
         entity: "article asset source".to_string(),
         id: requested_id.to_string(),
-        suggestion: "No supported article asset source found: no PMC OA, Europe PMC, or supported Figshare package."
+        suggestion: "No supported article assets found: no open-access asset package from PMC Open Access, Europe PMC, or a supported Figshare route."
             .to_string(),
     }
 }
 
-fn final_asset_source_error(requested_id: &str, failed: bool) -> BioMcpError {
+fn final_asset_source_error(
+    requested_id: &str,
+    failed: bool,
+    attempts: &[ArticleAssetSourceAttempt],
+) -> BioMcpError {
     if failed {
-        asset_sources_unavailable()
+        asset_sources_unavailable(attempts, None)
     } else {
         no_supported_asset_source(requested_id)
     }
 }
 
-fn asset_sources_unavailable() -> BioMcpError {
+fn asset_sources_unavailable(
+    attempts: &[ArticleAssetSourceAttempt],
+    additional_failure: Option<&str>,
+) -> BioMcpError {
+    let mut providers = BTreeSet::new();
+    for attempt in attempts {
+        if matches!(
+            attempt.outcome,
+            ArticleAssetSourceOutcome::SourceUnavailable
+                | ArticleAssetSourceOutcome::TimedOut
+                | ArticleAssetSourceOutcome::Degraded
+        ) {
+            providers.insert(attempt.provider.source.as_str());
+        }
+    }
+    providers.extend(additional_failure);
+    let providers = providers.into_iter().collect::<Vec<_>>().join(", ");
+    let package_absence = if attempts.iter().any(|attempt| {
+        attempt.source_document == ArticleAssetSourceDocument::PmcOaArchive
+            && attempt.outcome == ArticleAssetSourceOutcome::HealthyAbsent
+    }) {
+        " PMC Open Access returned no open-access asset package."
+    } else {
+        ""
+    };
     BioMcpError::SourceUnavailable {
         source_name: "article asset providers".to_string(),
-        reason: "Asset availability could not be confirmed because a consulted source failed."
-            .to_string(),
+        reason: format!(
+            "{}{providers} could not confirm asset availability (source_unavailable). No retrievable assets were returned by the consulted sources.{package_absence}",
+            crate::error::ARTICLE_ASSET_FAILURE_PREFIX
+        ),
         suggestion: "Retry later or inspect the article at its source.".to_string(),
     }
 }
@@ -1967,7 +2053,13 @@ async fn resolve_article_pmcid(article: &Article) -> Result<Option<String>, BioM
 async fn figshare_collection(
     article: &mut Article,
 ) -> Result<Option<FigshareCollection>, BioMcpError> {
-    super::detail::enrich_article_with_semantic_scholar(article).await?;
+    super::detail::enrich_article_with_semantic_scholar(article)
+        .await
+        .map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+            ))
+        })?;
     let Some(url) = article
         .semantic_scholar
         .as_ref()
@@ -2145,11 +2237,15 @@ async fn observe_figshare_assets(
     let collection = match figshare_collection(article).await {
         Ok(Some(collection)) => collection,
         Ok(None) => return SourceAttempt::Absent,
-        Err(_) => return SourceAttempt::Failed,
+        Err(error) => {
+            return SourceAttempt::Failed(Some(
+                error.public_projection().source.unwrap_or("Figshare"),
+            ));
+        }
     };
     let client = match FigshareClient::new() {
         Ok(client) => client,
-        Err(_) => return SourceAttempt::Failed,
+        Err(_) => return SourceAttempt::Failed(None),
     };
     let provider = figshare_provider();
     let route = ArticleAssetDiscoveryRoute {
@@ -2226,7 +2322,7 @@ async fn observe_figshare_assets(
     }
     if named_files == 0 {
         if failed {
-            SourceAttempt::Failed
+            SourceAttempt::Failed(None)
         } else {
             SourceAttempt::Absent
         }
@@ -2812,18 +2908,18 @@ mod tests {
         assert!(matches!(absent, SourceAttempt::Absent));
         let failed = bounded_source_attempt(
             std::time::Duration::from_millis(20),
-            std::future::ready(SourceAttempt::<()>::Failed),
+            std::future::ready(SourceAttempt::<()>::Failed(None)),
         )
         .await;
-        assert!(matches!(failed, SourceAttempt::Failed));
+        assert!(matches!(failed, SourceAttempt::Failed(_)));
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn manifest_cache_reuses_fresh_entries_and_discards_expired_or_corrupt_entries() {
         let cache = TempDirGuard::new("article-assets-manifest-cache");
-        let mut env = TestEnv::new();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        let mut env = TestEnv::scratch_cache_only();
+        env.set_cache_root(cache.path());
         let requested_id = "PMID:22663011";
         let manifest = sample_cached_manifest();
 
@@ -2942,11 +3038,11 @@ mod tests {
     #[test]
     fn final_source_classification_distinguishes_absence_from_failure() {
         assert!(matches!(
-            final_asset_source_error("22663011", false),
+            final_asset_source_error("22663011", false, &[]),
             BioMcpError::NotFound { .. }
         ));
         assert!(matches!(
-            final_asset_source_error("22663011", true),
+            final_asset_source_error("22663011", true, &[]),
             BioMcpError::SourceUnavailable { .. }
         ));
     }
@@ -2987,7 +3083,7 @@ mod tests {
             TestHttpReply::Bytes(test_http_response(status, content_type, body.as_bytes()))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-asset-failure-fold");
         for key in [
             "BIOMCP_TEST_UNPACED_ORIGIN",
@@ -2999,7 +3095,7 @@ mod tests {
         ] {
             env.set(key, &fixture.base);
         }
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
 
         let manifest_err = article_assets_manifest("4242")
             .await
@@ -3032,7 +3128,7 @@ mod tests {
             TestHttpReply::Bytes(test_http_response("200 OK", "text/html; charset=utf-8", body))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set(
             crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV,
@@ -3069,6 +3165,10 @@ mod tests {
             assets.is_empty(),
             "a PoW page must not receive an advertised raw-byte asset handle"
         );
+        assert_eq!(
+            serde_json::from_str::<ArticleAssetNamedOutcome>("\"ncbi_interstitial\"").unwrap(),
+            ArticleAssetNamedOutcome::PmcProofOfWork
+        );
         let coverage = &pending
             .first()
             .expect("named linked file remains visible")
@@ -3096,7 +3196,7 @@ mod tests {
             let error = article_asset_bytes_from_resolution("30311380", wanted, resolved.clone())
                 .unwrap_err();
             assert_eq!(error.code(), "article_asset_not_retrievable");
-            assert!(error.to_string().contains("ncbi_interstitial"));
+            assert!(error.to_string().contains("pmc_proof_of_work"));
             assert!(error.to_string().contains("PMC6329583"));
         }
         assert!(matches!(

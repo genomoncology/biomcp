@@ -215,7 +215,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     }
                 }
                 super::cache::CacheCommand::Stats => {
-                    let report = crate::cli::cache::collect_cache_stats_report()?;
+                    let report = tokio::task::spawn_blocking(crate::cli::cache::collect_cache_stats_report).await??;
                     if json {
                         Ok(crate::render::json::to_pretty(&report)?)
                     } else {
@@ -227,14 +227,14 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     max_size,
                     dry_run,
                 } => {
-                    let report = crate::cli::cache::execute_clean(max_age, max_size, dry_run)?;
+                    let report = tokio::task::spawn_blocking(move ||crate::cli::cache::execute_clean(max_age,max_size,dry_run)).await??;
                     if json {
                         Ok(crate::render::json::to_pretty(&report)?)
                     } else {
                         Ok(crate::cli::cache::render_clean_text(&report))
                     }
                 }
-                super::cache::CacheCommand::Clear { .. } => {
+                super::cache::CacheCommand::Clear { .. } | super::cache::CacheCommand::CleanLegacy { .. } => {
                     Err(crate::error::BioMcpError::InvalidArgument(
                         "cache clear must be executed through run_outcome()".into(),
                     )
@@ -358,21 +358,41 @@ async fn run_outcome_inner(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome
             .await
             .map_err(Into::into),
         Commands::Cache {
-            cmd: super::cache::CacheCommand::Clear { yes },
+            cmd:
+                command @ (super::cache::CacheCommand::Clear { .. }
+                | super::cache::CacheCommand::CleanLegacy { .. }),
         } => {
+            let (yes, legacy) = match command {
+                super::cache::CacheCommand::Clear { yes } => (yes, false),
+                super::cache::CacheCommand::CleanLegacy { yes } => (yes, true),
+                _ => unreachable!(),
+            };
             if !yes && !std::io::stdin().is_terminal() {
                 return Ok(CommandOutcome::stderr_with_exit(
-                    "Error: biomcp cache clear requires a TTY or --yes for non-interactive use."
-                        .to_string(),
+                    format!(
+                        "Error: biomcp cache {} requires a TTY or --yes for non-interactive use.",
+                        if legacy { "clean-legacy" } else { "clear" }
+                    ),
                     1,
                 ));
             }
 
             let config = crate::cache::resolve_cache_config()?;
-            let cache_path = config.cache_root.join("http");
+            let cache_path = if legacy {
+                config.cache_root.clone()
+            } else {
+                config.cache_root.join(crate::cache::sqlite::DATABASE_NAME)
+            };
 
             let report = if yes || crate::cli::cache::prompt_clear_confirmation(&cache_path)? {
-                crate::cli::cache::execute_managed_clear(&config)?
+                tokio::task::spawn_blocking(move || {
+                    if legacy {
+                        crate::cli::cache::execute_legacy_clear(&config)
+                    } else {
+                        crate::cli::cache::execute_managed_clear(&config)
+                    }
+                })
+                .await??
             } else {
                 crate::cache::ClearReport {
                     bytes_freed: None,
@@ -495,7 +515,7 @@ async fn run_outcome_inner(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome
                     command: Some(super::gene::CspecCommand::Document { capture_id }),
                     ..
                 }),
-        } => super::gene::cspec::document(capture_id, json),
+        } => super::gene::cspec::document(capture_id, json).await,
         Commands::Gene {
             cmd: super::GeneCommand::Definition { symbol },
         } => {
@@ -551,6 +571,16 @@ async fn run_outcome_inner(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome
     }
 }
 
+async fn run_outcome_with_get_notes(cli: Cli, mcp: bool) -> anyhow::Result<CommandOutcome> {
+    let get_json = matches!(&cli.command, Commands::Get { .. })
+        && (cli.json || command_requests_json(&cli.command));
+    let mut outcome = Box::pin(run_outcome_inner(cli, mcp)).await?;
+    if get_json && outcome.exit_code == 0 && outcome.bytes.is_none() {
+        super::shared::append_get_json_stale_notes(&mut outcome)?;
+    }
+    Ok(outcome)
+}
+
 async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome> {
     let json = cli.json || command_requests_json(&cli.command);
     let trusted_terminal_chart = is_charted_mcp_study_command(&cli).unwrap_or(false);
@@ -558,9 +588,9 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
     // The stale-cache scope wraps the command so every send inside it can
     // record what it served stale. The markdown note is
     // appended inside the scope, before sanitization; JSON bodies get
-    // their notes through the `_meta.notes` channel at payload build time.
+    // their notes through `_meta.notes` at payload build or get finalization.
     let command = crate::sources::with_stale_serve_notes(async {
-        let mut outcome = Box::pin(run_outcome_inner(cli, false)).await?;
+        let mut outcome = Box::pin(run_outcome_with_get_notes(cli, false)).await?;
         if !json && outcome.bytes.is_none() && !trusted_terminal_chart {
             crate::sources::append_stale_serve_notes_to_text(&mut outcome.text);
         }
@@ -609,13 +639,13 @@ async fn run_outcome_with_worker_stack(
                         // MCP path: the helper scopes the
                         // command with the stale-serve task-local (JSON
                         // bodies drain notes into _meta.notes inside
-                        // run_outcome_inner) and appends the text note
+                        // run_outcome_with_get_notes) and appends the text note
                         // before shell.rs redacts MCP output.
                         let wants_text_note = !(cli.json
                             || command_requests_json(&cli.command)
                             || is_charted_mcp_study_command(&cli).unwrap_or(false));
                         crate::sources::run_command_with_stale_serve_notes(
-                            Box::pin(run_outcome_inner(cli, true)),
+                            Box::pin(run_outcome_with_get_notes(cli, true)),
                             wants_text_note,
                         )
                         .await

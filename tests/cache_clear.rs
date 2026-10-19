@@ -38,7 +38,9 @@ fn run_biomcp(args: &[&str], cache_home: &Path, config_home: &Path) -> CommandRe
     // The platform cache root ignores XDG_CACHE_HOME on macOS, so the
     // fixture root travels through the explicit override every platform
     // honors.
-    command.env("BIOMCP_CACHE_DIR", resolved_cache_root(cache_home));
+    command.envs(biomcp_mcp_contract_client::child_cache_env(
+        resolved_cache_root(cache_home),
+    ));
     command.env("XDG_CONFIG_HOME", config_home);
     command.env_remove("BIOMCP_CACHE_MAX_SIZE");
     command.env_remove("BIOMCP_CACHE_MAX_AGE");
@@ -116,7 +118,7 @@ fn cache_clear_without_tty_refuses_with_plain_stderr_even_under_json() {
 }
 
 #[test]
-fn cache_clear_yes_deletes_only_http_tree() {
+fn cache_clear_yes_preserves_legacy_http_tree() {
     let root = temp_dir("delete-http-only");
     let cache_home = root.path().join("cache-home");
     let config_home = root.path().join("config-home");
@@ -142,7 +144,7 @@ fn cache_clear_yes_deletes_only_http_tree() {
         "stdout:\n{}",
         result.stdout
     );
-    assert!(!http_dir.exists(), "http cache tree should be removed");
+    assert!(http_dir.exists(), "legacy HTTP cache should remain");
     assert!(downloads_dir.is_dir(), "downloads sibling should remain");
     assert_eq!(
         fs::read(downloads_dir.join("keep.bin")).expect("downloads file should survive"),
@@ -174,8 +176,8 @@ fn cache_clear_yes_json_reports_machine_shape() {
     );
     let value: serde_json::Value =
         serde_json::from_str(&result.stdout).expect("stdout should be valid JSON");
-    assert_eq!(value["bytes_freed"], serde_json::json!(5));
-    assert_eq!(value["entries_removed"], serde_json::json!(2));
+    assert_eq!(value["bytes_freed"], serde_json::json!(0));
+    assert_eq!(value["entries_removed"], serde_json::json!(0));
 }
 
 #[test]
@@ -206,7 +208,7 @@ fn cache_clear_yes_missing_path_is_idempotent() {
 
 #[cfg(unix)]
 #[test]
-fn cache_clear_yes_root_symlink_is_unlinked_without_traversal() {
+fn legacy_cleanup_unlinks_root_symlink_without_traversal() {
     use std::os::unix::fs::symlink;
 
     let root = temp_dir("root-symlink");
@@ -222,7 +224,7 @@ fn cache_clear_yes_root_symlink_is_unlinked_without_traversal() {
     symlink(&target_dir, cache_root.join("http")).expect("http symlink should be created");
 
     let result = run_biomcp(
-        &["--json", "cache", "clear", "--yes"],
+        &["--json", "cache", "clean-legacy", "--yes"],
         &cache_home,
         &config_home,
     );
@@ -263,12 +265,12 @@ fn cache_clear_tty_accepts_after_confirmation() {
             .expect("tty cache clear should run");
 
     assert!(
-        output.contains("Cache clear: bytes_freed=9 entries_removed=3"),
+        output.contains("Cache clear: bytes_freed=0 entries_removed=0"),
         "unexpected PTY output:\n{output}"
     );
     assert!(
-        !http_dir.exists(),
-        "http cache tree should be removed after acceptance"
+        http_dir.exists(),
+        "legacy cache remains after current-cache clear"
     );
 }
 
@@ -324,7 +326,7 @@ fn cache_clear_yes_preserves_downloads_sibling() {
         result.stdout,
         result.stderr
     );
-    assert!(!http_dir.exists(), "http tree should be removed");
+    assert!(http_dir.exists(), "legacy HTTP cache should remain");
     assert!(downloads_dir.is_dir(), "downloads dir should remain");
     assert!(
         downloads_dir.join("keep.bin").is_file(),

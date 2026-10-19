@@ -196,22 +196,6 @@ where
         .await
 }
 
-pub(crate) async fn run_with_variant_article_safe_return_marker<F, T>(
-    future: F,
-    safe_return: &std::sync::atomic::AtomicBool,
-) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
-where
-    F: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
-{
-    match current_variant_article_deadline() {
-        Some(deadline) => deadline
-            .run_with_safe_return(future, safe_return)
-            .await
-            .map_err(|error| Box::new(error) as Box<dyn std::error::Error + Send + Sync>)?,
-        None => future.await,
-    }
-}
-
 fn ensure_variant_article_time() -> Result<(), BioMcpError> {
     if current_variant_article_deadline().is_some_and(|deadline| deadline.is_exhausted()) {
         return Err(BioMcpError::Api {
@@ -618,7 +602,11 @@ impl SharedHttpCache {
                 let _settlement = CacheInitializationSettlement::begin();
                 let manager = match deadline {
                     Some(deadline) => prepare_http_cache_with_deadline(config, deadline).await?,
-                    None => prepare_http_cache(config, crate::cache::SizeAwareCacheManager::new)?,
+                    None => tokio::task::spawn_blocking(move || {
+                        prepare_http_cache(config, crate::cache::SizeAwareCacheManager::new)
+                    })
+                    .await
+                    .map_err(|error| BioMcpError::Io(std::io::Error::other(error)))??,
                 };
                 if let Some(deadline) = deadline {
                     deadline.ensure_time_io()?;
@@ -648,7 +636,7 @@ impl Middleware for SharedHttpCache {
         extensions: &mut Extensions,
         next: Next<'_>,
     ) -> reqwest_middleware::Result<reqwest::Response> {
-        if cache_is_bypassed() {
+        if cache_is_bypassed() || crate::cache::http::bypass_request(&req, extensions) {
             req.headers_mut()
                 .insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
             return next.run(req, extensions).await;
@@ -692,33 +680,6 @@ type CacheSetupObservation = (
 #[cfg(test)]
 static CACHE_SETUP_OBSERVER: std::sync::RwLock<Option<CacheSetupObservation>> =
     std::sync::RwLock::new(None);
-
-#[cfg(test)]
-type CacheEpochMutationPause = (
-    std::path::PathBuf,
-    std::sync::Arc<tokio::sync::Notify>,
-    std::sync::Arc<tokio::sync::Notify>,
-);
-
-#[cfg(test)]
-static CACHE_EPOCH_MUTATION_PAUSE: std::sync::RwLock<Option<CacheEpochMutationPause>> =
-    std::sync::RwLock::new(None);
-
-#[cfg(test)]
-pub(crate) async fn observe_cache_epoch_mutation(root: &std::path::Path) {
-    let pause = {
-        let mut slot = CACHE_EPOCH_MUTATION_PAUSE.write().unwrap();
-        if slot.as_ref().is_some_and(|(path, _, _)| path == root) {
-            slot.take()
-        } else {
-            None
-        }
-    };
-    if let Some((_, entered, release)) = pause {
-        entered.notify_one();
-        release.notified().await;
-    }
-}
 
 #[cfg(test)]
 pub(crate) fn observe_cache_setup(root: &std::path::Path, epoch_acquired: bool) {
@@ -1521,18 +1482,7 @@ where
 {
     #[cfg(test)]
     observe_cache_setup(&config.cache_root, false);
-    let cache_root = config.cache_root.clone();
-    let content_root = crate::cache::content_root(&cache_root.join("http"));
-    crate::cache::secure_managed_tree(&cache_root, false, Some(&content_root))?;
-    let migration = crate::cache::try_migrate_http_cache(&cache_root)?;
-    crate::cache::try_ensure_body_limited_cache_epoch(
-        &cache_root,
-        matches!(migration, crate::cache::MigrationOutcome::Renamed),
-    )?;
-    let startup_repair = crate::cache::try_lock_cache_shared(&cache_root)?;
-    let cache_path = cache_root.join("http");
-    crate::cache::ensure_http_tree_secured(&cache_path, &content_root)?;
-    drop(startup_repair);
+    let cache_path = config.cache_root.join(crate::cache::sqlite::DATABASE_NAME);
     make_manager(cache_path, config)
 }
 
@@ -1557,11 +1507,11 @@ fn http_cache_middleware(
         ..HttpCacheOptions::default()
     };
 
-    std::sync::Arc::new(Cache(HttpCache {
+    std::sync::Arc::new(crate::cache::http::RequestCache(Cache(HttpCache {
         mode: CacheMode::Default,
-        manager: crate::cache::HttpCacheManager(manager.for_http_requests()),
+        manager: crate::cache::HttpCacheManager(manager),
         options: cache_options,
-    }))
+    })))
 }
 
 fn finish_http_client(
@@ -1595,7 +1545,9 @@ fn finish_http_client(
     // lookup/write, retry/backoff, transport, body parsing, and commitment.
     let builder = builder.with(rate_limit::RateLimitMiddleware::provider_pool());
     let builder = match cache {
-        Some(cache) => builder.with_arc(cache),
+        Some(cache) => builder
+            .with_arc(cache)
+            .with(crate::cache::http::RestoreCacheUrl),
         None => builder,
     };
     let builder = builder.with(RetryTransientMiddleware::new_with_policy_and_strategy(
@@ -1621,22 +1573,7 @@ async fn prepare_http_cache_with_deadline(
     deadline.ensure_time_io()?;
     #[cfg(test)]
     observe_cache_setup(&config.cache_root, false);
-    let cache_root = config.cache_root.clone();
-    let cache_path = cache_root.join("http");
-    let content_root = crate::cache::content_root(&cache_path);
-    crate::cache::secure_managed_tree_until(&cache_root, false, Some(&content_root), deadline)?;
-    deadline.ensure_time_io()?;
-    let migration = crate::cache::try_migrate_http_cache_until(&cache_root, deadline).await?;
-    deadline.ensure_time_io()?;
-    crate::cache::try_ensure_body_limited_cache_epoch_until(
-        &cache_root,
-        matches!(migration, crate::cache::MigrationOutcome::Renamed),
-        deadline,
-    )
-    .await?;
-    let startup_repair = crate::cache::try_lock_cache_shared(&cache_root)?;
-    crate::cache::ensure_http_tree_secured_until(&cache_path, &content_root, deadline)?;
-    drop(startup_repair);
+    let cache_path = config.cache_root.join(crate::cache::sqlite::DATABASE_NAME);
     crate::cache::SizeAwareCacheManager::new_with_deadline(cache_path, config, deadline).await
 }
 
@@ -2403,7 +2340,9 @@ mod tests {
         ResolvedCacheConfig {
             cache_root: cache_root.into(),
             max_size: 10_000_000_000,
-            min_disk_free: DiskFreeThreshold::Percent(10),
+            min_disk_free: DiskFreeThreshold::Bytes(
+                crate::test_support::FIXTURE_MIN_DISK_FREE_BYTES,
+            ),
             max_age: Duration::from_secs(86_400),
             origins: CacheConfigOrigins {
                 cache_root: ConfigOrigin::Default,
@@ -2972,39 +2911,24 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_http_client_migrates_then_clears_pre_limit_legacy_cache() {
-        let root = TempDirGuard::new("http-cache-migration");
-        let cache_root = root.path().join("override-root");
-        let legacy = cache_root.join("http-cacache");
-        std::fs::create_dir_all(&legacy).unwrap();
-        std::fs::write(legacy.join("sentinel.txt"), b"cached payload").unwrap();
+    async fn sqlite_initialization_preserves_legacy_cache_and_markers() {
+        let root = TempDirGuard::new("sqlite-legacy-coexistence");
+        let legacy = root.path().join("http-cacache");
+        std::fs::create_dir(&legacy).unwrap();
+        std::fs::write(legacy.join("keep"), b"legacy bytes").unwrap();
+        std::fs::write(root.path().join(".body-limit-cache-v1"), b"old marker").unwrap();
         let cache = SharedHttpCache {
-            config: Some(test_cache_config(&cache_root)),
+            config: Some(test_cache_config(root.path())),
             ..SharedHttpCache::default()
         };
         assert!(cache.initialize(None).await.unwrap().is_some());
-        assert!(cache_root.join("http").is_dir());
-        assert!(!cache_root.join("http/sentinel.txt").exists() && !legacy.exists());
-    }
-    #[tokio::test]
-    async fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
-        let root = TempDirGuard::new("http-cache-epoch-clear");
-        let cache_root = root.path().join("cache-root");
-        let legacy = cache_root.join("http-cacache");
-        std::fs::create_dir_all(&legacy).unwrap();
-        std::fs::write(legacy.join("legacy-sentinel"), b"legacy").unwrap();
-        std::fs::write(
-            cache_root.join(".body-limit-cache-v1"),
-            b"bounded-response-body-v1\n",
-        )
-        .unwrap();
-        let cache = SharedHttpCache {
-            config: Some(test_cache_config(&cache_root)),
-            ..SharedHttpCache::default()
-        };
-        assert!(cache.initialize(None).await.unwrap().is_some());
-        assert!(cache_root.join("http").is_dir());
-        assert!(!cache_root.join("http/legacy-sentinel").exists() && !legacy.exists());
+        assert!(root.path().join("biomcp.db").is_file());
+        assert_eq!(std::fs::read(legacy.join("keep")).unwrap(), b"legacy bytes");
+        assert_eq!(
+            std::fs::read(root.path().join(".body-limit-cache-v1")).unwrap(),
+            b"old marker"
+        );
+        assert!(!root.path().join("http").exists());
     }
 
     #[tokio::test]

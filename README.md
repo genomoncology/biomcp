@@ -8,7 +8,7 @@ BioMCP retrieves data from upstream biomedical sources. Those sources' terms gov
 
 ## What is BioMCP?
 
-BioMCP is one CLI binary over a single command grammar that reaches 71 trusted
+BioMCP is one CLI binary over a single command grammar that reaches 72 trusted
 biomedical sources directly (PubMed, ClinVar, ClinicalTrials.gov, OncoKB,
 Reactome, and more; ten further sources arrive inside another source's
 answer). It is also an MCP (Model Context Protocol) server, so the same tools are
@@ -23,7 +23,7 @@ get compact, evidence-oriented results across live public data plus local study 
 ## Features
 
 - **Search the literature:** `search article` fans out across PubTator3 and
-  Europe PMC, deduplicates PMID/PMCID/DOI identifiers, and can add a Semantic
+  Europe PMC and PubMed when the filters are compatible, deduplicates PMID/PMCID/DOI identifiers, and can add a Semantic
   Scholar leg when your filters support it.
 - **Pivot without rework:** move from a gene, variant, drug, disease, pathway,
   protein, or article straight into the next built-in view instead of

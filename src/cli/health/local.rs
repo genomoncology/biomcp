@@ -323,10 +323,25 @@ pub(in crate::cli::health) async fn check_cache_limits() -> ProbeOutcome {
         }
     };
 
+    let bypass = crate::sources::cache_is_bypassed();
     match tokio::task::spawn_blocking(move || {
         check_cache_limits_with(
             || Ok(config),
-            crate::cache::snapshot_cache,
+            |path| {
+                if bypass || !path.exists() {
+                    return Ok(0);
+                }
+                let store =
+                    crate::cache::sqlite::Store::open(path.parent().expect("database parent"))?;
+                store
+                    .connection()
+                    .query_row(
+                        "SELECT optional_bytes FROM cache_meta WHERE id=1",
+                        [],
+                        |r| crate::cache::sqlite::read_u64(r, 0),
+                    )
+                    .map_err(crate::cache::sqlite::sqlite_error)
+            },
             crate::cache::inspect_filesystem_space,
         )
     })
@@ -407,43 +422,47 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path, mcp: bool) -> Pr
 
 pub(in crate::cli::health) fn check_cache_limits_with<R, S, I>(
     resolve_config: R,
-    snapshotter: S,
+    read_bytes: S,
     inspect_space: I,
 ) -> ProbeOutcome
 where
     R: FnOnce() -> Result<crate::cache::ResolvedCacheConfig, BioMcpError>,
-    S: FnOnce(&Path) -> Result<crate::cache::CacheSnapshot, crate::cache::CachePlannerError>,
+    S: FnOnce(&Path) -> Result<u64, std::io::Error>,
     I: FnOnce(&Path) -> Result<crate::cache::FilesystemSpace, BioMcpError>,
 {
     let config = match resolve_config() {
         Ok(config) => config,
         Err(err) => return cache_limits_error_outcome(err.code().into()),
     };
-    let cache_path = config.cache_root.join("http");
-    let snapshot = match snapshotter(&cache_path) {
-        Ok(snapshot) => snapshot,
-        Err(err) => {
-            let kind = match err {
-                crate::cache::CachePlannerError::Io { source, .. } => {
-                    format!("{:?}", source.kind())
-                }
-                crate::cache::CachePlannerError::Index { .. } => "cache_index".into(),
-            };
-            return cache_limits_error_outcome(kind);
-        }
+    let cache_path = config.cache_root.join(crate::cache::sqlite::DATABASE_NAME);
+    let bytes = match read_bytes(&cache_path) {
+        Ok(bytes) => bytes,
+        Err(error) => return cache_limits_error_outcome(format!("{:?}", error.kind())),
     };
     let space = match inspect_space(&config.cache_root) {
         Ok(space) => space,
         Err(err) => return cache_limits_error_outcome(err.code().into()),
     };
-    let evaluation = crate::cache::evaluate_cache_limits(&snapshot, &config, space);
+    let usage = crate::cache::CacheUsage {
+        referenced_blob_bytes: bytes,
+        orphan_blob_bytes: 0,
+    };
+    let evaluation = crate::cache::evaluate_cache_usage(usage, &config, space);
 
+    cache_limits_evaluation_outcome(&config, space, evaluation)
+}
+
+fn cache_limits_evaluation_outcome(
+    config: &crate::cache::ResolvedCacheConfig,
+    space: crate::cache::FilesystemSpace,
+    evaluation: crate::cache::CacheLimitEvaluation,
+) -> ProbeOutcome {
     if evaluation.over_max_size || evaluation.below_min_disk_free {
         return outcome(
             HealthRow {
                 api: "Cache limits".into(),
                 status: HealthStatus::Warning,
-                latency: cache_limits_warning_message(&config, space, &evaluation),
+                latency: cache_limits_warning_message(config, space, &evaluation),
                 affects: None,
                 key_configured: None,
                 local_path: None,

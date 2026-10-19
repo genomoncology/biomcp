@@ -62,9 +62,10 @@ fn citations_map_semantic_scholar_edges() {
     let result = article_graph_from_citations(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(0),
             next: Some(10),
-            data: vec![SemanticScholarCitationEdge {
+            data: Some(vec![SemanticScholarCitationEdge {
                 contexts: vec!["Example context".into()],
                 intents: vec!["Background".into()],
                 is_influential: Some(false),
@@ -75,7 +76,7 @@ fn citations_map_semantic_scholar_edges() {
                     "Nature",
                     2024,
                 ),
-            }],
+            }]),
         },
         0,
         10,
@@ -154,9 +155,10 @@ fn references_map_semantic_scholar_edges() {
     let result = article_graph_from_references(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(7),
             next: None,
-            data: vec![SemanticScholarReferenceEdge {
+            data: Some(vec![SemanticScholarReferenceEdge {
                 contexts: vec!["Example context".into()],
                 intents: vec!["Background".into()],
                 is_influential: Some(false),
@@ -167,7 +169,7 @@ fn references_map_semantic_scholar_edges() {
                     "Cell",
                     2009,
                 ),
-            }],
+            }]),
         },
         7,
         3,
@@ -204,9 +206,10 @@ fn graph_page_validation_fails_closed_for_bad_offsets_and_next_values() {
         (Some(2), Some(1)),
     ] {
         let response = SemanticScholarGraphResponse::<SemanticScholarCitationEdge> {
+            paper_info: None,
             offset,
             next,
-            data: Vec::new(),
+            data: Some(Vec::new()),
         };
         assert!(
             article_graph_from_citations(article.clone(), response, 1, 10, "22663011",).is_err()
@@ -228,9 +231,10 @@ fn graph_pages_preserve_provider_order_and_duplicate_edges() {
     let result = article_graph_from_citations(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(4),
             next: Some(8),
-            data: vec![edge.clone(), edge],
+            data: Some(vec![edge.clone(), edge]),
         },
         4,
         4,
@@ -256,9 +260,10 @@ fn empty_pages_follow_provider_next_for_both_directions() {
     let citation = article_graph_from_citations(
         article.clone(),
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(9),
             next: None,
-            data: Vec::new(),
+            data: Some(Vec::new()),
         },
         9,
         2,
@@ -268,9 +273,10 @@ fn empty_pages_follow_provider_next_for_both_directions() {
     let reference = article_graph_from_references(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(9),
             next: Some(20),
-            data: Vec::new(),
+            data: Some(Vec::new()),
         },
         9,
         2,
@@ -499,9 +505,9 @@ fn graph_page(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_provider_context_needs_no_fulltext_request() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-context");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, requests) = spawn_citation_fixture(vec![graph_page(
         0,
         Some(100),
@@ -530,9 +536,9 @@ async fn citation_evidence_provider_context_needs_no_fulltext_request() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_deduplicates_duplicate_edges_and_contexts() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-dedup");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, requests) = spawn_citation_fixture(vec![graph_page(
         0,
         None,
@@ -570,9 +576,9 @@ async fn citation_evidence_deduplicates_duplicate_edges_and_contexts() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_follows_the_advertised_next_offset() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-next");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, requests) = spawn_citation_fixture(vec![
         graph_page(
             0,
@@ -611,9 +617,9 @@ async fn citation_evidence_follows_the_advertised_next_offset() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_stops_after_the_matching_page() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-stop");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, requests) = spawn_citation_fixture(vec![
         graph_page(0, Some(100), vec![(CITED_PID.to_string(), vec!["Hit"])]),
         graph_page(100, None, vec![(CITED_PID.to_string(), vec!["Never"])]),
@@ -640,9 +646,9 @@ async fn citation_evidence_stops_after_the_matching_page() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_exhausted_pages_return_the_directed_not_found() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-notfound");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, _requests) = spawn_citation_fixture(vec![graph_page(0, None, vec![])]).await;
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
@@ -677,9 +683,9 @@ async fn citation_evidence_exhausted_pages_return_the_directed_not_found() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_rejects_a_mismatched_page_offset() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-offset");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, _requests) = spawn_citation_fixture(vec![graph_page(7, None, vec![])]).await;
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
@@ -703,9 +709,9 @@ async fn citation_evidence_rejects_a_mismatched_page_offset() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_bounds_the_traversal_at_three_pages() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-cap");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, requests) = spawn_citation_fixture(vec![
         graph_page(0, Some(100), vec![]),
         graph_page(100, Some(200), vec![]),
@@ -737,9 +743,9 @@ async fn citation_evidence_bounds_the_traversal_at_three_pages() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_compares_paper_ids_case_insensitively() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-case");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let upper = CITED_PID.to_ascii_uppercase();
     let (fixture, _requests) =
         spawn_citation_fixture(vec![graph_page(0, None, vec![(upper, vec!["Cased"])])]).await;
@@ -834,9 +840,9 @@ async fn citation_evidence_rejects_equal_and_decreasing_next_values() {
             graph_page(100, Some(50), vec![]),
         ],
     ] {
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = crate::test_support::TempDirGuard::new("citation-bad-next");
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
         let (fixture, _requests) = spawn_citation_fixture(pages).await;
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         let client =
@@ -862,9 +868,9 @@ async fn citation_evidence_rejects_equal_and_decreasing_next_values() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_rejects_a_page_with_more_rows_than_the_page_size() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-oversize-page");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let oversize: Vec<(String, Vec<&'static str>)> = (0..101)
         .map(|index| (format!("{index:040}"), vec![] as Vec<&'static str>))
         .collect();
@@ -891,9 +897,9 @@ async fn citation_evidence_rejects_a_page_with_more_rows_than_the_page_size() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_expires() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-graph-deadline");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     // A zero-millisecond graph budget makes the pre-page deadline check fire
     // before any request is issued, pinning the bounded-unavailable outcome
     // of the ten-second graph deadline deterministically.
@@ -931,9 +937,9 @@ async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_exp
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("citation-bridge-deadline");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     // The shrunk command budget makes the stalled bridge hit the absolute
     // deadline instead of hanging past the test.
     env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "400");
@@ -1438,9 +1444,9 @@ async fn opencitations_case(
     TestHttpFixture,
     Arc<Mutex<Vec<String>>>,
 ) {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new(label);
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, requests) = spawn_opencitations_fixture(pages, opencitations, jats).await;
     point_providers_at(&mut env, &fixture);
     (env, cache, fixture, requests)
@@ -1640,9 +1646,9 @@ async fn citation_evidence_leaves_the_index_unrequested_for_an_unlinked_marker()
 async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_doi() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new("opencitations-no-doi");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     // The citing seed carries a PubMed identifier and no DOI, so the phase
     // cannot address a reference list.
     let requests = Arc::new(Mutex::new(Vec::new()));
@@ -1870,9 +1876,9 @@ async fn degradation_case(
     TestHttpFixture,
     Arc<Mutex<Vec<String>>>,
 ) {
-    let mut env = TestEnv::new();
+    let mut env = TestEnv::scratch_cache_only();
     let cache = crate::test_support::TempDirGuard::new(label);
-    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set_cache_root(cache.path());
     let (fixture, requests) = spawn_degradation_fixture(s2, opencitations).await;
     point_providers_at(&mut env, &fixture);
     (env, cache, fixture, requests)

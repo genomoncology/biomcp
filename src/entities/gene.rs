@@ -925,6 +925,46 @@ fn canonical_aliases_for_symbols(
         .collect()
 }
 
+/// Recorded aliases for one matching Entrez-backed gene, never inferred former symbols.
+pub(crate) async fn recorded_gene_aliases(
+    query: &str,
+) -> Result<Option<(String, Vec<String>)>, BioMcpError> {
+    let client = MyGeneClient::new()?;
+    let response = client
+        .search(&mygene_query_term(query), 10, 0, None)
+        .await?;
+    let symbols = matching_canonical_alias_symbols(query, &response.hits);
+    if symbols.len() != 1 || response.total > response.hits.len() {
+        return Ok(None);
+    }
+    let mut hits = response.hits.iter().filter(|hit| {
+        hit.entrezgene.is_some()
+            && hit
+                .symbol
+                .as_deref()
+                .is_some_and(|symbol| symbol == symbols[0])
+    });
+    let Some(hit) = hits.next() else {
+        return Ok(None);
+    };
+    if hits.next().is_some() {
+        return Ok(None);
+    }
+    let mut aliases = hit.alias.clone().into_vec();
+    aliases.retain(|alias| {
+        crate::sources::is_valid_gene_symbol(alias) && !alias.eq_ignore_ascii_case(query)
+    });
+    let mut seen = std::collections::BTreeSet::new();
+    aliases.retain(|alias| seen.insert(alias.to_ascii_uppercase()));
+    Ok(Some((
+        hit.entrezgene
+            .as_ref()
+            .expect("filtered Entrez record")
+            .as_string(),
+        aliases,
+    )))
+}
+
 async fn unique_canonical_alias_symbol(
     client: &MyGeneClient,
     query: &str,

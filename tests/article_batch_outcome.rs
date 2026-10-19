@@ -489,7 +489,9 @@ fn run_preflight_sentinel(
     command
         .args(args)
         .env("RUST_LOG", "off")
-        .env("BIOMCP_CACHE_DIR", &fixture.cache_dir);
+        .envs(biomcp_mcp_contract_client::child_cache_env(
+            &fixture.cache_dir,
+        ));
     for name in [
         "BIOMCP_PUBTATOR_BASE",
         "BIOMCP_EUROPEPMC_BASE",
@@ -529,9 +531,7 @@ const COMPACT_SUCCESS_MARKDOWN: &str = r#"# Batch: article (2)
 
 ## 22663011 — ok
 
-# Article Batch (1)
-
-## 1. Europe full text winner
+### Europe full text winner
 PMID: 22663011
 Journal: Journal One
 Year: 2025
@@ -545,9 +545,7 @@ Citations: 12 (influential: 3)
 
 ## 22663012 — ok
 
-# Article Batch (1)
-
-## 1. PMC HTML fallback winner
+### PMC HTML fallback winner
 PMID: 22663012
 Journal: Journal One
 Year: 2025
@@ -619,9 +617,7 @@ const MIXED_MARKDOWN: &str = r#"# Batch: article (3)
 
 ## 22663011 — ok
 
-# Article Batch (1)
-
-## 1. Europe full text winner
+### Europe full text winner
 PMID: 22663011
 Journal: Journal One
 Year: 2025
@@ -641,9 +637,7 @@ Invalid argument: Unsupported identifier format. BioMCP resolves PMID (digits on
 
 ## 22663011 — ok
 
-# Article Batch (1)
-
-## 1. Europe full text winner
+### Europe full text winner
 PMID: 22663011
 Journal: Journal One
 Year: 2025
@@ -772,10 +766,23 @@ fn fixture_backed_batches_match_independent_literal_goldens() {
     );
     assert_eq!(compact_markdown.status.code(), Some(0));
     assert!(compact_markdown.stderr.is_empty());
+    let compact_markdown = String::from_utf8(compact_markdown.stdout).unwrap();
     assert_eq!(
-        String::from_utf8(compact_markdown.stdout).unwrap(),
-        COMPACT_SUCCESS_MARKDOWN
+        compact_markdown
+            .lines()
+            .filter(|line| line.starts_with("# "))
+            .count(),
+        1
     );
+    assert!(compact_markdown.starts_with("# Batch: article (2)\n"));
+    assert_eq!(
+        compact_markdown
+            .lines()
+            .filter(|line| line.starts_with("### "))
+            .count(),
+        2
+    );
+    assert_eq!(compact_markdown, COMPACT_SUCCESS_MARKDOWN);
     let compatibility_json = run_fixture(
         &fixture,
         &["--json", "article", "batch", "22663011", "22663012"],

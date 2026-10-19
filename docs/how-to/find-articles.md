@@ -237,8 +237,10 @@ biomcp search article -g BRAF --since 2024-01-01 --no-preprints --limit 10
 
 ## Pull the full-text section
 
+This is a live example. Provider availability can change; see [full-text access groups](../user-guide/article.md#which-papers-can-biomcp-read) before requesting other papers.
+
 ```bash
-biomcp get article 22663011 fulltext
+biomcp get article 24200969 fulltext
 ```
 
 ## Fetch several shortlisted papers at once

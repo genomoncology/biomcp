@@ -574,11 +574,11 @@ def changelog_history(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_dev_cycle_section_carries_its_own_tickets(
+def test_historical_dev_cycle_section_carries_its_own_tickets(
     changelog_history: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The undated dev-cycle section sits ahead of the last released
-    heading and keeps a shape every branch only appends to: the three
+    """The historical 0.9.3 dev-cycle section keeps the shape branches
+    appended to before its release: the three
     named subsections stay in place even when empty, every bullet
     closes with its ticket number, every cited ticket is filed
     for this milestone or has a batch landed in it, no bullet appears twice,
@@ -587,8 +587,9 @@ def test_dev_cycle_section_carries_its_own_tickets(
     bullet alone and a landing merge touches no other line."""
     changelog = _read("CHANGELOG.md")
     assert DEV_CYCLE_HEADING in changelog
-    assert changelog.index(DEV_CYCLE_HEADING) <= changelog.index(
-        _current_release_heading()
+    # Later releases precede this fixed historical inventory.
+    assert changelog.index(_current_release_heading()) <= changelog.index(
+        DEV_CYCLE_HEADING
     )
     block = _markdown_section_block(changelog, DEV_CYCLE_HEADING)
     assert "### New features" in block

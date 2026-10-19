@@ -28,22 +28,23 @@ bash "$ROOT/spec/fixtures/setup-article-search-deadline-fixture.sh" "$ROOT"
 . "$ROOT/.cache/spec-article-search-deadline-env"
 export BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS="$DEADLINE_MS"
 
-# HOLD_EPOCH_LOCK=1 holds the cache epoch lock from a side process for the
+# HOLD_SQLITE_WRITER=1 holds the SQLite writer lease from a side process for the
 # whole invocation, pinning that construction cannot outlive the deadline
 # (ticket 1299).
 holder_pid=""
-if [[ "${HOLD_EPOCH_LOCK:-0}" == "1" ]]; then
+if [[ "${HOLD_SQLITE_WRITER:-0}" == "1" ]]; then
   mkdir -p "$BIOMCP_CACHE_DIR"
   holder_marker="$(mktemp -u "$BIOMCP_CACHE_DIR/.holder.XXXXXX")"
+  "$ROOT/tools/biomcp-ci" cache stats >/dev/null
   python3 -c '
-import fcntl, sys, time
+import sqlite3, sys, time
 lock_path, marker_path = sys.argv[1], sys.argv[2]
-lock = open(lock_path, "a+")
-fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+lock = sqlite3.connect(lock_path)
+lock.execute("BEGIN IMMEDIATE")
 with open(marker_path, "w") as marker:
     marker.write("held")
 time.sleep(60)
-' "$BIOMCP_CACHE_DIR/.body-limit-cache-v1.lock" "$holder_marker" &
+' "$BIOMCP_CACHE_DIR/biomcp.db" "$holder_marker" &
   holder_pid=$!
   for _ in $(seq 1 50); do
     [[ -f "$holder_marker" ]] && break

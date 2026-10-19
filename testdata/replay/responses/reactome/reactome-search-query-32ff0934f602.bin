@@ -1,1 +1,58 @@
-{"code":500,"reason":"INTERNAL_SERVER_ERROR","url":"http://reactome.org/ContentService/search/query","messages":["Solr exception occurred with query: fq=-isReferenceSummary:true&fq={!tag%3Dsf}species_facet:(\"Homo+sapiens\")&fq=-deleted&qt=/facet&q=BRAF"],"targets":null}
+{
+  "results": [
+    {
+      "entries": [
+        {
+          "stId": "R-HSA-167224",
+          "id": "R-HSA-167224",
+          "name": "<span class=\"highlighting\" >BRAF</span>"
+        },
+        {
+          "stId": "R-HSA-9648621",
+          "id": "R-HSA-9648621",
+          "name": "<span class=\"highlighting\" >BRAF</span> G469R"
+        },
+        {
+          "stId": "R-HSA-5675199",
+          "id": "R-HSA-5675199",
+          "name": "hyperphosphorylated <span class=\"highlighting\" >BRAF</span>"
+        },
+        {
+          "stId": "R-HSA-9648833",
+          "id": "R-HSA-9648833",
+          "name": "<span class=\"highlighting\" >BRAF</span> K601E"
+        },
+        {
+          "stId": "R-HSA-9648618",
+          "id": "R-HSA-9648618",
+          "name": "<span class=\"highlighting\" >BRAF</span> G469E"
+        },
+        {
+          "stId": "R-HSA-6802281",
+          "id": "R-HSA-6802281",
+          "name": "<span class=\"highlighting\" >BRAF</span> T599dup"
+        },
+        {
+          "stId": "R-HSA-9651123",
+          "id": "R-HSA-9651123",
+          "name": "<span class=\"highlighting\" >BRAF</span> A246P"
+        },
+        {
+          "stId": "R-HSA-9651152",
+          "id": "R-HSA-9651152",
+          "name": "<span class=\"highlighting\" >BRAF</span> N581D"
+        },
+        {
+          "stId": "R-HSA-9651147",
+          "id": "R-HSA-9651147",
+          "name": "<span class=\"highlighting\" >BRAF</span> L485F"
+        },
+        {
+          "stId": "R-HSA-9651134",
+          "id": "R-HSA-9651134",
+          "name": "<span class=\"highlighting\" >BRAF</span> G534R"
+        }
+      ]
+    }
+  ]
+}

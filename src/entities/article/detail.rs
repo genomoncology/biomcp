@@ -374,7 +374,15 @@ pub(super) async fn resolve_article_from_pmid_with_context(
             } else if let Some(Ok(search)) = variant_detail_request(
                 execution,
                 "europepmc",
-                europe.search_by_pmid(&pmid.to_string()),
+                europe
+                    .clone()
+                    .with_abstracts(
+                        article
+                            .abstract_text
+                            .as_deref()
+                            .is_none_or(|text| text.trim().is_empty()),
+                    )
+                    .search_by_pmid(&pmid.to_string()),
             )
             .await
                 && let Some(hit) = first_europepmc_hit(search)
@@ -400,7 +408,10 @@ pub(super) async fn resolve_article_from_pmid_with_context(
                     let Some(search) = variant_detail_request(
                         execution,
                         "europepmc",
-                        europe.search_by_pmid(&pmid.to_string()),
+                        europe
+                            .clone()
+                            .with_abstracts(true)
+                            .search_by_pmid(&pmid.to_string()),
                     )
                     .await
                     else {
@@ -546,7 +557,7 @@ pub(super) async fn get_article_base_with_clients(
         return Err(BioMcpError::InvalidArgument("ID is too long.".into()));
     }
 
-    match parse_article_id(id) {
+    let mut article = match parse_article_id(id) {
         ArticleIdType::Pmid(pmid) => {
             resolve_article_from_pmid(
                 pmid,
@@ -560,7 +571,11 @@ pub(super) async fn get_article_base_with_clients(
             .await
         }
         ArticleIdType::Doi(doi) => {
-            let search = europe.search_by_doi(&doi).await?;
+            let search = europe
+                .clone()
+                .with_abstracts(true)
+                .search_by_doi(&doi)
+                .await?;
             if search.hit_count.unwrap_or(0) == 0 {
                 return Err(article_not_found(&doi, id));
             }
@@ -582,7 +597,11 @@ pub(super) async fn get_article_base_with_clients(
             }
         }
         ArticleIdType::Pmc(pmcid) => {
-            let search = europe.search_by_pmcid(&pmcid).await?;
+            let search = europe
+                .clone()
+                .with_abstracts(true)
+                .search_by_pmcid(&pmcid)
+                .await?;
             if search.hit_count.unwrap_or(0) == 0 {
                 return Err(article_not_found(&pmcid, id));
             }
@@ -604,6 +623,25 @@ pub(super) async fn get_article_base_with_clients(
             }
         }
         ArticleIdType::Invalid => Err(BioMcpError::InvalidArgument(INVALID_ARTICLE_ID_MSG.into())),
+    }?;
+    prefer_pubmed_abstract(&mut article).await;
+    Ok(article)
+}
+
+/// PubTator may drop comparison characters before exporting an abstract.
+/// Keep its annotations, but prefer the publisher text in PubMed when available.
+async fn prefer_pubmed_abstract(article: &mut Article) {
+    let Some(pmid) = article.pmid.as_deref() else {
+        return;
+    };
+    let Ok(pubmed) = PubMedClient::new() else {
+        return;
+    };
+    if let Ok(Ok(citation)) =
+        tokio::time::timeout(ARTICLE_INDEXING_TIMEOUT, pubmed.citation(pmid)).await
+        && let Some(abstract_text) = citation.abstract_text
+    {
+        article.abstract_text = Some(abstract_text);
     }
 }
 

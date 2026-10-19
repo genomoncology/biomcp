@@ -95,7 +95,7 @@ pub fn drug_markdown_with_region(
         route => &drug.route,
         show_us_header => show_us_header,
         top_adverse_events => &drug.top_adverse_events,
-        targets => &drug.targets,
+        targets => drug.target_display_names(),
         variant_targets => &drug.variant_targets,
         target_family => &drug.target_family,
         target_family_name => &drug.target_family_name,
@@ -134,7 +134,7 @@ pub fn drug_markdown_with_region(
                 },
                 _ => render_us_approvals_block(
                     &approvals_heading,
-                    drug.approvals.as_deref(),
+                    drug,
                 ),
             }
         } else {

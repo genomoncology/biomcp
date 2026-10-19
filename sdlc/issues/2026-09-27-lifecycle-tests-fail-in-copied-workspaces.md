@@ -30,3 +30,11 @@ Open. Owner: the 0.9.1 follow-up batch (tickets 1255-1259). Revisit
 trigger: any new fixture script added to `scripts/run-specs.sh`
 without the existence guard, or the next lifecycle-test failure in
 a scratch checkout.
+
+## Residual closure in 2243
+
+Resolved: the two named lifecycle modules were deleted in e7e45eba5. No retained contract depends on their copied-workspace setup.
+
+## Release dispositions (2026-10-19)
+
+- Both copied-workspace lifecycle failures: MOOT. The two named modules were removed at e7e45eba5; 2243 at 569d9beb1 confirms no retained contract depends on them. No claim is made that their historical setup was repaired.

@@ -70,3 +70,12 @@ debugging session on the gate host, and the ticket queue has higher
 value ahead of it. Owner: the biomcp queue. Revisit trigger: any
 lease-test failure that reproduces with two CPUs, or a consumer
 running BioMCP tests inside a one-CPU container.
+
+## Resolution in2244
+
+The single-CPU failure was readiness framing in test scaffolding, not a demonstrated product deadlock. libtest wrote its test-name prefix without newline before the child wrote the raw marker; the exact-line parent rejected the combined line. Prepending newline at the raw writer fixes both existing one-CPU lease cases while preserving exact comparison and watchdogs. Both cancellation/publication controls also pass on one CPU. The two-CPU workaround and one-CPU prohibition are removed. Exact trace and red/green evidence remain in experiment171 with the source ticket.
+
+## Release dispositions (2026-10-19)
+
+- Single-CPU readiness finding: FIXED by 2244 at 2a2aca42. The recorded readiness framing repair preserves exact marker comparison and watchdogs; both existing lease cases and cancellation/publication controls pass on one CPU. The historical watchdog failure did not establish a production deadlock.
+- Historical two-CPU control and unreliable steal-read: HISTORICAL. Preserve the corrected observations above; a current repair does not validate the discarded probe.

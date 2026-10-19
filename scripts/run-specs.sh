@@ -15,6 +15,9 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/build-profile.md
   spec/surface/skills.md
   spec/entity/trial-numeric-filters.md
+  spec/entity/gene-discovery.md
+  spec/entity/pathway.md
+  spec/entity/trial-condition-search.md
   spec/surface/trial-retirement.md
   # Replays its own frozen capture through spec/fixtures/run-clingen-erepo-
   # fixture.sh, not the replay server (2127 ruling).
@@ -196,7 +199,9 @@ run_replay_server() {
   # another lane's cache under the offline sandbox.
   export BIOMCP_TEST_UNPACED_ORIGIN="$origin"
   export BIOMCP_TEST_RETRY_SLEEP_OFF=1
-  export BIOMCP_CACHE_DIR="$ROOT/.cache/spec-replay-http-cache"
+  # shellcheck source=../spec/fixtures/cache-policy.sh
+  source "$ROOT/spec/fixtures/cache-policy.sh"
+  set_fixture_cache_root "$ROOT/.cache/spec-replay-http-cache"
   rm -rf "$BIOMCP_CACHE_DIR"
   mkdir -p "$BIOMCP_CACHE_DIR"
   register_cleanup stop_replay_server
