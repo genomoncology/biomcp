@@ -13,6 +13,9 @@ Use these pages when you already know the provider you trust, the keyword you ar
 
 | Source | Best when you want | Guide |
 |---|---|---|
+| Europe PMC | Article source availability and full-text boundaries | [Europe PMC](europe-pmc.md) |
+| PMC | Article source availability and full-text boundaries | [PMC](pmc.md) |
+| PubTator3 | Article source availability and full-text boundaries | [PubTator3](pubtator.md) |
 | PubMed | Article search, PubTator annotations, and PMC full-text handoff | [PubMed](pubmed.md) |
 | ClinicalTrials.gov | Recruiting-study search, structured eligibility, and site details | [ClinicalTrials.gov](clinicaltrials-gov.md) |
 | ClinVar | Clinical significance and review-status context for variants | [ClinVar](clinvar.md) |
