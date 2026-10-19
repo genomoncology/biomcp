@@ -177,9 +177,11 @@ spec-static:
 	bash scripts/run-specs.sh spec-static
 
 spec-pr:
+	$(MAKE) sync-python-dev
 	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec-pr
 
 spec-contracts:
+	$(MAKE) sync-python-dev
 	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec-contracts
 
 verify:

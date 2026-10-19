@@ -42,3 +42,7 @@ Do not tag 0.9.2. No open branch is ready to land as it stands. The clinical log
 ## Landing order
 
 2024 first, because of the deadline. Then 2023 before 2020. The rest follow in any order, each rebased on main with a review covering its head and a green merged-tree run before main moves. 1305 lands last, with bullets checked against main at that point.
+
+## Residual closure in 2243
+
+Resolved finding17 Python-sync residual: 2243 makes spec-pr and spec-contracts depend on sync-python-dev and pins the ordering through the existing contract test. Other findings retain their own dispositions.
