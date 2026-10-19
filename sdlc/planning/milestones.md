@@ -26,6 +26,14 @@ Serves: BioMCP's ideal state that work stays bounded and that the same binary ru
 
 Done when: a long-used cache starts as fast as an empty one, the moved test work has landed, fresh and Rust-touch development builds are no slower than v0.9.2's on one build machine or the cost is explained, and a full release rehearsal passes.
 
+## 0.9.5
+
+Delivers: the remaining replay-server golden coverage left outside 0.9.4: the other search and get selector families, traversal and local-data outputs, with fresh captures where old receipts no longer match current URLs.
+
+Serves: BioMCP's ideal state that tests prove what users run, offline and the same on every machine.
+
+Done when: every search and get command's JSON and Markdown output is checked against committed golden files served by the replay server, and a full release rehearsal passes.
+
 ## 1.0
 
 Delivers: to be defined. BioMCP 1.0 is paused by Ian's direction, and this team continues on the 0.9 line.
