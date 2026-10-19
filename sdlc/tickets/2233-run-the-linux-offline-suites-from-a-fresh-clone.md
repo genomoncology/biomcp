@@ -29,3 +29,7 @@ One record lists the commit, the commands, the pass and fail counts and each fai
 ## Development brief
 
 Run the declared full offline Rust and Python suites on the configured Linux test machine through a build job, using a fresh clone of current main 096c11fc416ddc18ee3b05814a6d0b9fede63648. Separate dependency preparation from actual network-isolated execution, prove kernel isolation and record exact commands, graphs, counts and exclusions. Collect failures without fixing product code. Report each distinct gap and its cause to the coordinator, who files its ticket. Remove only owned clone/build scratch after preserving evidence. This is the initial check; final candidate rerun remains required after cache and replay land. PM explicitly authorized this occasional Linux qualification.
+
+## Progress
+
+- 2026-10-19 started
