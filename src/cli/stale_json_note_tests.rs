@@ -613,7 +613,7 @@ async fn stale_author_get_json_reaches_the_shared_finalizer() {
         "../../testdata/sources/semantic_scholar/author_detail.json"
     ))
     .await;
-    let _env = StaleNoteEnv::new(&base, &["BIOMCP_S2_BASE"]);
+    let _env = StaleNoteEnv::new(&base, &["BIOMCP_S2_BASE", "BIOMCP_TEST_UNPACED_ORIGIN"]);
     let args = ["--json", "get", "author", "semanticscholar:1716151"];
     let fresh = run(&args).await;
     let fresh_value: serde_json::Value = serde_json::from_str(&fresh).expect("fresh author JSON");
