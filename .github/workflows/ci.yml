@@ -370,12 +370,42 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: 3.12.3
+      - name: Compare released Windows cache behavior
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.windows_only }}
+        shell: pwsh
+        run: |
+          $comparison = Join-Path $env:RUNNER_TEMP 'biomcp-0.9.3-comparison'
+          New-Item -ItemType Directory -Path $comparison -Force | Out-Null
+          try {
+            $archive = Join-Path $comparison 'biomcp-windows-x86_64.zip'
+            $url = 'https://github.com/genomoncology/biomcp/releases/download/v0.9.3/biomcp-windows-x86_64.zip'
+            Invoke-WebRequest $url -OutFile $archive
+            Invoke-WebRequest "$url.sha256" -OutFile "$archive.sha256"
+            $expected = ((Get-Content "$archive.sha256" -Raw).Trim() -split '\s+')[0]
+            $actual = (Get-FileHash $archive -Algorithm SHA256).Hash
+            if ($expected -notmatch '^[0-9a-fA-F]{64}$' -or $actual -ne $expected) {
+              throw 'Released Windows archive checksum mismatch'
+            }
+            Write-Output "Released archive SHA256: $actual"
+            Expand-Archive $archive -DestinationPath (Join-Path $comparison 'unpacked')
+            $executables = @(Get-ChildItem (Join-Path $comparison 'unpacked') -Recurse -Filter biomcp.exe)
+            if ($executables.Count -ne 1) { throw 'Expected one released executable' }
+            $env:BIOMCP_WINDOWS_CONTRACT_BIN = $executables[0].FullName
+            Get-FileHash $env:BIOMCP_WINDOWS_CONTRACT_BIN -Algorithm SHA256 | Format-List
+            & $env:BIOMCP_WINDOWS_CONTRACT_BIN --version
+            if ($LASTEXITCODE -ne 0) { throw 'Released executable version failed' }
+            cargo test --locked --no-default-features --test windows_stdio_contract windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals -- --exact --nocapture
+            if ($LASTEXITCODE -ne 0) { throw 'Released Windows cache comparison failed' }
+          } finally {
+            Remove-Item Env:BIOMCP_WINDOWS_CONTRACT_BIN -ErrorAction SilentlyContinue
+            Remove-Item $comparison -Recurse -Force -ErrorAction SilentlyContinue
+          }
       - name: Check cache-lock contention and article-search deadlines
         shell: bash
         run: |
-          cargo test --locked --no-default-features --test windows_stdio_contract
+          cargo test --locked --no-default-features --test windows_stdio_contract -- --nocapture
           cargo test --locked --no-default-features --test windows_lock_contract
-          cargo test --locked --no-default-features --lib body_limit_epoch_lock_contention_obeys_variant_article_deadline
+          cargo test --locked --no-default-features --lib body_limit_epoch_lock_contention_preserves_variant_article_time
           cargo test --locked --no-default-features --lib construction_under_a_held_epoch_lock_honors_the_deadline
       - name: Compile Windows CSpec and managed-state boundaries
         if: ${{ !inputs.windows_only }}

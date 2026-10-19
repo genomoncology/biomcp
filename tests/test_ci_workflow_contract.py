@@ -92,16 +92,24 @@ def test_python_gate_prepares_a_clean_environment_before_offline_execution(
     )
     for executable in (uv, offline):
         executable.chmod(0o755)
-    env = {key: value for key, value in os.environ.items()
-           if key not in ('MAKEFLAGS', 'MAKEOVERRIDES', 'BIOMCP_OFFLINE_NETWORK')}
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in ("MAKEFLAGS", "MAKEOVERRIDES", "BIOMCP_OFFLINE_NETWORK")
+    }
     env["PATH"] = str(tools) + os.pathsep + env["PATH"]
     result = subprocess.run(
-        ["make", "test-python"], cwd=tmp_path, env=env,
-        capture_output=True, text=True,
+        ["make", "test-python"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert (tmp_path / "commands").read_text().splitlines() == [
-        "sync", "pytest", "mkdocs",
+        "sync",
+        "pytest",
+        "mkdocs",
     ]
 
 
@@ -110,7 +118,9 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
     assert "head_commit.message" not in text, (
         "the docs-only skip must never read the commit message"
     )
-    classify = (REPO_ROOT / "scripts" / "ci-classify-push.sh").read_text(encoding="utf-8")
+    classify = (REPO_ROOT / "scripts" / "ci-classify-push.sh").read_text(
+        encoding="utf-8"
+    )
     # The base is the merge-base with origin/main (a failed tip
     # followed by a markdown commit must not skip the Rust jobs),
     # and executable markdown (spec/, skills/, src/, the compiled
@@ -177,7 +187,9 @@ def test_no_workflow_job_runs_on_a_moving_runner_label() -> None:
     lane-setup action (ticket 2075) joined the ban: it runs inside
     every lane, so a moving label there moves every lane.
     """
-    texts = [path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yml"))]
+    texts = [
+        path.read_text(encoding="utf-8") for path in sorted(WORKFLOWS.glob("*.yml"))
+    ]
     texts.append(ACTION.read_text(encoding="utf-8"))
     for text in texts:
         _assert_no_moving_runner_label(text)
@@ -212,7 +224,7 @@ def _assert_windows_wrapper_step(doc: dict) -> None:
     )
     # A failing child must surface as a nonzero wrapper exit: the
     # captured status is compared against 0, and the branch fails.
-    assert '|| status=$?' in run and 'if [ "$status" -eq 0 ]; then' in run, (
+    assert "|| status=$?" in run and 'if [ "$status" -eq 0 ]; then' in run, (
         "the wrapper step must fail when a failing child exits 0 through "
         "the wrapper (the os.execvpe behavior on Windows)"
     )
@@ -273,7 +285,9 @@ def test_ci_runs_only_when_dispatched_or_called_for_a_release() -> None:
         "type": "boolean",
         "default": False,
     }
-    assert triggers["workflow_call"] == {"inputs": {"revision": {"required": True, "type": "string"}}}
+    assert triggers["workflow_call"] == {
+        "inputs": {"revision": {"required": True, "type": "string"}}
+    }
 
 
 def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
@@ -294,14 +308,53 @@ def test_manual_ci_classification_runs_every_rust_lane(tmp_path: Path) -> None:
             "(github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && "
             f"{narrow_skip}needs.changes.outputs.docs_only != 'true'"
         ), f"{jid} must run for a full manual dispatch on the selected revision"
-    windows_runs = "\n".join(s.get("run", "") for s in _job("windows-contracts")["steps"])
+    windows_runs = "\n".join(
+        s.get("run", "") for s in _job("windows-contracts")["steps"]
+    )
+    # Cargo accepts a stale filter and succeeds with zero tests. Compare the
+    # workflow's actual library selectors with Rust test definitions directly.
+    selectors = re.findall(r"(?m)^\s*cargo test .* --lib (\w+)\s*$", windows_runs)
+    assert selectors, "Windows must select its library deadline regressions"
+    rust_tests = {
+        name
+        for path in (REPO_ROOT / "src").rglob("*.rs")
+        for name in re.findall(
+            r"#\[(?:tokio::)?test(?:\([^\n]*\))?\]\s*(?:async\s+)?fn\s+(\w+)",
+            path.read_text(encoding="utf-8"),
+        )
+    }
+    for selector in selectors:
+        assert selector in rust_tests, (
+            f"Windows selector matches no Rust test: {selector}"
+        )
     for test in (
         "windows_stdio_contract",
         "windows_lock_contract",
-        "body_limit_epoch_lock_contention_obeys_variant_article_deadline",
+        "body_limit_epoch_lock_contention_preserves_variant_article_time",
         "construction_under_a_held_epoch_lock_honors_the_deadline",
     ):
         assert test in windows_runs, f"Windows must run the {test} regression"
+    comparison = next(
+        step
+        for step in _job("windows-contracts")["steps"]
+        if step.get("name") == "Compare released Windows cache behavior"
+    )
+    assert comparison["if"] == (
+        "${{ github.event_name == 'workflow_dispatch' && inputs.windows_only }}"
+    ), "Released-version diagnosis must run only for the scoped manual check"
+    assert comparison["shell"] == "pwsh"
+    for required in (
+        "v0.9.3/biomcp-windows-x86_64.zip",
+        'Invoke-WebRequest "$url.sha256"',
+        "$actual -ne $expected",
+        "Get-FileHash $env:BIOMCP_WINDOWS_CONTRACT_BIN -Algorithm SHA256",
+        "--exact --nocapture",
+        "if ($LASTEXITCODE -ne 0)",
+        "Remove-Item Env:BIOMCP_WINDOWS_CONTRACT_BIN",
+    ):
+        assert required in comparison["run"], (
+            f"Released comparison must retain {required}"
+        )
 
 
 @pytest.mark.parametrize("failed_command", [0, 1, 2, 3])
@@ -523,9 +576,7 @@ def test_the_release_checks_lane_runs_the_releases_exact_gh_query() -> None:
     version-check refuses one. Ticket 2125: the exact command now
     filters to push runs on main, as the release's gate does."""
     job = _job("release-checks")
-    gh_step = next(
-        s for s in job["steps"] if "gh run list" in str(s.get("run", ""))
-    )
+    gh_step = next(s for s in job["steps"] if "gh run list" in str(s.get("run", "")))
     run = gh_step["run"]
     assert gh_step["env"]["GH_TOKEN"] == "${{ github.token }}"
     for fragment in (
@@ -537,7 +588,9 @@ def test_the_release_checks_lane_runs_the_releases_exact_gh_query() -> None:
         "--json conclusion,event,headBranch",
         '| jq \'[.[] | select(.event == "push" and .headBranch == "main" and .conclusion == "success")] | length\'',
     ):
-        assert fragment in run, f"the green-CI query must keep its release shape: {fragment}"
+        assert fragment in run, (
+            f"the green-CI query must keep its release shape: {fragment}"
+        )
     assert " | 0 |" not in run, (
         "the branch form checks the query runs, not its answer: a zero "
         "count passes here (the release refuses it at the tag)"
@@ -556,7 +609,9 @@ def test_nextest_installs_through_the_checksummed_script() -> None:
         "the lane-setup action must install nextest through the checksummed script"
     )
     sha = DOC["env"]["CARGO_NEXTEST_SHA256"]
-    assert re.fullmatch(r"[0-9a-f]{64}", sha), "the nextest checksum must be a real sha256"
+    assert re.fullmatch(r"[0-9a-f]{64}", sha), (
+        "the nextest checksum must be a real sha256"
+    )
     script = (REPO_ROOT / "scripts" / "install-nextest.sh").read_text(encoding="utf-8")
     assert "sha256sum --check --status" in script
     assert "CARGO_NEXTEST_SHA256" in script
@@ -590,7 +645,6 @@ NEEDS_BINARY_MODULES_PATTERN = re.compile(
 )
 
 
-
 def test_the_binary_dependent_modules_carry_the_marker() -> None:
     """The docs-only lane deselects these modules by marker; a new
     binary-dependent module must join the list (and this test) or its
@@ -603,7 +657,7 @@ def test_the_binary_dependent_modules_carry_the_marker() -> None:
         import ast
 
         needs = bool(NEEDS_BINARY_MODULES_PATTERN.search(text))
-        if not needs and re.search(r'[\"\']cargo[\"\']', text):
+        if not needs and re.search(r"[\"\']cargo[\"\']", text):
             needs = path.name not in CARGO_FAKE_FIXTURE_MODULES
         if path.name in CARGO_DRIVER_MODULES:
             needs = True
@@ -620,12 +674,8 @@ def test_the_binary_dependent_modules_carry_the_marker() -> None:
                 if isinstance(value, ast.Call):
                     if getattr(value.func, "attr", "") == "needs_binary":
                         return True
-                    return (
-                        getattr(value.func, "attr", "") == "mark"
-                        and any(
-                            getattr(a, "attr", "") == "needs_binary"
-                            for a in value.args
-                        )
+                    return getattr(value.func, "attr", "") == "mark" and any(
+                        getattr(a, "attr", "") == "needs_binary" for a in value.args
                     )
                 if isinstance(value, (ast.List, ast.Tuple)):
                     return any(_marker_in(elt) for elt in value.elts)
@@ -647,14 +697,19 @@ def test_the_binary_dependent_modules_carry_the_marker() -> None:
             )
 
 
-def test_reusable_release_qualification_does_not_require_a_live_changelog_section() -> None:
+def test_reusable_release_qualification_does_not_require_a_live_changelog_section() -> (
+    None
+):
     # Stable untagged candidates have a dated section. The caller has already
     # checked that exact source with the release-form coverage gate; branch
     # coverage requires a live development section and would reject it.
-    step = next(step for step in _job("release-checks")["steps"]
-                if step.get("name") == "Require the changelog to cover the branch")
+    step = next(
+        step
+        for step in _job("release-checks")["steps"]
+        if step.get("name") == "Require the changelog to cover the branch"
+    )
     assert step.get("if") == "inputs.revision == ''"
     release = yaml.safe_load((WORKFLOWS / "release.yml").read_text(encoding="utf-8"))
     assert release["jobs"]["qualification"]["needs"] == ["version-check"]
     checks = release["jobs"]["version-check"]["steps"]
-    assert any('--revision HEAD' in step.get("run", "") for step in checks)
+    assert any("--revision HEAD" in step.get("run", "") for step in checks)

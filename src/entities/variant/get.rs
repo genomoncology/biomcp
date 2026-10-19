@@ -1009,11 +1009,11 @@ fn build_aware_not_found(id: &str, build: GenomeBuild, error: BioMcpError) -> Bi
     }
     BioMcpError::NotFound {
         entity: "variant".into(),
-        id: format!(
-            "{id} (attempted {}; upstream HTTP 404)",
+        id: id.to_string(),
+        suggestion: format!(
+            "Lookup attempted {}; upstream HTTP 404.\n\nTry searching: biomcp search variant \"{id}\"",
             genome_build_name(build)
         ),
-        suggestion: "Try searching: biomcp search variant".into(),
     }
 }
 
@@ -1118,8 +1118,10 @@ pub(super) async fn resolve_base_with_hit(
                     (Err(first), Err(second)) if first.is_not_found() && second.is_not_found() => {
                         return Err(BioMcpError::NotFound {
                             entity: "variant".into(),
-                            id: format!("{hgvs} (tried GRCh38 and GRCh37; upstream HTTP 404)"),
-                            suggestion: "Try searching: biomcp search variant".into(),
+                            id: id.to_string(),
+                            suggestion: format!(
+                                "Lookup tried GRCh38 and GRCh37; upstream HTTP 404.\n\nTry searching: biomcp search variant \"{id}\""
+                            ),
                         });
                     }
                     (Err(error), _) | (_, Err(error)) => return Err(error),
@@ -1144,7 +1146,7 @@ pub(super) async fn resolve_base_with_hit(
                     )
                 } else {
                     let hit = direct.map_err(|error| match effective_build {
-                        Some(build) => build_aware_not_found(hgvs, build, error),
+                        Some(build) => build_aware_not_found(id, build, error),
                         None => error,
                     })?;
                     let transcript_input =
@@ -1178,7 +1180,7 @@ pub(super) async fn resolve_base_with_hit(
                     .ok_or_else(|| BioMcpError::NotFound {
                         entity: "variant".into(),
                         id: format!("ClinVar VariationID {variation_id}"),
-                        suggestion: "Try searching: biomcp search variant".into(),
+                        suggestion: format!("Try searching: biomcp search variant \"{id}\""),
                     })?,
                 Some(GenomeBuild::Grch37),
                 Vec::new(),
