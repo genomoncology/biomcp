@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Report article metadata fallback failures in source status and mark search results incomplete; align full-text section quality with saved headings. (2269)
+
 - Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
 
 - Name unavailable article asset providers and keep successful HTML full-text retrieval free of internal serializer warnings. (2271)

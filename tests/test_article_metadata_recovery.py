@@ -24,9 +24,11 @@ FIXTURES = ROOT / "tests/fixtures/article/metadata-recovery"
 PMIDS = ["42894377", "42891779"]
 
 
-@pytest.mark.parametrize("covered", [False, True])
+@pytest.mark.parametrize("covered,europe_failed,pubtator_empty", [
+    (False, False, False), (True, False, False), (False, True, False), (True, False, True),
+])
 def test_visible_metadata_recovers_each_row_once_in_one_wave(
-    covered: bool, tmp_path: Path,
+    covered: bool, europe_failed: bool, pubtator_empty: bool, tmp_path: Path,
 ) -> None:
     recovery: list[str] = []
     missed: list[str] = []
@@ -46,6 +48,8 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
                 }}})
             if target.path == "/publications/export/biocjson":
                 assert params["pmids"][0] in PMIDS
+                if pubtator_empty:
+                    return self.reply({"PubTator3": []})
                 return self.bytes((FIXTURES / "pubtator-missing.body").read_bytes(), 400)
             if target.path == "/search" and params.get("query", [""])[0].startswith("EXT_ID:"):
                 pmid = params["query"][0].split()[0].removeprefix("EXT_ID:")
@@ -55,6 +59,8 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
                     overlaps.append(True)
                 except threading.BrokenBarrierError:
                     overlaps.append(False)
+                if europe_failed:
+                    return self.bytes(b"Authored invalid JSON control")
                 if covered:
                     return self.reply({"hitCount": 1, "resultList": {"result": [{
                         "id": pmid, "pmid": pmid, "title": "Synthetic recovered metadata",
@@ -114,7 +120,19 @@ def test_visible_metadata_recovers_each_row_once_in_one_wave(
     assert not missed, missed
     assert Counter(recovery) == Counter(PMIDS), recovery
     assert overlaps == [True, True], "Recovery requests must overlap before either reply"
-    rows = json.loads(result.stdout)["results"]
+    payload = json.loads(result.stdout)
+    rows = payload["results"]
+    assert payload["complete"] is False, payload
+    failures = [status for status in payload["_meta"]["source_status"]
+                if status["source"] == "pubtator" and status.get("status") == "degraded"]
+    assert failures, payload["_meta"]["source_status"]
+    failure_cause = "internal failure" if pubtator_empty else "http_status failure (HTTP 400)"
+    assert any("visible article metadata fallback" in status["message"]
+               and failure_cause in status["message"] for status in failures), failures
+    if europe_failed:
+        assert any(status["source"] == "europepmc" and status.get("status") == "degraded"
+                   and "decode failure" in status["message"]
+                   for status in payload["_meta"]["source_status"]), payload["_meta"]["source_status"]
     assert [row["pmid"] for row in rows] == PMIDS
     assert [row["title"] for row in rows] == [f"Synthetic row {pmid}" for pmid in PMIDS]
     if covered:

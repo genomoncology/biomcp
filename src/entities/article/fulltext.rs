@@ -611,8 +611,11 @@ async fn save_resolved_fulltext(
     kind: ArticleFulltextKind,
     text: String,
     source: ArticleFulltextSource,
-    manifest: ArticleFulltextManifest,
+    mut manifest: ArticleFulltextManifest,
 ) -> Result<(), BioMcpError> {
+    manifest.quality.has_sections = text
+        .lines()
+        .any(|line| crate::transform::article::markdown_heading_level(line).is_some());
     let path = download::save_atomic(
         &fulltext_cache_key(kind, first_cache_identifier(article, requested_id)),
         &text,
