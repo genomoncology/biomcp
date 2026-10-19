@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 7cd18d9, accept
+
 ## Outcome
 
 An agent test review runs `biomcp serve` for several hours under steady load across the daily clean and evictions, and checks answers, memory growth and cache accounting.
