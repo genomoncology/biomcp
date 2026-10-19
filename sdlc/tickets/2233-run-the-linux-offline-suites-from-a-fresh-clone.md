@@ -35,6 +35,7 @@ Run the declared full offline Rust and Python suites on the configured Linux tes
 - 2026-10-19 started
 - 2026-10-19 next: Initial fresh-clone offline qualification passed on096c11fc416ddc18ee3b05814a6d0b9fede63648 with no demonstrated gaps. Preserve evidence; rerun once on the final candidate after2134 and replay work land.
 - 2026-10-19 next: Final frozen-source Linux offline qualification is running at 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 in job 1792451222629-265544; retain initial and final evidence separately.
+- 2026-10-19 next: Final Linux job1792451222629-265544 failed only concurrent CLI/MCP cache-entry proof on51f5e03. Rust4279passed; Python1587passed/1failed/5skipped; docs/full-feature notrun. Evidence170/final retained and scratch removed. Repair2283 owns diagnosis; rerun final qualification after reviewed repair.
 
 ## Final source assignment
 
