@@ -26,7 +26,7 @@ Replay tests for a variant with CGI rows and one without show the source label a
 
 ## Coordinator implementation brief
 
-- Changes: `CHANGELOG.md` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `src/cli/variant/dispatch.rs` `src/render/markdown/variant.rs` `src/render/provenance.rs` `templates/variant.md.j2` `tests/test_variant_cgi_source.py`.
+- Changes: `CHANGELOG.md` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md` `sdlc/tickets/2249-show-the-match-in-supplement-search-context.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md` `src/cli/variant/dispatch.rs` `src/render/markdown/variant.rs` `src/render/provenance.rs` `templates/variant.md.j2` `tests/test_variant_cgi_source.py`.
 
 Restated outcome: identify the CGI data as MyVariant variant-level CGI subset, loaded 2023-02-27; an empty response says no record in that subset, not no CGI evidence for the gene. Change labels and source notes only in Markdown/JSON, preserving row content and routing.
 
@@ -39,3 +39,5 @@ Keep: experiments/788-biomcp-2245-cgi-label — Retain cited raw proof until rel
 ## Focused repair proof
 
 Source76131e979d090dd3cd2bdff4740f67efa73137bc changes the six declared files. Red1792423524173-65627 failed the missing source-note contract; green1792423552211-69922 passed all four real CLI replay cases and make lint including warnings-denied Clippy, formatting and quality checks, with zero replay misses. Empty CGI input is a clearly authored projection of the recorded BRAF reply, not a captured KRAS response. No live acquisition, data or routing change. All six final blobs and full source diff match the tested private patchSHA256 c7c28a1acffac0554e307424e0747aa9c862df82408ab58ef5ba46a0e467ce4e. Patch, comparison, hashes and raw results remain in experiments/788-biomcp-2245-cgi-label.
+
+PM authorized carrying bc2b82d3b five unchanged literature bug records with this landing. Their source work runs in separate lanes; this ticket makes no claim that those outcomes are complete.
