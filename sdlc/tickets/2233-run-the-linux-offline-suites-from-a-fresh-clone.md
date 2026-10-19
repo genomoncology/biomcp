@@ -10,7 +10,7 @@ Milestone: 0.9.4
 
 ## Outcome
 
-- Changes: `sdlc/records/2233-linux-offline-suites.md` and this ticket during the study phase; no product edits are authorized before the exact source claim is declared.
+Changes: `sdlc/records/2233-linux-offline-suites.md`, `CHANGELOG.md`.
 
 The full Rust and Python suites pass on the Linux test machine from a fresh clone of current main with the network off, before any 0.9.4 release rehearsal, and each gap found has its own ticket.
 
@@ -34,3 +34,9 @@ Run the declared full offline Rust and Python suites on the configured Linux tes
 
 - 2026-10-19 started
 - 2026-10-19 next: Initial fresh-clone offline qualification passed on096c11fc416ddc18ee3b05814a6d0b9fede63648 with no demonstrated gaps. Preserve evidence; rerun once on the final candidate after2134 and replay work land.
+
+## Final source assignment
+
+Run the final fresh-clone offline qualification on frozen pushed source 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 after the replay fixture batch. Preserve the earlier initial snapshot as historical proof; final evidence belongs in a separate subdirectory of the existing qualifying-host experiment. Reuse the established preparation, kernel isolation and command method, with two Rust workers and serial Python. No product changes, new harness or provider calls. If a gap appears, stop with its exact output and separate repair owner. Only the owned fresh clone and build scratch may be removed after evidence retention.
+
+Keep: experiments/170-biomcp-2233-linux-offline-evidence — retain initial and final offline qualification logs, commands, source identities, isolation proof and artifacts.
