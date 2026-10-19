@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 85153d3, accept
+
 ## Outcome
 
 The two recorded melanoma query pages live once in canonical replay storage, and every fixture consumer and manifest points to that same captured data. The live checker can inspect them without relaxing its path boundary.
