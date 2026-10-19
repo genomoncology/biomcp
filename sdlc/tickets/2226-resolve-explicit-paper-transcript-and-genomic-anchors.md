@@ -30,3 +30,7 @@ Preserve the existing typed Gene rule, conservative unknown-provenance handling,
 ## Proof
 
 Use recorded authoritative same-allele resolution and actual paper anchors. For each added mechanism, show an outside-in positive same-allele case and a different-allele or unsupported-anchor control. Keep an unresolved anchor unverified and outside verified evidence summaries. Run only the affected checks through the existing build job.
+
+## Progress
+
+- 2026-10-19 started
