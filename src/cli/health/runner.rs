@@ -174,11 +174,11 @@ pub(in crate::cli::health) async fn probe_source(
                     ),
                     ProbeClass::Error,
                 ),
-                crate::sources::fda_orphan::FdaOrphanHealth::Failed => outcome(
+                crate::sources::fda_orphan::FdaOrphanHealth::Failed(reason) => outcome(
                     health_row(
                         source.api,
                         HealthStatus::Error,
-                        format!("{}ms", started.elapsed().as_millis()),
+                        format!("{}ms ({reason})", started.elapsed().as_millis()),
                         source.affects,
                         None,
                     ),

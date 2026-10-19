@@ -65,6 +65,12 @@ async fn create_unique_sibling_temp(
     path: &Path,
     managed: bool,
 ) -> Result<(tokio::fs::File, PathBuf), BioMcpError> {
+    if !managed && path.is_dir() {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "Output path is a directory: {}. Provide a file path with --output.",
+            path.display()
+        )));
+    }
     let Some(dir) = path.parent() else {
         return Err(BioMcpError::InvalidArgument(
             "Invalid output path (no parent directory)".into(),
