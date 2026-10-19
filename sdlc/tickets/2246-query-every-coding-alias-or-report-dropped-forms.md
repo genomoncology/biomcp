@@ -30,7 +30,7 @@ Restate the approved outcome, reproduce on current main before source edits, and
 
 ## Granted implementation brief
 
-- Changes: `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_alias_coverage.py` `tests/fixtures/article/coding-aliases/**` `CHANGELOG.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md`.
+- Changes: `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_alias_coverage.py` `tests/fixtures/article/coding-aliases/**` `CHANGELOG.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md`. `src/entities/article/backends/provider_unit.rs`
 
 Restated outcome: every resolved protein/coding form is queried or explicitly reported as omitted with its reason in ordinary and debug output. Choose the approved disclosure outcome to preserve existing request caps and deadline. No new identity fallback or query expansion.
 
@@ -39,3 +39,5 @@ Current-main8cf9c3be7 job1792424100327-68113 live+replay ABCC8 R1437Q --limit5 -
 Write failing outside-in tests first, apply the minimal repair, run affected tests and mechanical checks through the configured build job. Preserve private patch and per-file hashes; verify published source matches the tested manifest. No WIP pushes, merges, ticket/status edits, mail or child agents. Push once review-ready and stop after reporting.
 
 Keep: experiments/791-biomcp-2246-coding-alias-study — Retain cited raw proof until release evidence is explicitly released.
+
+Claim expansion: Track actual request polling after provider setup and admission, so disabled/deadline-blocked plans are not called attempted. No changes to scheduling, caps, identity or provider selection.
