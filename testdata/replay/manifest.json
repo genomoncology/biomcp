@@ -225,19 +225,7 @@
     },
     "GET /mydisease/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
       "file": "responses/mydisease/melanoma-detail.json",
-      "headers": {
-        "content-type": "application/json; charset=UTF-8"
-      },
       "note": "Ontology identity fields from recorded melanoma query hit.",
-      "response_metadata_observation": {
-        "bytes": 193619,
-        "content_type": "application/json; charset=UTF-8",
-        "note": "Current credential-free reply; original recording bytes and dates remain unchanged.",
-        "observed_at": "2026-10-19T22:13:27.709739+00:00",
-        "sha256": "8aee511dd0dbdd7e20d2806e285f3d850c36b8dfa4ae76f067acf66343e9346d",
-        "source_revision": "6556ebe9df772dc4dbae544c7a620a45b7f00c52",
-        "status": 200
-      },
       "status": 200,
       "upstream": "https://mydisease.info/v1/disease/MONDO:0005105"
     },

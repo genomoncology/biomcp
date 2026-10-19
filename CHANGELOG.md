@@ -82,6 +82,8 @@
 
 ### Internal
 
+- Refresh observed replay response headers with exact request provenance, preserve original recording dates, correct the dbSNP endpoint declaration, and mark KEGG recordings unverified. Release qualification remains separate. (2279)
+
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 
 - Synchronize the disease deadline control with provider request arrival before advancing test time. (2276)
