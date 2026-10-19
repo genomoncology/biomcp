@@ -347,7 +347,7 @@ fn assert_gene_tool(client: &StdioMcp, id: &str) {
     assert!(text.contains("BRAF"), "recorded gene absent: {response}");
 }
 
-fn assert_size_marker(cache: &Path) {
+fn assert_legacy_size_marker(cache: &Path) {
     fn bytes(path: &Path) -> u64 {
         std::fs::read_dir(path)
             .expect("content directory")
@@ -376,8 +376,56 @@ fn assert_size_marker(cache: &Path) {
     );
 }
 
-// Exercise the real cross-process lock without a production test hook.
+fn assert_size_marker(cache: &Path) {
+    if std::env::var_os("BIOMCP_WINDOWS_CONTRACT_BIN").is_some() {
+        return assert_legacy_size_marker(cache);
+    }
+    let db = rusqlite::Connection::open(cache.join("biomcp.db")).unwrap();
+    let (reserved, actual): (i64, i64) = db
+        .query_row(
+            "SELECT (SELECT bytes FROM cache_meta),coalesce(sum(bytes),0) FROM entries",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert!(actual > 0);
+    assert_eq!(
+        reserved, actual,
+        "transactional cache total must match rows"
+    );
+    let check: String = db
+        .query_row("PRAGMA integrity_check", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(check, "ok");
+}
+
 fn assert_contended_write_fails_open(cache: &Path, provider: &GeneFixture) {
+    if std::env::var_os("BIOMCP_WINDOWS_CONTRACT_BIN").is_some() {
+        return assert_legacy_contended_write_fails_open(cache, provider);
+    }
+    let db = rusqlite::Connection::open(cache.join("biomcp.db")).unwrap();
+    db.execute_batch("BEGIN IMMEDIATE").unwrap();
+    let (answer, warning) =
+        successful_output_with_stderr(spawn_gene(cache, &provider.base, "BRAF_LOCK"));
+    assert!(!answer["results"].as_array().unwrap().is_empty());
+    assert!(
+        !warning.contains("local HTTP cache"),
+        "routine contention must stay quiet: {warning}"
+    );
+    db.execute_batch("ROLLBACK").unwrap();
+    let before = provider.count();
+    successful_output(spawn_gene(cache, &provider.base, "BRAF_LOCK"));
+    assert_eq!(provider.count(), before + 1, "contended entry must refill");
+    successful_output(spawn_gene(cache, &provider.base, "BRAF_LOCK"));
+    assert_eq!(
+        provider.count(),
+        before + 1,
+        "settled refill must be reusable"
+    );
+}
+
+// Exercise the real cross-process lock without a production test hook.
+fn assert_legacy_contended_write_fails_open(cache: &Path, provider: &GeneFixture) {
     let lock = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -438,8 +486,7 @@ fn windows_parallel_cli_and_mcp_survive_shared_cache_clear_and_keep_byte_totals(
     );
     mcp.send(&json!({"jsonrpc":"2.0", "method":"notifications/initialized"}));
 
-    // Establish the current epoch before testing ordinary concurrent puts;
-    // first-ever migration contention may legitimately bypass the cache.
+    // Initialize the store before exercising concurrent publication.
     successful_output(spawn_gene(cache, &provider.base, "BRAF0"));
     provider
         .arrivals

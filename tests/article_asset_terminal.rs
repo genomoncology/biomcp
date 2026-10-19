@@ -903,6 +903,36 @@ fn article_fulltext_without_out_keeps_the_managed_cache_path() {
             .exists(),
         "default retrieval should not create a user-library copy"
     );
+    let saved_bytes = fs::read(&saved_path).unwrap();
+    let export_dir = fixture.root.join("saved-export");
+    fs::create_dir(&export_dir).unwrap();
+    successful_output(
+        &fixture,
+        &[
+            "get",
+            "article",
+            "22663011",
+            "fulltext",
+            "--out",
+            export_dir.to_str().unwrap(),
+        ],
+    );
+    let export = export_dir.join("22663011-europe-full-text-winner.md");
+    let exported_bytes = fs::read(&export).unwrap();
+    for command in [
+        vec!["cache", "clean", "--max-size", "1B"],
+        vec!["cache", "clear", "--yes"],
+    ] {
+        successful_output(&fixture, &command);
+        assert_eq!(fs::read(&saved_path).unwrap(), saved_bytes);
+        assert_eq!(fs::read(&export).unwrap(), exported_bytes);
+        let view = successful_output(
+            &fixture,
+            &["get", "article", "22663011", "fulltext", "--lines", "1:2"],
+        );
+        assert!(!view.stdout.is_empty());
+        assert_eq!(fs::read(&saved_path).unwrap(), saved_bytes);
+    }
 }
 
 #[test]
@@ -948,7 +978,7 @@ fn supplement_search_finds_both_acceptance_examples_at_their_locators() {
     assert_eq!(files[0]["outcome"], "searched");
     assert_eq!(files[0]["sha256"], hits[0]["sha256"]);
 
-    let cache = fixture.root.join("cache/http");
+    let cache = fixture.root.join("cache/biomcp.db");
     let key = supplement_cache::key(sha256);
     let mut cached = supplement_cache::read(&cache, &key);
     cached["format"] = serde_json::json!("csv");

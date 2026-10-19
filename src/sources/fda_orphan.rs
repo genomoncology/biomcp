@@ -502,7 +502,7 @@ async fn fetch_with_deadline(
                 Err(_) => return Ok(unavailable()),
             };
             match crate::cache::SizeAwareCacheManager::new_with_deadline(
-                config.cache_root.join("http"),
+                config.cache_root.join(crate::cache::sqlite::DATABASE_NAME),
                 config,
                 &deadline,
             )
@@ -549,20 +549,6 @@ async fn fetch_with_deadline(
         .filter_map(Result::ok)
         .collect::<Vec<_>>();
     Ok(merge(successes, failures, count))
-}
-
-#[cfg(test)]
-pub(crate) async fn fetch_with_manager_for_test(
-    candidates: Vec<String>,
-    mode: SourceCacheMode,
-    limit: Duration,
-    manager: Arc<crate::cache::SizeAwareCacheManager>,
-) -> Result<FdaOrphanDesignations, BioMcpError> {
-    let deadline = crate::sources::VariantArticleDeadline::from_now(limit);
-    crate::sources::with_variant_article_deadline(deadline.clone(), async move {
-        fetch_with_deadline(candidates, mode, deadline, Some(manager)).await
-    })
-    .await
 }
 
 #[cfg(test)]

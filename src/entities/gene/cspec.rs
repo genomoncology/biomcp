@@ -109,8 +109,8 @@ pub(crate) async fn retrieve(
             resource_iri: selected.raw.clone(),
             specification_id: selected.specification_id.clone(),
         };
-        let capture = capture(&bytes, binding.clone())?;
-        let stored_bytes = read_capture(&capture.capture_id)?;
+        let capture = capture(&bytes, binding.clone()).await?;
+        let stored_bytes = read_capture(&capture.capture_id).await?;
         return Ok(serde_json::to_value(page_from_bytes(
             &stored_bytes,
             &binding,
@@ -123,7 +123,7 @@ pub(crate) async fn retrieve(
     Ok(serde_json::to_value(manifest).expect("CSpec manifest serializes"))
 }
 
-pub(crate) fn page_capture(
+fn page_capture_sync(
     capture_id: &str,
     gene: &str,
     offset: usize,
@@ -131,8 +131,7 @@ pub(crate) fn page_capture(
 ) -> Result<CspecResponse, BioMcpError> {
     validate_page(offset, limit)?;
     let store = store()?;
-    let bytes = store.read(capture_id).map_err(capture_error)?;
-    let manifest = store.read_manifest(capture_id).map_err(capture_error)?;
+    let (manifest, bytes) = store.read_complete(capture_id).map_err(capture_error)?;
     let binding = manifest
         .capture_binding
         .as_ref()
@@ -146,13 +145,9 @@ pub(crate) fn page_capture(
     page_from_bytes(&bytes, binding, offset, limit, &manifest)
 }
 
-pub(crate) fn files_capture(
-    capture_id: &str,
-    gene: &str,
-) -> Result<CspecFilesResponse, BioMcpError> {
+fn files_capture_sync(capture_id: &str, gene: &str) -> Result<CspecFilesResponse, BioMcpError> {
     let store = store()?;
-    let bytes = store.read(capture_id).map_err(capture_error)?;
-    let manifest = store.read_manifest(capture_id).map_err(capture_error)?;
+    let (manifest, bytes) = store.read_complete(capture_id).map_err(capture_error)?;
     let binding = manifest
         .capture_binding
         .as_ref()
@@ -180,14 +175,17 @@ pub(crate) async fn retrieve_files(
         resource_iri: selected.raw,
         specification_id: selected.specification_id,
     };
-    let capture = capture(&bytes, binding.clone())?;
-    files_from_bytes(&read_capture(&capture.capture_id)?, &binding, &capture)
+    let capture = capture(&bytes, binding.clone()).await?;
+    files_from_bytes(
+        &read_capture(&capture.capture_id).await?,
+        &binding,
+        &capture,
+    )
 }
 
-pub(crate) fn read_capture(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
+fn read_capture_sync(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
     let store = store()?;
-    let bytes = store.read(capture_id).map_err(capture_error)?;
-    let manifest = store.read_manifest(capture_id).map_err(capture_error)?;
+    let (manifest, bytes) = store.read_complete(capture_id).map_err(capture_error)?;
     validate_binding(
         manifest
             .capture_binding
@@ -292,13 +290,19 @@ fn parse_iri(value: &str) -> Result<CspecDocumentIri, BioMcpError> {
     })
 }
 
-fn capture(
+async fn capture(
     bytes: &[u8],
     binding: CspecCaptureBinding,
 ) -> Result<ProviderCaptureManifest, BioMcpError> {
-    store()?
-        .capture_cspec_bytes(binding, bytes)
-        .map_err(capture_error)
+    let store = store()?;
+    let bytes = bytes.to_vec();
+    tokio::task::spawn_blocking(move || {
+        store
+            .capture_cspec_bytes(binding, &bytes)
+            .map_err(capture_error)
+    })
+    .await
+    .map_err(|error| BioMcpError::Io(std::io::Error::other(error)))?
 }
 fn store() -> Result<ProviderCaptureStore, BioMcpError> {
     Ok(ProviderCaptureStore::new(
@@ -696,6 +700,35 @@ fn bounded(value: &str, field: &str, truncated: &mut Vec<String>) -> String {
         .expect("non-empty strings have a UTF-8 boundary at zero");
     truncated.push(field.into());
     value[..end].into()
+}
+
+pub(crate) async fn page_capture(
+    capture_id: &str,
+    gene: &str,
+    offset: usize,
+    limit: usize,
+) -> Result<CspecResponse, BioMcpError> {
+    let id = capture_id.to_owned();
+    let gene = gene.to_owned();
+    tokio::task::spawn_blocking(move || page_capture_sync(&id, &gene, offset, limit))
+        .await
+        .map_err(|error| BioMcpError::Io(std::io::Error::other(error)))?
+}
+pub(crate) async fn files_capture(
+    capture_id: &str,
+    gene: &str,
+) -> Result<CspecFilesResponse, BioMcpError> {
+    let id = capture_id.to_owned();
+    let gene = gene.to_owned();
+    tokio::task::spawn_blocking(move || files_capture_sync(&id, &gene))
+        .await
+        .map_err(|error| BioMcpError::Io(std::io::Error::other(error)))?
+}
+pub(crate) async fn read_capture(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
+    let id = capture_id.to_owned();
+    tokio::task::spawn_blocking(move || read_capture_sync(&id))
+        .await
+        .map_err(|error| BioMcpError::Io(std::io::Error::other(error)))?
 }
 
 #[cfg(test)]

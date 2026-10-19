@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -59,7 +60,10 @@ def run_gene(cache, base, index, limit=50000):
 
 
 def content_bytes(cache):
-    return sum(p.stat().st_size for p in (cache / "http/content-v2").rglob("*") if p.is_file())
+    with sqlite3.connect(cache / "biomcp.db") as connection:
+        total = connection.execute("select bytes from cache_meta where id=1").fetchone()[0]
+        assert total == connection.execute("select coalesce(sum(bytes),0) from entries").fetchone()[0]
+        return total
 
 
 def test_short_cli_runs_evict_within_the_shared_size_budget(tmp_path, gene_provider):
@@ -71,51 +75,29 @@ def test_short_cli_runs_evict_within_the_shared_size_budget(tmp_path, gene_provi
     assert 0 < sizes[-1] <= 50000, f"cache bytes after each short process: {sizes}"
 
 
-@pytest.mark.parametrize("marker", [None, b"1", b"v2\n1\n"])
-def test_missing_or_torn_total_recovers_before_the_next_short_run(tmp_path, gene_provider, marker):
-    cache = tmp_path / "cache"
-    for index in range(3):
-        run_gene(cache, gene_provider, index, limit=1000000)
-    total = cache / "http/.content-bytes-v1"
-    if marker is None:
-        total.unlink()
-    else:
-        total.write_bytes(marker)
-    run_gene(cache, gene_provider, 4)
-    assert 0 < content_bytes(cache) <= 50000, "invalid total must recount and evict"
-
 
 def test_concurrent_short_processes_do_not_lose_size_reservations(tmp_path, gene_provider):
     cache = tmp_path / "cache"
     run_gene(cache, gene_provider, 0, limit=1000000)
     with ThreadPoolExecutor(max_workers=4) as workers:
         list(workers.map(lambda index: run_gene(cache, gene_provider, index, limit=1000000), range(1, 9)))
-    marker = (cache / "http/.content-bytes-v1").read_text()
-    assert marker.startswith("v2 ") and marker.endswith("\n"), marker
-    assert int(marker[3:-1]) >= content_bytes(cache), "concurrent puts must not lose additions"
+    assert content_bytes(cache) > 0, "concurrent puts retain exact committed accounting"
 
 
-def test_explicit_cleanup_reconciles_failed_write_reservations(tmp_path, gene_provider):
+def test_explicit_cleanup_previews_then_removes_committed_cache_bytes(tmp_path, gene_provider):
     cache = tmp_path / "cache"
     run_gene(cache, gene_provider, 0, limit=1000000)
     stored_bytes = content_bytes(cache)
     assert stored_bytes > 0
-    total = cache / "http/.content-bytes-v1"
-    # A write reserves bytes before publishing content. If publication fails,
-    # that reservation legitimately overcounts until maintenance reconciles it.
-    reserved_total = f"v2 {stored_bytes + 100000}\n"
-    total.write_text(reserved_total)
-    env = os.environ | {"BIOMCP_CACHE_DIR": str(cache), "BIOMCP_CACHE_MIN_DISK_FREE": "1B"}
+    env = retained_cache_env(tmp_path, {}, gene_provider, cache_dir=cache)
     command = [str(BINARY), "--json", "cache", "clean", "--max-size", "1B"]
     preview = subprocess.run(command + ["--dry-run"], cwd=ROOT, env=env,
                              capture_output=True, text=True, timeout=20)
     assert preview.returncode == 0, (preview.stdout, preview.stderr)
     assert json.loads(preview.stdout)["errors"] == []
     assert content_bytes(cache) == stored_bytes
-    assert total.read_text() == reserved_total, "dry-run must not reconcile reservations"
     cleaned = subprocess.run(command, cwd=ROOT, env=env,
                              capture_output=True, text=True, timeout=20)
     assert cleaned.returncode == 0, (cleaned.stdout, cleaned.stderr)
     assert json.loads(cleaned.stdout)["errors"] == []
     assert content_bytes(cache) == 0
-    assert total.read_text() == "v2 0\n", "successful cleanup must discard phantom reservations"

@@ -2,52 +2,6 @@ use std::fs::{self, File, OpenOptions};
 use std::io;
 use std::path::Path;
 
-pub(crate) fn prepare_write_paths(cache_path: &Path, cache_key: &str) -> io::Result<()> {
-    secure_managed_dir(cache_path)?;
-    secure_managed_dir(&cache_path.join(super::TEMP_DIR))?;
-
-    let content_root = super::content_root(cache_path);
-    secure_managed_dir(&content_root)?;
-    secure_managed_dir(&content_root.join("sha256"))?;
-
-    let bucket = super::index_bucket_path(cache_path, cache_key);
-    let index_root = cache_path.join(super::INDEX_DIR);
-    secure_managed_dir(&index_root)?;
-    let first_shard = bucket
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| io::Error::other("derived cache index path has no first shard"))?;
-    let second_shard = bucket
-        .parent()
-        .ok_or_else(|| io::Error::other("derived cache index path has no second shard"))?;
-    secure_managed_dir(first_shard)?;
-    secure_managed_dir(second_shard)?;
-    prepare_managed_file(&bucket)
-}
-
-pub(crate) fn secure_written_content(
-    cache_path: &Path,
-    integrity: &ssri::Integrity,
-) -> io::Result<()> {
-    let blob = super::content_path(cache_path, integrity);
-    let content_root = super::content_root(cache_path);
-    secure_managed_dir(&content_root)?;
-
-    let (algorithm, _) = integrity.to_hex();
-    let algorithm = content_root.join(algorithm.to_string());
-    let first_shard = blob
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| io::Error::other("derived cache content path has no first shard"))?;
-    let second_shard = blob
-        .parent()
-        .ok_or_else(|| io::Error::other("derived cache content path has no second shard"))?;
-    secure_managed_dir(&algorithm)?;
-    secure_managed_dir(first_shard)?;
-    secure_managed_dir(second_shard)?;
-    secure_managed_file(&blob)
-}
-
 pub(crate) fn secure_managed_tree(
     root: &Path,
     recurse: bool,
@@ -66,87 +20,6 @@ pub(crate) fn secure_managed_tree(
         Err(error) => return Err(error),
     }
     secure_entry(root, recurse, managed_content_root)
-}
-
-/// Marker file under the HTTP cache recording that the tree has been
-/// secured once. A missing or malformed marker means the one-time
-/// recursive secure is due, exactly as the daily start-up clean marker
-/// works; a present marker means ordinary start-up
-/// never walks the tree, because every write already secures the files
-/// it creates through `secure_written_content` and
-/// `prepare_write_paths`.
-const TREE_SECURE_MARKER_FILE: &str = ".tree-secured-v1";
-const TREE_SECURE_MARKER: &[u8] = b"http-tree-secured-v1\n";
-
-/// Secure the HTTP cache tree for start-up without walking it on every
-/// command: the root is always validated and repaired, and the full
-/// recursive walk runs only while the marker is missing — a fresh cache
-/// root, a migrated one, or a pre-marker cache — after which the marker
-/// suppresses it forever. Files broadened after the marker are repaired
-/// when they are written through, not by start-up.
-pub(crate) fn ensure_http_tree_secured(cache_path: &Path, content_root: &Path) -> io::Result<()> {
-    secure_managed_tree(cache_path, false, Some(content_root))?;
-    if tree_secure_marker_valid(cache_path)? {
-        return Ok(());
-    }
-    secure_managed_tree(cache_path, true, Some(content_root))?;
-    write_tree_secure_marker(cache_path)
-}
-
-pub(crate) fn ensure_http_tree_secured_until(
-    cache_path: &Path,
-    content_root: &Path,
-    deadline: &crate::sources::VariantArticleDeadline,
-) -> io::Result<()> {
-    deadline.ensure_time_io()?;
-    ensure_http_tree_secured(cache_path, content_root)?;
-    deadline.ensure_time_io()
-}
-
-/// Whether the tree-secure marker exists with the expected tag. A
-/// malformed or unreadable marker reads as invalid, so a torn write
-/// costs one repair walk rather than failing start-up.
-fn tree_secure_marker_valid(cache_path: &Path) -> io::Result<bool> {
-    use std::io::Read;
-    let marker = cache_path.join(TREE_SECURE_MARKER_FILE);
-    let Ok(mut file) = open_managed_read(&marker) else {
-        return Ok(false);
-    };
-    let mut contents = Vec::with_capacity(TREE_SECURE_MARKER.len());
-    file.read_to_end(&mut contents)?;
-    Ok(contents == TREE_SECURE_MARKER)
-}
-
-fn write_tree_secure_marker(cache_path: &Path) -> io::Result<()> {
-    use std::io::Write;
-    secure_managed_dir(cache_path)?;
-    let marker = cache_path.join(TREE_SECURE_MARKER_FILE);
-    let mut options = fs::OpenOptions::new();
-    options.write(true).create(true).truncate(true);
-    let mut file = open_private(&mut options, &marker)?;
-    file.write_all(TREE_SECURE_MARKER)
-}
-
-pub(crate) fn secure_managed_tree_until(
-    root: &Path,
-    recurse: bool,
-    managed_content_root: Option<&Path>,
-    deadline: &crate::sources::VariantArticleDeadline,
-) -> io::Result<()> {
-    if deadline.is_exhausted() {
-        return Err(io::Error::new(
-            io::ErrorKind::TimedOut,
-            "variant article invocation deadline exceeded",
-        ));
-    }
-    secure_managed_tree(root, recurse, managed_content_root)?;
-    if deadline.is_exhausted() {
-        return Err(io::Error::new(
-            io::ErrorKind::TimedOut,
-            "variant article invocation deadline exceeded",
-        ));
-    }
-    Ok(())
 }
 
 pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
@@ -180,20 +53,6 @@ where
         }
         Err(error) => Err(error),
     }
-}
-
-pub(crate) fn prepare_managed_file(path: &Path) -> io::Result<()> {
-    let mut options = OpenOptions::new();
-    options.read(true).append(true).create(true);
-    drop(open_private(&mut options, path)?);
-    Ok(())
-}
-
-pub(crate) fn secure_managed_file(path: &Path) -> io::Result<()> {
-    let mut options = OpenOptions::new();
-    options.read(true).write(true);
-    drop(open_private(&mut options, path)?);
-    Ok(())
 }
 
 pub(crate) fn open_private(options: &mut OpenOptions, path: &Path) -> io::Result<File> {
@@ -481,8 +340,6 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
         return Ok(());
     }
     if metadata.is_file() {
-        #[cfg(test)]
-        crate::test_support::record_startup_cache_file_visit();
         if metadata.nlink() != 1 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -529,8 +386,6 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
         return Ok(());
     }
     if metadata.is_file() {
-        #[cfg(test)]
-        crate::test_support::record_startup_cache_file_visit();
         drop(open_managed_read(path)?);
     } else if metadata.is_dir() {
         if recurse {
@@ -617,12 +472,12 @@ fn check_variant_article_deadline() -> io::Result<()> {
 }
 
 #[cfg(unix)]
-fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
+pub(super) fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
     metadata.file_type().is_symlink()
 }
 
 #[cfg(windows)]
-fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
+pub(super) fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
     use std::os::windows::fs::MetadataExt;
     use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_REPARSE_POINT;
 
@@ -699,7 +554,7 @@ mod unix_tests {
         )
         .expect("content directory link");
 
-        let content_root = super::super::content_root(&root.path().join("http"));
+        let content_root = root.path().join("http/content-v2");
         let error = secure_managed_tree(root.path(), true, Some(&content_root))
             .expect_err("content directory link must be rejected");
 
@@ -722,7 +577,7 @@ mod unix_tests {
         fs::write(outside.join("sentinel"), b"outside bytes").expect("outside sentinel");
         symlink(&outside, &unrelated).expect("unrelated directory symlink");
 
-        let content_root = super::super::content_root(&root.path().join("http"));
+        let content_root = root.path().join("http/content-v2");
         secure_managed_tree(root.path(), true, Some(&content_root))
             .expect("unrelated link remains skippable");
 
@@ -754,7 +609,7 @@ mod unix_tests {
                 cache_root.join("unrelated-link")
             };
             symlink(&outside, &unrelated).expect("unrelated directory symlink");
-            let content_root = super::super::content_root(&cache_root.join("http"));
+            let content_root = cache_root.join("http/content-v2");
 
             secure_managed_tree(&cache_root, true, Some(&content_root))
                 .expect("basename collision must not make unrelated link strict");

@@ -10,7 +10,7 @@ use std::process::Command;
 
 #[cfg(unix)]
 #[test]
-fn cache_open_narrows_only_managed_paths_and_rejects_hardlinks() {
+fn cache_open_repairs_root_refuses_insecure_database_and_rejects_hardlinks() {
     let parent = tempfile::tempdir().expect("temporary parent");
     let root = parent.path().join("managed");
     let http = root.join("http");
@@ -46,17 +46,27 @@ fn cache_open_narrows_only_managed_paths_and_rejects_hardlinks() {
     );
     assert_eq!(
         fs::metadata(&http).expect("http mode").mode() & 0o777,
-        0o700
+        0o777
     );
     assert_eq!(
         fs::metadata(&file).expect("file mode").mode() & 0o777,
-        0o600
+        0o666
     );
     assert_eq!(
         fs::metadata(parent.path()).expect("parent mode").mode() & 0o777,
         expected_parent_mode
     );
 
+    let file = root.join("biomcp.db");
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o644)).unwrap();
+    let insecure = Command::new(env!("CARGO_BIN_EXE_biomcp"))
+        .args(["cache", "stats"])
+        .env("BIOMCP_CACHE_DIR", &root)
+        .output()
+        .unwrap();
+    assert!(!insecure.status.success());
+    assert!(String::from_utf8_lossy(&insecure.stderr).contains("insecure SQLite cache file"));
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o600)).unwrap();
     fs::hard_link(&file, parent.path().join("outside-link")).expect("hard link");
     let failed = Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
@@ -93,8 +103,7 @@ fn windows_managed_tree_rejects_hardlinked_files_without_fsutil() {
     let parent = tempfile::tempdir().expect("temporary parent");
     let root = parent.path().join("managed");
     fs::create_dir_all(&root).expect("managed root");
-    let file = root.join("local-metadata");
-    fs::write(&file, b"fixture-only").expect("managed file");
+    let file = root.join("biomcp.db");
 
     let accepted = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
@@ -371,56 +380,55 @@ fn windows_acl_contract_rejects_missing_and_nonexistent_paths() {
 }
 
 #[cfg(windows)]
-fn run_cache_epoch_probe(root: &std::path::Path) -> std::process::Output {
+fn run_cache_database_probe(root: &std::path::Path) -> std::process::Output {
     std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
         .env("BIOMCP_CACHE_DIR", root)
         .output()
-        .expect("run cache epoch probe")
+        .expect("run cache database probe")
 }
 
 #[cfg(windows)]
 #[test]
-fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
+fn windows_cache_database_files_are_user_only_and_reject_hard_links() {
     let parent = tempfile::tempdir().expect("temporary parent");
     let root = parent.path().join("managed");
-    let initial = run_cache_epoch_probe(&root);
+    let initial = run_cache_database_probe(&root);
     assert!(
         initial.status.success(),
-        "initial cache epoch probe failed: {}",
+        "initial cache database probe failed: {}",
         String::from_utf8_lossy(&initial.stderr)
     );
-    let lock = root.join(".body-limit-cache-v1.lock");
-    let marker = root.join(".body-limit-cache-v1");
+    let marker = root.join("biomcp.db");
 
-    for path in [&lock, &marker] {
-        assert!(path.is_file(), "epoch file was not created: {path:?}");
+    for path in [&marker] {
+        assert!(path.is_file(), "database file was not created: {path:?}");
         let broadened = std::process::Command::new("icacls.exe")
             .arg(path)
             .args(["/inheritance:e", "/grant", "*S-1-1-0:(R)"])
             .status()
-            .expect("broaden epoch ACL");
+            .expect("broaden database ACL");
         assert!(broadened.success());
     }
 
-    let repaired = run_cache_epoch_probe(&root);
+    let repaired = run_cache_database_probe(&root);
     assert!(
         repaired.status.success(),
         "fast-path ACL repair failed: {}",
         String::from_utf8_lossy(&repaired.stderr)
     );
-    for path in [&lock, &marker] {
+    for path in [&marker] {
         let exact_acl = inspect_windows_acl(Some(path));
         let stderr = String::from_utf8_lossy(&exact_acl.stderr);
         assert!(
             exact_acl.status.success(),
-            "unexpected epoch DACL for {path:?}: {stderr}"
+            "unexpected database DACL for {path:?}: {stderr}"
         );
     }
 
     let outside = parent.path().join("outside-marker-link");
     fs::hard_link(&marker, &outside).expect("hard link marker");
-    let rejected = run_cache_epoch_probe(&root);
+    let rejected = run_cache_database_probe(&root);
     assert!(!rejected.status.success());
     let stderr = String::from_utf8_lossy(&rejected.stderr);
     assert!(stderr.contains("managed file has 2 links"), "{stderr}");
