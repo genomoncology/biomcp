@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision bf57f7e, accept
+
 ## Outcome
 
 PM ruling: For Boolean-capable Europe PMC and PubMed queries, group the requested symbol and every recorded MyGene alias in one correctly escaped OR clause joined with the variant term. Split only as provider query-length limits require. Keep existing caps for providers without Boolean support, using longest spelling first and source order for ties, and disclose their omissions. Preserve typed Gene and same-DNA identity rules, invocation deadline and provider accounting. No gene-specific exception or silent alias exclusion.
