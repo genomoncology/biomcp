@@ -27,3 +27,15 @@ Reproduce on current main first. A replay test returns the preprint's text with 
 ## Coordinator study brief
 
 Restate the approved outcome, reproduce on current main before source edits, and report the exact command/output, proposed precise source/test paths and outside-in failing case. Reuse qualified unchanged current-main CLI when possible; all execution goes through the configured build job. Preserve exact raw source responses and invocation in the next numbered three-digit experiment on the executing host, with OWNER biomcp/2248. No live rerun if an existing deterministic replay already reproduces the same failure; any authored controls must be explicitly identified, not called captured source. Read source redistribution standards before publishing new captures. No product or test claim is granted yet. No source edits, WIP pushes, child agents, mail or status changes during this study. Stop after bounded reproduction and proposal; do not widen the ticket.
+
+## Granted implementation brief
+
+- Changes: `src/entities/source_state_registry.rs` `src/entities/article/fulltext.rs` `tests/test_article_preprint_fulltext.py` `tests/fixtures/article/preprint-fulltext/**` `CHANGELOG.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md`.
+
+Restated outcome: preprint DOI full text returns actual available JATS text with accurate provenance, or a named structured failure when unavailable; one preprint outcome must not erase unrelated ordered batch items. PM explicitly approved the JATS route within this ticket. Fix the provenance-registry mismatch rather than weakening its invariant.
+
+Current-main8cf9c3be7 job1792424078528-68450 reproduced exact preprint10.1101/2022.07.18.22276644 single lookup and seven-item batch both exit1/stdout0 at provenance.rs:115. Captured EuropePMC PPR521666 lacks PMID/PMCID; healthy ID Converter Identifier not found in PMC was credited but absent from article/fulltext registry. Evidence789-biomcp-2248-preprint-panic retains31rawbodies/invocations/providerbytes and hashes. PM supplied an existing114486byte advertisedJATS reply and preprint details metadata; reuse this evidence rather than another live chain. Preserve article source attribution, license facts and existing URL/trust boundaries. Review redistribution before publishing captures; retain full raw privately and mark authored controls or projections truthfully. Proposed source/test claim is intentionally small; report any additional exact file before editing it.
+
+Write failing outside-in tests first, apply the minimal repair, run affected tests and mechanical checks through the configured build job. Preserve private patch and per-file hashes; verify published source matches the tested manifest. No WIP pushes, merges, ticket/status edits, mail or child agents. Push once review-ready and stop after reporting.
+
+Keep: experiments/789-biomcp-2248-preprint-panic — Retain cited raw proof until release evidence is explicitly released.
