@@ -12,6 +12,9 @@ Milestone: 0.9.4
 
 Each `article supplement-search` hit's context includes the matched string with bounded text around it.
 
+- Changes: `src/entities/article/supplement_search.rs` `tests/article_asset_terminal.rs` `CHANGELOG.md` `sdlc/tickets/2249-show-the-match-in-supplement-search-context.md`.
+
+
 ## Evidence
 
 Reproduced on 0.9.3: `biomcp --json article supplement-search 24451234 R1436Q` finds the right page-21 hit, but its context omits the matched string.
@@ -37,3 +40,9 @@ Current-main8cf deterministic job1792424213233-98997 seeded the existing local e
 Implementation waits for the accepted2250candidate because these changes share source files. The coordinator will adopt that candidate; no independent overlapping source writer is authorized.
 
 Keep: experiments/793-biomcp-2249-context-study — Retain cited raw proof until release evidence is explicitly released.
+
+## Granted context implementation
+
+The coordinator adopted accepted2250source at383fc9c28ba540004db92c0d1692de01c76354f7 plus its review record. Implement only the remaining context bug in the three declared product files. Reuse793authoredred/control fixture; no live rerun or newmatching identity rules. Return the actual matched span from the existing matcher and select Unicode-safe surrounding context, preserving hit selection/order/locators and equivalent protein spellings. Beginning/end/late/Unicode/equivalent-spelling cases and a match longer than the ordinarycontextbudget must retain the complete matched string. Count ellipses inside the effectivebound; do not emit an arbitrarily long wholeblock. Preserve2250unreadablefiles/incompleteJSON/Markdown/readablehits/deadline proof.
+
+Write outside-in failing cases, then minimal fix, run only affected cases/mechanicals through configuredbuildjob. Retainpatch/manifests/raw in793, comparefinalpublishedblobs, publishoncegreen/noWIP, no merges/children/status/mail/ticketedits.
