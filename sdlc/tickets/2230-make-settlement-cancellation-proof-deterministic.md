@@ -24,6 +24,7 @@ The failed candidate gate is retained under gate-runs/biomcp/2226/m5/3c13c0ae6f2
 ## Progress
 
 - 2026-10-19 started
+- 2026-10-19 landed 47f5577e783fc98a5b8b905b4a41f8db7c088590; next: Complete the accepted cancellation repair using its shared source gate.
 
 ## Cause and focused proof
 
