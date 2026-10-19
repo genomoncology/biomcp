@@ -10,6 +10,8 @@ rsID: {% if rsid %}{{ rsid }}{% else %}Not reported{% endif %}
 {% if legacy_name %}Legacy Name: {{ legacy_name }}{% endif %}
 {% if hgvs_c %}cDNA: {{ hgvs_c }}{% endif %}
 {% if transcript %}Transcript: {{ transcript }}{% endif %}
+{% if matched_transcript %}Matched transcript: {{ matched_transcript }} ({{ matched_hgvs_c }})
+{% endif -%}
 {% if protein_numbering_note %}{{ protein_numbering_note }}
 {% endif -%}
 {% if consequence %}Consequence: {{ consequence }}{% endif %}
