@@ -30,6 +30,8 @@ Reviews: revision a1c81a7, accept
 
 Reviews: revision dc199db, accept
 
+Reviews: revision 8d4e66e, accept
+
 ## Outcome
 
 The recorded replay and committed JSON/Markdown goldens cover the approved release batches: search all, gene, trial and pathway, and get gene, variant, trial and pathway. Format changes use regenerate, inspect and commit. Remaining selector families, traversal and local-data outputs belong to follow-up 2236 outside this release.
