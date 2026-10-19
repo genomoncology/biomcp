@@ -55,12 +55,7 @@ closed: the get branches no longer publish `uniqueItems` on
 derived from the same constants and capability tables the branch
 builders and the body checks use, so they cannot drift.
 
-Failures that rmcp raises while deserializing `Parameters` (a missing
-required field, a wrong type, and — since ticket 1251 — an unknown
-`variant_erepo` field) stay `-32602` protocol errors, because they run
-before the handler body and rmcp's wrapper cannot be converted without
-restructuring rmcp. The MCP specification allows both channels; the
-model sees the message either way.
+Typed tool argument parse failures return `isError` tool results, including missing required fields, wrong types and unknown `variant_erepo` fields (ticket 2263). The shared argument extractor preserves the field path so the calling model can correct the argument. Unknown tools and non-tool protocol validation retain their protocol error channel. The ERepo root derives its properties and bounds from its typed argument definition.
 
 ## Verification status
 

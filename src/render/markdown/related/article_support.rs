@@ -392,6 +392,23 @@ pub(super) fn article_date_refinement_hint(
 
 pub(super) fn related_article(article: &Article) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
+    if let Some(coverage) = article.full_text_coverage.as_ref()
+        && coverage.coverage != crate::entities::article::ArticleFulltextCoverageKind::FullText
+        && !coverage.attempts.iter().any(|attempt| {
+            attempt.source_kind == crate::entities::article::ArticleFulltextAttemptSourceKind::Pdf
+        })
+        && let Some(id) = article
+            .pmid
+            .as_deref()
+            .or(article.pmcid.as_deref())
+            .or(article.doi.as_deref())
+    {
+        out.push(format!(
+            "biomcp get article {} fulltext --pdf",
+            quote_arg(id)
+        ));
+    }
+
     if let Some(pmid) = article
         .pmid
         .as_deref()

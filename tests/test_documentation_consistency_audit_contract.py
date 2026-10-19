@@ -305,7 +305,12 @@ def test_landing_copy_and_public_env_inventory_follow_consistency_contract() -> 
         "for downloaded cBioPortal-style datasets."
     )
 
-    assert article_sentence in _normalize_whitespace(readme)
+    readme_article_sentence = (
+        "`search article` fans out across PubTator3 and Europe PMC and PubMed "
+        "when the filters are compatible, deduplicates PMID/PMCID/DOI identifiers, "
+        "and can add a Semantic Scholar leg when your filters support it."
+    )
+    assert readme_article_sentence in _normalize_whitespace(readme)
     assert article_sentence in _normalize_whitespace(docs_index)
     assert study_sentence in _normalize_whitespace(readme)
     assert study_sentence in _normalize_whitespace(docs_index)

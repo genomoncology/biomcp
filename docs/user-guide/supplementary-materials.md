@@ -130,9 +130,11 @@ biomcp --json get article --asset-view coverage <id> assets
 | `empty_response` | The route answered, but its reply held no bytes for the file. |
 | `unusable_asset` | The route answered, but the bytes do not match the file name's type. |
 
-Entries with a `pmc_proof_of_work` outcome carry no `asset_key` and no
-`handle`. The file is named because the article references it, and BioMCP
-will not present a challenge page as the file's contents.
+PMC challenge coverage and blocked downloads both use `pmc_proof_of_work`.
+The older `ncbi_interstitial` condition is accepted as an alias when reading
+JSON coverage and maps to `pmc_proof_of_work`. Blocked rows may carry a stable
+`unavailable-` asset key, but no download `handle`. BioMCP names the file
+without presenting the challenge page as its contents.
 
 A route that answers with a zero-byte body gets the `empty_response`
 outcome: the download fails with an `article_asset_not_retrievable` error

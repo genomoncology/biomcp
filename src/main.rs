@@ -148,7 +148,10 @@ async fn async_main() -> std::process::ExitCode {
                 Ok(()) => std::process::ExitCode::SUCCESS,
                 Err(err) => {
                     eprintln!("Error: {}", human_error(&err));
-                    std::process::ExitCode::from(1)
+                    // A pending Tokio stdin read cannot be cancelled. Terminate
+                    // this failed stdio server before runtime shutdown waits
+                    // for the client to close its input pipe.
+                    std::process::exit(1);
                 }
             }
         }
