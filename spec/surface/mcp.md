@@ -253,6 +253,39 @@ Semantic Scholar request.
 Raw MCP keeps the diagnostic CLI body and its optional disease-match provenance
 for both JSON and Markdown responses. WHO-only disease search remains literal
 and does not need a typed diagnostic branch.
+The disease identity below is an authored control, not a recorded live reply.
+
+```bash
+python3 - <<'PY_MCP' | mustmatch like 'raw MCP preserves diagnostic synonym provenance in JSON and Markdown'
+import json, os, subprocess
+
+proc = subprocess.Popen([os.environ["BIOMCP_BIN"], "serve"],
+    stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+try:
+    for index, suffix in enumerate((" --json", "")):
+        message = {"jsonrpc": "2.0", "id": index, "method": "tools/call", "params": {
+            "name": "biomcp", "arguments": {"command": 'search diagnostic --disease "Bachmann-Bupp syndrome" --source gtr' + suffix},
+            "_meta": {"io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                "io.modelcontextprotocol/clientCapabilities": {}}}}
+        proc.stdin.write(json.dumps(message) + "\n")
+        proc.stdin.flush()
+        reply = json.loads(proc.stdout.readline())
+        assert "error" not in reply, reply
+        result = reply["result"]
+        assert not result.get("isError"), result
+        text = "\n".join(part.get("text", "") for part in result["content"])
+        if suffix:
+            match = json.loads(text)["results"][0]["disease_match"]
+            assert match["kind"] == "synonym" and match["resolved_id"] == "MONDO:0033642"
+        else:
+            assert "Synonym: neurodevelopmental disorder with alopecia and brain abnormalities" in text
+finally:
+    proc.terminate()
+    proc.wait(timeout=5)
+print("raw MCP preserves diagnostic synonym provenance in JSON and Markdown")
+PY_MCP
+```
+
 
 ## WHO Degrade Reason Reaches Raw MCP
 

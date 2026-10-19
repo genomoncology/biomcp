@@ -1,0 +1,16 @@
+{
+  "total": 1,
+  "hits": [
+    {
+      "_id": "MONDO:0033642",
+      "disease_ontology": {
+        "name": "Bachmann-Bupp syndrome",
+        "synonyms": {
+          "exact": [
+            "neurodevelopmental disorder with alopecia and brain abnormalities"
+          ]
+        }
+      }
+    }
+  ]
+}

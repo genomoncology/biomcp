@@ -1,0 +1,28 @@
+{
+  "total": 1,
+  "hits": [
+    {
+      "_id": "authored-aspirin",
+      "drugbank": {
+        "id": "DB00945",
+        "name": "Acetylsalicylic acid",
+        "synonyms": [
+          "aspirin"
+        ]
+      },
+      "chembl": {
+        "molecule_chembl_id": "CHEMBL25",
+        "pref_name": "ASPIRIN",
+        "molecule_type": "Small molecule"
+      },
+      "ndc": [
+        {
+          "nonproprietaryname": "aspirin, dipyridamole"
+        },
+        {
+          "nonproprietaryname": "aspirin"
+        }
+      ]
+    }
+  ]
+}

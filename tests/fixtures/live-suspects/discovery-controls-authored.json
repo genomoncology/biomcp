@@ -1,0 +1,25 @@
+{
+  "chemical": {
+    "iri": "http://example.org/CHEBI:1",
+    "ontology_prefix": "CHEBI",
+    "obo_id": "CHEBI:1",
+    "label": "Example chemical therapy",
+    "exact_synonyms": []
+  },
+  "vaccine": {
+    "iri": "http://example.org/NCIT:1",
+    "ontology_prefix": "NCIT",
+    "obo_id": "NCIT:1",
+    "label": "Example vaccine",
+    "exact_synonyms": []
+  },
+  "drug": {
+    "iri": "http://example.org/DRON:1",
+    "ontology_prefix": "DRON",
+    "obo_id": "DRON:1",
+    "label": "Example medicine",
+    "exact_synonyms": [
+      "Example alias"
+    ]
+  }
+}
