@@ -4,11 +4,13 @@ priority: 3
 
 # 2210 — Try toml 1.x
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 0a3d1ad, accept
+
+Landed: 7a4401e
 
 ## Outcome
 
