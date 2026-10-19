@@ -1,6 +1,6 @@
 # 2230 — Make settlement cancellation proof deterministic
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
@@ -9,6 +9,8 @@ Priority: 1
 Reviews: revision 64eae07, accept
 
 Reviews: revision 9b28ebb, accept
+
+Landed: 20c6b48
 
 ## Outcome
 
