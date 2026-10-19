@@ -82,6 +82,8 @@
 
 ### Internal
 
+- Record bounded provider access diagnosis and explicit unverified limits before release. (2280)
+
 - Set stable 0.9.4 version metadata and reconcile the release finding dispositions. (2262)
 
 - Synchronize the disease deadline control with provider request arrival before advancing test time. (2276)
