@@ -203,17 +203,12 @@
     {
       "name": "0.9.3",
       "targetRef": "main",
-      "state": "settled"
+      "state": "active"
     },
     {
       "name": "0.9.4",
       "targetRef": "main",
-      "state": "active"
-    },
-    {
-      "name": "0.9.5",
-      "targetRef": "main",
-      "state": "active"
+      "state": "settled"
     },
     {
       "name": "1.0",
