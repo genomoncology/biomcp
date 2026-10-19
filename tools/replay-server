@@ -328,6 +328,13 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0") or 0)
         body = self.rfile.read(length) if length else b""
         head_only = method == "HEAD"
+        if (
+            path == "/__replay/root"
+            and method == "POST"
+            and getattr(self.server, "allow_fixture_root_switch", False)
+        ):
+            self.switch_fixture_root(body)
+            return
         if path == "/healthz":
             self.replay.log(method, path, query, body, "probe", 200)
             self.send_json(200, {"status": "ok"}, head_only)
@@ -382,6 +389,25 @@ class Handler(BaseHTTPRequestHandler):
         response_body = self.replay.store.body_path(key).read_bytes()
         self.replay.log(method, path, query, body, "hit", status)
         self.send_bytes(status, headers, response_body, head_only)
+
+    def switch_fixture_root(self, body: bytes) -> None:
+        """Change recordings between serialized test contexts, without traffic logs."""
+        try:
+            selection = json.loads(body)
+            root = Path(selection["root"])
+            record = selection.get("record", False)
+            if not isinstance(record, bool):
+                raise ValueError("record must be a boolean")
+            replay_dir = root / "testdata" / "replay"
+            if not (replay_dir / "manifest.json").is_file():
+                raise ValueError("fixture root has no replay manifest")
+            store = ReplayStore(replay_dir)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            self.send_json(400, {"replayError": str(error)}, False)
+            return
+        self.replay.store = store
+        self.replay.record = record
+        self.send_json(200, {"status": "ok"}, False)
 
     def send_json(self, status: int, payload: dict[str, str], head_only: bool) -> None:
         self.send_bytes(
@@ -444,6 +470,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--env-file", type=Path)
     parser.add_argument("--request-log", type=Path)
     parser.add_argument(
+        "--allow-fixture-root-switch",
+        action="store_true",
+        help="allow the test runner to switch recordings between serialized tests",
+    )
+    parser.add_argument(
         "--record",
         action="store_true",
         help="fetch a live upstream reply for an unrecorded request and store it",
@@ -484,6 +515,7 @@ def main(argv: list[str] | None = None) -> int:
     server = ReplayServer(routes, ORIGIN_SUBSTITUTION_ROUTES, store, log_write, args.record)
     httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     httpd.replay = server  # type: ignore[attr-defined]
+    httpd.allow_fixture_root_switch = args.allow_fixture_root_switch
     origin = f"http://127.0.0.1:{httpd.server_port}"
     if args.env_file is not None:
         write_env_file(args.env_file, origin, routes, ORIGIN_SUBSTITUTION_ROUTES)

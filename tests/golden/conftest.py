@@ -15,9 +15,9 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def replay(request: pytest.FixtureRequest) -> Iterator["object"]:
-    """One replay server for the whole golden run.
+    """One isolated view of the session's replay server for each golden case.
 
     Set BIOMCP_GOLDEN_RECORD=1 for a run that records live replies for
     unrecorded requests; without it every request must replay from disk.
