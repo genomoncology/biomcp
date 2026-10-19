@@ -10,6 +10,8 @@ Reviews: revision e0b4f1b, accept
 
 Reviews: revision caaa01b, accept
 
+Reviews: revision 99c5a23, accept
+
 ## Outcome
 
 BioMCP's HTTP cache, saved article full text, citation evidence and provider captures live in one SQLite database under the cache root. Lookups use indexed rows, size limits and eviction need no folder walk, the CLI and the MCP server share the cache safely, and every cache-age note reads as it does today.
