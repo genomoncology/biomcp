@@ -41,3 +41,6 @@ All builds and tests run through the configured build job. Stage private test/so
 ## Focused proof
 
 Source 27091d77c956364da72847c95230bc55568ecc14 passed the public CLI/MCP ERepo fixture, targeted parser/schema cases, formatting, all-target Clippy and quality boundaries in job 1792420695659-83007. The trailing ad hoc ShellCheck omitted the standard severity flag; canonical ShellCheck passed in 1792420924670-40576. Published verification 1792420971750-51557 matched all ten product/spec files and patch SHA256 3e181163c04bd3eaff6d36f223c2de41fb0f71738d9f2f69373ec0b9d76a95e8. Private build-host experiment 782-biomcp-2238-erepo-paging retains exact raw proof. Fresh review accepted the source without changes.
+
+Keep: experiments/488-biomcp-2238-erepo-paging — Retain cited raw proof until the release evidence is explicitly released.
+Keep: experiments/782-biomcp-2238-erepo-paging — Retain cited raw proof until the release evidence is explicitly released.
