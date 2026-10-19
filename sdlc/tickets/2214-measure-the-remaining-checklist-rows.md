@@ -18,3 +18,6 @@ The release measurement covers every row the 0.9.3 checklist named, so the next 
 
 - Changes: `tools/measure-0-9-3-baseline` `tests/test_measurement_coverage_contract.py` `tests/test_measurement_summary_contract.py` and the baseline record. Inventory the exact record path and narrow tests before editing. Reuse retained release workflow and archive evidence; mark unavailable historical rows honestly. Measure frozen revisions; do not call a moving development tip the final release candidate.
 
+## Progress
+
+- 2026-10-19 started
