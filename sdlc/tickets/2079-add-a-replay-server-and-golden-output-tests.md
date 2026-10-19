@@ -35,6 +35,7 @@ PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every b
 ## Progress
 
 - 2026-10-18 started
+- 2026-10-19 landed a646ba83da934317591a5a5e57f4cb7db24c72fe; next: Record completed review batch; retain 2079 for its remaining command coverage.
 
 ## Next bounded batch
 
