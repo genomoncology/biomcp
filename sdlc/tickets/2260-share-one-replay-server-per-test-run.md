@@ -23,3 +23,7 @@ Keep parent-death exit and per-test request-log isolation (tests read only their
 ## Proof
 
 A session-scoped pytest fixture (one per worker under parallel runs) and one shared server per Rust test binary replace the per-module starts. A check counts replay-server processes during a full `make test` and `make spec` and finds at most one per runner process, and none after the run, including after killing the runner mid-run.
+
+## Progress
+
+- 2026-10-19 started
