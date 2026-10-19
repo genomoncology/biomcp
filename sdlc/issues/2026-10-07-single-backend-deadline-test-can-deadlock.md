@@ -105,3 +105,7 @@ are green, and it landed as merge ae9e6c2e9 (9b23236f8 is the follow-up records 
 above is retired: landings again require the ordinary green gates. The
 pre-existing blocking waits outside the article fixtures (noted in the
 2030 review) stay recorded here for a future ticket.
+
+## Residual closure in 2243
+
+Resolved remaining src test waits: 2243 bounds eleven inventoried test joins through a small helper that preserves panic results and diagnoses expiry. Production outcome join and the already bounded article receive remain unchanged. This does not assert a fix for the separately tracked single-CPU handshake issue2244.

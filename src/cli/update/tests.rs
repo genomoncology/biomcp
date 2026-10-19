@@ -79,7 +79,7 @@ async fn archive_transport_accepts_exact_limit_for_declared_and_chunked_bodies()
         let (url, server) = serve_body(vec![b'x'; 4096], chunked);
         let bytes = download_asset_with_limit(&url, 4096).await.unwrap();
         assert_eq!(bytes.len(), 4096);
-        server.join().unwrap();
+        crate::test_support::bounded_join(server).unwrap();
     }
 }
 
@@ -95,7 +95,7 @@ async fn archive_transport_rejects_limit_plus_one_for_declared_and_chunked_bodie
                 ..
             } | BioMcpError::HttpMiddleware(_)
         ));
-        server.join().unwrap();
+        crate::test_support::bounded_join(server).unwrap();
     }
 }
 
@@ -117,7 +117,7 @@ async fn archive_larger_than_shared_default_reaches_verification_and_extraction(
             extract_binary_from_targz(&downloaded, "biomcp").unwrap(),
             binary
         );
-        server.join().unwrap();
+        crate::test_support::bounded_join(server).unwrap();
     }
 }
 
@@ -127,7 +127,7 @@ async fn release_metadata_endpoint_is_injectable() {
     let (url, server) = serve_body(body, false);
     let release = fetch_latest_release_from(&url).await.unwrap();
     assert_eq!(release.tag_name, "v9.9.9");
-    server.join().unwrap();
+    crate::test_support::bounded_join(server).unwrap();
 }
 
 #[test]

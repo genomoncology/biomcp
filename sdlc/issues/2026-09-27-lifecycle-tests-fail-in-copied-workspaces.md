@@ -30,3 +30,7 @@ Open. Owner: the 0.9.1 follow-up batch (tickets 1255-1259). Revisit
 trigger: any new fixture script added to `scripts/run-specs.sh`
 without the existence guard, or the next lifecycle-test failure in
 a scratch checkout.
+
+## Residual closure in 2243
+
+Resolved: the two named lifecycle modules were deleted in e7e45eba5. No retained contract depends on their copied-workspace setup.
