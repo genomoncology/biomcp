@@ -82,3 +82,47 @@ fn healthy_asset_package_misses_name_the_consulted_sources() {
     assert!(answer.contains("no open-access asset package"), "{answer}");
     assert!(!answer.contains("BioMCP source"), "{answer}");
 }
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn identity_and_discovery_failures_name_the_upstream_provider() {
+    let fixture = ArticleFixture::start();
+    for (pmid, provider) in [
+        ("99002271", "NCBI ID Converter"),
+        ("99002272", "Semantic Scholar"),
+    ] {
+        let output = fixture
+            .biomcp_command(&["--json", "get", "article", pmid, "assets"])
+            .output()
+            .expect("asset lookup should run");
+        assert!(!output.status.success(), "{output:?}");
+        let answer: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        let message = answer["error"]["message"].as_str().unwrap();
+        assert!(message.contains(provider), "{message}");
+        assert!(!message.contains("Figshare"), "{message}");
+        assert!(
+            !message.contains("no open-access asset package"),
+            "{message}"
+        );
+        assert!(!message.contains("authored"), "{message}");
+    }
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn malformed_asset_xml_names_only_the_provider_that_failed() {
+    let fixture = ArticleFixture::start();
+    let output = fixture
+        .biomcp_command(&["--json", "get", "article", "99002273", "assets"])
+        .output()
+        .expect("asset lookup should run");
+    assert!(!output.status.success(), "{output:?}");
+    let answer: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let message = answer["error"]["message"].as_str().unwrap();
+    assert!(
+        message.starts_with("Article asset sources unavailable: Europe PMC could not confirm"),
+        "{message}"
+    );
+    assert!(!message.contains("NCBI EFetch"), "{message}");
+    assert!(!message.contains("Figshare"), "{message}");
+}
