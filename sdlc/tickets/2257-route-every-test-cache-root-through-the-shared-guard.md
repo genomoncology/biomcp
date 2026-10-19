@@ -32,7 +32,7 @@ An inventory lists every test that sets a cache directory and shows each uses th
 
 Use a dedicated shared Rust set_cache_root helper, the existing dev-only fixture crate for child cache environment pairs, a shared Python root setter, and one shell fixture policy helper. Preserve explicit policy probes and passed cache configurations; controlled measurement arms and their harness method stay unchanged. Replace independent wrapper mutation/restoration only where equivalent; otherwise retain its provider guard and hold the shared cache guard separately. Keep every assertion and intentional override. The existing central-helper quality check must reject a new uncontrolled root assignment, with narrow exceptions only for the actual shared helper definitions. Complete the fixture-only groups as one coherent change with one final green source push.
 
-Keep: experiments/491-biomcp-2257-cache-fixture-inventory — retain the original static inventory until its complete contents are verified in the execution evidence archive.
+Keep: experiments/802-biomcp-2257-cache-fixture-migration — retain the full classified inventory, controlled baseline and accepted-batch failures, owning red/green results, commands and final source hashes.
 
 Coordinator fixture-only grant: baseline f63ba97 reproduced the FDA cache-row loss with available disk below its explicit ten-percent helper default. Authorize only cfg(test) test_cache_config in src/sources/mod.rs to use the same shared numeric disk-floor constant as FixtureEnv root policy; preserve per-test overrides, size, age, origins, all assertions and production configuration. Retain baseline and disk observations in experiment 802.
 
@@ -41,3 +41,9 @@ Coordinator dependency grant: the two copied-runner harnesses may copy the actua
 ## Progress
 
 - 2026-10-19 started
+
+## Implementation evidence
+
+Developer stopped at cf6acb525eb89deaee068b3a61adf77b398126db, published once and clean. Shared fixture defaults now cover Rust environment and explicit config helpers, child environments, Python and executable shells without changing production defaults, deliberate overrides, assertions or measurement methods. All 254 inventory rows are classified in the retained archive; the archived manifest matches all 73 changed source files.
+
+Focused proof on the configured build host passed final formatting and all-target warnings-denied Clippy; 127 remaining or affected Rust checks including both FDA cases, with 670 earlier passing checks retained; 84 Python checks, 32 audit and copied-runner checks, one replay-root check, four local shell fixtures and three setup/export smokes. No full routine or release gate, live-provider, Windows or Linux offline claim. The actual landing and main gates follow fresh review.
