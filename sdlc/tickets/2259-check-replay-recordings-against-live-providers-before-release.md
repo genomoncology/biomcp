@@ -12,6 +12,8 @@ Reviews: revision 0e1bb2a, reject
 
 Reviews: revision 9822256, accept
 
+Reviews: revision ea1000c, accept
+
 ## Outcome
 
 Changes: `sdlc/tickets/2251-report-publisher-elided-references-as-empty.md`, `sdlc/tickets/2252-make-variant-articles-markdown-match-its-json.md`, `sdlc/tickets/2253-document-full-text-access-groups-and-reason-codes.md`, `sdlc/tickets/2254-fix-article-help-lists-and-condition-names.md`, `sdlc/tickets/2256-bound-only-the-mcp-handshake-wait-by-the-startup-timer.md`, `sdlc/tickets/2257-route-every-test-cache-root-through-the-shared-guard.md`, `sdlc/tickets/2258-admit-the-0-9-4-release-candidate.md`, `sdlc/tickets/2260-share-one-replay-server-per-test-run.md`, `tools/check-replay-live`, `scripts/replay_drift.py`, `tests/test_replay_live_drift.py`, `docs/reference/release-process.md`, `sdlc/release-checklist.md`, `tools/replay-server`, `testdata/replay/manifest.json`, `CHANGELOG.md`, `sdlc/tickets/2259-check-replay-recordings-against-live-providers-before-release.md`.
