@@ -38,7 +38,9 @@ fn run_biomcp(args: &[&str], cache_home: &Path, config_home: &Path) -> CommandRe
     // The platform cache root ignores XDG_CACHE_HOME on macOS, so the
     // fixture root travels through the explicit override every platform
     // honors.
-    command.env("BIOMCP_CACHE_DIR", resolved_cache_root(cache_home));
+    command.envs(biomcp_mcp_contract_client::child_cache_env(
+        resolved_cache_root(cache_home),
+    ));
     command.env("XDG_CONFIG_HOME", config_home);
     command.env_remove("BIOMCP_CACHE_MAX_SIZE");
     command.env_remove("BIOMCP_CACHE_MAX_AGE");

@@ -2822,8 +2822,8 @@ mod tests {
     #[serial_test::serial(source_env)]
     async fn manifest_cache_reuses_fresh_entries_and_discards_expired_or_corrupt_entries() {
         let cache = TempDirGuard::new("article-assets-manifest-cache");
-        let mut env = TestEnv::new();
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        let mut env = TestEnv::scratch_cache_only();
+        env.set_cache_root(cache.path());
         let requested_id = "PMID:22663011";
         let manifest = sample_cached_manifest();
 
@@ -2987,7 +2987,7 @@ mod tests {
             TestHttpReply::Bytes(test_http_response(status, content_type, body.as_bytes()))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         let cache = TempDirGuard::new("article-asset-failure-fold");
         for key in [
             "BIOMCP_TEST_UNPACED_ORIGIN",
@@ -2999,7 +2999,7 @@ mod tests {
         ] {
             env.set(key, &fixture.base);
         }
-        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set_cache_root(cache.path());
 
         let manifest_err = article_assets_manifest("4242")
             .await
@@ -3032,7 +3032,7 @@ mod tests {
             TestHttpReply::Bytes(test_http_response("200 OK", "text/html; charset=utf-8", body))
         })
         .await;
-        let mut env = TestEnv::new();
+        let mut env = TestEnv::scratch_cache_only();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set(
             crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV,

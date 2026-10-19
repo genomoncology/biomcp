@@ -174,7 +174,7 @@ def test_scanner_ignores_imports_and_comments_in_fixture(tmp_path: Path) -> None
 def cache_retention_bypasses(root: Path) -> list[str]:
     """Cache-enabling fixtures use the helper that owns their disk floor."""
     pattern = re.compile(
-        r"[\"']BIOMCP_CACHE_MODE[\"']\s*(?:\]\s*=|:)\s*[\"'](?:default|infinite)[\"']"
+        r"[\"']BIOMCP_CACHE_MODE[\"']\s*(?:\]\s*=(?!=)|:)\s*[\"'](?:default|infinite)[\"']"
         r"|\.pop\(\s*[\"']BIOMCP_CACHE_MODE[\"']"
         r"|BIOMCP_CACHE_MODE\s*=\s*[\"'](?:default|infinite)[\"']"
         r"|\.setenv\(\s*[\"']BIOMCP_CACHE_MODE[\"']\s*,\s*[\"'](?:default|infinite)[\"']"
@@ -214,3 +214,85 @@ def test_cache_retention_guard_rejects_an_unisolated_fixture(tmp_path: Path, sta
     assert cache_retention_bypasses(tmp_path) == [
         "tests/retention.py:1",
     ]
+
+CACHE_ROOT_ASSIGNMENT = re.compile(
+    r'(?:\.env|\.set|\.setenv|::set_var)\(\s*["\']BIOMCP_CACHE_DIR["\']\s*,'
+    r'|["\']BIOMCP_CACHE_DIR["\']\s*(?:\]\s*=(?!=)|:)'
+    r'|(?<![\w:])\(\s*["\']BIOMCP_CACHE_DIR["\']\s*,'
+    r'(?!\s*["\'](?:BIOMCP_|XDG_)[A-Z_]*["\'])'
+    r'|\bBIOMCP_CACHE_DIR\s*='
+)
+
+def shared_root_assignment(relative: str, text: str, offset: int) -> bool:
+    """Exceptions cover the actual setter bodies, never an entire file."""
+    definitions = {
+        "tests/cache_fixture.py": ("def set_cache_root(", "\n\ndef "),
+        "crates/biomcp-mcp-contract-client/src/lib.rs": (
+            "pub fn child_cache_env(", "\n}"),
+        "spec/fixtures/cache-policy.sh": ("set_fixture_cache_root() {", "\n}"),
+    }
+    definition = definitions.get(relative)
+    if definition is None:
+        return False
+    signature, terminator = definition
+    if relative == "spec/fixtures/cache-policy.sh":
+        printer = text.find("print_fixture_cache_exports() {")
+        end_printer = text.find("\n}", printer)
+        if printer >= 0 and printer <= offset < end_printer:
+            return True
+    start = text.find(signature)
+    if start < 0:
+        return False
+    end = text.find(terminator, start + len(signature))
+    if relative == "tests/cache_fixture.py":
+        end = text.find("\n", start)
+        for line in text[end + 1:].splitlines(keepends=True):
+            if line.strip() and not line[0].isspace():
+                break
+            end += len(line)
+    return start <= offset < (len(text) if end < 0 else end)
+
+def cache_root_bypasses(root: Path) -> list[str]:
+    paths = support_sources_under(root)
+    for directory, suffixes in (("crates", {".rs"}), ("spec", {".sh", ".md"}),
+                                ("scripts", {".sh"})):
+        paths.extend(path for path in (root / directory).rglob("*")
+                     if path.is_file() and path.suffix in suffixes)
+    wrapper = root / "tools/biomcp-ci"
+    if wrapper.is_file():
+        paths.append(wrapper)
+    found = []
+    for path in sorted(paths):
+        relative = path.relative_to(root).as_posix()
+        text = path.read_text(encoding="utf-8")
+        for match in CACHE_ROOT_ASSIGNMENT.finditer(text):
+            if shared_root_assignment(relative, text, match.start()):
+                continue
+            found.append(f"{relative}:{line_number(text, match.start())}")
+    return found
+
+def test_cache_root_fixtures_use_the_shared_guard() -> None:
+    assert cache_root_bypasses(REPO_ROOT) == []
+
+@pytest.mark.parametrize(("path", "statement"), [
+    ("src/fixture.rs", 'env.set("BIOMCP_CACHE_DIR", root);'),
+    ("tests/child.rs", 'command.env("BIOMCP_CACHE_DIR", root);'),
+    ("tests/child.rs", '("BIOMCP_CACHE_DIR", root),'),
+    ("tests/fixture.py", 'env["BIOMCP_CACHE_DIR"] = str(root)'),
+    ("tests/fixture.py", 'env = {"BIOMCP_CACHE_DIR": str(root)}'),
+    ("tests/fixture.py", 'monkeypatch.setenv("BIOMCP_CACHE_DIR", str(root))'),
+    ("spec/fixtures/fixture.sh", 'export BIOMCP_CACHE_DIR="$root"'),
+    ("spec/entity/fixture.md", 'BIOMCP_CACHE_DIR="$root" biomcp get gene BRAF'),
+    ("scripts/fixture.sh", 'BIOMCP_CACHE_DIR="$root"'),
+    ("tests/cache_fixture.py", 'env["BIOMCP_CACHE_DIR"] = str(root)'),
+    ("tests/cache_fixture.py", 'def set_cache_root(env, root):\n'
+     '    env["BIOMCP_CACHE_DIR"] = str(root)\n'
+     'env["BIOMCP_CACHE_DIR"] = str(root)'),
+])
+def test_cache_root_guard_rejects_an_uncontrolled_assignment(
+    tmp_path: Path, path: str, statement: str,
+) -> None:
+    fixture = tmp_path / path
+    fixture.parent.mkdir(parents=True)
+    fixture.write_text(statement + "\n", encoding="utf-8")
+    assert cache_root_bypasses(tmp_path) == [f"{path}:{len(statement.splitlines())}"]

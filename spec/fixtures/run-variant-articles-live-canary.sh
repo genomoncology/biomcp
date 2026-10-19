@@ -21,6 +21,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 repo = Path(sys.argv[1])
+sys.path.insert(0, str(repo / "tests"))
+from cache_fixture import set_cache_root
 binary = sys.argv[2]
 work = Path(sys.argv[3])
 source_root = repo / "testdata/sources"
@@ -90,12 +92,11 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 thread = threading.Thread(target=server.serve_forever, daemon=True)
 thread.start()
 base = f"http://127.0.0.1:{server.server_port}"
-env = os.environ | {
+env = set_cache_root(os.environ | {
     "BIOMCP_EUROPEPMC_BASE": base,
     "BIOMCP_TEST_UNPACED_ORIGIN": base,
     "BIOMCP_CACHE_MODE": "off",
-    "BIOMCP_CACHE_DIR": str(work / "cache"),
-}
+}, work / "cache")
 
 cli_checks = []
 seen_requests = set()

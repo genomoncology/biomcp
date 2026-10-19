@@ -88,14 +88,14 @@ pub(super) fn drug_fixture_env(
     let root = crate::test_support::TempDirGuard::new(ddinter_label);
     let missing_ddinter = root.path().join("missing-ddinter");
     let mut env = crate::test_support::FixtureEnv::new();
-    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_MYCHEM_BASE", format!("{base}/v1"));
     env.set("BIOMCP_OPENFDA_BASE", base);
     // The guarded discover rescue reaches OLS4 and the HPO alias lookup it
     // carries; both stay on the fixture so no name-resolution test leaves
     // it.
     env.set("BIOMCP_OLS4_BASE", base);
-    env.set("BIOMCP_HPO_BASE", &format!("{base}/hp"));
-    env.set("BIOMCP_UMLS_BASE", &format!("{base}/umls"));
+    env.set("BIOMCP_HPO_BASE", format!("{base}/hp"));
+    env.set("BIOMCP_UMLS_BASE", format!("{base}/umls"));
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
     env.set(
         "BIOMCP_DDINTER_DIR",

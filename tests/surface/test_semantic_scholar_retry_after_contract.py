@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cache_fixture import set_cache_root
+
 import json
 import os
 import subprocess
@@ -163,13 +165,12 @@ def _run_article_citations(
 ) -> subprocess.CompletedProcess[str]:
     assert BIOMCP_BIN.exists(), f"missing biomcp binary: {BIOMCP_BIN}"
     with tempfile.TemporaryDirectory(prefix="biomcp-s2-retry-spec-") as cache_home:
-        env = os.environ.copy()
+        env = set_cache_root(os.environ.copy(), cache_home)
         env.update(
             {
                 "BIOMCP_S2_BASE": server.base_url,
                 "BIOMCP_TEST_UNPACED_ORIGIN": server.base_url,
                 "BIOMCP_CACHE_MODE": "off",
-                "XDG_CACHE_HOME": cache_home,
                 "RUST_LOG": "error",
             }
         )
