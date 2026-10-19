@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Name unavailable article asset providers and keep successful HTML full-text retrieval free of internal serializer warnings. (2271)
 - Resolve drug development codes through exact ChEMBL molecule synonyms. Verify the preferred card carries the same molecule identifier for single and batch calls. (2266)
 
 - Label drug targets with source organisms, list human targets first, and suggest gene lookups only for source-confirmed human targets. (2265)
