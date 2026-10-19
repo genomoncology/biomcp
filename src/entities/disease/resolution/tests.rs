@@ -11,8 +11,8 @@ fn json_response(body: &str) -> Vec<u8> {
     .into_bytes()
 }
 
-async fn exact_resolution_fixture(
-    handler: impl Fn(&str) -> &'static str + Send + Sync + 'static,
+async fn exact_resolution_fixture_owned(
+    handler: impl Fn(&str) -> String + Send + Sync + 'static,
 ) -> (
     MyDiseaseClient,
     Arc<Mutex<Vec<String>>>,
@@ -34,7 +34,7 @@ async fn exact_resolution_fixture(
                 .lock()
                 .expect("lock exact-resolution requests")
                 .push(request.clone());
-            let response = json_response(handler(&request));
+            let response = json_response(&handler(&request));
             stream.write_all(&response).await.expect("write response");
         }
     });
@@ -44,6 +44,19 @@ async fn exact_resolution_fixture(
         server,
     )
 }
+
+async fn exact_resolution_fixture(
+    handler: impl Fn(&str) -> &'static str + Send + Sync + 'static,
+) -> (
+    MyDiseaseClient,
+    Arc<Mutex<Vec<String>>>,
+    tokio::task::JoinHandle<()>,
+) {
+    exact_resolution_fixture_owned(move |request| handler(request).to_owned()).await
+}
+
+#[path = "paging_tests.rs"]
+mod paging_tests;
 
 fn holder_hits() -> Vec<MyDiseaseHit> {
     vec![
