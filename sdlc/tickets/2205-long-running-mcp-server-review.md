@@ -4,11 +4,13 @@ priority: 3
 
 # 2205 — Review a long-running MCP server
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 7cd18d9, accept
+
+Landed: 39e9146
 
 ## Outcome
 
