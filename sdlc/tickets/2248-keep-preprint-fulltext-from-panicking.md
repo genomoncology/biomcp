@@ -12,6 +12,8 @@ Milestone: 0.9.4
 
 `get article` full text for a preprint DOI returns a structured answer, the text or a named reason, and never panics. A batch keeps every unrelated item when one fails.
 
+- Changes: `CHANGELOG.md` `architecture/technical/source-integration.md` `docs/reference/source-licensing.md` `docs/reference/sources.json` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md` `sdlc/tickets/2249-show-the-match-in-supplement-search-context.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md` `src/entities/article/fulltext.rs` `src/entities/source_state_registry.rs` `src/error.rs` `src/sources/provider_url_policy.rs` `tests/fixtures/article/preprint-fulltext/README.md` `tests/fixtures/article/preprint-fulltext/article.xml` `tests/test_article_preprint_fulltext.py`.
+
 ## Evidence
 
 Reproduced on 0.9.3: `biomcp --json --no-cache get article 10.1101/2022.07.18.22276644 fulltext` panics at a provenance invariant (`provenance.rs:115`) and writes zero JSON bytes. `batch article 14735200,25922291,18178632,18509008,12752119,20301425,10.1101/2022.07.18.22276644 --mode detail --sections fulltext` loses all seven items. The preprint server's API has the JATS body, and `--pdf` returns real text.
@@ -30,7 +32,7 @@ Restate the approved outcome, reproduce on current main before source edits, and
 
 ## Granted implementation brief
 
-- Changes: `CHANGELOG.md` `architecture/technical/source-integration.md` `docs/reference/source-licensing.md` `docs/reference/sources.json` `sdlc/tickets/2245-name-the-cgi-sections-source.md` `sdlc/tickets/2246-query-every-coding-alias-or-report-dropped-forms.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `sdlc/tickets/2248-keep-preprint-fulltext-from-panicking.md` `sdlc/tickets/2249-show-the-match-in-supplement-search-context.md` `sdlc/tickets/2250-mark-supplement-search-incomplete-when-files-are-unreachable.md` `src/entities/article/fulltext.rs` `src/entities/source_state_registry.rs` `src/error.rs` `src/sources/provider_url_policy.rs` `tests/fixtures/article/preprint-fulltext/README.md` `tests/fixtures/article/preprint-fulltext/article.xml` `tests/test_article_preprint_fulltext.py`.
+
 
 Restated outcome: preprint DOI full text returns actual available JATS text with accurate provenance, or a named structured failure when unavailable; one preprint outcome must not erase unrelated ordered batch items. PM explicitly approved the JATS route within this ticket. Fix the provenance-registry mismatch rather than weakening its invariant.
 
