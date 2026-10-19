@@ -310,8 +310,17 @@ fn article_batch_entities(summary: Option<&ArticleBatchEntitySummary>) -> Option
     }
 }
 
+// dead-code reason: standalone batch rendering is exercised by native renderer contracts
+#[allow(dead_code)]
 pub fn article_batch_markdown(items: &[ArticleBatchItem]) -> Result<String, BioMcpError> {
-    let nested = items.len() == 1;
+    render_article_batch(items, false)
+}
+
+pub fn article_batch_item_markdown(item: &ArticleBatchItem) -> Result<String, BioMcpError> {
+    render_article_batch(std::slice::from_ref(item), true)
+}
+
+fn render_article_batch(items: &[ArticleBatchItem], nested: bool) -> Result<String, BioMcpError> {
     let mut out = if nested {
         String::new()
     } else {

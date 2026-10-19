@@ -535,6 +535,11 @@ fn article_batch_markdown_renders_compact_rows() {
         },
     ];
 
+    let single = article_batch_markdown(&rows[..1]).expect("standalone single-item batch");
+    assert!(
+        single.starts_with("# Article Batch (1)\n\n## 1. Improved survival with vemurafenib\n")
+    );
+
     let markdown = article_batch_markdown(&rows).expect("batch markdown");
     assert!(markdown.contains("# Article Batch (3)"));
     assert!(markdown.contains("## 1. Improved survival with vemurafenib"));
