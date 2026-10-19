@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 ## Outcome
 
+Changes: `tests/golden/replay_env.py`, `tests/conftest.py`, `tests/golden/conftest.py`, `tests/test_variant_article_transcript_aliases.py`, `tests/disable_sources_cli.rs`, `tests/test_replay_server_lifetime.py`, `tools/replay-server`, `CHANGELOG.md`, `sdlc/tickets/2260-share-one-replay-server-per-test-run.md`.
+
 Each test run starts at most one replay server per test process tree, reused by every test that needs it, and that run owns its teardown, including when the run is killed.
 
 ## Evidence
@@ -27,3 +29,7 @@ A session-scoped pytest fixture (one per worker under parallel runs) and one sha
 ## Progress
 
 - 2026-10-19 started
+
+## Coordinator implementation grant
+
+Approved implementation: runner-owned shared process with per-context isolated cache/work roots and request-log baselines, function-scoped pytest views over the worker session owner, and serialized Rust views over one binary owner. Preserve every assertion and parent-death handling. Allow an explicitly enabled loopback-only fixture-root switch under the context lock to preserve projected fixtures; it must not become a recorded provider request or change ordinary server behavior. Wait for the active 2257 writer to stop before common fixture edits; integrate its shared cache policy first. Targeted lifetime and isolation proof now; whole-run counting proof on the reviewed combined candidate.
