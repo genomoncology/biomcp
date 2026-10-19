@@ -55,3 +55,13 @@ Combined gate 2247/1792436359063-73075 passed at d836b94937f03ce9f35be43345af96a
 The release defect lanes retain a private, read-only copy of research runs 0031, 0032 and 0033. All 3967 files match the retained source SHA256 manifest. Source replies subject to licensing remain private; only permitted projections belong in public fixtures. This preserves lane inputs independently of the research store.
 
 Keep: experiments/2081-biomcp-2258-research-fixture-retention — retain the private research replies and source checksum manifest used by the release defect lanes.
+
+## Observed live collection scope
+
+Changes: `testdata/replay/manifest.json`, `sdlc/records/2258-replay-live-collection.md`.
+
+After stable metadata lands, recompute the actual recording inventory. Use observed credential-free primary replies to refresh historical missing response content types and the stale dbSNP request declaration, retaining original recording provenance and dates. Retain raw replies privately with exact request settings, status, case-insensitive Content-Type, observation time, bytes and SHA256. Final coverage uses tools/check-replay-live --live on the final candidate and records every entry and complete counts. No hardcoded historical inventory count.
+
+Never call KEGG live; every KEGG recording says not checked live: commercial-restricted source and never counts as checked. Do not print, log, hash or store credentials or a derived value. Reuse authorized source settings; no new paid access. One serial request stream, bounded response size and time, no redirect/proxy/retry loop; obey Retry-After and stop the affected provider.
+
+No checker/runtime/code changes in this collection. Do not publish broad or licensed source replies. Report every blocked, drifted or unsupported entry with the supported next repair or recording action; source/fixture body changes belong to a separately reviewed bounded fix. Partial coverage never means pass. Retain collection proof in a numbered private experiment with OWNER and Keep; the public record contains safe request metadata, counts, hashes and limitations. No tag or publication.
