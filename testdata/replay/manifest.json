@@ -93,6 +93,22 @@
       "status": 200,
       "upstream": "https://rest.kegg.jp/find/pathway/BRAF"
     },
+    "GET /kegg/find/pathway/MAPK%20signaling%20pathway": {
+      "file": "responses/kegg/search_mapk_20260811.txt",
+      "headers": {
+        "content-type": "text/plain"
+      },
+      "status": 200,
+      "upstream": "https://rest.kegg.jp/find/pathway/MAPK%20signaling%20pathway"
+    },
+    "GET /kegg/get/hsa05200": {
+      "file": "responses/kegg/get_hsa05200_20260811.txt",
+      "headers": {
+        "content-type": "text/plain"
+      },
+      "status": 200,
+      "upstream": "https://rest.kegg.jp/get/hsa05200"
+    },
     "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=6": {
       "file": "responses/mychem/mychem-query-212dd06e4cf8.bin",
       "status": 200,
@@ -166,10 +182,50 @@
       "status": 200,
       "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40GENE_BRAF+%40DISEASE_Melanoma&page=1&size=25"
     },
+    "GET /reactome/data/participants/R-HSA-5673001": {
+      "file": "responses/reactome/participants_r_hsa_5673001_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://reactome.org/ContentService/data/participants/R-HSA-5673001"
+    },
+    "GET /reactome/data/pathway/R-HSA-5673001/containedEvents": {
+      "file": "responses/reactome/events_r_hsa_5673001_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://reactome.org/ContentService/data/pathway/R-HSA-5673001/containedEvents"
+    },
+    "GET /reactome/data/query/R-HSA-5673001": {
+      "file": "responses/reactome/get_r_hsa_5673001_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://reactome.org/ContentService/data/query/R-HSA-5673001"
+    },
     "GET /reactome/search/query?pageSize=3&query=BRAF&species=Homo+sapiens": {
       "file": "responses/reactome/reactome-search-query-32ff0934f602.bin",
       "status": 500,
       "upstream": "https://reactome.org/ContentService/search/query?query=BRAF&species=Homo+sapiens&pageSize=3"
+    },
+    "GET /reactome/search/query?pageSize=3&query=MAPK+signaling+pathway&species=Homo+sapiens": {
+      "file": "responses/reactome/search_mapk_limit3_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://reactome.org/ContentService/search/query?query=MAPK+signaling+pathway&species=Homo+sapiens&pageSize=3"
+    },
+    "GET /reactome/search/query?pageSize=5&query=MAPK+signaling+pathway&species=Homo+sapiens": {
+      "file": "responses/reactome/search_mapk_limit5_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "status": 200,
+      "upstream": "https://reactome.org/ContentService/search/query?query=MAPK+signaling+pathway&species=Homo+sapiens&pageSize=5"
     },
     "GET /s2/graph/v1/paper/search?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=1&query=BRAF+melanoma": {
       "file": "responses/s2/s2-graph-v1-paper-search-12fb30916c77.bin",
