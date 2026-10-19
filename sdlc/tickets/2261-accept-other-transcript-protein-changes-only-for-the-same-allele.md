@@ -23,3 +23,7 @@ Follow `sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-chang
 ## Proof
 
 A test with only a residue mismatch and no request-matching versioned projection refuses. The two verified examples still resolve with their notes. Each new test fails before the change. Clinical questions go to a clinical reviewer.
+
+## Progress
+
+- 2026-10-19 started
