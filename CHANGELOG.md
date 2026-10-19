@@ -8,6 +8,7 @@
 
 - Resolve drug development codes through exact ChEMBL molecule synonyms. Verify the preferred card carries the same molecule identifier for single and batch calls. (2266)
 
+- Label drug targets with source organisms, list human targets first, and suggest gene lookups only for source-confirmed human targets. (2265)
 - Preserve source failures during disease and drug name fallback resolution instead of reporting that the requested entity was not found. (2264)
 - Return malformed MCP tool arguments as model-visible errors naming the argument, and derive the ERepo tool schema from its typed fields. (2263)
 - Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)

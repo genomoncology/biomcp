@@ -8,7 +8,9 @@ pub(crate) mod label;
 mod metadata;
 mod query;
 mod search;
+mod target_organisms;
 mod targets;
+pub use target_organisms::DrugTargetOrganism;
 #[cfg(test)]
 mod test_support;
 
@@ -78,6 +80,8 @@ pub struct Drug {
     pub route: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub targets: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub target_organisms: Vec<DrugTargetOrganism>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub variant_targets: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
