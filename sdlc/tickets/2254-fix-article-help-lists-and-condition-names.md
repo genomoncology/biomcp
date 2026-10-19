@@ -35,3 +35,9 @@ A test compares `biomcp list` entries with the command definitions. Tests cover 
 ## Progress
 
 - 2026-10-19 started
+
+## Verification
+
+The focused baseline failed all four claimed CLI regressions. Final job 2254/1792427716050-37286 passed the owning CLI and MCP cases, formatting, all-target lint and relevant boundary checks. Earlier jobs 1792427613519-89627 and 1792427546828-74059 passed the legacy condition alias, existing proof-of-work case and PDF failure behavior. Compact output explicitly checks one batch heading and correctly nested item headings. Changed full-text examples are labeled live; no live provider lookup or full gate ran. The supplement-search Markdown behavior depends on the accepted 2250 change.
+
+Keep: experiments/796-biomcp-2254-article-consistency — retain baseline and green raw output, checked patch and commands.
