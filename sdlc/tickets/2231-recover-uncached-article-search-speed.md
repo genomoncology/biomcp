@@ -29,3 +29,7 @@ Reproduce the gap on current main with alternating v0.9.2 and current samples an
 ## Development brief
 
 Study and reproduce the uncached article-search gap before proposing source edits. Preserve sources, ordering, deadlines and honest errors. Use alternating comparable-profile v0.9.2 and current samples, with load and a timing breakdown. Do not compare an optimized old release with a debug new build. Start from current main 096c11fc416ddc18ee3b05814a6d0b9fede63648; PM record commit 4da16647b changes no product code. Report exact candidate source paths and a failing outside-in case before the coordinator declares any implementation claim. If the cost is intentional, report its evidence and close by record after review.
+
+## Progress
+
+- 2026-10-19 started
