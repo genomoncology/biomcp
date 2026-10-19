@@ -48,6 +48,29 @@ CASES = (
     Case("search-gene-braf", ("search", "gene", "BRAF", "--limit", "3")),
     Case("get-variant-braf-v600e", ("get", "variant", "BRAF V600E")),
     Case(
+        "search-pathway-mapk-long-form-limit3",
+        (
+            "search",
+            "pathway",
+            "mitogen activated protein kinase signaling pathway",
+            "--limit",
+            "3",
+        ),
+    ),
+    Case(
+        "search-pathway-mapk-exact-limit3",
+        ("search", "pathway", "MAPK signaling pathway", "--limit", "3"),
+    ),
+    Case(
+        "search-pathway-mapk-exact-limit5",
+        ("search", "pathway", "MAPK signaling pathway", "--limit", "5"),
+    ),
+    Case("get-pathway-hsa05200", ("get", "pathway", "hsa05200")),
+    Case(
+        "get-pathway-r-hsa-5673001-genes-events",
+        ("get", "pathway", "R-HSA-5673001", "genes", "events"),
+    ),
+    Case(
         "get-trial-nct02576665-references",
         ("get", "trial", "NCT02576665", "--source", "ctgov", "references"),
     ),
