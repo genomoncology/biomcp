@@ -35,3 +35,7 @@ Unchanged-main reproduction on08d721f8525a35267bcd0a307248c69b1de210fc: job2245/
 Write four failing outside-in replay cases for populated/empty JSON/Markdown using existing replay helper; keep authored projection provenance explicit. Use one shared note rather than duplicated source facts. No new entity-model fields are needed. 1260 shares provenance/render/template files for matched-transcript additions; changes are semantically separate and the coordinator will resolve them at landing. Run focused red/green and mechanical checks through configured build job, retain patch/manifests/raw in788, publish once review-ready without WIP pushes.
 
 Keep: experiments/788-biomcp-2245-cgi-label — Retain cited raw proof until release evidence is explicitly released.
+
+## Focused repair proof
+
+Source76131e979d090dd3cd2bdff4740f67efa73137bc changes the six declared files. Red1792423524173-65627 failed the missing source-note contract; green1792423552211-69922 passed all four real CLI replay cases and make lint including warnings-denied Clippy, formatting and quality checks, with zero replay misses. Empty CGI input is a clearly authored projection of the recorded BRAF reply, not a captured KRAS response. No live acquisition, data or routing change. All six final blobs and full source diff match the tested private patchSHA256 c7c28a1acffac0554e307424e0747aa9c862df82408ab58ef5ba46a0e467ce4e. Patch, comparison, hashes and raw results remain in experiments/788-biomcp-2245-cgi-label.
