@@ -8,8 +8,6 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2267
-
 Reviews: revision 0a61f68, accept
 
 Reviews: revision 93f4d90, accept
@@ -44,7 +42,7 @@ Fresh developer completed b67528990f8301540f22a49545b2a4e1adc8d259. Meaningful r
 
 Approval fallback preserves exact identity from source-owned brand and full ingredient mapping; no generic-suffix normalization remains. Plain daratumumab excludes BLA761145, while an explicitly resolved combination requires complete exact requested, label and product ingredient sets, preserving suffixes and salts. For combinations, reject additional, missing, unnamed or contradictory ingredients and retain only matched whole products. A single product may use an independently established exact brand to rescue missing ingredient metadata, while contradictory or additional actives still refuse. The clinical ruling is recorded beside this ticket. Regulatory aggregation reflects actual source outcomes; label dates remain source dates, and healthy null Open Targets replies remain empty without inventing provider errors. Retained trichostatin stderr contains the mechanismsOfAction warning; its checksum verifies the original null case. No clinical indication, interchangeability or live approval claim is inferred. No full gate is claimed.
 
-Landing integration: the branch contains reviewed 2267 and its runtime prerequisites, plus current main; the dependency records the single batch integration order and adds no product outcome. Source merges were automatic; only changelog and ticket conflicts were resolved by the coordinator. Fresh review covers the final combined drug callers.
+Landing integration: the branch contains reviewed 2267 and its runtime prerequisites, plus current main; the batch order retains those prerequisites without adding a product dependency. Source merges were automatic; only changelog and ticket conflicts were resolved by the coordinator. Fresh review covers the final combined drug callers.
 
 Keep: experiments/2091-biomcp-2270 — retain original private research replies, controlled red/green proof, exact checked patch and source hashes.
 
@@ -65,3 +63,5 @@ The coordinator merged accepted 2268 repair 02dc317210c06abeb2b0bb1579c032537285
 Developer 0703af568e50eb028eaee62c8eccd42a8fe8f946 adds the successful-empty explanation to JSON and both approvals and regulatory Markdown. Provider failures, disabled and unrequested outcomes retain their existing meaning; matching guards and source calls are unchanged. Red job 2270/1792442474369-89437 failed all three new cases on fe0edec87. Green 1792442597483-35800 passed twelve CLI cases and 34 affected Rust tests, then exposed an unused test-only import in Clippy. Final mechanics job 1792442781009-51784 passed formatting, warnings-denied Clippy, Ruff and quality checks after scoping that import to tests. Retained experiment 2091 owns the exact patches, logs and source comparison. The original live BLENREP discovery remains unverified. No full gate is claimed.
 
 Landing claim clarification: include scripts/run-specs.sh inherited from current main. The final script is identical to actual main 4c27c60; the batch compares its sequential integration candidates, so this inherited restoration must appear in the claim. No script behavior was edited by this ticket.
+
+Batch base correction: this branch already contains current main and all accepted prerequisites. Remove its artificial integration-only Depends link so pm compares against current main rather than an older prerequisite tip. The older-tip comparison incorrectly treated inherited main specification changes as new gate edits. The full claim remains; no source or gate behavior changed.
