@@ -25,3 +25,11 @@ Move the existing public captures without changing a byte; preserve their reques
 ## Proof
 
 Use existing checker to show the two path refusals on current main, then demonstrate canonical-path validation and all affected paging/article consumers. Verify both moved payload hashes and absence of stale readers. Run focused checks and necessary lint through pm job; no full gate. Report scope additions before widening beyond fixture readers.
+
+## Implementation proof
+
+Developer 7ab2980677780d4779689bb3ead9e8a52a9bcc8f moves both captured pages byte-for-byte into replay storage, updates the two known consumers and exactly two manifest fixture paths, and adds the changelog citation. Both original SHA256 values remain equal and the stale-reader scan finds no old path. No response metadata, runtime, checker boundary or provider request changes.
+
+M5 job 2277/1792448290647-72497 retains the meaningful two-path refusal and canonical-ready comparison, moved hashes, private patch parity, formatting, Ruff and full quality ratchet. Raw main missing Content-Types mask path validation, so the controlled two-route inventory uses already observed headers privately: red two blocked, green two ready, checked zero. No live request is implied. That first job then failed because its Rust filter selected zero tests; no passing test claim attaches to the empty selection. Corrected continuation 1792448486196-69340 reused compilation and the identical patch, passed five paging tests, CLI build, twelve article-filter cases and twenty-nine controlled source-checker cases. No provider calls or full gate ran.
+
+Keep: experiments/2097-biomcp-2277-canonical-disease-pages — retain both jobs, exact source patch and hashes, baseline/overlay inventories, corrected selector and proof limitations.
