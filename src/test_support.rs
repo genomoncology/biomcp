@@ -138,6 +138,22 @@ pub(crate) fn watchdog(seconds: u64) -> Duration {
     watchdog_scaled(seconds, timeout_scale())
 }
 
+/// Join a test worker within the shared watchdog, preserving its panic payload.
+/// A timeout returns an error too, so cleanup may ignore it without panicking
+/// again while another assertion unwinds.
+pub(crate) fn bounded_join<T>(worker: std::thread::JoinHandle<T>) -> std::thread::Result<T> {
+    let deadline = std::time::Instant::now() + watchdog(60);
+    while !worker.is_finished() {
+        if std::time::Instant::now() >= deadline {
+            return Err(Box::new(String::from(
+                "test worker exceeded the join watchdog",
+            )));
+        }
+        std::thread::sleep(Duration::from_millis(10)); // watchdog: bounded test-worker cleanup
+    }
+    worker.join()
+}
+
 /// A sub-second watchdog window under the same stretch, for the
 /// deadline-transition proofs whose semantic windows are milliseconds.
 pub(crate) fn watchdog_millis(millis: u64) -> Duration {
@@ -250,10 +266,9 @@ impl Drop for SignaledChild {
         self.release();
         let _ = self.child.kill();
         let _ = self.child.wait();
-        // The reaped child's stdout pipe is at end-of-stream, so the
-        // drain thread has exited and joining cannot block.
+        // Bound the drain thread too: descendants may still own the stdout pipe.
         if let Some(reader) = self.reader.take() {
-            let _ = reader.join();
+            let _ = bounded_join(reader);
         }
     }
 }

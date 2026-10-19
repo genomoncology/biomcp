@@ -25,6 +25,8 @@
 
 ### Internal
 
+- Prepare Python for alternate specification targets, bound test worker cleanup, and keep the MCP runtime assertion scoped to its probe window. Clarify that DepMap data are not for clinical use. (2243)
+
 - Run gene discovery and identity specifications against recorded replies and reuse the gene-search golden for JSON follow-up checks. (2111)
 
 - Check BRAF gene search in JSON and Markdown against a complete recorded provider reply. (2079)

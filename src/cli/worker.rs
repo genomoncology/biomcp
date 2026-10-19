@@ -7,8 +7,8 @@
 const BLOCKING_STACK_BYTES: usize = 4 * 1024 * 1024;
 
 /// Per-process count of one-shot runtime constructions. The MCP path
-/// must drive on the shared server runtime and build none; the counter
-/// is the seam the dispatch test asserts against.
+/// must drive on the shared server runtime and build none. Tests use
+/// the armed-window probe below rather than asserting on this shared count.
 pub(super) static ONE_SHOT_RUNTIMES_BUILT: std::sync::atomic::AtomicUsize =
     std::sync::atomic::AtomicUsize::new(0);
 
@@ -24,8 +24,8 @@ pub(super) static ONE_SHOT_RUNTIMES_BUILT: std::sync::atomic::AtomicUsize =
 /// spawn plus command run (milliseconds, not microseconds), so it is
 /// a real residual flake under the plain runner; the gate and CI both
 /// use nextest, where no other test shares the process. `drive_one_shot` increments it
-/// alongside the production counter; the test asserts both so the
-/// seam cannot drift from what production counts.
+/// alongside the production counter; the test asserts only this armed
+/// window rather than the process-wide count.
 /// How the dedicated execute thread drives the command future
 ///.
 pub(super) enum WorkerDrive {
