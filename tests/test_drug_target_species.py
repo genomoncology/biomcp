@@ -25,7 +25,11 @@ def test_drug_targets_label_species_and_only_suggest_human_genes(tmp_path: Path)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
-            body = json.dumps(captured if "/query" in self.path else hit).encode()
+            if "/mechanism" in self.path:
+                payload = {"mechanisms": [{"target_pref_name": "psmb5"}]}
+            else:
+                payload = captured if "/query" in self.path else hit
+            body = json.dumps(payload).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -70,6 +74,15 @@ def test_drug_targets_label_species_and_only_suggest_human_genes(tmp_path: Path)
         unknown = run(False)
         assert "PSMB5 (organism not supplied; Guide to PHARMACOLOGY)" in unknown
         assert "biomcp get gene" not in unknown
+        # A synthetic secondary-provider spelling exercises case-folded merging;
+        # it supplies no organism or biological mapping.
+        hit["chembl"] = {"molecule_chembl_id": "CHEMBL1"}
+        env["BIOMCP_CHEMBL_BASE"] = base
+        env["BIOMCP_DISABLE_SOURCES"] = "opentargets,civic,openfda"
+        merged = json.loads(run(True))
+        assert merged["targets"].count("PSMB5") == 1
+        assert "psmb5" not in merged["targets"]
+        assert {"target": "psmb5", "organism": None, "source": "ChEMBL"} in merged["target_organisms"]
     finally:
         server.shutdown()
         server.server_close()
