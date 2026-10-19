@@ -1,0 +1,169 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT06970236",
+          "briefTitle": "Resistance Exercise in Patients With Ocular Melanoma"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2025-02-01"
+          },
+          "completionDateStruct": {
+            "date": "2026-12"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "University of Valencia"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "Choroidal melanoma (CM) is one of the most common intraocular cancers worldwide. During treatment with episcleral brachytherapy, patients require a week of hospitalization in isolation. The primary aim of this study will be to investigate the effects of resistance training during hospitalization on health-related blood biomarkers in CM patients. Our secondary aim will be to assess changes in physical function tests, quality of life and anxiety and depression. Candidates for this study will be patients undergoing CM treatment at the \"Hospital Universitari i Politècnic La Fe\" of Valencia."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Ocular Melanoma"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "NA"
+          ],
+          "enrollmentInfo": {
+            "count": 40
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Exercise"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT04114136",
+          "briefTitle": "Anti-PD-1 mAb Plus Metabolic Modulator in Solid Tumor Malignancies"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2020-09-14"
+          },
+          "completionDateStruct": {
+            "date": "2032-04-30"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Dan Zandberg"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "Patients with histologically or cytologically confirmed advanced melanoma, renal cell carcinoma, NSCLC, HCC (Child Pugh Class A only), MSI-High solid tumors, Urothelial Cancer, GE junction/Gastric Adenocarcinoma, or HNSCC for which current standard of care treatment for their stage of disease would be with Pembrolizumab or Nivolumab monotherapy, who meet eligibility criteria will undergo a biopsy (core or excisional/incisional; FNA not adequate) for baseline tissue. Patients will then be randomized to one of 3 arms: Anti-PD-1 mAb plus Metformin 500mg po BID, Anti-PD-1 mAb alone, Anti-PD-1 mAb plus Rosiglitazone 4mg po qdaily. Five weeks (+/- 7 days) after initiation of therapy a patient will undergo a repeat biopsy (core or excisional/incisional; FNA not adequate) for correlative analysis. The patient will then continue on study therapy for up to 2 years, or until progression of disease or unacceptable toxicity, whichever occurs first. RECIST 1.1 with modifications, to allow for continued therapy until progressive disease is confirmed if the patient is clinically stable, will be used in the trial."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Melanoma",
+            "NSCLC",
+            "Hepatocellular Carcinoma",
+            "Urothelial Cancer",
+            "Gastric Adenocarcinoma",
+            "HNSCC",
+            "Esophageal Adenocarcinoma",
+            "Microsatellite Instability-High Solid Malignant Tumor"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 72
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Nivolumab or Pembrolizumab (dependent upon approved indication)"
+            },
+            {
+              "name": "Metformin"
+            },
+            {
+              "name": "Rosiglitazone"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT04318717",
+          "briefTitle": "Pembrolizumab and Hypofractionated Radiation Therapy for the Treatment of Mucosal Melanoma"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2020-05-29"
+          },
+          "completionDateStruct": {
+            "date": "2032-07-31"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Washington University School of Medicine"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This is an open-label, single center, one cohort, non-randomized, phase II study. The aim is to evaluate the efficacy and safety of the combination of hypofractionated radiotherapy (HRT) and pembrolizumab on local tumor control in mucosal melanoma patients. Treatment effect will be compared with historical radiation therapy-alone control data."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Mucosal Melanoma of the Head and Neck"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 20
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Pembrolizumab"
+            },
+            {
+              "name": "Hypofractionated radiation therapy"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "16 Years"
+        }
+      }
+    }
+  ],
+  "totalCount": 480,
+  "nextPageToken": "ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd7KrgP4ZmTmRvvE"
+}
