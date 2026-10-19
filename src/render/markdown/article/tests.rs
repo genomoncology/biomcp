@@ -408,6 +408,7 @@ fn article_graph_markdown_renders_expected_table_headers() {
             coverage_status: crate::entities::article::GraphCoverageStatus::Continuable,
         },
         _meta: crate::entities::article::ArticleGraphMeta {
+            note: None,
             next_commands: vec!["biomcp article citations 22663011 --limit 1 --offset 5".into()],
         },
     };

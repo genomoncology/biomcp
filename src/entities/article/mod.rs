@@ -919,6 +919,7 @@ pub struct ArticleGraphResult {
 pub enum GraphCoverageStatus {
     Continuable,
     Exhausted,
+    Unavailable,
 }
 
 impl GraphCoverageStatus {
@@ -926,6 +927,7 @@ impl GraphCoverageStatus {
         match self {
             Self::Continuable => "continuable",
             Self::Exhausted => "exhausted",
+            Self::Unavailable => "unavailable",
         }
     }
 }
@@ -941,6 +943,8 @@ pub struct ArticleGraphPagination {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleGraphMeta {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
     pub next_commands: Vec<String>,
 }
 
@@ -1247,6 +1251,7 @@ mod tests {
                 coverage_status: GraphCoverageStatus::Exhausted,
             },
             _meta: ArticleGraphMeta {
+                note: None,
                 next_commands: Vec::new(),
             },
         };
@@ -1288,6 +1293,7 @@ mod tests {
                 coverage_status: GraphCoverageStatus::Exhausted,
             },
             _meta: ArticleGraphMeta {
+                note: None,
                 next_commands: Vec::new(),
             },
         };

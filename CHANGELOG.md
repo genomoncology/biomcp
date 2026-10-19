@@ -6,6 +6,14 @@
 
 ### Fixes
 
+- Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
+
+- Derive variant article Markdown source plans and source states from the same route results as JSON, including empty pages and authenticated Semantic Scholar searches. (2252)
+
+- Explain article full-text access groups, preprint JATS, retrieval reason codes, and source boundaries with corrected live examples. (2253)
+
+- Align article and variant command help and discovery, name blocked PMC assets consistently, suggest explicit PDF fallback after a full-text miss, and keep compact batch headings nested. (2254)
+
 - Repair garbled trademark and registered symbols in all displayed GTR text, including names and methods, while preserving identifiers and other content. (2237)
 
 - Preserve selected drug identity names for interaction matching, require supported drug identity in discovery, rank exact matches first, and explain missing diagnostic synonym resolution. Restore deterministic diagnostic synonym controls. (2242)
