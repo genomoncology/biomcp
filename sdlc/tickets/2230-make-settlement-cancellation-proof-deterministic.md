@@ -6,6 +6,8 @@ Milestone: 0.9.4
 
 Priority: 1
 
+Reviews: revision 64eae07, accept
+
 ## Outcome
 
 Cancellation must stop an abandoned article provider retry and release admission. Diagnose the failed shared candidate before changing behavior or assertions. Preserve its observable cancellation contract and remove the actual race with the smallest fix.
