@@ -12,6 +12,9 @@ Milestone: 0.9.4
 
 Recognize a paper's explicit transcript accession and version or genomic coordinates with a named build as verified identity only when authoritative resolution proves the same requested allele, following the recorded clinical ruling. Unsupported or unresolved anchors remain unverified. This work can move to a later release without blocking the demonstrated alias-label correction or the current release.
 
+- Changes: `src/entities/article/variant_search.rs` `src/entities/article/identity_verification.rs` and focused recorded identity fixtures and tests. Name the exact fixture and test paths before editing. Apply the existing clinical ruling; report any new clinical interpretation for separate clinical review before implementation.
+
+
 ## Evidence
 
 2185's fresh recorded regression proves unknown-provenance alias-only papers must stay unverified. The existing verifier has real TP53 and CHEK2 paper-linked CAID/rsID proofs, but it does not generally extract and resolve paper-text transcript or build-coordinate anchors. The PM separated this additional mechanism from the reproduced label/provenance defect on2026-10-18. See `sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md`.
