@@ -281,8 +281,10 @@ use crate::entities::disease::{
     Disease, DiseaseAssociationScoreSummary, DiseasePhenotype, DiseaseSearchResult,
     PhenotypeSearchResult,
 };
+#[cfg(test)]
+use crate::entities::drug::DrugApproval;
 use crate::entities::drug::{
-    Drug, DrugApproval, DrugInteractionReport, DrugRegion, DrugSearchResult, EmaDrugSearchResult,
+    Drug, DrugInteractionReport, DrugRegion, DrugSearchResult, EmaDrugSearchResult,
     EmaRegulatoryRow, EmaSafetyInfo, EmaShortageEntry, WhoPrequalificationEntry,
     WhoPrequalificationSearchResult,
 };

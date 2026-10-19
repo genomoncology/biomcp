@@ -134,7 +134,7 @@ pub fn drug_markdown_with_region(
                 },
                 _ => render_us_approvals_block(
                     &approvals_heading,
-                    drug.approvals.as_deref(),
+                    drug,
                 ),
             }
         } else {

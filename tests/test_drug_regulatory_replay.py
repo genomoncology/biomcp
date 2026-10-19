@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.needs_binary]
 
 @pytest.fixture
 def replay(tmp_path: Path):
-    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False, "label_extra": False, "related_label": False}
+    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False, "label_extra": False, "related_label": False, "approvals_unavailable": False}
 
     class Handler(BaseHTTPRequestHandler):
         def answer(self, payload, status=200):
@@ -33,6 +33,9 @@ def replay(tmp_path: Path):
             query = parse_qs(path.query).get("search", [""])[0]
             name = state["name"]
             if "drugsfda" in path.path:
+                if state["approvals_unavailable"]:
+                    self.answer({}, 503)
+                    return
                 rows = []
                 if name == "daratumumab" and "products.active_ingredients.name" in query:
                     rows = [{"application_number": app, "products": [{"active_ingredients": [{"name": ingredient}]}]}
@@ -191,3 +194,34 @@ def test_null_mechanisms_are_healthy_empty_but_malformed_mechanisms_are_unavaila
     state["mechanisms"] = {"rows": "invalid"}
     malformed, _ = run("targets")
     assert malformed["section_outcomes"]["targets"]["outcome"] == "unavailable"
+
+
+@pytest.mark.parametrize("brands,unverified,unavailable", [
+    ([], False, False),
+    (["BLENREP"], True, False),
+    ([], False, True),
+])
+def test_empty_approvals_explain_unverified_identity_without_ruling_out_approval(
+    replay, brands, unverified, unavailable,
+):
+    state, run = replay
+    state.update(name="belantamab mafodotin", brands=brands, label_extra=unverified,
+                 approvals_unavailable=unavailable)
+    for section in ["approvals", "regulatory"]:
+        data, _ = run(section)
+        assert data["approvals"] == []
+        outcome = data["section_outcomes"]["approvals"]
+        markdown = run(section, markdown=True).stdout
+        if unavailable:
+            assert outcome["outcome"] == "unavailable"
+            assert "unavailable" in outcome["message"]
+            assert "no exact-name match" not in markdown.lower()
+        else:
+            assert outcome["outcome"] == "empty"
+            message = outcome["message"]
+            assert "no exact-name match" in message.lower()
+            assert "belantamab mafodotin-blmf" in message
+            assert "source-confirmed identity" in message
+            assert "FDA approvals are not ruled out" in message
+            assert message in markdown
+        assert "No approvals found" not in markdown

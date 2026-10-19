@@ -79,18 +79,20 @@ fn render_fda_orphan_block(name: &str, value: Option<&FdaOrphanDesignations>) ->
     out
 }
 
-pub(super) fn render_us_approvals_block(
-    heading: &str,
-    approvals: Option<&[DrugApproval]>,
-) -> String {
-    let Some(approvals) = approvals else {
+pub(super) fn render_us_approvals_block(heading: &str, drug: &Drug) -> String {
+    let Some(approvals) = drug.approvals.as_deref() else {
         return String::new();
     };
 
     let mut out = String::new();
     let _ = writeln!(out, "{heading}\n");
     if approvals.is_empty() {
-        out.push_str("No approvals found in Drugs@FDA for this query.\n");
+        let message = drug
+            .section_outcomes
+            .get("approvals")
+            .and_then(|outcome| outcome.message())
+            .unwrap_or("No approvals found in Drugs@FDA for this query.");
+        let _ = writeln!(out, "{message}");
         return out;
     }
 
@@ -598,10 +600,7 @@ fn render_eu_shortage_block(heading: &str, shortage: Option<&[EmaShortageEntry]>
 pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String {
     match region {
         DrugRegion::Us => {
-            let approvals = render_us_approvals_block(
-                "## Regulatory (US - Drugs@FDA)",
-                drug.approvals.as_deref(),
-            );
+            let approvals = render_us_approvals_block("## Regulatory (US - Drugs@FDA)", drug);
             format!(
                 "{approvals}\n{}",
                 render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_deref())
@@ -616,10 +615,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
             drug.who_note.as_deref(),
         ),
         DrugRegion::All => {
-            let us = render_us_approvals_block(
-                "## Regulatory (US - Drugs@FDA)",
-                drug.approvals.as_deref(),
-            );
+            let us = render_us_approvals_block("## Regulatory (US - Drugs@FDA)", drug);
             let orphan =
                 render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_deref());
             let eu = render_eu_regulatory_block(

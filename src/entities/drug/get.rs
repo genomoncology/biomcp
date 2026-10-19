@@ -203,7 +203,10 @@ fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, Bio
     match result {
         Ok(rows) => {
             let outcome = if rows.is_empty() {
-                SectionOutcome::empty("OpenFDA Drugs@FDA")
+                SectionOutcome::empty_with_reason(
+                    "OpenFDA Drugs@FDA",
+                    "Drugs@FDA found no exact-name match. Suffixed names (e.g. belantamab mafodotin-blmf) require source-confirmed identity; FDA approvals are not ruled out.",
+                )
             } else {
                 SectionOutcome::data("OpenFDA Drugs@FDA")
             };
