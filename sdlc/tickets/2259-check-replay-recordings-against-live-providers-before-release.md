@@ -23,3 +23,7 @@ Opt-in only, never in routine gates. Pace every provider and respect each provid
 ## Proof
 
 The check runs once on the 0.9.4 candidate and its report is retained in a numbered experiment folder. A recording deliberately edited to a stale shape is reported as drifted. The release checklist gains the step: run the drift check, then re-record or fix every drifted recording before the go request. Document when and how to re-record in the testing docs.
+
+## Progress
+
+- 2026-10-19 started
