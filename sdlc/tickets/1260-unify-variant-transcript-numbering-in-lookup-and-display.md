@@ -54,7 +54,9 @@ Use the three exact versioned inputs as identity/control cases. Require matching
 
 ## Granted implementation and reproduction
 
-- Changes: `src/entities/variant/get.rs`, `src/entities/variant/mod.rs`, `src/transform/variant.rs`, `src/render/markdown/variant.rs`, `templates/variant.md.j2`, `tests/test_variant_transcript_lookup.py`, `tests/fixtures/variant-transcript-lookup/**`, `CHANGELOG.md`, `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md`.
+- Changes: `src/entities/variant/get.rs`, `src/entities/variant/get/tests.rs`, `src/render/provenance.rs`, `src/entities/variant/mod.rs`, `src/transform/variant.rs`, `src/render/markdown/variant.rs`, `templates/variant.md.j2`, `tests/test_variant_transcript_lookup.py`, `tests/fixtures/variant-transcript-lookup/**`, `CHANGELOG.md`, `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md`.
+
+Claim expansion: `src/entities/variant/get/tests.rs` and `src/render/provenance.rs` may initialize the two new optional matched-transcript provenance fields in existing exhaustive test literals. No additional behavior or scope is granted.
 
 Exact-main study reproduced the defect on 08d721f8525a35267bcd0a307248c69b1de210fc. NM_001128425.2:c.1187G>A and NM_001048174.2:c.1103G>A resolved but both displayed only NM_001048174.2, omitting matched-transcript provenance. NM_001048171.1:c.1145G>A returned not_found although normalization supplied GRCh38 NC_000001.11:g.45331556C>T and CA011561. Captured ClinGen responses explicitly join all three exact versioned inputs to the same allele and ClinVar5294. The unavailable-normalizer/other-transcript-only control correctly refused identity but omitted unverified-transcript wording. Exact commands, output, responses and 57 raw files are retained in experiments/787-biomcp-1260-transcript-lookup on the build host. No prior proof of these executions is inferred from the clinical source review.
 
