@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision b00d1d6, accept
+
 ## Outcome
 
 The release replay checker sends the honest application-controlled headers of the current public BioMCP client. A controlled HTTP consumer proves the request profile. The seven previously denied Reactome and WikiPathways recordings receive one bounded recheck with that profile and truthful per-entry observations.
