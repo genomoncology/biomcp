@@ -23,6 +23,8 @@ Preserve behavioral assertions; replace storage-specific cacache file/marker ass
 
 Outside-in red cases: legacy-store coexistence and repeat fixture fetch through CLI with a real database; size eviction and concurrent initialized MCP/CLI reuse; indexed hit among 100,000 small replies; killed uncommitted writer recovery; preserved fulltext path/views/export and saved downloads across clear/clean. Use focused behavioral cases and justified storage assertions, not a second general cache framework. Run occasional Linux proof only for the ticket's named lookup timing/syscall comparison, after the ordinary implementation is ready.
 
+PM ruling, 2026-10-19, explicit capture exception: preserve the existing `gene cspec --version` capture workflow under cache off and `--no-cache`. Explicit capture creation/read operations use only their artifact table; optional HTTP reuse stays disabled. Document this boundary and test bypass plus capture leaves zero HTTP cache entries. The blanket no-database sentence below is updated to match.
+
 ## Evidence
 
 - The HTTP cache is http-cache 0.20 over cacache 13. Its key is `method:uri`, the full unnormalized URL. cacache only appends index buckets, so one long-used machine held 102,376 index files (709 MB) for 212 stored bodies (120 MB) on 2026-10-16.
@@ -37,7 +39,7 @@ Outside-in red cases: legacy-store coexistence and repeat fixture fetch through 
   - Bodies over about 1 MB go to `blobs/<sha256>` files, written before their row commits. A trigger keeps the byte total; over the size limit or under the disk floor, delete by `last_access` through its index. `last_access` updates at most hourly per row.
   - Full text, citation evidence and captures become tables in the same file, with their current lifetimes. `cache stats`, `clear` and `clean` work against the database. The key-lock and maintenance-lock files go.
   - Start the new cache empty and keep it isolated from old-version writes. Keep saved downloads as user-readable artifacts across clear and clean. Never automatically delete legacy stores or captures; report their sizes in stats and remove only disposable legacy cache stores through the explicit documented cleanup command when requested.
-  - `BIOMCP_CACHE_MODE=off` and `--no-cache` open no database.
+  - `BIOMCP_CACHE_MODE=off` and `--no-cache` disable optional HTTP reuse and open no database for ordinary requests. An explicitly requested capture is a saved artifact: its creation and later reads still access the capture table under bypass, without creating HTTP cache entries or running optional HTTP maintenance.
   - Downloaded datasets in the data folder (WHO, GTR, EMA, DDInter, CVX, GenCC) stay as they are.
 - Changes: claims `src/cache/**` `src/sources/mod.rs` (cache wiring only) `src/entities/article/graph/citation_evidence.rs` the full-text download store `Cargo.toml` `Cargo.lock` `deny.toml` `docs/reference/configuration.md` `CHANGELOG.md` and the tests beside them.
 - Proof: the existing cache-age, day-cache, cache-mode, size-limit and disk-floor tests pass unchanged; a test runs the CLI and an MCP server against one cache at once; a test shows a lookup with 100,000 stored replies opens one database and no reply files; on the Linux gate host, `get gene BRAF` wall and system time with a 100,000-reply cache, before and after; a crash-recovery test kills a writer mid-transaction and reopens cleanly.
