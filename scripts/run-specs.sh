@@ -15,6 +15,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/build-profile.md
   spec/surface/skills.md
   spec/entity/trial-numeric-filters.md
+  spec/entity/gene-discovery.md
   spec/entity/trial-condition-search.md
   spec/surface/trial-retirement.md
   # Replays its own frozen capture through spec/fixtures/run-clingen-erepo-

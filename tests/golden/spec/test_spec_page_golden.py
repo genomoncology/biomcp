@@ -53,13 +53,24 @@ def _keys_matching(run, fragment: str) -> list[str]:
     ]
 
 
+def test_search_gene_uses_the_bounded_symbol_and_alias_query(
+    replay: ReplayEnvironment,
+) -> None:
+    run = _run(replay, "search-gene-braf", "--json")
+    queries = _keys_matching(run, "GET /mygene/query?")
+    assert len(queries) == 1, run.request_log_lines
+    assert "q=%28symbol%3ABRAF+OR+alias%3ABRAF%29" in queries[0]
+    assert "&size=50&" in queries[0]
+    assert "&from=0&" in queries[0]
+
+
 def test_get_gene_queries_mygene_once_by_symbol(replay: ReplayEnvironment) -> None:
     run = _run(replay, "get-gene-braf", "--json")
     # The acquisition arithmetic the gene page counted by hand: one
     # MyGene query for the spelled symbol, no alias scan, no second fetch.
     queries = _keys_matching(run, "GET /mygene/query?")
     assert len(queries) == 1, run.request_log_lines
-    assert 'q=symbol%3A%22BRAF%22' in queries[0]
+    assert "q=symbol%3A%22BRAF%22" in queries[0]
     assert "species=human" in queries[0]
 
 
