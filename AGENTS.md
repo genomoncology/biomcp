@@ -53,6 +53,10 @@ cargo nextest run --no-default-features -E 'test(...)'
 
 Run affected tests during development. Run one Rust build at a time within a lane. Build-job admission schedules independent lanes in parallel.
 
+For focused Python checks in a build job, reuse the prepared Python environment or prepare it with `make sync-python-dev`. That target runs `uv sync --extra dev --no-install-project`. Then run the affected checks with `uv run --no-sync pytest tests/<affected-test>.py`, supplying the prepared `BIOMCP_BIN` when the checks need the CLI. Keep `--no-sync` on Python commands, as `test-contracts-prepared` does, so uv does not install the project and trigger an editable Rust package build.
+
+Run Ruff through the configured PATH, for example `ruff check <changed-python-files>`. `tools/bootstrap-lint-tools` installs only ShellCheck and actionlint; it does not provide Ruff.
+
 tools/run-offline isolates the network only on Linux, so run any gate that must prove offline behavior on a Linux build host.
 
 There is intentionally no `make check` convention. `make lint` includes the

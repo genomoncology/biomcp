@@ -292,3 +292,85 @@ def test_census_retains_the_runner_exit_status(
     assert f"RESULT rust_test_census_collection = {expected}" in proc.stdout
     assert (clone / ".cache/measure/census.jsonl").read_text()
     assert "RESULT rust_tests_with_duration = 1" in proc.stdout
+
+
+@pytest.mark.parametrize("retained", [False, True])
+def test_checklist_rows_report_values_or_explicit_unavailability(
+    tmp_path: Path, bash: str, retained: bool
+) -> None:
+    clone = tmp_path / "clone"
+    (clone / "tests").mkdir(parents=True)
+    (clone / "src/render/markdown").mkdir(parents=True)
+    (clone / "src/render/markdown/gene.rs").write_text("// fixture\n")
+    (clone / "target").mkdir()
+    (clone / "target/built").write_bytes(b"built output")
+    (clone / "tests/test_runtime.py").write_text(
+        "import pytest\n@pytest.mark.parametrize('x', [1, 2])\n"
+        "def test_card(x): pass\nclass TestCard:\n"
+        "    async def test_other(self): pass\n"
+    )
+    (clone / "tests/test_tool.py").write_text(
+        "TOOL = 'tools/measure-0-9-3-baseline'\n"
+        "def test_output(): pass\ndef helper(): pass\n"
+    )
+    home = tmp_path / "home"
+    executable(
+        home / ".cargo/bin/cargo", "echo 'Summary [0.1s] 2 tests run: 2 passed'\n"
+    )
+    executable(home / ".local/bin/uv", "echo '4 tests collected in 0.01s'\n")
+    executable(clone / "tools/with-build-identity", 'exec "$@"\n')
+    executable(clone / "tools/run-offline", 'shift; exec "$@"\n')
+    args = []
+    if retained:
+        log = tmp_path / "linux.log"
+        log.write_text(
+            "   Compiling example v1.0.0\n   Compiling example v1.0.0\n"
+            "^[[1m   Compiling^[[0m biomcp-cli v0.9.3\n"
+            "\x1b[1m    Finished\x1b[0m `release` profile [optimized] target(s) in 1.0s\n"
+        )
+        args += ["--target-build-log", f"x86_64-unknown-linux-gnu={log}"]
+        incomplete = tmp_path / "windows.log"
+        incomplete.write_text("   Compiling example v1.0.0\nerror: stopped\n")
+        args += ["--target-build-log", f"x86_64-pc-windows-msvc={incomplete}"]
+        args += ["--release-record", str(ROOT / "sdlc/records/2215-0-9-3-release.md")]
+    proc = subprocess.run(
+        [
+            bash if retained else "/bin/bash",
+            str(ROOT / "tools/measure-0-9-3-baseline"),
+            str(clone),
+            "--only",
+            "working-checkout,release-target-counts,python-test-functions,python-test-count,edit-test-group,release-history",
+            *args,
+        ],
+        env=dict(os.environ, HOME=str(home)),
+        text=True,
+        capture_output=True,
+        timeout=20,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    lines = dict(
+        line.removeprefix("RESULT ").split(" = ", 1)
+        for line in proc.stdout.splitlines()
+        if line.startswith("RESULT ")
+    )
+    assert int(lines["working_checkout_build_folder_bytes"]) >= 12
+    assert lines["python_test_functions"] == "3"
+    assert lines["python_tests_collected"] == "4"
+    assert lines["python_tooling_test_functions"] == "1"
+    assert lines["python_tooling_test_share_pct"] == "33.33"
+    inventory = (clone / ".cache/measure/python-test-functions.tsv").read_text()
+    assert "tests/test_tool.py\ttooling\t1" in inventory
+    assert "tests/test_runtime.py\tother\t2" in inventory
+    assert float(lines["edit_test_group_wall_s"]) >= 0
+    assert lines["edit_test_group_exit"] == "0"
+    assert lines["crates_compiled_windows_release"].startswith("unavailable (")
+    if retained:
+        assert lines["crates_compiled_linux_release"] == "2"
+        assert lines["release_workflow_wall_s"] == "2919"
+        assert lines["full_rehearsals_count"] == "8"
+        assert "release_archive_bytes_biomcp-linux-x86_64.tar.gz" in lines
+    else:
+        assert lines["crates_compiled_linux_release"].startswith("unavailable (")
+        assert lines["release_workflow_wall_s"].startswith("unavailable (")
+        assert lines["release_archive_bytes"].startswith("unavailable (")
+        assert lines["full_rehearsals_count"].startswith("unavailable (")
