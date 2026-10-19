@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Name unreachable supplement files and mark incomplete searches in JSON and Markdown while retaining readable hits. (2250)
+
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
 - Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)

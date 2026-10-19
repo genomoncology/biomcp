@@ -70,6 +70,7 @@ pub async fn article_supplement_search(
                 Some(asset) => vec![asset],
                 // A key no retrievable asset answers reaches the same typed
                 // refusal or not-found error the raw `asset` download gives.
+                None if !unavailable_files(manifest, Some(wanted)).is_empty() => Vec::new(),
                 None => {
                     let refused = super::assets::article_asset_bytes_from_resolution(
                         requested_id,
@@ -96,24 +97,40 @@ pub async fn article_supplement_search(
     };
 
     let protein_names = protein_search_names(needle);
-    let mut files = Vec::new();
+    let mut files = unavailable_files(manifest, asset_filter);
+
     let mut hits = Vec::new();
     let mut hits_truncated = false;
     for asset in selected {
         let format = supplement_format_for_filename(&asset.filename);
         let Some(bytes) = bytes.get(&asset.asset_key) else {
-            continue;
-        };
-        if bytes.len() > SUPPLEMENT_SEARCH_MAX_FILE_BYTES {
             files.push(ArticleSupplementSearchFile {
-                asset_key: asset.asset_key.clone(),
+                asset_key: Some(asset.asset_key.clone()),
                 filename: asset.filename.clone(),
                 member: None,
                 format: format
                     .map(|format| format.as_str())
                     .unwrap_or("other")
                     .to_string(),
-                sha256: asset.sha256.clone(),
+                sha256: None,
+                outcome: ArticleSupplementSearchFileOutcome::Unavailable(
+                    super::ArticleAssetNamedOutcome::SourceUnavailable,
+                ),
+                truncated: false,
+                reason: Some("file bytes unavailable".to_string()),
+            });
+            continue;
+        };
+        if bytes.len() > SUPPLEMENT_SEARCH_MAX_FILE_BYTES {
+            files.push(ArticleSupplementSearchFile {
+                asset_key: Some(asset.asset_key.clone()),
+                filename: asset.filename.clone(),
+                member: None,
+                format: format
+                    .map(|format| format.as_str())
+                    .unwrap_or("other")
+                    .to_string(),
+                sha256: Some(asset.sha256.clone()),
                 outcome: ArticleSupplementSearchFileOutcome::Unextractable,
                 truncated: false,
                 reason: Some("extraction size limit exceeded".to_string()),
@@ -127,11 +144,11 @@ pub async fn article_supplement_search(
             .find(|problem| problem.member.is_none())
         {
             files.push(ArticleSupplementSearchFile {
-                asset_key: asset.asset_key.clone(),
+                asset_key: Some(asset.asset_key.clone()),
                 filename: asset.filename.clone(),
                 member: None,
                 format: problem.format.clone(),
-                sha256: asset.sha256.clone(),
+                sha256: Some(asset.sha256.clone()),
                 outcome: if problem.empty_text {
                     ArticleSupplementSearchFileOutcome::EmptyText
                 } else {
@@ -175,10 +192,48 @@ pub async fn article_supplement_search(
         pmid: manifest.pmid.clone(),
         pmcid: manifest.pmcid.clone(),
         query: needle.to_string(),
+        incomplete: hits_truncated
+            || files.iter().any(|file| {
+                file.truncated || file.outcome != ArticleSupplementSearchFileOutcome::Searched
+            }),
         files,
         hits,
         hits_truncated,
     })
+}
+
+fn unavailable_files(
+    manifest: &super::ArticleAssetsManifest,
+    asset_filter: Option<&str>,
+) -> Vec<ArticleSupplementSearchFile> {
+    manifest
+        .coverage
+        .iter()
+        .filter(|row| {
+            row.outcome != super::ArticleAssetNamedOutcome::Retrievable
+                && supplement_format_for_filename(&row.filename).is_some()
+                && asset_filter.is_none_or(|wanted| {
+                    row.filename == wanted.trim() || row.asset_key.as_deref() == Some(wanted.trim())
+                })
+                && !manifest
+                    .assets
+                    .iter()
+                    .any(|asset| asset.filename == row.filename)
+        })
+        .map(|row| ArticleSupplementSearchFile {
+            asset_key: row.asset_key.clone(),
+            filename: row.filename.clone(),
+            member: None,
+            format: supplement_format_for_filename(&row.filename)
+                .unwrap()
+                .as_str()
+                .to_string(),
+            sha256: None,
+            outcome: ArticleSupplementSearchFileOutcome::Unavailable(row.outcome),
+            truncated: false,
+            reason: Some("file could not be retrieved".to_string()),
+        })
+        .collect()
 }
 
 // Keep ordinary text literal. Only standalone substitution names use the
@@ -235,11 +290,11 @@ fn file_outcome_rows(
             None => format,
         };
         ArticleSupplementSearchFile {
-            asset_key: asset.asset_key.clone(),
+            asset_key: Some(asset.asset_key.clone()),
             filename: asset.filename.clone(),
             member,
             format: member_format.to_string(),
-            sha256: asset.sha256.clone(),
+            sha256: Some(asset.sha256.clone()),
             outcome,
             truncated: extraction.truncated,
             reason,
