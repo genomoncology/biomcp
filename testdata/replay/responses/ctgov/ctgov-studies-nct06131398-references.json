@@ -1,0 +1,640 @@
+{
+  "derivedSection": {
+    "conditionBrowseModule": {
+      "ancestors": [
+        {
+          "id": "D002283",
+          "term": "Carcinoma, Bronchogenic"
+        },
+        {
+          "id": "D001984",
+          "term": "Bronchial Neoplasms"
+        },
+        {
+          "id": "D008175",
+          "term": "Lung Neoplasms"
+        },
+        {
+          "id": "D012142",
+          "term": "Respiratory Tract Neoplasms"
+        },
+        {
+          "id": "D013899",
+          "term": "Thoracic Neoplasms"
+        },
+        {
+          "id": "D009371",
+          "term": "Neoplasms by Site"
+        },
+        {
+          "id": "D009369",
+          "term": "Neoplasms"
+        },
+        {
+          "id": "D008171",
+          "term": "Lung Diseases"
+        },
+        {
+          "id": "D012140",
+          "term": "Respiratory Tract Diseases"
+        },
+        {
+          "id": "D007414",
+          "term": "Intestinal Neoplasms"
+        },
+        {
+          "id": "D005770",
+          "term": "Gastrointestinal Neoplasms"
+        },
+        {
+          "id": "D004067",
+          "term": "Digestive System Neoplasms"
+        },
+        {
+          "id": "D004066",
+          "term": "Digestive System Diseases"
+        },
+        {
+          "id": "D005767",
+          "term": "Gastrointestinal Diseases"
+        },
+        {
+          "id": "D003108",
+          "term": "Colonic Diseases"
+        },
+        {
+          "id": "D007410",
+          "term": "Intestinal Diseases"
+        },
+        {
+          "id": "D012002",
+          "term": "Rectal Diseases"
+        },
+        {
+          "id": "D013272",
+          "term": "Stomach Diseases"
+        },
+        {
+          "id": "D018358",
+          "term": "Neuroendocrine Tumors"
+        },
+        {
+          "id": "D017599",
+          "term": "Neuroectodermal Tumors"
+        },
+        {
+          "id": "D009373",
+          "term": "Neoplasms, Germ Cell and Embryonal"
+        },
+        {
+          "id": "D009370",
+          "term": "Neoplasms by Histologic Type"
+        },
+        {
+          "id": "D009380",
+          "term": "Neoplasms, Nerve Tissue"
+        },
+        {
+          "id": "D018326",
+          "term": "Nevi and Melanomas"
+        },
+        {
+          "id": "D012878",
+          "term": "Skin Neoplasms"
+        },
+        {
+          "id": "D012871",
+          "term": "Skin Diseases"
+        },
+        {
+          "id": "D017437",
+          "term": "Skin and Connective Tissue Diseases"
+        }
+      ],
+      "meshes": [
+        {
+          "id": "D002289",
+          "term": "Carcinoma, Non-Small-Cell Lung"
+        },
+        {
+          "id": "D015179",
+          "term": "Colorectal Neoplasms"
+        },
+        {
+          "id": "D013274",
+          "term": "Stomach Neoplasms"
+        },
+        {
+          "id": "D008545",
+          "term": "Melanoma"
+        }
+      ]
+    },
+    "interventionBrowseModule": {
+      "meshes": [
+        {
+          "id": "C582435",
+          "term": "pembrolizumab"
+        }
+      ]
+    },
+    "miscInfoModule": {
+      "versionHolder": "2026-09-03"
+    }
+  },
+  "hasResults": false,
+  "protocolSection": {
+    "armsInterventionsModule": {
+      "armGroups": [
+        {
+          "description": "Specified dose on specified days",
+          "interventionNames": [
+            "Drug: AMG 355"
+          ],
+          "label": "Group A: AMG 355 monotherapy",
+          "type": "EXPERIMENTAL"
+        },
+        {
+          "description": "Specified dose on specified days",
+          "interventionNames": [
+            "Drug: AMG 355",
+            "Drug: Pembrolizumab"
+          ],
+          "label": "Group B: AMG 355 and pembrolizumab",
+          "type": "EXPERIMENTAL"
+        }
+      ],
+      "interventions": [
+        {
+          "armGroupLabels": [
+            "Group A: AMG 355 monotherapy",
+            "Group B: AMG 355 and pembrolizumab"
+          ],
+          "description": "Short-term intravenous (IV) infusion",
+          "name": "AMG 355",
+          "type": "DRUG"
+        },
+        {
+          "armGroupLabels": [
+            "Group B: AMG 355 and pembrolizumab"
+          ],
+          "description": "Short-term IV infusion",
+          "name": "Pembrolizumab",
+          "otherNames": [
+            "Keytruda"
+          ],
+          "type": "DRUG"
+        }
+      ]
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Advanced Solid Tumors"
+      ],
+      "keywords": [
+        "Advanced Solid Tumors",
+        "AMG 355",
+        "Pembrolizumab",
+        "Pharmacokinetics",
+        "Non-small Cell Lung Cancer (NSCLC)",
+        "Colorectal Cancer (CRC)",
+        "Gastric Cancer (GC)",
+        "Melanoma (MEL)"
+      ]
+    },
+    "contactsLocationsModule": {
+      "locations": [
+        {
+          "city": "Duarte",
+          "country": "United States",
+          "facility": "City of Hope National Medical Center",
+          "geoPoint": {
+            "lat": 34.13945,
+            "lon": -117.97729
+          },
+          "state": "California",
+          "zip": "91010"
+        },
+        {
+          "city": "Merriam",
+          "country": "United States",
+          "facility": "Alliance for Multispecialty Research - Kansas City",
+          "geoPoint": {
+            "lat": 39.02362,
+            "lon": -94.69357
+          },
+          "state": "Kansas",
+          "zip": "66204"
+        },
+        {
+          "city": "Boston",
+          "country": "United States",
+          "facility": "Dana-Farber Cancer Institute",
+          "geoPoint": {
+            "lat": 42.35843,
+            "lon": -71.05977
+          },
+          "state": "Massachusetts",
+          "zip": "02215"
+        },
+        {
+          "city": "St Louis",
+          "country": "United States",
+          "facility": "Washington University",
+          "geoPoint": {
+            "lat": 38.62727,
+            "lon": -90.19789
+          },
+          "state": "Missouri",
+          "zip": "63110"
+        },
+        {
+          "city": "Winston-Salem",
+          "country": "United States",
+          "facility": "Wake Forest University Health Sciences",
+          "geoPoint": {
+            "lat": 36.09986,
+            "lon": -80.24422
+          },
+          "state": "North Carolina",
+          "zip": "27157"
+        },
+        {
+          "city": "San Antonio",
+          "country": "United States",
+          "facility": "South Texas Accelerated Research Therapeutics",
+          "geoPoint": {
+            "lat": 29.42412,
+            "lon": -98.49363
+          },
+          "state": "Texas",
+          "zip": "78229"
+        },
+        {
+          "city": "Darlinghurst",
+          "country": "Australia",
+          "facility": "St Vincents Hospital Sydney",
+          "geoPoint": {
+            "lat": -33.87939,
+            "lon": 151.21925
+          },
+          "state": "New South Wales",
+          "zip": "2010"
+        },
+        {
+          "city": "Woodville South",
+          "country": "Australia",
+          "facility": "The Queen Elizabeth Hospital",
+          "geoPoint": {
+            "lat": -34.88186,
+            "lon": 138.53477
+          },
+          "state": "South Australia",
+          "zip": "5011"
+        },
+        {
+          "city": "Toronto",
+          "country": "Canada",
+          "facility": "Princess Margaret Cancer Centre",
+          "geoPoint": {
+            "lat": 43.70643,
+            "lon": -79.39864
+          },
+          "state": "Ontario",
+          "zip": "M5G 1Z5"
+        },
+        {
+          "city": "Bordeaux",
+          "country": "France",
+          "facility": "Institut Bergonie",
+          "geoPoint": {
+            "lat": 44.84124,
+            "lon": -0.58046
+          },
+          "zip": "33076"
+        },
+        {
+          "city": "Villejuif",
+          "country": "France",
+          "facility": "Gustave Roussy",
+          "geoPoint": {
+            "lat": 48.7939,
+            "lon": 2.35992
+          },
+          "zip": "94805"
+        },
+        {
+          "city": "Kashiwa-shi",
+          "country": "Japan",
+          "facility": "National Cancer Center Hospital East",
+          "state": "Chiba",
+          "zip": "277-8577"
+        },
+        {
+          "city": "Koto-ku",
+          "country": "Japan",
+          "facility": "The Cancer Institute Hospital of Japanese Foundation for Cancer Research",
+          "state": "Tokyo",
+          "zip": "135-8550"
+        },
+        {
+          "city": "Nijmegen",
+          "country": "Netherlands",
+          "facility": "Radboud Universitair Medisch Centrum",
+          "geoPoint": {
+            "lat": 51.8425,
+            "lon": 5.85278
+          },
+          "zip": "6525 GA"
+        },
+        {
+          "city": "Rotterdam",
+          "country": "Netherlands",
+          "facility": "Erasmus Medisch Centrum",
+          "geoPoint": {
+            "lat": 51.9225,
+            "lon": 4.47917
+          },
+          "zip": "3015 CE"
+        },
+        {
+          "city": "Warsaw",
+          "country": "Poland",
+          "facility": "Narodowy Instytut Onkologii im Marii Sklodowskiej-Curie - Panstwowy Instytut Badawczy",
+          "geoPoint": {
+            "lat": 52.22977,
+            "lon": 21.01178
+          },
+          "zip": "02-781"
+        },
+        {
+          "city": "Seoul",
+          "country": "South Korea",
+          "facility": "Seoul National University Hospital",
+          "geoPoint": {
+            "lat": 37.566,
+            "lon": 126.9784
+          },
+          "zip": "03080"
+        },
+        {
+          "city": "Seoul",
+          "country": "South Korea",
+          "facility": "Asan Medical Center",
+          "geoPoint": {
+            "lat": 37.566,
+            "lon": 126.9784
+          },
+          "zip": "138-736"
+        },
+        {
+          "city": "Barcelona",
+          "country": "Spain",
+          "facility": "Hospital Universitari Vall d Hebron",
+          "geoPoint": {
+            "lat": 41.38879,
+            "lon": 2.15899
+          },
+          "state": "Catalonia",
+          "zip": "08023"
+        },
+        {
+          "city": "Barcelona",
+          "country": "Spain",
+          "facility": "Hospital Clinic i Provincial de Barcelona",
+          "geoPoint": {
+            "lat": 41.38879,
+            "lon": 2.15899
+          },
+          "state": "Catalonia",
+          "zip": "08036"
+        },
+        {
+          "city": "Madrid",
+          "country": "Spain",
+          "facility": "Hospital Universitario Ramon y Cajal",
+          "geoPoint": {
+            "lat": 40.4165,
+            "lon": -3.70256
+          },
+          "zip": "28034"
+        },
+        {
+          "city": "Bellinzona",
+          "country": "Switzerland",
+          "facility": "Istituto Oncologico della Svizzera Italiana",
+          "geoPoint": {
+            "lat": 46.19278,
+            "lon": 9.01703
+          },
+          "zip": "6500"
+        },
+        {
+          "city": "Sankt Gallen",
+          "country": "Switzerland",
+          "facility": "Kantonsspital Sankt Gallen",
+          "geoPoint": {
+            "lat": 47.42391,
+            "lon": 9.37477
+          },
+          "zip": "9007"
+        },
+        {
+          "city": "Taipei",
+          "country": "Taiwan",
+          "facility": "National Taiwan University Hospital",
+          "geoPoint": {
+            "lat": 25.05306,
+            "lon": 121.52639
+          },
+          "zip": "10002"
+        },
+        {
+          "city": "Taipei",
+          "country": "Taiwan",
+          "facility": "Taipei Veterans General Hospital",
+          "geoPoint": {
+            "lat": 25.05306,
+            "lon": 121.52639
+          },
+          "zip": "11217"
+        }
+      ],
+      "overallOfficials": [
+        {
+          "affiliation": "Amgen",
+          "name": "MD",
+          "role": "STUDY_DIRECTOR"
+        }
+      ]
+    },
+    "descriptionModule": {
+      "briefSummary": "The primary objectives of this study are to:\n\n* Evaluate the safety and tolerability of AMG 355 as monotherapy and in combination with pembrolizumab in participants with advanced solid tumors\n* Determine the recommended phase 2 dose and the maximum tolerated dose for AMG 355 as monotherapy and in combination with pembrolizumab in participants with advanced solid tumors."
+    },
+    "designModule": {
+      "designInfo": {
+        "allocation": "NON_RANDOMIZED",
+        "interventionModel": "SEQUENTIAL",
+        "maskingInfo": {
+          "masking": "NONE"
+        },
+        "primaryPurpose": "BASIC_SCIENCE"
+      },
+      "enrollmentInfo": {
+        "count": 77,
+        "type": "ACTUAL"
+      },
+      "phases": [
+        "PHASE1"
+      ],
+      "studyType": "INTERVENTIONAL"
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "Key Inclusion Criteria:\n\n* Age \u2265 18 years at the time of signing informed consent.\n* Participants with histologically or cytologically confirmed metastatic or locally advanced solid tumors who have relapsed after and/or are refractory to or ineligible for established and available therapies with known clinical benefit at time of pre-screening:\n\n  * Group A: NSCLC, CRC, GC, and melanoma.\n  * Group B: NSCLC, CRC, GC.\n* Eastern Cooperative Oncology Group Performance status 0 or 1.\n* Life expectancy of \\> 3 months, in the opinion of the investigator.\n* At least 1 measurable lesion as defined by modified RECIST 1.1 guidelines. Note: this lesion should be avoided for the required biopsies on the study.\n* Participants must be willing to undergo 1 or more biopsies as follows:\n\n  * Fresh biopsy prior to enrollment is preferred or, if fresh tissue is not obtainable, an archival tumor sample may be acceptable if the sample was obtained within 6 months of enrollment and participant has not received any other treatment since sample was obtained, consult the Medical Monitor.\n  * Mandatory fresh biopsy during cycle 2 (before the restaging of CT-scan) of treatment with AMG 355 (\u00b1 pembrolizumab).\n\nNote: Where slides are accepted, samples must consist of a minimum of 11 (21 preferred) freshly-cut, serially, sectioned, unstained slides. A formalin-fixed, paraffin embedded block is preferred if available, but in lieu of a block, unstained slides or fresh wet tissue is acceptable.\n\nKey Exclusion Criteria:\n\n* Participant who received prior therapy with an anti-PD-1, anti-PD-L1, or anti PD-L2 agent or with an agent directed to another stimulatory or co-inhibitory T-cell receptor (eg, cytotoxic T-lymphocyte-associated protein 4 \\[CTLA-4\\], OX 40, CD137), and was discontinued from that treatment due to an immune-related adverse events.\n* Untreated or symptomatic brain metastases and leptomeningeal disease Note: participants with previously treated brain metastases may participate provided they are radiologically stable, ie, without evidence of progression for at least 4 weeks by repeat imaging (note that the repeat imaging should be performed during study screening), clinically stable and without requirement of steroid treatment for at least 14 days prior to first dose of study treatment.\n* Chronic intake of systemic corticosteroids (eg prednisone \\> 10 mg/day or equivalent) or any other form of immunosuppressive therapy within 7 days prior to the first dose of study treatment.\n* Has an active autoimmune disease that has required systemic treatment in past 2 years (ie, with use of disease modifying agents, corticosteroids, or immunosuppressive drugs). Replacement therapy (eg, thyroxine or insulin) is not considered a form of systemic treatment and is allowed.\n* History of organ transplantation.\n* History of (non-infectious) pneumonitis/interstitial lung disease that required steroids or has current pneumonitis/interstitial lung disease.\n* History of any immune-related colitis. Infectious colitis is allowed if evidence of adequate treatment and clinical recovery exists and at least 3 months interval observed since diagnosis of colitis.\n\nOther protocol-defined inclusion/exclusion criteria apply.",
+      "healthyVolunteers": false,
+      "maximumAge": "100 Years",
+      "minimumAge": "18 Years",
+      "sex": "ALL",
+      "stdAges": [
+        "ADULT",
+        "OLDER_ADULT"
+      ]
+    },
+    "identificationModule": {
+      "briefTitle": "A Study of AMG 355 Alone and in Combination With Pembrolizumab in Participants With Advanced Solid Tumors",
+      "nctId": "NCT06131398",
+      "officialTitle": "A Phase 1 First-in-Human Study Evaluating the Safety, Tolerability, Pharmacokinetics and Efficacy of AMG 355 as Monotherapy and in Combination With Pembrolizumab in Subjects With Advanced Solid Tumors",
+      "orgStudyIdInfo": {
+        "id": "20220028"
+      },
+      "organization": {
+        "class": "INDUSTRY",
+        "fullName": "Amgen"
+      }
+    },
+    "ipdSharingStatementModule": {
+      "accessCriteria": "Qualified researchers may submit a request containing the research objectives, the Amgen product(s) and Amgen study/studies in scope, endpoints/outcomes of interest, statistical analysis plan, data requirements, publication plan, and qualifications of the researcher(s). In general, Amgen does not grant external requests for individual patient data for the purpose of re-evaluating safety and efficacy issues already addressed in the product labelling. Requests are reviewed by a committee of internal advisors. If not approved, a Data Sharing Independent Review Panel will arbitrate and make the final decision. Upon approval, information necessary to address the research question will be provided under the terms of a data sharing agreement. This may include anonymized individual patient data and/or available supporting documents, containing fragments of analysis code where provided in analysis specifications. Further details are available at the URL below.",
+      "description": "De-identified individual patient data for variables necessary to address the specific research question in an approved data sharing request.",
+      "infoTypes": [
+        "STUDY_PROTOCOL",
+        "SAP",
+        "ICF",
+        "CSR"
+      ],
+      "ipdSharing": "YES",
+      "timeFrame": "Data sharing requests relating to this study will be considered beginning 18 months after the study has ended and either 1) the product and indication have been granted marketing authorization in both the US and Europe or 2) clinical development for the product and/or indication discontinues and the data will not be submitted to regulatory authorities. There is no end date for eligibility to submit a data sharing request for this study.",
+      "url": "http://www.amgen.com/datasharing"
+    },
+    "outcomesModule": {
+      "primaryOutcomes": [
+        {
+          "measure": "Number of Participants Who Experience a Dose Limiting Toxicity (DLT)",
+          "timeFrame": "Day 1 to Day 21"
+        },
+        {
+          "description": "Adverse events (AEs) are defined as any untoward medical occurrence in a clinical study participant irrespective of a causal relationship with the study treatment. TEAEs are any event that occurs after the participant has received study treatment. Any clinically significant changes in vital signs, electrocardiograms (ECGs), and clinical laboratory tests, as assessed by the investigator, will also be reported as TEAEs.",
+          "measure": "Number of Participants Who Experience a Treatment-emergent Adverse Event (TEAE)",
+          "timeFrame": "Up to 2 years"
+        },
+        {
+          "measure": "Number of Participants Who Experience a Treatment-related AE",
+          "timeFrame": "Up to 2 years"
+        }
+      ],
+      "secondaryOutcomes": [
+        {
+          "measure": "Maximum Observed Serum Concentration (Cmax) of AMG 355",
+          "timeFrame": "Up to 85 days"
+        },
+        {
+          "measure": "Minimum Observed Serum Concentration (Cmin) of AMG 355",
+          "timeFrame": "Up to 85 days"
+        },
+        {
+          "measure": "Area Under the Concentration-time Curve (AUC) of AMG 355",
+          "timeFrame": "Up to 85 days"
+        },
+        {
+          "measure": "Confirmed Objective Response (OR) Based on Response Evaluation Criteria in Solid Tumors version 1.1 (RECIST v1.1).",
+          "timeFrame": "Up to 2 years"
+        },
+        {
+          "measure": "Clinical Benefit per RECIST v1.1",
+          "timeFrame": "Up to 2 years"
+        },
+        {
+          "measure": "Duration of Response per RECIST v1.1",
+          "timeFrame": "Up to 2 years"
+        },
+        {
+          "measure": "Time to Progression by RECIST v1.1",
+          "timeFrame": "Up to 2 years"
+        },
+        {
+          "measure": "Progression-free Survival (PFS) by RECIST v1.1",
+          "timeFrame": "Up to 2 years"
+        },
+        {
+          "measure": "Overall Survival",
+          "timeFrame": "Up to 2 years"
+        },
+        {
+          "measure": "Change From Baseline in C-C motif chemokine receptor 8 (CCR8+) Expression Between Pre and On Treatment Tumor Samples",
+          "timeFrame": "Up to 2 years"
+        }
+      ]
+    },
+    "oversightModule": {
+      "isFdaRegulatedDevice": false,
+      "isFdaRegulatedDrug": true,
+      "oversightHasDmc": false
+    },
+    "referencesModule": {
+      "seeAlsoLinks": [
+        {
+          "label": "AmgenTrials clinical trials website",
+          "url": "http://www.amgentrials.com"
+        }
+      ]
+    },
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {
+        "class": "INDUSTRY",
+        "name": "Amgen"
+      },
+      "responsibleParty": {
+        "type": "SPONSOR"
+      }
+    },
+    "statusModule": {
+      "completionDateStruct": {
+        "date": "2026-07-22",
+        "type": "ACTUAL"
+      },
+      "expandedAccessInfo": {
+        "hasExpandedAccess": false
+      },
+      "lastUpdatePostDateStruct": {
+        "date": "2026-08-11",
+        "type": "ACTUAL"
+      },
+      "lastUpdateSubmitDate": "2026-08-10",
+      "overallStatus": "COMPLETED",
+      "primaryCompletionDateStruct": {
+        "date": "2026-07-22",
+        "type": "ACTUAL"
+      },
+      "startDateStruct": {
+        "date": "2024-03-07",
+        "type": "ACTUAL"
+      },
+      "statusVerifiedDate": "2026-08",
+      "studyFirstPostDateStruct": {
+        "date": "2023-11-14",
+        "type": "ACTUAL"
+      },
+      "studyFirstSubmitDate": "2023-11-09",
+      "studyFirstSubmitQcDate": "2023-11-09"
+    }
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "ClinicalTrials.gov",
+        "url": "https://clinicaltrials.gov/study/NCT02576665"
+      }
+    ],
+    "next_commands": [
+      "biomcp search article --drug \"Toca 511\" -q \"NCT02576665 A Study of Toca 511, a\" --limit 5",
+      "biomcp search disease --query \"Colorectal Cancer\"",
+      "biomcp search article -d \"Colorectal Cancer\"",
+      "biomcp search trial -c \"Colorectal Cancer\"",
+      "biomcp search drug -q \"vocimagene amiretrorepvec\""
+    ],
+    "section_sources": [
+      {
+        "key": "overview",
+        "label": "Overview",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "conditions",
+        "label": "Conditions",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "interventions",
+        "label": "Interventions",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "outcomes",
+        "label": "Outcomes",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      },
+      {
+        "key": "references",
+        "label": "References",
+        "outcome": "data",
+        "sources": [
+          "ClinicalTrials.gov"
+        ]
+      }
+    ]
+  },
+  "completion_date": "2019-12-20",
+  "conditions": [
+    "Colorectal Cancer",
+    "Triple Negative Breast Cancer",
+    "Pancreatic Cancer",
+    "Non-Small Cell Lung Cancer",
+    "Head and Neck Cancer",
+    "Ovarian Cancer",
+    "Lymphoma",
+    "Sarcoma",
+    "Bladder Cancer",
+    "Melanoma",
+    "IDH1 Mutated Solid Tumors",
+    "IDH1 Mutated or MGMT Methylated Recurrent HGG (Not Recruiting)"
+  ],
+  "enrollment": 21,
+  "interventions": [
+    {
+      "description": "Toca 511 consists of a purified retroviral replicating vector encoding a modified yeast cytosine deaminase (CD) gene. The CD gene converts the antifungal 5-fluorocytosine (5FC) to the anticancer drug 5-FU in cells that have been infected by the Toca 511 vector",
+      "id": 1,
+      "name": "Toca 511",
+      "other_names": [
+        "vocimagene amiretrorepvec",
+        "RRV",
+        "retroviral replicating viral"
+      ],
+      "type": {
+        "authority": "clinicaltrials.gov",
+        "code": "BIOLOGICAL",
+        "display": null,
+        "recognized_meaning": null,
+        "vocabulary_version": null
+      }
+    },
+    {
+      "description": "Toca FC is an extended-release formulation of flucytosine. Toca FC is supplied as 500 mg white, oblong tablets with \"TOCA FC\" embossed on one side and \"500\" embossed on the other side",
+      "id": 2,
+      "name": "Toca FC",
+      "other_names": [
+        "Flucytosine",
+        "5-FC",
+        "5-Fluorocytosine"
+      ],
+      "type": {
+        "authority": "clinicaltrials.gov",
+        "code": "DRUG",
+        "display": null,
+        "recognized_meaning": null,
+        "vocabulary_version": null
+      }
+    }
+  ],
+  "nct_id": "NCT02576665",
+  "outcomes": {
+    "primary": [
+      {
+        "measure": "Changes from baseline in immune activity in tumor and peripheral blood",
+        "time_frame": "Baseline to Weeks 9-10"
+      }
+    ],
+    "secondary": []
+  },
+  "phase": "PHASE1",
+  "references": [
+    {
+      "citation": "Inoko K, Hiraoka K, Inagaki A, Takahashi M, Kushibiki T, Hontani K, Takano H, Sato S, Takeuchi S, Nakamura T, Tsuchikawa T, Shichinohe T, Gruber HE, Jolly DJ, Kasahara N, Hirano S. Therapeutic activity of retroviral replicating vector-mediated prodrug activator gene therapy for pancreatic cancer. Cancer Gene Ther. 2018 Aug;25(7-8):184-195. doi: 10.1038/s41417-018-0020-7. Epub 2018 May 8.",
+      "pmid": "29735994",
+      "source_type": {
+        "authority": "clinicaltrials.gov",
+        "code": "DERIVED",
+        "display": null,
+        "recognized_meaning": null,
+        "vocabulary_version": null
+      }
+    },
+    {
+      "citation": "Yagiz K, Rodriguez-Aguirre ME, Lopez Espinoza F, Montellano TT, Mendoza D, Mitchell LA, Ibanez CE, Kasahara N, Gruber HE, Jolly DJ, Robbins JM. A Retroviral Replicating Vector Encoding Cytosine Deaminase and 5-FC Induces Immune Memory in Metastatic Colorectal Cancer Models. Mol Ther Oncolytics. 2017 Dec 5;8:14-26. doi: 10.1016/j.omto.2017.12.001. eCollection 2018 Mar 30.",
+      "pmid": "29322091",
+      "source_type": {
+        "authority": "clinicaltrials.gov",
+        "code": "DERIVED",
+        "display": null,
+        "recognized_meaning": null,
+        "vocabulary_version": null
+      }
+    }
+  ],
+  "source": "ClinicalTrials.gov",
+  "sponsor": "Tocagen Inc.",
+  "start_date": "2016-07",
+  "status": "TERMINATED",
+  "study_type": "INTERVENTIONAL",
+  "summary": "The purpose of this trial is to evaluate changes in immune activity relative to baseline following treatment with Toca 511 and Toca FC in patients with solid tumors (including recurrent high grade glioma \\[rHGG\\]) or lymphoma. This is a multicenter, open-label study of Toca 511 and Toca FC. Patients with advanced solid tumors or lymphoma, for whom curative options are not available, will be enrolled into the study, subject to all entry criteria. Tumors must be accessible to biopsy and/or resection. Patients will be qualified based on the presence of specific molecular characteristics, documented by Foundation Medicine (or equivalent) genomic profile report, and specific tumor types.\n\nToca 511 will be administered by IV injection followed by (1) intratumoral injection following biopsy or (2) injection into the resection cavity wall following planned resection in the case of rHGG or brain metastases. Toca FC will be administered orally in cycles of therapy.\n\nPatients not undergoing resection of brain tumors will undergo 2 biopsies to allow assessment of baseline and follow-up immune activity in the tumor. Changes in immune activity in peripheral blood will be measured in all patients.",
+  "title": "A Study of Toca 511, a Retroviral Replicating Vector, Combined With Toca FC in Patients With Solid Tumors or Lymphoma (Toca 6)",
+  "why_stopped": "Sponsor decision"
+}
