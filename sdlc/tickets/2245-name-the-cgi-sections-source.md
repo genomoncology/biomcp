@@ -55,3 +55,7 @@ PM authorized carrying bc2b82d3b five unchanged literature bug records with this
 ## Binary marker integration repair
 
 Merged-candidate gate2237/1792425706706-70958 failed the existing binary-dependent-module contract on tests/test_variant_cgi_source.py;1373Pythoncasespassed and10skipped. The source-qualified CLI tests passed, but the new module lacks the required needs_binary declaration for binary-free test selection. Repair only that existing claimed test path, preserve assertions, and run the owning marker contract plus Ruff through the configured build job. No new test or product rebuild is needed. Retain integration proof in788.
+
+## Binary marker repair proof
+
+Accepted sourceb1ba8702cdf6da9a639ebca5f8c33e2f499ada77 moves needs_binary to the module declaration, preserving every CGI assertion and the product source.1792426177488-78266 reproduced the owning marker-contract failure, then passed that contract, Ruff and whitespace checks. The committed test blob matches the tested file; raw proof remains in788. No product rebuild or behavioral rerun was needed for classification metadata.
