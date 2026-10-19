@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Prefer PubMed abstract text in article detail to preserve comparison symbols while retaining PubTator annotations and existing text when PubMed is unavailable. (2273)
+
 - Name unavailable article asset providers and keep successful HTML full-text retrieval free of internal serializer warnings. (2271)
 - Resolve drug development codes through exact ChEMBL molecule synonyms. Verify the preferred card carries the same molecule identifier for single and batch calls. (2266)
 

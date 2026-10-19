@@ -43,6 +43,7 @@ pub(crate) enum PubMedCitationErrorKind {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct PubMedCitation {
+    pub abstract_text: Option<String>,
     pub authors: Vec<PubMedCitationAuthor>,
     pub mesh_headings: Vec<PubMedMeshHeading>,
 }
@@ -730,7 +731,26 @@ fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, PubMedCit
         .map_err(|_| PubMedCitationErrorKind::Parse)?
         .unwrap_or_default();
 
+    let abstract_text = element_children(citation, "Article")
+        .next()
+        .and_then(|article| element_children(article, "Abstract").next())
+        .map(|abstract_node| {
+            element_children(abstract_node, "AbstractText")
+                .map(|section| {
+                    section
+                        .descendants()
+                        .filter(|node| node.is_text())
+                        .filter_map(|node| node.text())
+                        .collect::<String>()
+                })
+                .filter(|text| !text.trim().is_empty())
+                .collect::<Vec<_>>()
+                .join("\n\n")
+        })
+        .filter(|text| !text.is_empty());
+
     Ok(PubMedCitation {
+        abstract_text,
         authors,
         mesh_headings,
     })
