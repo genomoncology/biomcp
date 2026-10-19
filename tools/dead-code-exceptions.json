@@ -1085,6 +1085,15 @@
       "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
     },
     {
+      "path": "src/render/markdown/article.rs",
+      "scope": "item",
+      "item": "pub fn article_batch_markdown(items: &[ArticleBatchItem]) -> Result<String, BioMcpError> {",
+      "occurrence": 1,
+      "owner": "render-contracts",
+      "reason": "standalone batch rendering is exercised by native renderer contracts",
+      "removal_condition": "Remove when standalone batch rendering gains a production caller or the standalone API is removed."
+    },
+    {
       "path": "src/render/human.rs",
       "scope": "item",
       "item": "pub(crate) fn sanitize_provider_inline(value: &str) -> String {",
