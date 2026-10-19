@@ -14,7 +14,7 @@ Reviews: revision c513540, accept
 
 ## Outcome
 
-- Changes: `src/cli/outcome.rs` `src/cli/shared.rs` `src/cli/shared/get_notes.rs` `src/cli/stale_json_note_tests.rs` `skills/schemas/*.json` `CHANGELOG.md` `sdlc/issues/2026-09-27-get-json-bodies-have-no-notes-channel-for-the-stale-cache-age.md` and this ticket.
+- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-27-get-json-bodies-have-no-notes-channel-for-the-stale-cache-age.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `sdlc/tickets/2238-reject-limit-and-offset-in-variant-erepo-caid-mode.md` `sdlc/tickets/2239-cap-the-drug-trial-alias-cache.md` `sdlc/tickets/2240-use-the-ca-bundle-for-alphagenome.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `skills/schemas/article.json` `skills/schemas/disease.json` `skills/schemas/drug.json` `skills/schemas/gene.json` `skills/schemas/pathway.json` `skills/schemas/trial.json` `skills/schemas/variant.json` `src/cli/outcome.rs` `src/cli/shared.rs` `src/cli/shared/get_notes.rs` `src/cli/stale_json_note_tests.rs` and this ticket. Carried PM ticket and milestone records are unchanged except this ticket own reviewed proof.
 
 When a single-record `get ... --json` answer is served from a stale cache, the JSON says so in an optional `notes` field, as search, article and GWAS JSON already do.
 
