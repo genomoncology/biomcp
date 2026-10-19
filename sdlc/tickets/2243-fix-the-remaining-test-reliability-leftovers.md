@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 ## Outcome
 
+- Changes: `Makefile` `src/cli/outcome/probe_tests.rs` `src/cli/worker.rs` `src/test_support.rs` `src/cli/update/tests.rs` `src/sources/gencc/tests.rs` `src/cache/manager.rs` `src/cli/discover.rs` `src/cli/tests/facade/cache.rs` `src/utils/sync.rs` `docs/reference/sources.json` `docs/reference/source-licensing.md` `tests/test_routine_cargo_feature_contract.py` `CHANGELOG.md` and this ticket.
+
 Known test-reliability leftovers are gone: spec targets sync Python, no test asserts on a process-wide counter, and no test waits on a channel or thread without a bound.
 
 ## Evidence
@@ -26,3 +28,9 @@ Test promises are unchanged. No new test framework.
 ## Proof
 
 Each item has its change and the affected tests pass on the build machine. Mark each issue resolved.
+
+## Coordinator development brief
+
+Repair the inventoried eleven unbounded test joins under src using a small existing-watchdog-based bounded join that preserves panic results and named diagnostics. Leave the production outcome join and already bounded article receive unchanged. Sync Python before both spec targets, remove only the process-wide counter assertion while retaining the armed-window probe, and apply the explicitly requested source note. The current ruling supersedes the old issue disposition retaining both counter assertions. Do not expand into integration/Python wait inventories. Return issue-closure text for coordinator rather than editing additional unclaimed issue files. Reproduce Makefile ordering with a red regression, then focused affected tests. The later2244 lane must account for this GenCC test-file overlap.
+
+All builds and tests run through the configured build job. Stage private test/source patches on a published base without pushing WIP; retain patch and per-file hashes with raw evidence, then verify the final published source matches. Push source once ready for review. The developer may resolve the named issue findings as required by the outcome, but does not edit ticket status or send mail.
