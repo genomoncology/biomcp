@@ -10,14 +10,14 @@ Milestone: 0.9.4
 
 ## Outcome
 
-Variant article search also queries a gene's previous official symbols and well-recorded aliases, labeled with where each came from, or states plainly that it searched only the current symbol.
+Variant article search queries the unambiguous queried gene's recorded MyGene aliases with their provenance, including source-provided former spellings without relabeling them as official previous symbols. It discloses current-spelling-only only when those MyGene facts are absent, unavailable or disabled.
 
 - Changes: `src/entities/gene.rs` `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_gene_aliases.py` `tests/fixtures/article/gene-aliases/authored.json` `CHANGELOG.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md`.
 
 
 ## Evidence
 
-Reproduced on 0.9.3: the ABCC8 R1437Q search never uses the older name SUR1. Europe PMC `SUR1 AND "R1437Q"` returns six PMIDs, including free PMC papers 10685980 and 9312191, against three for `ABCC8 AND "R1437Q"`.
+Reproduced on 0.9.3: the ABCC8 R1437Q search never uses the recorded alias SUR1. Europe PMC `SUR1 AND "R1437Q"` returns six PMIDs, including free PMC papers 10685980 and 9312191, against three for `ABCC8 AND "R1437Q"`.
 
 ## Keeps
 
@@ -56,3 +56,5 @@ No newHGNCclient, typedGeneannotationrelaxation, gene-token identity fallback, s
 Owning outside-in regression: authored unambiguous ABCC8/MyGeneSUR1 response produces an actual correctly formed SUR1R1437Q provider query and source coverage, never ABCC8SUR1R1437Q. Cover absent/unavailable/cap and shared output surfaces, preserve2246codingformproof. Build/test only through configuredbuildjob; privatepatch/hashmanifest/finalblobmatch; noWIPpush, merges, ticket/status/mail or childagents. Exact additional paths require declaration before edits.
 
 The coordinator adopted accepted2246source02c08e8fcfc480c5719a14978e41977628ca7653, including the strict original-key attribution repair. The declared MyGene implementation is now authorized on this dependency base. Every new Python binary-driven module declares the required module-level needs_binary marker.
+
+Owning regression should also return a clearly authored SUR1-only article control when that alias is queried, preserving existing typed-gene/same-DNA identity classification. Do not claim recovery of any real extra paper without its recorded identity proof. The old broad Proof wording is interpreted under the later PM ruling: source-backed query expansion is required when facts exist; restriction is fallback only.
