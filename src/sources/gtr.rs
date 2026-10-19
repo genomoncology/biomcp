@@ -516,22 +516,26 @@ fn parse_test_version_tsv_with_limit<R: Read>(
             accession.clone(),
             GtrRecord {
                 accession,
-                lab_test_name: name_field(&record, &positions, "lab_test_name"),
-                manufacturer_test_name: name_field(&record, &positions, "manufacturer_test_name"),
-                test_type: field(&record, &positions, "test_type"),
-                name_of_laboratory: name_field(&record, &positions, "name_of_laboratory"),
-                name_of_institution: name_field(&record, &positions, "name_of_institution"),
+                lab_test_name: display_field(&record, &positions, "lab_test_name"),
+                manufacturer_test_name: display_field(
+                    &record,
+                    &positions,
+                    "manufacturer_test_name",
+                ),
+                test_type: display_field(&record, &positions, "test_type"),
+                name_of_laboratory: display_field(&record, &positions, "name_of_laboratory"),
+                name_of_institution: display_field(&record, &positions, "name_of_institution"),
                 clia_number: field(&record, &positions, "CLIA_number"),
-                state_licenses: field(&record, &positions, "state_licenses"),
-                facility_country: field(&record, &positions, "facility_country"),
-                test_curr_stat: field(&record, &positions, "test_currStat"),
-                test_pub_stat: field(&record, &positions, "test_pubStat"),
-                method_categories: split_pipe_list(&field(
+                state_licenses: display_field(&record, &positions, "state_licenses"),
+                facility_country: display_field(&record, &positions, "facility_country"),
+                test_curr_stat: display_field(&record, &positions, "test_currStat"),
+                test_pub_stat: display_field(&record, &positions, "test_pubStat"),
+                method_categories: split_pipe_list(&display_field(
                     &record,
                     &positions,
                     "method_categories",
                 )),
-                methods: split_pipe_list(&field(&record, &positions, "methods")),
+                methods: split_pipe_list(&display_field(&record, &positions, "methods")),
                 genes: split_pipe_list(&field(&record, &positions, "genes")),
             },
         );
@@ -594,7 +598,7 @@ fn parse_condition_gene_links_with_limit<R: Read>(
         })?;
         let accession = field(&record, &positions, "#accession_version");
         let test_type = if positions.contains_key("test_type") {
-            field(&record, &positions, "test_type")
+            display_field(&record, &positions, "test_type")
         } else {
             String::new()
         };
@@ -609,7 +613,11 @@ fn parse_condition_gene_links_with_limit<R: Read>(
 
         match object.as_str() {
             "gene" => push_unique(&mut genes_by_id, accession, object_name),
-            "condition" => push_unique(&mut conditions_by_id, accession, object_name),
+            "condition" => push_unique(
+                &mut conditions_by_id,
+                accession,
+                repair_display_text(&object_name),
+            ),
             _ => {}
         }
     }
@@ -651,15 +659,17 @@ fn field(record: &csv::StringRecord, positions: &HashMap<String, usize>, header:
 }
 
 // The upstream UTF-8 bundle contains these Windows-1252-decoded trademark bytes.
-// Repair only display names so unrelated fields and valid Unicode stay unchanged.
-fn name_field(
+// Repair only displayed text so identifiers and valid Unicode stay unchanged.
+fn display_field(
     record: &csv::StringRecord,
     positions: &HashMap<String, usize>,
     header: &str,
 ) -> String {
-    field(record, positions, header)
-        .replace("â„¢", "™")
-        .replace("Â®", "®")
+    repair_display_text(&field(record, positions, header))
+}
+
+fn repair_display_text(value: &str) -> String {
+    value.replace("â„¢", "™").replace("Â®", "®")
 }
 
 fn clean_text(value: &str) -> Option<String> {

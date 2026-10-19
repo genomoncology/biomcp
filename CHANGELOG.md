@@ -6,7 +6,7 @@
 
 ### Fixes
 
-- Repair garbled trademark and registered symbols in GTR test, manufacturer, laboratory and institution names while preserving other fields. (2237)
+- Repair garbled trademark and registered symbols in all displayed GTR text, including names and methods, while preserving identifiers and other content. (2237)
 
 - Store reusable responses, article text, citation evidence and provider captures in one indexed SQLite cache shared by the CLI and MCP server. Preserve readable saved article files and exports. Older binaries keep writing their separate stores until upgraded; `biomcp cache clean-legacy` removes those stores explicitly while preserving saved downloads. (2134)
 

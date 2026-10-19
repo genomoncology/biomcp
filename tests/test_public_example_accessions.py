@@ -192,13 +192,12 @@ def test_public_gtr_examples_resolve_against_live_gtr_bundle(tmp_path: Path) -> 
                 assert "No FDA device 510(k) or PMA records matched" not in result.stdout, command
 
 
-def test_gtr_trademark_names_render_without_changing_other_fields(tmp_path: Path) -> None:
+def test_gtr_trademark_text_renders_without_changing_other_fields(tmp_path: Path) -> None:
     bundle = _prepare_public_gtr_bundle(tmp_path / "gtr")
     version_path = bundle / GTR_TEST_VERSION_FILE
     with gzip.open(version_path, "rt", encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh, delimiter="\t"))
     rows[1]["lab_test_name"] = "Correct ™ ® — Laboratoire Élan 東京"
-    rows[0]["method_categories"] = "Method â„¢ Â®"
 
     def write_bundle() -> None:
         with gzip.open(version_path, "wt", encoding="utf-8") as fh:
@@ -213,27 +212,48 @@ def test_gtr_trademark_names_render_without_changing_other_fields(tmp_path: Path
     def read_cards() -> dict[str, dict]:
         cards = {}
         for accession in accessions:
-            result = _run_biomcp_command(f"biomcp --json get diagnostic {accession}", env)
+            result = _run_biomcp_command(f"biomcp --json get diagnostic {accession} genes conditions methods", env)
             assert result.returncode == 0, result.stderr
             cards[accession] = json.loads(result.stdout)
         return cards
 
     write_bundle()
     expected = read_cards()
-    names = {
+    display_fields = {
         "lab_test_name": ("name", "Ion AmpliSeqâ„¢", "Ion AmpliSeq™"),
         "manufacturer_test_name": ("manufacturer", "CancerNext-ExpandedÂ®", "CancerNext-Expanded®"),
         "name_of_laboratory": ("laboratory", "Laboratory â„¢ Â®", "Laboratory ™ ®"),
         "name_of_institution": ("institution", "Institution Â® â„¢", "Institution ® ™"),
     }
-    for column, (key, encoded, decoded) in names.items():
+    display_fields.update({
+        "test_type": ("test_type", "Type â„¢ Â®", "Type ™ ®"),
+        "state_licenses": ("state_licenses", "License â„¢ Â®", "License ™ ®"),
+        "facility_country": ("country", "Country â„¢ Â®", "Country ™ ®"),
+        "test_currStat": ("current_status", "Current â„¢ Â®", "Current ™ ®"),
+        "test_pubStat": ("public_status", "Public â„¢ Â®", "Public ™ ®"),
+    })
+    for column, (key, encoded, decoded) in display_fields.items():
         rows[0][column] = encoded
         expected[LIVE_GTR_ACCESSION][key] = decoded
+    for column, text in (("method_categories", "Category"), ("methods", "Method")):
+        rows[0][column] = f"{text} â„¢ Â®|Correct ™ ® — Élan 東京"
+        expected[LIVE_GTR_ACCESSION][column] = [f"{text} ™ ®", "Correct ™ ® — Élan 東京"]
+    links_path = bundle / GTR_CONDITION_GENE_FILE
+    links_path.write_text(
+        links_path.read_text(encoding="utf-8").replace("Breast cancer", "Breast cancer â„¢ Â®", 1),
+        encoding="utf-8",
+    )
+    expected[LIVE_GTR_ACCESSION]["conditions"] = [
+        "Hereditary breast ovarian cancer syndrome", "Breast cancer ™ ®"
+    ]
     write_bundle()
 
     assert read_cards() == expected
-    markdown = _run_biomcp_command(f"biomcp get diagnostic {LIVE_GTR_ACCESSION}", env)
+    markdown = _run_biomcp_command(f"biomcp get diagnostic {LIVE_GTR_ACCESSION} genes conditions methods", env)
     assert markdown.returncode == 0, markdown.stderr
-    for _, _, decoded in names.values():
+    for _, _, decoded in display_fields.values():
         assert decoded in markdown.stdout
-    assert "Method â„¢ Â®" in markdown.stdout
+    for text in ("Category ™ ®", "Method ™ ®", "Breast cancer ™ ®", "Correct ™ ® — Élan 東京"):
+        assert text in markdown.stdout
+    assert "â„¢" not in markdown.stdout
+    assert "Â®" not in markdown.stdout
