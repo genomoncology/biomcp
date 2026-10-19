@@ -201,6 +201,19 @@ pub(super) async fn handle(
         }
         markdown
     };
+    let mut alias_coverage_text = String::new();
+    if !json && !outcome.response.alias_coverage.is_empty() {
+        alias_coverage_text.push_str(
+            "\n\n## Alias query coverage\n\nAn attempted query may fail or return no articles.\n\n",
+        );
+        for coverage in &outcome.response.alias_coverage {
+            alias_coverage_text.push_str(&format!(
+                "- {}: {} ({}; planned: {})\n",
+                coverage.alias, coverage.disposition, coverage.reason, coverage.planned
+            ));
+        }
+    }
+    text.push_str(&alias_coverage_text);
     if !json && !outcome.response.complete {
         let unfinished = outcome
             .response
@@ -261,7 +274,7 @@ pub(super) async fn handle(
         "Provider work failed"
     };
     Ok(CommandOutcome::stderr_with_exit(
-        format!("{cause}; unfinished variant article routes: {sources}. Retry the request."),
+        format!("{cause}; unfinished variant article routes: {sources}. Retry the request.{alias_coverage_text}"),
         1,
     )
     .with_variant_articles_mcp_disposition(VariantArticlesMcpDisposition::StructuredError))
