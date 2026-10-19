@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision a7db04e, accept
 
+Reviews: revision 73d978b, accept
+
 ## Outcome
 
 The repository instructions give one existing Python setup and invocation path that runs focused checks without building an editable Rust package or assuming shell-workflow bootstrap tools contain Ruff.
