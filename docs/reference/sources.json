@@ -40,6 +40,26 @@
     "notes": "BioMCP calls the hosted gRPC API, not the separately licensed cloud commercial route. The official FAQ restricts API outputs and disallows clinical decision-making."
   },
   {
+    "id": "biorxiv-medrxiv",
+    "name": "bioRxiv/medRxiv",
+    "tier": 3,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "get article <doi> fulltext"
+    ],
+    "bioMcp_auth": "none",
+    "commercial_terms": null,
+    "env_var": null,
+    "provider_access": "public details API and advertised JATS for bioRxiv and medRxiv preprints",
+    "license_summary": "article licenses vary; query access does not grant a common reuse license",
+    "redistribution_summary": "follow each article license and preserve author attribution; do not assume unrestricted reuse",
+    "terms_url": "https://www.medrxiv.org/content/about-medrxiv",
+    "key_url": null,
+    "reviewed_on": "2026-10-19",
+    "notes": "BioMCP retrieves the advertised JATS URL on the official preprint servers and reports the license supplied by the details API. The API license label is not a blanket license for other articles."
+  },
+  {
     "id": "cancer-genome-interpreter",
     "name": "Cancer Genome Interpreter",
     "tier": 3,
@@ -476,7 +496,7 @@
     "commercial_terms": null,
     "env_var": null,
     "provider_access": "public portal; BioMCP shows DepMap identifiers resolved through Cellosaurus cross-references and fetches no DepMap data",
-    "license_summary": "DepMap's own guidance says DepMap-generated data are generally CC BY 4.0 while other hosted projects may use different licenses; each file's Data Usage and Terms must be checked per download, and a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed)",
+    "license_summary": "DepMap's own guidance says DepMap-generated data are generally CC BY 4.0 while other hosted projects may use different licenses; each file's Data Usage and Terms must be checked per download, and a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed); the same staff guidance states that DepMap data are not for clinical use",
     "redistribution_summary": "BioMCP shows the identifier through a Cellosaurus cross-reference only; no DepMap bytes enter BioMCP output beyond the identifier",
     "terms_url": "https://forum.depmap.org/t/license-for-data-found-in-the-depmap-portal/130",
     "key_url": null,

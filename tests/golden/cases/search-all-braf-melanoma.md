@@ -57,9 +57,14 @@
 - `biomcp search article --gene BRAF --disease melanoma --limit 3 --type research-article`
 - `biomcp search article --gene BRAF --disease melanoma --limit 3 --type review`
 
-## Pathways (unknown)
-Error: API request to Reactome failed. Retry the remote source.
-- `biomcp search pathway --query BRAF --limit 3`
+## Pathways (at least 3)
+|ID|Name|
+|---|---|
+|R-HSA-167224|BRAF|
+|R-HSA-9648621|BRAF G469R|
+|R-HSA-5675199|hyperphosphorylated BRAF|
+
+- `biomcp get pathway R-HSA-167224`
 
 
 

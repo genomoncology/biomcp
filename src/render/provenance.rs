@@ -13,11 +13,16 @@ use crate::entities::variant::{GnomadPopulationStatus, Variant};
 use serde::Serialize;
 use std::collections::HashSet;
 mod adverse_event;
+mod drug_regulatory;
 pub(crate) use self::adverse_event::{
     report_section_sources as adverse_event_report_section_sources,
     source_search_section_sources as adverse_event_source_search_section_sources,
     subset_section_sources as adverse_event_subset_section_sources,
 };
+pub(crate) const VARIANT_CGI_SOURCE_NOTE: &str =
+    "MyVariant's variant-level CGI subset, loaded 2023-02-27.";
+pub(crate) const VARIANT_CGI_EMPTY_NOTE: &str = "No record in this subset.";
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SectionSource {
     pub key: String,
@@ -406,34 +411,9 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         "Brand Names",
         ["DrugBank"],
     );
-    let mut regulatory_sources = Vec::new();
-    if drug
-        .section_outcomes
-        .get("approvals")
-        .is_some_and(|outcome| !outcome.sources().is_empty())
-    {
-        regulatory_sources.push("OpenFDA Drugs@FDA".to_string());
+    if let Some(regulatory) = drug_regulatory::section_source(drug) {
+        out.push(regulatory);
     }
-    if drug
-        .fda_orphan_designations
-        .as_ref()
-        .is_some_and(|value| !value.sources.is_empty())
-    {
-        regulatory_sources.push("FDA Orphan Drug Designations and Approvals".to_string());
-    }
-    if drug.ema_regulatory.is_some() {
-        regulatory_sources.push("EMA".to_string());
-    }
-    if drug.who_prequalification.is_some() {
-        regulatory_sources.push("WHO Prequalification".to_string());
-    }
-    push_section(
-        &mut out,
-        !regulatory_sources.is_empty(),
-        "regulatory",
-        "Regulatory",
-        regulatory_sources.iter().map(String::as_str),
-    );
     push_section(
         &mut out,
         has_opt_text(&drug.mechanism) || !drug.mechanisms.is_empty(),
@@ -1022,6 +1002,8 @@ mod tests {
             hgvs_p: None,
             legacy_name: None,
             hgvs_c: None,
+            matched_transcript: None,
+            matched_hgvs_c: None,
             protein_numbering_note: None,
             transcript: None,
             rsid: Some("rs7903146".to_string()),
@@ -1104,6 +1086,7 @@ mod tests {
             brand_names: Vec::new(),
             route: None,
             targets: vec!["EGFR".to_string()],
+            target_organisms: Vec::new(),
             variant_targets: vec!["EGFRvIII".to_string()],
             target_family: None,
             target_family_name: None,
@@ -1122,6 +1105,7 @@ mod tests {
             shortage: None,
             approvals: None,
             fda_orphan_designations: None,
+            us_label_effective_date: None,
             us_safety_warnings: None,
             us_boxed_warning: None,
             ema_regulatory: None,
@@ -1159,6 +1143,7 @@ mod tests {
             brand_names: Vec::new(),
             route: None,
             targets: Vec::new(),
+            target_organisms: Vec::new(),
             variant_targets: Vec::new(),
             target_family: None,
             target_family_name: None,
@@ -1177,6 +1162,7 @@ mod tests {
             shortage: None,
             approvals: None,
             fda_orphan_designations: None,
+            us_label_effective_date: None,
             us_safety_warnings: None,
             us_boxed_warning: None,
             ema_regulatory: None,
@@ -1235,6 +1221,7 @@ mod tests {
             brand_names: Vec::new(),
             route: None,
             targets: Vec::new(),
+            target_organisms: Vec::new(),
             variant_targets: Vec::new(),
             target_family: None,
             target_family_name: None,
@@ -1253,6 +1240,7 @@ mod tests {
             shortage: None,
             approvals: None,
             fda_orphan_designations: None,
+            us_label_effective_date: None,
             us_safety_warnings: None,
             us_boxed_warning: None,
             ema_regulatory: None,

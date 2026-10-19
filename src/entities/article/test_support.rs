@@ -14,40 +14,7 @@ pub(super) use crate::error::BioMcpError;
 #[allow(unused_imports)]
 pub(super) use crate::sources::europepmc::EuropePmcSort;
 
-pub(super) struct TestEnv {
-    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
-}
-
-impl TestEnv {
-    pub(super) fn new() -> Self {
-        Self {
-            previous: Vec::new(),
-        }
-    }
-
-    pub(super) fn set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
-        if !self.previous.iter().any(|(existing, _)| *existing == key) {
-            self.previous.push((key, std::env::var_os(key)));
-        }
-        // SAFETY: article tests that mutate provider variables use the same serial-test key.
-        unsafe { std::env::set_var(key, value) };
-    }
-}
-
-impl Drop for TestEnv {
-    fn drop(&mut self) {
-        for (key, previous) in self.previous.drain(..).rev() {
-            // SAFETY: article tests that mutate provider variables use the same serial-test key.
-            unsafe {
-                if let Some(value) = previous {
-                    std::env::set_var(key, value);
-                } else {
-                    std::env::remove_var(key);
-                }
-            }
-        }
-    }
-}
+pub(super) type TestEnv = crate::test_support::FixtureEnv;
 
 pub(super) enum TestHttpReply {
     Bytes(Vec<u8>),
@@ -169,6 +136,7 @@ pub(super) fn empty_filters() -> ArticleSearchFilters {
     ArticleSearchFilters {
         gene: None,
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,

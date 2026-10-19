@@ -4,7 +4,7 @@
 > Warning: {{ warning }}
 
 {% endif %}
-Source plan: candidates [{{ candidate_sources }}]; enrichment [{{ enrichment_sources }}]
+{% if variant_source_metadata %}{{ variant_source_metadata }}{% else %}Source plan: candidates [{{ candidate_sources }}]; enrichment [{{ enrichment_sources }}]{% endif %}
 
 {% for status in source_status_rows -%}
 {{ status.note }}
@@ -25,7 +25,7 @@ Found {{ count }} article{% if count != 1 %}s{% endif %}
 > {{ note }}
 
 {% endif %}
-Semantic Scholar: {% if semantic_scholar_enabled %}enabled{% else %}disabled{% endif %}
+{% if not variant_source_metadata %}Semantic Scholar: {% if semantic_scholar_enabled %}enabled{% else %}disabled{% endif %}{% endif %}
 {% if sort == "relevance" %}
 Ranking: {{ ranking_policy }}
 {% endif %}

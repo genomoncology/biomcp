@@ -36,7 +36,7 @@ variables, test-only override seams, cache settings, and release/install knobs.
 | Article enrichment and graph helpers | Semantic Scholar | `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Search-leg metadata, TLDR, influential citations, citation/reference graph, recommendations |
 | Article annotations | PubTator3 | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api` | No | Entity annotations |
 | Article indexing | PubMed citation EFetch XML | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | Optional (`NCBI_API_KEY`) | Opt-in associated author affiliations/ORCID and structured MeSH; explicit available/unavailable status; included by `all` |
-| Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata | `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://pmc-oa-opendata.s3.amazonaws.com`, `https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles`, `https://pmc.ncbi.nlm.nih.gov/articles`, `https://api.semanticscholar.org` | Optional (`NCBI_API_KEY`, `S2_API_KEY`) | NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available |
+| Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + bioRxiv/medRxiv JATS + opt-in Semantic Scholar PDF metadata | `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://pmc-oa-opendata.s3.amazonaws.com`, `https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles`, `https://pmc.ncbi.nlm.nih.gov/articles`, `https://api.biorxiv.org`, `https://api.semanticscholar.org` | Optional (`NCBI_API_KEY`, `S2_API_KEY`) | NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available |
 | Drug | MyChem.info | `https://mychem.info/v1` | No | Drug metadata, targets, synonyms, and default U.S. search/get normalization |
 | Drug EU regional context | EMA website JSON batch (local human-medicines download) | `https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format` | No | Supports canonical `search/get drug --region eu|all` for regulatory, safety, and shortage, accepts `ema` as an input alias for `eu`, and auto-downloads into `BIOMCP_EMA_DIR` or the platform data directory on first use; `biomcp ema sync` force-refreshes the local files and omitting `--region` on `get drug <name> regulatory` checks U.S. and EU regulatory data |
 | Drug WHO regional context | WHO finished-pharmaceutical-products CSV + WHO active-pharmaceutical-ingredients CSV + WHO vaccine CSV (local downloads) | `https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&_format=csv`, `https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&_format=csv`, `https://extranet.who.int/prequal/vaccines/prequalified/export` | No | Supports `search/get drug --region who|all`, WHO-filtered structured `search drug --region who` for finished-pharma/API, and WHO-only `--product-type <finished_pharma|api|vaccine>` filters; WHO vaccine support is explicit search-only; auto-downloads all three files into `BIOMCP_WHO_DIR` or the platform data directory on first use and `biomcp who sync` force-refreshes the local exports |
@@ -93,10 +93,10 @@ bundled webpki roots plus any operator PEM bundle named by `BIOMCP_CA_BUNDLE`,
 falling back to `SSL_CERT_FILE` only when that variable is unset; the bundle
 only adds roots and never disables verification. The bundle is parsed once;
 restart BioMCP after rotating it. AlphaGenome is the single separate
-authenticated gRPC/Tonic provider transport and does not use
-`BIOMCP_CA_BUNDLE`. Its `SSL_CERT_FILE` and `SSL_CERT_DIR` settings replace the
-native OS trust source when set. Wiring the BioMCP bundle into AlphaGenome
-remains future work.
+authenticated gRPC/Tonic provider transport and adds the same validated
+`BIOMCP_CA_BUNDLE` to its native roots. Its native-root loader also reads
+`SSL_CERT_FILE` and `SSL_CERT_DIR`, which replace the native OS trust source
+when set.
 
 Provider-returned URL fetches share one outbound policy across Semantic Scholar
 PDFs, PMC OA objects, Figshare files, and ClinicalTrials.gov documents. Before
@@ -192,16 +192,18 @@ Article workflows compose multiple APIs for different tasks:
 4. PubMed citation EFetch XML for opt-in author-affiliation/ORCID and MeSH indexing metadata (`all` includes it; ordinary detail/search/batch do not)
 5. Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, `openAccessPdf` metadata for the explicit `--pdf` fallback, and supported Figshare article-asset discovery
 6. NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and PMC OA asset rungs when the base article lacks PMCID
-7. Europe PMC PMC XML, NCBI EFetch PMC XML, PMC OA Archive XML, Europe PMC MED XML, PMC HTML, and opt-in Semantic Scholar PDF form the full-text content ladder where available
+7. Europe PMC PMC XML, NCBI EFetch PMC XML, PMC OA Archive XML, Europe PMC MED XML (a healthy miss because the endpoint serves PMC records), advertised bioRxiv/medRxiv JATS for eligible preprint DOIs, PMC HTML, and opt-in Semantic Scholar PDF form the full-text content ladder where available
 8. Article assets resolve through PMC OA Archive, then Europe PMC `PMC<digits>/supplementaryFiles`, then Figshare after Semantic Scholar points at a supported Figshare/AACR Figshare article URL
 
 NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and asset rungs.
 Semantic Scholar supplies `openAccessPdf` metadata for the explicit `--pdf` fallback and for supported Figshare asset discovery;
-BioMCP fetches an opt-in PDF only when its HTTPS origin is on the explicit Semantic Scholar/CDN allowlist. Figshare asset retrieval is a separate path that re-resolves bytes through the Figshare API `download_url`; both that URL and PMC OA archive links use the same outbound policy with source-specific reviewed origins.
+BioMCP fetches the Semantic Scholar-supplied PDF URL only after validating its HTTPS origin, public DNS answers, and redirects. Publisher origins are supported. Figshare asset retrieval is a separate path that re-resolves bytes through the Figshare API `download_url`; both that URL and PMC OA archive links use the same outbound policy with source-specific reviewed origins.
 Europe PMC supplementary ZIP responses are capped at 64 MiB compressed, 8 MiB per member, 64 MiB total expanded bytes, and 256 members. BioMCP validates relative normalized member names and never extracts them to disk. Only healthy absence across the applicable asset ladder returns `not_found`; a transport, body-limit, or archive failure without a later winner returns `source_unavailable`.
 
 This means metadata, annotations, and full text may have different availability
 for the same PMID.
+
+Full-text access depends on the copy available: PMC-backed papers can use the XML/HTML routes, eligible bioRxiv/medRxiv preprints can use advertised JATS without PMC, publisher-only free copies require an accessible Semantic Scholar PDF link and `--pdf`, and paywalled papers without an accessible copy cannot supply a body. BioMCP never bypasses bot protection or a paywall. Article-level licenses govern every retrieved copy. See [access groups and attempt reasons](../user-guide/article.md#which-papers-can-biomcp-read) for details, including the difference between a search hit, abstract, and article body.
 
 ## OpenFDA behavior
 

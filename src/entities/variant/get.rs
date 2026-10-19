@@ -324,6 +324,81 @@ fn hit_names_requested_change(
         .is_some_and(|protein| protein_changes_equivalent(change, &protein))
 }
 
+fn has_conflicting_transcript_projection(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    annotation: &crate::sources::myvariant::MyVariantSnpeffAnnotation,
+) -> bool {
+    let (Some(feature), Some(coding), Some(protein)) = (
+        annotation.feature_id.as_deref(),
+        annotation.hgvs_c.as_deref(),
+        annotation.hgvs_p.as_deref(),
+    ) else {
+        return false;
+    };
+    hit.snpeff.as_ref().is_some_and(|snpeff| {
+        snpeff.ann.iter().any(|other| {
+            other.feature_id.as_deref() == Some(feature)
+                && other.hgvs_c.as_deref().is_some_and(|other_coding| {
+                    other_coding.starts_with("c.")
+                        && other.hgvs_p.as_deref().is_some_and(|other_protein| {
+                            super::normalize_protein_change(other_protein).is_some()
+                                && (other_coding != coding
+                                    || !protein_changes_equivalent(protein, other_protein))
+                        })
+                })
+        })
+    })
+}
+
+/// Both protein spellings must be paired with versioned coding transcript
+/// projections on this source allele. Merged protein aliases prove no identity.
+fn has_same_allele_transcript_projection(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_transcript: Option<&str>,
+) -> bool {
+    let Some(snpeff) = hit.snpeff.as_ref() else {
+        return false;
+    };
+    let versioned_coding = |ann: &crate::sources::myvariant::MyVariantSnpeffAnnotation| {
+        ann.feature_id.as_deref().is_some_and(|feature| {
+            feature.rsplit_once('.').is_some_and(|(stem, version)| {
+                (stem.starts_with("NM_") || stem.starts_with("XM_") || stem.starts_with("ENST"))
+                    && !version.is_empty()
+                    && version.bytes().all(|byte| byte.is_ascii_digit())
+                    && stem
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+            })
+        }) && ann
+            .hgvs_c
+            .as_deref()
+            .is_some_and(|coding| coding.starts_with("c.") && coding.len() > 2)
+            && ann
+                .hgvs_p
+                .as_deref()
+                .and_then(super::normalize_protein_change)
+                .is_some()
+    };
+    let Some(selected) =
+        transform::variant::selected_snpeff_annotation_index(hit, mane_transcript, Some(change))
+            .and_then(|index| snpeff.ann.get(index))
+    else {
+        return false;
+    };
+    let consistent_projection = |ann: &crate::sources::myvariant::MyVariantSnpeffAnnotation| {
+        versioned_coding(ann) && !has_conflicting_transcript_projection(hit, ann)
+    };
+    consistent_projection(selected)
+        && snpeff.ann.iter().any(|ann| {
+            consistent_projection(ann)
+                && ann
+                    .hgvs_p
+                    .as_deref()
+                    .is_some_and(|protein| protein_changes_equivalent(change, protein))
+        })
+}
+
 /// A gene+protein query can resolve to a hit whose headline protein change
 /// does not spell the request (a unique provider hit, or the only named
 /// match): `TP53 R116Q` reaches the `p.Arg248Gln` variant through a shorter
@@ -337,6 +412,9 @@ fn protein_change_numbering_note(
     mane_transcript: Option<&str>,
 ) -> Option<String> {
     super::normalize_protein_change(change)?;
+    if !has_same_allele_transcript_projection(hit, change, mane_transcript) {
+        return None;
+    }
     let protein = transform::variant::canonical_protein_change(hit, mane_transcript, Some(change))?;
     if protein_changes_equivalent(change, &protein) {
         return None;
@@ -378,8 +456,8 @@ struct CanonicalProteinFacts {
     residue: Option<char>,
     /// The canonical sequence's length, so a requested position beyond it
     /// (`BRCA1 Y1866D` against the 1863-residue P38398) is distinguishable
-    /// from an unreadable sequence: a position the protein cannot hold
-    /// proves the request follows another numbering by itself.
+    /// from an unreadable sequence. Transcript projections must establish
+    /// whether another numbering actually belongs to this allele.
     sequence_length: Option<u32>,
     mane_transcript: Option<String>,
 }
@@ -423,8 +501,9 @@ async fn canonical_protein_facts(
 /// match spells the request on the shorter isoform while MANE names
 /// `p.Ser315Tyr`), so `get variant` refuses rather than return the
 /// lookalike. When the check instead
-/// finds a different residue at the position, the request really does
-/// follow another transcript's numbering and the answer says so. When the request names no residue, or the sequence lookup is
+/// finds a different residue at the position, paired versioned transcript
+/// projections must establish the same allele before the answer says the
+/// request follows another transcript's numbering. When the request names no residue, or the sequence lookup is
 /// unavailable, nothing is proven either way — and an unverified
 /// other-transcript claim is exactly the false note this rule removes
 /// so the answer stays silent.
@@ -444,11 +523,44 @@ async fn refuse_or_note_numbering_mismatch(
     mane_transcript: Option<&str>,
     prefetched: Option<CanonicalProteinFacts>,
 ) -> Result<Option<String>, BioMcpError> {
-    if transform::variant::mane_annotation_names_change(hit, change, mane_transcript) {
+    let protein = transform::variant::canonical_protein_change(hit, mane_transcript, Some(change));
+    let different_headline = protein
+        .as_deref()
+        .is_some_and(|protein| !protein_changes_equivalent(change, protein));
+    let conflicting_headline =
+        transform::variant::selected_snpeff_annotation_index(hit, mane_transcript, Some(change))
+            .and_then(|index| hit.snpeff.as_ref()?.ann.get(index))
+            .is_some_and(|annotation| has_conflicting_transcript_projection(hit, annotation));
+    // Every renumbered answer needs paired source evidence, including
+    // non-substitutions and records with an unpaired MANE alias row.
+    if conflicting_headline
+        || (different_headline
+            && !has_same_allele_transcript_projection(hit, change, mane_transcript))
+    {
+        return Err(transcript_projection_refusal_message(id, gene, change));
+    }
+    if !different_headline
+        && transform::variant::mane_annotation_names_change(hit, change, mane_transcript)
+    {
         return Ok(None);
     }
     let Some((_, position)) = requested_reference_residue(change) else {
-        return Ok(None);
+        if !has_same_allele_transcript_projection(hit, change, mane_transcript) {
+            return Err(transcript_projection_refusal_message(id, gene, change));
+        }
+        return if different_headline {
+            Ok(protein_change_numbering_note(hit, change, mane_transcript))
+        } else if protein.is_none() {
+            Err(protein_change_absent_refusal_message(
+                id,
+                gene,
+                change,
+                hit,
+                mane_transcript,
+            ))
+        } else {
+            Ok(None)
+        };
     };
     let facts = match prefetched {
         Some(facts) => facts,
@@ -530,6 +642,13 @@ fn unchecked_numbering_note(transcript: &str, protein: &str, change: &str) -> St
     )
 }
 
+fn transcript_projection_refusal_message(id: &str, gene: &str, change: &str) -> BioMcpError {
+    BioMcpError::InvalidArgument(format!(
+        "No MANE-numbered variant matches '{id}': no request-matching versioned transcript projection with paired coding and protein changes proves the same genomic allele as the answer. BioMCP refuses rather than return the wrong variant.\n\
+Retry `biomcp get variant` with a transcript-qualified HGVS naming '{change}', or search the spelling: biomcp search variant -g {gene} --hgvsp {change}."
+    ))
+}
+
 /// The numbering decision once the canonical protein facts are in hand —
 /// pure, so the recorded shapes pin it offline.
 fn refuse_or_note_with_facts(
@@ -543,23 +662,15 @@ fn refuse_or_note_with_facts(
     let Some((from, position)) = requested_reference_residue(change) else {
         return Ok(None);
     };
-    let Some(residue) = facts.residue else {
-        // No residue to compare: a requested position the canonical protein
-        // cannot hold proves the request follows another numbering without
-        // one (`BRCA1 Y1866D` past the 1863 residues of P38398),
-        // so the other-transcript note prints; a sequence the record never
-        // carried proves nothing either way and the
-        // answer stays silent.
-        if facts
+    let other_numbering = facts.residue.is_some_and(|residue| residue != from)
+        || facts
             .sequence_length
-            .is_some_and(|length| position > length)
-        {
-            // The note names the headline's own transcript and spelling; a
-            // record that cannot name one refuses like the no-protein-change
-            // case below instead of resolving silently.
-            if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
-                return Ok(Some(note));
-            }
+            .is_some_and(|length| position > length);
+    if other_numbering {
+        let (Some(transcript), Some(protein)) = (
+            transform::variant::canonical_transcript(hit, mane_transcript, Some(change)),
+            transform::variant::canonical_protein_change(hit, mane_transcript, Some(change)),
+        ) else {
             return Err(protein_change_absent_refusal_message(
                 id,
                 gene,
@@ -567,45 +678,20 @@ fn refuse_or_note_with_facts(
                 hit,
                 mane_transcript,
             ));
+        };
+        if !has_same_allele_transcript_projection(hit, change, mane_transcript) {
+            return Err(transcript_projection_refusal_message(id, gene, change));
         }
-        return Ok(None);
-    };
-    if residue != from {
-        // The canonical protein holds a different residue at the requested
-        // position, so the request follows another transcript's numbering —
-        // proven by the record, not guessed. The answer must say so instead
-        // of resolving an isoform spelling silently: the
-        // standard note when the headline names a different change, and an
-        // equivalent headline's own note naming the transcript it resolved
-        // on; a record that cannot name its transcript or its protein change
-        // refuses rather than resolve with nothing to say.
         if let Some(note) = protein_change_numbering_note(hit, change, mane_transcript) {
             return Ok(Some(note));
         }
-        let transcript =
-            transform::variant::canonical_transcript(hit, mane_transcript, Some(change));
-        let protein =
-            transform::variant::canonical_protein_change(hit, mane_transcript, Some(change));
-        return Ok(Some(match (transcript.as_deref(), protein.as_deref()) {
-            (Some(transcript), Some(protein)) => format!(
-                "Numbering note: resolved on {transcript} as {protein}; the requested \
-                 {change} follows another transcript's numbering."
-            ),
-            (Some(transcript), None) => format!(
-                "Numbering note: the requested {change} follows another transcript's \
-                 numbering; the record names no protein change on {transcript}."
-            ),
-            (None, _) => {
-                return Err(protein_change_absent_refusal_message(
-                    id,
-                    gene,
-                    change,
-                    hit,
-                    mane_transcript,
-                ));
-            }
-        }));
+        return Ok(Some(format!(
+            "Numbering note: resolved on {transcript} as {protein}; the requested {change} follows another transcript's numbering."
+        )));
     }
+    let Some(residue) = facts.residue else {
+        return Ok(None);
+    };
     let Some(reference) = super::amino_acid_three_letter(residue) else {
         return Ok(None);
     };
@@ -897,23 +983,58 @@ Try first: biomcp variant normalize all {id}"
     ))
 }
 
+/// Keep the assembly attached to the exact DNA projection. CAR aliases use
+/// versioned genomic accessions, whose builds the coordinate parser knows.
 pub(crate) fn normalized_get_variant_id(
     response: &VariantNormalizationResponse,
-) -> Result<String, BioMcpError> {
+) -> Result<(String, Option<GenomeBuild>), BioMcpError> {
+    use super::VariantNormalizationAggregate;
     response
         .services
         .iter()
-        .filter_map(|service| match service {
-            crate::entities::variant::VariantNormalizationAggregate::Legacy(service)
+        .find_map(|service| match service {
+            VariantNormalizationAggregate::Legacy(service)
                 if service.status == VariantNormalizationStatus::Success =>
             {
-                Some(service.genomic_descriptions.iter())
+                service.genomic_descriptions.iter().find_map(|candidate| {
+                    let parsed = super::normalize_genomic_coordinate(&candidate.coordinate)
+                        .ok()
+                        .flatten();
+                    let id = parsed
+                        .as_ref()
+                        .map(|value| value.id.clone())
+                        .or_else(|| normalized_genomic_hgvs_for_get(&candidate.coordinate))?;
+                    let accession_build = parsed.and_then(|value| value.genome_build);
+                    let declared_build = candidate.genome_build.parse::<GenomeBuild>().ok();
+                    if accession_build
+                        .zip(declared_build)
+                        .is_some_and(|(a, b)| a != b)
+                    {
+                        return None;
+                    }
+                    Some((id, accession_build.or(declared_build)))
+                })
             }
-            crate::entities::variant::VariantNormalizationAggregate::Car(_) => None,
+            VariantNormalizationAggregate::Car(service)
+                if service.item.status
+                    == super::normalization::CarNormalizationStatus::Resolved
+                    && service.item.input == response.input =>
+            {
+                service
+                    .item
+                    .genomic_aliases
+                    .values
+                    .iter()
+                    .find_map(|alias| {
+                        let coordinate =
+                            super::normalize_genomic_coordinate(alias).ok().flatten()?;
+                        coordinate
+                            .genome_build
+                            .map(|build| (coordinate.id, Some(build)))
+                    })
+            }
             _ => None,
         })
-        .flatten()
-        .find_map(|candidate| normalized_genomic_hgvs_for_get(&candidate.coordinate))
         .ok_or_else(|| transcript_hgvs_normalization_error(&response.input, Some(response)))
 }
 
@@ -924,9 +1045,14 @@ fn transcript_hgvs_clinvar_query(id: &str) -> String {
     )
 }
 
-fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
+fn transcript_hgvs_not_found_suggestion(id: &str, normalized: bool) -> String {
+    let reason = if normalized {
+        "The requested transcript normalized successfully, but MyVariant.info returned no matching genomic allele."
+    } else {
+        "The requested transcript remains unverified; no source-backed match was found for this exact identifier."
+    };
     format!(
-        "Try first: biomcp variant normalize all {id}; the ClinVar VariationID (e.g. biomcp get variant 577152) or rsID (e.g. biomcp get variant rs113488022) also resolves directly"
+        "{reason} Try first: biomcp variant normalize all {id}; the ClinVar VariationID (e.g. biomcp get variant 577152) or rsID (e.g. biomcp get variant rs113488022) also resolves directly"
     )
 }
 
@@ -959,7 +1085,9 @@ async fn transcript_hgvs_clinvar_alias_hit(
     .cloned())
 }
 
-async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
+async fn resolve_transcript_hgvs_for_get(
+    id: &str,
+) -> Result<(VariantIdFormat, Option<GenomeBuild>, bool), BioMcpError> {
     match normalize_transcript_hgvs_for_get(id).await {
         Ok(format) => Ok(format),
         // Transcript normalization services refuse intronic deletion ranges
@@ -976,22 +1104,30 @@ async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, Bi
                         Ok(VariantIdFormat::HgvsGenomic(_))
                     )
                 })
-                .map(|hit| VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()))
+                .map(|hit| {
+                    (
+                        VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()),
+                        None,
+                        false,
+                    )
+                })
                 .ok_or_else(|| BioMcpError::NotFound {
                     entity: "variant".into(),
                     id: id.to_string(),
-                    suggestion: transcript_hgvs_not_found_suggestion(id),
+                    suggestion: transcript_hgvs_not_found_suggestion(id, false),
                 })
         }
     }
 }
 
-async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
+async fn normalize_transcript_hgvs_for_get(
+    id: &str,
+) -> Result<(VariantIdFormat, Option<GenomeBuild>, bool), BioMcpError> {
     let response = normalize_variant("all", id)
         .await
         .map_err(|_| transcript_hgvs_normalization_error(id, None))?;
-    let normalized_id = normalized_get_variant_id(&response)?;
-    parse_variant_id(&normalized_id)
+    let (normalized_id, build) = normalized_get_variant_id(&response)?;
+    Ok((parse_variant_id(&normalized_id)?, build, true))
 }
 
 /// The public spelling of a genome build. One definition serves the
@@ -1037,17 +1173,33 @@ pub(super) async fn resolve_base_with_hit(
 
     let input_kind = classify_variant_input(id);
     let normalized_coordinate = super::normalize_genomic_coordinate(id)?;
+    let transcript_resolution = if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_)) {
+        Some(resolve_transcript_hgvs_for_get(id).await?)
+    } else {
+        None
+    };
+    let normalized_transcript_dna = transcript_resolution
+        .as_ref()
+        .is_some_and(|(_, _, normalized)| *normalized);
     let mut requested = match normalized_coordinate.as_ref() {
         Some(coordinate) => super::RequestedVariantIdentity::from_variant_input(&coordinate.id)?,
         None => super::RequestedVariantIdentity::from_variant_input(id)?,
     };
     let id_format = match (input_kind.clone(), normalized_coordinate.as_ref()) {
         (_, Some(coordinate)) => VariantIdFormat::HgvsGenomic(coordinate.id.clone()),
-        (VariantInputKind::TranscriptCodingHgvs(_), None) => {
-            resolve_transcript_hgvs_for_get(id).await?
-        }
+        (VariantInputKind::TranscriptCodingHgvs(_), None) => transcript_resolution
+            .as_ref()
+            .expect("transcript resolution")
+            .0
+            .clone(),
         _ => parse_variant_id(id)?,
     };
+    if normalized_transcript_dna && let VariantIdFormat::HgvsGenomic(hgvs) = &id_format {
+        // A normalizer resolved the exact versioned request to this DNA
+        // change. Compare DNA, without requiring the downstream record to
+        // repeat the original transcript spelling.
+        requested = super::RequestedVariantIdentity::from_variant_input(hgvs)?;
+    }
     if let VariantIdFormat::HgvsGenomic(hgvs) = &id_format
         && requested.genomic_accession.is_none()
     {
@@ -1055,7 +1207,12 @@ pub(super) async fn resolve_base_with_hit(
     }
     let inferred_build = normalized_coordinate
         .as_ref()
-        .and_then(|coordinate| coordinate.genome_build);
+        .and_then(|coordinate| coordinate.genome_build)
+        .or_else(|| {
+            transcript_resolution
+                .as_ref()
+                .and_then(|(_, build, _)| *build)
+        });
     if let (Some(declared), Some(inferred)) = (genome_build, inferred_build)
         && declared != inferred
     {
@@ -1136,14 +1293,12 @@ pub(super) async fn resolve_base_with_hit(
                         .ok_or_else(|| BioMcpError::NotFound {
                             entity: "variant".into(),
                             id: id.to_string(),
-                            suggestion: transcript_hgvs_not_found_suggestion(id),
+                            suggestion: transcript_hgvs_not_found_suggestion(
+                                id,
+                                normalized_transcript_dna,
+                            ),
                         })?;
-                    (
-                        alias_hit,
-                        effective_build.or(Some(GenomeBuild::Grch37)),
-                        Vec::new(),
-                        None,
-                    )
+                    (alias_hit, Some(GenomeBuild::Grch37), Vec::new(), None)
                 } else {
                     let hit = direct.map_err(|error| match effective_build {
                         Some(build) => build_aware_not_found(id, build, error),
@@ -1151,11 +1306,12 @@ pub(super) async fn resolve_base_with_hit(
                     })?;
                     let transcript_input =
                         matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_));
-                    let alias_confirmed =
-                        transcript_input && hit_confirms_transcript_alias(&hit, id);
+                    let alias_confirmed = transcript_input
+                        && !normalized_transcript_dna
+                        && hit_confirms_transcript_alias(&hit, id);
                     if !compatible(&hit) && !alias_confirmed {
                         let suggestion = if transcript_input {
-                            transcript_hgvs_not_found_suggestion(id)
+                            transcript_hgvs_not_found_suggestion(id, normalized_transcript_dna)
                         } else {
                             format!("Try searching: biomcp search variant -g \"{id}\"")
                         };
@@ -1300,9 +1456,15 @@ pub(super) async fn resolve_base_with_hit(
         }
         None => transform::variant::from_myvariant_hit(&hit),
     };
+    if let VariantInputKind::TranscriptCodingHgvs(value) = &input_kind
+        && let Some((transcript, coding)) = value.split_once(':')
+    {
+        variant.matched_transcript = Some(transcript.to_string());
+        variant.matched_hgvs_c = Some(coding.to_string());
+    }
     variant.genome_build = answering_build;
     variant.genome_build_provenance = (answering_build == Some(GenomeBuild::Grch37)
-        && effective_build.is_none()
+        && effective_build != Some(GenomeBuild::Grch37)
         && (!matches!(id_format, VariantIdFormat::HgvsGenomic(_))
             || matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_))))
     .then(|| "MyVariant.info provider default".into());
@@ -1672,6 +1834,8 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         legacy_name: None,
         hgvs_c: None,
         transcript: None,
+        matched_transcript: None,
+        matched_hgvs_c: None,
         protein_numbering_note: None,
         rsid: Some(rsid.to_string()),
         cosmic_id: None,

@@ -1,7 +1,7 @@
 {
   "query": "gene=BRAF disease=melanoma",
   "searches_dispatched": 9,
-  "searches_with_results": 6,
+  "searches_with_results": 7,
   "sections": [
     {
       "count_exact": true,
@@ -54,11 +54,10 @@
     {
       "count_exact": false,
       "entity": "pathway",
-      "error": "API request to Reactome failed. Retry the remote source.",
       "label": "Pathways",
-      "returned": 0,
+      "returned": 3,
       "total": null,
-      "total_lower_bound": null
+      "total_lower_bound": 3
     },
     {
       "count_exact": false,

@@ -225,6 +225,48 @@ fn trial_alias_cache_key_normalizes_requested_name() {
     assert_eq!(trial_alias_cache_key(" Daraxonrasib "), "daraxonrasib");
 }
 
+#[test]
+fn trial_alias_cache_stays_bounded_and_keeps_recent_resolutions() {
+    let mut cache = HashMap::new();
+    for index in 0..(TRIAL_ALIAS_CACHE_CAP * 2 + 3) {
+        let name = format!("drug-{index}");
+        let resolution = TrialAliasResolution {
+            canonical_name: name.clone(),
+            aliases: vec![trial_alias(&name, TrialAliasSource::Canonical)],
+        };
+        insert_trial_alias_cache_entry(&mut cache, name.clone(), resolution);
+        assert!(
+            cache.len() <= TRIAL_ALIAS_CACHE_CAP,
+            "entries: {}",
+            cache.len()
+        );
+        let cached = cache.get(&name).expect("recent resolution stays cached");
+        assert_eq!(cached.canonical_name, name);
+        assert_eq!(
+            cached.aliases,
+            vec![trial_alias(&name, TrialAliasSource::Canonical)]
+        );
+        if index + 1 == TRIAL_ALIAS_CACHE_CAP {
+            insert_trial_alias_cache_entry(
+                &mut cache,
+                name.clone(),
+                TrialAliasResolution {
+                    canonical_name: "updated".into(),
+                    aliases: vec![trial_alias("updated", TrialAliasSource::Canonical)],
+                },
+            );
+            assert_eq!(cache.len(), TRIAL_ALIAS_CACHE_CAP);
+            assert_eq!(
+                cache.get(&name).expect("replacement").canonical_name,
+                "updated"
+            );
+        }
+    }
+    for index in (TRIAL_ALIAS_CACHE_CAP * 2)..(TRIAL_ALIAS_CACHE_CAP * 2 + 3) {
+        assert!(cache.contains_key(&format!("drug-{index}")));
+    }
+}
+
 #[tokio::test]
 async fn cached_trial_alias_resolution_refreshes_worker_zero_label() {
     let cache_key = "ticket-510-cache-case";
@@ -1042,9 +1084,9 @@ async fn drug_card_sources_run_at_once_and_keep_the_undelayed_output() {
     let (base, hold_replies, server) = parallel_source_server(HOLD).await;
     let (mut env, _ddinter) =
         crate::entities::drug::test_support::drug_fixture_env(&base, "parallel-drug-ddinter");
-    env.set("BIOMCP_CIVIC_BASE", &format!("{base}/civic"));
-    env.set("BIOMCP_OPENTARGETS_BASE", &format!("{base}/opentargets"));
-    env.set("BIOMCP_CHEMBL_BASE", &format!("{base}/chembl"));
+    env.set("BIOMCP_CIVIC_BASE", format!("{base}/civic"));
+    env.set("BIOMCP_OPENTARGETS_BASE", format!("{base}/opentargets"));
+    env.set("BIOMCP_CHEMBL_BASE", format!("{base}/chembl"));
 
     let started = Instant::now();
     let held_card = super::get("imatinib", &[])

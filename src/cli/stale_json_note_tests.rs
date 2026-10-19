@@ -2,7 +2,7 @@
 //! What this file proves, exactly: the note reaches article search
 //! JSON and search-all JSON through `_meta.notes` (parsed, not
 //! grepped); the ClinGen prefetch inside `get gene` carries a stale
-//! serve's note to the markdown card. Day-cached GWAS replies remain
+//! serve's note to the markdown card and CLI/MCP get JSON. Day-cached GWAS replies remain
 //! free of stale notes inside the day window even when the provider's
 //! shorter freshness window has expired.
 //! Fixtures answer with a one-second freshness window, then stop.
@@ -166,111 +166,40 @@ async fn run(args: &[&str]) -> String {
 /// filesystem's free space can evict the cached reply before the
 /// stale serve. A test that sets its own floor after the
 /// constructor still wins.
-const MIN_DISK_FREE: &str = "1B";
-
 struct StaleNoteEnv {
-    /// Held (never read) so the cache directory outlives the env.
-    // dead-code reason: held-for-drop guard keeps the temp cache root alive
-    #[allow(dead_code)]
-    root: crate::test_support::TempDirGuard,
-    /// (key, previous value) pairs restored on drop, so one test's
-    /// fixture bases never leak into the next.
-    previous: Vec<(&'static str, Option<String>)>,
+    _cache: crate::test_support::FixtureEnv,
 }
 
 impl StaleNoteEnv {
     fn two_bases(mygene: &str, clingen: &str, keys: &[&'static str]) -> Self {
-        let root = crate::test_support::TempDirGuard::new("stale-json-notes");
-        let mut previous = Vec::new();
-        for key in keys
-            .iter()
-            .copied()
-            .chain(["BIOMCP_CACHE_DIR", "BIOMCP_CACHE_MIN_DISK_FREE"])
-        {
-            let value = if key == "BIOMCP_CACHE_DIR" {
-                root.path().to_str().expect("utf-8 cache root").to_string()
-            } else if key == "BIOMCP_CACHE_MIN_DISK_FREE" {
-                MIN_DISK_FREE.to_string()
-            } else if key == "BIOMCP_MYGENE_BASE" {
-                mygene.to_string()
-            } else {
-                clingen.to_string()
-            };
-            // SAFETY: serialized on the source_env key; restored on drop.
-            unsafe {
-                previous.push((key, std::env::var(key).ok()));
-                std::env::set_var(key, value);
-            }
+        let mut env = crate::test_support::FixtureEnv::scratch_cache_only();
+        for key in keys.iter().copied() {
+            env.set(
+                key,
+                if key == "BIOMCP_MYGENE_BASE" {
+                    mygene
+                } else {
+                    clingen
+                },
+            );
         }
-        Self { root, previous }
+        Self { _cache: env }
     }
 
-    /// Distinct bases per source key (the search-all fixture pins
-    /// four federated legs to two different servers).
     fn bases(pairs: &[(&'static str, &str)]) -> Self {
-        let root = crate::test_support::TempDirGuard::new("stale-json-notes");
-        let mut previous = Vec::new();
+        let mut env = crate::test_support::FixtureEnv::scratch_cache_only();
         for (key, base) in pairs.iter().copied() {
-            // SAFETY: serialized on the source_env key; restored on drop.
-            unsafe {
-                previous.push((key, std::env::var(key).ok()));
-                std::env::set_var(key, base);
-            }
+            env.set(key, base);
         }
-        // SAFETY: as above.
-        unsafe {
-            previous.push(("BIOMCP_CACHE_DIR", std::env::var("BIOMCP_CACHE_DIR").ok()));
-            std::env::set_var(
-                "BIOMCP_CACHE_DIR",
-                root.path().to_str().expect("utf-8 cache root"),
-            );
-            previous.push((
-                "BIOMCP_CACHE_MIN_DISK_FREE",
-                std::env::var("BIOMCP_CACHE_MIN_DISK_FREE").ok(),
-            ));
-            std::env::set_var("BIOMCP_CACHE_MIN_DISK_FREE", MIN_DISK_FREE);
-        }
-        Self { root, previous }
+        Self { _cache: env }
     }
 
     fn new(base: &str, keys: &[&'static str]) -> Self {
-        let root = crate::test_support::TempDirGuard::new("stale-json-notes");
-        let mut previous = Vec::new();
-        for key in keys
-            .iter()
-            .copied()
-            .chain(["BIOMCP_CACHE_DIR", "BIOMCP_CACHE_MIN_DISK_FREE"])
-        {
-            // SAFETY: serialized on the source_env key; values restore on drop.
-            unsafe {
-                previous.push((key, std::env::var(key).ok()));
-                std::env::set_var(
-                    key,
-                    if key == "BIOMCP_CACHE_DIR" {
-                        root.path().to_str().expect("utf-8 cache root")
-                    } else if key == "BIOMCP_CACHE_MIN_DISK_FREE" {
-                        MIN_DISK_FREE
-                    } else {
-                        base
-                    },
-                );
-            }
+        let mut env = crate::test_support::FixtureEnv::scratch_cache_only();
+        for key in keys.iter().copied() {
+            env.set(key, base);
         }
-        Self { root, previous }
-    }
-}
-
-impl Drop for StaleNoteEnv {
-    fn drop(&mut self) {
-        for (key, value) in self.previous.drain(..) {
-            // SAFETY: serialized on the source_env key.
-            unsafe {
-                match value {
-                    Some(previous) => std::env::set_var(key, previous),
-                    None => std::env::remove_var(key),
-                }
-            }
-        }
+        Self { _cache: env }
     }
 }
 
@@ -535,4 +464,73 @@ fn search_all_json_body_carries_notes_only_when_present() {
     let without =
         crate::cli::search_all::json_body(&results, false, Vec::new()).expect("json body builds");
     assert!(without.get("_meta").is_none());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn stale_get_json_reports_cache_notes_without_changing_the_fresh_card() {
+    let (base, server) = stale_note_routes_server(vec![
+        ("/query".to_string(), MYGENE_BODY, 3600),
+        ("/api/genes/look/BRAF".to_string(), CLINGEN_LOOKUP_BODY, 1),
+        (
+            "/kb/gene-validity/download".to_string(),
+            CLINGEN_VALIDITY_BODY,
+            1,
+        ),
+        (
+            "/kb/gene-dosage/download".to_string(),
+            CLINGEN_DOSAGE_BODY,
+            1,
+        ),
+    ])
+    .await;
+    let _env = StaleNoteEnv::new(&base, &["BIOMCP_MYGENE_BASE", "BIOMCP_CLINGEN_BASE"]);
+    let args = ["--json", "get", "gene", "BRAF", "clingen"];
+    let fresh = run(&args).await;
+    let fresh_value: serde_json::Value = serde_json::from_str(&fresh).expect("fresh JSON");
+    assert!(fresh_value["_meta"].get("notes").is_none(), "{fresh}");
+    assert_eq!(
+        run(&args).await,
+        fresh,
+        "fresh cache preserves the JSON bytes"
+    );
+
+    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: bounded freshness-window wait
+    server.abort();
+    let stale = run(&args).await;
+    assert!(
+        meta_notes(&stale)
+            .iter()
+            .any(|note| { note.contains("older than the provider's freshness window") }),
+        "stale get JSON must carry the cache note: {stale}"
+    );
+    let mut stale_value: serde_json::Value = serde_json::from_str(&stale).expect("stale JSON");
+    stale_value["_meta"]
+        .as_object_mut()
+        .expect("metadata")
+        .remove("notes");
+    assert_eq!(stale_value, fresh_value, "only cache notes change");
+
+    let mcp_args = std::iter::once("biomcp")
+        .chain(args)
+        .map(str::to_string)
+        .collect();
+    let mcp = crate::cli::execute_mcp(mcp_args)
+        .await
+        .expect("MCP JSON get");
+    assert!(!meta_notes(&mcp.text).is_empty(), "{}", mcp.text);
+    assert_eq!(mcp.metadata_json.as_deref(), Some(mcp.text.as_str()));
+    let markdown_args = ["biomcp", "get", "gene", "BRAF", "clingen"]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    let markdown = crate::cli::execute_mcp(markdown_args)
+        .await
+        .expect("MCP Markdown get");
+    assert!(markdown.text.contains("Cache note:"), "{}", markdown.text);
+    assert!(
+        markdown
+            .text
+            .contains("older than the provider's freshness window")
+    );
 }

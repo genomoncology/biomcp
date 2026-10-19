@@ -22,7 +22,7 @@ use super::label::{
 };
 use super::metadata::{
     apply_openfda_metadata, apply_top_adverse_event_preview, fetch_shortage_entries,
-    fetch_top_adverse_event_preview, map_drugsfda_approvals, merge_unique_casefold, orphan_aliases,
+    fetch_top_adverse_event_preview, merge_unique_casefold, orphan_aliases,
 };
 use super::search::search_page;
 use super::targets::{TargetSources, enrich_indications, enrich_targets, fetch_target_sources};
@@ -203,7 +203,10 @@ fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, Bio
     match result {
         Ok(rows) => {
             let outcome = if rows.is_empty() {
-                SectionOutcome::empty("OpenFDA Drugs@FDA")
+                SectionOutcome::empty_with_reason(
+                    "OpenFDA Drugs@FDA",
+                    "Drugs@FDA found no exact-name match. Suffixed names (e.g. belantamab mafodotin-blmf) require source-confirmed identity; FDA approvals are not ruled out.",
+                )
             } else {
                 SectionOutcome::data("OpenFDA Drugs@FDA")
             };
@@ -220,7 +223,11 @@ fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, Bio
     }
 }
 
-async fn add_approvals_section(drug: &mut Drug) {
+async fn add_approvals_section(
+    drug: &mut Drug,
+    label_response: Option<&serde_json::Value>,
+    identity_brands: &[String],
+) {
     let name = drug.name.trim();
     if name.is_empty() {
         drug.approvals = Some(Vec::new());
@@ -231,25 +238,10 @@ async fn add_approvals_section(drug: &mut Drug) {
         return;
     }
 
-    let escaped = OpenFdaClient::escape_query_value(name);
-    let query = if name.chars().any(|c| c.is_whitespace()) {
-        format!(
-            "openfda.generic_name:\"{escaped}\" OR openfda.brand_name:\"{escaped}\" OR products.brand_name:\"{escaped}\""
-        )
-    } else {
-        format!(
-            "openfda.generic_name:*{escaped}* OR openfda.brand_name:*{escaped}* OR products.brand_name:*{escaped}*"
-        )
-    };
-
-    let approvals_fut = async {
-        let client = OpenFdaClient::new()?;
-        client.drugsfda_search(&query, 8, 0).await
-    };
+    let approvals_fut = super::approvals::fetch(drug, label_response, identity_brands);
 
     let result = match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
-        Ok(Ok(resp)) => Ok(resp.map(map_drugsfda_approvals).unwrap_or_default()),
-        Ok(Err(err)) => Err(err),
+        Ok(result) => result,
         Err(_) => Err(BioMcpError::SourceUnavailable {
             source_name: "OpenFDA Drugs@FDA".to_string(),
             reason: "request timed out".to_string(),
@@ -638,6 +630,42 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
         }
     }
 
+    // General discovery leaves ontology aliases unclassified without a
+    // structured drug type. An explicit drug lookup can corroborate one
+    // exact alias with the named DrugBank record, while retaining the
+    // separate drug signal above and refusing competing exact identities.
+    let exact_candidates = result
+        .concepts
+        .iter()
+        .filter(|concept| {
+            matches!(
+                concept.primary_type,
+                crate::entities::discover::DiscoverType::Drug
+                    | crate::entities::discover::DiscoverType::Unknown
+            ) && concept.match_tier == crate::entities::discover::MatchTier::Exact
+                && concept.confidence == crate::entities::discover::DiscoverConfidence::CanonicalId
+        })
+        .collect::<Vec<_>>();
+    if let Some(candidate) = exact_candidates.first()
+        && candidate.primary_type == crate::entities::discover::DiscoverType::Unknown
+        && !candidate.label.trim().is_empty()
+        && exact_candidates.iter().all(|other| {
+            normalized_discover_drug_label(&other.label)
+                == normalized_discover_drug_label(&candidate.label)
+        })
+        && let Some(response) = named_drug_response(&candidate.label).await
+        && transform::drug::select_hits_for_name(&response.hits, &candidate.label)
+            .iter()
+            .any(|hit| {
+                hit.drugbank
+                    .as_ref()
+                    .and_then(|record| record.id.as_deref())
+                    .is_some_and(|id| !id.trim().is_empty())
+            })
+    {
+        return SparseDrugDiscoverRescue::Canonical(candidate.label.clone());
+    }
+
     SparseDrugDiscoverRescue::AliasFallback
 }
 
@@ -695,10 +723,23 @@ struct TrialAliasLookup {
     candidates: Vec<TrialAlias>,
 }
 
+const TRIAL_ALIAS_CACHE_CAP: usize = 512;
+
 static TRIAL_ALIAS_CACHE: OnceLock<Mutex<HashMap<String, TrialAliasResolution>>> = OnceLock::new();
 
 fn trial_alias_cache() -> &'static Mutex<HashMap<String, TrialAliasResolution>> {
     TRIAL_ALIAS_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn insert_trial_alias_cache_entry(
+    cache: &mut HashMap<String, TrialAliasResolution>,
+    key: String,
+    resolution: TrialAliasResolution,
+) {
+    if cache.len() >= TRIAL_ALIAS_CACHE_CAP && !cache.contains_key(&key) {
+        cache.clear();
+    }
+    cache.insert(key, resolution);
 }
 
 fn trial_alias_cache_key(name: &str) -> String {
@@ -914,7 +955,7 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
 
     if cacheable {
         let mut cache = crate::utils::sync::recover_poison(trial_alias_cache().lock());
-        cache.insert(cache_key, resolution.clone());
+        insert_trial_alias_cache_entry(&mut cache, cache_key, resolution.clone());
     }
 
     Ok(resolution)
@@ -1043,33 +1084,37 @@ async fn resolve_drug_identity(name: &str) -> Result<ResolvedDrugBase, BioMcpErr
             query: Some(name.to_string()),
             ..Default::default()
         };
-        let fallback_name = search_page(&fallback_filters, 2, 0)
-            .await
-            .ok()
-            .and_then(|page| {
-                if page.results.len() != 1 {
-                    return None;
-                }
-                let candidate = page.results[0].name.trim();
-                if candidate.is_empty() || candidate.eq_ignore_ascii_case(name) {
-                    None
-                } else {
-                    Some(candidate.to_string())
-                }
-            });
-
-        if let Some(candidate) = fallback_name
-            && let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
-            && !fallback_resp.hits.is_empty()
-        {
-            lookup_name = candidate;
-            resp = fallback_resp;
-        } else {
+        let fallback_page = search_page(&fallback_filters, 2, 0).await?;
+        let fallback_name = match fallback_page.results.as_slice() {
+            [result] => {
+                let candidate = result.name.trim();
+                (!candidate.is_empty() && !candidate.eq_ignore_ascii_case(name))
+                    .then(|| candidate.to_string())
+            }
+            _ => None,
+        };
+        let Some(candidate) = fallback_name else {
+            return Err(original_not_found());
+        };
+        let fallback_resp = direct_drug_lookup(&candidate).await?;
+        if fallback_resp.hits.is_empty() {
             return Err(original_not_found());
         }
+        lookup_name = candidate;
+        resp = fallback_resp;
     }
 
     let mut selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    if let Some((candidate, candidate_resp)) = super::development_codes::resolve(
+        name,
+        &transform::drug::merge_mychem_hits(&selected, &lookup_name),
+    )
+    .await?
+    {
+        lookup_name = candidate;
+        resp = candidate_resp;
+        selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    }
     if selected.is_empty() {
         // The MyChem full-text query matched only other drugs' records. The
         // query may still be a real brand whose identity openFDA knows, so
@@ -1314,6 +1359,7 @@ async fn populate_us_regional_sections(
     drug: &mut Drug,
     selected_hits: &[MyChemHit],
     label_response: Option<&serde_json::Value>,
+    identity_brands: &[String],
     section_flags: &DrugSections,
 ) -> Result<(), BioMcpError> {
     if section_flags.include_shortage {
@@ -1323,7 +1369,7 @@ async fn populate_us_regional_sections(
     }
 
     if section_flags.include_regulatory || section_flags.include_approvals {
-        add_approvals_section(drug).await;
+        add_approvals_section(drug, label_response, identity_brands).await;
     } else {
         drug.approvals = None;
     }
@@ -1337,6 +1383,11 @@ async fn populate_us_regional_sections(
         None
     };
 
+    drug.us_label_effective_date = if section_flags.include_safety {
+        label_response.and_then(super::label::extract_label_effective_date)
+    } else {
+        None
+    };
     drug.us_safety_warnings = if section_flags.include_safety {
         label_response.and_then(extract_label_warnings_text)
     } else {
@@ -1530,7 +1581,10 @@ async fn get_with_region_owned(
     let fetch_label_response = !section_only
         || section_flags.include_label
         || section_flags.include_interactions
-        || (region.includes_us() && section_flags.include_safety);
+        || (region.includes_us()
+            && (section_flags.include_safety
+                || section_flags.include_approvals
+                || section_flags.include_regulatory));
 
     let mut resolved = resolve_drug_identity(&name).await?;
 
@@ -1574,6 +1628,7 @@ async fn get_with_region_owned(
     let (label_lookup, civic, target_sources, adverse_event_fetch) =
         tokio::join!(label_fut, civic_fut, targets_fut, adverse_event_fut);
 
+    let identity_brands = resolved.drug.brand_names.clone();
     if let Some(label_response) = label_lookup.response.as_ref() {
         apply_openfda_metadata(&mut resolved.drug, label_response);
         resolved.drug.label_set_id = extract_label_set_id(label_response);
@@ -1605,6 +1660,7 @@ async fn get_with_region_owned(
             &mut resolved.drug,
             &resolved.selected_hits,
             label_lookup.response.as_ref(),
+            &identity_brands,
             &section_flags,
         )
         .await?;
@@ -1612,6 +1668,7 @@ async fn get_with_region_owned(
         resolved.drug.shortage = None;
         resolved.drug.approvals = None;
         resolved.drug.fda_orphan_designations = None;
+        resolved.drug.us_label_effective_date = None;
         resolved.drug.us_safety_warnings = None;
         resolved.drug.us_boxed_warning = None;
     }

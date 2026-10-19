@@ -93,6 +93,7 @@ where
     let Some(unit) = unit else {
         return Ok(None);
     };
+    execution.record_alias_query_attempt(source);
     let result = future.await.and_then(commit);
     match &result {
         Ok(_) => unit.record("ok", 1),

@@ -6,7 +6,7 @@ Filed 2026-09-23 from an independent review of `v0.9.0..f2549676`. Covers ticket
 
 `src/sources/ca_bundle.rs:118-131` converts the value with `to_string_lossy()` and opens the converted path. A real file named `n\xffu.pem` fails with "No such file or directory". The 1221 record says only the error text is affected. Build the path from the raw OS string and trim only valid UTF-8.
 
-## AlphaGenome ignores BIOMCP_CA_BUNDLE
+## AlphaGenome ignores BIOMCP_CA_BUNDLE — resolved by 2240
 
 `src/sources/alphagenome.rs:50` is on by default. Its roots come through tonic `tls-roots` and rustls-native-certs 0.8.3. That library reads `SSL_CERT_FILE` and `SSL_CERT_DIR` in place of the OS store. `docs/reference/configuration.md:66` and `docs/reference/data-sources.md:95` describe it wrongly. Add the bundle through `ClientTlsConfig::ca_certificate(...)`, or document the real behavior.
 
@@ -38,6 +38,19 @@ server transport accepts work, keeps raw non-UTF-8 paths for file access,
 replaces parser details with indexed fixed reasons, and directs fallback users
 to `BIOMCP_CA_BUNDLE`. Its contracts cover fallback failures, startup behavior,
 provider builders, additive roots, and the listed dedicated clients. The docs
-state that rotation requires restart. AlphaGenome's actual
-`SSL_CERT_FILE`/`SSL_CERT_DIR` behavior is documented; wiring
-`BIOMCP_CA_BUNDLE` into its gRPC client remains deferred future work.
+state that rotation requires restart. Ticket 2240 passes the cached validated
+Rustls trust anchors to AlphaGenome through tonic 0.14's
+`ClientTlsConfig::trust_anchors`, preserving enabled native roots. The real CLI
+health probe rejects a local private-CA TLS server without the bundle and
+connects with it. This proves TLS connection behavior, without claiming live
+prediction RPC coverage. AlphaGenome's native `SSL_CERT_FILE`/`SSL_CERT_DIR`
+behavior remains documented.
+
+## Release dispositions (2026-10-19)
+
+- Non-UTF-8 paths: FIXED by 1236, with raw operating-system paths retained for file access; preserve the existing contract evidence cited above.
+- AlphaGenome trust: FIXED by 2240 at 0ecf152ec. The local private-CA health connection proves additive trust behavior; it does not claim a live prediction RPC.
+- Per-call parsing and startup validation: FIXED by 1236 through process-wide cached resolution and validation before accepting server work.
+- Parse-error disclosure: FIXED by 1236 through fixed indexed reasons rather than file-content parser messages.
+- Provider-builder, dedicated handshake, fda_orphan failure-channel and additive-root tests: FIXED by 1236 with the contract evidence already retained above.
+- Fallback warning repetition, mixed-bundle guidance, missing/unreadable/blank fallback controls and inherited RUST_LOG: FIXED by 1236 with the existing fallback and child-process contracts.

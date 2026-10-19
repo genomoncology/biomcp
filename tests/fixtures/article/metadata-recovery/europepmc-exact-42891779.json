@@ -1,0 +1,12 @@
+{
+  "method": "GET",
+  "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID%3A42891779%20AND%20SRC%3AMED&format=json&cursorMark=%2A&pageSize=1",
+  "curl_exit": 0,
+  "response": [
+    "200",
+    "application/json;charset=UTF-8"
+  ],
+  "body_sha256": "0d721f00c39788a3666061741263248e2563e125b0f8237cd5669c7b81eecec8",
+  "body_bytes": 235,
+  "stderr": ""
+}

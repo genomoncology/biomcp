@@ -113,6 +113,16 @@ class ReplayHandler(BaseHTTPRequestHandler):
         if path in payloads:
             self._send_json(_fixture(payloads[path]))
             return
+        if path == "/pubmed/efetch.fcgi":
+            # Authored empty citation control: this corpus measures output size,
+            # and its synthetic PMID aliases have no additional PubMed abstract.
+            body = b"<PubmedArticleSet/>"
+            self.send_response(200)
+            self.send_header("Content-Type", "application/xml")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if path == "/pubmed/esummary.fcgi":
             fixture = _fixture("testdata/sources/pubmed/esummary_two_ids.json")
             result = fixture["result"]

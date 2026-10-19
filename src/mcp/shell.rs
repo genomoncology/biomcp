@@ -1,11 +1,10 @@
 use std::collections::BTreeSet;
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
-use std::time::Duration;
 
 use base64::Engine;
 use futures::FutureExt;
-use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
+use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::model::{
     AnnotateAble, CallToolRequestParams, CallToolResult, Content, Implementation,
     ListPromptsResult, ListResourceTemplatesResult, ListResourcesResult, ListToolsResult,
@@ -22,6 +21,9 @@ use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
 const TEST_PANIC_TOOL: &str = "__biomcp_test_panic";
+
+mod arguments;
+use self::arguments::Parameters;
 
 mod typed_get;
 use self::typed_get::{
@@ -61,20 +63,25 @@ struct TypedVariantCar {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
-#[schemars(transform = typed_variant_erepo_schema)]
 struct TypedVariantErepo {
     #[serde(default)]
+    #[schemars(length(min = 1))]
     caid: Option<String>,
     #[serde(default)]
-    #[schemars(length(min = 1, max = 50))]
+    #[schemars(length(min = 1, max = 50), transform = erepo_caid_items_schema)]
     caids: Option<Vec<String>>,
     #[serde(default)]
+    #[schemars(length(min = 1))]
     gene: Option<String>,
-    #[serde(default = "default_cspec_limit")]
-    #[schemars(range(min = 1, max = 100))]
-    limit: usize,
     #[serde(default)]
-    offset: usize,
+    #[schemars(
+        range(min = 1, max = 100),
+        description = "Gene mode only; defaults to 25 in gene mode."
+    )]
+    limit: Option<usize>,
+    #[serde(default)]
+    #[schemars(description = "Gene mode only; defaults to 0 in gene mode.")]
+    offset: Option<usize>,
     #[serde(default)]
     detail: bool,
     #[serde(default)]
@@ -462,25 +469,35 @@ fn merge_property(left: &Value, right: &Value) -> Value {
     panic!("unmerged schema clash: {left} vs {right}");
 }
 
-fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
-    // Flat union of the selector fields; the typed struct's
-    // deny_unknown_fields keeps the body prescriptive (ADR 0002).
-    let properties = json!({
-        "caid":{"type":"string","minLength":1},
-        "caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}},
-        "gene":{"type":"string","minLength":1},
-        "detail":{"type":"boolean"},
-        "assertion_id":{"type":"string"},
-        "version":{"type":"string"},
-        "limit":{"type":"integer","minimum":1,"maximum":100,"default":25},
-        "offset":{"type":"integer","minimum":0,"default":0},
-    });
-    *schema = serde_json::from_value(json!({
-        "type":"object",
-        "additionalProperties":false,
-        "properties":properties
-    }))
-    .expect("valid typed ERepo schema");
+fn erepo_caid_items_schema(schema: &mut schemars::Schema) {
+    schema.get_mut("items").expect("CAID item schema")["minLength"] = json!(1);
+}
+
+fn typed_variant_erepo_schema() -> std::sync::Arc<serde_json::Map<String, Value>> {
+    let typed = schemars::schema_for!(TypedVariantErepo);
+    let mut properties = typed.as_value()["properties"]
+        .as_object()
+        .expect("ERepo fields")
+        .clone();
+    // Optional Rust fields describe which selectors may be omitted. The flat
+    // tool root publishes their value types without nullable/default markers.
+    for property in properties.values_mut() {
+        let property = property.as_object_mut().expect("ERepo field schema");
+        property.remove("default");
+        if property.get("format").and_then(Value::as_str) == Some("uint") {
+            property.remove("format");
+        }
+        if let Some(Value::Array(types)) = property.get_mut("type") {
+            types.retain(|kind| kind != "null");
+            if types.len() == 1 {
+                let kind = types[0].clone();
+                property.insert("type".into(), kind);
+            }
+        }
+    }
+    let mut root = typed.as_object().expect("ERepo object schema").clone();
+    root.insert("properties".into(), Value::Object(properties));
+    std::sync::Arc::new(root)
 }
 
 fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
@@ -1416,31 +1433,33 @@ impl BioMcpServer {
         }
     }
 
-    #[tool]
+    #[tool(input_schema = typed_variant_erepo_schema())]
     async fn variant_erepo(
         &self,
         Parameters(input): Parameters<TypedVariantErepo>,
     ) -> Result<CallToolResult, McpError> {
+        let (limit, offset) = match crate::entities::variant::resolve_erepo_paging(
+            input.gene.as_deref(),
+            input.limit,
+            input.offset,
+        ) {
+            Ok(paging) => paging,
+            Err(error) => return Ok(Self::tool_error(Self::bio_mcp_error_text(&error))),
+        };
         if let Some(gene) = input.gene {
             if input.caid.is_some()
                 || input.caids.is_some()
                 || input.detail
                 || input.assertion_id.is_some()
                 || input.version.is_some()
-                || input.limit == 0
-                || input.limit > 100
+                || limit == 0
+                || limit > 100
             {
                 return Ok(Self::tool_error(
                     "variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100",
                 ));
             }
-            return match crate::entities::variant::search_erepo_gene(
-                &gene,
-                input.limit,
-                input.offset,
-            )
-            .await
-            {
+            return match crate::entities::variant::search_erepo_gene(&gene, limit, offset).await {
                 Ok(response) => Ok(CallToolResult::success(vec![Content::text(
                     crate::render::json::to_pretty(&response).map_err(|error| {
                         McpError::internal_error(
@@ -1626,11 +1645,17 @@ impl ServerHandler for BioMcpServer {
         request: CallToolRequestParams,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
+        let known_tool = self.tool_router.get(&request.name).is_some();
         let context = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
         match AssertUnwindSafe(self.tool_router.call(context))
             .catch_unwind()
             .await
         {
+            Ok(Err(error))
+                if known_tool && error.code == rmcp::model::ErrorCode::INVALID_PARAMS =>
+            {
+                Ok(Self::tool_error(error.message))
+            }
             Ok(result) => result,
             Err(payload) => {
                 let message = crate::utils::panic_payload_message(payload.as_ref());
@@ -1784,24 +1809,18 @@ pub async fn run_stdio() -> anyhow::Result<()> {
             cancel.cancel();
         }
     });
-    let startup = tokio::time::timeout(Duration::from_secs(5), async {
-        let transport = pre_session::stdio_transport().await?;
-        BioMcpServer::new()
-            .serve_with_ct(transport, shutdown)
-            .await
-            .map_err(anyhow::Error::new)
-    })
-    .await;
-    let running = match startup {
-        Ok(Ok(running)) => running,
-        Ok(Err(err)) => {
+    let transport = pre_session::stdio_transport().await?;
+    let running = match BioMcpServer::new()
+        .serve_with_ct(transport, shutdown)
+        .await
+        .map_err(anyhow::Error::new)
+    {
+        Ok(running) => running,
+        Err(err) => {
             if is_handshake_startup_error(&err) {
                 anyhow::bail!("{}", mcp_stdio_guidance());
             }
             return Err(err);
-        }
-        Err(_) => {
-            anyhow::bail!("{}", mcp_stdio_guidance());
         }
     };
     let _reason = running.waiting().await?;
@@ -1881,7 +1900,7 @@ mod tests {
     #[tokio::test]
     async fn raw_mcp_rejects_unparseable_commands_before_execution() {
         let result = BioMcpServer::new()
-            .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            .biomcp(super::Parameters(ShellCommand {
                 command: "biomcp get --json article".into(),
                 json: false,
             }))
@@ -1994,10 +2013,11 @@ mod tests {
             format!("{base}/vaccines.csv"),
         );
         let _who_dir = WhoMcpFixtureEnv::set("BIOMCP_WHO_DIR", who_dir.path());
-        let _cache = WhoMcpFixtureEnv::set("BIOMCP_CACHE_DIR", cache.path());
+        let mut cache_policy = crate::test_support::FixtureEnv::scratch_cache_only();
+        cache_policy.set_cache_root(cache.path());
 
         let result = BioMcpServer::new()
-            .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            .biomcp(super::Parameters(ShellCommand {
                 command: "biomcp search drug aspirin --region who".into(),
                 json: false,
             }))
@@ -2235,8 +2255,7 @@ mod tests {
             )
         );
 
-        let erepo =
-            serde_json::to_value(rmcp::schemars::schema_for!(super::TypedVariantErepo)).unwrap();
+        let erepo = serde_json::to_value(super::typed_variant_erepo_schema()).unwrap();
         assert_eq!(erepo["type"], json!("object"));
         for combinator in ["oneOf", "anyOf", "allOf"] {
             assert!(
@@ -2382,7 +2401,7 @@ mod tests {
     #[tokio::test]
     async fn typed_gene_cspec_rejects_version_and_capture_together_before_network_access() {
         let result = BioMcpServer::new()
-            .gene_cspec(rmcp::handler::server::wrapper::Parameters(TypedGeneCspec {
+            .gene_cspec(super::Parameters(TypedGeneCspec {
                 gene: "ATM".into(),
                 version_iri: Some("https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into()),
                 capture_id: Some("capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()),
@@ -2477,17 +2496,15 @@ mod tests {
         ]))
         .expect("typed variant requests");
         let result = BioMcpServer::new()
-            .variant_articles(rmcp::handler::server::wrapper::Parameters(
-                TypedVariantArticles {
-                    items,
-                    strategy: "union".into(),
-                    limit: 3,
-                    offset: 0,
-                    debug_plan: true,
-                    verify_identity: false,
-                    confirmed_only: false,
-                },
-            ))
+            .variant_articles(super::Parameters(TypedVariantArticles {
+                items,
+                strategy: "union".into(),
+                limit: 3,
+                offset: 0,
+                debug_plan: true,
+                verify_identity: false,
+                confirmed_only: false,
+            }))
             .await
             .expect("typed MCP response");
         let value = serde_json::to_value(result).expect("MCP result JSON");

@@ -391,13 +391,7 @@ where
             }
 
             lookups += 1;
-            let Some(mut row) = (match resolve_source_id(source_id.clone()).await {
-                Ok(row) => row,
-                Err(err) => {
-                    warn!("Disease search fallback row resolution failed: {err}");
-                    continue;
-                }
-            }) else {
+            let Some(mut row) = resolve_source_id(source_id.clone()).await? else {
                 continue;
             };
 
@@ -451,17 +445,7 @@ pub(crate) async fn fallback_search_page(
     let mut concepts = Vec::new();
     for resolved_query in &request.resolver_queries {
         let discover =
-            match crate::entities::discover::resolve_query(resolved_query, request.discover_mode)
-                .await
-            {
-                Ok(result) => result,
-                Err(err) => {
-                    warn!(
-                        "Disease search discover fallback unavailable for {resolved_query}: {err}"
-                    );
-                    continue;
-                }
-            };
+            crate::entities::discover::resolve_query(resolved_query, request.discover_mode).await?;
         concepts.extend(discover.concepts);
     }
 
@@ -502,9 +486,8 @@ pub(super) async fn resolve_disease_hit_via_discover_fallback(
 
         match client.get(&row.id).await {
             Ok(hit) => return Ok(Some(hit)),
-            Err(err) => {
-                warn!("Disease get fallback canonical fetch failed: {err}");
-            }
+            Err(err) if err.is_not_found() => continue,
+            Err(err) => return Err(err),
         }
     }
 

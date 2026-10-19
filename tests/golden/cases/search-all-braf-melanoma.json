@@ -1,7 +1,7 @@
 {
   "query": "gene=BRAF disease=melanoma",
   "searches_dispatched": 9,
-  "searches_with_results": 6,
+  "searches_with_results": 7,
   "sections": [
     {
       "count": 1,
@@ -358,23 +358,39 @@
       "total_lower_bound": 3
     },
     {
-      "count": 0,
+      "count": 3,
       "count_exact": false,
       "entity": "pathway",
-      "error": "API request to Reactome failed. Retry the remote source.",
+      "error": null,
       "label": "Pathways",
       "links": [
         {
-          "command": "biomcp search pathway --query BRAF --limit 3",
-          "rel": "search.retry",
-          "title": "Retry pathway search"
+          "command": "biomcp get pathway R-HSA-167224",
+          "rel": "get.top",
+          "title": "Inspect top pathway"
         }
       ],
       "note": null,
-      "results": [],
-      "returned": 0,
+      "results": [
+        {
+          "id": "R-HSA-167224",
+          "name": "BRAF",
+          "source": "Reactome"
+        },
+        {
+          "id": "R-HSA-9648621",
+          "name": "BRAF G469R",
+          "source": "Reactome"
+        },
+        {
+          "id": "R-HSA-5675199",
+          "name": "hyperphosphorylated BRAF",
+          "source": "Reactome"
+        }
+      ],
+      "returned": 3,
       "total": null,
-      "total_lower_bound": null
+      "total_lower_bound": 3
     },
     {
       "count": 0,

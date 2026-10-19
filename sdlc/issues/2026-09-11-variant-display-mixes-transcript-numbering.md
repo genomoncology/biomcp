@@ -20,3 +20,12 @@ hygiene item.
 `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md`
 now carries the work, with an owner (the biomcp queue) and a
 revisit trigger. This issue stays as the observation record.
+
+## Remaining lookup resolution in1260
+
+The already landed MANE/display work and the remaining source-backed lookup repair resolve this issue together. Exact versioned alternate cDNA inputs can resolve through their same DNA allele and preserve the matched transcript. Normalizer and fallback assembly provenance stay accurate; unverified transcript identity is distinguished from source-resolved missing records. The three MUTYH spellings and unavailable-normalizer/wrong-allele controls have outside-in CLI proof retained with1260. No token similarity establishes identity.
+
+## Release dispositions (2026-10-19)
+
+- Lookup and display finding: FIXED by 1260 at ceb51f9a2 together with the existing MANE/display repairs. Versioned transcript lookups use source-backed DNA identity and retain matched-transcript provenance.
+- Related protein-alias guard: FIXED by 2261 at d836b949 under the recorded clinical ruling in sdlc/decisions/2026-10-19-clinical-rulings-for-the-0-9-4-review-dispositions.md; do not infer identity from numbering alone.

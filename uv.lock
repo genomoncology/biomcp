@@ -45,7 +45,7 @@ wheels = [
 
 [[package]]
 name = "biomcp-cli"
-version = "0.9.4.dev0"
+version = "0.9.4"
 source = { editable = "." }
 
 [package.optional-dependencies]

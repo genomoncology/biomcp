@@ -40,6 +40,9 @@ import select
 import shlex
 import subprocess
 import tempfile
+import sys
+sys.path.insert(0, "../../tests")
+from cache_fixture import set_cache_root
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -59,7 +62,6 @@ expected = {
         "biomcp drug trials \"imatinib mesylate\"",
         "biomcp drug adverse-events \"imatinib mesylate\"",
         "biomcp search pgx -d \"imatinib mesylate\"",
-        "biomcp get gene ABL1",
     ],
     "warfarin": [
         "biomcp get drug warfarin targets",
@@ -71,12 +73,11 @@ expected = {
         "biomcp drug trials warfarin",
         "biomcp drug adverse-events warfarin",
         "biomcp search pgx -d warfarin",
-        "biomcp get gene VKORC1",
     ],
 }
 
 def run(*args, extra_env=None, check=True):
-    child_env = base_env | {"BIOMCP_CACHE_DIR": tempfile.mkdtemp()}
+    child_env = set_cache_root(base_env.copy(), tempfile.mkdtemp())
     child_env.update(extra_env or {})
     return subprocess.run(
         [binary, *args], env=child_env, text=True, stdout=subprocess.PIPE,
@@ -129,7 +130,6 @@ multi_expected = [
     "biomcp drug trials \"imatinib mesylate\"",
     "biomcp drug adverse-events \"imatinib mesylate\"",
     "biomcp search pgx -d \"imatinib mesylate\"",
-    "biomcp get gene ABL1",
 ]
 reset_log()
 multi_json = cli_json("get", "drug", "imatinib", "label", "targets")
@@ -191,7 +191,7 @@ hostile_command = next(
     if command.endswith(" approvals")
 )
 reset_log()
-shell_env = base_env | {"PATH": os.path.dirname(binary) + ":" + base_env.get("PATH", ""), "BIOMCP_CACHE_DIR": tempfile.mkdtemp()}
+shell_env = set_cache_root(base_env | {"PATH": os.path.dirname(binary) + ":" + base_env.get("PATH", "")}, tempfile.mkdtemp())
 hostile_result = subprocess.run(hostile_command, shell=True, executable="/bin/bash", env=shell_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
 assert hostile_result.returncode == 0
 assert not os.path.exists(sentinel_path)
@@ -208,7 +208,7 @@ def rpc(proc, message):
     assert ready, "MCP response timeout"
     return json.loads(proc.stdout.readline())
 
-server_env = base_env | {"BIOMCP_CACHE_DIR": tempfile.mkdtemp()}
+server_env = set_cache_root(base_env.copy(), tempfile.mkdtemp())
 server = subprocess.Popen(
     [binary, "serve"], env=server_env, stdin=subprocess.PIPE,
     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
@@ -512,7 +512,7 @@ trial/adverse-event pivots that a clinician uses from the same card.
 ../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch like '## Regulatory (EU - EMA)
 ## Targets (ChEMBL / Open Targets)
 biomcp drug trials pembrolizumab'
-../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch '/PDCD1\nMore:/'
+../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch '/PDCD1 \(organism not supplied;[^\n]+\)\nMore:/'
 grep -F 'GET /chembl/mechanism.json?molecule_chembl_id=CHEMBL3137343&limit=15' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'CHEMBL3137343'
 grep -F 'POST /opentargets/api/v4/graphql' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '"chemblId":"CHEMBL3137343"'
 ```

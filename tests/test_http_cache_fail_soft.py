@@ -117,12 +117,19 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
     first_payload = json.loads(first.stdout)
     assert first_payload.get("results") or any(section["results"] for section in first_payload["sections"])
     assert (cache / "biomcp.db").is_file(), "cold search must fill SQLite cache"
+    # Cold parallel startup may skip best-effort writes. Once that process has
+    # exited, one call in this isolated cache admits any skipped responses
+    # without competing with startup; the following call must reuse them.
+    admitted = run(command)
+    assert admitted.returncode == 0, admitted.stderr
+    admitted_payload = json.loads(admitted.stdout)
+    assert admitted_payload.get("results", admitted_payload.get("sections")) == first_payload.get("results", first_payload.get("sections"))
     before = replay.request_log_line_count()
     second = run(command)
     assert second.returncode == 0, second.stderr
     second_payload = json.loads(second.stdout)
     assert second_payload.get("results", second_payload.get("sections")) == first_payload.get("results", first_payload.get("sections"))
-    assert "local HTTP cache" not in first.stderr + second.stderr, (first.stderr, second.stderr)
+    assert "local HTTP cache" not in first.stderr + admitted.stderr + second.stderr, (first.stderr, admitted.stderr, second.stderr)
     cached_keys = {
         entry["key"] for entry in replay.request_log_entries()[:before]
         if entry["status"] == 200 and entry["key"].startswith(("GET /europepmc/", "GET /mygene/"))

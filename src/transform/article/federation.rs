@@ -240,8 +240,7 @@ pub fn from_europepmc_result(hit: &EuropePmcResult) -> Article {
         author_completeness,
         author_source: ArticleSource::EuropePmc,
         journal: hit
-            .journal_title
-            .as_ref()
+            .journal_title()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty()),
         date: hit
@@ -285,8 +284,7 @@ pub fn merge_europepmc_metadata(article: &mut Article, hit: &EuropePmcResult) {
     }
     if article.journal.is_none() {
         article.journal = hit
-            .journal_title
-            .as_ref()
+            .journal_title()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
     }
@@ -341,8 +339,7 @@ pub fn from_europepmc_search_result(hit: &EuropePmcResult) -> Option<ArticleSear
         semantic_scholar_id: None,
         title,
         journal: hit
-            .journal_title
-            .as_ref()
+            .journal_title()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty()),
         date: hit

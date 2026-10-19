@@ -1,9 +1,8 @@
 [package]
 name = "biomcp-cli"
-# Main carries the next development version between releases (2132):
-# 0.9.4-dev until the 0.9.4 release commit drops the suffix. A build
-# from main then reports 0.9.4-dev+g<sha>, never the released number.
-version = "0.9.4-dev"
+# Main carries a development suffix between releases.
+# The release commit sets the stable version before qualification.
+version = "0.9.4"
 edition = "2024"
 # The minimum Rust the code needs (ticket 2125): the std file locks
 # 2072 introduced are 1.89 or later; release lanes pin 1.93.1.
@@ -74,6 +73,7 @@ zstd = { version = "0.13", optional = true }
 # JSON
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value", "unbounded_depth"] }
+serde_path_to_error = "0.1"
 base64 = "0.22"
 
 # Hashing (download cache keys)

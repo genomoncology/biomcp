@@ -35,7 +35,7 @@ internal fixture overrides and release/install variables.
 | `BIOMCP_GTR_DIR` | Local GTR download root |
 | `BIOMCP_GENCC_DIR` | Private durable GenCC normalized-dataset root; defaults to the platform data directory under `biomcp/gencc` |
 | `BIOMCP_WHO_IVD_DIR` | Local WHO IVD download root |
-| `BIOMCP_CA_BUNDLE` | PEM bundle of extra trusted TLS roots for ordinary provider HTTPS; `SSL_CERT_FILE` is the fallback |
+| `BIOMCP_CA_BUNDLE` | PEM bundle of extra trusted TLS roots for provider HTTPS and AlphaGenome; `SSL_CERT_FILE` is the fallback |
 | `BIOMCP_VARIANT_QUERY_GENE_ROUTING` | Source that recognizes a gene-symbol first token in a free-text `search variant` phrase; `mygene` (default) or `off` |
 | `cache.toml` | Persistent cache defaults under the resolved config root |
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
@@ -68,11 +68,11 @@ certificate-less `BIOMCP_CA_BUNDLE` fails the command before any request and
 names the path in both text and `--json` errors. The bundle only adds roots: certificate
 verification and the bundled roots stay in place. Client certificates, mTLS,
 and `SSL_CERT_DIR` are out of scope for ordinary providers. AlphaGenome's
-separate gRPC client does not use `BIOMCP_CA_BUNDLE`; when set,
-`SSL_CERT_FILE` and `SSL_CERT_DIR` replace its native OS trust source. Wiring
-`BIOMCP_CA_BUNDLE` into that client requires retained PEM bytes and remains
-future work. BioMCP resolves and parses the ordinary-provider bundle once per
-process, so set it before startup and restart BioMCP after rotating it.
+separate gRPC client adds the same validated operator bundle to its native OS
+roots. Its native-root loader also reads `SSL_CERT_FILE` and `SSL_CERT_DIR`,
+which replace its native OS trust source when set. BioMCP resolves and parses
+the operator bundle once per process, so set it before startup and restart
+BioMCP after rotating it.
 
 Free-text `search variant "GENE condition"` routes the first token to the gene
 filter only after the `BIOMCP_VARIANT_QUERY_GENE_ROUTING` source confirms it

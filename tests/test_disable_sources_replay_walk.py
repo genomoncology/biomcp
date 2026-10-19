@@ -29,6 +29,9 @@ import json
 import os
 import subprocess
 import sys
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlsplit
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -100,6 +103,9 @@ WALK: tuple[WalkEntry, ...] = (
     # litvar prefix stays silent either way and the disable must not change
     # the command's outcome.
     WalkEntry("litvar2", ("--json", "variant", "articles", "BRAF V600E", "--limit", "1"), ("litvar",), kind="carried"),
+    # The recorded article has no preprint metadata. The authored control below
+    # separately proves that disabling this source suppresses its details requests.
+    WalkEntry("biorxiv-medrxiv", ("--json", "get", "article", "42875213", "fulltext"), ("details",), kind="carried"),
     WalkEntry("ncbi-e-utilities", ("--json", "get", "article", "42875213", "fulltext"), kind="carried"),
     WalkEntry("ncbi-id-converter", ("--json", "get", "article", "42875213", "fulltext"), ("ncbi-idconv",), kind="carried"),
     WalkEntry("figshare", ("--json", "get", "article", "42875213", "assets"), ("figshare",), kind="carried"),
@@ -336,3 +342,70 @@ def test_disabled_local_health_names_the_setting_without_errors(origin: str) -> 
             assert not rows[name].get("missing_files"), rows[name]
         assert report["error"] == 0, report
         assert replay.request_log_entries(since=before) == []
+
+
+def test_disabled_preprint_source_stops_details_requests(tmp_path: Path) -> None:
+    """Authored metadata reaches the real preprint client before disabling it."""
+    from replay_env import isolated_command_env
+
+    binary = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "debug" / "biomcp"))
+    doi = "10.1101/2022.07.18.22276644"
+    requests: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            path = urlsplit(self.path).path
+            requests.append(path)
+            if path == "/search":
+                payload = {"hitCount": 1, "resultList": {"result": [{
+                    "id": "PPR521666", "source": "PPR", "doi": doi,
+                    "title": "Authored preprint metadata control", "pubType": "preprint",
+                }]}}
+                code = 200
+            elif path == "/idconv/":
+                payload = {"records": [{"status": "error", "errmsg": "Identifier not found in PMC"}]}
+                code = 200
+            else:
+                payload = {"error": "Authored unavailable source control"}
+                code = 404
+            body = json.dumps(payload).encode()
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *_args) -> None:
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    origin = f"http://127.0.0.1:{server.server_port}"
+    try:
+        for disabled in (False, True):
+            requests.clear()
+            env = isolated_command_env(tmp_path / str(disabled), {
+                "BIOMCP_EUROPEPMC_BASE": origin,
+                "BIOMCP_NCBI_IDCONV_BASE": origin + "/idconv/",
+                "BIOMCP_PUBTATOR_BASE": origin,
+                "BIOMCP_S2_BASE": origin,
+                "BIOMCP_PREPRINT_FIXTURE_ORIGIN": origin,
+            }, origin)
+            env.pop("BIOMCP_DISABLE_SOURCES", None)
+            argv = [str(binary), "--json", "get", "article", doi, "fulltext"]
+            if disabled:
+                argv.extend(["--disable-sources", "biorxiv-medrxiv"])
+            process = subprocess.run(argv, env=env, capture_output=True, text=True,
+                                     timeout=RUN_TIMEOUT_SECONDS, cwd=REPO_ROOT)
+            assert process.returncode == 0, process.stderr
+            json.loads(process.stdout)
+            details = [path for path in requests if path.startswith("/details/")]
+            if disabled:
+                assert not details, details
+            else:
+                assert f"/details/medrxiv/{doi}" in details, requests
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()

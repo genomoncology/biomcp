@@ -411,6 +411,7 @@ pub struct ArticleSupplementSearch {
     pub files: Vec<ArticleSupplementSearchFile>,
     pub hits: Vec<ArticleSupplementSearchHit>,
     pub hits_truncated: bool,
+    pub incomplete: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -419,16 +420,20 @@ pub enum ArticleSupplementSearchFileOutcome {
     Searched,
     EmptyText,
     Unextractable,
+    #[serde(untagged)]
+    Unavailable(ArticleAssetNamedOutcome),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleSupplementSearchFile {
-    pub asset_key: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub asset_key: Option<String>,
     pub filename: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub member: Option<String>,
     pub format: String,
-    pub sha256: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
     pub outcome: ArticleSupplementSearchFileOutcome,
     #[serde(default, skip_serializing_if = "is_false")]
     pub truncated: bool,
@@ -533,6 +538,7 @@ pub enum ArticleAssetNamedOutcome {
     Retrievable,
     HealthyAbsent,
     AccessOrLicenceDenied,
+    #[serde(alias = "ncbi_interstitial")]
     PmcProofOfWork,
     UnsupportedOrigin,
     SourceUnavailable,
@@ -914,6 +920,7 @@ pub struct ArticleGraphResult {
 pub enum GraphCoverageStatus {
     Continuable,
     Exhausted,
+    Unavailable,
 }
 
 impl GraphCoverageStatus {
@@ -921,6 +928,7 @@ impl GraphCoverageStatus {
         match self {
             Self::Continuable => "continuable",
             Self::Exhausted => "exhausted",
+            Self::Unavailable => "unavailable",
         }
     }
 }
@@ -936,6 +944,8 @@ pub struct ArticleGraphPagination {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleGraphMeta {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
     pub next_commands: Vec<String>,
 }
 
@@ -1153,6 +1163,8 @@ pub struct ArticleVariantIntent {
 pub struct ArticleSearchFilters {
     pub gene: Option<String>,
     pub gene_anchored: bool,
+    /// Recover abstracts for full article search output. Compact pivots keep metadata requests.
+    pub(crate) include_abstracts: bool,
     pub disease: Option<String>,
     pub drug: Option<String>,
     pub variant: Option<ArticleVariantIntent>,
@@ -1242,6 +1254,7 @@ mod tests {
                 coverage_status: GraphCoverageStatus::Exhausted,
             },
             _meta: ArticleGraphMeta {
+                note: None,
                 next_commands: Vec::new(),
             },
         };
@@ -1283,6 +1296,7 @@ mod tests {
                 coverage_status: GraphCoverageStatus::Exhausted,
             },
             _meta: ArticleGraphMeta {
+                note: None,
                 next_commands: Vec::new(),
             },
         };

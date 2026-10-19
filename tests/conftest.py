@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cache_fixture import set_cache_root
+
 import os
 import subprocess
 import tempfile
@@ -9,6 +11,21 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def replay_server_owner() -> Iterator[None]:
+    """Own one lazy replay server per pytest process, including xdist workers."""
+    import sys
+
+    golden = str(REPO_ROOT / "tests/golden")
+    if golden not in sys.path:
+        sys.path.insert(0, golden)
+    from replay_env import replay_session
+
+    with replay_session():
+        yield
+
 
 def pytest_configure(config: pytest.Config) -> None:
     """Register the needs_binary marker: the test drives a built
@@ -70,10 +87,8 @@ def own_http_cache_dir(
     BIOMCP_CACHE_DIR is unset, so without this guard a test that builds
     the HTTP client reads and writes the developer's own cache.
     """
-    monkeypatch.setenv("BIOMCP_CACHE_DIR", str(tmp_path / "biomcp-cache"))
-    monkeypatch.setenv("BIOMCP_CACHE_MIN_DISK_FREE", "1B")
-
-
+    for key, value in set_cache_root({}, tmp_path / "biomcp-cache").items():
+        monkeypatch.setenv(key, value)
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addini(
