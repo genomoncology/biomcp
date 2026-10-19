@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.needs_binary]
 
 @pytest.fixture
 def replay(tmp_path: Path):
-    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False}
+    state = {"name": "daratumumab", "brands": [], "mechanisms": None, "orphan_healthy": False, "label_extra": False}
 
     class Handler(BaseHTTPRequestHandler):
         def answer(self, payload, status=200):
@@ -51,11 +51,26 @@ def replay(tmp_path: Path):
                         "active_ingredients": [{"name": "BELANTAMAB MAFODOTIN-ABCD"}]}]},
                         {"application_number": "BLA999996", "products": [{"brand_name": "BLENREP",
                         "active_ingredients": [{"name": "BELANTAMAB MAFODOTIN-BLMF"}, {"name": "unrelated"}]}]}])
+                if name == "daratumumab and hyaluronidase-fihj" and "DARZALEX FASPRO" in query.upper():
+                    product = {"brand_name": "DARZALEX FASPRO", "active_ingredients": [
+                        {"name": "DARATUMUMAB"}, {"name": "HYALURONIDASE-FIHJ"}]}
+                    rows = [{"application_number": "BLA761145", "products": [product,
+                        {"brand_name": "unrelated", "active_ingredients": [{"name": "unrelated"}]}]},
+                        {"application_number": "BLA999994", "products": [{**product, "active_ingredients": [
+                            {"name": "DARATUMUMAB"}, {"name": "HYALURONIDASE"}]}]},
+                        {"application_number": "BLA999993", "products": [{**product, "active_ingredients": [
+                            {"name": "DARATUMUMAB"}, {"name": "HYALURONIDASE-FIHJ"}, {"name": "unrelated"}]}]},
+                        {"application_number": "BLA999992", "products": [{**product, "brand_name": "other brand"}]},
+                        {"application_number": "BLA999991", "products": [{**product, "active_ingredients": [
+                            {"name": "DARATUMUMAB"}, {}]}]}]
                 self.answer({"meta": {"results": {"skip": 0, "limit": 8, "total": len(rows)}}, "results": rows})
             elif "label" in path.path:
                 ingredient = "BELANTAMAB MAFODOTIN-BLMF" if name == "belantamab mafodotin" else name
+                substances = ["DARATUMUMAB", "HYALURONIDASE-FIHJ"] if name == "daratumumab and hyaluronidase-fihj" else [ingredient]
+                if state["label_extra"]:
+                    substances.append("unrelated")
                 self.answer({"results": [{"set_id": "label-fixture", "effective_time": "20180429",
-                    "openfda": {"generic_name": [ingredient], "substance_name": [ingredient],
+                    "openfda": {"generic_name": [ingredient], "substance_name": substances,
                                 "brand_name": state["brands"]}, "warnings": ["Recorded label warning."]}]})
             elif "event" in path.path:
                 self.answer({"results": []})
@@ -113,12 +128,21 @@ def replay(tmp_path: Path):
 @pytest.mark.parametrize("name,brands,expected", [
     ("daratumumab", [], {"BLA761036"}),
     ("belantamab mafodotin", ["BLENREP"], {"BLA761440"}),
+    ("daratumumab and hyaluronidase-fihj", ["DARZALEX FASPRO"], {"BLA761145"}),
 ])
 def test_approvals_find_ingredient_and_brand_records_without_other_drugs(replay, name, brands, expected):
     state, run = replay
     state.update(name=name, brands=brands)
     data, _ = run("approvals")
     assert {row["application_number"] for row in data["approvals"]} == expected
+    if name == "daratumumab and hyaluronidase-fihj":
+        products = data["approvals"][0]["products"]
+        assert len(products) == 1
+        assert products[0]["brand_name"] == "DARZALEX FASPRO"
+        assert products[0]["active_ingredients"] == ["DARATUMUMAB", "HYALURONIDASE-FIHJ"]
+        state["label_extra"] = True
+        contradictory, _ = run("approvals")
+        assert contradictory["approvals"] == []
 
 
 @pytest.mark.parametrize("name,healthy,expected,sources", [

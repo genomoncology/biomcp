@@ -6,7 +6,7 @@ use super::label::{
 use super::metadata::map_drugsfda_approvals;
 use super::{Drug, DrugApproval};
 use crate::error::BioMcpError;
-use crate::sources::openfda::{DrugsFdaResult, OpenFdaClient};
+use crate::sources::openfda::{DrugsFdaOpenFda, DrugsFdaProduct, DrugsFdaResult, OpenFdaClient};
 
 pub(super) async fn fetch(
     drug: &Drug,
@@ -37,13 +37,14 @@ pub(super) async fn fetch(
     let linked_labels = linked_label_identities(drug, label_response);
     response
         .results
-        .retain(|row| matches_card(row, drug, &linked_labels));
+        .retain_mut(|row| filter_row(row, drug, &linked_labels));
     Ok(map_drugsfda_approvals(response))
 }
 
 struct LabelIdentity {
     brands: Vec<String>,
     ingredient_names: Vec<String>,
+    ingredients: Vec<String>,
 }
 
 fn linked_label_identities(
@@ -59,9 +60,31 @@ fn linked_label_identities(
             let mut ingredients = label_result_ingredient_names(record);
             ingredients.sort_by_key(|name| name.to_ascii_lowercase());
             ingredients.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
-            // Additional active ingredients make a separate combination product.
-            if ingredients.len() != 1 {
+            let generics = label_result_generic_names(record);
+            let combination = crate::transform::drug::card_names_combination(&drug.name);
+            if ingredients.is_empty()
+                || (combination
+                    && (ingredients.len() < 2
+                        || !generics.iter().any(|name| equals(name, &drug.name))))
+                || (!combination && ingredients.len() != 1)
+            {
                 return None;
+            }
+            if combination {
+                let requested = drug
+                    .name
+                    .to_ascii_lowercase()
+                    .replace(", and ", ",")
+                    .replace(" and ", ",")
+                    .split(',')
+                    .map(|name| name.trim().to_string())
+                    .collect::<Vec<_>>();
+                if requested.len() < 2
+                    || requested.iter().any(String::is_empty)
+                    || !same_ingredient_set(&requested, &ingredients)
+                {
+                    return None;
+                }
             }
             let single = serde_json::json!({"results": [record]});
             let brands = card_own_label_brands(&single, &drug.name)
@@ -75,10 +98,14 @@ fn linked_label_identities(
             if brands.is_empty() {
                 return None;
             }
-            ingredients.extend(label_result_generic_names(record));
+            let mut ingredient_names = ingredients.clone();
+            if !combination {
+                ingredient_names.extend(generics);
+            }
             Some(LabelIdentity {
                 brands,
-                ingredient_names: ingredients,
+                ingredient_names,
+                ingredients,
             })
         })
         .collect()
@@ -88,52 +115,89 @@ fn equals(left: &str, right: &str) -> bool {
     left.trim().eq_ignore_ascii_case(right.trim())
 }
 
-fn matches_card(row: &DrugsFdaResult, drug: &Drug, labels: &[LabelIdentity]) -> bool {
-    (!row.products.is_empty()
-        && row.products.iter().all(|product| {
-            let ingredients = product
-                .active_ingredients
-                .iter()
-                .filter_map(|ingredient| ingredient.name.as_deref())
-                .collect::<Vec<_>>();
-            if product.active_ingredients.len() > 1 {
-                return false;
-            }
-            if let Some(ingredient) = ingredients.first() {
-                if equals(ingredient, &drug.name) {
-                    return true;
-                }
-                // A shared name core or suffix never proves product identity.
-                // A selected source label must link the exact brand and full ingredient.
-                return product.brand_name.as_deref().is_some_and(|brand| {
-                    labels.iter().any(|label| {
-                        label.brands.iter().any(|known| equals(brand, known))
-                            && label
-                                .ingredient_names
-                                .iter()
-                                .any(|name| equals(ingredient, name))
-                    })
-                });
-            }
-            // Brand-only rescue is allowed only without contradictory generic metadata.
-            let generic_agrees = row.openfda.as_ref().is_none_or(|meta| {
-                meta.generic_name
-                    .iter()
-                    .all(|name| equals(name, &drug.name))
-            });
-            generic_agrees
-                && product.brand_name.as_deref().is_some_and(|brand| {
-                    std::iter::once(&drug.name)
-                        .chain(&drug.brand_names)
-                        .any(|known| equals(brand, known))
+fn same_ingredient_set(left: &[String], right: &[String]) -> bool {
+    let normalize = |value: &str| value.trim().to_ascii_lowercase();
+    let mut left = left
+        .iter()
+        .map(|value| normalize(value))
+        .collect::<Vec<_>>();
+    let mut right = right
+        .iter()
+        .map(|value| normalize(value))
+        .collect::<Vec<_>>();
+    left.sort();
+    right.sort();
+    left == right
+}
+
+fn product_matches(
+    product: &DrugsFdaProduct,
+    meta: Option<&DrugsFdaOpenFda>,
+    drug: &Drug,
+    labels: &[LabelIdentity],
+) -> bool {
+    let ingredients = product
+        .active_ingredients
+        .iter()
+        .filter_map(|ingredient| ingredient.name.as_deref())
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    if crate::transform::drug::card_names_combination(&drug.name) {
+        return ingredients.len() == product.active_ingredients.len()
+            && product.brand_name.as_deref().is_some_and(|brand| {
+                labels.iter().any(|label| {
+                    label.ingredients.len() > 1
+                        && label.brands.iter().any(|known| equals(brand, known))
+                        && same_ingredient_set(&ingredients, &label.ingredients)
                 })
-        }))
-        || (row.products.is_empty()
+            });
+    }
+    if product.active_ingredients.len() > 1 {
+        return false;
+    }
+    if let Some(ingredient) = ingredients.first() {
+        if equals(ingredient, &drug.name) {
+            return true;
+        }
+        // A shared name core or suffix never proves product identity.
+        // A selected source label must link the exact brand and full ingredient.
+        return product.brand_name.as_deref().is_some_and(|brand| {
+            labels.iter().any(|label| {
+                label.brands.iter().any(|known| equals(brand, known))
+                    && label
+                        .ingredient_names
+                        .iter()
+                        .any(|name| equals(ingredient, name))
+            })
+        });
+    }
+    // Brand-only rescue is allowed only without contradictory generic metadata.
+    let generic_agrees = meta.is_none_or(|meta| {
+        meta.generic_name
+            .iter()
+            .all(|name| equals(name, &drug.name))
+    });
+    generic_agrees
+        && product.brand_name.as_deref().is_some_and(|brand| {
+            std::iter::once(&drug.name)
+                .chain(&drug.brand_names)
+                .any(|known| equals(brand, known))
+        })
+}
+
+fn filter_row(row: &mut DrugsFdaResult, drug: &Drug, labels: &[LabelIdentity]) -> bool {
+    if row.products.is_empty() {
+        return !crate::transform::drug::card_names_combination(&drug.name)
             && row.openfda.as_ref().is_some_and(|meta| {
                 !meta.generic_name.is_empty()
                     && meta
                         .generic_name
                         .iter()
                         .all(|name| equals(name, &drug.name))
-            }))
+            });
+    }
+    let metadata = row.openfda.as_ref();
+    row.products
+        .retain(|product| product_matches(product, metadata, drug, labels));
+    !row.products.is_empty()
 }
