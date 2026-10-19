@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2244, 2259, 2260, 2261, 2247, 2251, 2252, 2253, 2254, 2256, 2111, 2263, 2264, 2265, 2266, 2267, 2268, 2269, 2270, 2271, 2273, 2274, 2275
+Depends on: 2244, 2259, 2260, 2261, 2247, 2251, 2252, 2253, 2254, 2256, 2111, 2263, 2264, 2265, 2266, 2267, 2268, 2269, 2270, 2271, 2273, 2274, 2275, 2276
 
 Reviews: revision b18f3e8, accept
 
@@ -43,3 +43,7 @@ Developer 295f6dcc84b5958432af6767001e3826c7baaadb finalizes exactly the approve
 M5 job 2262/1792444864948-83331 reconstructs the private candidate from published main and verifies exact Git tree and commit parity before checks. Version sync, stable v0.9.4 equality, exact-candidate changelog coverage for all seventy-four tickets since v0.9.3, 115 focused metadata tests and whitespace checks pass; no release tag was created. This is metadata proof, not full release qualification.
 
 Keep: experiments/2095-biomcp-2262-stable-metadata — retain raw job 1792444864948-83331, exact private patch and reproducible commit/parity script.
+
+## Deadline repair integration
+
+Integrate actual main b7d6f83acc14eab10b832eecb133ca9d3c9a4672 while preserving the accepted metadata, dispositions, historical evidence and milestone configuration. Retain the 2276 fixture repair and changelog entry, retain the 2258 dependency on 2276, and cite this metadata landing in the release changelog. The existing 115 focused metadata tests remain applicable because their inputs and implementation remain unchanged; refresh only version sync, stable version equality, exact-candidate changelog coverage and whitespace proof.
