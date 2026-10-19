@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision beef86e, accept
 
+Reviews: revision 0ef2c95, accept
+
 ## Outcome
 
 Determine the supported, authorized path to complete live replay verification for Reactome, WikiPathways and Semantic Scholar, or identify the exact external blocker and next owner. No denial or rate-limited reply qualifies a recording.
