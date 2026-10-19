@@ -36,3 +36,7 @@ with `CacheMode::NoStore` (`src/sources/gwas.rs`, a deliberate
 bypass after cache decode failures), so no stale serve exists to
 describe. If that bypass is ever revisited, the notes channel added
 for article and search-all is the pattern to copy.
+
+## Resolved
+
+Single-record get JSON now attaches optional `_meta.notes` inside the CLI and MCP stale-cache scopes. The finalizer covers every get adapter, including author, and reuses the existing cache-age sentences. Empty notes preserve the original JSON bytes. Existing Markdown notes keep their current path.
