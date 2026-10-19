@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 46e94c8, accept
+
 ## Outcome
 
 `article supplement-search` lists every supplement file it could not read and marks the search incomplete, so "no hits" never reads as "not present".
