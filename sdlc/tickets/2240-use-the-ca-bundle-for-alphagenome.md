@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 2e7f610, accept
+
 ## Outcome
 
 - Changes: `src/sources/ca_bundle.rs` `src/sources/alphagenome.rs` `tests/tls_ca_bundle_contract.rs` `tests/test_provider_network_policy.py` `docs/reference/configuration.md` `docs/reference/data-sources.md` `docs/troubleshooting.md` `CHANGELOG.md` `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md` and this ticket.
