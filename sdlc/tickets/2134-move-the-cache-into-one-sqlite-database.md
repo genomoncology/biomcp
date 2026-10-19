@@ -8,8 +8,20 @@ Milestone: 0.9.4
 
 BioMCP's HTTP cache, saved article full text, citation evidence and provider captures live in one SQLite database under the cache root. A lookup is one indexed read, size limits and eviction need no folder walk, the CLI and the MCP server share the cache safely, and every cache-age note reads as it does today.
 
-- Changes: `src/cache/**` `src/sources/mod.rs` `src/entities/article/graph/citation_evidence.rs` `Cargo.toml` `Cargo.lock` `deny.toml` `docs/reference/configuration.md` `CHANGELOG.md` and the existing download store and focused cache tests. Narrow the download-store and test paths after the initial inventory before editing.
+- Changes: `src/cache/**` `src/sources/mod.rs` `src/utils/download.rs` `src/entities/article/fulltext.rs` `src/cli/cache.rs` `src/entities/article/graph/citation_evidence.rs` `src/entities/gene/cspec.rs` `src/entities/article/supplement_search/cache.rs` `src/sources/fda_orphan.rs` `src/sources/semantic_scholar.rs` `src/sources/tests/provider_network.rs` `src/sources/gwas/tests/day_cache.rs` `src/sources/openfda/tests/day_cache.rs` `Cargo.toml` `Cargo.lock` `deny.toml` `docs/reference/configuration.md` `CHANGELOG.md` `tests/cache_clear.rs` `tests/test_cache_*.py` `tests/test_http_cache_fail_soft.py` `tests/test_no_cache_managed_state.py` `tests/test_gwas_day_cache_contract.py` `tests/article_asset_terminal/supplement_cache.rs` and focused new SQLite behavior tests. Narrow any additional path before editing.
 
+
+## Development brief and migration ruling
+
+Restated outcome: use one indexed SQLite cache with shared-process safety, preserved freshness and bounded storage, while retaining readable saved full-text artifacts and explicit exports.
+
+Reproduction on main `08b74a340658f2c30e158fd00459330baebacd74`: job `2134/1792409854384-61696` ran the retained inline driver, using a frozen qualified CLI with SHA256 `886e80635de11125329d039da533c4e1ca7ee478936b4c0eb330bcf05d138b4c` and a synthetic loopback provider. The primary command was `biomcp --json search gene BRAF<N> --limit 1`, repeated for thirty distinct queries, then `biomcp --json cache clean`. With a 50,000-byte body budget the snapshots were six index files / 4,914 bytes, twelve / 10,756 bytes, thirty / 28,342 bytes, while retained bodies stayed at two / 34,996 bytes. Clean exited 0 with no errors and left thirty index files. The complete driver and invocation remain in the job; its owned scratch and server were removed. This proves retained index growth, not a new ordinary warm-lookup folder walk.
+
+PM ruling, 2026-10-19: SQLite owns reusable full text, but fulltext still returns a real readable `full_text_path`. Saved downloads and explicit exports remain ordinary files and survive both cache clear and cache clean. Keep the database isolated from old-version writes. Never automatically delete legacy stores or captures. Cache stats name their sizes; one explicit documented command removes legacy cache stores on request, preserving saved downloads. The changelog explains that old versions continue writing their own stores until upgraded. Automatic legacy removal is deferred beyond this release. `cache path` reports the database for the new backend. This ruling supersedes the automatic-deletion instruction in the older architecture below.
+
+Preserve behavioral assertions; replace storage-specific cacache file/marker assertions with the new backend contracts. The no-reply-file proof applies to small inline replies; large blobs remain permitted. Article sessions and asset manifests stay outside the migration. Request-context handling for Vary/body keys and transactional blob ownership must be covered by the implementation and fresh review, rather than approximated from the old string key.
+
+Outside-in red cases: legacy-store coexistence and repeat fixture fetch through CLI with a real database; size eviction and concurrent initialized MCP/CLI reuse; indexed hit among 100,000 small replies; killed uncommitted writer recovery; preserved fulltext path/views/export and saved downloads across clear/clean. Use focused behavioral cases and justified storage assertions, not a second general cache framework. Run occasional Linux proof only for the ticket's named lookup timing/syscall comparison, after the ordinary implementation is ready.
 
 ## Evidence
 
