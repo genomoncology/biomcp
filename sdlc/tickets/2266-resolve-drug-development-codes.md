@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision d382080, accept
+
 ## Outcome
 
 Changes: `CHANGELOG.md`, `src/entities/drug/development_codes.rs`, `src/entities/drug/get.rs`, `src/entities/drug/mod.rs`, `src/sources/chembl/molecules.rs`, `src/sources/chembl.rs`, `tests/test_drug_development_codes.py`.
