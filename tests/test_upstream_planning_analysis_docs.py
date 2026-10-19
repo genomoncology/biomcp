@@ -1252,6 +1252,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     ), "spec: must run through scripts/run-specs.sh with the selected binary"
     assert re.search(
         r"^spec-pr:\n"
+        r"\t\$\(MAKE\) sync-python-dev\n"
         r'\tSPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_FEATURE_ON_BIN="\$\(if \$\(filter release,\$\(SPEC_PROFILE\)\),\$\(SPEC_BIN\),\)" bash scripts/run-specs\.sh spec-pr$',
         makefile,
         flags=re.MULTILINE,
