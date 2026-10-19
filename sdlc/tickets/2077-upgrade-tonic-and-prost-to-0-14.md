@@ -4,9 +4,13 @@ priority: 3
 
 # 2077 — Upgrade tonic and prost to 0.14
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
+
+Reviews: revision a0b0230, accept
+
+Reviews: revision d545e6e, accept
 
 ## Outcome
 

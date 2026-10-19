@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -353,6 +355,17 @@ def test_source_licensing_reference_matches_inventory_and_required_sections() ->
 
     for name in EXPECTED_NAMES:
         assert name in licensing, f"missing source row or note for {name}"
+
+
+def test_source_licensing_facts_and_notes_are_generated_from_registry() -> None:
+    result = subprocess.run(
+        [sys.executable, "tools/render-source-licensing.py"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_article_fulltext_source_inventory_matches_resolver_contract() -> None:

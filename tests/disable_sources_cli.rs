@@ -120,6 +120,12 @@ fn find_head_end(bytes: &[u8]) -> Option<usize> {
 /// fixtures under `testdata/sources/`.
 fn route(path: &str, query: &str) -> (&'static str, &'static str, &'static [u8]) {
     match path {
+        "/fda-http/OOPD_Results.cfm" => ("503 Service Unavailable", "text/plain", b"unavailable"),
+        "/fda-invalid/OOPD_Results.cfm" => ("200 OK", "text/html", b"not a designation table"),
+        "/fda-valid/OOPD_Results.cfm" => ("200 OK", "text/html", include_bytes!("../testdata/sources/fda_orphan/provider-shaped.html")),
+        "/fda-redirect/OOPD_Results.cfm" => ("302 Found", "text/plain", b""),
+        "/gwas/rest/api/singleNucleotidePolymorphisms/rs7903146" => ("410 Gone", "text/plain", include_bytes!("../testdata/sources/gwas/associations_retired_410_body.txt")),
+        "/gwas/rest/api/v2/associations" => ("200 OK", "application/json", include_bytes!("../testdata/sources/gwas/associations_gene_tcf7l2_v2_20260812.json")),
         "/europe/search" => ("200 OK", "application/json", br#"{"hitCount":0,"resultList":{"result":[]}}"#),
         "/ols4/api/search" => (
             "200 OK", "application/json",
@@ -1137,4 +1143,130 @@ fn mcp_override_refusal_names_the_original_flag_setting() {
         assert!(!text.contains("by BIOMCP_DISABLE_SOURCES"), "{text}");
         client.cancel().await.unwrap();
     });
+}
+
+#[test]
+fn variant_miss_keeps_assembly_outside_the_quoted_identifier() {
+    let fixture = Fixture::start();
+    let binary = Binary::new(&fixture).env(
+        "BIOMCP_MYVARIANT_BASE",
+        &format!("{}/missing", fixture.base),
+    );
+    for json in [false, true] {
+        let mut args = vec![
+            "--no-cache",
+            "get",
+            "variant",
+            "--assembly",
+            "hg38",
+            "chr7:g.140453136A>T",
+        ];
+        if json {
+            args.insert(0, "--json");
+        }
+        let output = binary.run(&args);
+        let message = if json {
+            let value: serde_json::Value =
+                serde_json::from_slice(&output.stdout).expect("error JSON");
+            assert_eq!(value["error"]["code"], "not_found", "{value}");
+            value["error"]["message"].as_str().unwrap().to_string()
+        } else {
+            stderr(&output)
+        };
+        eprintln!("{args:?}: exit {:?}; {message}", output.status.code());
+        assert_eq!(output.status.code(), Some(1));
+        assert!(
+            message.contains("variant 'chr7:g.140453136A>T' not found."),
+            "{message}"
+        );
+        assert!(message.contains("attempted GRCh38"), "{message}");
+        assert!(message.contains("upstream HTTP 404"), "{message}");
+        assert!(
+            message.contains("biomcp search variant \"chr7:g.140453136A>T\""),
+            "{message}"
+        );
+    }
+}
+
+#[test]
+fn fda_nonredirect_health_failures_explain_the_observed_reason() {
+    let fixture = Fixture::start();
+    let mut failures = Vec::new();
+    for (base, expected, code) in [
+        ("fda-http", "HTTP 503", 1),
+        ("fda-invalid", "invalid designation response", 1),
+        (
+            "fda-redirect",
+            "HTTP 302, blocked: the FDA site redirects scripted clients",
+            1,
+        ),
+        ("fda-valid", "ms", 0),
+    ] {
+        let output = Binary::new(&fixture)
+            .env(
+                "BIOMCP_FDA_ORPHAN_BASE",
+                &format!("{}/{base}", fixture.base),
+            )
+            .run(&[
+                "--json",
+                "health",
+                "--api",
+                "FDA Orphan Drug Designations",
+                "--fail-on-error",
+            ]);
+        let value: serde_json::Value = serde_json::from_slice(&output.stdout).expect("health JSON");
+        eprintln!("FDA {base}: exit {:?}; {value}", output.status.code());
+        if output.status.code() != Some(code) || !value.to_string().contains(expected) {
+            failures.push(format!("{base}: {value}"));
+        }
+    }
+    assert!(
+        failures.is_empty(),
+        "FDA must name the observed failure: {failures:?}"
+    );
+}
+
+#[test]
+fn gwas_health_checks_the_supported_association_search() {
+    let fixture = Fixture::start();
+    let binary = Binary::new(&fixture)
+        .env("BIOMCP_HEALTH_PROBE_BASE", &fixture.base)
+        .env(
+            "BIOMCP_GWAS_BASE",
+            &format!("{}/gwas/rest/api", fixture.base),
+        );
+    let search = binary.run(&[
+        "--json",
+        "--no-cache",
+        "search",
+        "gwas",
+        "-g",
+        "TCF7L2",
+        "--limit",
+        "1",
+    ]);
+    eprintln!(
+        "GWAS search: exit {:?}; {}",
+        search.status.code(),
+        stdout(&search)
+    );
+    assert!(search.status.success(), "{}", stderr(&search));
+    let health = binary.run(&[
+        "--json",
+        "health",
+        "--api",
+        "GWAS Catalog",
+        "--fail-on-error",
+    ]);
+    eprintln!(
+        "GWAS health: exit {:?}; {}",
+        health.status.code(),
+        stdout(&health)
+    );
+    assert!(health.status.success(), "{}", stdout(&health));
+    assert_eq!(
+        fixture.requests_matching("singleNucleotidePolymorphisms"),
+        0
+    );
+    assert_eq!(fixture.requests_matching("v2/associations"), 2);
 }

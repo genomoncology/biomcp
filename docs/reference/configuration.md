@@ -48,6 +48,9 @@ writes, statistics, and maintenance physically remove entries older than
 `max_age_secs`; opening the session store removes expired sessions. The
 automatic start-up clean runs at most once a day, and `biomcp cache clean`
 runs it now; `BIOMCP_CACHE_MODE=off` skips the start-up clean entirely.
+
+BioMCP 0.9.2 does not update the saved HTTP cache byte total. Sharing a cache with that version can exceed the configured size limit until the next automatic daily clean reconciles the total and applies the limit. Maintenance runs when a command opens the cache; it is not a background timer. To reconcile sooner, run `biomcp cache clean --max-size <size>` with your desired limit.
+
 BioMCP creates managed directories and files with access limited to the current
 OS user. On Unix this means 0700 directories and 0600 files. HTTP cache startup
 repairs the root directory every time and secures the existing tree once, when

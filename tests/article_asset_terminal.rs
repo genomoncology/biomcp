@@ -176,6 +176,46 @@ fn binary_article_assets_protect_terminals_and_preserve_files() {
     assert!(!fixture.root.join("missing").exists());
 }
 
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn asset_output_directory_destinations_name_the_file_path_error() {
+    let fixture = ArticleFixture::start();
+    fs::create_dir(fixture.root.join("existing-directory")).expect("create output directory");
+    let mut failures = Vec::new();
+    for destination in ["./", "existing-directory"] {
+        let output = fixture
+            .biomcp_command(&[
+                "get",
+                "article",
+                "22663011",
+                "asset",
+                "traces-s1.csv",
+                "--output",
+                destination,
+            ])
+            .current_dir(&fixture.root)
+            .output()
+            .expect("run directory output command");
+        let message = String::from_utf8_lossy(&output.stderr);
+        eprintln!(
+            "--output {destination}: exit {:?}; {message}",
+            output.status.code()
+        );
+        if output.status.success()
+            || !message.contains("is a directory")
+            || !message.contains(destination)
+        {
+            failures.push(format!("{destination}: {message}"));
+        }
+        assert!(fixture.root.is_dir());
+        assert!(fixture.root.join("existing-directory").is_dir());
+    }
+    assert!(
+        failures.is_empty(),
+        "output must name the directory destination: {failures:?}"
+    );
+}
+
 fn successful_output(fixture: &ArticleFixture, args: &[&str]) -> std::process::Output {
     let output = fixture
         .biomcp_command(args)

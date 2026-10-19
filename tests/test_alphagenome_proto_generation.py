@@ -34,7 +34,7 @@ def test_normal_build_consumes_only_committed_alphagenome_rust() -> None:
     # made cargo rescan every package file and recompile the crate after any
     # edit, Rust or not.
     assert not (REPO_ROOT / "build.rs").exists()
-    assert 'alphagenome = ["dep:tonic", "dep:prost", "dep:zstd", "dep:tokio-stream"]' in manifest
+    assert 'alphagenome = ["dep:tonic", "dep:tonic-prost", "dep:prost", "dep:zstd", "dep:tokio-stream"]' in manifest
     assert "tonic-build" not in manifest
     assert "tonic::include_proto!" not in alphagenome
     assert 'env!("CARGO_MANIFEST_DIR")' in alphagenome
