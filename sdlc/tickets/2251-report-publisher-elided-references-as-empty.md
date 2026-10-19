@@ -29,3 +29,9 @@ A replay test with the elided reply returns an empty result with the Semantic Sc
 ## Progress
 
 - 2026-10-19 started
+
+## Verification
+
+A single public Semantic Scholar references reply confirmed publisher elision under citingPaperInfo.openAccessPdf.disclaimer and data null without an offset. Baseline job 2251/1792427465184-63507 failed the claimed behavior and preserved the controls. Green job 2251/1792427499060-68658 passed the owning CLI table, existing graph/parser/rendering checks and mechanical lint. Citations use an explicitly authored equivalent envelope; no live citations claim. The final source patch is unchanged after adopting the ticket-only progress commit.
+
+Keep: experiments/794-biomcp-2251-publisher-elision — retain the one capture, hashes, checked patches and red/green raw evidence.
