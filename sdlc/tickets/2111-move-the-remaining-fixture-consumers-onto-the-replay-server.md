@@ -70,3 +70,9 @@ PM authorized carrying its committed 4da16647b ticket records with the next land
 ## Next cohesive development batch
 
 Move the supported gene discovery and identity reader sections together to the routine replay lane. Preserve the Markdown assertions. The now-landed search-gene-braf JSON golden owns the three duplicated JSON table checks. Move only the BRAF search request assertion into the existing replay Python lane; preserve the BRCA1 request assertion and every other consumer. No new recording or mutation build is needed. Keep the parent open.
+
+## Gene discovery replay proof
+
+Source `5038d6b540c2c8aa9d41d58e647a59f0b5854601` changes the five declared files. Baseline job `2111/1792418649264-93648` passed the affected old reader sections and request checks. Job `2111/1792418679290-4426` passed six focused tests and both preserved Markdown assertions with three recorded hits and no misses. The request assertion checks size and offset independently because replay canonicalizes query ordering. Job `2111/1792418713576-8281` passed Ruff, formatting, ShellCheck, shell syntax, tracked-text and specification lint, zero-coupling checks and 35 coupling tests; final file hashes match the commit.
+
+The tests reused the qualified CLI with SHA256 `e47d903c9a83a1c8d18d9cd208e20ee4a27a03caa1f0e1a72b075a42542d949d`. No Rust build, repeated mutation or network isolation is claimed. Source captures, BRCA1 assertions and remaining consumers are unchanged. Owned transfer scripts, patch and copied binary were removed. Review accepted the source without changes; the parent remains open for other consumers.
