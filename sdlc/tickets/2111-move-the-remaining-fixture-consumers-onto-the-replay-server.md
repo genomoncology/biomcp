@@ -44,3 +44,4 @@ No helper deletion is valid: three CTGov shell cases and the custom server's oth
 ## Progress
 
 - 2026-10-19 started
+- 2026-10-19 landed f16e27cd40385c61f3de20d269f89c5b799e6bd3; next: Keep the parent open; migrate the condition-first trial consumer next, preserving all reader assertions.
