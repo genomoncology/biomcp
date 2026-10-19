@@ -83,7 +83,7 @@ DIRECT_SOURCE_MODULES = {
     "wikipathways": "WikiPathways",
 }
 
-NESTED_DIRECT_SOURCES = {"ClinVar"}
+NESTED_DIRECT_SOURCES = {"ClinVar", "bioRxiv/medRxiv"}
 
 INDIRECT_ONLY_ROWS = {
     "AlphaFold DB": "UniProt",

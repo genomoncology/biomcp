@@ -1,0 +1,41 @@
+{
+  "provenance": {
+    "kind": "authored control, not a recorded provider response",
+    "basis": "Exact versioned transcript and DNA identity anchors reviewed against ClinVar 5294 and RCV000079501.9. Provider fields are deliberately minimal; no provider payload is redistributed.",
+    "sources": [
+      "https://www.ncbi.nlm.nih.gov/clinvar/variation/5294/",
+      "https://www.ncbi.nlm.nih.gov/clinvar/RCV000079501.9/?cmd=HTOn"
+    ],
+    "reviewed": "2026-10-19"
+  },
+  "inputs": [
+    "NM_001128425.2:c.1187G>A",
+    "NM_001048174.2:c.1103G>A",
+    "NM_001048171.1:c.1145G>A"
+  ],
+  "genomic": "NC_000001.11:g.45331556C>T",
+  "hit": {
+    "_id": "chr1:g.45331556C>T",
+    "dbsnp": {
+      "rsid": "rs36053993"
+    },
+    "clinvar": {
+      "variant_id": 5294,
+      "gene": {
+        "symbol": "MUTYH"
+      },
+      "hgvs": {
+        "coding": [
+          "NM_001048174.2:c.1103G>A"
+        ]
+      },
+      "rcv": [
+        {
+          "preferred_name": "NM_001048174.2(MUTYH):c.1103G>A (p.Gly368Asp)",
+          "accession": "RCV000079501"
+        }
+      ]
+    }
+  },
+  "genomic_grch37": "NC_000001.10:g.45797228C>T"
+}

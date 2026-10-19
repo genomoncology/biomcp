@@ -411,6 +411,7 @@ pub struct ArticleSupplementSearch {
     pub files: Vec<ArticleSupplementSearchFile>,
     pub hits: Vec<ArticleSupplementSearchHit>,
     pub hits_truncated: bool,
+    pub incomplete: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -419,16 +420,20 @@ pub enum ArticleSupplementSearchFileOutcome {
     Searched,
     EmptyText,
     Unextractable,
+    #[serde(untagged)]
+    Unavailable(ArticleAssetNamedOutcome),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleSupplementSearchFile {
-    pub asset_key: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub asset_key: Option<String>,
     pub filename: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub member: Option<String>,
     pub format: String,
-    pub sha256: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
     pub outcome: ArticleSupplementSearchFileOutcome,
     #[serde(default, skip_serializing_if = "is_false")]
     pub truncated: bool,

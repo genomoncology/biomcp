@@ -57,6 +57,7 @@ impl SourceProvider {
     pub const MYDISEASE: Self = Self::new("MyDisease.info");
     pub const MYGENE: Self = Self::new("MyGene.info");
     pub const MYVARIANT: Self = Self::new("MyVariant.info");
+    pub const BIORXIV_MEDRXIV: Self = Self::new("bioRxiv/medRxiv");
     pub const PUBMED: Self = Self::new("PubMed");
     pub const NCBI_EFETCH: Self = Self::new("NCBI EFetch");
     pub const NCBI_ID_CONVERTER: Self = Self::new("NCBI ID Converter");
@@ -128,6 +129,7 @@ impl SourceProvider {
         Self::MYDISEASE,
         Self::MYGENE,
         Self::MYVARIANT,
+        Self::BIORXIV_MEDRXIV,
         Self::PUBMED,
         Self::NCBI_EFETCH,
         Self::NCBI_ID_CONVERTER,
@@ -210,6 +212,7 @@ impl SourceProvider {
             "mydisease.info" | "MyDisease.info" => Self::MYDISEASE,
             "mygene.info" | "MyGene.info" => Self::MYGENE,
             "myvariant.info" | "MyVariant.info" => Self::MYVARIANT,
+            "biorxiv-medrxiv" | "bioRxiv/medRxiv" => Self::BIORXIV_MEDRXIV,
             "pubmed-eutils" | "PubMed" => Self::PUBMED,
             "ncbi-efetch" | "NCBI EFetch" => Self::NCBI_EFETCH,
             "ncbi-idconv" | "NCBI ID Converter" => Self::NCBI_ID_CONVERTER,

@@ -529,16 +529,14 @@ pub(in crate::cli) async fn handle_command(
             }
         }
         ArticleCommand::SupplementSearch { id, needle, asset } => {
-            if !json {
-                anyhow::bail!(crate::error::BioMcpError::InvalidArgument(
-                    "Article supplement search is JSON-only; rerun with --json (example: biomcp --json article supplement-search 30209399 F1761I)"
-                        .into(),
-                ));
-            }
             let search =
                 crate::entities::article::article_supplement_search(&id, &needle, asset.as_deref())
                     .await?;
-            crate::render::json::to_pretty(&search)?
+            if json {
+                crate::render::json::to_pretty(&search)?
+            } else {
+                crate::render::markdown::article_supplement_search_markdown(&search)?
+            }
         }
         ArticleCommand::Recommendations {
             ids,

@@ -294,13 +294,25 @@ pub(crate) fn render_loaded_card(
                 )
             })
             .transpose()?;
-        Ok(crate::render::json::to_entity_json_with_workflow(
+        let mut value = crate::render::json::to_entity_json_value_with_workflow(
             variant,
             crate::render::markdown::variant_evidence_urls(variant),
             crate::render::markdown::related_variant_with_recovery(variant),
             crate::render::provenance::variant_section_sources(variant),
             workflow,
-        )?)
+        )?;
+        if !variant.cgi_associations.is_empty()
+            || sections.iter().any(|section| {
+                section.eq_ignore_ascii_case("cgi") || section.eq_ignore_ascii_case("all")
+            })
+        {
+            let mut notes = vec![crate::render::provenance::VARIANT_CGI_SOURCE_NOTE];
+            if variant.cgi_associations.is_empty() {
+                notes.push(crate::render::provenance::VARIANT_CGI_EMPTY_NOTE);
+            }
+            value["_meta"]["notes"] = serde_json::json!(notes);
+        }
+        Ok(crate::render::json::to_pretty(&value)?)
     } else {
         Ok(crate::render::markdown::variant_markdown(
             variant, sections,

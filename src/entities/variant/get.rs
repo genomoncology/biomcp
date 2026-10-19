@@ -897,23 +897,58 @@ Try first: biomcp variant normalize all {id}"
     ))
 }
 
+/// Keep the assembly attached to the exact DNA projection. CAR aliases use
+/// versioned genomic accessions, whose builds the coordinate parser knows.
 pub(crate) fn normalized_get_variant_id(
     response: &VariantNormalizationResponse,
-) -> Result<String, BioMcpError> {
+) -> Result<(String, Option<GenomeBuild>), BioMcpError> {
+    use super::VariantNormalizationAggregate;
     response
         .services
         .iter()
-        .filter_map(|service| match service {
-            crate::entities::variant::VariantNormalizationAggregate::Legacy(service)
+        .find_map(|service| match service {
+            VariantNormalizationAggregate::Legacy(service)
                 if service.status == VariantNormalizationStatus::Success =>
             {
-                Some(service.genomic_descriptions.iter())
+                service.genomic_descriptions.iter().find_map(|candidate| {
+                    let parsed = super::normalize_genomic_coordinate(&candidate.coordinate)
+                        .ok()
+                        .flatten();
+                    let id = parsed
+                        .as_ref()
+                        .map(|value| value.id.clone())
+                        .or_else(|| normalized_genomic_hgvs_for_get(&candidate.coordinate))?;
+                    let accession_build = parsed.and_then(|value| value.genome_build);
+                    let declared_build = candidate.genome_build.parse::<GenomeBuild>().ok();
+                    if accession_build
+                        .zip(declared_build)
+                        .is_some_and(|(a, b)| a != b)
+                    {
+                        return None;
+                    }
+                    Some((id, accession_build.or(declared_build)))
+                })
             }
-            crate::entities::variant::VariantNormalizationAggregate::Car(_) => None,
+            VariantNormalizationAggregate::Car(service)
+                if service.item.status
+                    == super::normalization::CarNormalizationStatus::Resolved
+                    && service.item.input == response.input =>
+            {
+                service
+                    .item
+                    .genomic_aliases
+                    .values
+                    .iter()
+                    .find_map(|alias| {
+                        let coordinate =
+                            super::normalize_genomic_coordinate(alias).ok().flatten()?;
+                        coordinate
+                            .genome_build
+                            .map(|build| (coordinate.id, Some(build)))
+                    })
+            }
             _ => None,
         })
-        .flatten()
-        .find_map(|candidate| normalized_genomic_hgvs_for_get(&candidate.coordinate))
         .ok_or_else(|| transcript_hgvs_normalization_error(&response.input, Some(response)))
 }
 
@@ -924,9 +959,14 @@ fn transcript_hgvs_clinvar_query(id: &str) -> String {
     )
 }
 
-fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
+fn transcript_hgvs_not_found_suggestion(id: &str, normalized: bool) -> String {
+    let reason = if normalized {
+        "The requested transcript normalized successfully, but MyVariant.info returned no matching genomic allele."
+    } else {
+        "The requested transcript remains unverified; no source-backed match was found for this exact identifier."
+    };
     format!(
-        "Try first: biomcp variant normalize all {id}; the ClinVar VariationID (e.g. biomcp get variant 577152) or rsID (e.g. biomcp get variant rs113488022) also resolves directly"
+        "{reason} Try first: biomcp variant normalize all {id}; the ClinVar VariationID (e.g. biomcp get variant 577152) or rsID (e.g. biomcp get variant rs113488022) also resolves directly"
     )
 }
 
@@ -959,7 +999,9 @@ async fn transcript_hgvs_clinvar_alias_hit(
     .cloned())
 }
 
-async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
+async fn resolve_transcript_hgvs_for_get(
+    id: &str,
+) -> Result<(VariantIdFormat, Option<GenomeBuild>, bool), BioMcpError> {
     match normalize_transcript_hgvs_for_get(id).await {
         Ok(format) => Ok(format),
         // Transcript normalization services refuse intronic deletion ranges
@@ -976,22 +1018,30 @@ async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, Bi
                         Ok(VariantIdFormat::HgvsGenomic(_))
                     )
                 })
-                .map(|hit| VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()))
+                .map(|hit| {
+                    (
+                        VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()),
+                        None,
+                        false,
+                    )
+                })
                 .ok_or_else(|| BioMcpError::NotFound {
                     entity: "variant".into(),
                     id: id.to_string(),
-                    suggestion: transcript_hgvs_not_found_suggestion(id),
+                    suggestion: transcript_hgvs_not_found_suggestion(id, false),
                 })
         }
     }
 }
 
-async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
+async fn normalize_transcript_hgvs_for_get(
+    id: &str,
+) -> Result<(VariantIdFormat, Option<GenomeBuild>, bool), BioMcpError> {
     let response = normalize_variant("all", id)
         .await
         .map_err(|_| transcript_hgvs_normalization_error(id, None))?;
-    let normalized_id = normalized_get_variant_id(&response)?;
-    parse_variant_id(&normalized_id)
+    let (normalized_id, build) = normalized_get_variant_id(&response)?;
+    Ok((parse_variant_id(&normalized_id)?, build, true))
 }
 
 /// The public spelling of a genome build. One definition serves the
@@ -1037,17 +1087,33 @@ pub(super) async fn resolve_base_with_hit(
 
     let input_kind = classify_variant_input(id);
     let normalized_coordinate = super::normalize_genomic_coordinate(id)?;
+    let transcript_resolution = if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_)) {
+        Some(resolve_transcript_hgvs_for_get(id).await?)
+    } else {
+        None
+    };
+    let normalized_transcript_dna = transcript_resolution
+        .as_ref()
+        .is_some_and(|(_, _, normalized)| *normalized);
     let mut requested = match normalized_coordinate.as_ref() {
         Some(coordinate) => super::RequestedVariantIdentity::from_variant_input(&coordinate.id)?,
         None => super::RequestedVariantIdentity::from_variant_input(id)?,
     };
     let id_format = match (input_kind.clone(), normalized_coordinate.as_ref()) {
         (_, Some(coordinate)) => VariantIdFormat::HgvsGenomic(coordinate.id.clone()),
-        (VariantInputKind::TranscriptCodingHgvs(_), None) => {
-            resolve_transcript_hgvs_for_get(id).await?
-        }
+        (VariantInputKind::TranscriptCodingHgvs(_), None) => transcript_resolution
+            .as_ref()
+            .expect("transcript resolution")
+            .0
+            .clone(),
         _ => parse_variant_id(id)?,
     };
+    if normalized_transcript_dna && let VariantIdFormat::HgvsGenomic(hgvs) = &id_format {
+        // A normalizer resolved the exact versioned request to this DNA
+        // change. Compare DNA, without requiring the downstream record to
+        // repeat the original transcript spelling.
+        requested = super::RequestedVariantIdentity::from_variant_input(hgvs)?;
+    }
     if let VariantIdFormat::HgvsGenomic(hgvs) = &id_format
         && requested.genomic_accession.is_none()
     {
@@ -1055,7 +1121,12 @@ pub(super) async fn resolve_base_with_hit(
     }
     let inferred_build = normalized_coordinate
         .as_ref()
-        .and_then(|coordinate| coordinate.genome_build);
+        .and_then(|coordinate| coordinate.genome_build)
+        .or_else(|| {
+            transcript_resolution
+                .as_ref()
+                .and_then(|(_, build, _)| *build)
+        });
     if let (Some(declared), Some(inferred)) = (genome_build, inferred_build)
         && declared != inferred
     {
@@ -1136,14 +1207,12 @@ pub(super) async fn resolve_base_with_hit(
                         .ok_or_else(|| BioMcpError::NotFound {
                             entity: "variant".into(),
                             id: id.to_string(),
-                            suggestion: transcript_hgvs_not_found_suggestion(id),
+                            suggestion: transcript_hgvs_not_found_suggestion(
+                                id,
+                                normalized_transcript_dna,
+                            ),
                         })?;
-                    (
-                        alias_hit,
-                        effective_build.or(Some(GenomeBuild::Grch37)),
-                        Vec::new(),
-                        None,
-                    )
+                    (alias_hit, Some(GenomeBuild::Grch37), Vec::new(), None)
                 } else {
                     let hit = direct.map_err(|error| match effective_build {
                         Some(build) => build_aware_not_found(id, build, error),
@@ -1151,11 +1220,12 @@ pub(super) async fn resolve_base_with_hit(
                     })?;
                     let transcript_input =
                         matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_));
-                    let alias_confirmed =
-                        transcript_input && hit_confirms_transcript_alias(&hit, id);
+                    let alias_confirmed = transcript_input
+                        && !normalized_transcript_dna
+                        && hit_confirms_transcript_alias(&hit, id);
                     if !compatible(&hit) && !alias_confirmed {
                         let suggestion = if transcript_input {
-                            transcript_hgvs_not_found_suggestion(id)
+                            transcript_hgvs_not_found_suggestion(id, normalized_transcript_dna)
                         } else {
                             format!("Try searching: biomcp search variant -g \"{id}\"")
                         };
@@ -1300,9 +1370,15 @@ pub(super) async fn resolve_base_with_hit(
         }
         None => transform::variant::from_myvariant_hit(&hit),
     };
+    if let VariantInputKind::TranscriptCodingHgvs(value) = &input_kind
+        && let Some((transcript, coding)) = value.split_once(':')
+    {
+        variant.matched_transcript = Some(transcript.to_string());
+        variant.matched_hgvs_c = Some(coding.to_string());
+    }
     variant.genome_build = answering_build;
     variant.genome_build_provenance = (answering_build == Some(GenomeBuild::Grch37)
-        && effective_build.is_none()
+        && effective_build != Some(GenomeBuild::Grch37)
         && (!matches!(id_format, VariantIdFormat::HgvsGenomic(_))
             || matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_))))
     .then(|| "MyVariant.info provider default".into());
@@ -1672,6 +1748,8 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         legacy_name: None,
         hgvs_c: None,
         transcript: None,
+        matched_transcript: None,
+        matched_hgvs_c: None,
         protein_numbering_note: None,
         rsid: Some(rsid.to_string()),
         cosmic_id: None,

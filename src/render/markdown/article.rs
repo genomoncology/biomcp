@@ -790,3 +790,50 @@ pub fn article_citation_evidence_markdown(
 
     Ok(out)
 }
+
+/// Shows search coverage beside exact text hits, including unreadable files.
+pub fn article_supplement_search_markdown(
+    search: &crate::entities::article::ArticleSupplementSearch,
+) -> anyhow::Result<String> {
+    let mut text = format!(
+        "# Supplement search: {}\n\nQuery: {}\n\n",
+        search.article_id, search.query
+    );
+    if search.incomplete {
+        text.push_str(
+            "Search incomplete. Unreadable or truncated files may contain additional matches.\n\n",
+        );
+    } else {
+        text.push_str("Search complete.\n\n");
+    }
+    for file in &search.files {
+        let outcome = serde_json::to_value(file.outcome)?;
+        text.push_str(&format!(
+            "- {}{}: {}{}\n",
+            file.filename,
+            file.member
+                .as_ref()
+                .map(|member| format!(" / {member}"))
+                .unwrap_or_default(),
+            outcome.as_str().unwrap_or("unknown"),
+            file.reason
+                .as_ref()
+                .map(|reason| format!(" ({reason})"))
+                .unwrap_or_default()
+        ));
+    }
+    text.push_str("\n## Hits\n\n");
+    if search.hits.is_empty() {
+        text.push_str("No hits in the text searched.\n");
+    }
+    for hit in &search.hits {
+        text.push_str(&format!(
+            "- {} — {}\n  {}\n  SHA-256: {}\n",
+            hit.filename, hit.locator, hit.context, hit.sha256
+        ));
+    }
+    if search.hits_truncated {
+        text.push_str("\nHit limit reached; additional matches were omitted.\n");
+    }
+    Ok(text)
+}
