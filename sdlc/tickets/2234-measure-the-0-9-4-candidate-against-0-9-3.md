@@ -37,3 +37,8 @@ Begin by reading the existing release measurement records and retained helpers. 
 ## Final source assignment
 
 The source-frozen candidate is pushed main 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8. Begin the final paired collection only after the coordinator confirms its full main check passes and frees the build-machine slot. Compare with v0.9.3 at 5641de7d7b79b53872f8599dbb4dba22e611dcaf using the unchanged existing helper tools/measure-0-9-3-baseline, SHA256 9c427657dcd0c79a1982aae3f692433a88a9b273f131a4ca62b86962aa4bc9c7. Preserve its established rows and alternating pair method; add no new harness. Label preparation, compiler/linker/profile/cache state, load, raw samples and incomplete failures. Runtime samples use their existing watchdog. The full main comparison runs direct env -u CARGO_INCREMENTAL make main-gate. Cache disk proof includes allocated bytes, file bytes, stats JSON, SQLite, sidecars, blobs and returned data separately. Any worse-than-ten-percent row needs its measured cause, repair or PM disposition before release. No source changes or tag.
+
+## Progress
+
+- 2026-10-19 started
+- 2026-10-19 next: Preparation identified the unchanged existing helper (SHA256 9c427657dcd0c79a1982aae3f692433a88a9b273f131a4ca62b86962aa4bc9c7) and compatible v0.9.3 gates. No builds or samples ran. Await frozen candidate; collect paired rows with direct main-gate and populated-cache disk commands, retaining new raw evidence durably. Historical 2214 archives are unavailable at recorded paths; retention issue sent to PM.
