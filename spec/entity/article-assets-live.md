@@ -17,9 +17,11 @@ sufficient.
 ```bash
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
+source ../fixtures/cache-policy.sh
 asset_cache_dir="$scratch/cache"
-BIOMCP_CACHE_DIR="$asset_cache_dir" ../../tools/biomcp-ci --json get article 20516115 --asset-view coverage --asset-limit 100 --asset-offset 0 assets >"$scratch/coverage.json"
-BIOMCP_CACHE_DIR="$asset_cache_dir" ../../tools/biomcp-ci --json get article 20516115 --asset-view retrievable --asset-limit 100 --asset-offset 0 assets >"$scratch/retrievable.json"
+set_fixture_cache_root "$asset_cache_dir"
+../../tools/biomcp-ci --json get article 20516115 --asset-view coverage --asset-limit 100 --asset-offset 0 assets >"$scratch/coverage.json"
+../../tools/biomcp-ci --json get article 20516115 --asset-view retrievable --asset-limit 100 --asset-offset 0 assets >"$scratch/retrievable.json"
 env -i PATH="$PATH" python3 /dev/fd/3 "$scratch/coverage.json" "$scratch/retrievable.json" 3<<'PY' | mustmatch like "live article asset pages are complete and mutually exclusive"
 import json
 import sys

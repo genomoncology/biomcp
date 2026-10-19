@@ -1,12 +1,26 @@
 # Unify variant transcript numbering in lookup and display
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Priority note 2026-10-19: moved into 0.9.4 because every known bug ships fixed. MANE preference and naming the matched numbering already landed; the remaining scope is lookup by either transcript cDNA numbering and a not-found answer that says the identifier belongs to a different transcript. Follow sdlc/decisions/2026-10-18-transcript-aliases-need-the-same-genomic-change.md, and route clinical questions to a clinical reviewer.
 
 From issue `2026-09-11-variant-display-mixes-transcript-numbering.md` (a real clinical-report failure: a report's `c.1187G>A` finds no match because the display mixes protein numbering from one transcript with cDNA numbering from another; the not-found reads as "nothing to see" instead of "wrong transcript"). The 2026-09-27 review ordered a real ticket with an owner and trigger, not a parked line.
+
+Reviews: revision 6452dd6, accept
+
+Reviews: revision f1d576e, accept
+
+Reviews: revision 50fbb8d, accept
+
+Reviews: revision 7a82a29, accept
+
+## Outcome
+
+Look up the approved same-allele transcript spellings and name the matched transcript while preserving headline numbering; distinguish unverified transcript identity from source-resolved missing records.
+
+- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-11-variant-display-mixes-transcript-numbering.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `src/entities/variant/get.rs` `src/entities/variant/get/tests.rs` `src/entities/variant/mod.rs` `src/render/markdown/variant.rs` `src/render/provenance.rs` `src/transform/variant.rs` `templates/variant.md.j2` `tests/fixtures/variant-transcript-lookup/authored.json` `tests/test_variant_transcript_lookup.py`.
 
 ## Problem
 
@@ -43,3 +57,31 @@ The curated transcript-priority table (which transcript is primary per gene, wit
 ## Owner and trigger
 
 Owner: the biomcp queue (developer agents; no clinical judgement needed to render provenance already present in the data). Revisit trigger: any new molecular-tumor-board experiment that matches report identifiers against BioMCP output, or the start of the 1.0 feature track, whichever comes first. Ian can re-prioritize at any time.
+
+## Coordinator study brief
+
+Restated remaining outcome: look up an allele through either source-backed transcript cDNA representation, while distinguishing another reported transcript from an unverified or ordinary not-found input. MANE/display work already landed. Before any product edit, reproduce current-main lookup and propose exact files plus an outside-in failing case; if the remaining problem does not reproduce, report that for withdrawal rather than invent work.
+
+Clinical review 2026-10-19 confirmed the existing same-genomic-change decision. Use explicit transcript versions and authoritative DNA-level anchors; gene/protein/token similarity alone is insufficient. ClinVar5294 lists NM_001128425.2:c.1187G>A and current MANE Select NM_001048174.2:c.1103G>A. Archived RCV000079501.9 also lists NM_001048171.1:c.1145G>A with the same NC_000001.11:g.45331556C>T and NC_000001.10:g.45797228C>T. Do not substitute NM_001048171.2 for version1, or call c.1187G>A MANE Select. Sources: https://www.ncbi.nlm.nih.gov/clinvar/RCV000079501.9/?cmd=HTOn and https://www.ncbi.nlm.nih.gov/clinvar/variation/5294/. The current record supplies canonical SPDI NC_000001.11:45331555:C:T and ClinGenCA011561. These are a source-backed case, not proof that current lookup passes or that a new ClinGen reply was captured.
+
+Use the three exact versioned inputs as identity/control cases. Require matching transcript provenance and the same allele only when the recorded DNA anchor proves it. With normalizers unavailable, another transcript's spelling alone must not establish identity. Say an identifier belongs to another transcript only when source evidence establishes that fact; otherwise say the requested transcript remains unverified. Existing BRCA1 recorded paper-anchor responses CA002402 and alternate-allele CA10594475 can support controls but do not prove lookup behavior. All execution is through the configured build job. Preserve raw exact commands/responses in a numbered build-host experiment. Read-only study first; no source claim is granted yet.
+
+## Granted implementation and reproduction
+
+
+
+Claim expansion: `src/entities/variant/get/tests.rs` and `src/render/provenance.rs` may initialize the two new optional matched-transcript provenance fields in existing exhaustive test literals. No additional behavior or scope is granted.
+
+Exact-main study reproduced the defect on 08d721f8525a35267bcd0a307248c69b1de210fc. NM_001128425.2:c.1187G>A and NM_001048174.2:c.1103G>A resolved but both displayed only NM_001048174.2, omitting matched-transcript provenance. NM_001048171.1:c.1145G>A returned not_found although normalization supplied GRCh38 NC_000001.11:g.45331556C>T and CA011561. Captured ClinGen responses explicitly join all three exact versioned inputs to the same allele and ClinVar5294. The unavailable-normalizer/other-transcript-only control correctly refused identity but omitted unverified-transcript wording. Exact commands, output, responses and 57 raw files are retained in experiments/787-biomcp-1260-transcript-lookup on the build host. No prior proof of these executions is inferred from the clinical source review.
+
+First failing outside-in case: legacy versioned input resolves when the fixture normalizer supplies that GRCh38 DNA anchor and the downstream fixture serves the coordinate only with assembly=hg38. Preserve source assembly and exact matched transcript provenance. Add the two successful spellings and unavailable-normalizer refusal control. Source inspection suggests discarded normalizer genome build and excluded CAR DNA projections; prove the minimal mechanism through regression before changing it. No protein/gene token fallback, invented MANE table, transcript-version substitution or claim of another transcript without source proof. Preserve current MANE display while adding matched provenance.
+
+Use recorded source-backed responses with truthful provenance, clearly mark any authored controls, and inspect capture redistribution standards before publishing. Keep full raw evidence privately in the experiment. Run focused red/green and mechanical checks through the configured build job. No extra live reruns or WIP push. A different clinical interpretation requires clinical review; implementing the recorded DNA identity rule is authorized.
+
+Keep: experiments/787-biomcp-1260-transcript-lookup — Retain cited raw proof until release evidence is explicitly released.
+
+## Focused lookup repair proof
+
+Source97abbf720885a7be615ffb9e512419007a787333 preserves normalized DNA assembly, accepts source-resolved CAR DNA coordinates, verifies exact DNA identity and retains matched transcript/cDNA provenance without replacing current headline numbering. A normalized direct miss followed by MyVariant exact-alias fallback previously used GRCh37coordinates but labeledGRCh38; the final repair names that source answering build correctly. Unavailable transcript normalization gets unverified wording; source-resolved missing genomic records get missing wording. No gene/protein-token identity fallback, invented transcript-priority table or new clinical interpretation.
+
+Red1792423447454-46057 reproduced lookup failure; red1792423937477-80439 reproduced the incorrect fallback assembly label. Final1792424003685-99460 passed nine CLI cases,85affected Rust cases and make lint. All ten committed product/test/fixture blobs match787/tested-source-manifest.json and tested.patch. Public fixture is explicitly authored; full provider captures stay private in experiments/787-biomcp-1260-transcript-lookup. No live study was repeated.

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=cache-policy.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cache-policy.sh"
+
 ROOT="${1:?repo root required}"
 ROOT="$(cd "$ROOT" && pwd)"
 CACHE_DIR="$ROOT/.cache"
@@ -166,7 +169,7 @@ cat >"$ENV_FILE" <<EOF
 export BIOMCP_EUROPEPMC_CURSOR_FIXTURE_PID="$pid"
 export BIOMCP_EUROPEPMC_CURSOR_FIXTURE_ROOT="$FIXTURE_ROOT"
 export BIOMCP_EUROPEPMC_CURSOR_REQUESTS="$REQUESTS_FILE"
-export BIOMCP_CACHE_DIR="$FIXTURE_ROOT/cache"
+$(print_fixture_cache_exports "$FIXTURE_ROOT/cache")
 export BIOMCP_PUBTATOR_BASE="$base"
 export BIOMCP_EUROPEPMC_BASE="$base"
 export BIOMCP_PUBMED_BASE="$base/entrez/eutils"

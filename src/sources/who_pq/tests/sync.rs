@@ -13,27 +13,7 @@ use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
 /// SAFETY: these tests own the `who_pq_sync_env` serial-test key, so the
 /// process-global WHO Prequalification export URL variables are exclusive
 /// while they run.
-struct EnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
-impl EnvRestore {
-    fn set(&mut self, name: &'static str, value: impl AsRef<std::ffi::OsStr>) {
-        self.0.push((name, std::env::var_os(name)));
-        // SAFETY: this test owns the who_pq_sync_env serial-test key.
-        unsafe { std::env::set_var(name, value) };
-    }
-}
-impl Drop for EnvRestore {
-    fn drop(&mut self) {
-        for (name, value) in self.0.drain(..).rev() {
-            // SAFETY: this test owns the who_pq_sync_env serial-test key.
-            unsafe {
-                match value {
-                    Some(value) => std::env::set_var(name, value),
-                    None => std::env::remove_var(name),
-                }
-            }
-        }
-    }
-}
+type EnvRestore = crate::test_support::FixtureEnv;
 
 async fn serve_exports_once(
     fpp_body: String,
@@ -79,8 +59,6 @@ fn point_export_urls_at(env: &mut EnvRestore, base: &str) {
     env.set(WHO_PQ_EXPORT_URL_ENV, format!("{base}/fpp.csv"));
     env.set(WHO_PQ_API_EXPORT_URL_ENV, format!("{base}/api.csv"));
     env.set(WHO_VACCINES_EXPORT_URL_ENV, format!("{base}/vaccines.csv"));
-    let cache = TempDirGuard::new("who-pq-sync-test-cache");
-    env.set("BIOMCP_CACHE_DIR", cache.path());
 }
 
 #[tokio::test]
@@ -95,7 +73,7 @@ async fn sync_replays_the_recorded_captures_and_reports_every_file_refreshed() {
     )
     .await;
     let root = TempDirGuard::new("who-pq-sync-replay");
-    let mut env = EnvRestore(Vec::new());
+    let mut env = EnvRestore::scratch_cache_only();
     point_export_urls_at(&mut env, &base);
 
     let report = sync_who_pq_root(root.path(), WhoPqSyncMode::Force)
@@ -124,7 +102,7 @@ async fn sync_attempts_every_file_and_names_the_failing_file_when_required_files
     )
     .await;
     let root = TempDirGuard::new("who-pq-sync-failure");
-    let mut env = EnvRestore(Vec::new());
+    let mut env = EnvRestore::scratch_cache_only();
     point_export_urls_at(&mut env, &base);
 
     let err = sync_who_pq_root(root.path(), WhoPqSyncMode::Force)
@@ -176,7 +154,7 @@ async fn sync_names_the_failing_file_and_column_in_its_final_error() {
     )
     .await;
     let root = TempDirGuard::new("who-pq-sync-column");
-    let mut env = EnvRestore(Vec::new());
+    let mut env = EnvRestore::scratch_cache_only();
     point_export_urls_at(&mut env, &base);
 
     let err = sync_who_pq_root(root.path(), WhoPqSyncMode::Force)
@@ -262,7 +240,7 @@ async fn sync_partial_run_keeps_older_data_and_reports_the_failure_reason_per_fi
     // An older good copy keeps the run partial instead of failing it.
     std::fs::write(root.path().join(WHO_PQ_CSV_FILE), super::fixture_csv())
         .expect("seed older WHO export");
-    let mut env = EnvRestore(Vec::new());
+    let mut env = EnvRestore::scratch_cache_only();
     point_export_urls_at(&mut env, &base);
 
     let report = sync_who_pq_root(root.path(), WhoPqSyncMode::Force)
