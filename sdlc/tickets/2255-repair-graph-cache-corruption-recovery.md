@@ -31,3 +31,7 @@ Name the exact cause, run the owning regression under the condition that exposed
 ## Repair boundary
 
 The failure occurs while asserting the first seed row, before corruption is inserted. Inspect the graph fixture against the shared scratch-cache policy and prove any inherited disk-floor cause under a controlled threshold on both prior main 569d9beb142c0ccb70e65d5f8618f5ee8d07a4d7 and current main. Reuse the shared fixture guard rather than copying its settings. Preserve every existing corruption and replacement assertion.
+
+## Progress
+
+- 2026-10-19 started
