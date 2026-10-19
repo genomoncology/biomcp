@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Preserve source failures during disease and drug name fallback resolution instead of reporting that the requested entity was not found. (2264)
 - Return malformed MCP tool arguments as model-visible errors naming the argument, and derive the ERepo tool schema from its typed fields. (2263)
 - Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
 
