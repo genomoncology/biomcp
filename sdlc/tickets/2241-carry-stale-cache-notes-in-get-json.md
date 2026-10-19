@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 362bf8f, accept
 
+Reviews: revision c513540, accept
+
 ## Outcome
 
 - Changes: `src/cli/outcome.rs` `src/cli/shared.rs` `src/cli/shared/get_notes.rs` `src/cli/stale_json_note_tests.rs` `skills/schemas/*.json` `CHANGELOG.md` `sdlc/issues/2026-09-27-get-json-bodies-have-no-notes-channel-for-the-stale-cache-age.md` and this ticket.
