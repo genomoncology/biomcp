@@ -6,7 +6,7 @@ priority: 4
 
 Status: OPEN.
 
-Scheduling: Outside 0.9.4; assign the later milestone declared by PM before starting a lane.
+Milestone: 0.9.5
 
 ## Outcome
 
