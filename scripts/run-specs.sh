@@ -170,7 +170,7 @@ run_replay_server() {
   # 4.1+ and the macOS gate host runs the bundled Bash 3.2.
   local greeting origin
   exec 3< <(
-    python3 tools/replay-server \
+    exec python3 tools/replay-server \
       --root "$ROOT" \
       --env-file "$env_file" \
       --request-log "$request_log"
