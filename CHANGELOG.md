@@ -6,6 +6,20 @@
 
 ### Fixes
 
+- Repair garbled trademark and registered symbols in all displayed GTR text, including names and methods, while preserving identifiers and other content. (2237)
+
+- Preserve selected drug identity names for interaction matching, require supported drug identity in discovery, rank exact matches first, and explain missing diagnostic synonym resolution. Restore deterministic diagnostic synonym controls. (2242)
+
+- Identify variant CGI output as MyVariant's variant-level CGI subset, loaded 2023-02-27, and scope empty results to that subset in Markdown and JSON. (2245)
+
+- Resolve versioned transcript variant inputs through source-backed DNA coordinates with their assembly, and name the matched transcript while preserving the displayed numbering. Refuse unverified transcript matches explicitly. (1260)
+
+- Retrieve advertised preprint JATS with its source and license, and preserve structured single and batch answers when full text is unavailable. (2248)
+
+- Name unreachable supplement files and mark incomplete searches in JSON and Markdown while retaining readable hits. (2250)
+
+- Keep the matched spelling visible in bounded supplement-search context, including Unicode text and long matches. (2249)
+
 - Name every resolved variant article alias with its planned and attempted query disposition, including forms omitted by the alias limit or invocation deadline. (2246)
 
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)

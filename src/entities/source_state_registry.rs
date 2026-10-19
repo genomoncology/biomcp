@@ -193,6 +193,8 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         &[
             "Europe PMC",
             "NCBI EFetch",
+            "NCBI ID Converter",
+            "bioRxiv/medRxiv",
             "PMC OA",
             "PMC",
             "Semantic Scholar",

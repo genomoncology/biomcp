@@ -46,6 +46,7 @@ pub use self::article::{
     ArticleSearchRenderContext, article_batch_markdown, article_citation_evidence_markdown,
     article_entities_markdown, article_graph_markdown, article_markdown,
     article_recommendations_markdown, article_search_markdown_with_footer_and_context,
+    article_supplement_search_markdown,
 };
 #[allow(unused_imports)]
 pub use self::author::{

@@ -380,6 +380,55 @@ async fn tarceva_lists_the_typed_brand_and_no_chemical_synonym() {
     server.abort();
 }
 
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn unclassified_brand_alias_requires_one_named_drugbank_identity() {
+    for competing_alias in [false, true] {
+        let mut ols: serde_json::Value = serde_json::from_str(OLS_TARCEVA_BODY).unwrap();
+        if competing_alias {
+            ols["response"]["docs"]
+                .as_array_mut()
+                .unwrap()
+                .push(serde_json::json!({
+                    "iri": "http://purl.obolibrary.org/obo/NCIT_C999999",
+                    "ontology_prefix": "NCIT", "obo_id": "NCIT:C999999",
+                    "label": "Other identity", "exact_synonyms": ["Tarceva"]
+                }));
+        }
+        let mut mychem: serde_json::Value = serde_json::from_str(&recorded!(
+            "mychem",
+            "query_erlotinib_hydrochloride_get_20261015.json"
+        ))
+        .unwrap();
+        if !competing_alias {
+            for hit in mychem["hits"].as_array_mut().unwrap() {
+                hit.as_object_mut().unwrap().remove("drugbank");
+            }
+        }
+        let (base, server) = name_resolution_fixture_server(
+            vec![
+                (
+                    "Tarceva".to_string(),
+                    recorded!("mychem", "query_tarceva_get_20261015.json"),
+                ),
+                ("erlotinib hydrochloride".to_string(), mychem.to_string()),
+            ],
+            Vec::new(),
+            vec![("Tarceva".to_string(), ols.to_string())],
+        )
+        .await;
+        let (_env, _ddinter) = drug_fixture_env(&base, "unclassified-brand-ddinter");
+        let error = super::super::get("Tarceva", &["label".to_string()])
+            .await
+            .expect_err("unclassified aliases need one supported identity");
+        assert!(
+            error.to_string().contains("No drug card matches"),
+            "{error}"
+        );
+        server.abort();
+    }
+}
+
 /// `get drug trastuzumab` against the recorded provider replies of
 /// 2026-10-15: the label page's five newest records hold four trastuzumab
 /// products and Enhertu, whose generic line "fam-trastuzumab

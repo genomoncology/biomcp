@@ -1142,6 +1142,8 @@ pub(crate) fn from_myvariant_hit_with_mane(
         transcript: annotation
             .as_ref()
             .and_then(|value| value.transcript.clone()),
+        matched_transcript: None,
+        matched_hgvs_c: None,
         protein_numbering_note: None,
         rsid,
         cosmic_id,
