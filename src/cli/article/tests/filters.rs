@@ -229,6 +229,7 @@ fn build_article_debug_plan_includes_article_type_limitation_note() {
     let filters = crate::entities::article::ArticleSearchFilters {
         gene: Some("BRAF".into()),
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,

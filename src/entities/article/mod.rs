@@ -1163,6 +1163,8 @@ pub struct ArticleVariantIntent {
 pub struct ArticleSearchFilters {
     pub gene: Option<String>,
     pub gene_anchored: bool,
+    /// Recover abstracts for full article search output. Compact pivots keep metadata requests.
+    pub(crate) include_abstracts: bool,
     pub disease: Option<String>,
     pub drug: Option<String>,
     pub variant: Option<ArticleVariantIntent>,

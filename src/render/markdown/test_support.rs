@@ -6,6 +6,7 @@ pub(super) fn article_filters_for_test(sort: ArticleSort) -> ArticleSearchFilter
     ArticleSearchFilters {
         gene: None,
         gene_anchored: false,
+        include_abstracts: false,
         disease: None,
         drug: None,
         variant: None,
