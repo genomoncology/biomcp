@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Depends on: 2274
+
 ## Outcome
 
 `search article -d` either filters every source's rows to the disease or is documented and labeled as ranking only; help and output agree with the behavior.
