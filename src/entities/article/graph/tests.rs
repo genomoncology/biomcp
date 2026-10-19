@@ -62,6 +62,7 @@ fn citations_map_semantic_scholar_edges() {
     let result = article_graph_from_citations(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(0),
             next: Some(10),
             data: vec![SemanticScholarCitationEdge {
@@ -154,6 +155,7 @@ fn references_map_semantic_scholar_edges() {
     let result = article_graph_from_references(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(7),
             next: None,
             data: vec![SemanticScholarReferenceEdge {
@@ -204,6 +206,7 @@ fn graph_page_validation_fails_closed_for_bad_offsets_and_next_values() {
         (Some(2), Some(1)),
     ] {
         let response = SemanticScholarGraphResponse::<SemanticScholarCitationEdge> {
+            paper_info: None,
             offset,
             next,
             data: Vec::new(),
@@ -228,6 +231,7 @@ fn graph_pages_preserve_provider_order_and_duplicate_edges() {
     let result = article_graph_from_citations(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(4),
             next: Some(8),
             data: vec![edge.clone(), edge],
@@ -256,6 +260,7 @@ fn empty_pages_follow_provider_next_for_both_directions() {
     let citation = article_graph_from_citations(
         article.clone(),
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(9),
             next: None,
             data: Vec::new(),
@@ -268,6 +273,7 @@ fn empty_pages_follow_provider_next_for_both_directions() {
     let reference = article_graph_from_references(
         article,
         SemanticScholarGraphResponse {
+            paper_info: None,
             offset: Some(9),
             next: Some(20),
             data: Vec::new(),

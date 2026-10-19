@@ -384,6 +384,7 @@ fn graph_markdown_is_exact_for_every_page_shape_and_direction() {
                     coverage_status,
                 },
                 _meta: ArticleGraphMeta {
+                    note: None,
                     next_commands: command.clone().into_iter().collect(),
                 },
             };
@@ -426,6 +427,7 @@ fn graph_markdown_uses_a_safe_code_span_for_the_shared_command() {
             coverage_status: GraphCoverageStatus::Continuable,
         },
         _meta: ArticleGraphMeta {
+            note: None,
             next_commands: vec![
                 "biomcp article citations \"10.1/a`b\" --limit 1 --offset 1".into(),
             ],

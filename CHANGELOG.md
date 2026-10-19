@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Report publisher-elided article references and citations as empty Semantic Scholar results with an elision note, while preserving named provider failures. (2251)
+
 - Recover visible article-search metadata once per PMID in one concurrent Europe PMC wave, preserving row order and warnings. (2235)
 
 - Reject gene paging arguments in ClinGen ERepo allele lookups through the CLI and MCP tool, while preserving default gene pages. (2238)

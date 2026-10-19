@@ -221,19 +221,37 @@ fn graph_page_contract<T>(
     caller_id: &str,
     direction: GraphDirection,
 ) -> Result<(ArticleGraphPagination, ArticleGraphMeta), BioMcpError> {
+    if response.publisher_elided(direction.as_str()) {
+        return Ok((
+            ArticleGraphPagination {
+                offset: requested_offset,
+                limit,
+                returned: 0,
+                next_offset: None,
+                coverage_status: GraphCoverageStatus::Unavailable,
+            },
+            ArticleGraphMeta {
+                next_commands: Vec::new(),
+                note: Some(format!(
+                    "Semantic Scholar returned no {} because the publisher elided that field.",
+                    direction.as_str(),
+                )),
+            },
+        ));
+    }
     let provider_offset = response.offset.ok_or_else(|| BioMcpError::Api {
-        api: "semantic-scholar".into(),
+        api: crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_API.into(),
         message: "graph response omitted its required offset".into(),
     })?;
     if provider_offset != requested_offset {
         return Err(BioMcpError::Api {
-            api: "semantic-scholar".into(),
+            api: crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_API.into(),
             message: "graph response offset did not match the request".into(),
         });
     }
     if response.next.is_some_and(|next| next <= provider_offset) {
         return Err(BioMcpError::Api {
-            api: "semantic-scholar".into(),
+            api: crate::sources::semantic_scholar::SEMANTIC_SCHOLAR_API.into(),
             message: "graph response continuation did not advance".into(),
         });
     }
@@ -254,7 +272,10 @@ fn graph_page_contract<T>(
                 GraphCoverageStatus::Exhausted
             },
         },
-        ArticleGraphMeta { next_commands },
+        ArticleGraphMeta {
+            next_commands,
+            note: None,
+        },
     ))
 }
 

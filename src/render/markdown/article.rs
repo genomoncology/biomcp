@@ -372,6 +372,9 @@ pub fn article_graph_markdown(
         markdown_cell(kind),
         markdown_cell(&article_related_label(&result.article))
     );
+    if let Some(note) = &result._meta.note {
+        out.push_str(&format!("{}\n\n", markdown_cell(note)));
+    }
     out.push_str("| Identifier | Title | Intents | Influential | Context |\n");
     out.push_str("| --- | --- | --- | --- | --- |\n");
     if result.edges.is_empty() {

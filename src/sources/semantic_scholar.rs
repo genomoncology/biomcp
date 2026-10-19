@@ -1017,6 +1017,38 @@ pub struct SemanticScholarGraphResponse<T> {
     pub next: Option<u64>,
     #[serde(default, deserialize_with = "deserialize_vec_or_default")]
     pub data: Vec<T>,
+    #[serde(default, rename = "citingPaperInfo", alias = "citedPaperInfo")]
+    pub paper_info: Option<SemanticScholarGraphPaperInfo>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SemanticScholarGraphPaperInfo {
+    #[serde(rename = "openAccessPdf")]
+    pub open_access_pdf: Option<SemanticScholarGraphPdfInfo>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SemanticScholarGraphPdfInfo {
+    pub disclaimer: Option<String>,
+}
+
+impl<T> SemanticScholarGraphResponse<T> {
+    pub(crate) fn publisher_elided(&self, field: &str) -> bool {
+        self.data.is_empty()
+            && self.next.is_none()
+            && self
+                .paper_info
+                .as_ref()
+                .and_then(|info| info.open_access_pdf.as_ref())
+                .and_then(|pdf| pdf.disclaimer.as_deref())
+                .and_then(|text| {
+                    text.split_once(
+                        "The following paper fields have been elided by the publisher: ",
+                    )
+                })
+                .and_then(|(_, fields)| fields.split_once('}'))
+                .is_some_and(|(fields, _)| fields.contains(&format!("'{field}'")))
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
