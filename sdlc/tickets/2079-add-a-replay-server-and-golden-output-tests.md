@@ -51,6 +51,7 @@ PM decision: 2026-10-17. Moved to 0.9.4. Ian ruled that 0.9.3 ships once every b
 - 2026-10-19 next: Continue the remaining command JSON and Markdown golden coverage; the CTGov trial-reference batch is landed and qualified through the shared gate.
 - 2026-10-19 landed 1d61826ab61846f0a570d7e22607b324906c06df; next: Keep the parent open; choose the next missing golden coverage needed by a named remaining replay consumer.
 - 2026-10-19 landed fe24bfc32968b2609cebd38a1b0dd19a52b2e9bb; next: Retain 2079 for remaining golden coverage; complete the accepted article-speed and GWAS evidence outcomes after this shared source batch.
+- 2026-10-19 next: Pathway batch accepted on SQLite main; wait for the main check and its own merged gate. Retained raw job evidence is copied to the private experiments/2079-replay-evidence folder, exempt from lane cleanup under PM ruling. Parent coverage inventory is running.
 
 ## Next bounded batch
 
