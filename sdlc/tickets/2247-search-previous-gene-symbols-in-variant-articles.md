@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 Variant article search queries the unambiguous queried gene's recorded MyGene aliases with their provenance, including source-provided former spellings without relabeling them as official previous symbols. It discloses current-spelling-only only when those MyGene facts are absent, unavailable or disabled.
 
-- Changes: `src/entities/gene.rs` `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_gene_aliases.py` `tests/fixtures/article/gene-aliases/authored.json` `CHANGELOG.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md`.
+- Changes: `src/entities/gene.rs` `src/entities/article/variant_search.rs` `src/cli/variant/articles.rs` `tests/test_variant_article_gene_aliases.py` `tests/fixtures/article/gene-aliases/authored.json` `CHANGELOG.md` `sdlc/tickets/2247-search-previous-gene-symbols-in-variant-articles.md` `tests/test_variant_article_alias_coverage.py` `tests/test_variant_article_transcript_aliases.py`.
 
 
 ## Evidence
@@ -58,3 +58,5 @@ Owning outside-in regression: authored unambiguous ABCC8/MyGeneSUR1 response pro
 The coordinator adopted accepted2246source02c08e8fcfc480c5719a14978e41977628ca7653, including the strict original-key attribution repair. The declared MyGene implementation is now authorized on this dependency base. Every new Python binary-driven module declares the required module-level needs_binary marker.
 
 Owning regression should also return a clearly authored SUR1-only article control when that alias is queried, preserving existing typed-gene/same-DNA identity classification. Do not claim recovery of any real extra paper without its recorded identity proof. The old broad Proof wording is interpreted under the later PM ruling: source-backed query expansion is required when facts exist; restriction is fallback only.
+
+Fixture compatibility claim: extend the existing2246alias-coverage fixture with an authored empty MyGene query/base while preserving all its assertions. The existing transcript-alias fixture may explicitly disable the unrelated MyGene alias lookup, preserving its recorded bytes and all transcript/typed-gene identity assertions. These source-controlled fixtures must work in normal gates; a special job-only environment is insufficient. Report any other exact affected fixture path before editing it.
