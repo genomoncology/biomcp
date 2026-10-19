@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 96e8831, accept
 
+Reviews: revision 7b02037, accept
+
 ## Outcome
 
 - Changes: `sdlc/records/2231-uncached-article-search.md` and this ticket during the study phase; no product edits are authorized before the exact source claim is declared.
