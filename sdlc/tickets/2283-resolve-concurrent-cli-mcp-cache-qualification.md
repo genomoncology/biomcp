@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 7d66daa, accept
+
 ## Outcome
 
 Final qualification proves concurrent initialized MCP and CLI calls return correct data, share the supported SQLite cache and reuse admitted responses. Diagnose the failing one-entry observation before deciding whether the defect belongs to production or to a test that assumes every best-effort concurrent write must succeed.
