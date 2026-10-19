@@ -40,13 +40,16 @@ pub use self::adverse_event::{
     device_event_search_markdown_with_footer, recall_search_markdown,
     recall_search_markdown_with_footer,
 };
-pub(crate) use self::article::article_source_retry_commands;
 #[allow(unused_imports)]
 pub use self::article::{
     ArticleSearchRenderContext, article_batch_markdown, article_citation_evidence_markdown,
     article_entities_markdown, article_graph_markdown, article_markdown,
     article_recommendations_markdown, article_search_markdown_with_footer_and_context,
     article_supplement_search_markdown,
+};
+pub(crate) use self::article::{
+    article_source_retry_commands, variant_article_search_markdown,
+    variant_article_sources_markdown,
 };
 #[allow(unused_imports)]
 pub use self::author::{
