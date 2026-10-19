@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 79ac5d7, accept
 
+Reviews: revision 0604527, accept
+
 ## Outcome
 
 Pathway recordings and response metadata reflect the retained exact-request primary replies. Real source-consumer failures receive a separate bounded defect; no invented fields, weakened checks or assumed clinical facts hide them.
