@@ -10,7 +10,6 @@ Milestone: 0.9.4
 
 Depends on: 2236
 
-Changes: `tests/golden/cases/*`, `src/entities/article/assets.rs`, `tests/article_asset_terminal.rs`, `tests/article_asset_terminal/primary_archive.rs`, `sdlc/records/2294-primary-article-asset-resolution.md`, `CHANGELOG.md`.
 
 Reviews: revision 3d9472e, accept
 
@@ -21,6 +20,8 @@ Reviews: revision 98152f6, accept
 ## Outcome
 
 An article assets or asset-bytes request does not call or wait on the optional Europe PMC supplementaryFiles ZIP when the primary PMC archive answer is complete and sufficient. Existing XML, HTML and Figshare discovery can add assets and retain their existing budgets. When the primary fails or lacks the asset, the secondary sources still serve as fallback with their existing budgets and unavailable labels.
+
+Changes: `tests/golden/cases/get-article-23056577-assets.json`, `src/entities/article/assets.rs`, `tests/article_asset_terminal.rs`, `tests/article_asset_terminal/primary_archive.rs`, `sdlc/records/2294-primary-article-asset-resolution.md`, `CHANGELOG.md`.
 
 - Proof: An outside-in replay case where the primary archive succeeds and the ZIP route hangs returns the primary assets without waiting out the ZIP budget, and its output names the same assets as today. A case where the primary fails still reaches the ZIP and other fallbacks. Existing availability and fallback controls pass unchanged.
 
