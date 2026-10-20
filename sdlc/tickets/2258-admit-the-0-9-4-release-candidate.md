@@ -51,6 +51,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 - 2026-10-20 next: 2233 and2234 records landed; exact candidatecffae4af5fb600039137b7c13d6955165ca46823/tree50e028fcb3dd0a17c0d5ee64e3678245895d6bc5 accepted through actualprefix. M5finalversion/changelog2258/1792497270549-70460 passed all86citations. Full nonpublishing release rehearsal39418376272 runs once on that SHA; main held fixed. Finalresult/cleanup/ownrecordreview follow, no tag.
 - 2026-10-20 next: Fullrehearsal39418376272 failed bothmanylinuxinstalled-wheelsmokes after successfulqualification andall5archive/5wheelbuilds. Cache stats exits1aftervalidversion; causeunknown. Solefreshrepair2286 reproducesactualartifact/containerbeforefix. Admissionheld, no tag; preservefailedrunandreevaluateaffectedproofbindingsoncecauseknown.
 - 2026-10-20 next: Reviewed wheel repair2286 passes both installed Linux smoke profiles; landing gate runs. Whole fresh Linux2258/1792502148739-726187 runs reviewed2ca without Rust reuse. Next actual-main full check and new full untagged rehearsal; original rehearsal remains failed, no tag.
+- 2026-10-20 landed e0d84c4293051b7f466bfcc58a68e2b739aace10; next: Partial administrative records and citation landed. Finish repaired Linux qualification, then full untagged rehearsal and final admission review. No tag.
 
 ## Preparation evidence
 
