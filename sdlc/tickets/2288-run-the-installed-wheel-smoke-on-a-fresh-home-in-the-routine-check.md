@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 The routine full main check builds the Linux wheel, installs it in the same manylinux container release.yml uses, and runs the release.yml installed-wheel smoke commands under a fresh HOME with no cache ancestors. It uses the same `BIOMCP_DISABLE_SOURCES` profile as release.yml. A fresh-root, packaging or installed-command failure fails the routine check, so the GitHub release rehearsal is never the first place one appears.
 
-Changes: `Makefile`, `.github/workflows/release.yml`, `scripts/installed-wheel-smoke.sh`, `scripts/check-linux-wheel.sh`, `tests/test_release_workflow_provenance.py`, `tests/test_installed_wheel_smoke.py`, `CHANGELOG.md`.
+Changes: `Makefile`, `.github/workflows/release.yml`, `scripts/installed-wheel-smoke.sh`, `scripts/check-linux-wheel.sh`, `tests/test_release_workflow_provenance.py`, `tests/test_installed_wheel_smoke.py`, `sdlc/records/2288-local-installed-wheel-check.md`, `CHANGELOG.md`.
 
 - Proof: Breaking fresh-root directory creation on a branch fails the routine check. The routine check and the release rehearsal run the same smoke command list.
 
@@ -25,3 +25,7 @@ Reuse the release.yml smoke command list from one shared source, so the local an
 ## Implementation boundary
 
 Use one shared smoke command list with fresh home and keyless environment on native and manylinux execution. The local wrapper reads the release matrix image source; pin the two existing Linux build/smoke images to the exact digests already qualified in 2286. Add checkout before using shared scripts. Fakes must make cold-root/cache and other unexpected product failures fatal and print captured stdout and stderr before any provider call. Preserve approved expected-disabled responses.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain installed-wheel-process/2288 raw source, fake controls, failed negative-control harness output and actual-main artifact proof until release admission closes. Original wheel/image identities remain in experiment 492.
+
+Landing alone: this changes the main gate and release workflow, so its gate definition must land separately. Source and negative controls are reviewed; the actual-main full gate supplies the single positive current-artifact smoke before another ordinary landing.
