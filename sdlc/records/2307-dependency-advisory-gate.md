@@ -33,3 +33,9 @@ The policy evidence mirror was initially deferred and absent on M5. It is now co
 ## Final routine classification correction
 
 Routine 2307/1792531221869-74743 failed one Python CI-classification contract while 1781 cases passed. Its lexical detector interpreted a fixture label ending in the quoted word cargo as a real Cargo caller. Candidate a8bf9f19e changes only malformed and missing fixture case names to their actual Cargo.lock and uv.lock names. It changes neither the detector nor test markers or dependency requirements. The failed aggregate routine remains failed, with full raw retained under routine-fe8093832/jobs. Focused helper, classifier and Ruff checks precede the next exact routine attempt.
+
+## Forced-path interpreter correction
+
+Conditional routine 2307/1792531757999-79181 passed on 5a9a0e76e. It skips unchanged-input advisory execution and therefore does not prove that path uses a compatible interpreter. Actual M5 preimage 2307/1792532156514-8292 reproduced system Python 3.9.6 failing to import tomllib. Candidate fdbebabe24b1c70440832fef152aea2829ce50c6 invokes the helper through uv run --no-sync python, honoring the existing .python-version 3.12 development pin without installing the project. Project Python support starts at 3.10; it was incorrect to call 3.12 the package minimum.
+
+M5 focused 2307/1792532243153-20795 passed Ruff and 79 affected controls, including classifier coverage. Its actual host preflight used declared Python 3.12.13 and reached the real scanner, which correctly reported pending dependency findings instead of an interpreter error. This is not a forced-main or release advisory pass. The final corrected candidate still requires its complete routine before acceptance. Canonical python-runtime-preflight.log and job records retain the actual interpreter and scanner outputs.
