@@ -15,16 +15,16 @@ Installed packages place agent skills in `share/biomcp/skills/`. Packaged
 Markdown documentation is available locally and on the canonical site at
 https://biomcp.org/:
 
-| Topic | Packaged documentation | Website |
-| --- | --- | --- |
-| Blog | `share/biomcp/docs/blog/` | https://biomcp.org/blog/ |
-| Charts | `share/biomcp/docs/charts/` | https://biomcp.org/charts/ |
-| Concepts | `share/biomcp/docs/concepts/` | https://biomcp.org/concepts/ |
+| Topic           | Packaged documentation               | Website                             |
+| --------------- | ------------------------------------ | ----------------------------------- |
+| Blog            | `share/biomcp/docs/blog/`            | https://biomcp.org/blog/            |
+| Charts          | `share/biomcp/docs/charts/`          | https://biomcp.org/charts/          |
+| Concepts        | `share/biomcp/docs/concepts/`        | https://biomcp.org/concepts/        |
 | Getting started | `share/biomcp/docs/getting-started/` | https://biomcp.org/getting-started/ |
-| How-to | `share/biomcp/docs/how-to/` | https://biomcp.org/how-to/ |
-| Reference | `share/biomcp/docs/reference/` | https://biomcp.org/reference/ |
-| Sources | `share/biomcp/docs/sources/` | https://biomcp.org/sources/ |
-| User guide | `share/biomcp/docs/user-guide/` | https://biomcp.org/user-guide/ |
+| How-to          | `share/biomcp/docs/how-to/`          | https://biomcp.org/how-to/          |
+| Reference       | `share/biomcp/docs/reference/`       | https://biomcp.org/reference/       |
+| Sources         | `share/biomcp/docs/sources/`         | https://biomcp.org/sources/         |
+| User guide      | `share/biomcp/docs/user-guide/`      | https://biomcp.org/user-guide/      |
 
 ## Repository contract shape
 
@@ -40,6 +40,7 @@ https://biomcp.org/:
   ad hoc docs. Specification pages execute prepared paths and must not invoke
   `cargo run`, `cargo build`, `cargo rustc`, `cargo test`, `cargo tree`, or
   `cargo metadata`.
+
 - Unit/static layers run with `make test`: Rust nextest and the Python
   CLI/MCP/docs contract lane run concurrently.
 
@@ -119,9 +120,9 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 ## Landing changes
 
-One coordinator lands one reviewed ticket at a time. Run `make landing-gate` on the reviewed merge candidate through the configured build job. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
+Land reviewed tickets in batches, as the shared build coordinator skill (`skills/build-coordinator.md`) says. Run `make landing-gate` once on the batch candidate through the configured build job. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
 
-A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another ticket.
+A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another batch.
 
 Everyday builds and tests use build jobs. GitHub Actions run for releases after local checks pass, and retain manual dispatch for explicit checks. The release workflow must qualify its candidate directly; a prior CI run on main does not qualify it. Rehearse the full release workflow without publishing before Ian tags a release.
 
