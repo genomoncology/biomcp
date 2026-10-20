@@ -12,6 +12,9 @@ mod supplement_cache;
 #[path = "article_asset_terminal/source_outcomes.rs"]
 mod source_outcomes;
 
+#[path = "article_asset_terminal/primary_archive.rs"]
+mod primary_archive;
+
 struct ArticleFixture {
     root: PathBuf,
     workspace: PathBuf,
