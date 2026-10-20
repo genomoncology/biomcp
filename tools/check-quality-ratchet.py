@@ -588,7 +588,7 @@ def check_paused_clock_io(
                 before = body[:pause.start()]
                 after = body[pause.end():]
                 after = re.split(r"\b(?:tokio::)?time::resume\s*\(", after, maxsplit=1)[0]
-                if socket_wait.search(after):
+                if socket_wait.search(after) or sockets.search(after):
                     reason = "real socket IO follows pause without resuming time"
                 servers = []
                 for server in re.finditer(r"\blet\s+(\w+)\s*=\s*tokio::spawn\s*\(", before):
@@ -596,12 +596,32 @@ def check_paused_clock_io(
                     if server_span is None:
                         continue
                     server_body = before[server_span[0]:server_span[1]]
-                    if not socket_wait.search(server_body):
+                    if not (socket_wait.search(server_body) or sockets.search(server_body)):
                         continue
                     joined = re.search(rf"\b{server[1]}\s*\.\s*await\b", before[server_span[1]:])
                     servers.append((server_span, bool(joined)))
                     if not joined:
                         reason = f"socket server {server[1]} remains unjoined when time pauses"
+                # Fixture wrappers own live servers even if the test itself
+                # performs no explicit read or send after pausing.
+                fixture_bindings = re.finditer(
+                    r"\blet\s+(?:mut\s+)?(\w+)\s*=\s*(?:[\w:]+::)?"
+                    r"(?:(?:MockServer|TestHttpFixture|TestHttpServer|Server)::\w+|"
+                    r"spawn_\w*(?:fixture|server)\w*)\s*\(",
+                    before,
+                )
+                for fixture in fixture_bindings:
+                    if any(span[0] <= fixture.start() < span[1] for span, _ in servers):
+                        continue
+                    if any(
+                        joined and re.search(rf"\b{fixture[1]}\b", before[span[0]:span[1]])
+                        for span, joined in servers
+                    ):
+                        continue
+                    if not re.search(
+                        rf"\bdrop\s*\(\s*{fixture[1]}\s*\)", before[fixture.end():]
+                    ):
+                        reason = f"socket fixture {fixture[1]} remains live when time pauses"
                 # A request-read event is insufficient: direct sockets must
                 # close before pause, too. Ignore locals owned by server tasks.
                 bindings = re.compile(
