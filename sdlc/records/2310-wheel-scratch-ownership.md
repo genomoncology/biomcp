@@ -7,3 +7,7 @@ The unchanged recipe in scripts/check-linux-wheel.sh completes both check=True s
 Before production edits, candidate 8d09f68f2 adds a bounded ownership regression against the unchanged script. Its Gator job imports the exact bundle on published a5314c569 and performs tiny container-owned file operations using the existing pinned image and repository/ticket labels. No package cold build is needed to reproduce this class. The proposed repair removes only verified scratch contents through that image in finally, then lets the host remove its empty directory. No new privilege or general ownership change is authorized. Success, intentional stage failure, cleanup failure and an unrelated symlink sentinel must retain their correct outcomes.
 
 The red control, corrected focused checks, routine qualification and fresh review are pending here. This ticket remains a final release blocker; prior dependency tickets may cite their verified build and smoke stages without calling their failed aggregate commands passing.
+
+## PM source-prevention ruling
+
+The PM supersedes the proposed after-the-fact cleanup approach: run the wheel container as the host uid and gid, or restore ownership of its exact target before container exit, so root-owned files do not remain in host scratch. No additional cleanup container is authorized as the preventive fix. This is another environment-leak case under the 2299 root cause record. Keep real ownership and failure-preservation controls; choose the narrow compatible source fix after inspecting the pinned image.
