@@ -76,17 +76,12 @@ class RawStdioMcp:
 
     def close(self) -> None:
         try:
-            if self.process.poll() is None:
-                self.process.terminate()
-                self.process.wait()
-        finally:
-            try:
-                os.killpg(self.process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            if self.process.poll() is None:
-                self.process.kill()
-            self.process.wait()
+            os.killpg(self.process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        if self.process.poll() is None:
+            self.process.kill()
+        self.process.wait()
 
 
 @pytest.fixture
@@ -306,6 +301,7 @@ def _running_http_server() -> Iterator[str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        start_new_session=True,
     )
     try:
         while process.poll() is None:
@@ -318,12 +314,10 @@ def _running_http_server() -> Iterator[str]:
         pytest.fail("serve-http exited before becoming ready")
     finally:
         try:
-            process.terminate()
-            process.wait()
-        finally:
-            if process.poll() is None:
-                process.kill()
-            process.wait()
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.wait()
 
 
 def _http_rpc(

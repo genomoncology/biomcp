@@ -56,17 +56,12 @@ class StdioMcp:
 
     def close(self) -> None:
         try:
-            if self.process.poll() is None:
-                self.process.terminate()
-                self.process.wait()
-        finally:
-            try:
-                os.killpg(self.process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            if self.process.poll() is None:
-                self.process.kill()
-            self.process.wait()
+            os.killpg(self.process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        if self.process.poll() is None:
+            self.process.kill()
+        self.process.wait()
 
 
 @pytest.fixture

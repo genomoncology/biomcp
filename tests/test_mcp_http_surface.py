@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import socket
 import subprocess
 import time
@@ -182,6 +183,7 @@ def _running_server(*extra_args: str) -> Iterator[str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        start_new_session=True,
     )
     try:
         while proc.poll() is None:
@@ -194,12 +196,10 @@ def _running_server(*extra_args: str) -> Iterator[str]:
         raise AssertionError(f"serve-http exited before readiness at {base_url}")
     finally:
         try:
-            proc.terminate()
-            proc.wait()
-        finally:
-            if proc.poll() is None:
-                proc.kill()
-            proc.wait()
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait()
 
 
 @pytest.fixture
@@ -213,6 +213,7 @@ def http_server() -> Iterator[str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        start_new_session=True,
     )
 
     try:
@@ -228,12 +229,10 @@ def http_server() -> Iterator[str]:
         raise AssertionError(f"serve-http exited before readiness on {base_url}/health")
     finally:
         try:
-            proc.terminate()
-            proc.wait()
-        finally:
-            if proc.poll() is None:
-                proc.kill()
-            proc.wait()
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait()
 
 
 def test_http_routes_advertise_streamable_http_surface(http_server: str) -> None:
