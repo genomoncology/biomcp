@@ -1,0 +1,71 @@
+{
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "UniProt",
+        "url": "https://www.uniprot.org/uniprot/P15056"
+      }
+    ],
+    "next_commands": [
+      "biomcp get protein P15056 complexes"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "UniProt"
+        ]
+      },
+      {
+        "key": "structures",
+        "label": "Structures",
+        "outcome": "data",
+        "sources": [
+          "UniProt"
+        ]
+      }
+    ]
+  },
+  "_provenance": {
+    "evidence_urls": [
+      {
+        "label": "UniProt",
+        "url": "https://www.uniprot.org/uniprot/P15056"
+      }
+    ]
+  },
+  "accession": "P15056",
+  "complexes": [],
+  "domains": [],
+  "entry_id": "BRAF_HUMAN",
+  "interactions": [],
+  "length": 766,
+  "name": "P15056",
+  "section_outcomes": {
+    "complexes": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "domains": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "interactions": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "structures": {
+      "outcome": "data",
+      "sources": [
+        "UniProt"
+      ]
+    }
+  },
+  "structure_count": 2,
+  "structures": [
+    "1UWH (X-ray, 2.95 A)",
+    "P15056 (AlphaFold model)"
+  ]
+}
