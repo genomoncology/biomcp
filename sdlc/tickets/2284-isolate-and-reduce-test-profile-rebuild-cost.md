@@ -56,4 +56,4 @@ Keep: experiments/2113-biomcp-2284-rebuild-attribution — retain the rejected p
 
 Keep: experiments/2288-biomcp-2284-unit-attribution — retain native unit timings, exact inputs and completed job evidence.
 
-The PM directs this administrative landing to carry the root-cause record and six authorized follow-up tickets from tickets/pm-rca at3819a97abb142b7d57f71eada2e8a4031b9c65a9, plus the open issue-triage ticket from its updated seede18acd7ed. Those tickets remain open; this landing claims no implementation of them. The PM permits the issue triage after the release candidate if it would otherwise delay the release.
+The PM directs this administrative landing to carry the root-cause record and six authorized follow-up tickets from tickets/pm-rca at3819a97abb142b7d57f71eada2e8a4031b9c65a9, plus the open issue-triage ticket from its updated seed e18acd7ed. Those tickets remain open; this landing claims no implementation of them. The PM permits the issue triage after the release candidate if it would otherwise delay the release.
