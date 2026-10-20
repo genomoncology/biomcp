@@ -1,0 +1,5 @@
+# 2301 — paused clock io
+
+Separate real socket work from paused-clock assertions, preserving the existing deadline and cancellation outcomes. The finite source audit on published main91118b5881ccbf4186875e445173b61ec4dbc86d found five unsafe tests: batch, dev2, article held-reply, author stalled request and disease EOF. Gator job1792524728198-1183525 retained that red and passed nine planted command-line controls. The earlier86ms runner setup failure exercised no audit and remains separate. This source-ordering reproduction does not establish any historical host-stall cause.
+
+The article held-wait future is tested without sockets; real author and disease deadline tests retain their configured policies and cancellation assertions. The routine source check is bounded to the observed source patterns, rather than a general proof of Rust async safety. Exact raw commands, patches, outputs and setup failure remain under M5 experiments/2102-biomcp-2258-final-live-replay/paused-clock/2301. Corrected runtime and routine qualification are recorded after execution.
