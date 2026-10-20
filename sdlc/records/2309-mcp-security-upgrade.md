@@ -7,3 +7,9 @@ Before upgrading, the developer committed an outside-in regression using the pro
 M5 dependency and API job 2309/1792530306199-82317 failed before compiling BioMCP: resolved rmcp 2.2.0 calls SseStream::from_bytes_stream, absent in selected sse-stream 0.2.1. This is a failed compatibility check. A narrow compatible lock resolution remains required, followed by unchanged MCP and contract-client checks, installed-wheel smoke, routine qualification and fresh review. No later result is claimed.
 
 Both hosts retain commands, advisory references, source overlays and raw results under experiment 2102-biomcp-2258-final-live-replay/mcp-security/2309. GitHub alerts must close through the actual landed fix, never manual dismissal.
+
+## Reproduced session leak and SDK migration
+
+Gator job 2309/1792530452524-1304021 reproduced the old-lock leak: the first rejected non-initializing POST retained a session, failing the security regression. The earlier --bin selection ran zero tests and is not reproduction evidence. Corrected raw red-lib.log and the exact red source 3b8516e81 remain retained. The regression also performs valid initialization and DELETE as its positive control before testing rejected requests.
+
+Candidate c95e30e0b resolves rmcp and rmcp-macros 2.2.0 with compatible sse-stream 0.2.6. The initial suggestion to downgrade sse-stream was corrected before a second compiler run: the required from_bytes_stream alias appears in later releases. SDK content and resource adaptations stay in the MCP shell, modern shell, contract client and existing HTTP example; schemas and protocol assertions remain unchanged. Focused API, stdio, HTTP and contract-client qualification is queued on this exact source. The existing installed Linux wheel smoke and routine suite remain required after compatibility settles.
