@@ -247,6 +247,8 @@ fn windows_mygene_fixture_accepts_a_valid_request_after_cold_start_delay() {
     use std::time::Duration;
 
     let fixture = start_mygene_fixture();
+    // sleep reason: exercise a client that connects after a cold process start.
+    #[allow(clippy::disallowed_methods)]
     std::thread::sleep(Duration::from_millis(2_500));
     let mut stream = TcpStream::connect(fixture.base.trim_start_matches("http://"))
         .expect("connect to delayed fixture");
