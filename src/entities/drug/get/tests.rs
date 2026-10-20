@@ -949,7 +949,7 @@ fn ambiguous_candidates_rank_by_record_count_then_name_and_cap_at_ten() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn get_drug_pain_relief_refuses_as_ambiguous_with_the_recorded_candidates() {
-    let (base, server) = crate::entities::drug::test_support::name_resolution_fixture_server(
+    let (base, mut server) = crate::entities::drug::test_support::name_resolution_fixture_server(
         // The live MyChem text query matches only other drugs' records
         // (live total 673, trimmed to one row).
         vec![(
@@ -974,7 +974,7 @@ async fn get_drug_pain_relief_refuses_as_ambiguous_with_the_recorded_candidates(
     let message = err.to_string();
     assert!(message.contains("biomcp search drug"), "{message}");
     assert!(!message.contains("- lidocaine"), "{message}");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The parallel-source proof's MyChem reply: one record that names
@@ -1016,53 +1016,49 @@ async fn parallel_source_server(
 ) -> (
     String,
     std::sync::Arc<std::sync::atomic::AtomicBool>,
-    tokio::task::JoinHandle<()>,
+    crate::test_support::TestHttpServer,
 ) {
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::io::AsyncWriteExt;
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind parallel drug fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let hold_replies = Arc::new(AtomicBool::new(true));
     let held = hold_replies.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let held = held.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 32 * 1024];
-                let Ok(len) = stream.read(&mut request).await else {
-                    return;
-                };
-                let request = String::from_utf8_lossy(&request[..len]);
-                let (body, delayed) = if request.starts_with("GET /v1/query?") {
-                    (PARALLEL_PROOF_MYCHEM, false)
-                } else if request.starts_with("GET /drug/label.json?") {
-                    (PARALLEL_PROOF_LABEL, true)
-                } else if request.starts_with("POST /civic/graphql") {
-                    (PARALLEL_PROOF_CIVIC, true)
-                } else if request.starts_with("POST /opentargets/graphql") {
-                    (PARALLEL_PROOF_OPENTARGETS, true)
-                } else if request.starts_with("GET /chembl/mechanism.json?") {
-                    (PARALLEL_PROOF_CHEMBL, false)
-                } else if request.starts_with("GET /drug/event.json?") {
-                    (PARALLEL_PROOF_FAERS, true)
-                } else {
-                    (r#"{"error":"unplanned"}"#, false)
-                };
-                if delayed && held.load(Ordering::SeqCst) {
-                    tokio::time::sleep(hold).await; // watchdog: the one-second reply hold is the measured subject of the parallel proof
-                }
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let held = held.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+let request = String::from_utf8_lossy(&request);
+            let (body, delayed) = if request.starts_with("GET /v1/query?") {
+                (PARALLEL_PROOF_MYCHEM, false)
+            } else if request.starts_with("GET /drug/label.json?") {
+                (PARALLEL_PROOF_LABEL, true)
+            } else if request.starts_with("POST /civic/graphql") {
+                (PARALLEL_PROOF_CIVIC, true)
+            } else if request.starts_with("POST /opentargets/graphql") {
+                (PARALLEL_PROOF_OPENTARGETS, true)
+            } else if request.starts_with("GET /chembl/mechanism.json?") {
+                (PARALLEL_PROOF_CHEMBL, false)
+            } else if request.starts_with("GET /drug/event.json?") {
+                (PARALLEL_PROOF_FAERS, true)
+            } else {
+                (r#"{"error":"unplanned"}"#, false)
+            };
+            if delayed && held.load(Ordering::SeqCst) {
+                tokio::time::sleep(hold).await; // watchdog: the one-second reply hold is the measured subject of the parallel proof
+            }
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, hold_replies, task)
 }
 
@@ -1081,7 +1077,7 @@ async fn drug_card_sources_run_at_once_and_keep_the_undelayed_output() {
     const HOLD: Duration = Duration::from_secs(1);
     const CARD_DEADLINE: Duration = Duration::from_millis(2000);
 
-    let (base, hold_replies, server) = parallel_source_server(HOLD).await;
+    let (base, hold_replies, mut server) = parallel_source_server(HOLD).await;
     let (mut env, _ddinter) =
         crate::entities::drug::test_support::drug_fixture_env(&base, "parallel-drug-ddinter");
     env.set("BIOMCP_CIVIC_BASE", format!("{base}/civic"));
@@ -1105,7 +1101,7 @@ async fn drug_card_sources_run_at_once_and_keep_the_undelayed_output() {
         .await
         .expect("undelayed card settles");
     drop(env);
-    server.abort();
+    server.finish().unwrap();
 
     assert_eq!(
         serde_json::to_value(&held_card).expect("serialize held card"),

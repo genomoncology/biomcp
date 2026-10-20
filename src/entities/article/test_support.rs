@@ -41,65 +41,46 @@ pub(super) fn held_reply_gate() -> (tokio::sync::mpsc::Sender<()>, HeldReplyGate
     )
 }
 
+/// Bound a held reply without coupling the timer to a real socket.
+pub(super) async fn wait_for_held_reply(release: HeldReplyGate) {
+    let _ = tokio::time::timeout(crate::test_support::watchdog(180), async {
+        release.lock().await.recv().await;
+    })
+    .await;
+}
+
 pub(super) struct TestHttpFixture {
     pub(super) base: String,
-    task: tokio::task::JoinHandle<()>,
+    server: crate::test_support::TestHttpServer,
 }
 
 impl TestHttpFixture {
     pub(super) async fn spawn(
         handler: impl Fn(&str) -> TestHttpReply + Send + Sync + 'static,
     ) -> Self {
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
-
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind article fixture");
-        let address = listener.local_addr().expect("article fixture address");
-        let handler = std::sync::Arc::new(handler);
-        let task = tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let handler = handler.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let length = stream.read(&mut request).await.unwrap_or(0);
-                    let request = String::from_utf8_lossy(&request[..length]);
-                    match handler(&request) {
-                        TestHttpReply::Bytes(response) => {
-                            let _ = stream.write_all(&response).await;
-                        }
-                        TestHttpReply::Hold(release) => {
-                            // The hold waits on async primitives, so it never
-                            // parks a runtime worker thread.
-                            // The wait also carries its own bound, above
-                            // every legitimate test bound (the 60 s search
-                            // deadline, the 60-120 s watchdogs): nextest
-                            // kills a hung test at its slow-timeout, but a
-                            // bare `cargo test` run has no such budget, so
-                            // a hold that outlives its test self-releases
-                            // and closes the connection. The caller waiting
-                            // on the reply then fails instead of hanging
-                            // the runner.
-                            let _ =
-                                tokio::time::timeout(crate::test_support::watchdog(180), async {
-                                    release.lock().await.recv().await;
-                                })
-                                .await;
-                        }
+        let server = crate::test_support::TestHttpServer::respond(move |request| {
+            let reply = handler(&String::from_utf8_lossy(&request));
+            async move {
+                match reply {
+                    TestHttpReply::Bytes(response) => Ok(response),
+                    TestHttpReply::Hold(release) => {
+                        wait_for_held_reply(release).await;
+                        Ok(Vec::new())
                     }
-                });
+                }
             }
-        });
+        })
+        .expect("start article fixture");
         Self {
-            base: format!("http://{address}"),
-            task,
+            base: server.base.clone(),
+            server,
         }
     }
 }
 
-impl Drop for TestHttpFixture {
-    fn drop(&mut self) {
-        self.task.abort();
+impl TestHttpFixture {
+    pub(super) fn finish(&mut self) -> std::io::Result<()> {
+        self.server.finish()
     }
 }
 

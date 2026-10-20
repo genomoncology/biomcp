@@ -4,7 +4,7 @@ use super::super::test_support::*;
 use super::*;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 mod fallback;
 mod mechanism;
@@ -116,56 +116,53 @@ fn mychem_fixture_response(status: &str, body: &str) -> Vec<u8> {
     .into_bytes()
 }
 
-async fn mychem_fallback_fixture_server() -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>)
-{
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind MyChem fallback fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn mychem_fallback_fixture_server() -> (
+    String,
+    Arc<AtomicUsize>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(AtomicUsize::new(0));
     let observed = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let observed = observed.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 32 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]);
-                observed.fetch_add(1, Ordering::SeqCst);
-                let response = if request.contains("q=gardasil&") {
-                    mychem_fixture_response("200 OK", r#"{"malformed":"fixture"}"#)
-                } else if request.contains("q=prevnar&") {
-                    mychem_fixture_response("200 OK", r#"{"total":0,"hits":[]}"#)
-                } else if request.contains("q=fluzone&") {
-                    mychem_fixture_response(
-                        "200 OK",
-                        r#"{"total":1,"hits":[{"drugbank":{"name":"unrelated"}}]}"#,
-                    )
-                } else if request.contains("q=GARDASIL&") {
-                    mychem_fixture_response(
-                        "200 OK",
-                        r#"{"total":1,"hits":[{"drugbank":{"synonyms":["GARDASIL"]}}]}"#,
-                    )
-                } else {
-                    mychem_fixture_response("404 Not Found", r#"{"error":"unplanned"}"#)
-                };
-                stream
-                    .write_all(&response)
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let observed = observed.clone();
+
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request);
+            observed.fetch_add(1, Ordering::SeqCst);
+            let response = if request.contains("q=gardasil&") {
+                mychem_fixture_response("200 OK", r#"{"malformed":"fixture"}"#)
+            } else if request.contains("q=prevnar&") {
+                mychem_fixture_response("200 OK", r#"{"total":0,"hits":[]}"#)
+            } else if request.contains("q=fluzone&") {
+                mychem_fixture_response(
+                    "200 OK",
+                    r#"{"total":1,"hits":[{"drugbank":{"name":"unrelated"}}]}"#,
+                )
+            } else if request.contains("q=GARDASIL&") {
+                mychem_fixture_response(
+                    "200 OK",
+                    r#"{"total":1,"hits":[{"drugbank":{"synonyms":["GARDASIL"]}}]}"#,
+                )
+            } else {
+                mychem_fixture_response("404 Not Found", r#"{"error":"unplanned"}"#)
+            };
+            stream.write_all(&response).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn unresolved_mychem_paths_each_request_once_and_preserve_positive_cvx_fallback() {
-    let (base, requests, server) = mychem_fallback_fixture_server().await;
+    let (base, requests, mut server) = mychem_fallback_fixture_server().await;
     let fixture_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/fixtures");
     let local_data = crate::test_support::TempDirGuard::new("ema-search-fallback");
     let ema_root = local_data.path().join("ema");
@@ -224,7 +221,7 @@ async fn unresolved_mychem_paths_each_request_once_and_preserve_positive_cvx_fal
             "{query} should fall back through CVX to {expected_name}"
         );
     }
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[test]

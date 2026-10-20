@@ -216,34 +216,31 @@ mod orcid_row {
     use super::super::super::http::check_orcid_get;
     use super::super::super::runner::ProbeClass;
     use super::super::super::{HealthRow, HealthStatus};
-    use std::io::{Read as _, Write};
-    use std::net::TcpListener;
+    use crate::test_support::TestHttpServer;
     use std::sync::{Arc, Mutex};
+    use tokio::io::AsyncWriteExt;
 
     struct ProbeServer {
         url: String,
         hits: Arc<Mutex<usize>>,
         authorizations: Arc<Mutex<Vec<String>>>,
+        server: TestHttpServer,
     }
 
     /// Counts connections; serves one canned 200 response per connection;
     /// records each request's Authorization header value, if any.
     fn probe_server() -> ProbeServer {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("bind probe listener");
-        let address = listener.local_addr().expect("probe address");
         let hits = Arc::new(Mutex::new(0usize));
         let counter = hits.clone();
         let authorizations = Arc::new(Mutex::new(Vec::<String>::new()));
         let logged_headers = authorizations.clone();
-        std::thread::spawn(move || {
-            for stream in listener.incoming() {
-                let Ok(mut stream) = stream else {
-                    break;
-                };
+        let server = TestHttpServer::spawn(move |mut stream| {
+            let counter = counter.clone();
+            let logged_headers = logged_headers.clone();
+            async move {
                 *counter.lock().unwrap() += 1;
-                let mut buffer = [0_u8; 4096];
-                let _ = stream.read(&mut buffer);
-                let request = String::from_utf8_lossy(&buffer);
+                let Some(bytes) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
+                let request = String::from_utf8_lossy(&bytes);
                 let authorization = request
                     .lines()
                     .find_map(|line| {
@@ -259,13 +256,17 @@ mod orcid_row {
                     body.len(),
                     body
                 );
-                let _ = stream.write_all(response.as_bytes());
+                stream.write_all(response.as_bytes()).await?;
+                Ok(())
             }
-        });
+        })
+        .expect("start probe fixture");
+
         ProbeServer {
-            url: format!("http://{address}/0000-0002-1825-0097/person"),
+            url: format!("{}/0000-0002-1825-0097/person", server.base),
             hits,
             authorizations,
+            server,
         }
     }
 
@@ -313,6 +314,7 @@ mod orcid_row {
             url,
             hits,
             authorizations,
+            mut server,
         } = probe_server();
         let outcome = check_orcid_get(
             client(),
@@ -338,13 +340,19 @@ mod orcid_row {
         );
         assert!(json.ends_with(r#"ms","key_configured":false}"#), "{json}");
         assert!(!json.contains("Authorization"), "{json}");
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn an_invalid_nonblank_token_is_an_error_row_without_any_request() {
         let _env = TokenEnv::set(Some("bad token"));
-        let ProbeServer { url, hits, .. } = probe_server();
+        let ProbeServer {
+            url,
+            hits,
+            mut server,
+            ..
+        } = probe_server();
         let outcome = check_orcid_get(
             client(),
             "ORCID",
@@ -361,6 +369,7 @@ mod orcid_row {
         let json = row_json(&outcome.row);
         assert!(json.contains(r#""status":"error""#), "{json}");
         assert!(json.contains(r#""key_configured":true"#), "{json}");
+        server.finish().unwrap();
     }
 
     #[tokio::test]
@@ -371,6 +380,7 @@ mod orcid_row {
             url,
             hits,
             authorizations,
+            mut server,
         } = probe_server();
         let outcome = check_orcid_get(
             client(),
@@ -388,5 +398,6 @@ mod orcid_row {
             *authorizations.lock().unwrap(),
             vec!["Bearer fixture-public-read-token"]
         );
+        server.finish().unwrap();
     }
 }

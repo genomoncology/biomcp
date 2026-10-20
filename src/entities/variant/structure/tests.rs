@@ -340,60 +340,47 @@ fn structure_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<u
 /// One recorded-reply server for both structure rows: it replays the
 /// committed captures above and logs every request line so tests can prove
 /// which lookups ran.
-async fn structure_recorded_reply_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind structure fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn structure_recorded_reply_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        while let Ok((mut stream, _)) = listener.accept().await {
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        use tokio::io::{AsyncWriteExt};
+
             let captured = captured.clone();
-            tokio::spawn(async move {
-                // The production GET field list makes the request line span
-                // TCP segments, so read until the headers end before routing.
-                let mut request = vec![0_u8; 64 * 1024];
-                let mut len = 0_usize;
-                loop {
-                    let read = stream
-                        .read(&mut request[len..])
-                        .await
-                        .expect("read fixture request");
-                    len += read;
-                    if read == 0
-                        || len == request.len()
-                        || request[..len].windows(4).any(|w| w == b"\r\n\r\n")
-                    {
-                        break;
-                    }
-                }
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured.lock().expect("lock requests").push(
-                    request
-                        .split_whitespace()
-                        .nth(1)
-                        .unwrap_or_default()
-                        .to_string(),
-                );
-                let (status, content_type, body) = structure_recorded_reply(&request);
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response head");
-                stream
-                    .write_all(&body)
-                    .await
-                    .expect("write fixture response body");
-            });
+        async move {
+            // The production GET field list makes the request line span
+            // TCP segments, so read until the headers end before routing.
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+let request = String::from_utf8_lossy(&request).into_owned();
+            captured.lock().expect("lock requests").push(
+                request
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or_default()
+                    .to_string(),
+            );
+            let (status, content_type, body) = structure_recorded_reply(&request);
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            stream
+                .write_all(&body)
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -417,14 +404,14 @@ fn structure_reply_env(base: &str, cache_dir: &tempfile::TempDir) -> StructureRe
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn mutyh_g368d_on_q9uif7_never_reports_position_368_as_a_placement() {
-    let (base, requests, server) = structure_recorded_reply_server().await;
+    let (base, requests, mut server) = structure_recorded_reply_server().await;
     let cache_dir = tempfile::tempdir().expect("temp cache dir");
     let _env = structure_reply_env(&base, &cache_dir);
 
     let result = crate::sources::with_no_cache(true, structure("MUTYH G368D"))
         .await
         .expect("recorded MUTYH G368D structure answer");
-    server.abort();
+    server.finish().unwrap();
     let requests = requests.lock().expect("lock requests").join("\n");
 
     // The protein the helper chose still heads the answer.
@@ -502,14 +489,14 @@ async fn mutyh_g368d_on_q9uif7_never_reports_position_368_as_a_placement() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn braf_v600e_on_p15056_keeps_the_verified_position_600() {
-    let (base, requests, server) = structure_recorded_reply_server().await;
+    let (base, requests, mut server) = structure_recorded_reply_server().await;
     let cache_dir = tempfile::tempdir().expect("temp cache dir");
     let _env = structure_reply_env(&base, &cache_dir);
 
     let result = crate::sources::with_no_cache(true, structure("BRAF V600E"))
         .await
         .expect("recorded BRAF V600E structure answer");
-    server.abort();
+    server.finish().unwrap();
     let requests = requests.lock().expect("lock requests").join("\n");
 
     assert_eq!(result.protein.accession, "P15056");

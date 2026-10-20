@@ -100,6 +100,10 @@
 
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
+- Share local Rust HTTP test fixtures with owned shutdown, disconnect handling and explicit failure reporting. (2303)
+- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
+
+- Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
