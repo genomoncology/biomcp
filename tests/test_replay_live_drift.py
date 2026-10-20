@@ -553,3 +553,31 @@ def test_real_formats_reject_truncated_opaque_signature(tmp_path, provider, hist
     assert process.returncode == 1
     assert summary["blocked" if historical else "drift"] == 1
     assert summary["checked"] == int(not historical)
+
+
+@pytest.mark.parametrize(
+    ("name", "source_id", "origin"),
+    [
+        ("hpa", "human-protein-atlas", "https://www.proteinatlas.org"),
+        ("hpo", "hpo-jax-api", "https://ontology.jax.org/api/hp"),
+        ("monarch", "monarch-initiative", "https://api-v3.monarchinitiative.org"),
+    ],
+)
+def test_inventory_uses_runtime_provider_policy_identity(tmp_path, name, source_id, origin):
+    replay, _ = recording(tmp_path, origin, provider=name)
+    process, results, summary = run_check(tmp_path, replay)
+    assert process.returncode == 0, results
+    assert summary["ready"] == 1
+    process, results, summary = run_check(
+        tmp_path, replay, "--disable-sources", source_id
+    )
+    assert process.returncode == 0, results
+    assert summary["disabled"] == 1
+
+
+def test_inventory_refuses_unknown_provider_identity(tmp_path):
+    replay, _ = recording(tmp_path, "https://example.invalid", provider="future-source")
+    process, results, summary = run_check(tmp_path, replay)
+    assert process.returncode == 1
+    assert summary["blocked"] == 1
+    assert results[0]["details"] == ["unknown or ambiguous provider policy identity"]
