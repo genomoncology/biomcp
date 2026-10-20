@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Report the license stated by fetched PMC metadata in full-text output, including when an asset package is unavailable. (2296)
+
 - Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
 
 - Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
