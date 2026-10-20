@@ -31,3 +31,7 @@ Landing alone: this changes the release qualification checker dependency and the
 PM decision: HPA, HPO (JAX) and Monarch retain existing registry policies. Unknown identities fail closed with clear messages. The existing offline inventory must run in the routine landing gate; add its invocation here because it was absent. No capture-admission framework or separate follow-up is required.
 
 Keep: experiments/2102-biomcp-2258-final-live-replay — retain provider-policy-identities/2295 while final admission consumes its original inventory failure and corrected proof.
+
+## Progress
+
+- 2026-10-20 started
