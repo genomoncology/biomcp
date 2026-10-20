@@ -18,4 +18,4 @@ The locked versions clear every open GitHub security alert that a patch-level or
 
 GitHub Dependabot listed these on 2026-10-20 (alerts 80, 87, 88, 89, 91, 93). The local `cargo deny` gate did not report xxhash-rust, and no local check audits `uv.lock`, so the routine gate never saw them.
 
-Changes: uv.lock, Cargo.lock, CHANGELOG.md, sdlc/records/2308-security-lock-pins.md
+Changes: `uv.lock`, `Cargo.lock`, `CHANGELOG.md`, `sdlc/records/2308-security-lock-pins.md`
