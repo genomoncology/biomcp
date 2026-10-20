@@ -12,7 +12,7 @@ Depends on: 2134
 
 ## Outcome
 
-Changes: `sdlc/records/2234-candidate-measurements.md`, `CHANGELOG.md`.
+Changes: `sdlc/records/2234-candidate-measurements.md`, `CHANGELOG.md`, `sdlc/tickets/2284-isolate-and-reduce-test-profile-rebuild-cost.md`.
 
 The release measurement compares v0.9.3 and the 0.9.4 candidate on one build machine for test time, spec time, full main check, development build time, first-run and warm command times, and cache size on disk, and names every regression with its cause.
 
@@ -56,3 +56,7 @@ Keep: experiments/491-biomcp-2234-raw — independently verified backup of the f
 ## Test-only qualification disposition
 
 PM approved the 2283 cache-test correction under best-effort admission. Product source remains unchanged, so candidate measurements resume on 51f5e03b218c87cedc82bd9e1a67552bd5ab9df8 while final Linux qualification reruns on the repaired tip after landing. Preserve all valid old-release samples and failures.
+
+## Performance disposition
+
+The PM ruled that user-facing runtime rows slower beyond noise require a cause and fix lane for 0.9.4. Developer rebuild cost does not block this release: record the cost in the final measurement record and changelog. Follow-up 2284 in 0.9.5 owns isolating and reducing the test-profile compilation cost. Final paired collection continues before the go request.
