@@ -88,7 +88,7 @@
 
 ### Internal
 
-- Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article command output in JSON and Markdown. (2236)
+- Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
 
 - Build and smoke an installed Linux wheel with a fresh home during the full main check, sharing release smoke commands and pinned manylinux images. (2288)
