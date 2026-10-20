@@ -1,6 +1,6 @@
 # Publish flat MCP tool schemas and finish the argument checks
 
-From sdlc/issues/2026-09-24-mcp-schema-follow-ups-after-1240.md. The
+From sdlc/archive/issues/2026-09-24-mcp-schema-follow-ups-after-1240.md. The
 reviewer drove the live server: all seven tools have root
 `type: object` and top-level properties, but three tools still wrap
 their arguments in a top-level `oneOf`, which OpenAI and Gemini

@@ -1,5 +1,8 @@
 # MCP schema follow-ups after ticket 1240
 
+Disposition (2026-10-20): Superseded by ticket 2258's full untagged release rehearsal. The PM withdrew the separate external conformance run. The earlier external known-safe tools/call proof remains UNVERIFIED; this archive claims no additional run.
+
+
 Filed 2026-09-24 from the review of ticket 1240 (merge 60ecdb66). The reviewer drove a debug build over stdio and ran `@hasmcp/mcp-spec-test` 0.1.5: 9 passed, 0 failed, 2 not verified. All seven tools have a root `"type":"object"` and top-level `properties`, and `search` and `get` carry the `entity` enum and `required`.
 
 ## Should-fix

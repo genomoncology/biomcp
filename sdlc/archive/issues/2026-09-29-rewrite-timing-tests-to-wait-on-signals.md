@@ -1,5 +1,8 @@
 # Rewrite timing tests to wait on signals
 
+Disposition (2026-10-20): Transferred to OPEN ticket 2302 for 0.9.4. Ticket 2302 owns replacing the five freshness sleeps. This archive does not mark those waits fixed.
+
+
 Ian approved this move to 1.0 on 2026-09-29 (recorded in the review file 2026-09-29-review-of-the-enrichr-cache-and-records-round.md and main commit 5bb12367). Timing tests that sleep or poll wall-clock windows break under CI's parallel load; each break costs a gate cycle and a CI run. The rewrite replaces sleeps with child-exit signals and readiness markers the way ticket 1252 converted the lease waits.
 
 ## Scope

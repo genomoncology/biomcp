@@ -1,7 +1,7 @@
 # Fix the MCP tool schemas and argument errors
 
 Split from ticket 1238. Source issue:
-`sdlc/issues/2026-09-23-mcp-tool-schemas-and-argument-errors.md`.
+`sdlc/archive/issues/2026-09-23-mcp-tool-schemas-and-argument-errors.md`.
 
 ## Problem
 
