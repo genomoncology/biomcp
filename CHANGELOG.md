@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
 - Restore PGx frequency and guideline sections broken against the current CPIC API by ordering on supported provider columns. (2292)
 
 - Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
