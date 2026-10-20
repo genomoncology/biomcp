@@ -58,7 +58,7 @@ copy. If it appears wrong, stop rather than implementing a different rule.
 The NCI object parsing and unreadable-element error behavior currently in
 `nci_conditions` is correct and must remain. That behavior was completed and
 landed for ticket 1107 at commit `633affc2`; its completed record is
-`sdlc/records/1107-an-nci-trial-reports-no-conditions-at-all.md`. This ticket
+`sdlc/archive/records/1107-an-nci-trial-reports-no-conditions-at-all.md`. This ticket
 removes only the subsequent count cap.
 
 ## Required behavior

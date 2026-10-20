@@ -11,7 +11,7 @@ Every completion record has one unique four-digit identity, and the routine repo
 
 At `origin/main` commit `b2e05326`, these files both existed:
 
-- `sdlc/records/1160-keep-provider-trial-titles-inert-in-displayed-article-search-commands.md`
+- `sdlc/archive/records/1160-keep-provider-trial-titles-inert-in-displayed-article-search-commands.md`
 - `sdlc/records/1160-carry-biodata-reference-values-through-the-working-trial-command.md`
 
 There were 734 numbered record files but only 733 unique record IDs. `sdlc/project/tasks` stores record IDs in a set used only to mark tickets done, so it cannot distinguish or report two record paths carrying one identity. `sdlc/project/health` checks ticket and legacy-issue collisions but not record-versus-record collisions.
