@@ -97,6 +97,8 @@
 
 ### Internal
 
+- Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
+
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
