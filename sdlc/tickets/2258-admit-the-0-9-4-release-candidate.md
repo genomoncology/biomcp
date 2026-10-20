@@ -22,7 +22,7 @@ Main holds a stable 0.9.4 candidate that meets `docs/reference/release-process.m
 
 - Proof: The final source passes the full local main check, fresh-clone Linux qualification and full untagged release rehearsal; the go request names their exact revisions and jobs.
 
-Changes: `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `docs/reference/release-process.md`, `CHANGELOG.md`, `AGENTS.md`, `sdlc/tickets/**`, `sdlc/plan.md`, `sdlc/planning/**`, `sdlc/archive/planning/**`, `sdlc/decisions/**`, `sdlc/records/**`.
+Changes: `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `docs/reference/release-process.md`, `CHANGELOG.md`, `AGENTS.md`, `sdlc/tickets/**`, `sdlc/plan.md`, `sdlc/planning/**`, `sdlc/archive/planning/**`, `sdlc/decisions/**`, `sdlc/records/**`, `sdlc/issues/2026-09-09-clingen-car-rate-limiting-degrades-batch-identity-verification.md`.
 
 ## Evidence
 
