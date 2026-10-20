@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2287, 2293, 2295
+Depends on: 2287, 2293, 2295, 2298
 
 Reviews: revision e44b173, accept
 
