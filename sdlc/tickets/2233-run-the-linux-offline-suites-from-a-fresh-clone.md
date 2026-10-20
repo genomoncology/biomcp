@@ -39,6 +39,7 @@ Run the declared full offline Rust and Python suites on the configured Linux tes
 - 2026-10-19 next: Test-only2283 landed actualmain4c582db4186837893e4839f6d47e5e60a129aae7 with passing landing gate1792454342992-75134. Fresh experimenter prepared whole final Linux rerun and failed-case temp retention; starts after actualmain full check. Preserve initial and failed evidence170.
 - 2026-10-19 next: Whole final Linux job1792455276832-365318 submitted on4c582db after mainfullpassed. It waits for6GiB memory behind ThinkThen0619 booking13.5GiB; no build started. Resource route sentPM. Preserve queue and original170 evidence; no admission bypass.
 - 2026-10-19 next: Final Linux job1792455276832-365318 admitted on exact4c582db. Dependency bootstrap completed and fresh builds/tests now run under existing kernel network isolation. Retain new evidence170/final-1792455276832-365318 separately; preserve failed-case temp if any stage fails.
+- 2026-10-19 next: Renewed final Linux job1792455276832-365318 passed routine Rust4279 and long/inventory, then failed parallel article cache command1 at about39 percent of Python. Full Python continues for trace without retry. Sole repair2285 owns diagnosis. Accessible replay evidence retained; original caseDB already removed by TemporaryDirectory teardown. Stop after failed stage; no docs/fullfeature or record edits.
 
 ## Final source assignment
 
