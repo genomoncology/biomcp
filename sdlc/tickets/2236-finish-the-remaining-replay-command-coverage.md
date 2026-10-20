@@ -12,6 +12,8 @@ Milestone: 0.9.5
 
 Extend the existing recorded replay and JSON/Markdown goldens to the remaining command families after the narrowed 2079 and 2111 release batches. Keep authored fault controls and excluded local datasets in their existing helpers. Each implementation batch declares its own exact source claim before code changes.
 
+Changes: `tests/golden/test_golden_output.py`, `tests/golden/cases/get-protein-p15056.*`, `tests/golden/cases/get-protein-p15056-structures.*`, `tests/golden/cases/protein-structures-p15056-limit5-offset5.*`, `CHANGELOG.md`.
+
 ## Inventory
 
 The completed coverage includes search all, gene, trial and pathway, and get gene, variant, trial and pathway. The remaining search selectors are author, disease, diagnostic, pgx, phenotype, gwas, article, variant, drug, cell-line, protein and adverse-event. Remaining get selectors are author, article, disease, diagnostic, pgx, drug, cell-line, protein and adverse-event. Also inventory traversal commands and local-data outputs; distinguish byte or JSON-only outputs from commands with both JSON and Markdown forms.
@@ -27,3 +29,11 @@ Preserve existing complete or explicitly minimized source captures and their rec
 Each cohesive batch adds executed output goldens that reject changed output and passes the affected recorded consumer checks without missing requests. Keep original reader claims and unique request/refusal assertions. Reuse existing replay lifecycle, runner and measurement tools; add no framework. Record exactly which command selectors and traversal outputs are covered, then close this follow-up only at its approved finite boundary.
 
 PM decision: 2026-10-19. This follow-up is outside 0.9.4. That release ends replay work after the accepted gene and pathway goldens and supported pathway reader migration; authored fault controls and excluded local datasets remain in their helpers.
+
+## Progress
+
+- 2026-10-20 started
+
+## First batch boundary
+
+Use the existing exact UniProt P15056 recording to cover get protein identity, get protein structures and protein structures with limit 5 and offset 5 in both JSON and Markdown. Existing captures and authored fault controls remain unchanged. Protein search and every other selector stay outside this batch. Reproduce current main before implementation; a suspected structures source-credit panic must be reported before any registry change. This batch cannot close the whole follow-up.
