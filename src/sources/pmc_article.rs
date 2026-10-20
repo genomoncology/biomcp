@@ -742,11 +742,16 @@ mod tests {
     async fn proof_of_work_is_retained_when_a_later_linked_target_fails() {
         let received = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let observed = received.clone();
+        let completed = std::sync::Arc::new(tokio::sync::Notify::new());
+        let finished = completed.clone();
         let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
     let observed = observed.clone();
+    let finished = finished.clone();
     async move {
         let Some(request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
-observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+// The original faulty server answered exactly two requests, then closed.
+        if observed.load(std::sync::atomic::Ordering::SeqCst) >= 2 { return Ok(()); }
+        let ordinal = observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         let request = String::from_utf8_lossy(&request);
         if request.contains("pow.xls") {
             let body = include_bytes!(concat!(
@@ -764,6 +769,7 @@ observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 .write_all(b"HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                 .await?;
         }
+        if ordinal == 1 { finished.notify_one(); }
         Ok(())
     }
 })
@@ -780,8 +786,12 @@ observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             .linked_target("/articles/instance/3040717/bin/unavailable.xls", false)
             .unwrap();
 
+        let fetch =
+            tokio::spawn(async move { client.fetch_first_available(&[pow, unavailable]).await });
+        completed.notified().await;
+        server.finish().unwrap();
         assert_eq!(
-            client.fetch_first_available(&[pow, unavailable]).await,
+            fetch.await.unwrap(),
             PmcLinkedFetch::ProofOfWork,
             "a known PMC gate must not be hidden by a later generic source failure"
         );
