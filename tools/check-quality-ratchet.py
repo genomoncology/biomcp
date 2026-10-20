@@ -76,6 +76,7 @@ AUDIT_NAMES = [
     "mcp_allowlist",
     "source_registry",
     "dead_code_allowances",
+    "paused_clock_io",
     "section_outcome_policy_line_cap",
     "experiment_results",
     "renderer_next_command_source",
@@ -548,6 +549,89 @@ def _rust_production_text(text: str) -> str:
         text = text[: match.start()] + (" " * (cursor - match.start())) + text[cursor:]
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
     return re.sub(r"//[^\n]*", "", text)
+
+
+def check_paused_clock_io(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None
+) -> dict[str, object]:
+    """Guard explicit socket operations and spawned TCP servers under fake time.
+
+    This is a source convention check, not Rust lifetime or call-graph analysis.
+    """
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    findings: list[dict[str, object]] = []
+    test = re.compile(
+        r"#\[\s*tokio::test(?P<settings>[^\]]*)\]\s*"
+        r"(?:#\[[^\]]*\]\s*)*(?:async\s+)?fn\s+(?P<name>\w+)"
+    )
+    sockets = re.compile(
+        r"\b(?:TcpListener|TcpStream|MockServer|TestHttpFixture|TestHttpServer|Server)::|"
+        r"\bspawn_\w*(?:fixture|server)\w*\s*\("
+    )
+    socket_wait = re.compile(
+        r"\b(?:TcpListener::bind|TcpStream::connect)\s*\(|"
+        r"\.\s*(?:accept|read|read_exact|read_to_end|read_to_string|"
+        r"write|write_all|shutdown|send)\s*\("
+    )
+    for path, source in snapshot.masked_sources.items():
+        for match in test.finditer(source):
+            span = _brace_span(source, match.end())
+            if span is None:
+                continue
+            body = source[span[0] + 1:span[1] - 1]
+            if not sockets.search(body):
+                continue
+            reason = None
+            if re.search(r"\bstart_paused\s*=\s*true", match["settings"]):
+                reason = "start_paused permits automatic time advancement during real socket IO"
+            for pause in re.finditer(r"\b(?:tokio::)?time::pause\s*\(\s*\)", body):
+                before = body[:pause.start()]
+                after = body[pause.end():]
+                after = re.split(r"\b(?:tokio::)?time::resume\s*\(", after, maxsplit=1)[0]
+                if socket_wait.search(after):
+                    reason = "real socket IO follows pause without resuming time"
+                servers = []
+                for server in re.finditer(r"\blet\s+(\w+)\s*=\s*tokio::spawn\s*\(", before):
+                    server_span = _brace_span(before, server.end())
+                    if server_span is None:
+                        continue
+                    server_body = before[server_span[0]:server_span[1]]
+                    if not socket_wait.search(server_body):
+                        continue
+                    joined = re.search(rf"\b{server[1]}\s*\.\s*await\b", before[server_span[1]:])
+                    servers.append((server_span, bool(joined)))
+                    if not joined:
+                        reason = f"socket server {server[1]} remains unjoined when time pauses"
+                # A request-read event is insufficient: direct sockets must
+                # close before pause, too. Ignore locals owned by server tasks.
+                bindings = re.compile(
+                    r"\blet\s+(?:mut\s+)?(?P<direct>\w+)\s*=\s*"
+                    r"(?:[\w:]+::)?(?:TcpListener::bind|TcpStream::connect)\s*\(|"
+                    r"\blet\s*\(\s*(?:mut\s+)?(?P<accepted>\w+)[^;]*?\.accept\s*\("
+                )
+                for binding in bindings.finditer(before):
+                    if any(span[0] <= binding.start() < span[1] for span, _ in servers):
+                        continue
+                    name = binding["direct"] or binding["accepted"]
+                    closed = re.search(rf"\bdrop\s*\(\s*{name}\s*\)", before[binding.end():])
+                    moved_and_joined = any(
+                        joined and re.search(rf"\b{name}\b", before[span[0]:span[1]])
+                        for span, joined in servers
+                    )
+                    if not closed and not moved_and_joined:
+                        reason = f"socket {name} remains live when time pauses"
+            if reason:
+                findings.append({
+                    "path": path,
+                    "line": source.count("\n", 0, match.start()) + 1,
+                    "test": match["name"],
+                    "message": reason,
+                })
+    return {
+        "status": "error" if snapshot.errors else "fail" if findings else "pass",
+        "findings": findings,
+        "errors": snapshot.errors,
+    }
 
 
 def check_renderer_next_command_source(root_dir: Path) -> dict[str, object]:
@@ -2485,6 +2569,7 @@ def main() -> int:
         load_rust_source_snapshot(args.root_dir)
         if {
             "dead_code_allowances",
+            "paused_clock_io",
             "source_attributed_status_typing",
             "external_error_logging",
         }.intersection(selected_audits)
@@ -2538,6 +2623,10 @@ def main() -> int:
         )
 
     simple_audits = {
+        "paused_clock_io": (
+            "quality-ratchet-paused-clock-io.json",
+            lambda: check_paused_clock_io(args.root_dir, rust_snapshot),
+        ),
         "dead_code_allowances": (
             "quality-ratchet-dead-code-allowances.json",
             lambda: check_dead_code_allowances(

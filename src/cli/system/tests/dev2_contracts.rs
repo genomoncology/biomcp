@@ -247,9 +247,6 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
         () = first_s2_response.notified() => {}
         result = &mut command => panic!("command settled before provider retry: {result:?}"),
     }
-    for _ in 0..10 {
-        tokio::task::yield_now().await;
-    }
     assert_eq!(s2_requests.load(Ordering::SeqCst), 1);
     // The canonical compact enrichment is a POST, so the real cache
     // middleware correctly performs no lookup or publication.
@@ -260,8 +257,15 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
     drop(command);
     assert!(middleware_dropped.upgrade().is_none());
     assert_eq!(active_connections.load(Ordering::SeqCst), 0);
-    // Exchange real socket traffic on real time. Only advance the clock
-    // after cancellation, when no request can race an I/O timeout.
+    server.abort();
+    assert!(
+        server
+            .await
+            .expect_err("fixture server should be cancelled")
+            .is_cancelled()
+    );
+    // Finish the real server before advancing time to prove cancellation
+    // cannot schedule another retry.
     tokio::time::pause();
     tokio::time::advance(Duration::from_secs(30)).await;
     for _ in 0..10 {
@@ -271,11 +275,4 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
     assert_eq!(cache_gets.load(Ordering::SeqCst), 0);
     assert_eq!(cache_puts.load(Ordering::SeqCst), 0);
     assert_eq!(active_connections.load(Ordering::SeqCst), 0);
-    server.abort();
-    assert!(
-        server
-            .await
-            .expect_err("fixture server should be cancelled")
-            .is_cancelled()
-    );
 }
