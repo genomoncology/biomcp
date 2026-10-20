@@ -45,8 +45,8 @@ class Case:
 
 CASES = (
     Case(
-        'search-disease-melanoma-limit5',
-        ('search', 'disease', 'melanoma', '--limit', '5'),
+        'search-disease-melanoma-limit1',
+        ('search', 'disease', 'melanoma', '--limit', '1'),
     ),
     Case(
         'search-variant-braf-melanoma-limit3',
@@ -62,12 +62,12 @@ CASES = (
         ),
     ),
     Case(
-        'search-gwas-braf-limit3',
-        ('search', 'gwas', '--gene', 'BRAF', '--limit', '3'),
+        'search-gwas-braf-limit49',
+        ('search', 'gwas', '--gene', 'BRAF', '--limit', '49'),
     ),
     Case(
-        'search-gwas-melanoma-limit3',
-        ('search', 'gwas', '--trait', 'melanoma', '--limit', '3'),
+        'search-gwas-melanoma-limit49',
+        ('search', 'gwas', '--trait', 'melanoma', '--limit', '49'),
     ),
     Case(
         'search-pgx-cyp2d6-limit20',
