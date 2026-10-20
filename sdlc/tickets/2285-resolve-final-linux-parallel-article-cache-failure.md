@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 3e6575b, accept
+
 ## Outcome
 
 Diagnose the final Linux parallel article-source cache failure and prove that the supported cold-admission and warm-reuse behavior works. Correct answers, isolation, meaningful concurrency and genuine admitted-response reuse remain required. Decide from observed failure evidence whether the cause is runtime behavior or the test contract.
