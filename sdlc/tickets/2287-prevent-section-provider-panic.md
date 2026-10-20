@@ -20,7 +20,7 @@ Actual main e0d84c4293051b7f466bfcc58a68e2b739aace10, prepared CLI `biomcp 0.9.4
 
 ## PM decision
 
-2026-10-20: Fix before 0.9.4 under Ian's every-known-bug rule. Add the outside-in JSON regression and one test walking every entity section's credited providers against the source-state registry. Fix any other mismatches found in the same lane. Compare 0.9.3 and record whether it had the panic, so the changelog is accurate. Keep replay expansion 2236 in 0.9.5. Refresh only qualification invalidated by this repair, then run one full rehearsal.
+2026-10-20: Fix before 0.9.4 under Ian's every-known-bug rule. Add the outside-in JSON regression and one test walking every entity section's credited providers against the source-state registry. Fix any other mismatches found in the same lane. Compare 0.9.3 and record whether it had the panic, so the changelog is accurate. The later PM decision in 2236 moves replay expansion into 0.9.4 after the release-blocking repairs. Refresh only qualification invalidated by this repair, then run one full rehearsal.
 
 ## Boundaries
 
