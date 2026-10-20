@@ -16,7 +16,7 @@ Reviews: revision 45c802e, accept
 
 The landing gate runs live dependency advisory checks only when the candidate changes Cargo.lock, Cargo.toml, uv.lock or pyproject.toml. Every full main check and every release qualification still runs live advisory checks, including when no dependency input changes. A newly published advisory can block release admission. Dependency-changing landing candidates audit both Cargo.lock and uv.lock against live RustSec and GitHub/Python advisory sources. Full main and release checks always require both sources. Scanner installation, parsing and query errors fail safely, and findings stay visible. Preserve the remaining lint, license, test and specification checks.
 
-Changes: `tools/bootstrap-lint-tools`, `tools/check-dependency-advisories`, `tests/test_advisory_bootstrap.py`, `tests/test_dependency_advisories.py`, `Makefile`, `bin/lint`, `tests/test_lint.py`, `tests/test_dependency_advisory_gate.py`, `AGENTS.md`, `CHANGELOG.md`, `sdlc/records/2307-dependency-advisory-gate.md`.
+Changes: `tools/bootstrap-lint-tools`, `tools/check-dependency-advisories`, `tests/test_advisory_bootstrap.py`, `tests/test_dependency_advisories.py`, `Makefile`, `bin/lint`, `tests/test_lint.py`, `tests/test_dependency_advisory_gate.py`, `AGENTS.md`, `docs/reference/release-process.md`, `CHANGELOG.md`, `sdlc/records/2307-dependency-advisory-gate.md`.
 
 ## Keeps
 
@@ -32,4 +32,4 @@ An outside-in command control shows routine landing with unchanged dependency in
 
 ## Order
 
-PM authorizes this small 0.9.4 change alongside the reliability lanes. The coordinator batches it when existing gate tooling permits; gate-definition isolation rules remain enforceable. The actual resulting main requires its full check before release admission.
+PM authorizes this small 0.9.4 change alongside the reliability lanes. The coordinator batches it when existing gate tooling permits; gate-definition isolation rules remain enforceable. PM ruling m2529 supersedes the per-landing full main check: each batch runs one candidate gate. The final candidate requires one full main gate before the full nonpublishing rehearsal until nightly qualification is scheduled. The landing carries the corresponding AGENTS and release-runbook correction.
