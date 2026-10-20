@@ -79,7 +79,8 @@ def test_installed_smoke_is_cold_keyless_and_propagates_product_failures(
     env = os.environ | {
         "HOME": str(tmp_path), "NCBI_API_KEY": "fixture-only",
         "S2_API_KEY": "fixture-only", "BIOMCP_CACHE_DIR": str(tmp_path),
-        "XDG_CACHE_HOME": str(tmp_path), "BIOMCP_WHEEL_SMOKE_ISOLATED": "1",
+        "XDG_CACHE_HOME": str(tmp_path),
+        "BIOMCP_WHEEL_SMOKE_ISOLATED": "" if fault else "1",
     }
     result = subprocess.run(
         ["bash", str(HELPER), str(executable), "0.9.4"],
