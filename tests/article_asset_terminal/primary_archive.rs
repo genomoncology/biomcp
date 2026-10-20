@@ -175,6 +175,7 @@ fn configure_archive(fixture: &ArticleFixture, zip: &HangingZip) {
         .open(&fixture.env_file)
         .unwrap();
     for key in [
+        "BIOMCP_TEST_UNPACED_ORIGIN",
         "BIOMCP_EUROPEPMC_BASE",
         "BIOMCP_PMC_OA_BASE",
         "BIOMCP_PMC_HTML_BASE",
