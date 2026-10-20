@@ -95,6 +95,9 @@
 
 ### Internal
 
+- Share local Rust HTTP test fixtures with owned shutdown, disconnect handling and explicit failure reporting. (2303)
+- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
+
 - Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
