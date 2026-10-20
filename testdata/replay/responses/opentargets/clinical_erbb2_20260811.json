@@ -1,0 +1,337 @@
+{
+  "data": {
+    "target": {
+      "associatedDiseases": {
+        "rows": [
+          {
+            "score": 0.7794787474875552,
+            "disease": {
+              "id": "MONDO_0005233",
+              "name": "non-small cell lung carcinoma"
+            }
+          },
+          {
+            "score": 0.7752610727348844,
+            "disease": {
+              "id": "MONDO_0004992",
+              "name": "cancer"
+            }
+          },
+          {
+            "score": 0.728973167678001,
+            "disease": {
+              "id": "MONDO_0001056",
+              "name": "gastric cancer"
+            }
+          },
+          {
+            "score": 0.69693769402704,
+            "disease": {
+              "id": "MONDO_0004989",
+              "name": "breast carcinoma"
+            }
+          },
+          {
+            "score": 0.6899093257092311,
+            "disease": {
+              "id": "MONDO_0005036",
+              "name": "gastric adenocarcinoma"
+            }
+          }
+        ]
+      },
+      "drugAndClinicalCandidates": {
+        "rows": [
+          {
+            "drug": {
+              "id": "CHEMBL4297556",
+              "name": "MM-111"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4650289",
+              "name": "KBP5209"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1201179",
+              "name": "LAPATINIB DITOSYLATE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL545315",
+              "name": "CANERTINIB DIHYDROCHLORIDE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2007641",
+              "name": "PERTUZUMAB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL313972",
+              "name": "MASOPROCOL"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2105719",
+              "name": "DACOMITINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4650256",
+              "name": "ZANIDATAMAB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1743082",
+              "name": "TRASTUZUMAB EMTANSINE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3989868",
+              "name": "TUCATINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1614707",
+              "name": "MUBRITINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1614725",
+              "name": "TAK-285"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL5095273",
+              "name": "DISITAMAB VEDOTIN"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL5314782",
+              "name": "TRASTUZUMAB BOTIDOTIN"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4297892",
+              "name": "ANVATABART OPADOTIN"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4298178",
+              "name": "TRASTUZUMAB DUOCARMAZINE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL554",
+              "name": "LAPATINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3545396",
+              "name": "BMS-690514"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL31965",
+              "name": "CANERTINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2110732",
+              "name": "DACOMITINIB ANHYDROUS"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1173655",
+              "name": "AFATINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3989921",
+              "name": "NERATINIB MALEATE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3545154",
+              "name": "POZIOTINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2103842",
+              "name": "VARLITINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4650279",
+              "name": "TUXOBERTINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL6067986",
+              "name": "AV-412"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3109738",
+              "name": "JNJ-26483327"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2364649",
+              "name": "MARGETUXIMAB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL587723",
+              "name": "AEE-788"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3833344",
+              "name": "GANCOTAMAB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1645462",
+              "name": "AC-480"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1201585",
+              "name": "TRASTUZUMAB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL598797",
+              "name": "CUDC-101"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL180022",
+              "name": "NERATINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3544983",
+              "name": "TESEVATINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1947204",
+              "name": "ALLITINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3647420",
+              "name": "PYROTINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4297844",
+              "name": "TRASTUZUMAB DERUXTECAN"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2408045",
+              "name": "SAPITINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4297661",
+              "name": "TARLOXOTINIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL483321",
+              "name": "CP-724714"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2105712",
+              "name": "AFATINIB DIMALEATE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2108029",
+              "name": "ERTUMAXOMAB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4298025",
+              "name": "ZENOCUTUZUMAB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3545200",
+              "name": "S-222611"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3545111",
+              "name": "HEMAY-022"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4594568",
+              "name": "KN-026"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL24828",
+              "name": "VANDETANIB"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

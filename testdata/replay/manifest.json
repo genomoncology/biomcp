@@ -1,5 +1,85 @@
 {
   "routes": {
+    "GET /cellosaurus/cell-line/CVCL_0005?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr&format=json": {
+      "upstream": "https://api.cellosaurus.org/cell-line/CVCL_0005?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
+      "status": 200,
+      "file": "responses/cellosaurus/get_cvcl_0005_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_0005?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "924eacf6cf358a4b9f46a2cd45451f5f5e97965e831d6bbbf12b2c49cb81398f",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present. Recorded with the card projection plus dr and without var."
+      }
+    },
+    "GET /cellosaurus/cell-line/CVCL_0064?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr&format=json": {
+      "upstream": "https://api.cellosaurus.org/cell-line/CVCL_0064?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr",
+      "status": 200,
+      "file": "responses/cellosaurus/get_cvcl_0064_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_0064?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "7763e4192d58c82d8de46eadd0409d8c7d0645d3724dc7212bbf5617285f012a",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    "GET /cellosaurus/cell-line/CVCL_1844?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar&format=json": {
+      "upstream": "https://api.cellosaurus.org/cell-line/CVCL_1844?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar",
+      "status": 200,
+      "file": "responses/cellosaurus/get_cvcl_1844_var_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_1844?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "0c7126fee37146b353c92c8bc6219a5ae935c2b614fbb140104faee62b8cf4fa",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    "GET /cellosaurus/release-info?format=json": {
+      "upstream": "https://api.cellosaurus.org/release-info?format=json",
+      "status": 200,
+      "file": "responses/cellosaurus/release_info_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/release-info?format=json",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "91b0cf0539b7e22f3bad72480f5e89ce2513cae8eaafcc4ebc6875bba02a148c",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    "GET /cellosaurus/search/cell-line?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&format=json&q=idsy%3A%22KG1%22&rows=1000": {
+      "upstream": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22KG1%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+      "status": 200,
+      "file": "responses/cellosaurus/search_idsy_kg1_20260917.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22KG1%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "820f745be6426b4a12c38885a8c4510a246b496f6ae763e6f6d061c88e51d30f",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
     "GET /cpic/pair_view?drugname=ilike.%2Aclopidogrel%2A&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc&select=%2A": {
       "upstream": "https://api.cpicpgx.org/v1/pair_view?drugname=ilike.*clopidogrel*&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc",
       "status": 200,
@@ -320,6 +400,22 @@
       "status": 200,
       "upstream": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?page=0&size=50&sort=p_value&direction=asc&mapped_gene=BRAF"
     },
+    "GET /hpa/ENSG00000157764.xml": {
+      "upstream": "https://www.proteinatlas.org/ENSG00000157764.xml",
+      "status": 200,
+      "file": "responses/hpa/braf_20260811.xml",
+      "headers": {
+        "content-type": "application/xml"
+      },
+      "recording_provenance": {
+        "provider": "Human Protein Atlas",
+        "request": "https://www.proteinatlas.org/ENSG00000157764.xml",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "c82c1d85b5c6d9f6acb886cd2b78ef71d3424d00a54782c62ed6cb59a33897ec",
+        "minimization_or_redaction": "Reduced to one real tissue row and the consumed reliability, subcellular-location, and RNA-summary elements.",
+        "provider_origin_statement": "Bytes were recorded from the public Human Protein Atlas response through BioMCP's production request path before any stated minimization."
+      }
+    },
     "GET /hpo/terms/HP:0001250": {
       "upstream": "https://ontology.jax.org/api/hp/terms/HP:0001250",
       "status": 200,
@@ -608,6 +704,38 @@
       "status": 200,
       "upstream": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1"
     },
+    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&q=symbol%3A%22EGFR%22&size=1&species=human": {
+      "upstream": "https://mygene.info/v3/query?q=symbol%3A%22EGFR%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+      "status": 200,
+      "file": "responses/mygene/get_egfr_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22EGFR%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "749dc54f58ac3a2ed73466823163368bb9edb1d9b2d82b5c0345a53e1ada0c41",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&q=symbol%3A%22ERBB2%22&size=1&species=human": {
+      "upstream": "https://mygene.info/v3/query?q=symbol%3A%22ERBB2%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+      "status": 200,
+      "file": "responses/mygene/get_erbb2_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22ERBB2%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "c30c679f4077447aae130493f958903fe5520789e51df5f5e8a1311cbe0c7aaa",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path before any stated minimization."
+      }
+    },
     "GET /myvariant/query?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic&from=0&q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5": {
       "file": "responses/myvariant/myvariant-query-05bd87d2d97a.bin",
       "headers": {
@@ -768,6 +896,38 @@
       "status": 200,
       "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/entity/autocomplete/?query=melanoma"
     },
+    "GET /pubtator/publications/export/biocjson?pmids=20516115": {
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=20516115",
+      "status": 200,
+      "file": "responses/pubtator/export_20516115.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=20516115",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "df4b97b3a5dbcf7ba359261ff2f97d1d0746eda021370772f7c8d9d2cc2a52d4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    "GET /pubtator/publications/export/biocjson?pmids=30738221": {
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=30738221",
+      "status": 200,
+      "file": "responses/pubtator/export_30738221.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=30738221",
+        "captured_at": "2026-10-05T00:00:00Z",
+        "sha256": "2c0a2ef332582bb305b015b0fdb0dd4af65950b0f659be22479e0b8cd1b9fc08",
+        "minimization_or_redaction": "none; the committed bytes retain the provider annotation identifiers, namespaces, and locations",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
     "GET /pubtator/publications/export/biocjson?pmids=42875213": {
       "file": "responses/pubtator/pubtator-publications-export-biocjson-d586620d07c5.bin",
       "headers": {
@@ -801,6 +961,38 @@
       },
       "status": 200,
       "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/?text=%40GENE_BRAF+%40DISEASE_Melanoma&page=1&size=25"
+    },
+    "GET /quickgo/annotation/search?geneProductId=P15056&limit=20": {
+      "upstream": "https://www.ebi.ac.uk/QuickGO/services/annotation/search?geneProductId=P15056&limit=20",
+      "status": 200,
+      "file": "responses/quickgo/annotations_braf_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "QuickGO",
+        "request": "https://www.ebi.ac.uk/QuickGO/services/annotation/search?geneProductId=P15056&limit=20",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "b91715e9aca0f4f471539db6ff02d9d38785dfa592d07ca03aa84db4297e7a10",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public QuickGO response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    "GET /quickgo/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267": {
+      "upstream": "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267",
+      "status": 200,
+      "file": "responses/quickgo/terms_braf_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "QuickGO",
+        "request": "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "a4ea85061d60cdecdb4c91656f0cb82aa18b51c1bdbc14131bfa7f525807698e",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public QuickGO response through BioMCP's production request path before any stated minimization."
+      }
     },
     "GET /reactome/data/participants/R-HSA-5673001": {
       "file": "responses/reactome/participants_r_hsa_5673001_20260811.json",
@@ -872,6 +1064,22 @@
       "status": 429,
       "upstream": "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF+melanoma&fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2CcitationCount%2CinfluentialCitationCount%2Cabstract&limit=3"
     },
+    "GET /string/network?identifiers=BRAF&limit=15&species=9606": {
+      "upstream": "https://string-db.org/api/json/network?identifiers=BRAF&species=9606&limit=15",
+      "status": 200,
+      "file": "responses/string/network_braf_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "STRING",
+        "request": "https://string-db.org/api/json/network?identifiers=BRAF&species=9606&limit=15",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "3a7d5d22cc78750c0514dd5b321eb5c4ee94cd24a6b823121727817e92d02232",
+        "minimization_or_redaction": "Reduced to the first five real interaction rows consumed by the bounded renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public STRING response through BioMCP's production request path before any stated minimization."
+      }
+    },
     "GET /uniprot/uniprotkb/P15056.json": {
       "file": "responses/uniprot/uniprot-uniprotkb-p15056-json-877bdc7b8fe3.json",
       "headers": {
@@ -908,6 +1116,79 @@
       "status": 200,
       "upstream": "https://www.wikipathways.org/json/findPathwaysByText.json"
     },
+    "POST /dgidb/graphql#c159fd178b8d29bd": {
+      "upstream": "https://dgidb.org/api/graphql",
+      "status": 200,
+      "file": "responses/dgidb/gene_egfr_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "DGIdb",
+        "request": "https://dgidb.org/api/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "388b392c03f3f28bc0e32d30d6daeb9a3299c22816ff7ae60a303a3331f7fb84",
+        "minimization_or_redaction": "Reduced to the real EGFR categories and three approved antibody interaction rows consumed by the renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public DGIdb response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery DgidbGeneDruggability($gene: String!, $first: Int!) {\\n  genes(names: [$gene], first: $first) {\\n    nodes {\\n      name\\n      geneCategories {\\n        name\\n      }\\n      interactions {\\n        drug {\\n          name\\n          approved\\n        }\\n        interactionScore\\n        interactionTypes {\\n          type\\n        }\\n        sources {\\n          sourceDbName\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"first\":1,\"gene\":\"EGFR\"}}"
+    },
+    "POST /nih-reporter/projects/search#73694944e7a26ce0": {
+      "upstream": "https://api.reporter.nih.gov/v2/projects/search",
+      "status": 200,
+      "file": "responses/nih-reporter/nih-reporter-projects-search-73694944e7a-6215cbe62760.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"offset\":0,\"limit\":50,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}",
+      "request_headers": {
+        "accept": "application/json",
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "NIH RePORTER",
+        "request": "https://api.reporter.nih.gov/v2/projects/search",
+        "captured_at": "2026-10-20T15:09:48.131127+00:00",
+        "sha256": "cc59221f77957c6ac380f8128ebe31238db2150a721b08be4934602c6c08a7a2",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public NIH RePORTER endpoint.",
+        "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"offset\":0,\"limit\":50,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
+      }
+    },
+    "POST /opentargets/graphql#34180b1b60125348": {
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "status": 200,
+      "file": "responses/opentargets/clinical_erbb2_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "796aa0ce178d1eaed8662132ca5bcf30dfa73e94c3a0991f0756523b1e54e6dc",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery TargetClinicalContext($ensemblId: String!, $size: Int!) {\\n  target(ensemblId: $ensemblId) {\\n    associatedDiseases(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        disease {\\n          id\\n          name\\n        }\\n      }\\n    }\\n    drugAndClinicalCandidates {\\n      rows {\\n        drug {\\n          id\\n          name\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"ensemblId\":\"ENSG00000141736\",\"size\":5}}"
+    },
+    "POST /opentargets/graphql#363262cece075dfb": {
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "status": 200,
+      "file": "responses/opentargets/druggability_egfr_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "82ff30aa7379fcb0f4ce12e846fc94240a982c2c0e138c8b6fb232b8a31286f1",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery TargetDruggabilityContext($ensemblId: String!) {\\n  target(ensemblId: $ensemblId) {\\n    tractability {\\n      label\\n      modality\\n      value\\n    }\\n    safetyLiabilities {\\n      event\\n      datasource\\n      effects {\\n        direction\\n        dosing\\n      }\\n      biosamples {\\n        tissueLabel\\n        cellLabel\\n        cellFormat\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"ensemblId\":\"ENSG00000146648\"}}"
+    },
     "POST /opentargets/graphql#43750647d0c40094": {
       "file": "responses/opentargets/opentargets-graphql-43750647d0c40094-701220c8c35c.bin",
       "headers": {
@@ -928,6 +1209,23 @@
       },
       "status": 200,
       "upstream": "https://api.platform.opentargets.org/api/v4/graphql"
+    },
+    "POST /opentargets/graphql#b4c954a74eb6839b": {
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "status": 200,
+      "file": "responses/opentargets/clinical_egfr_20260811.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "db4efc2c98675b3ab03788a0254e51d790f8d9a2b3e123007afce9f1e114cd9c",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      },
+      "request_body": "{\"query\":\"\\nquery TargetClinicalContext($ensemblId: String!, $size: Int!) {\\n  target(ensemblId: $ensemblId) {\\n    associatedDiseases(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        disease {\\n          id\\n          name\\n        }\\n      }\\n    }\\n    drugAndClinicalCandidates {\\n      rows {\\n        drug {\\n          id\\n          name\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"ensemblId\":\"ENSG00000146648\",\"size\":5}}"
     },
     "POST /s2/graph/v1/paper/batch?fields=paperId%2CexternalIds%2CcitationCount%2CinfluentialCitationCount%2Cabstract#417154d125173f55": {
       "file": "responses/s2/s2-graph-v1-paper-batch-88bd002daeb4.bin",
