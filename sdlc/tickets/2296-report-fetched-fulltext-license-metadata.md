@@ -14,7 +14,7 @@ Depends on: 2294
 
 When a fetched fulltext source’s own metadata states a license, get article fulltext reports that license with truthful source attribution. Unknown is allowed only when no fetched source states one. Reuse the existing license classification and restrictions rather than adding a new licensing policy.
 
-Changes: `src/entities/article/fulltext.rs`, `src/sources/pmc_oa.rs`, `src/sources/pmc_oa/tests/*`, `tests/test_article_fulltext_license.py`, `tests/golden/cases/get-article-23056577-fulltext.*`, `sdlc/records/2296-fulltext-license-metadata.md`, `CHANGELOG.md`. Narrow or correct these claims after locating the source of the lost fact.
+Changes: `src/entities/article/assets.rs`, `tests/test_article_fulltext_license.py`, `tests/golden/cases/get-article-23056577-fulltext.*`, `sdlc/records/2296-fulltext-license-metadata.md`, `CHANGELOG.md`.
 
 ## Evidence and PM ruling
 
@@ -27,3 +27,7 @@ Before code, restate the outcome, reproduce on current main or the approved depe
 Run only affected checks through pm job. Reuse captured replies; no new capture unless a genuinely needed field is absent, and then only under the standing approved public-keyless rule. Existing body, sections, references and asset bytes remain outside the fix unless the actual propagation path requires them. Update only affected recorded output and preserve exact source bindings. No full suite or new live collection during development.
 
 Keep: experiments/2102-biomcp-2258-final-live-replay — preserve the observed metadata and prior fulltext output while this repair and final admission consume them. Name the repair’s raw job folder in its record.
+
+## Pre-code restatement
+
+The existing metadata fetch already supplies the article license after fulltext resolution. Preserve the stated fact in an unknown fulltext reuse result immediately after that fetch, with PMC OA attribution, before an archive-package failure can discard it. Preserve known reuse decisions, source restrictions, bodies and asset results. No Cargo, build-profile or variant-search path changes are planned.
