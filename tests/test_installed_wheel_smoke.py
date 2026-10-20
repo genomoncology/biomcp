@@ -157,6 +157,11 @@ if stage == 'build':
     assert os.environ['BIOMCP_BUILD_VERSION'] == EXPECTED_VERSION
     destination = script.split(' -o ', 1)[1].split()[0]
     destination = pathlib.Path.cwd() / destination.removeprefix('/io/')
+    target_arg = next(arg for arg in args if arg.startswith('CARGO_TARGET_DIR='))
+    target = pathlib.Path.cwd() / target_arg.split('=', 1)[1].removeprefix('/io/')
+    assert target == destination.parent / 'target', 'build target must belong to this run'
+    assert not target.exists(), 'build target must start empty'
+    target.mkdir()
     (destination / 'fixture.whl').touch()
 else:
     mount = next(arg for arg in args if arg.endswith(':/wheel:ro'))
@@ -178,3 +183,4 @@ else:
     assert (tmp_path / 'docker.calls').read_text().splitlines() == (
         ['build'] if failed_stage == 'build' else ['build', 'smoke']
     )
+    assert not list((tmp_path / '.cache' / 'installed-wheel').glob('run-*'))
