@@ -88,6 +88,7 @@
 
 ### Internal
 
+- Build and smoke an installed Linux wheel with a fresh home during the full main check, sharing release smoke commands and pinned manylinux images. (2288)
 - Require changelog citations for shipped changes and reject tracked scratch files in the local lint gate, including stable release candidates with dated changelog sections. (2291)
 
 - Record release qualification, live replay coverage, measurement limits and the nonpublishing release rehearsal. (2258)
