@@ -13,7 +13,7 @@ use std::time::Duration;
 use base64::Engine;
 use rmcp::ServiceExt;
 use rmcp::model::{
-    CallToolRequestParams, RawContent, ReadResourceRequestParams, ResourceContents, Tool,
+    CallToolRequestParams, ContentBlock, ReadResourceRequestParams, ResourceContents, Tool,
 };
 use rmcp::service::ServiceError;
 use rmcp::transport::{StreamableHttpClientTransport, TokioChildProcess};
@@ -105,27 +105,27 @@ fn assert_tool_metadata(tools: &[Tool]) {
     }
 }
 
-pub fn text_chunks(content: &[rmcp::model::Content]) -> Vec<&str> {
+pub fn text_chunks(content: &[rmcp::model::ContentBlock]) -> Vec<&str> {
     content
         .iter()
-        .filter_map(|chunk| match &chunk.raw {
-            RawContent::Text(text) => Some(text.text.as_str()),
+        .filter_map(|chunk| match chunk {
+            ContentBlock::Text(text) => Some(text.text.as_str()),
             _ => None,
         })
         .collect()
 }
 
-pub fn image_chunks(content: &[rmcp::model::Content]) -> Vec<(&str, &str)> {
+pub fn image_chunks(content: &[rmcp::model::ContentBlock]) -> Vec<(&str, &str)> {
     content
         .iter()
-        .filter_map(|chunk| match &chunk.raw {
-            RawContent::Image(image) => Some((image.mime_type.as_str(), image.data.as_str())),
+        .filter_map(|chunk| match chunk {
+            ContentBlock::Image(image) => Some((image.mime_type.as_str(), image.data.as_str())),
             _ => None,
         })
         .collect()
 }
 
-pub fn first_text(content: &[rmcp::model::Content]) -> &str {
+pub fn first_text(content: &[rmcp::model::ContentBlock]) -> &str {
     text_chunks(content)
         .into_iter()
         .next()
