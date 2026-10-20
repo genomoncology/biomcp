@@ -12,6 +12,8 @@ Depends on: 2134
 
 Reviews: revision a383223, accept
 
+Reviews: revision 1599cf7, accept
+
 ## Outcome
 
 Changes: `sdlc/records/2234-candidate-measurements.md`, `CHANGELOG.md`, `sdlc/tickets/2284-isolate-and-reduce-test-profile-rebuild-cost.md`.
