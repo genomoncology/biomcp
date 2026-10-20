@@ -14,6 +14,8 @@ Reviews: revision 1b8e728, accept
 
 Reviews: revision fffcf09, accept
 
+Reviews: revision 5db2cfd, accept
+
 ## Outcome
 
 Main holds a stable 0.9.4 candidate that has passed every item in section 1 of `sdlc/release-checklist.md`, including a full untagged release rehearsal, and the PM has a go request naming the exact commit. No tag or publication.
