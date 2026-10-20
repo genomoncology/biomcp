@@ -1,5 +1,7 @@
 # The release line flows into 1.0, never the reverse
 
+Superseded on 2026-10-20 by `sdlc/plan.md` and Ian's pause of 1.0.
+
 October 9, 2026. Ruled by Ian.
 
 ## The ruling
