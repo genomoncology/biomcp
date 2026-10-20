@@ -77,7 +77,16 @@ def collect(root: Path, baseline: bool) -> int:
     if sys.platform not in {"linux", "darwin"}:
         raise ValueError("outside-in continuous profiling requires Linux or macOS")
     if sys.platform == "linux":
-        instrumented["RUSTFLAGS"] += " -Cllvm-args=-runtime-counter-relocation"
+        relocation = "-Cllvm-args=-runtime-counter-relocation"
+        wrapper_flags = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS"
+        if wrapper_flags in instrumented:
+            instrumented[wrapper_flags] += "\x1f" + relocation
+        elif "CARGO_ENCODED_RUSTFLAGS" in instrumented:
+            instrumented["CARGO_ENCODED_RUSTFLAGS"] += "\x1f" + relocation
+        elif "RUSTFLAGS" in instrumented:
+            instrumented["RUSTFLAGS"] += " " + relocation
+        else:
+            raise ValueError("llvm-cov exported no supported instrumentation flags")
     instrumented["LLVM_PROFILE_FILE"] = str(target / "outside-%c%p.profraw")
     # Compile only binaries/examples and selected integration targets. cfg(test)
     # library/unit artifacts are never built or included as test consumers.

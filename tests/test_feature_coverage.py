@@ -112,7 +112,10 @@ def test_golden_links_follow_existing_command_metadata(tmp_path: Path) -> None:
     assert "unknown feature drug" in rejected.stderr
 
 
-def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_path: Path) -> None:
+@pytest.mark.parametrize("encoded", [False, True])
+def test_failed_build_replaces_an_old_success_with_incomplete_collection(
+    tmp_path: Path, encoded: bool,
+) -> None:
     import os
     import shutil
 
@@ -142,11 +145,14 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_pat
     make.write_text("#!/bin/sh\nexit 0\n")
     make.chmod(0o755)
     cargo = commands / "cargo"
+    flag_key = "__CARGO_LLVM_COV_RUSTC_WRAPPER_RUSTFLAGS" if encoded else "RUSTFLAGS"
+    separator = "\x1f" if encoded else " "
+    instrumentation = separator.join(("-C", "instrument-coverage", "--cfg=coverage"))
     cargo.write_text(
         '#!/bin/sh\ncase "$1 $2" in\n'
         '"llvm-cov clean") exit 0;;\n'
-        '"llvm-cov show-env") echo \'RUSTFLAGS="--cfg instrumented"\'; exit 0;;\n'
-        'build*) printf "%s\\n%s\\n" "$RUSTFLAGS" "$LLVM_PROFILE_FILE" > profile-env.txt; exit 17;;\n'
+        f'"llvm-cov show-env") printf \'%s\\n\' "{flag_key}=\'{instrumentation}\'"; exit 0;;\n'
+        f'build*) printf "%s\\n%s\\n" "${{{flag_key}}}" "$LLVM_PROFILE_FILE" > profile-env.txt; exit 17;;\n'
         '*) exit 90;;\nesac\n'
     )
     cargo.chmod(0o755)
@@ -161,6 +167,7 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_pat
     assert data["status"] == "incomplete"
     assert "outside_in_percent" not in data
     flags, pattern = (root / "profile-env.txt").read_text().splitlines()
+    assert instrumentation in flags
     if sys.platform == "linux":
         assert "-Cllvm-args=-runtime-counter-relocation" in flags
     assert Path(pattern).is_absolute()

@@ -20,6 +20,8 @@ List unreached production code. Give each item a feature test or a separate revi
 
 - Proof: Every selected outside-in test maps to a listed feature; planted unknown or missing links fail. The corrected collection passes, reports its actual source and exclusions, and establishes the floor checked by the nightly and release targets. Routine feature-link validation adds no instrumented build.
 
+- Changes: `sdlc/features.md` `tests/feature-links.json` `tests/test_feature_coverage.py` `tools/feature_coverage.py` `tools/check-feature-coverage.py` `tools/collect_feature_coverage.py` `scripts/collect-feature-coverage.sh` `pyproject.toml` `CHANGELOG.md` `crates/biomcp-mcp-contract-client/src/lib.rs` `tests/tls_ca_bundle_contract.rs`
+
 ## Evidence
 
 The shared notes retire size ratchets in favor of feature coverage; until this lands, treat the ratchet as a maximum. From Ian's process assessment of 2026-10-20.
