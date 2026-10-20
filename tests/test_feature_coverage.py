@@ -105,3 +105,42 @@ def test_golden_links_follow_existing_command_metadata(tmp_path: Path) -> None:
     rejected = run(root, "links")
     assert rejected.returncode != 0
     assert "unknown feature drug" in rejected.stderr
+
+
+def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_path: Path) -> None:
+    import os
+    import shutil
+
+    root = tree(tmp_path)
+    tools = root / "tools"
+    tools.mkdir()
+    for name in ("collect_feature_coverage.py", "feature_coverage.py"):
+        shutil.copyfile(ROOT / "tools" / name, tools / name)
+    (root / "pyproject.toml").write_text("")
+    output = root / ".cache/feature-coverage"
+    output.mkdir(parents=True)
+    (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
+    commands = root / "commands"
+    commands.mkdir()
+    make = commands / "make"
+    make.write_text("#!/bin/sh\nexit 0\n")
+    make.chmod(0o755)
+    cargo = commands / "cargo"
+    cargo.write_text(
+        '#!/bin/sh\ncase "$1 $2" in\n'
+        '"llvm-cov clean") exit 0;;\n'
+        '"llvm-cov show-env") echo \'RUSTFLAGS="--cfg instrumented"\'; exit 0;;\n'
+        'build*) exit 17;;\n'
+        '*) exit 90;;\nesac\n'
+    )
+    cargo.chmod(0o755)
+    result = subprocess.run(
+        [sys.executable, str(tools / "collect_feature_coverage.py"), "--baseline"],
+        env=os.environ | {"PATH": str(commands) + os.pathsep + os.environ["PATH"]},
+        text=True, capture_output=True,
+    )
+    assert result.returncode != 0
+    assert "product-build: exit 17" in result.stdout
+    data = json.loads((output / "coverage.json").read_text())
+    assert data["status"] == "incomplete"
+    assert "outside_in_percent" not in data
