@@ -613,6 +613,7 @@ def test_full_rust_audits_share_one_source_snapshot(
 
     ratchet.check_dead_code_allowances(fixture_root, snapshot)
     ratchet.check_source_attributed_status_is_typed(fixture_root, snapshot)
+    ratchet.check_test_waits(fixture_root, snapshot)
 
     assert mask_calls == len(snapshot.sources) == 1
 

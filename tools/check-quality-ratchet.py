@@ -681,7 +681,9 @@ def check_paused_clock_io(
 TEST_WAIT_EXCEPTIONS = "tools/test-wait-exceptions.json"
 
 
-def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
+def test_wait_rows(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None,
+) -> tuple[list[dict[str, object]], list[str]]:
     """Inventory explicit test delays, not production policy or quoted fixtures.
 
     This is a source convention check. It does not resolve Rust macros or
@@ -694,8 +696,9 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
     )
     if proc.returncode:
         return [], [proc.stderr.strip() or "git ls-files failed"]
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
     rows: list[dict[str, object]] = []
-    errors: list[str] = []
+    errors = list(snapshot.errors)
 
     def add(path: str, scope: str, kind: str, expression: str) -> None:
         expression = re.sub(r"\s+", " ", expression).strip()
@@ -711,7 +714,8 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
         path = root_dir / relative
         if not path.is_file():
             continue
-        source = path.read_text(encoding="utf-8")
+        source = (snapshot.sources.get(relative, "") if relative.endswith(".rs")
+                  else path.read_text(encoding="utf-8"))
         if relative.endswith(".py"):
             if not relative.startswith("tests/"):
                 continue
@@ -771,7 +775,7 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
                     add(relative, scope, kind, expression)
             continue
 
-        masked = _mask_rust_non_code(source)
+        masked = snapshot.masked_sources.get(relative, "")
         all_test = relative.startswith(("tests/", "crates/biomcp-mcp-contract-client/")) or bool(re.search(r"(?:^|/)(?:tests|test_support|[\w]+_tests)(?:/|\.rs$)", relative))
         ranges: list[tuple[int, int]] = []
         for annotation in re.finditer(r"#\[\s*(?:cfg\(test\)|(?:tokio::)?test(?:\([^\]]*\))?)\s*\]", masked):
@@ -812,8 +816,10 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
     return rows, errors
 
 
-def check_test_waits(root_dir: Path) -> dict[str, object]:
-    rows, errors = test_wait_rows(root_dir)
+def check_test_waits(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None,
+) -> dict[str, object]:
+    rows, errors = test_wait_rows(root_dir, snapshot)
     inventory = root_dir / TEST_WAIT_EXCEPTIONS
     try:
         exceptions = json.loads(inventory.read_text(encoding="utf-8")) if inventory.exists() else []
@@ -2782,6 +2788,7 @@ def main() -> int:
         load_rust_source_snapshot(args.root_dir)
         if {
             "dead_code_allowances",
+            "test_waits",
             "paused_clock_io",
             "source_attributed_status_typing",
             "external_error_logging",
@@ -2836,7 +2843,7 @@ def main() -> int:
         )
 
     simple_audits = {
-        "test_waits": ("quality-ratchet-test-waits.json", lambda: check_test_waits(args.root_dir)),
+        "test_waits": ("quality-ratchet-test-waits.json", lambda: check_test_waits(args.root_dir, rust_snapshot)),
         "paused_clock_io": (
             "quality-ratchet-paused-clock-io.json",
             lambda: check_paused_clock_io(args.root_dir, rust_snapshot),
