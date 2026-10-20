@@ -125,6 +125,10 @@ record_pass() {
   PASS=$((PASS + 1))
 }
 
+show_command_output() {
+  cat "$@"
+}
+
 record_fail() {
   local name="$1"
   local detail="$2"
@@ -147,14 +151,17 @@ assert_cmd() {
   local code=$?
 
   if [[ "$code" != "$expected_code" ]]; then
-    record_fail "$name" "exit $code, expected $expected_code; stderr: $(head -n 2 "$err" | tr '\n' ' ')"
+    show_command_output "$out" "$err"
+    record_fail "$name" "exit $code, expected $expected_code"
     return
   fi
   if [[ -n "$stdout_re" ]] && ! grep -qE -- "$stdout_re" "$out"; then
+    show_command_output "$out" "$err"
     record_fail "$name" "stdout did not match /$stdout_re/"
     return
   fi
   if [[ -n "$stderr_re" ]] && ! grep -qE -- "$stderr_re" "$err"; then
+    show_command_output "$out" "$err"
     record_fail "$name" "stderr did not match /$stderr_re/"
     return
   fi
@@ -170,7 +177,8 @@ assert_no_stderr_warn() {
   timeout "$timeout_seconds" "$BIN" "$@" >"$out" 2>"$err"
   local code=$?
   if [[ "$code" != 0 ]]; then
-    record_fail "$name" "exit $code, expected 0; stderr: $(head -n 2 "$err" | tr '\n' ' ')"
+    show_command_output "$out" "$err"
+    record_fail "$name" "exit $code, expected 0"
     return
   fi
   if grep -q 'WARN' "$err"; then
@@ -208,6 +216,7 @@ smoke_serve_http() {
   SERVER_PID=$!
   if ! wait_for_http "http://127.0.0.1:$port/health"; then
     record_fail "240 serve-http default Host guard" "server did not become healthy"
+    show_command_output "$TMP_ROOT"/serve-http-*.out "$TMP_ROOT"/serve-http-*.err
   else
     local code
     code=$(curl -sS --max-time 5 -H 'Host: evil.example' -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/health" || true)
@@ -226,6 +235,7 @@ smoke_serve_http() {
   SERVER_PID=$!
   if ! wait_for_http "http://127.0.0.1:$port/health"; then
     record_fail "240 serve-http allowed-hosts rejects foreign Host" "server did not become healthy"
+    show_command_output "$TMP_ROOT"/serve-http-*.out "$TMP_ROOT"/serve-http-*.err
   else
     local code
     code=$(curl -sS --max-time 5 -H 'Host: evil.example' -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/mcp" || true)
@@ -250,7 +260,8 @@ smoke_plugin() {
 
 smoke_mcp() {
   local mcp_out="$TMP_ROOT/mcp.tsv"
-  BIOMCP_BIN="$BIN" python3 - <<'PY' >"$mcp_out"
+  local mcp_err="$TMP_ROOT/mcp.err"
+  BIOMCP_BIN="$BIN" python3 - <<'PY' >"$mcp_out" 2>"$mcp_err"
 import json, os, subprocess, sys
 bin_path = os.environ['BIOMCP_BIN']
 p = subprocess.Popen([bin_path, 'serve'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
@@ -261,6 +272,7 @@ def request(msg):
     line = p.stdout.readline()
     if not line:
         raise RuntimeError('MCP server closed stdout')
+    print(line, file=sys.stderr, end='')
     return json.loads(line)
 
 try:
@@ -286,7 +298,16 @@ try:
     print('434 MCP provenance footer\t' + ('PASS' if provenance_ok else 'FAIL') + '\tget gene BRAF includes section sources')
 finally:
     p.kill()
+    output, errors = p.communicate()
+    print(output, file=sys.stderr, end='')
+    print(errors, file=sys.stderr, end='')
 PY
+  local code=$?
+  if [[ "$code" != 0 ]]; then
+    show_command_output "$mcp_out" "$mcp_err"
+    record_fail "MCP smoke command" "exit $code"
+    return
+  fi
   local name status detail
   while IFS=$'\t' read -r name status detail; do
     [[ -n "$name" ]] || continue

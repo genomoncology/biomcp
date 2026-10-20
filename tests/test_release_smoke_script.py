@@ -259,3 +259,28 @@ def test_explicit_bin_mismatch_is_visible_and_not_rebuilt(tmp_path: Path) -> Non
     assert f"Current HEAD: {head_sha}" in result.stdout
     assert "WARNING: --bin binary is stamped git deadbeef" in result.stdout
     assert "FAIL 444 version command reports HEAD git SHA" in result.stdout
+
+
+@pytest.mark.parametrize("failure", ["serve", "get gene BRAF"])
+def test_release_smoke_reports_failed_command_streams(tmp_path: Path, failure: str) -> None:
+    repo_root = _copy_release_smoke_fixture(tmp_path)
+    head_sha = subprocess.check_output(
+        ["git", "rev-parse", "--short=8", "HEAD"], cwd=repo_root, text=True
+    ).strip()
+    fake_bin = _install_fake_tools(repo_root, head_sha)
+    binary = repo_root / "biomcp"
+    script = _fake_biomcp_script(head_sha).replace(
+        'args = sys.argv[1:]',
+        'args = sys.argv[1:]\n'
+        f'if " ".join(args) == {failure!r}:\n'
+        '    print(json.dumps({"error":"command stdout failure"}), flush=True)\n'
+        '    print("command stderr failure", file=sys.stderr, flush=True)\n'
+        '    raise SystemExit(7)',
+    )
+    _write_executable(binary, script)
+
+    result = _run_release_smoke(repo_root, fake_bin, "--bin", str(binary))
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "command stdout failure" in result.stdout + result.stderr
+    assert "command stderr failure" in result.stdout + result.stderr
