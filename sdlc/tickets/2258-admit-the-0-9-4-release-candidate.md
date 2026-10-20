@@ -18,7 +18,7 @@ Reviews: revision fffcf09, accept
 
 Main holds a stable 0.9.4 candidate that has passed every item in section 1 of `sdlc/release-checklist.md`, including a full untagged release rehearsal, and the PM has a go request naming the exact commit. No tag or publication.
 
-Changes: `sdlc/records/2258-replay-live-collection.md`, `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `CHANGELOG.md`.
+Changes: `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `CHANGELOG.md`.
 
 ## Order
 
