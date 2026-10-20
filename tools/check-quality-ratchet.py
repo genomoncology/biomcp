@@ -738,6 +738,9 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
                         waits = node.args[:1] or [kw.value for kw in node.keywords]
                     else:
                         waits = [kw.value for kw in node.keywords if kw.arg == "timeout"]
+                        # The suite's outer pytest watchdog is not an IO readiness deadline.
+                        if ast.unparse(node.func) == "pytest.mark.timeout":
+                            continue
                         position = {"settimeout": 0, "setdefaulttimeout": 0,
                                     "set_timeout": 0, "join": 0, "wait": 0,
                                     "communicate": 1, "select": 3, "poll": 0,
