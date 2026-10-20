@@ -137,7 +137,12 @@ def test_local_wheel_gate_runs_release_steps_and_propagates_failure(
     (tmp_path / "pyproject.toml").write_text(f'[project]\nversion = "{version}"\n')
     unrelated = tmp_path / "unrelated"
     unrelated.write_text("keep")
-    unrelated.chmod(0o640)
+    unrelated.chmod(0o644)
+    entries = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['pypi-build']['strategy']['matrix']['include']
+    image = next(row['container'] for row in entries if row.get('target') == 'x86_64-unknown-linux-gnu')
+    if real_docker:
+        # A different owner makes an accidental symlink traversal observable.
+        subprocess.run([real_docker, 'run', '--rm', '--label', 'pm.repo=biomcp', '--label', 'pm.ticket=2310', '-v', str(tmp_path) + ':/io', '--entrypoint', 'chown', image, '12345:12345', '/io/unrelated'], check=True)
     identity = (unrelated.stat().st_uid, unrelated.stat().st_gid, unrelated.stat().st_mode)
     tools = tmp_path / "tools"
     tools.mkdir()
@@ -178,6 +183,10 @@ if stage == 'build':
         operation += 'touch "$2/fixture.whl"'
     if REAL_DOCKER:
         result = subprocess.run([REAL_DOCKER, 'run', '--rm', '--label', 'pm.repo=biomcp', '--label', 'pm.ticket=2310', '-v', str(pathlib.Path.cwd()) + ':/io', '--entrypoint', 'bash', image, '-euo', 'pipefail', '-c', prefix + operation, 'bash', target_arg.split('=', 1)[1], '/io/' + str(destination.relative_to(pathlib.Path.cwd()))])
+        if 'ownership' not in FAILED:
+            assert target.stat().st_uid == os.getuid()
+            assert (target / 'private' / 'root-owned').stat().st_uid == os.getuid()
+            assert all(path.stat().st_uid == os.getuid() for path in destination.iterdir())
     else:
         prefix = prefix.replace('/io/', str(pathlib.Path.cwd()) + '/')
         operation = operation.replace('/io/unrelated', str(pathlib.Path.cwd() / 'unrelated'))
@@ -202,8 +211,6 @@ if 'smoke' in FAILED:
     remaining = list((tmp_path / '.cache' / 'installed-wheel').glob('run-*'))
     # Reclaim only this control's scratch after intentional restoration failures.
     if real_docker and remaining:
-        entries = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['pypi-build']['strategy']['matrix']['include']
-        image = next(row['container'] for row in entries if row.get('target') == 'x86_64-unknown-linux-gnu')
         for scratch in remaining:
             subprocess.run([real_docker, 'run', '--rm', '--label', 'pm.repo=biomcp', '--label', 'pm.ticket=2310', '-v', str(scratch) + ':/scratch', '--entrypoint', 'find', image, '/scratch', '-mindepth', '1', '-maxdepth', '1', '-exec', 'rm', '-rf', '--', '{}', '+'], check=True)
     assert bool(result.returncode) == bool(failed_stage), result.stdout + result.stderr
