@@ -513,11 +513,10 @@ fn two_route_pdf_supplement_prefers_the_pmc_oa_copy() {
     assert!(
         doc["coverage"]
             .as_array()
-            .expect("coverage should be a list")
+            .unwrap()
             .iter()
-            .any(|row| row["filename"] == filename
-                && row["outcome"] == "empty_response"
-                && row["provider"]["source"] == "Europe PMC")
+            .all(|row| { row["provider"]["source"] != "Europe PMC" }),
+        "a sufficient primary does not observe the ZIP's empty alternative"
     );
 
     let destination = fixture.root.join("pdf-case.pdf");
@@ -583,7 +582,7 @@ fn empty_supplement_reply_fails_the_download_and_writes_no_file() {
 
 #[test]
 #[serial_test::serial(article_output_fixture)]
-fn two_route_supplement_prefers_bytes_and_marks_the_empty_alternative() {
+fn primary_supplement_skips_the_zip_but_keeps_explicit_refusal_handles() {
     let fixture = ArticleFixture::start();
     let filename = "NIHMS1501643-supplement-2.xlsx";
 
@@ -609,24 +608,17 @@ fn two_route_supplement_prefers_bytes_and_marks_the_empty_alternative() {
         serde_json::json!(two_route_fixture_bytes().len())
     );
 
-    let empty_rows = doc["coverage"]
-        .as_array()
-        .expect("coverage should be a list")
-        .iter()
-        .filter(|row| row["filename"] == filename)
-        .collect::<Vec<_>>();
-    assert_eq!(empty_rows.len(), 1, "the empty alternative stays marked");
-    assert_eq!(empty_rows[0]["outcome"], "empty_response");
-    assert_eq!(empty_rows[0]["provider"]["source"], "Europe PMC");
-    let empty_key = empty_rows[0]["asset_key"]
-        .as_str()
-        .expect("the marked alternative keeps a stable key")
-        .to_string();
     assert!(
-        empty_key.starts_with("europe-pmc-")
-            && empty_key.ends_with("--NIHMS1501643-supplement-2.xlsx"),
-        "unexpected empty-route key: {empty_key}"
+        doc["coverage"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|row| { row["provider"]["source"] != "Europe PMC" }),
+        "a sufficient primary does not observe the ZIP's empty alternative"
     );
+    // A handle learned before fallback-only discovery must still resolve its
+    // original refusal when the caller explicitly asks for that route.
+    let empty_key = "europe-pmc-1bb2678a2475dfa83dd8e1a24a8eab35486adda4124b703d2fe747dff3905912--NIHMS1501643-supplement-2.xlsx";
 
     let destination = fixture.root.join("full-supplement.xlsx");
     successful_output(
@@ -655,7 +647,7 @@ fn two_route_supplement_prefers_bytes_and_marks_the_empty_alternative() {
             "article",
             "22663024",
             "asset",
-            &empty_key,
+            empty_key,
             "--output",
             refused.to_str().expect("destination path should be UTF-8"),
         ])
