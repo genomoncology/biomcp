@@ -1,0 +1,57 @@
+{
+  "author": {
+    "kind": "exact_provider",
+    "id": "orcid:0000-0002-4299-3018"
+  },
+  "papers": [
+    {
+      "title": "The urgent challenge of gastroesophageal cancer",
+      "journal": "Nature Reviews Cancer",
+      "year": 2026,
+      "work_id": "orcid:0000-0002-4299-3018/work:229328109"
+    },
+    {
+      "title": "The long return on discovery science in cancer therapeutics",
+      "journal": "Nature Reviews Cancer",
+      "year": 2026,
+      "work_id": "orcid:0000-0002-4299-3018/work:225103748"
+    },
+    {
+      "title": "Integrated MB-PhD training is a long-term investment in the clinician-scientist workforce",
+      "year": 2026,
+      "work_id": "orcid:0000-0002-4299-3018/work:225371218"
+    }
+  ],
+  "pagination": {
+    "offset": 0,
+    "limit": 3,
+    "next": 3,
+    "total": 380,
+    "truncated": false
+  },
+  "_meta": {
+    "source_status": [
+      {
+        "source": "orcid",
+        "status": "available"
+      }
+    ],
+    "evidence_urls": [
+      {
+        "source": "orcid",
+        "url": "https://orcid.org/0000-0002-4299-3018/work/229328109"
+      },
+      {
+        "source": "orcid",
+        "url": "https://orcid.org/0000-0002-4299-3018/work/225103748"
+      },
+      {
+        "source": "orcid",
+        "url": "https://orcid.org/0000-0002-4299-3018/work/225371218"
+      }
+    ],
+    "next_commands": [
+      "biomcp author papers orcid:0000-0002-4299-3018 --limit 3 --offset 3"
+    ]
+  }
+}

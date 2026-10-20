@@ -1,0 +1,79 @@
+{
+  "_id": "MONDO:0005105",
+  "disease_ontology": {
+    "def": "\"A cell type cancer that has_material_basis_in abnormally proliferating cells derives_from melanocytes which are found in skin, the bowel and the eye.\" [url:http\\://en.wikipedia.org/wiki/Melanoma, url:https\\://www.ncbi.nlm.nih.gov/pubmed/22123420]",
+    "doid": "DOID:1909",
+    "name": "melanoma",
+    "parents": [
+      "DOID:0050687"
+    ],
+    "synonyms": {
+      "exact": [
+        "malignant melanoma",
+        "Naevocarcinoma"
+      ]
+    },
+    "xrefs": {
+      "efo": "0000756",
+      "icdo": "8720/3",
+      "kegg": "05218",
+      "mesh": "D008545",
+      "ncit": "C3224",
+      "snomedct_us_2025_09_01": "2092003",
+      "umls_cui": "C0025202"
+    }
+  },
+  "mondo": {
+    "definition": "A malignant, usually aggressive tumor composed of atypical, neoplastic melanocytes. Most often, melanomas arise in the skin (cutaneous melanomas) and include the following histologic subtypes: superficial spreading melanoma, nodular melanoma, acral lentiginous melanoma, and lentigo maligna melanoma. Cutaneous melanomas may arise from acquired or congenital melanocytic or dysplastic nevi. Melanomas may also arise in other anatomic sites including the gastrointestinal system, eye, urinary tract, and reproductive system. Melanomas frequently metastasize to lymph nodes, liver, lungs, and brain. [NCIT:C3224]",
+    "label": "melanoma",
+    "parents": [
+      "MONDO:0021143"
+    ],
+    "synonym": {
+      "exact": [
+        "malignant melanoma",
+        "melanoma",
+        "melanoma (disease)",
+        "melanoma, malignant"
+      ]
+    },
+    "xrefs": {
+      "doid": [
+        "DOID:1909"
+      ],
+      "efo": [
+        "EFO:0000756"
+      ],
+      "hp": [
+        "HP:0002861"
+      ],
+      "icdo": [
+        "8720/3"
+      ],
+      "medgen": [
+        "9944"
+      ],
+      "mesh": [
+        "D008545"
+      ],
+      "nando": [
+        "2200077"
+      ],
+      "ncit": [
+        "C3224"
+      ],
+      "oncotree": [
+        "MEL"
+      ],
+      "orphanet": [
+        "411533"
+      ],
+      "sctid": [
+        "372244006"
+      ],
+      "umls": [
+        "C0025202"
+      ]
+    }
+  }
+}

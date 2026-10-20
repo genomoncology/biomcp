@@ -152,6 +152,8 @@ class ReplayEnvironment:
         binary: Path,
         argv: tuple[str, ...],
         timeout: float = 120.0,
+        *,
+        text: bool = True,
     ) -> ReplayRun:
         """Run one command against the replay server with a fresh cache."""
         run_dir = self._next_run_dir()
@@ -160,7 +162,7 @@ class ReplayEnvironment:
             [str(binary), *argv],
             env=self.command_env(run_dir),
             capture_output=True,
-            text=True,
+            text=text,
             timeout=timeout,
             cwd=str(REPO_ROOT),
         )

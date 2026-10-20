@@ -1,0 +1,140 @@
+{
+  "_meta": {
+    "evidence_urls": [],
+    "next_commands": [
+      "biomcp get cell-line CVCL_0064 chembl",
+      "biomcp get cell-line CVCL_0064 drug_response"
+    ],
+    "section_sources": [
+      {
+        "key": "identity",
+        "label": "Identity",
+        "outcome": "data",
+        "sources": [
+          "Cellosaurus"
+        ]
+      },
+      {
+        "key": "variants",
+        "label": "Variants",
+        "outcome": "data",
+        "sources": [
+          "Cellosaurus"
+        ]
+      },
+      {
+        "key": "xrefs",
+        "label": "Cross-references",
+        "outcome": "data",
+        "sources": [
+          "Cellosaurus"
+        ]
+      }
+    ]
+  },
+  "accession": "CVCL_0064",
+  "age": "10Y",
+  "category": "Cancer cell line",
+  "data_as_of": "56.0 (2026-06-25)",
+  "data_as_of_kind": "release",
+  "diseases": [
+    {
+      "accession": "C9163",
+      "database": "NCIt",
+      "label": "Childhood acute monocytic leukemia"
+    },
+    {
+      "accession": "Orphanet_514",
+      "database": "ORDO",
+      "label": "Acute monoblastic/monocytic leukemia"
+    }
+  ],
+  "name": "MV4-11",
+  "rrid": "RRID:CVCL_0064",
+  "section_outcomes": {
+    "chembl": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "drug_response": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "variants": {
+      "outcome": "data",
+      "sources": [
+        "Cellosaurus"
+      ]
+    },
+    "xrefs": {
+      "outcome": "data",
+      "sources": [
+        "Cellosaurus"
+      ]
+    }
+  },
+  "sex": "Male",
+  "source": "Cellosaurus",
+  "species": [
+    {
+      "label": "Homo sapiens (Human)",
+      "taxon_id": "9606"
+    }
+  ],
+  "synonyms": [
+    "MV-4-11",
+    "MV-4:11",
+    "MV4:11",
+    "MV 4;11",
+    "MV4;11",
+    "MV411",
+    "MV(4;11)",
+    "MV4II"
+  ],
+  "variants": [
+    {
+      "description": "KMT2A-AFF1, MLL-AFF1, ALL-1/AF4",
+      "gene": "AFF1",
+      "hgnc_id": "HGNC:7135",
+      "pubmed_ids": [
+        "8358709",
+        "1423625"
+      ],
+      "variation_type": "Gene fusion"
+    },
+    {
+      "description": "Internal tandem duplication (FLT3-ITD)",
+      "gene": "FLT3",
+      "hgnc_id": "HGNC:3765",
+      "mutation_type": "Unexplicit",
+      "pubmed_ids": [
+        "12529668"
+      ],
+      "variation_type": "Mutation",
+      "zygosity": "Unspecified"
+    }
+  ],
+  "xrefs": {
+    "cell_model_passport": [
+      "SIDM00657"
+    ],
+    "chembl": [
+      "CHEMBL3308063"
+    ],
+    "cosmic_clp": [
+      "908156"
+    ],
+    "depmap": [
+      "ACH-000045"
+    ],
+    "gdsc": [
+      "908156"
+    ],
+    "lincs_ldp": [
+      "LCL-1092"
+    ],
+    "pharmacodb": [
+      "MV411_972_2019"
+    ]
+  }
+}
