@@ -4,7 +4,9 @@ priority: 2
 
 # 2314 — Remove baseline re-stamping checkers
 
-Status: OPEN.
+Status: WITHDRAWN.
+
+Opened as: 2026-10-20, PM m2501: already completed by 2076 in 8c2d822af3d74b407aa0ae99f8def3fc451e845b; remaining checkers enforce actual regressions..
 
 Milestone: 0.9.4
 
