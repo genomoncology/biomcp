@@ -39,3 +39,5 @@ Restore CYP2D6 frequency and guideline sections by replacing unsupported adapter
 PM decision: fix this live user-facing bug for 0.9.4 at priority1. After repair recapture both routes under standing public keyless authorization, add them to the recorded set and existing live drift checker, and state in the changelog that both sections were broken against the current CPIC API.
 
 The pre-code adapter inventory found the invalid order strings only in src/sources/cpic.rs. Existing construction checks omit order. The meaningful CLI regression belongs in tests/test_pgx_cpic_sections.py using the shared isolated environment and strict loopback exact-query routing: supported-order replies, nonzero-offset paging and retained HTTP400 failure reporting. This adds no production abstraction.
+
+Landing alone: This priority1 user-facing repair is ready. The other accepted process tickets require separate gate implementation landings; remaining replay coverage continues in its lane.
