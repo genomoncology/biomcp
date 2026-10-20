@@ -415,3 +415,78 @@ def test_invalid_xml_keeps_complete_recording_accounting(
         if historical
         else "live response has unsupported or invalid shape"
     ]
+
+
+FORMAT_CASES = [
+    ("image/jpeg", b"\xff\xd8\xff\xe0photo", b"not a jpeg"),
+    ("application/msword", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1document", b"not a doc"),
+    ("application/zip", b"PK\x03\x04archive", b"not a zip"),
+    ("text/html", b"<!DOCTYPE html><html><body>article</body></html>", b"not html"),
+    ("binary/octet-stream", b'{"Key":"value","tail":1}', b""),
+]
+
+
+@pytest.mark.parametrize(("content_type", "body", "malformed"), FORMAT_CASES)
+@pytest.mark.parametrize("fault", [None, "historical", "live", "status", "type"])
+def test_real_formats_report_only_the_checks_performed(
+    tmp_path, provider, content_type, body, malformed, fault
+):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = content_type
+    (replay / "manifest.json").write_text(json.dumps({"schema_version": 1, "routes": routes}))
+    (replay / "reply.json").write_bytes(malformed if fault == "historical" else body)
+    server.content_type = content_type if fault != "type" else "application/json"
+    server.body = malformed if fault == "live" else body
+    server.status = 503 if fault == "status" else 200
+    process, results, summary = run_check(tmp_path, replay, "--live")
+    assert results[0]["qualification"] == "status/type/signature only"
+    assert process.returncode == int(fault is not None)
+    assert summary["checked"] == int(fault != "historical")
+    assert summary["blocked" if fault == "historical" else "drift" if fault else "passed"] == 1
+    assert results[0]["added_paths"] == []
+    if fault == "status":
+        assert "changed status" in results[0]["details"]
+    if fault == "type":
+        assert "changed content-type" in results[0]["details"]
+
+
+@pytest.mark.parametrize(
+    ("doctype", "refused"),
+    [
+        (b'<!DOCTYPE reply SYSTEM "http://127.0.0.1:1/no-fetch">', False),
+        (b'<!DOCTYPE reply [<!ENTITY word "expanded">]>', True),
+        (b'<!DOCTYPE reply [<!ENTITY word SYSTEM "file:///etc/passwd">]>', True),
+        (b'<!DOCTYPE reply [<!ENTITY % remote SYSTEM "http://127.0.0.1:1/no-fetch">%remote;]>', True),
+    ],
+)
+@pytest.mark.parametrize("historical", [False, True])
+def test_doctype_allows_declarations_but_refuses_entity_expansion(
+    tmp_path, provider, doctype, refused, historical
+):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "application/xml"
+    (replay / "manifest.json").write_text(json.dumps({"schema_version": 1, "routes": routes}))
+    xml = doctype + b"<reply><row/></reply>"
+    (replay / "reply.json").write_bytes(xml if historical else b"<reply><row/></reply>")
+    server.content_type = "application/xml"
+    server.body = b"<reply><row/></reply>" if historical else xml
+    process, _, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == int(refused)
+    assert summary["blocked" if historical and refused else "drift" if refused else "passed"] == 1
+    assert len(server.requests) == int(not (historical and refused))
+
+
+def test_real_formats_keep_root_object_provider_from_capture_provenance(tmp_path):
+    replay, routes = recording(tmp_path, "https://mygene.info/v3")
+    entry = next(iter(routes.values()))
+    entry["recording_provenance"] = {"provider": "mygene"}
+    entry["upstream"] = "https://mygene.info/v3/object?q=1"
+    (replay / "manifest.json").write_text(json.dumps({
+        "schema_version": 1, "routes": {"GET /v3/object?q=1": entry}
+    }))
+    process, results, summary = run_check(tmp_path, replay)
+    assert process.returncode == 0
+    assert results[0]["provider"] == "mygene"
+    assert summary["ready"] == 1

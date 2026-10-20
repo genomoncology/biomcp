@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import tomllib
 from pathlib import Path
+from urllib.parse import parse_qsl, urlsplit
 from xml.etree import ElementTree
 
 ID_ALIASES = {
@@ -18,6 +19,30 @@ ID_ALIASES = {
     "gwas": "gwas-catalog",
     "europepmc": "europe-pmc",
 }
+
+
+def recording_provider(key: str, entry: dict, routes: dict[str, str]) -> str:
+    """Resolve exact origin-path recordings from their declared capture provider."""
+    method, raw_path = key.split(" ", 1)
+    path = urlsplit(raw_path)
+    prefix = path.path.lstrip("/").split("/", 1)[0]
+    if prefix in routes:
+        return prefix
+    provider = entry.get("recording_provenance", {}).get("provider")
+    if method not in {"GET", "HEAD"} or provider not in routes:
+        return prefix
+    upstream = urlsplit(entry.get("upstream", ""))
+    base = urlsplit(routes[provider])
+    if (
+        (upstream.scheme, upstream.netloc) == (base.scheme, base.netloc)
+        and (upstream.path == base.path or upstream.path.startswith(base.path.rstrip("/") + "/"))
+        and upstream.path == path.path
+        and not path.fragment
+        and sorted(parse_qsl(upstream.query, keep_blank_values=True))
+        == sorted(parse_qsl(path.query, keep_blank_values=True))
+    ):
+        return provider
+    return prefix
 
 
 def product_headers(root: Path) -> dict[str, str]:
