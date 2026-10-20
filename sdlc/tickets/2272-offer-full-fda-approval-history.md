@@ -12,7 +12,7 @@ Milestone: 0.9.5
 
 `get drug ... approval-history` shows the application's full provider-returned Drugs@FDA submission history with source class, date and document links. The opt-in section reuses the existing section registry; approvals, regulatory and all retain compact output, and all does not include full history.
 
-Changes: `src/sources/openfda.rs`, `src/entities/drug/mod.rs`, `src/entities/drug/get.rs`, `src/entities/drug/approvals.rs`, `src/entities/drug/metadata.rs`, `src/entities/drug/metadata/tests.rs`, `src/render/markdown/drug_regulatory.rs`, `src/cli/list/clinical.rs`, `src/cli/commands/selectors.rs`, `docs/reference/drug-approvals-and-ae-summary.md`, `spec/entity/drug.md`, `tests/test_drug_regulatory_replay.py`, `testdata/sources/openfda/*`, `CHANGELOG.md`.
+Changes: `src/sources/openfda.rs`, `src/entities/source_state_registry.rs`, `src/render/provenance.rs`, `src/render/markdown/drug.rs`, `src/transform/drug.rs`, `src/entities/drug/get/tests.rs`, `testdata/sources/capture-receipts.json`, `src/entities/drug/mod.rs`, `src/entities/drug/get.rs`, `src/entities/drug/approvals.rs`, `src/entities/drug/metadata.rs`, `src/entities/drug/metadata/tests.rs`, `src/render/markdown/drug_regulatory.rs`, `src/cli/list/clinical.rs`, `src/cli/commands/selectors.rs`, `docs/reference/drug-approvals-and-ae-summary.md`, `spec/entity/drug.md`, `tests/test_drug_regulatory_replay.py`, `testdata/sources/openfda/*`, `CHANGELOG.md`.
 
 ## Evidence
 
@@ -41,3 +41,7 @@ Base e0d84c4293051b7f466bfcc58a68e2b739aace10. Read-only source inspection finds
 ## Reproduction on current main
 
 Before product edits, M5 job 2272/1792505332201-43094 ran `pm job run --machine m5 2272 e0d84c4293051b7f466bfcc58a68e2b739aace10 -- env BIOMCP_BIN=/Users/ian/workspace/worktrees/biomcp-2258-job/target/debug/biomcp /Users/ian/workspace/worktrees/biomcp-2258-job/.venv/bin/python -m pytest -q /tmp/biomcp2272-proof/tests/test_drug_regulatory_replay.py -k approval_history`. It failed one case with twelve deselected: the compact replay first returned eight submissions without class, then the actual main CLI exited 2 with invalid_argument, Unknown section approval-history for drug. The authorized keyless BLA125514 capture succeeded once with HTTP 200 and 127 submissions; fixture and exact request metadata are retained in testdata/sources/openfda/drugsfda_keytruda_20261020.json and its .request.json. These are observed capture counts, not hardcoded product limits.
+
+## Reviewed representation
+
+The new opt-in section uses the existing approvals JSON payload with every provider-returned row, source class and document data. It does not add a second top-level history field or change compact projections. Registry and provenance additions remain isolated on this branch while release repair 2287 changes the protein credit contract; this feature will be rebased and reviewed after that repair and cannot land before the tag. The approved successful FDA capture uses the existing shared capture-receipts format rather than a parallel request-metadata mechanism.
