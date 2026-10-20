@@ -1,6 +1,6 @@
 # ClinGen CAR rate limiting degrades batch identity verification
 
-Disposition (2026-10-20): Closed as an active defect because ticket 1238 recorded a deferred idea, future task or design precondition at 6e695bf19. This archive preserves the original ruling and does not complete the future work.
+Disposition (2026-10-20): Closed as moot for active defect tracking because ticket 1238 recorded a deferred idea, future task or design precondition at 6e695bf19. This archive preserves the original ruling and does not complete the future work.
 
 
 Found during a full CLI verification run (2026-09-09) on main `9f6cbc0e`:

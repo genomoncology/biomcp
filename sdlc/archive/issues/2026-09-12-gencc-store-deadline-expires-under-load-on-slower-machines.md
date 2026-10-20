@@ -1,6 +1,6 @@
 # GenCC store deadline expires under full-suite load on slower machines
 
-Disposition (2026-10-20): Closed as an active defect under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
+Disposition (2026-10-20): Closed as moot for active defect tracking under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
 
 
 Observed 2026-09-12 while running the full `make test` gate for ticket 1163 on

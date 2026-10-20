@@ -1,6 +1,6 @@
 # DepMap's own terms contradict the Figshare CC BY 4.0 field, and they restrict rehosting
 
-Disposition (2026-10-20): Closed as an active defect because the recorded decision keeps the disputed DepMap integration parked. The original terms analysis and revisit triggers remain in force.
+Disposition (2026-10-20): Closed as moot for active defect tracking because the recorded decision keeps the disputed DepMap integration parked. The original terms analysis and revisit triggers remain in force.
 
 
 Observed 2026-09-18 while starting ticket 1206. The ticket records DepMap's licence as CC BY 4.0. That string comes from the `license` field on the Figshare mirror article, not from DepMap. DepMap's own terms say something materially different and more restrictive, and they were revised on 2026-04-02, after the ticket's source survey.

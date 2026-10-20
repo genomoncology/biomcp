@@ -1,6 +1,6 @@
 # ClinGen ERepo fixture cleanup race
 
-Disposition (2026-10-20): Closed as an active defect under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
+Disposition (2026-10-20): Closed as moot for active defect tracking under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
 
 
 A repeated direct ERepo fixture run can pass every assertion yet print a

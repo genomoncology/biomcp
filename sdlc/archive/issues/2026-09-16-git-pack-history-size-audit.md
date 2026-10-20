@@ -1,6 +1,6 @@
 # Git pack is 1.23 GiB against a roughly 30 MB working tree
 
-Disposition (2026-10-20): Closed as an active defect because ticket 1238 recorded a deferred idea, future task or design precondition at 6e695bf19. This archive preserves the original ruling and does not complete the future work.
+Disposition (2026-10-20): Closed as moot for active defect tracking because ticket 1238 recorded a deferred idea, future task or design precondition at 6e695bf19. This archive preserves the original ruling and does not complete the future work.
 
 
 Observed 2026-09-16 during the v0.8.25..v0.9.0 growth audit.

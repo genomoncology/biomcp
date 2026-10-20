@@ -1,6 +1,6 @@
 # CSpec fixture lacks a selectable BRAF document
 
-Disposition (2026-10-20): Closed as an active defect under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
+Disposition (2026-10-20): Closed as moot for active defect tracking under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
 
 
 The routine CSpec fixture lists BRAF resource IRIs, but selecting its listed

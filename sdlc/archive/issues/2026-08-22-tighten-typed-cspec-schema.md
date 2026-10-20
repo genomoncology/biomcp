@@ -1,6 +1,6 @@
 # Typed CSpec schema leaves mode constraints to runtime
 
-Disposition (2026-10-20): Closed as an active defect under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
+Disposition (2026-10-20): Closed as moot for active defect tracking under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
 
 
 `gene_cspec` advertises unbounded `gene`, and its `version_iri`, `capture_id`,

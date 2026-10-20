@@ -1,6 +1,6 @@
 # A citation sidecar would make synthesis mechanical
 
-Disposition (2026-10-20): Closed as an active defect because ticket 1238 recorded a deferred idea, future task or design precondition at 6e695bf19. This archive preserves the original ruling and does not complete the future work.
+Disposition (2026-10-20): Closed as moot for active defect tracking because ticket 1238 recorded a deferred idea, future task or design precondition at 6e695bf19. This archive preserves the original ruling and does not complete the future work.
 
 
 Found in a botassembly knowledge-base run (2026-08-27): the synthesize
