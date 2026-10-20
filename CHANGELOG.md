@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
 - Restore PGx frequency and guideline sections broken against the current CPIC API by ordering on supported provider columns. (2292)
 
 - Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
@@ -91,6 +92,7 @@
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
 
+- Run the existing release metadata checks together before a metadata gate, and report every failed group in one local command. (2290)
 - Build and smoke an installed Linux wheel with a fresh home during the full main check, sharing release smoke commands and pinned manylinux images. (2288)
 - Require changelog citations for shipped changes and reject tracked scratch files in the local lint gate, including stable release candidates with dated changelog sections. (2291)
 

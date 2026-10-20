@@ -1,0 +1,21 @@
+---
+priority: 2
+---
+
+# 2294 — Stop article assets waiting on the secondary ZIP
+
+Status: OPEN.
+
+Milestone: 0.9.4
+
+## Outcome
+
+An article assets or asset-bytes request returns as soon as the primary PMC archive answer is complete and sufficient. It does not wait on the optional Europe PMC supplementaryFiles ZIP when the primary already answered. When the primary fails or lacks the asset, the secondary sources still serve as fallback with their existing budgets and unavailable labels.
+
+- Proof: An outside-in replay case where the primary archive succeeds and the ZIP route hangs returns the primary assets without waiting out the ZIP budget, and its output names the same assets as today. A case where the primary fails still reaches the ZIP and other fallbacks. Existing availability and fallback controls pass unchanged.
+
+## Evidence
+
+The 2236 coverage lane read the assets flow: resolution starts the PMC archive, the Europe PMC ZIP and XML, NCBI XML and official HTML together with `tokio::join!`. The ZIP call runs even after the primary archive succeeds, is NoStore, and has a 10-second optional-source budget, so repeated asset and byte requests can pay that wait each time. A live capture of PMC3467229 saw the ZIP time out twice while the primary assets succeeded. Healthy full text did not request the ZIP.
+
+Keep the change local to assets resolution. Keep source labels and unavailable reporting truthful. Add no new cache layer unless the measured case requires one.
