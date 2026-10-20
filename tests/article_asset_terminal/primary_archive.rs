@@ -20,6 +20,26 @@ impl HangingZip {
     }
 
     fn with_primary(hang: bool, primary_failure: bool) -> Self {
+        Self::with_collision(hang, primary_failure, false)
+    }
+
+    fn with_collision(hang: bool, primary_failure: bool, collision: bool) -> Self {
+        let filename = if collision {
+            "figshare-supplement.pdf"
+        } else {
+            "traces-s1.csv"
+        };
+        let primary_bytes: &[u8] = if collision {
+            b"%PDF-1.4\nPrimary archive supplement\n%%EOF\n"
+        } else {
+            b"time,value\n0,1\n"
+        };
+        let metadata = format!(
+            r#"{{"pmcid":"PMC123456","version":1,"license_code":"CC BY","xml_url":"s3://pmc-oa-opendata/PMC123456.1/article.nxml","media_urls":["s3://pmc-oa-opendata/PMC123456.1/{filename}"]}}"#
+        );
+        let xml = format!(
+            r#"<article xmlns:xlink="http://www.w3.org/1999/xlink"><body><supplementary-material xlink:href="{filename}"><label>Data S1</label></supplementary-material></body></article>"#
+        );
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         listener.set_nonblocking(true).unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
@@ -35,6 +55,9 @@ impl HangingZip {
         let zip_bytes = archive.finish().unwrap().into_inner();
         let zip_requested = requested.clone();
         let stopping = stop.clone();
+        let figshare = format!(
+            r#"{{"id":22474820,"title":"Figshare asset fallback winner","doi":"10.1158/fixture.figshare","url_public_html":"https://aacr.figshare.com/articles/journal_contribution/Fixture/22474820","license":{{"name":"CC BY 4.0","url":"https://creativecommons.org/licenses/by/4.0/"}},"files":[{{"id":39926318,"name":"figshare-supplement.pdf","size":24,"download_url":"{base}/file.pdf"}}]}}"#
+        );
         let worker = thread::spawn(move || {
             let mut held = Vec::new();
             let mut failures = Vec::new();
@@ -67,14 +90,37 @@ impl HangingZip {
                         && request.contains("/supplementaryFiles")
                     {
                         ("200 OK", "application/zip", &zip_bytes)
+                    } else if collision && request.starts_with("GET /graph/v1/paper/PMID:22663015")
+                    {
+                        ("200 OK", "application/json", br#"{"paperId":"paper-5","title":"Figshare asset fallback winner","openAccessPdf":{"url":"https://aacr.figshare.com/articles/journal_contribution/Fixture/22474820?file=39926318","status":"GREEN","license":"CC BY 4.0"}}"#)
+                    } else if collision && request.starts_with("GET /v2/articles/22474820 ") {
+                        ("200 OK", "application/json", figshare.as_bytes())
+                    } else if collision && request.starts_with("POST /v2/articles/search ") {
+                        ("200 OK", "application/json", b"[]")
+                    } else if collision && request.starts_with("GET /file.pdf ") {
+                        ("200 OK", "application/pdf", b"%PDF-1.4\nFigshare\n%%EOF\n")
+                    } else if collision && request.contains("ids=") {
+                        (
+                            "200 OK",
+                            "application/json",
+                            br#"{"records":[{"pmid":22663015,"pmcid":"PMC123456"}]}"#,
+                        )
                     } else if request.starts_with("GET /?list-type=2") {
                         ("200 OK", "application/xml", b"<ListBucketResult><CommonPrefixes><Prefix>PMC123456.1/</Prefix></CommonPrefixes></ListBucketResult>")
                     } else if request.starts_with("GET /PMC123456.1/PMC123456.1.json ") {
-                        ("200 OK", "application/json", br#"{"pmcid":"PMC123456","version":1,"license_code":"CC BY","xml_url":"s3://pmc-oa-opendata/PMC123456.1/article.nxml","media_urls":["s3://pmc-oa-opendata/PMC123456.1/traces-s1.csv"]}"#)
+                        ("200 OK", "application/json", metadata.as_bytes())
                     } else if request.starts_with("GET /PMC123456.1/article.nxml ") {
-                        ("200 OK", "application/xml", br#"<article xmlns:xlink="http://www.w3.org/1999/xlink"><body><supplementary-material xlink:href="traces-s1.csv"><label>Data S1</label></supplementary-material></body></article>"#)
-                    } else if request.starts_with("GET /PMC123456.1/traces-s1.csv ") {
-                        ("200 OK", "text/csv", b"time,value\n0,1\n")
+                        ("200 OK", "application/xml", xml.as_bytes())
+                    } else if request.starts_with(&format!("GET /PMC123456.1/{filename} ")) {
+                        (
+                            "200 OK",
+                            if collision {
+                                "application/pdf"
+                            } else {
+                                "text/csv"
+                            },
+                            primary_bytes,
+                        )
                     } else if !primary_failure && request.starts_with("GET /PMC123456/fullTextXML ")
                     {
                         (
@@ -226,5 +272,59 @@ fn failed_primary_still_returns_the_zip_assets() {
             asset["filename"] == "traces-s1.csv" && asset["provider"]["source"] == "Europe PMC"
         }),
         "the failed primary must retain the ZIP fallback: {manifest}"
+    );
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn primary_collision_handle_does_not_consult_the_zip() {
+    use std::fs::OpenOptions;
+    let fixture = ArticleFixture::start();
+    let zip = HangingZip::with_collision(true, false, true);
+    configure_archive(&fixture, &zip);
+    let mut env = OpenOptions::new()
+        .append(true)
+        .open(&fixture.env_file)
+        .unwrap();
+    for key in [
+        "BIOMCP_NCBI_IDCONV_BASE",
+        "BIOMCP_S2_BASE",
+        "BIOMCP_FIGSHARE_BASE",
+    ] {
+        writeln!(env, "export {key}='{}'", zip.base).unwrap();
+    }
+    let output = fixture
+        .biomcp_command(&["--json", "get", "article", "22663015", "assets"])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    let manifest: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let primary = manifest["assets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|asset| {
+            asset["filename"] == "figshare-supplement.pdf"
+                && asset["provider"]["source"] == "PMC OA"
+        })
+        .expect("the primary collision asset remains listed");
+    let key = primary["asset_key"].as_str().unwrap();
+    assert_ne!(
+        key, "figshare-supplement.pdf",
+        "the fixture must establish a real public collision handle: {manifest}"
+    );
+    assert!(!zip.requested.load(Ordering::SeqCst));
+    let output = fixture
+        .biomcp_command(&["get", "article", "22663015", "asset", key])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert_eq!(
+        output.stdout,
+        b"%PDF-1.4\nPrimary archive supplement\n%%EOF\n"
+    );
+    assert!(
+        !zip.requested.load(Ordering::SeqCst),
+        "listed primary collision handles must not request the hanging ZIP"
     );
 }

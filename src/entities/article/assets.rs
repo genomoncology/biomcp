@@ -638,9 +638,15 @@ async fn resolve_article_assets_for(
             && nonretrievable.is_empty()
             && undelivered_supplements.is_empty()
             && wanted.is_none_or(|wanted| {
-                assets
-                    .iter()
-                    .any(|asset| asset.entry.asset_key == wanted || asset.entry.filename == wanted)
+                assets.iter().any(|asset| {
+                    asset.entry.asset_key == wanted
+                        || asset.entry.filename == wanted
+                        || collision_asset_key(
+                            &asset.entry.provider.source,
+                            &asset.canonical_identity,
+                            &asset.entry.filename,
+                        ) == wanted
+                })
             })
             && PmcArticleClient::new(pmcid).is_ok_and(|client| {
                 candidates.iter().all(|candidate| {
@@ -1651,11 +1657,10 @@ fn assign_asset_keys(
         asset.entry.asset_key = if counts.get(&filename) == Some(&1) {
             filename.clone()
         } else {
-            format!(
-                "{}-{}--{}",
-                provider_slug(&asset.entry.provider.source),
-                sha256_hex(asset.canonical_identity.as_bytes()),
-                filename
+            collision_asset_key(
+                &asset.entry.provider.source,
+                &asset.canonical_identity,
+                &filename,
             )
         };
         asset.entry.handle = article_asset_command(requested_id, &asset.entry.asset_key);
@@ -1668,16 +1673,19 @@ fn assign_asset_keys(
         let asset_key = if counts.get(&filename) == Some(&1) {
             filename.clone()
         } else {
-            format!(
-                "{}-{}--{}",
-                provider_slug(&coverage.row.provider.source),
-                sha256_hex(identity.as_bytes()),
-                filename
-            )
+            collision_asset_key(&coverage.row.provider.source, identity, &filename)
         };
         coverage.row.asset_key = Some(asset_key.clone());
         coverage.row.handle = Some(article_asset_command(requested_id, &asset_key));
     }
+}
+
+fn collision_asset_key(source: &str, identity: &str, filename: &str) -> String {
+    format!(
+        "{}-{}--{filename}",
+        provider_slug(source),
+        sha256_hex(identity.as_bytes()),
+    )
 }
 
 fn retrievable_coverage(asset: &ResolvedAsset) -> ArticleAssetNamedCoverage {
