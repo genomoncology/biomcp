@@ -101,8 +101,12 @@
       "has_tables": true
     },
     "reuse": {
-      "license_present": false,
-      "reuse_warning": "License/reuse status is unknown; verify rights before reuse."
+      "license": "http://creativecommons.org/licenses/by/4.0/",
+      "license_present": true,
+      "license_source": {
+        "label": "Europe PMC XML",
+        "source": "Europe PMC"
+      }
     },
     "source_identifier": "PMC3467229",
     "source_kind": "jats_xml"

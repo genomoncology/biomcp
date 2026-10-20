@@ -35,8 +35,8 @@ with tempfile.TemporaryDirectory(prefix='run-', dir=cache) as scratch:
     container_wheels = '/io/' + wheel_dir.relative_to(root).as_posix()
     command = step['run'].replace('${{ matrix.target }}', target).replace('${{ matrix.container }}', image)
     command = command.replace('target/wheels', container_wheels)
-    # Keep the compiler output between checks, but never reuse a wheel from an earlier run.
-    container_target = f'/io/.cache/installed-wheel/{target}/target'
+    # Build each wheel with an empty target owned and removed by this run.
+    container_target = '/io/' + (scratch / 'target').relative_to(root).as_posix()
     command = command.replace('docker run --rm', f'docker run --rm --platform {linux_platform} --label pm.repo=biomcp --label pm.ticket=2288 -e CARGO_TARGET_DIR={container_target}', 1)
     env = os.environ | {'RUNNER_TEMP': str(scratch), 'TAG': f'v{version}', 'BIOMCP_BUILD_VERSION': version}
     subprocess.run(['bash', '-euo', 'pipefail', '-c', command], env=env, check=True)

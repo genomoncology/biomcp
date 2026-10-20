@@ -1908,7 +1908,7 @@ async fn observe_pmc_html(pmcid: &str) -> SourceAttempt<String> {
     }
 }
 
-async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePackage> {
+async fn resolve_archive_package(article: &mut Article) -> SourceAttempt<ArchivePackage> {
     let pmcid = match resolve_article_pmcid(article).await {
         Ok(Some(pmcid)) => pmcid,
         Ok(None) => return SourceAttempt::Absent,
@@ -1933,6 +1933,23 @@ async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePack
             None
         }
     };
+    // License metadata remains useful even if the package download fails.
+    // Keep the fulltext provider separate from the source stating its license.
+    if let Some(license) = pmc_manifest
+        .as_ref()
+        .and_then(|manifest| manifest.license.as_deref())
+        .map(str::trim)
+        .filter(|license| !license.is_empty())
+        && let Some(fulltext) = article.full_text_manifest.as_mut()
+        && !fulltext.reuse.license_present
+    {
+        fulltext.reuse = ArticleFulltextReuse {
+            license_present: true,
+            license: Some(license.to_string()),
+            license_source: Some(provider()),
+            reuse_warning: None,
+        };
+    }
     if let Some(manifest) = pmc_manifest.clone() {
         match pmc.archive_package(manifest).await {
             Ok(package) => {

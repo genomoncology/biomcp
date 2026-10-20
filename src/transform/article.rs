@@ -47,6 +47,7 @@ pub(crate) enum ArticleDocumentCoverage {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ClassifiedArticleDocument {
+    pub license: Option<String>,
     pub coverage: ArticleDocumentCoverage,
     pub markdown: Option<String>,
     pub abstract_text: Option<String>,

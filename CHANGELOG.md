@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Report licenses stated by fetched full-text source metadata and JATS links with their source, including when an asset package is unavailable. (2296)
+
 - Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
 
 - Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
@@ -94,6 +96,10 @@
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
 
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
+- Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
+
+- Isolate each installed-wheel check in a fresh build directory and remove its output after the run. (2297)
+
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
 
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
