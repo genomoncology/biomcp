@@ -46,6 +46,10 @@ class Case:
 
 CASES = (
     Case(
+        "get-disease-mondo0005105",
+        ("get", "disease", "MONDO:0005105"),
+    ),
+    Case(
         "get-pgx-cyp2d6-frequencies",
         ("get", "pgx", "CYP2D6", "frequencies"),
     ),
