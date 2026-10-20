@@ -1181,7 +1181,8 @@ async fn raw_mcp_global_flags_are_safe_over_stdio() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread")]
 async fn raw_reversed_search_is_pure_preflight_over_stdio() -> anyhow::Result<()> {
     let harness = harness();
-    let root = tempfile::tempdir_in(&harness.repo_root)?;
+    // Honor the test lane TMPDIR; root-level untracked state races Cargo packaging.
+    let root = tempfile::tempdir()?;
     let cache = root.path().join("absent-cache");
     let sentinel = root.path().join("not-created");
     let env = [
@@ -1239,7 +1240,8 @@ async fn raw_mcp_global_flags_are_safe_over_http() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread")]
 async fn raw_reversed_search_is_pure_preflight_over_http() -> anyhow::Result<()> {
     let harness = harness();
-    let root = tempfile::tempdir_in(&harness.repo_root)?;
+    // Honor the test lane TMPDIR; root-level untracked state races Cargo packaging.
+    let root = tempfile::tempdir()?;
     let cache = root.path().join("absent-cache");
     let sentinel = root.path().join("not-created");
     let env = [
