@@ -747,7 +747,13 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
                     while parent and not isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         parent = parents.get(parent)
                     scope = parent.name if parent else "<module>"
-                    add(relative, scope, kind, ast.get_source_segment(source, node) or "")
+                    if isinstance(node, ast.Call):
+                        waits = ([kw.value for kw in node.keywords if kw.arg == "timeout"]
+                                 if any(kw.arg == "timeout" for kw in node.keywords) else node.args[:1])
+                        expression = f"{ast.unparse(node.func)}({', '.join(ast.unparse(arg) for arg in waits)})"
+                    else:
+                        expression = ast.unparse(node)
+                    add(relative, scope, kind, expression)
             continue
 
         masked = _mask_rust_non_code(source)
@@ -776,6 +782,10 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
                          if start <= match.start() < end]
             scope = min(enclosing)[1] if enclosing else "<module>"
             end = match.end()
+            if match["timeout"]:
+                # Only the delay is the selector, not the future or its body.
+                add(relative, scope, "deadline", masked[match.start():end] + ")")
+                continue
             if not match["instant"]:
                 opening = masked.find("(", match.start())
                 depth = 1
