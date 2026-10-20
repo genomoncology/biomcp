@@ -341,14 +341,6 @@
       "source_document": "pmc_oa_archive"
     },
     {
-      "outcome": "source_unavailable",
-      "provider": {
-        "label": "Europe PMC Supplementary Files",
-        "source": "Europe PMC"
-      },
-      "source_document": "europe_pmc_zip"
-    },
-    {
       "outcome": "data",
       "provider": {
         "label": "Europe PMC XML",
