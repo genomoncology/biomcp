@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287
+Depends on: 2257, 2244, 2111, 2262, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2285, 2233, 2234, 2286, 2287, 2288, 2289, 2290, 2291, 2236, 2284
 
 Reviews: revision 1b8e728, accept
 
@@ -144,3 +144,7 @@ Keep: experiments/493-biomcp-2258-repaired-linux — retain the exact runner, so
 ## Protein section release hold
 
 Whole repaired Linux2258/1792502148739-726187 passed all stages on2ca, and actual repaired-main full2286/1792503071436-75490 passed on c937. Reviewed administrative partiallanding e0d and final metadata all88 citations passed. Before dispatch, 2236 reproduced a real protein-structures JSON panic on e0d. PM orders2287 release repair plus class prevention; no second rehearsal was dispatched. Refresh only qualification invalidated by the repair, then perform the full rehearsal. See the single admission record for all exact bindings and retained evidence.
+
+## Final process batch
+
+Ian moved 2288, 2289, 2290, 2291, 2236 and rebuild-cost work 2284 into 0.9.4. Finish these reviewed batches before the one new full untagged rehearsal. Formal rebuild measurements require a quiet M5. FDA approval-history feature 2272 stays accepted on its 0.9.5 branch until after the 0.9.4 tag. The earlier deferral of process improvements is superseded.
