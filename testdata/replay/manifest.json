@@ -1,5 +1,46 @@
 {
   "routes": {
+    "GET /cpic/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&limit=11&offset=0&order=guideline_name.asc&select=%2A": {
+      "file": "responses/cpic/cpic-guideline-summary-view-a40f0c0dcd01.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "attempt": 0,
+        "bytes": 2995,
+        "method": "GET",
+        "observed_at": "2026-10-20T15:17:00.948410+00:00",
+        "proxy": false,
+        "redirects": false,
+        "request_headers": {
+          "accept": "*/*",
+          "accept-encoding": "identity",
+          "cache-control": "no-store",
+          "user-agent": "biomcp-cli/0.9.4"
+        },
+        "response_headers": {
+          "Cache-Control": "no-cache",
+          "Connection": "close",
+          "Content-Location": "/v1/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&limit=11&offset=0&order=guideline_name.asc&select=%2A",
+          "Content-Range": "0-6/*",
+          "Content-Security-Policy": "upgrade-insecure-requests; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Tue, 20 Oct 2026 15:17:01 GMT",
+          "Expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+          "Server": "nginx",
+          "Strict-Transport-Security": "max-age=16070400; includeSubDomains",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Content-Type-Options": "nosniff"
+        },
+        "sha256": "8ad47f79a591100835f819004c5052135d97b940a9f940ffcbac4f74494f5f1c",
+        "source_revision": "edc97ec1462a696c0f340f7cbb939c83c87cf3ea",
+        "status": 200,
+        "url": "https://api.cpicpgx.org/v1/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&select=%2A&limit=11&offset=0&order=guideline_name.asc"
+      },
+      "status": 200,
+      "upstream": "https://api.cpicpgx.org/v1/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&select=%2A&limit=11&offset=0&order=guideline_name.asc"
+    },
     "GET /cpic/pair_view?genesymbol=eq.BRAF&limit=15&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
       "file": "responses/cpic/cpic-pair-view-a004e3956d1f.bin",
       "headers": {
@@ -33,6 +74,47 @@
       },
       "status": 200,
       "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc"
+    },
+    "GET /cpic/population_frequency_view?genesymbol=eq.CYP2D6&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc&select=%2A": {
+      "file": "responses/cpic/cpic-population-frequency-view-771961fe0f99.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "attempt": 0,
+        "bytes": 2131,
+        "method": "GET",
+        "observed_at": "2026-10-20T15:16:58.608466+00:00",
+        "proxy": false,
+        "redirects": false,
+        "request_headers": {
+          "accept": "*/*",
+          "accept-encoding": "identity",
+          "cache-control": "no-store",
+          "user-agent": "biomcp-cli/0.9.4"
+        },
+        "response_headers": {
+          "Cache-Control": "no-cache",
+          "Connection": "close",
+          "Content-Location": "/v1/population_frequency_view?genesymbol=eq.CYP2D6&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc&select=%2A",
+          "Content-Range": "0-10/*",
+          "Content-Security-Policy": "upgrade-insecure-requests; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Tue, 20 Oct 2026 15:16:58 GMT",
+          "Expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+          "Server": "nginx",
+          "Strict-Transport-Security": "max-age=16070400; includeSubDomains",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Content-Type-Options": "nosniff"
+        },
+        "sha256": "1f81667236268dc97dfe2ef947e128ca699282cff745daf7260a1abb8f916497",
+        "source_revision": "edc97ec1462a696c0f340f7cbb939c83c87cf3ea",
+        "status": 200,
+        "url": "https://api.cpicpgx.org/v1/population_frequency_view?genesymbol=eq.CYP2D6&select=%2A&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc"
+      },
+      "status": 200,
+      "upstream": "https://api.cpicpgx.org/v1/population_frequency_view?genesymbol=eq.CYP2D6&select=%2A&limit=11&offset=0&order=genesymbol.asc%2Cname.asc%2Cpopulation_group.asc"
     },
     "GET /ctgov/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped": {
       "file": "responses/ctgov/ctgov-studies-nct02576665-references.json",
