@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import select
+import signal
 import socket
 import subprocess
 import time
@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+pytestmark = [pytest.mark.needs_binary, pytest.mark.timeout(120)]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_BIN = Path(
@@ -40,6 +40,7 @@ class RawStdioMcp:
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
+            start_new_session=True,
         )
 
     def send(self, message: dict[str, object]) -> None:
@@ -49,8 +50,6 @@ class RawStdioMcp:
 
     def receive(self) -> dict[str, Any]:
         assert self.process.stdout is not None
-        ready, _, _ = select.select([self.process.stdout], [], [], 3)
-        assert ready, "timed out waiting for an MCP message"
         line = self.process.stdout.readline()
         if not line:
             assert self.process.stderr is not None
@@ -76,9 +75,18 @@ class RawStdioMcp:
         return response
 
     def close(self) -> None:
-        if self.process.poll() is None:
-            self.process.terminate()
-            self.process.wait(timeout=2)
+        try:
+            if self.process.poll() is None:
+                self.process.terminate()
+                self.process.wait()
+        finally:
+            try:
+                os.killpg(self.process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            if self.process.poll() is None:
+                self.process.kill()
+            self.process.wait()
 
 
 @pytest.fixture
@@ -300,21 +308,22 @@ def _running_http_server() -> Iterator[str]:
         text=True,
     )
     try:
-        for _ in range(40):
+        while process.poll() is None:
             try:
-                with urllib.request.urlopen(f"{base_url}/readyz", timeout=1):
+                with urllib.request.urlopen(f"{base_url}/readyz", timeout=None):
                     yield base_url
                     return
             except urllib.error.URLError:
                 time.sleep(0.25)
-        pytest.fail("serve-http did not become ready")
+        pytest.fail("serve-http exited before becoming ready")
     finally:
-        process.terminate()
         try:
-            process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait(timeout=3)
+            process.terminate()
+            process.wait()
+        finally:
+            if process.poll() is None:
+                process.kill()
+            process.wait()
 
 
 def _http_rpc(
@@ -353,7 +362,7 @@ def _http_rpc(
         method="POST",
     )
     try:
-        response = urllib.request.urlopen(request, timeout=3)
+        response = urllib.request.urlopen(request, timeout=None)
     except urllib.error.HTTPError as error:
         response = error
     with response:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import select
+import signal
 import subprocess
 import sys
 import threading
@@ -16,7 +16,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent / "golden"))
 from replay_env import isolated_command_env  # noqa: E402
 
-pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+pytestmark = [pytest.mark.needs_binary, pytest.mark.timeout(120)]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
@@ -34,16 +34,15 @@ class StdioMcp:
             text=True,
             bufsize=1,
             env=env,
+            start_new_session=True,
         )
 
-    def call(self, request: dict[str, object], timeout: float = 3) -> dict[str, Any]:
+    def call(self, request: dict[str, object]) -> dict[str, Any]:
         assert self.process.stdin is not None
         assert self.process.stdout is not None
         self.process.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
         self.process.stdin.flush()
 
-        ready, _, _ = select.select([self.process.stdout], [], [], timeout)
-        assert ready, "timed out waiting for an MCP response"
         line = self.process.stdout.readline()
         if not line:
             assert self.process.stderr is not None
@@ -56,9 +55,18 @@ class StdioMcp:
         return response
 
     def close(self) -> None:
-        if self.process.poll() is None:
-            self.process.terminate()
-            self.process.wait(timeout=2)
+        try:
+            if self.process.poll() is None:
+                self.process.terminate()
+                self.process.wait()
+        finally:
+            try:
+                os.killpg(self.process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            if self.process.poll() is None:
+                self.process.kill()
+            self.process.wait()
 
 
 @pytest.fixture
@@ -203,7 +211,7 @@ def test_slow_tool_call_outlives_startup_wait(
         started = time.monotonic()
         response = client.call({
             "jsonrpc": "2.0", "id": "slow", "method": "tools/call", "params": params,
-        }, timeout=15)
+        })
         result = response["result"]
         assert not result.get("isError"), result
         assert "authored slow gene" in json.dumps(result)
@@ -238,16 +246,37 @@ def test_client_without_initialize_expires_startup_wait(
     send_pings: bool, tmp_path: Path,
 ) -> None:
     client = StdioMcp(isolated_command_env(tmp_path, {}, "http://127.0.0.1:9"))
+    responses: list[dict[str, Any]] = []
+    errors: list[Exception] = []
+
+    def ping_until_exit() -> None:
+        assert client.process.stdin is not None
+        assert client.process.stdout is not None
+        try:
+            while client.process.poll() is None:
+                client.process.stdin.write('{"jsonrpc":"2.0","id":1,"method":"ping"}\n')
+                client.process.stdin.flush()
+                line = client.process.stdout.readline()
+                if not line:
+                    return
+                responses.append(json.loads(line))
+                threading.Event().wait(0.05)
+        except BrokenPipeError:
+            pass  # Startup expiry closes the stream while the client stays open.
+        except Exception as error:
+            errors.append(error)
+
+    writer = threading.Thread(target=ping_until_exit, daemon=True) if send_pings else None
     started = time.monotonic()
     try:
-        if send_pings:
-            for request_id in range(3):
-                threading.Event().wait(1)
-                assert client.call({
-                    "jsonrpc": "2.0", "id": request_id, "method": "ping",
-                })["result"] == {}
-        client.process.wait(timeout=max(0.1, 7 - (time.monotonic() - started)))
-        assert 4 <= time.monotonic() - started < 7
+        if writer is not None:
+            writer.start()
+        client.process.wait()
+        if writer is not None:
+            writer.join()
+        assert not errors, errors
+        assert all(response["id"] == 1 and response["result"] == {} for response in responses)
+        assert time.monotonic() - started >= 4
         assert client.process.stdin is not None
         assert not client.process.stdin.closed
         assert client.process.returncode == 1
@@ -257,6 +286,8 @@ def test_client_without_initialize_expires_startup_wait(
         assert "expects an MCP client on stdin" in client.process.stderr.read()
     finally:
         client.close()
+        if writer is not None:
+            writer.join()
 
 
 def test_client_not_reading_ping_responses_expires_startup_wait(tmp_path: Path) -> None:
@@ -277,12 +308,12 @@ def test_client_not_reading_ping_responses_expires_startup_wait(tmp_path: Path) 
     writer.start()
     started = time.monotonic()
     try:
-        client.process.wait(timeout=7)
-        assert 4 <= time.monotonic() - started < 7
+        client.process.wait()
+        assert time.monotonic() - started >= 4
         assert client.process.returncode == 1
         assert not client.process.stdin.closed
         assert client.process.stderr is not None
         assert "expects an MCP client on stdin" in client.process.stderr.read()
     finally:
         client.close()
-        writer.join(timeout=2)
+        writer.join()

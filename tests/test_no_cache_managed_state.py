@@ -47,7 +47,7 @@ class SlowGeneHandler(GeneHandler):
 
     def do_GET(self) -> None:
         type(self).started.set()
-        type(self).release.wait(5)
+        type(self).release.wait()
         super().do_GET()
 
 
@@ -151,6 +151,7 @@ def test_failed_no_cache_request_leaves_no_managed_state(tmp_path: Path) -> None
         thread.join()
 
 
+@pytest.mark.timeout(120)
 def test_empty_and_interrupted_no_cache_requests_leave_no_state(tmp_path: Path) -> None:
     GeneHandler.status = 200
     GeneHandler.payload = {"total": 0, "hits": []}
@@ -183,11 +184,14 @@ def test_empty_and_interrupted_no_cache_requests_leave_no_state(tmp_path: Path) 
         text=True,
     )
     try:
-        assert SlowGeneHandler.started.wait(2)
+        assert SlowGeneHandler.started.wait()
         process.terminate()
-        process.communicate(timeout=5)
+        process.communicate()
         assert not interrupted_cache.exists()
     finally:
+        if process.poll() is None:
+            process.kill()
+        process.wait()
         SlowGeneHandler.release.set()
         slow.shutdown()
         slow_thread.join()

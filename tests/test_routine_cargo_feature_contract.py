@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import os
+import signal
 import subprocess
 import sys
 import re
@@ -214,20 +215,19 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
 
 
 @pytest.mark.parametrize("failed_lane", ["", "rust", "python"])
+@pytest.mark.timeout(120)
 def test_make_test_prepares_once_and_waits_for_both_lanes(
     tmp_path: Path, failed_lane: str
 ) -> None:
     """Exercise Make's orchestration without rebuilding product artifacts."""
     worker = tmp_path / "lane.py"
     worker.write_text(
-        "import os, pathlib, sys, time\n"
+        "import os, pathlib, sys, threading\n"
         "root = pathlib.Path(sys.argv[1]); lane = sys.argv[2]\n"
         "(root / (lane + '.started')).touch()\n"
         "peer = 'python' if lane == 'rust' else 'rust'\n"
-        "deadline = time.monotonic() + 3\n"
         "while not (root / (peer + '.started')).exists():\n"
-        "    if time.monotonic() > deadline: raise SystemExit('lanes did not overlap')\n"
-        "    time.sleep(.01)\n"
+        "    threading.Event().wait(.01)\n"
         "(root / (lane + '.finished')).touch()\n"
         "print(lane + ' output')\n"
         "raise SystemExit(7 if os.environ['FAILED_LANE'] == lane else 0)\n"
@@ -246,7 +246,7 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
         "-f",
         str(overlay),
     ]
-    result = subprocess.run(
+    with subprocess.Popen(
         [
             *command,
             "test",
@@ -255,10 +255,20 @@ def test_make_test_prepares_once_and_waits_for_both_lanes(
         ],
         cwd=REPO_ROOT,
         env={**os.environ, "FAILED_LANE": failed_lane},
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
-        timeout=15,
-    )
+        start_new_session=True,
+    ) as process:
+        try:
+            stdout, stderr = process.communicate()
+        finally:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+    result = subprocess.CompletedProcess(process.args, process.returncode, stdout, stderr)
     assert (result.returncode == 0) == (not failed_lane), result.stdout + result.stderr
     assert (tmp_path / "prepared").read_text().splitlines() == ["prepare"]
     assert all(

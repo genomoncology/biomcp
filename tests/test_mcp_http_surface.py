@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+pytestmark = [pytest.mark.needs_binary, pytest.mark.timeout(120)]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
@@ -60,7 +60,7 @@ def _mcp_rpc(
         headers=headers,
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=3) as response:
+    with urllib.request.urlopen(request, timeout=None) as response:
         return (
             {key.lower(): value for key, value in response.headers.items()},
             response.read().decode("utf-8"),
@@ -85,7 +85,7 @@ def _post_status(base_url: str, path: str, body: bytes) -> int:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=3) as response:
+        with urllib.request.urlopen(request, timeout=None) as response:
             response.read()
             return response.status
     except urllib.error.HTTPError as error:
@@ -96,7 +96,7 @@ def _post_status(base_url: str, path: str, body: bytes) -> int:
 def _open_http_socket(base_url: str) -> tuple[socket.socket, str]:
     parsed = urllib.parse.urlsplit(base_url)
     assert parsed.hostname is not None and parsed.port is not None
-    return socket.create_connection((parsed.hostname, parsed.port), timeout=3), parsed.netloc
+    return socket.create_connection((parsed.hostname, parsed.port), timeout=None), parsed.netloc
 
 
 def _response_status(sock: socket.socket) -> int:
@@ -146,7 +146,7 @@ def _require_release_binary() -> Path:
 
 
 def _read_json(url: str) -> tuple[dict[str, str], str]:
-    with urllib.request.urlopen(url, timeout=2) as response:
+    with urllib.request.urlopen(url, timeout=None) as response:
         body = response.read().decode("utf-8")
         return json.loads(body), response.headers.get_content_type()
 
@@ -156,7 +156,7 @@ def _mcp_status(base_url: str, host: str) -> int:
         f"{base_url}/mcp", data=b"{}", headers={"Host": host}, method="POST"
     )
     try:
-        with urllib.request.urlopen(request, timeout=2) as response:
+        with urllib.request.urlopen(request, timeout=None) as response:
             return response.status
     except urllib.error.HTTPError as error:
         return error.code
@@ -165,7 +165,7 @@ def _mcp_status(base_url: str, host: str) -> int:
 def _route_status(base_url: str, path: str, host: str) -> int:
     request = urllib.request.Request(f"{base_url}{path}", headers={"Host": host})
     try:
-        with urllib.request.urlopen(request, timeout=2) as response:
+        with urllib.request.urlopen(request, timeout=None) as response:
             return response.status
     except urllib.error.HTTPError as error:
         return error.code
@@ -184,21 +184,22 @@ def _running_server(*extra_args: str) -> Iterator[str]:
         text=True,
     )
     try:
-        for _ in range(40):
+        while proc.poll() is None:
             try:
                 if _route_status(base_url, "/health", "127.0.0.1") < 500:
                     yield base_url
                     return
             except urllib.error.URLError:
                 time.sleep(0.25)
-        raise AssertionError(f"serve-http did not start at {base_url}")
+        raise AssertionError(f"serve-http exited before readiness at {base_url}")
     finally:
-        proc.terminate()
         try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait(timeout=5)
+            proc.terminate()
+            proc.wait()
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait()
 
 
 @pytest.fixture
@@ -215,7 +216,7 @@ def http_server() -> Iterator[str]:
     )
 
     try:
-        for _ in range(40):
+        while proc.poll() is None:
             try:
                 payload, content_type = _read_json(f"{base_url}/health")
                 if payload == {"status": "ok"} and content_type == "application/json":
@@ -224,14 +225,15 @@ def http_server() -> Iterator[str]:
             except urllib.error.URLError:
                 time.sleep(0.25)
 
-        raise AssertionError(f"serve-http did not become ready on {base_url}/health")
+        raise AssertionError(f"serve-http exited before readiness on {base_url}/health")
     finally:
-        proc.terminate()
         try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait(timeout=5)
+            proc.terminate()
+            proc.wait()
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait()
 
 
 def test_http_routes_advertise_streamable_http_surface(http_server: str) -> None:
