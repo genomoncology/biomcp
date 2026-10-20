@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Depends on: 2293
 
+Reviews: revision 8a7ec84, accept
+
 ## Outcome
 
 The replay inventory identifies the existing source policy for every approved recorded provider using the existing canonical source identity. Correct the HPA, HPO and Monarch lookup gaps without changing licensing policy, weakening restrictions or treating unknown providers as allowed. Reuse one shared identity resolver across callers; do not create a second list of policy facts.
