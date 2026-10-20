@@ -4,13 +4,15 @@ priority: 1
 
 # 2293 — Qualify real replay response formats
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
 Reviews: revision 63edd27, accept
 
 Reviews: revision 2226f67, accept
+
+Reviews: revision 1a3c3a6, accept
 
 ## Outcome
 

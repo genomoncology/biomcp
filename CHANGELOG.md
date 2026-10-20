@@ -94,6 +94,10 @@
 ### Internal
 
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
+- Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
+
+- Isolate each installed-wheel check in a fresh build directory and remove its output after the run. (2297)
+
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
 
 - Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
