@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 78e678a, accept
+
 ## Outcome
 
 An installed 0.9.4 wheel passes the existing manylinux 2.28 smoke on Linux x86-64 and ARM64: exact stable version and successful cache-statistics JSON. Fix the actual cause, preserve real failure detection and complete one bounded outside-in proof before another full untagged rehearsal. No tag or publication.
