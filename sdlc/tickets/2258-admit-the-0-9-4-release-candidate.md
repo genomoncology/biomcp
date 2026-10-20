@@ -54,6 +54,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 - 2026-10-20 landed e0d84c4293051b7f466bfcc58a68e2b739aace10; next: Partial administrative records and citation landed. Finish repaired Linux qualification, then full untagged rehearsal and final admission review. No tag.
 - 2026-10-20 next: WholeLinux2ca and actualmainc937full passed; administrativee0d and finalmetadata88 passed. Rehearsal held before dispatch because protein-structures JSON panics on currentmain. PM requires sole release repair2287 plus class check; refresh affected qualification then full untagged rehearsal, no tag.
 - 2026-10-20 next: Main6e full passed; finish reviewed2288/2289/2290/2291 process batch, finite2236 replay batches and quietM5 rebuild2284 before affected qualification and one final untagged rehearsal.2272 accepted held for0.9.5. No tag.
+- 2026-10-20 next: Main74d9f2d full407.756s passed.2288retrylandinggate underway;2290/2289 accepted integrated;2236partial57goldens accepted;2292CPICrepair live200s verified focusedchecksfinish. Quiet2284 timings then remaining2236 and finalqualification/rehearsal. No tag.
 
 ## Preparation evidence
 
