@@ -138,19 +138,113 @@ LOCAL_COMMANDS = {
 SETUP_AND_ARTIFACT_ACTIONS = {
     "./.github/actions/lane-setup", "actions/checkout", "actions/download-artifact",
     "actions/setup-python", "actions/upload-artifact", "arduino/setup-protoc",
-    "astral-sh/setup-uv", "docker/build-push-action", "docker/login-action",
+    "astral-sh/setup-uv", "Swatinem/rust-cache", "docker/build-push-action", "docker/login-action",
     "docker/setup-buildx-action", "docker/setup-qemu-action", "dtolnay/rust-toolchain",
 }
 
 
-def assert_counterparts(workflow: dict, root: Path) -> None:
-    for job_name, job in workflow["jobs"].items():
+# Reusable qualification and composite actions are executable containers too.
+# This inventory links steps, not shell semantics: edits inside a mapped shell
+# block still require source review and its existing behavioral contracts.
+CI_COUNTERPARTS = {
+    ("changes", "Decide whether the push touches only docs"): ("scripts/ci-classify-push.sh", "git merge-base"),
+    ("build", "Build the dev test archive and binaries"): ("Makefile", "prepare-test:"),
+    ("build", "Fetch the offline lanes' cargo registry"): (PROVENANCE, "cargo fetch --locked"),
+    ("lint", "Canonical lint gate"): ("Makefile", "lint:"),
+    ("rust-tests", "Canonical Rust test gate"): ("Makefile", "test-rust:"),
+    ("python-lane", "Fetch the cargo registry for the offline contract tests"): (PROVENANCE, "cargo fetch --locked"),
+    ("python-lane", "Canonical Python contract gate"): ("Makefile", "test-python:"),
+    ("spec-lane", "Canonical specification gate"): ("Makefile", "spec:"),
+    ("stress-lane", "Stress lane"): ("scripts/run-nightly-checks.sh", "make stress"),
+    ("release-panic", "Release-mode panic recovery contract"): ("scripts/run-nightly-checks.sh", "cargo nextest run --release --test rmcp_client_contract rmcp_stdio_recovers_from_tool_panic"),
+    ("full-features", "make full-feature-check FULL_FEATURE_PROFILE=release"): ("Makefile", "full-feature-check:"),
+    ("generated-sources", "scripts/regenerate-alphagenome-proto --check"): ("scripts/run-nightly-checks.sh", "scripts/regenerate-alphagenome-proto --check"),
+    ("repository-contracts", "Sync the Python contract environment"): ("Makefile", "sync-python-dev:"),
+    ("repository-contracts", "Python contract tests (docs and records)"): ("Makefile", "test-contracts-prepared:"),
+    ("repository-contracts", "Documentation build"): ("Makefile", "mkdocs build --strict"),
+    ("repository-contracts", "cmp --silent install.sh docs/install.sh"): ("install.sh", "#!/"),
+    ("repository-contracts", "bash scripts/check-version-sync.sh"): ("scripts/check-version-sync.sh", "Cargo.toml"),
+    ("repository-contracts", "bash scripts/check-no-climb-tracked.sh"): ("scripts/check-no-climb-tracked.sh", "git ls-files"),
+    ("release-checks", "Require the changelog to cover the branch"): ("scripts/check-release-metadata.py", "scripts/check-changelog-coverage.py"),
+    ("release-checks", "Require the release's green-CI query to run"): ("tests/test_ci_workflow_contract.py", "green-CI"),
+}
+# Native Windows commands execute in the complete rehearsal, not nightly Linux.
+for name in (
+    "Compare released Windows cache behavior",
+    "Check cache-lock contention and article-search deadlines",
+    "Compile Windows CSpec and managed-state boundaries",
+    "Check with-build-identity passes exit codes through",
+):
+    CI_COUNTERPARTS["windows-contracts", name] = ("tests/test_ci_workflow_contract.py", "windows-contracts")
+for job in ("rust-tests", "python-lane", "spec-lane", "stress-lane"):
+    CI_COUNTERPARTS[job, "Restore the dev binaries' exec bits"] = ("tests/test_ci_workflow_contract.py", "test_the_build_job_uploads_one_dev_build_the_lanes_download")
+
+# Setup dispositions point at the local bootstrap or the existing setup contract.
+ACTION_COUNTERPARTS = {
+    ("lane-setup", "Install the offline sandbox"): ("tools/run-offline", "bwrap"),
+    ("lane-setup", "Install pinned nextest"): ("scripts/install-nextest.sh", "NEXTEST"),
+    ("lane-setup", "Install pinned mustmatch"): ("scripts/run-specs.sh", "mustmatch"),
+    ("lane-setup", "Install pinned lint tools"): ("tools/bootstrap-lint-tools", "shellcheck"),
+    ("lane-setup", "Record exact tool versions"): (".github/actions/lane-setup/action.yml", "command -v"),
+}
+
+
+# Pages writes remain publication-only; strict construction is also local.
+DOCS_COUNTERPARTS = {
+    ("publish-docs", "Fetch the existing Pages history"): ("tests/test_docs_publication_contract.py", "git fetch origin gh-pages"),
+    ("publish-docs", "Install the locked Python environment"): ("Makefile", "sync-python-dev:"),
+    ("publish-docs", "Build documentation strictly"): ("Makefile", "mkdocs build --strict"),
+    ("publish-docs", "Admit only the selected revision without replacing newer documentation"): ("tests/test_docs_publication_contract.py", "test_docs_admission_retains_newer_revisions_and_refuses_divergence"),
+    ("publish-docs", "Publish the validated site to the Pages branch"): ("tests/test_docs_publication_contract.py", "mkdocs gh-deploy --strict --force"),
+    ("publish-docs", "Request a Pages build from the configured branch"): ("tests/test_docs_publication_contract.py", "/pages/builds"),
+    ("publish-docs", "Verify the exact revision and static documentation are live"): ("scripts/verify-docs-publication.py", "def main("),
+}
+REUSED_WORKFLOWS = {
+    "./.github/workflows/ci.yml": CI_COUNTERPARTS,
+    "./.github/workflows/docs-edge.yml": DOCS_COUNTERPARTS,
+}
+
+
+def assert_reused_steps(jobs: dict, root: Path, counterparts: dict, visited: set[str]) -> None:
+    for job_name, job in jobs.items():
+        assert "uses" not in job, (
+            f"{job_name}: {job.get('uses')} has no local/nightly counterpart or platform disposition"
+        )
         for step in job.get("steps", []):
             if "run" not in step:
-                action = step.get("uses", "").split("@", 1)[0]
-                assert action in SETUP_AND_ARTIFACT_ACTIONS, (
-                    f"{job_name}: {action} has no local/nightly counterpart or platform disposition"
-                )
+                assert_action_counterpart(step, root, visited)
+                continue
+            name = step.get("name", step["run"].strip())
+            assert (job_name, name) in counterparts, (
+                f"{job_name}: {name} has no local/nightly counterpart or platform disposition"
+            )
+            relative, needle = counterparts[job_name, name]
+            assert needle in (root / relative).read_text(), f"{job_name}: {name} lost {relative}: {needle}"
+
+
+def assert_action_counterpart(step: dict, root: Path, visited: set[str]) -> None:
+    action = step.get("uses", "").split("@", 1)[0]
+    assert action in SETUP_AND_ARTIFACT_ACTIONS, (
+        f"{action} has no local/nightly counterpart or platform disposition"
+    )
+    if action.startswith("./") and action not in visited:
+        visited.add(action)
+        document = yaml.safe_load((root / action / "action.yml").read_text())
+        assert_reused_steps({"lane-setup": document["runs"]}, root, ACTION_COUNTERPARTS, visited)
+
+
+def assert_counterparts(workflow: dict, root: Path) -> None:
+    visited: set[str] = set()
+    for job_name, job in workflow["jobs"].items():
+        if "uses" in job:
+            assert job["uses"] in REUSED_WORKFLOWS, (
+                f"{job_name}: {job['uses']} has no local/nightly counterpart or platform disposition"
+            )
+            reused = yaml.safe_load((root / job["uses"]).read_text())
+            assert_reused_steps(reused["jobs"], root, REUSED_WORKFLOWS[job["uses"]], visited)
+        for step in job.get("steps", []):
+            if "run" not in step:
+                assert_action_counterpart(step, root, visited)
                 continue
             name = step.get("name", "<unnamed>")
             assert name in COUNTERPARTS.get(job_name, {}), (
@@ -182,6 +276,25 @@ def test_unmapped_release_check_fails_even_inside_an_existing_job(step: dict) ->
     with pytest.raises(AssertionError, match="has no local/nightly counterpart"):
         assert_counterparts(planted, ROOT)
 
+
+
+@pytest.mark.parametrize("container", ["ci", "action"])
+def test_new_check_inside_a_reused_container_needs_a_counterpart(tmp_path: Path, container: str) -> None:
+    for child in ROOT.iterdir():
+        if child.name != ".github":
+            (tmp_path / child.name).symlink_to(child, target_is_directory=child.is_dir())
+    shutil.copytree(ROOT / ".github", tmp_path / ".github")
+    relative = (".github/workflows/ci.yml" if container == "ci"
+                else ".github/actions/lane-setup/action.yml")
+    path = tmp_path / relative
+    document = yaml.safe_load(path.read_text())
+    steps = (document["jobs"]["stress-lane"]["steps"] if container == "ci"
+             else document["runs"]["steps"])
+    steps.append({"name": "Check a new condition inside reused code", "run": "scripts/new-check"})
+    path.write_text(yaml.safe_dump(document))
+    release = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())
+    with pytest.raises(AssertionError, match="has no local/nightly counterpart"):
+        assert_counterparts(release, tmp_path)
 
 def test_nightly_reuses_the_existing_release_only_commands() -> None:
     nightly = (ROOT / "scripts/run-nightly-checks.sh").read_text()
