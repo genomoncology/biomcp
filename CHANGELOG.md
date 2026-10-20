@@ -102,6 +102,7 @@
 - Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
 - Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 - Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
+- Wait for subprocess responses, readiness, exit and cleanup events under outer test guards, and set cached fixture response ages directly instead of waiting for freshness windows. (2302)
 - Keep reversed-search test state in the prepared temporary directory so concurrent source packaging cannot read removed test directories. (2320)
 
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)

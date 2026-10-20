@@ -76,6 +76,7 @@ def test_sqlite_coexists_with_legacy_cache_and_preserves_saved_downloads(tmp_pat
         assert (cache / name / "keep.txt").read_text() == "saved bytes"
 
 
+@pytest.mark.timeout(120)
 def test_killed_uncommitted_writer_preserves_cached_answer(tmp_path, gene_provider):
     env = retained_cache_env(tmp_path, {"BIOMCP_MYGENE_BASE": gene_provider}, gene_provider)
     first = invoke(env, "search", "gene", "BRAF", "--limit", "1")
@@ -86,7 +87,7 @@ def test_killed_uncommitted_writer_preserves_cached_answer(tmp_path, gene_provid
     try:
         assert writer.stdout.readline().strip() == "ready"
         writer.kill()
-        writer.wait(timeout=5)
+        writer.wait()
         assert invoke(env, "search", "gene", "BRAF", "--limit", "1") == first
         with sqlite3.connect(database) as connection:
             assert connection.execute("pragma integrity_check").fetchone() == ("ok",)
@@ -94,7 +95,7 @@ def test_killed_uncommitted_writer_preserves_cached_answer(tmp_path, gene_provid
     finally:
         if writer.poll() is None:
             writer.kill()
-            writer.wait(timeout=5)
+            writer.wait()
 
 
 def test_small_reply_lookup_uses_index_among_one_hundred_thousand_entries(tmp_path, gene_provider):
@@ -134,6 +135,7 @@ def test_explicit_legacy_cleanup_preserves_saved_files_and_current_cache(tmp_pat
     assert (cache / "biomcp.db").is_file()
 
 
+@pytest.mark.timeout(120)
 def test_initialized_mcp_and_cli_share_cache_during_concurrent_requests(tmp_path, gene_provider, monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
     from http.server import BaseHTTPRequestHandler
