@@ -4,7 +4,7 @@ priority: 1
 
 # 2308 — Update flagged Python and Rust lock pins
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
