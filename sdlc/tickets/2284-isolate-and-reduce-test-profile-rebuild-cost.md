@@ -16,7 +16,7 @@ Reviews: revision 7b56fb8, accept
 
 Disposition the measured test-profile rebuild slowdown through the approved bounded attribution and single prototype. Land a reduction only if the controlled comparison supports it; otherwise reject the prototype and record that the source cause remains unknown, as the PM explicitly approved.
 
-Changes: `sdlc/records/2284-rebuild-attribution.md`, `CHANGELOG.md`.
+Changes: `sdlc/records/2284-rebuild-attribution.md`, `CHANGELOG.md`, `sdlc/records/2299-root-cause-of-test-only-check-failures.md`, `sdlc/tickets/2299-keep-a-failed-test-cases-state.md`, `sdlc/tickets/2300-share-the-best-effort-cache-reuse-helper.md`, `sdlc/tickets/2301-finish-the-paused-clock-repairs-and-forbid-the-mix.md`, `sdlc/tickets/2302-replace-fixed-test-deadlines-with-event-waits.md`, `sdlc/tickets/2303-share-one-rust-test-http-server.md`, `sdlc/tickets/2304-add-the-repo-wide-contract-tests-to-the-local-command.md`.
 
 ## Evidence
 
@@ -53,3 +53,5 @@ The PM accepted rejection of the sole BoxFuture prototype and forbids a second p
 Keep: experiments/2113-biomcp-2284-rebuild-attribution — retain the rejected prototype comparison, raw arms and source identities.
 
 Keep: experiments/2288-biomcp-2284-unit-attribution — retain native unit timings, exact inputs and completed job evidence.
+
+The PM directs this administrative landing to carry the root-cause record and six authorized follow-up tickets from tickets/pm-rca at3819a97abb142b7d57f71eada2e8a4031b9c65a9. Those tickets remain open; this landing claims no implementation of them.
