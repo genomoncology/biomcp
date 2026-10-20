@@ -82,6 +82,8 @@
 
 ### Internal
 
+- Qualify the final candidate from a fresh Linux clone under kernel network isolation, with complete Python, strict docs and shipped-feature checks plus approved reuse of unchanged Rust suite evidence. Preserve both failed qualification attempts and their evidence limits. (2233)
+
 - Record paired 0.9.4 and 0.9.3 build, command and cache measurements. Accept the measured warm variant and GWAS costs and small-cache SQLite overhead; retain slower developer rebuild and gate costs for follow-up. (2234)
 
 - Verify parallel article cache reuse against admitted responses and preserve failed-case cache databases. (2285)
