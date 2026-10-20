@@ -604,23 +604,45 @@ def check_paused_clock_io(
                         reason = f"socket server {server[1]} remains unjoined when time pauses"
                 # Fixture wrappers own live servers even if the test itself
                 # performs no explicit read or send after pausing.
-                fixture_bindings = re.finditer(
-                    r"\blet\s+(?:mut\s+)?(\w+)\s*=\s*(?:[\w:]+::)?"
-                    r"(?:(?:MockServer|TestHttpFixture|TestHttpServer|Server)::\w+|"
-                    r"spawn_\w*(?:fixture|server)\w*)\s*\(",
-                    before,
+                fixture_constructor = re.compile(
+                    r"(?:[\w:]+::)?(?P<kind>MockServer|TestHttpFixture|TestHttpServer|Server)::\w+\s*\(|"
+                    r"(?:[\w:]+::)?spawn_\w*(?:fixture|server)\w*\s*\("
                 )
-                for fixture in fixture_bindings:
+                fixture_bindings = []
+                for binding in re.finditer(r"\blet\s+(?:mut\s+)?(\w+)\s*=\s*", before):
+                    start = binding.end()
+                    constructor = fixture_constructor.match(before, start)
+                    initializer_span = None
+                    if constructor is None and before[start:start + 1] == "{":
+                        initializer_span = _brace_span(before, start)
+                        if initializer_span is not None:
+                            constructor = fixture_constructor.search(
+                                before, initializer_span[0], initializer_span[1]
+                            )
+                    if constructor is not None:
+                        end = initializer_span[1] if initializer_span else constructor.end()
+                        fixture_bindings.append((binding, end, constructor["kind"], initializer_span))
+                for fixture, end, kind, initializer_span in fixture_bindings:
                     if any(span[0] <= fixture.start() < span[1] for span, _ in servers):
+                        continue
+                    if any(
+                        outer_span and outer_span[0] <= fixture.start() < outer_span[1]
+                        for outer, _, _, outer_span in fixture_bindings if outer is not fixture
+                    ):
                         continue
                     if any(
                         joined and re.search(rf"\b{fixture[1]}\b", before[span[0]:span[1]])
                         for span, joined in servers
                     ):
                         continue
-                    if not re.search(
-                        rf"\bdrop\s*\(\s*{fixture[1]}\s*\)", before[fixture.end():]
-                    ):
+                    tail = before[end:]
+                    dropped = re.search(rf"\bdrop\s*\(\s*{fixture[1]}\s*\)", tail)
+                    # These two owned wrappers finish synchronously. No generic
+                    # finish-method or Rust lifetime inference is claimed.
+                    finished = kind in {"TestHttpServer", "TestHttpFixture"} and re.search(
+                        rf"\b{fixture[1]}\s*\.\s*finish\s*\(\s*\)", tail
+                    )
+                    if not (dropped or finished):
                         reason = f"socket fixture {fixture[1]} remains live when time pauses"
                 # A request-read event is insufficient: direct sockets must
                 # close before pause, too. Ignore locals owned by server tasks.
