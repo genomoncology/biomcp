@@ -1783,3 +1783,38 @@ def test_paused_clock_audit_rejects_pending_io_but_allows_completed_io(
     assert payload["status"] == ("fail" if unsafe else "pass")
     if unsafe:
         assert payload["findings"][0]["test"] == "socket_case"
+
+
+@pytest.mark.parametrize("relative,source", [
+    ("tests/test_wait.py", "import time\ndef test_ready():\n    time.sleep(0.01)\n"),
+    ("tests/test_wait.py", "import socket\ndef test_ready():\n    socket.create_connection(('localhost', 1), timeout=2)\n"),
+    ("src/lib.rs", "#[tokio::test]\nasync fn ready() { tokio::time::sleep(Duration::from_millis(5)).await; }"),
+    ("src/lib.rs", "#[tokio::test]\nasync fn ready() { tokio::time::timeout(Duration::from_secs(2), reply).await; }"),
+])
+def test_wait_audit_rejects_unlisted_coordination_limits(
+    tmp_path: Path, relative: str, source: str,
+) -> None:
+    fixture = tmp_path / "wait-fixture"
+    _write_dead_code_fixture(fixture, source, relative)
+    tool = _load_ratchet_module()
+    result = tool.check_test_waits(fixture)
+    assert result["status"] == "fail", result
+    assert len(result["findings"]) == 1, result
+
+
+def test_wait_audit_preserves_reasoned_timing_and_ignores_non_test_text(tmp_path: Path) -> None:
+    fixture = tmp_path / "wait-fixture"
+    _write_dead_code_fixture(fixture, "fn production() { std::thread::sleep(duration); }\n"
+                             '#[test]\nfn example() { let s = "sleep(2)"; }\n')
+    _write_dead_code_fixture(fixture, 'import time\ndef test_delay():\n    time.sleep(0.2)\n',
+                             "tests/test_wait.py")
+    tool = _load_ratchet_module()
+    rows, errors = tool.test_wait_rows(fixture)
+    assert not errors
+    assert len(rows) == 1
+    inventory = fixture / "tools/test-wait-exceptions.json"
+    inventory.parent.mkdir(parents=True, exist_ok=True)
+    inventory.write_text(json.dumps([{**rows[0], "reason": "Injected provider delay is the behavior under test."}]))
+    assert tool.check_test_waits(fixture)["status"] == "pass"
+    inventory.write_text(json.dumps([{**rows[0], "reason": ""}]))
+    assert tool.check_test_waits(fixture)["status"] == "error"
