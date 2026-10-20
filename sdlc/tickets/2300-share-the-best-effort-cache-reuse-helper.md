@@ -12,6 +12,8 @@ Reviews: revision b46216f, accept
 
 Reviews: revision 607f347, accept
 
+Reviews: revision b358407, accept
+
 ## Outcome
 
 Every test that counts cache writes or provider requests after concurrent runs asserts the contract through one shared helper: reuse of the entries actually admitted, never that every concurrent write landed. `admitted_provider_keys` moves from tests/test_http_cache_fail_soft.py:32 into shared test support, and one sweep routes every concurrent count assertion through it.
