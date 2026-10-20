@@ -42,6 +42,15 @@ where
         }
         Ok(_) => secure_entry(path, false, None),
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            // A fresh home may not have the platform cache directory yet.
+            // Create missing ancestors without changing existing permissions;
+            // keep final-component creation and race validation below.
+            if let Some(parent) = path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+            {
+                create_private_dir(parent)?;
+            }
             before_create();
             match create_private_dir_exact(path) {
                 Ok(()) => secure_entry(path, false, None),

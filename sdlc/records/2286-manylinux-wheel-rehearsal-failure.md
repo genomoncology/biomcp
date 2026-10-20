@@ -1,0 +1,37 @@
+# Restore installed Linux wheel cache statistics
+
+## Outcome and scope
+
+An installed 0.9.4 Linux wheel must print its exact stable version and successful cache-statistics JSON on x86-64 and ARM64 in manylinux 2.28. Any failing smoke command must expose its error. The PM additionally requires comparison with 0.9.3 in the same image and the existing installed Linux-wheel workload on both architectures before another full rehearsal. The failed rehearsal stays failed.
+
+Starting revision: 0fd933117, based on rehearsal source cffae4af5fb600039137b7c13d6955165ca46823. Bounded repair files: `src/cache/private.rs`, `tests/test_cache_sqlite.py`, `.github/workflows/release.yml`, `tests/test_release_workflow_provenance.py`, and `CHANGELOG.md`, plus this record. The regression test calls the real CLI with a nested absent cache parent. The smoke contract test executes the extracted container script with a failing CLI and requires the captured error to reach stderr. No provider fixtures or new proof framework.
+
+## Reproduction
+
+Owned experiment 492-biomcp-manylinux-wheel retains both raw failed job logs, original public rehearsal wheel archives, published 0.9.3 wheels, metadata, exact reproduction scripts and diagnostic outputs. Source rights: public BioMCP packages and public PyPA container images, read-only downloads. No credentials or provider requests.
+
+ARM64: image `quay.io/pypa/manylinux_2_28_aarch64@sha256:b873ffc316ffe8a154e3dc4872871de2ebd170db4876c8bbd983d42ff320001e`; original artifact 12265375357 ZIP SHA256 `50a91e8b6ad91cebe4ab99f535a138cf91635611fa9e6a848473af216780b56b`; wheel SHA256 `f701663b397bc37108ff4400db93a676d317cc6e41f8b66e6f7b006202d001b7`.
+
+x86-64: image `quay.io/pypa/manylinux_2_28_x86_64@sha256:1e7b8460ad8fb3fb0fbe1cd818845159ac896b4fd17452d56e892c291f3b97a8`; original artifact 12263817113 ZIP SHA256 `b90510fbf32fdd400978aa833f9fd0d5ccfe04a50ce1d9f6584f0d1340d8b90e`; wheel SHA256 `0489d14898e6ca501404cf92b6714a481becfedbc612d53f6082b88bbaba8732`.
+
+M5 job 1792500401967-90129 ran `bash experiment/reproduce.sh` through pm at 0fd933117. The script preserves the workflow container command, pins the ARM64 image digest, mounts the original wheel read-only, sets TAG=v0.9.4, and adds the required pm labels and ARM64 platform. Installation succeeds, `--version` prints `biomcp 0.9.4`, then the smoke exits 1.
+
+M5 job 1792500487672-10436 exposes the captured command: `biomcp cache stats --json` exits 1, stdout contains `{"error":{"code":"io","message":"I/O operation failed."},"_meta":{"not_found":false}}`, stderr is empty. Human mode prints `Error: IO error: No such file or directory (os error 2)`. This is not a silent runtime exit: the shell hides the existing structured error. Installing published 0.9.3 in the same container makes cache statistics succeed with JSON and exit 0. Old ARM64 wheel SHA256 `180bf35ac8e325839be397b13be647d9accb92e64e547518036936a141b4f11c`; old x86-64 wheel SHA256 `7432e77b0f224a03048aaaa2e3105cc7f73391f5521137bcd731a470f73c5b9a`.
+
+M5 job 1792500537842-38473 repeats the 0.9.4 failure, creates only `/root/.cache`, then the unchanged installed 0.9.4 wheel prints valid cache-statistics JSON and exits 0. `Store::open` calls `secure_managed_dir`, whose exact final-component creation assumes its parent exists. A clean manylinux home has no `.cache`. Repair missing ancestors while preserving final-component symlink rejection and race revalidation.
+
+## Evidence limits
+
+The runtime repair changes cache directory creation. Existing measurements whose source inputs include runtime code need reassessment by the coordinator; no new performance claim is made. Packaging inputs and workflow smoke script changes need review and the ordinary gates, followed by the coordinator's full untagged rehearsal. Archive/wheel build success from the failed run remains useful diagnosis but does not qualify repaired runtime artifacts. The complete existing smoke workload includes live public sources; provider-free cases proceed while the coordinator resolves that authorization boundary.
+
+## Approved smoke profile and runtime reach
+
+The PM authorizes one serial pass per corrected Linux architecture of the existing installed-wheel smoke workload, with read-only public requests, existing limits/pacing, and `BIOMCP_DISABLE_SOURCES=commercial-restricted,kegg,semantic-scholar` on every invocation. No keys, paid or licensed access, KEGG requests or Semantic Scholar requests. This supersedes the initial provider-free boundary only for that workload. The fresh-home regression uses the existing local gene fixture.
+
+The new ancestor creation runs only after `symlink_metadata` reports the managed root missing. An existing root takes the unchanged `secure_entry` branch. An existing parent keeps its permissions. `SqliteCacheManager::new` shares the failing Store initialization, so ordinary cached searches and lookups can fail before their request on a fresh home; cache clean/clear, capture/evidence storage and cached downloads share Store initialization too. The changelog describes cache statistics and cached searches/lookups as the direct user impact. The PM permits reuse of paired measurements and live checker/recording proof with this missing-directory correction disclosed. No timing experiment was added.
+
+The final regression starts with a fresh HOME and no platform-cache ancestors, removes the fixture's explicit cache-root override, resolves the default path without creating it, and runs either cache statistics or a cached gene search against the existing loopback fixture. The search must retain an HTTP entry. Both cases call the actual CLI.
+
+M5 job 1792500626280-57291 failed the new smoke error test on the unchanged workflow: stderr was empty after the version line. M5 workflow checks then passed all 158 cases on the corrected workflow. M5 job 1792500733049-86785 passed formatting, Ruff, the hostile final-directory race test, managed-state permission/hardlink checks, and both initial explicit nested-root CLI cases. The later fresh-home cases replace those narrower cases.
+
+M5 job 1792500864400-39878 passed `make lint`, including Rust formatting, Clippy with warnings denied, Python lint, shell/workflow lint, structural checks and the quality ratchet. Existing Cargo license-exception warnings remain nonfatal. The same job passed both final fresh-HOME cases: cache statistics and a cached BRAF gene search against the existing local fixture. The Linux x86-64 artifact work uses Yellow through pm because native execution avoids adding an emulated platform to the diagnosis; ARM64 uses M5 Docker. Corrected production-profile wheels are built once per architecture, then installed into fresh instances of the original digest-pinned manylinux images for the approved existing serial smoke workload. The coordinator retains the subsequent artifact-build and smoke job evidence after source review starts.

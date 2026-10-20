@@ -402,7 +402,7 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
     ("wheel-smoke", "Install the wheel into a clean venv"): "b71c6070feccc452c661c5d04a95d0e016d1e0af74da26175ca57d5244c821bc",
-    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "aa05d59785ad1869b7a0dd819d3040b1a87092e6cbe0e0c7d40a8518856b6ebd",
+    ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "18174be22c9800d5306692ca4013103bf2b9293edb7fc543c4ad613d27599907",
     ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
     ("docs-live", "Check out the gate helper"): "ff29379fee6ad185b41206f3cd927d55f6c99711dafe8c11de48998ec8e64373",
     ("docs-live", "Resolve the tag commit"): "b9e7731ec89c65f683eb9045aa898fcb7091e0c718f75c1f6ca29bc49d615255",
@@ -1959,6 +1959,26 @@ def _assert_docker_scripts_receive_their_variables(parsed: dict) -> None:
         "in with -e or --env: docker shares no job environment with the "
         "container, and the scripts run under set -u; " + "; ".join(offenders)
     )
+
+
+def test_manylinux_smoke_prints_the_cache_error_before_failing(tmp_path: Path) -> None:
+    parsed = _load_release_pipeline()
+    script = next(script for where, _, script in _docker_c_scripts(parsed)
+                  if "Run the wheel inside the manylinux" in where)
+    executable = tmp_path / "biomcp"
+    executable.write_text(
+        '#!/bin/sh\nif [ "$1" = "--version" ]; then echo "biomcp 0.9.4"; '
+        "else echo '{\"error\":{\"code\":\"io\",\"message\":\"I/O operation failed.\"}}'; "
+        'exit 1; fi\n', encoding="utf-8",
+    )
+    executable.chmod(0o755)
+    script = script.replace("/opt/python/cp312-cp312/bin/python", "true")
+    script = script.replace("/opt/python/cp312-cp312/bin/biomcp", shlex.quote(str(executable)))
+    result = subprocess.run(["bash", "-euo", "pipefail", "-c", script],
+                            env=os.environ | {"TAG": "v0.9.4"},
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 1
+    assert '"code":"io"' in result.stderr, result
 
 
 def test_docker_run_container_scripts_receive_every_variable_they_read() -> None:

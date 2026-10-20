@@ -496,7 +496,11 @@ jobs:
             if [ "$actual" != "biomcp $expected" ]; then
               echo "wheel --version must print exactly biomcp $expected, got: $printed" >&2; exit 1
             fi
-            stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"
+            stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)" || {
+              printf "%s\n" "$stats" >&2
+              echo "installed wheel cache stats failed" >&2
+              exit 1
+            }
             case "$stats" in
               "{"*) ;;
               *) echo "cache stats must print a JSON object, got: $stats" >&2; exit 1 ;;

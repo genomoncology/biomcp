@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails.
+
 - Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)
 
 - Label drug targets with source organisms, list human targets first, and suggest gene lookups only for source-confirmed human targets. (2265)
