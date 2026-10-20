@@ -1,6 +1,6 @@
 use super::ArticleFixture;
 use std::io::{Read, Write};
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
@@ -61,14 +61,13 @@ impl HangingZip {
         let worker = thread::spawn(move || {
             let mut held = Vec::new();
             let mut failures = Vec::new();
+            let mut pending = Vec::new();
             while !stopping.load(Ordering::SeqCst) {
-                if let Ok((mut stream, _)) = listener.accept() {
-                    stream
-                        .set_read_timeout(Some(Duration::from_secs(1)))
-                        .unwrap();
-                    let mut bytes = [0; 8192];
-                    let count = stream.read(&mut bytes).unwrap();
-                    let request = String::from_utf8_lossy(&bytes[..count]);
+                if let Ok((stream, _)) = listener.accept() {
+                    stream.set_nonblocking(true).unwrap();
+                    pending.push((stream, Vec::new()));
+                }
+                for (mut stream, request) in ready_requests(&mut pending) {
                     if primary_failure && request.starts_with("GET /?list-type=2") {
                         let failure_nanos = failure_nanos.clone();
                         failures.push(thread::spawn(move || {
@@ -139,11 +138,10 @@ impl HangingZip {
                     );
                     let _ = stream.write_all(header.as_bytes());
                     let _ = stream.write_all(body);
-                } else {
-                    // sleep reason: poll the nonblocking fixture listener with a 2-millisecond stop-check interval
-                    #[allow(clippy::disallowed_methods)]
-                    thread::sleep(Duration::from_millis(2));
                 }
+                // sleep reason: poll the nonblocking fixture listener and incomplete requests with a 2-millisecond stop-check interval
+                #[allow(clippy::disallowed_methods)]
+                thread::sleep(Duration::from_millis(2));
             }
             for failure in failures {
                 failure.join().unwrap();
@@ -157,12 +155,47 @@ impl HangingZip {
             worker: Some(worker),
         }
     }
+
+    fn finish(&mut self) -> thread::Result<()> {
+        self.stop.store(true, Ordering::SeqCst);
+        self.worker.take().map_or(Ok(()), |worker| worker.join())
+    }
+}
+
+// Clients can connect before sending headers, or close without sending any.
+// Keep those sockets independent so they cannot block other fixture requests.
+fn ready_requests(pending: &mut Vec<(TcpStream, Vec<u8>)>) -> Vec<(TcpStream, String)> {
+    let mut ready = Vec::new();
+    let mut index = 0;
+    while index < pending.len() {
+        let (stream, request) = &mut pending[index];
+        let mut bytes = [0; 8192];
+        match stream.read(&mut bytes) {
+            Ok(0) => {
+                pending.swap_remove(index);
+                continue;
+            }
+            Ok(count) => request.extend_from_slice(&bytes[..count]),
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) => panic!("fixture request read failed: {error}"),
+        }
+        if request.windows(4).any(|window| window == b"\r\n\r\n") {
+            let (stream, request) = pending.swap_remove(index);
+            stream.set_nonblocking(false).unwrap();
+            ready.push((stream, String::from_utf8(request).unwrap()));
+        } else {
+            index += 1;
+        }
+    }
+    ready
 }
 
 impl Drop for HangingZip {
     fn drop(&mut self) {
-        self.stop.store(true, Ordering::SeqCst);
-        self.worker.take().unwrap().join().unwrap();
+        if self.finish().is_err() {
+            let _ = writeln!(std::io::stderr(), "article archive fixture worker panicked");
+        }
     }
 }
 
@@ -170,7 +203,7 @@ impl Drop for HangingZip {
 #[serial_test::serial(article_output_fixture)]
 fn complete_primary_assets_do_not_wait_for_an_optional_zip() {
     let fixture = ArticleFixture::start();
-    let zip = HangingZip::start(true);
+    let mut zip = HangingZip::start(true);
     configure_archive(&fixture, &zip);
     let output = fixture
         .biomcp_command(&["--json", "get", "article", "22663011", "assets"])
@@ -216,6 +249,7 @@ fn complete_primary_assets_do_not_wait_for_an_optional_zip() {
     assert!(output.status.success(), "{output:?}");
     assert_eq!(output.stdout, b"time,value\n0,1\n");
     assert!(!zip.requested.load(Ordering::SeqCst));
+    zip.finish().unwrap();
 }
 
 fn configure_archive(fixture: &ArticleFixture, zip: &HangingZip) {
@@ -239,7 +273,7 @@ fn configure_archive(fixture: &ArticleFixture, zip: &HangingZip) {
 #[serial_test::serial(article_output_fixture)]
 fn missing_primary_asset_still_consults_the_secondary_zip() {
     let fixture = ArticleFixture::start();
-    let zip = HangingZip::start(false);
+    let mut zip = HangingZip::start(false);
     configure_archive(&fixture, &zip);
     let output = fixture
         .biomcp_command(&["get", "article", "22663011", "asset", "missing.csv"])
@@ -250,13 +284,14 @@ fn missing_primary_asset_still_consults_the_secondary_zip() {
         zip.requested.load(Ordering::SeqCst),
         "a requested asset missing from the primary must still try the ZIP fallback"
     );
+    zip.finish().unwrap();
 }
 
 #[test]
 #[serial_test::serial(article_output_fixture)]
 fn failed_primary_still_returns_the_zip_assets() {
     let fixture = ArticleFixture::start();
-    let zip = HangingZip::with_primary(false, true);
+    let mut zip = HangingZip::with_primary(false, true);
     configure_archive(&fixture, &zip);
     let started = std::time::Instant::now();
     let output = fixture
@@ -277,6 +312,7 @@ fn failed_primary_still_returns_the_zip_assets() {
         }),
         "the failed primary must retain the ZIP fallback: {manifest}"
     );
+    zip.finish().unwrap();
 }
 
 #[test]
@@ -284,7 +320,12 @@ fn failed_primary_still_returns_the_zip_assets() {
 fn primary_collision_handle_does_not_consult_the_zip() {
     use std::fs::OpenOptions;
     let fixture = ArticleFixture::start();
-    let zip = HangingZip::with_collision(true, false, true);
+    let mut zip = HangingZip::with_collision(true, false, true);
+    // Earlier idle and partial requests must not prevent CLI fixture requests.
+    let _idle_connection = TcpStream::connect(zip.base.trim_start_matches("http://")).unwrap();
+    let mut partial_connection =
+        TcpStream::connect(zip.base.trim_start_matches("http://")).unwrap();
+    partial_connection.write_all(b"GET / HTTP/1.1\r\n").unwrap();
     configure_archive(&fixture, &zip);
     let mut env = OpenOptions::new()
         .append(true)
@@ -331,4 +372,6 @@ fn primary_collision_handle_does_not_consult_the_zip() {
         !zip.requested.load(Ordering::SeqCst),
         "listed primary collision handles must not request the hanging ZIP"
     );
+    // Shutdown also handles an incomplete request whose client remains connected.
+    zip.finish().unwrap();
 }
