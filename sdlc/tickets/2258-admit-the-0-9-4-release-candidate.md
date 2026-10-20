@@ -20,7 +20,7 @@ Main holds a stable 0.9.4 candidate that has passed every item in section 1 of `
 2. On that candidate: the final 2233 Linux fresh-clone offline run and the 2234 paired measurement against v0.9.3, with raw evidence in a numbered experiment folder.
 3. A fresh read-only reviewer reads every commit since v0.9.3 through the final tip, including records-only commits; commits after its accept get their own review.
 4. The full untagged `release.yml` rehearsal on GitHub from the final commit with its full `candidate_sha` and `rehearsal_version` 0.9.4. Every required job succeeds. Record the run URL, the SHA and the unexercised publication limits.
-5. Branch, worktree, reservation and scratch cleanup for this repository; `workspace repos --dirty` clean.
+5. Branch, worktree, reservation and scratch cleanup for this repository; `git status --porcelain` empty on main and each owned worktree, plus `pm daily` cleanup evidence.
 
 ## Keeps
 
@@ -65,7 +65,7 @@ Keep: experiments/2081-biomcp-2258-research-fixture-retention — retain the pri
 
 ## Observed live collection scope
 
-Changes: `sdlc/records/2258-replay-live-collection.md`, `sdlc/records/2258-release-admission.md`, `CHANGELOG.md`.
+Changes: `sdlc/records/2258-replay-live-collection.md`, `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `CHANGELOG.md`.
 
 After stable metadata lands, recompute the actual recording inventory. Use observed credential-free primary replies to refresh historical missing response content types and the stale dbSNP request declaration, retaining original recording provenance and dates. Retain raw replies privately with exact request settings, status, case-insensitive Content-Type, observation time, bytes and SHA256. Final coverage uses tools/check-replay-live --live on the final candidate and records every entry and complete counts. No hardcoded historical inventory count.
 
@@ -100,7 +100,7 @@ Keep: experiments/2102-biomcp-2258-final-live-replay — retain complete final p
 - [ ] On the final candidate, run `python3 tools/check-replay-live --live` with the authorized source-disable and access settings. Retain every recording's result, the complete summary counts and candidate revision. Repair or re-record every blocked or drifted entry before tagging; name disabled sources explicitly because they remain unverified. See the release process for JSON/XML structure coverage and unsupported-format blockers and credential restrictions.
 - [ ] Both the prior release and candidate measurements used the same build host, corrected measurement harness, toolchain, workload and cache settings; retain raw samples and label failed collections incomplete.
 - [ ] Every `gh` call in `.github/workflows/release.yml` carries `GH_REPO: ${{ github.repository }}` (or a checkout), and every repository script runs after a checkout — `tests/test_release_workflow_provenance.py` enforces both. Every job that downloads the release while it is still a draft has `contents: write`.
-- [ ] Merged ticket branches, worktrees, local branches, stale ticket-number reservations and scratch build folders for this repository are removed. Branches owned by the 1.0 team are left alone. `workspace repos --dirty` is clean for this repository.
+- [ ] Merged ticket branches, worktrees, local branches, stale ticket-number reservations and scratch build folders for this repository are removed. Branches owned by the 1.0 team are left alone. `git status --porcelain` is empty on this repository's main checkout and each owned worktree, and `pm daily` confirms owned cleanup.
 - [ ] After every release ticket and the final measurement record has landed, manually run the full untagged `release.yml` rehearsal from the final candidate commit, with its full `candidate_sha` and stable `rehearsal_version`. Every required job, including `rehearsal-complete`, succeeds. Record the run URL and exact SHA in the go request. No tag or publication is created. A later source/workflow change requires a new full rehearsal.
 - [ ] Record the rehearsal limits: GitHub release creation/upload/publication, PyPI trusted upload, registry authentication/pushes and `latest` movement, Pages deployment/live-site verification, and the Homebrew push remain unexercised. The rehearsal validates production builds, installed-package and container smokes, generated documentation and publication payloads without their credentials.
 
