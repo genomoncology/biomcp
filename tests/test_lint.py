@@ -305,10 +305,7 @@ def test_lint_requires_cargo_deny_for_rust_repos(tmp_path: Path) -> None:
     assert "[FAIL] Rust license lint (cargo-deny missing)" in result.stdout
 
 
-@pytest.mark.parametrize("dependency_input", [None, "Cargo.lock", "Cargo.toml", "uv.lock", "pyproject.toml"])
-def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
-    tmp_path: Path, dependency_input: str | None,
-) -> None:
+def _advisory_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path]:
     repo_root = _copy_lint_fixture(tmp_path)
     _track_files(
         repo_root,
@@ -321,9 +318,6 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
     subprocess.run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"], cwd=repo_root, check=True)
     _track_files(repo_root, {"README.md": "candidate\n"})
     subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.org", "commit", "-qm", "Change text"], cwd=repo_root, check=True)
-    if dependency_input:
-        with (repo_root / dependency_input).open("a") as output:
-            output.write("# change\n")
     tool_dir = tmp_path / "tools"
     tool_dir.mkdir()
     log_file = tmp_path / "cargo-deny.log"
@@ -352,25 +346,28 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
         'printf \'%s\\n\' "$*" >> "$CARGO_DENY_LOG"\n',
     )
 
-    result = _run_lint(
-        repo_root,
-        env={
-            "CARGO_DENY_LOG": str(log_file),
-            "BIOMCP_ADVISORY_SCOPE": "landing",
-            # The fixture cargo shadows the real one; the host PATH keeps
-            # every other lint tool (ruff above all) reachable, which a
-            # /usr/bin-only path cannot promise on a gate host whose
-            # toolchain lives elsewhere.
-            "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
-        },
-    )
+    env = {
+        "CARGO_DENY_LOG": str(log_file),
+        "BIOMCP_ADVISORY_SCOPE": "landing",
+        "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
+    }
+    return repo_root, env, log_file
 
+
+@pytest.mark.parametrize("dependency_input", [None, "Cargo.lock", "Cargo.toml", "uv.lock", "pyproject.toml"])
+def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
+    tmp_path: Path, dependency_input: str | None,
+) -> None:
+    repo_root, env, log_file = _advisory_fixture(tmp_path)
+    if dependency_input:
+        with (repo_root / dependency_input).open("a") as output:
+            output.write("# change\n")
+    result = _run_lint(repo_root, env=env)
     assert result.returncode == 0
     expected = "check licenses\n" + ("check advisories\n" if dependency_input else "")
     assert log_file.read_text(encoding="utf-8") == expected
     assert "[PASS] Rust license lint (cargo deny check licenses)" in result.stdout
     assert ("[PASS] Rust advisory lint (cargo deny check advisories)" in result.stdout) == bool(dependency_input)
-
 
 
 def test_lint_fails_when_cargo_deny_advisory_check_fails(tmp_path: Path) -> None:

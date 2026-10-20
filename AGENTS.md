@@ -69,7 +69,12 @@ profile, including PNG, SVG and terminal output checks. `make release-gate`
 requires the same full-feature build and output checks with the optimized
 release profile before release-profile specifications. The final release
 rehearsal also requires optimized artifacts and their output checks. `make landing-gate` runs lint, routine tests and
-specifications in order. `make main-gate` runs that standard gate and then
+specifications in order. Landing lint skips live dependency advisories only
+when the four Cargo and Python dependency inputs match a verified preceding
+`origin/main`; missing or ambiguous comparison context runs advisories.
+Standalone lint, full main checks and release qualification always run live
+advisories. The release marker subset relies on the release workflow's full
+qualification lint. License checks always run. `make main-gate` runs that standard gate and then
 `make repo-audit` and `make full-feature-check`. The audit stage retains the
 whole-repository source, capture, coupling and CLI surface checks; routine Python
 keeps their focused malformed-input and wrapper checks. Release qualification

@@ -37,6 +37,23 @@ if [ "$PWD" != "$repo_root" ]; then
   exit 1
 fi
 
+# Only a landing candidate with a verified, preceding main can skip live
+# advisory lookup. Comparing to the worktree includes staged and unstaged edits.
+advisories_required() {
+  [ "${BIOMCP_ADVISORY_SCOPE:-always}" = landing ] || return 0
+  local base head
+  base="$(git rev-parse --verify 'refs/remotes/origin/main^{commit}' 2>/dev/null)" || return 0
+  head="$(git rev-parse --verify 'HEAD^{commit}' 2>/dev/null)" || return 0
+  [ "$base" != "$head" ] || return 0
+  git merge-base --is-ancestor "$base" "$head" 2>/dev/null || return 0
+  local inputs=(Cargo.lock Cargo.toml uv.lock pyproject.toml)
+  git ls-files --error-unmatch -- "${inputs[@]}" >/dev/null 2>&1 || return 0
+  if git diff --quiet "$base" -- "${inputs[@]}"; then
+    return 1
+  fi
+  return 0
+}
+
 run_tracked_text_checks() {
   if ! python3 "$repo_root/tools/check-tracked-text" "$repo_root"; then
     status=1
@@ -106,7 +123,11 @@ if [ -f Cargo.toml ]; then
   # caller with a trimmed PATH — which is how the factory runs us.
   if cargo deny --version >/dev/null 2>&1; then
     run_required 'Rust license lint (cargo deny check licenses)' cargo deny check licenses
-    run_required 'Rust advisory lint (cargo deny check advisories)' cargo deny check advisories
+    if advisories_required; then
+      run_required 'Rust advisory lint (cargo deny check advisories)' cargo deny check advisories
+    else
+      skip 'Rust advisory lint (dependency inputs unchanged since origin/main)'
+    fi
   else
     printf 'Install cargo-deny with: cargo install cargo-deny --locked\n'
     fail 'Rust license lint (cargo-deny missing)'
