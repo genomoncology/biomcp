@@ -82,6 +82,8 @@
 
 ### Internal
 
+- Record release qualification, live replay coverage, measurement limits and the nonpublishing release rehearsal. (2258)
+
 - Verify parallel article cache reuse against admitted responses and preserve failed-case cache databases. (2285)
 
 - Qualify concurrent CLI and MCP cache sharing with distinct stored requests and strict warm reuse after bounded admission. (2283)
