@@ -1,5 +1,21 @@
 {
   "routes": {
+    "GET /PMC3467229.1/PMC3467229.1.json": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+      "status": 200,
+      "file": "responses/pmc-oa/pmc3467229.1.json",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
+        "captured_at": "2026-10-20T15:38:07.384063+00:00",
+        "sha256": "4240e488862f7ed12db13a2a12c162102dd54e54f18df9e156436bc3779acb6b",
+        "minimization_or_redaction": "Raw public metadata bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public PMC OA bucket. Own article metadata explicitly records CC BY and is_pmc_openaccess true."
+      }
+    },
     "GET /cellosaurus/cell-line/CVCL_0005?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr&format=json": {
       "upstream": "https://api.cellosaurus.org/cell-line/CVCL_0005?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
       "status": 200,
@@ -960,22 +976,6 @@
         "request": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC3467229.&delimiter=%2F",
         "captured_at": "2026-10-20T15:38:05.282548+00:00",
         "sha256": "d977e2d8059ad86853f61830b2e3750f811c2b0aa34f40163867a57fd3f20399",
-        "minimization_or_redaction": "Raw public metadata bytes retained without edits.",
-        "provider_origin_statement": "Captured directly from the public PMC OA bucket. Own article metadata explicitly records CC BY and is_pmc_openaccess true."
-      }
-    },
-    "GET /pmc-oa/PMC3467229.1/PMC3467229.1.json": {
-      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
-      "status": 200,
-      "file": "responses/pmc-oa/pmc3467229.1.json",
-      "headers": {
-        "content-type": "binary/octet-stream"
-      },
-      "recording_provenance": {
-        "provider": "PMC OA",
-        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.json",
-        "captured_at": "2026-10-20T15:38:07.384063+00:00",
-        "sha256": "4240e488862f7ed12db13a2a12c162102dd54e54f18df9e156436bc3779acb6b",
         "minimization_or_redaction": "Raw public metadata bytes retained without edits.",
         "provider_origin_statement": "Captured directly from the public PMC OA bucket. Own article metadata explicitly records CC BY and is_pmc_openaccess true."
       }
