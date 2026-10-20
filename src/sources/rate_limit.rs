@@ -425,6 +425,7 @@ mod tests {
         let committing = Arc::new(AtomicUsize::new(0));
         let commit_peak = Arc::new(AtomicUsize::new(0));
         let requests = (0..20).map(|index| {
+            let address = address.clone();
             let client = client.clone();
             let execution = execution.clone();
             let committing = committing.clone();

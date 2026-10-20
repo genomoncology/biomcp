@@ -8,7 +8,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use super::super::*;
 use crate::test_support::TempDirGuard;
-use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
 
 /// SAFETY: these tests own the `who_pq_sync_env` serial-test key, so the
 /// process-global WHO Prequalification export URL variables are exclusive

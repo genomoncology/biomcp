@@ -21,7 +21,6 @@ use axum::{
 };
 use http_cache_reqwest::CacheMode;
 use reqwest::StatusCode;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 struct EnvRestore(BTreeMap<&'static str, Option<std::ffi::OsString>>);
 

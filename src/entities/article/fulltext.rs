@@ -1509,7 +1509,7 @@ mod tests {
             pdf_with_client(&client, &format!("{}/missing.pdf", not_found.base), "1").await,
             FulltextStepOutcome::Empty
         ));
-        drop(not_found);
+        not_found.finish().unwrap();
 
         let attempts = Arc::new(AtomicUsize::new(0));
         let fixture_attempts = attempts.clone();
@@ -1536,7 +1536,7 @@ mod tests {
             FulltextStepOutcome::Data(_)
         ));
         assert_eq!(attempts.load(Ordering::SeqCst), 3);
-        drop(status_failure);
+        status_failure.finish().unwrap();
 
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
@@ -1576,7 +1576,7 @@ mod tests {
         );
         assert_eq!(pdf_error.code(), "api");
         assert!(format!("{pdf_error:?}").contains("BodyLimit"));
-        drop(oversized);
+        oversized.finish().unwrap();
 
         let mut unsupported = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response("200 OK", "text/plain", b"plain text"))
@@ -1592,7 +1592,7 @@ mod tests {
             )
             .await,
         );
-        drop(unsupported);
+        unsupported.finish().unwrap();
 
         let mut invalid_utf8 = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response("200 OK", "text/html", &[0xff, 0xfe]))
@@ -1600,7 +1600,7 @@ mod tests {
         .await;
         configure_attempt_env(&mut env, &invalid_utf8);
         failed_html(html_with_client(&client, "PMC1", "1").await);
-        drop(invalid_utf8);
+        invalid_utf8.finish().unwrap();
 
         let mut empty_conversion = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
@@ -1612,7 +1612,7 @@ mod tests {
         .await;
         configure_attempt_env(&mut env, &empty_conversion);
         failed_html(html_with_client(&client, "PMC1", "1").await);
-        drop(empty_conversion);
+        empty_conversion.finish().unwrap();
 
         let mut invalid_pdf = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
@@ -1624,13 +1624,6 @@ mod tests {
         .await;
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &invalid_pdf.base);
         failed(pdf_with_client(&client, &format!("{}/invalid.pdf", invalid_pdf.base), "1").await);
-        drop(invalid_pdf);
-        not_found.finish().unwrap();
-        status_failure.finish().unwrap();
-        oversized.finish().unwrap();
-        unsupported.finish().unwrap();
-        invalid_utf8.finish().unwrap();
-        empty_conversion.finish().unwrap();
         invalid_pdf.finish().unwrap();
     }
 

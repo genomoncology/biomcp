@@ -63,7 +63,7 @@ async fn associations_by_rsid_against(
     Arc<Mutex<Vec<String>>>,
     crate::test_support::TestHttpServer,
 ) {
-    let (base, requests, mut server) = retired_endpoint_server(status_line).await;
+    let (base, requests, server) = retired_endpoint_server(status_line).await;
     let mut env = FixtureEnv::new();
     env.set("BIOMCP_GWAS_BASE", &base);
     let client = GwasClient::new().expect("client against fixture");

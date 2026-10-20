@@ -135,7 +135,7 @@ fn serve_http_rejects_port_zero() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn dropping_canonical_compact_command_cancels_provider_retry() {
-    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+    use tokio::io::AsyncWriteExt as _;
 
     type EnvRestore = crate::test_support::FixtureEnv;
 

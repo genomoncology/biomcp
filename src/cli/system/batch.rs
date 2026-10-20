@@ -715,7 +715,7 @@ let requests = requests.clone();
 let first_response = first_response.clone();
 async move {
 
-                    let Some(request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
+                    let Some(_request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
                     requests.fetch_add(1, Ordering::SeqCst);
                     stream
                         .write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
