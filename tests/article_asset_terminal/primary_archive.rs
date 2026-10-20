@@ -49,6 +49,12 @@ impl HangingZip {
                         ("200 OK", "application/xml", br#"<article xmlns:xlink="http://www.w3.org/1999/xlink"><body><supplementary-material xlink:href="traces-s1.csv"><label>Data S1</label></supplementary-material></body></article>"#)
                     } else if request.starts_with("GET /PMC123456.1/traces-s1.csv ") {
                         ("200 OK", "text/csv", b"time,value\n0,1\n")
+                    } else if request.starts_with("GET /PMC123456/fullTextXML ") {
+                        (
+                            "503 Service Unavailable",
+                            "text/plain",
+                            b"optional XML outage",
+                        )
                     } else {
                         ("404 Not Found", "text/plain", b"not found")
                     };
@@ -103,6 +109,25 @@ fn complete_primary_assets_do_not_wait_for_an_optional_zip() {
         .collect();
     names.sort();
     assert_eq!(names, ["traces-s1.csv"]);
+    assert!(
+        manifest["source_attempts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|attempt| {
+                attempt["provider"]["label"] == "Europe PMC XML"
+                    && attempt["outcome"] == "source_unavailable"
+            }),
+        "optional XML outage must remain visible: {manifest}"
+    );
+    assert!(
+        !manifest["source_attempts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|attempt| { attempt["source_document"] == "europe_pmc_zip" }),
+        "an unconsulted ZIP must not be labeled absent or unavailable: {manifest}"
+    );
     let output = fixture
         .biomcp_command(&["get", "article", "22663011", "asset", "traces-s1.csv"])
         .output()
