@@ -12,13 +12,13 @@ Depends on: 2305
 
 ## Outcome
 
-The landing gate runs live dependency advisory checks only when the candidate changes Cargo.lock, Cargo.toml, uv.lock or pyproject.toml. Every full main check and every release qualification still runs live advisory checks, including when no dependency input changes. A newly published advisory can block release admission. Preserve the remaining lint, license, test and specification checks.
+The landing gate runs live dependency advisory checks only when the candidate changes Cargo.lock, Cargo.toml, uv.lock or pyproject.toml. Every full main check and every release qualification still runs live advisory checks, including when no dependency input changes. A newly published advisory can block release admission. Dependency-changing landing candidates audit both Cargo.lock and uv.lock against live RustSec and GitHub/Python advisory sources. Full main and release checks always require both sources. Scanner installation, parsing and query errors fail safely, and findings stay visible. Preserve the remaining lint, license, test and specification checks.
 
-Changes: `Makefile`, `bin/lint`, `tests/test_lint.py`, `tests/test_dependency_advisory_gate.py`, `AGENTS.md`, `CHANGELOG.md`, `sdlc/records/2307-dependency-advisory-gate.md`.
+Changes: `tools/bootstrap-lint-tools`, `tests/test_advisory_bootstrap.py`, `Makefile`, `bin/lint`, `tests/test_lint.py`, `tests/test_dependency_advisory_gate.py`, `AGENTS.md`, `CHANGELOG.md`, `sdlc/records/2307-dependency-advisory-gate.md`.
 
 ## Keeps
 
-Use the existing gate commands and dependency-input source of truth. Keep advisory failures visible when required. Missing or ambiguous comparison information fails safely or runs the check; it must never silently suppress required checks. Do not disable certificate checks, suppress advisories, weaken license policy or add a second advisory implementation.
+Use the existing gate commands and dependency-input source of truth. Keep advisory failures visible when required. Missing or ambiguous comparison information fails safely or runs the check; it must never silently suppress required checks. Do not disable certificate checks, suppress advisories, weaken license policy or duplicate advisory selection logic. Keep the RustSec and GitHub/Python scanners behind the same existing selector.
 
 ## Reproduction before code
 
@@ -26,7 +26,7 @@ The text-only 2284 landing ran cargo-deny advisories on an unchanged lockfile an
 
 ## Proof
 
-An outside-in command control shows routine landing with unchanged dependency inputs skips only live advisory work, while a change to each supported dependency input requires it. Missing comparison context must not skip the check. Full main and release entry points require advisory work with unchanged inputs. Required advisory failure propagates; remaining lint and license checks still run. Execute affected controls and the routine suite on the branch merged with current main before fresh review.
+An outside-in command control shows routine landing with unchanged dependency inputs skips only live advisory work, while a change to each supported dependency input requires it. Missing comparison context must not skip the check. Full main and release entry points require advisory work with unchanged inputs. Required advisory failure propagates; remaining lint and license checks still run. An executable scanner control establishes invocation and failure propagation; a separate real scanner run against retained vulnerable locks must establish detection of the reported GitHub and Python advisories. Execute affected controls and the routine suite on the branch merged with current main before fresh review.
 
 ## Order
 
