@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 9da712f, accept
 
+Reviews: revision 9fa5c3b, accept
+
 ## Outcome
 
 The routine full main check builds the Linux wheel, installs it in the same manylinux container release.yml uses, and runs the release.yml installed-wheel smoke commands under a fresh HOME with no cache ancestors. It uses the same `BIOMCP_DISABLE_SOURCES` profile as release.yml. A fresh-root, packaging or installed-command failure fails the routine check, so the GitHub release rehearsal is never the first place one appears.
