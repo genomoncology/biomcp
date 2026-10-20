@@ -14,8 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.needs_binary
 
 
+@pytest.mark.parametrize("failure_phase", ["setup", "call", "teardown"])
 def test_failed_replay_case_keeps_cache_and_log_while_passing_case_cleans_up(
-    tmp_path: Path,
+    tmp_path: Path, failure_phase: str,
 ) -> None:
     project = tmp_path / "runner"
     project.mkdir()
@@ -26,8 +27,9 @@ from pathlib import Path
 import pytest
 from replay_env import replay_environment, retained_cache_env
 
-@pytest.mark.parametrize("fails", [False, True], ids=["passing", "failing"])
-def test_replayed_case(tmp_path, fails):
+@pytest.fixture
+def replayed_case(request):
+    fails = request.param
     with replay_environment() as replay:
         run = replay._next_run_dir()
         result = subprocess.run(
@@ -39,8 +41,16 @@ def test_replayed_case(tmp_path, fails):
         assert replay.request_log_entries()
         (Path(__file__).parent / ("failing.json" if fails else "passing.json")).write_text(
             json.dumps({"work": str(replay.work_dir), "run": str(run)}))
-        assert not fails, "deliberate retained-state control"
-''')
+        if fails and FAILURE_PHASE == "setup":
+            pytest.fail("deliberate retained-state control")
+        yield fails
+        if fails and FAILURE_PHASE == "teardown":
+            pytest.fail("deliberate retained-state control")
+
+@pytest.mark.parametrize("replayed_case", [False, True], indirect=True, ids=["passing", "failing"])
+def test_replayed_case(replayed_case):
+    assert not (replayed_case and FAILURE_PHASE == "call"), "deliberate retained-state control"
+'''.replace("FAILURE_PHASE", repr(failure_phase)))
     env = os.environ.copy()
     env["BIOMCP_BIN"] = str(Path(env.get("BIOMCP_BIN", ROOT / "target/debug/biomcp")).resolve())
     env["PYTHONPATH"] = os.pathsep.join((str(ROOT / "tests"), str(ROOT / "tests/golden")))
@@ -51,7 +61,8 @@ def test_replayed_case(tmp_path, fails):
     )
     (project / "pytest.log").write_text(result.stdout + result.stderr)
     assert result.returncode == 1, result.stdout + result.stderr
-    assert "1 failed, 1 passed" in result.stdout, result.stdout + result.stderr
+    expected = "1 failed, 1 passed" if failure_phase == "call" else "1 error"
+    assert expected in result.stdout, result.stdout + result.stderr
     assert "deliberate retained-state control" in result.stdout
     failed = json.loads((project / "failing.json").read_text())
     passed = json.loads((project / "passing.json").read_text())

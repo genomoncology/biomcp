@@ -3,6 +3,7 @@ from __future__ import annotations
 from cache_fixture import set_cache_root
 
 import os
+import shutil
 import subprocess
 import tempfile
 from collections.abc import Iterator
@@ -11,6 +12,8 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPLAY_CASE_PATH = pytest.StashKey[Path]()
+_REPLAY_CASE_FAILED = pytest.StashKey[bool]()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -28,12 +31,29 @@ def replay_server_owner() -> Iterator[None]:
 
 
 @pytest.fixture(autouse=True)
-def replay_case_owner(tmp_path: Path, replay_server_owner: None) -> Iterator[None]:
+def replay_case_owner(
+    tmp_path: Path, replay_server_owner: None, request: pytest.FixtureRequest,
+) -> Iterator[None]:
     """Leave replay evidence in pytest storage for failed cases only."""
     from replay_env import replay_case_directory
 
-    with replay_case_directory(tmp_path / "replay"):
+    directory = tmp_path / "replay"
+    request.node.stash[_REPLAY_CASE_PATH] = directory
+    with replay_case_directory(directory):
         yield
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
+    """Keep case storage until setup, call and every fixture teardown finish."""
+    report = yield
+    if report.failed:
+        item.stash[_REPLAY_CASE_FAILED] = True
+    if report.when == "teardown":
+        directory = item.stash.get(_REPLAY_CASE_PATH, None)
+        if directory is not None and not item.stash.get(_REPLAY_CASE_FAILED, False):
+            shutil.rmtree(directory, ignore_errors=True)
+    return report
 
 
 def pytest_configure(config: pytest.Config) -> None:
