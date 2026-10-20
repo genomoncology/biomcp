@@ -10,7 +10,7 @@ Milestone: 0.9.4
 
 Depends on: 2316, 2319
 
-Changes: `Makefile`, `scripts/run-nightly-checks.sh`, `tests/test_release_check_counterparts.py`, `tests/test_ci_workflow_contract.py`, `CHANGELOG.md`.
+Changes: `Makefile`, `scripts/run-nightly-checks.sh`, `tests/test_release_check_counterparts.py`, `tests/test_ci_workflow_contract.py`, `tests/test_stress_lane_contract.py`, `CHANGELOG.md`.
 
 ## Outcome
 
