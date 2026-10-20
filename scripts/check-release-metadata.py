@@ -81,7 +81,7 @@ def main() -> int:
                 runbook_check() if command is None else
                 subprocess.run(command, cwd=ROOT, check=False).returncode
             )
-        except (OSError, ImportError) as error:
+        except Exception as error:
             print(f"{name}: {error}", file=sys.stderr, flush=True)
             status = 1
         if status:
