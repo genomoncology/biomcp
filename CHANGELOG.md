@@ -98,6 +98,8 @@
 
 ### Internal
 
+- Remove obsolete pipeline scripts and their lifecycle tests, and classify archived planning and records as documentation. (2313)
+
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)

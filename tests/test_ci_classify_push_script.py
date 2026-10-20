@@ -122,10 +122,6 @@ def test_docs_only_push_classifies_true(scratch_repo: Path) -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        "sdlc/scripts/clean",
-        "sdlc/scripts/test",
-        "sdlc/project/health",
-        "sdlc/project/provenance.json",
         "sdlc/pm.json",
         "sdlc/skills/build-coordinator.md",
         "sdlc/release-checklist.md",
@@ -135,10 +131,8 @@ def test_sdlc_program_or_configuration_push_runs_full_ci(
     scratch_repo: Path, path: str
 ) -> None:
     """A program, gate wrapper or configuration under sdlc/ counts as
-    a change, because sdlc/ holds more than records: the gate wrappers
-    in sdlc/scripts, the lifecycle programs and their state in
-    sdlc/project, the landing configuration, the skills the checks read,
-    and the release checklist. A push touching any of them must run
+    a change, because sdlc/ holds the landing configuration, the skills
+    the checks read, and the release checklist as well as records. A push touching any of them must run
     the full jobs.
     """
     sha = _commit(scratch_repo, {path: "changed"}, "sdlc program change")
@@ -435,7 +429,7 @@ def test_green_tip_route_refuses_sdlc_programs(
     ever asks for the previous tip's run.
     """
     code_tip = _commit(scratch_repo, {"src/lib.rs": "fn a() {}"}, "code")
-    tip = _commit(scratch_repo, {"sdlc/scripts/test": "changed"}, "program change")
+    tip = _commit(scratch_repo, {"sdlc/pm.json": "changed"}, "program change")
     env, args_file = _green_tip_env(tmp_path, "completed|success")
     assert (
         _run_script(
