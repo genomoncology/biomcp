@@ -399,38 +399,32 @@ fn braf_v600e_recorded_reply(request: &str) -> (&'static str, &'static str, Vec<
     )
 }
 
-async fn braf_v600e_recorded_reply_server() -> (String, tokio::task::JoinHandle<()>) {
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+async fn braf_v600e_recorded_reply_server() -> (String, crate::test_support::TestHttpServer) {
+    use tokio::io::AsyncWriteExt;
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind BRAF V600E recorded-reply fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 64 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                let (status, content_type, body) = braf_v600e_recorded_reply(&request);
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response head");
-                stream
-                    .write_all(&body)
-                    .await
-                    .expect("write fixture response body");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            let (status, content_type, body) = braf_v600e_recorded_reply(&request);
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            stream
+                .write_all(&body)
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, task)
 }
 
@@ -448,7 +442,7 @@ fn quoted_coordinate(command: &str) -> Option<&str> {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn braf_v600e_card_prints_follow_ups_on_the_headline_coordinate() {
-    let (base, server) = braf_v600e_recorded_reply_server().await;
+    let (base, mut server) = braf_v600e_recorded_reply_server().await;
     let cache_dir = tempfile::tempdir().expect("temp cache dir");
     let mut env = RecordedReplyEnv::scratch_cache_only();
     env.set("BIOMCP_CACHE_MODE", "off");
@@ -565,5 +559,5 @@ async fn braf_v600e_card_prints_follow_ups_on_the_headline_coordinate() {
         counted_predictive,
         "the civic follow-up reports the evidence the card counted:\n{follow_up_markdown}"
     );
-    server.abort();
+    server.finish().unwrap();
 }

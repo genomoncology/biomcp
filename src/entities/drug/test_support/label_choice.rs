@@ -795,7 +795,7 @@ pub(in crate::entities::drug::test_support) fn assert_label_data_with_set_id(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn keytruda_takes_keytrudas_own_label_not_the_qlex_pairing() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             (
                 "Keytruda".to_string(),
@@ -822,13 +822,13 @@ async fn keytruda_takes_keytrudas_own_label_not_the_qlex_pairing() {
     assert_eq!(drug.name, "pembrolizumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09037"));
     assert_label_data_with_set_id(&drug, "9333c79b-d487-4538-a9f0-71b91a02b287");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn pembrolizumab_takes_the_plain_keytruda_label() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "pembrolizumab".to_string(),
             PEMBROLIZUMAB_CAPTURE.to_string(),
@@ -845,13 +845,13 @@ async fn pembrolizumab_takes_the_plain_keytruda_label() {
     assert_eq!(drug.name, "pembrolizumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09037"));
     assert_label_data_with_set_id(&drug, "9333c79b-d487-4538-a9f0-71b91a02b287");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn herceptin_takes_herceptins_own_label_not_the_biosimilar() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             ("Herceptin".to_string(), HERCEPTIN_CAPTURE.to_string()),
             ("trastuzumab".to_string(), TRASTUZUMAB_CAPTURE.to_string()),
@@ -874,13 +874,13 @@ async fn herceptin_takes_herceptins_own_label_not_the_biosimilar() {
     assert_eq!(drug.name, "trastuzumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00072"));
     assert_label_data_with_set_id(&drug, "492dbdb2-077e-4064-bff3-372d6af0a7a2");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn trastuzumab_takes_the_plain_herceptin_label_not_the_biosimilar() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![("trastuzumab".to_string(), TRASTUZUMAB_CAPTURE.to_string())],
         vec![(
             "trastuzumab".to_string(),
@@ -897,13 +897,13 @@ async fn trastuzumab_takes_the_plain_herceptin_label_not_the_biosimilar() {
     assert_eq!(drug.name, "trastuzumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00072"));
     assert_label_data_with_set_id(&drug, "492dbdb2-077e-4064-bff3-372d6af0a7a2");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn rybrevant_takes_the_plain_rybrevant_label_not_faspro() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "Rybrevant".to_string(),
             crate::transform::drug::name_resolution_tests::RYBREVANT_CAPTURE.to_string(),
@@ -923,13 +923,13 @@ async fn rybrevant_takes_the_plain_rybrevant_label_not_faspro() {
     assert_eq!(drug.name, "amivantamab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
     assert_label_data_with_set_id(&drug, "1466c070-9f97-4fa4-a955-6a6b59981fb8");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn amivantamab_takes_the_plain_rybrevant_label_not_faspro() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "amivantamab".to_string(),
             crate::transform::drug::name_resolution_tests::AMIVANTAMAB_CAPTURE.to_string(),
@@ -948,13 +948,13 @@ async fn amivantamab_takes_the_plain_rybrevant_label_not_faspro() {
     assert_eq!(drug.name, "amivantamab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
     assert_label_data_with_set_id(&drug, "1466c070-9f97-4fa4-a955-6a6b59981fb8");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn avastin_takes_avastins_own_label() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             ("Avastin".to_string(), AVASTIN_CAPTURE.to_string()),
             ("bevacizumab".to_string(), BEVACIZUMAB_CAPTURE.to_string()),
@@ -980,13 +980,13 @@ async fn avastin_takes_avastins_own_label() {
     assert_eq!(drug.name, "bevacizumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00112"));
     assert_label_data_with_set_id(&drug, "939b5d1f-9fb2-4499-80ef-0607aa6b114e");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn bevacizumab_escalates_past_the_biosimilar_page_to_avastin() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![("bevacizumab".to_string(), BEVACIZUMAB_CAPTURE.to_string())],
         vec![
             (
@@ -1007,13 +1007,13 @@ async fn bevacizumab_escalates_past_the_biosimilar_page_to_avastin() {
     assert_eq!(drug.name, "bevacizumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00112"));
     assert_label_data_with_set_id(&drug, "939b5d1f-9fb2-4499-80ef-0607aa6b114e");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
-    let (base, server) = name_resolution_fixture_server_with_elements(
+    let (base, mut server) = name_resolution_fixture_server_with_elements(
         vec![
             ("Darzalex".to_string(), DARZALEX_CAPTURE.to_string()),
             ("daratumumab".to_string(), DARATUMUMAB_CAPTURE.to_string()),
@@ -1052,13 +1052,13 @@ async fn darzalex_takes_the_plain_darzalex_label_not_faspro() {
         "the card's brands include Darzalex itself: {:?}",
         drug.brand_names
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
-    let (base, server) = name_resolution_fixture_server_with_elements(
+    let (base, mut server) = name_resolution_fixture_server_with_elements(
         vec![("daratumumab".to_string(), DARATUMUMAB_CAPTURE.to_string())],
         vec![("daratumumab".to_string(), DARZALEX_LABEL_BODY.to_string())],
         Vec::new(),
@@ -1077,13 +1077,13 @@ async fn daratumumab_takes_the_plain_darzalex_label_not_faspro() {
     assert_eq!(drug.name, "daratumumab");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB09331"));
     assert_label_data_with_set_id(&drug, "a4d0efe9-5e54-467e-9eb4-56fa7d53b60b");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn phesgo_resolves_its_own_label_and_safety_line() {
-    let (base, server) = name_resolution_fixture_server_with_elements(
+    let (base, mut server) = name_resolution_fixture_server_with_elements(
         vec![("Phesgo".to_string(), PHESGO_CAPTURE.to_string())],
         Vec::new(),
         Vec::new(),
@@ -1126,13 +1126,13 @@ async fn phesgo_resolves_its_own_label_and_safety_line() {
             .is_some_and(|text| text.contains("WARNINGS AND PRECAUTIONS")),
         "the Phesgo safety line reached the card"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_non_hyaluronidase_combination_never_becomes_another_products_card() {
-    let (base, server) = name_resolution_fixture_server_with_elements(
+    let (base, mut server) = name_resolution_fixture_server_with_elements(
         vec![
             ("Opdualag".to_string(), OPDUALAG_CAPTURE.to_string()),
             ("nivolumab".to_string(), NIVOLUMAB_CAPTURE.to_string()),
@@ -1160,13 +1160,13 @@ async fn a_non_hyaluronidase_combination_never_becomes_another_products_card() {
         "the combination never becomes the nivolumab card"
     );
     assert_label_data_with_set_id(&drug, "b22c9d83-3256-4e17-85f7-f331a504adc6");
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
-    let (base, server) = name_resolution_fixture_server_with_elements(
+    let (base, mut server) = name_resolution_fixture_server_with_elements(
         vec![("Gleevec".to_string(), GLEEVEC_CAPTURE.to_string())],
         vec![
             ("Gleevec".to_string(), GLEEVEC_LABEL_BODY.to_string()),
@@ -1197,7 +1197,7 @@ async fn gleevec_keeps_its_own_label_against_the_generic_ingredient_twin() {
     // and passing the card name instead of the query serves the newest
     // generic labeler (0291eca5); both mutations fail this pin.
     assert_label_data_with_set_id(&drug, "211ef2da-2868-4a77-8055-1cb2cd78e24b");
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The OLS4 answer for a brand whose only concept match is a non-exact
@@ -1212,7 +1212,7 @@ async fn a_contains_tier_ols_match_never_adopts_a_card() {
     let ols_contains_body = r#"{"response":{"docs":[
         {"iri":"http://purl.obolibrary.org/obo/CHEBI_888881","ontology_prefix":"CHEBI","obo_id":"CHEBI:888881","label":"Ambifton Compounded Product","exact_synonyms":["ambifton-based product"]}
     ]}}"#;
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             (
                 "Ambifton".to_string(),
@@ -1243,7 +1243,7 @@ async fn a_contains_tier_ols_match_never_adopts_a_card() {
         message.contains("No drug card matches \"Ambifton\""),
         "{message}"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The discover rescue's canonical candidate is adopted only through
@@ -1256,7 +1256,7 @@ async fn the_rescue_adopts_a_candidate_only_through_its_own_record() {
     let ols_exact_body = r#"{"response":{"docs":[
         {"iri":"http://purl.obolibrary.org/obo/CHEBI_999990","ontology_prefix":"CHEBI","obo_id":"CHEBI:999990","label":"Fixture Plain Drug","exact_synonyms":["Ambifton"]}
     ]}}"#;
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             (
                 "Ambifton".to_string(),
@@ -1284,5 +1284,5 @@ async fn the_rescue_adopts_a_candidate_only_through_its_own_record() {
         drug.drugbank_id.is_none(),
         "no record that names the candidate was adopted"
     );
-    server.abort();
+    server.finish().unwrap();
 }

@@ -1,17 +1,16 @@
 use super::ArticleFixture;
+use biomcp_mcp_contract_client::test_http::TestHttpServer;
 use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::TcpStream;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::thread;
 use std::time::Duration;
 
 struct HangingZip {
     base: String,
     requested: Arc<AtomicBool>,
-    stop: Arc<AtomicBool>,
     primary_failure_nanos: Arc<AtomicU64>,
-    worker: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 impl HangingZip {
@@ -40,11 +39,7 @@ impl HangingZip {
         let xml = format!(
             r#"<article xmlns:xlink="http://www.w3.org/1999/xlink"><body><supplementary-material xlink:href="{filename}"><label>Data S1</label></supplementary-material></body></article>"#
         );
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        listener.set_nonblocking(true).unwrap();
-        let base = format!("http://{}", listener.local_addr().unwrap());
         let requested = Arc::new(AtomicBool::new(false));
-        let stop = Arc::new(AtomicBool::new(false));
         let primary_failure_nanos = Arc::new(AtomicU64::new(0));
         let failure_nanos = primary_failure_nanos.clone();
         let mut archive = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
@@ -54,39 +49,35 @@ impl HangingZip {
         archive.write_all(b"time,value\n0,1\n").unwrap();
         let zip_bytes = archive.finish().unwrap().into_inner();
         let zip_requested = requested.clone();
-        let stopping = stop.clone();
-        let figshare = format!(
-            r#"{{"id":22474820,"title":"Figshare asset fallback winner","doi":"10.1158/fixture.figshare","url_public_html":"https://aacr.figshare.com/articles/journal_contribution/Fixture/22474820","license":{{"name":"CC BY 4.0","url":"https://creativecommons.org/licenses/by/4.0/"}},"files":[{{"id":39926318,"name":"figshare-supplement.pdf","size":24,"download_url":"{base}/file.pdf"}}]}}"#
-        );
-        let worker = thread::spawn(move || {
-            let mut held = Vec::new();
-            let mut failures = Vec::new();
-            let mut pending = Vec::new();
-            while !stopping.load(Ordering::SeqCst) {
-                if let Ok((stream, _)) = listener.accept() {
-                    stream.set_nonblocking(true).unwrap();
-                    pending.push((stream, Vec::new()));
+        let server = TestHttpServer::respond(move |request| {
+            let zip_requested = zip_requested.clone();
+            let failure_nanos = failure_nanos.clone();
+            let zip_bytes = zip_bytes.clone();
+            let metadata = metadata.clone();
+            let xml = xml.clone();
+            async move {
+                let request = String::from_utf8(request)
+                    .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+                let host = request.lines().find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.eq_ignore_ascii_case("host").then_some(value.trim())
+                })
+                .expect("request host");
+                let figshare = format!(
+                    r#"{{"id":22474820,"title":"Figshare asset fallback winner","doi":"10.1158/fixture.figshare","url_public_html":"https://aacr.figshare.com/articles/journal_contribution/Fixture/22474820","license":{{"name":"CC BY 4.0","url":"https://creativecommons.org/licenses/by/4.0/"}},"files":[{{"id":39926318,"name":"figshare-supplement.pdf","size":24,"download_url":"http://{host}/file.pdf"}}]}}"#
+                );
+                if primary_failure && request.starts_with("GET /?list-type=2") {
+                    let started = std::time::Instant::now();
+                    // sleep reason: inject the fixed 200-millisecond primary failure delay
+                    #[allow(clippy::disallowed_methods)]
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    failure_nanos.store(started.elapsed().as_nanos() as u64, Ordering::SeqCst);
+                    return Ok(b"HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\nContent-Length: 9\r\nConnection: close\r\n\r\n<records>".to_vec());
                 }
-                for (mut stream, request) in ready_requests(&mut pending) {
-                    if primary_failure && request.starts_with("GET /?list-type=2") {
-                        let failure_nanos = failure_nanos.clone();
-                        failures.push(thread::spawn(move || {
-                            let started = std::time::Instant::now();
-                            // sleep reason: inject the fixed 200-millisecond primary failure delay
-                            #[allow(clippy::disallowed_methods)]
-                            thread::sleep(Duration::from_millis(200));
-                            let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\nContent-Length: 9\r\nConnection: close\r\n\r\n<records>");
-                            failure_nanos.store(started.elapsed().as_nanos() as u64, Ordering::SeqCst);
-                        }));
-                        continue;
-                    }
-                    if request.contains("/supplementaryFiles") {
-                        zip_requested.store(true, Ordering::SeqCst);
-                        if hang {
-                            held.push(stream);
-                            continue;
-                        }
-                    }
+                if request.contains("/supplementaryFiles") {
+                    zip_requested.store(true, Ordering::SeqCst);
+                    if hang { return std::future::pending().await; }
+                }
                     let (status, content_type, body): (&str, &str, &[u8]) = if primary_failure
                         && request.contains("/supplementaryFiles")
                     {
@@ -136,66 +127,22 @@ impl HangingZip {
                         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                         body.len()
                     );
-                    let _ = stream.write_all(header.as_bytes());
-                    let _ = stream.write_all(body);
-                }
-                // sleep reason: poll the nonblocking fixture listener and incomplete requests with a 2-millisecond stop-check interval
-                #[allow(clippy::disallowed_methods)]
-                thread::sleep(Duration::from_millis(2));
+                let mut response = header.into_bytes();
+                response.extend_from_slice(body);
+                Ok(response)
             }
-            for failure in failures {
-                failure.join().unwrap();
-            }
-        });
+        })
+        .expect("start article archive fixture");
         Self {
-            base,
+            base: server.base.clone(),
             requested,
-            stop,
             primary_failure_nanos,
-            worker: Some(worker),
+            server,
         }
     }
 
-    fn finish(&mut self) -> thread::Result<()> {
-        self.stop.store(true, Ordering::SeqCst);
-        self.worker.take().map_or(Ok(()), |worker| worker.join())
-    }
-}
-
-// Clients can connect before sending headers, or close without sending any.
-// Keep those sockets independent so they cannot block other fixture requests.
-fn ready_requests(pending: &mut Vec<(TcpStream, Vec<u8>)>) -> Vec<(TcpStream, String)> {
-    let mut ready = Vec::new();
-    let mut index = 0;
-    while index < pending.len() {
-        let (stream, request) = &mut pending[index];
-        let mut bytes = [0; 8192];
-        match stream.read(&mut bytes) {
-            Ok(0) => {
-                pending.swap_remove(index);
-                continue;
-            }
-            Ok(count) => request.extend_from_slice(&bytes[..count]),
-            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
-            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
-            Err(error) => panic!("fixture request read failed: {error}"),
-        }
-        if request.windows(4).any(|window| window == b"\r\n\r\n") {
-            let (stream, request) = pending.swap_remove(index);
-            stream.set_nonblocking(false).unwrap();
-            ready.push((stream, String::from_utf8(request).unwrap()));
-        } else {
-            index += 1;
-        }
-    }
-    ready
-}
-
-impl Drop for HangingZip {
-    fn drop(&mut self) {
-        if self.finish().is_err() {
-            let _ = writeln!(std::io::stderr(), "article archive fixture worker panicked");
-        }
+    fn finish(&mut self) -> std::io::Result<()> {
+        self.server.finish()
     }
 }
 
@@ -374,4 +321,48 @@ fn primary_collision_handle_does_not_consult_the_zip() {
     );
     // Shutdown also handles an incomplete request whose client remains connected.
     zip.finish().unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn disconnected_fixture_client_does_not_panic_or_block_other_requests() {
+    use std::os::fd::AsRawFd;
+    let mut server = TestHttpServer::respond(|_| async {
+        Ok(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".to_vec())
+    })
+    .unwrap();
+    let address = server.base.trim_start_matches("http://");
+    let client = TcpStream::connect(address).unwrap();
+    let linger = libc::linger {
+        l_onoff: 1,
+        l_linger: 0,
+    };
+    // SAFETY: the descriptor is live and the option points at a valid linger value.
+    assert_eq!(
+        unsafe {
+            libc::setsockopt(
+                client.as_raw_fd(),
+                libc::SOL_SOCKET,
+                libc::SO_LINGER,
+                std::ptr::from_ref(&linger).cast(),
+                std::mem::size_of_val(&linger) as libc::socklen_t,
+            )
+        },
+        0
+    );
+    drop(client);
+    let _idle = TcpStream::connect(address).unwrap();
+    let mut partial = TcpStream::connect(address).unwrap();
+    partial.write_all(b"GET /").unwrap();
+    let mut survivor = TcpStream::connect(address).unwrap();
+    survivor
+        .set_read_timeout(Some(Duration::from_secs(60)))
+        .unwrap();
+    survivor
+        .write_all(b"GET /survives HTTP/1.1\r\nHost: localhost\r\n\r\n")
+        .unwrap();
+    let mut response = String::new();
+    survivor.read_to_string(&mut response).unwrap();
+    assert!(response.ends_with("\r\n\r\nok"), "{response}");
+    server.finish().unwrap();
 }

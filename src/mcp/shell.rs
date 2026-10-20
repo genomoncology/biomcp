@@ -1968,36 +1968,16 @@ mod tests {
         // directory. The MCP error text must come from the public error
         // projection, so it names the failure and the recovery without
         // the local path.
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
-
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind WHO Prequalification MCP fixture");
-        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-        let server = tokio::spawn(async move {
-            // Every export answers a CSV whose headers do not match, so the
-            // sync fails per file and the final error names the exports.
+        let mut server = crate::test_support::TestHttpServer::respond(|request| async move {
+            // Every export retains the malformed CSV that triggers sync failure.
             let body = "WRONG,HEADER,ROW\n1,2,3\n";
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let mut request = [0_u8; 4096];
-                let read = stream.read(&mut request).await.unwrap_or(0);
-                let target = String::from_utf8_lossy(&request[..read])
-                    .split_whitespace()
-                    .nth(1)
-                    .unwrap_or_default()
-                    .to_string();
-                let status = if target.starts_with("/") {
-                    "200 OK"
-                } else {
-                    "404 Not Found"
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: text/csv\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            }
-        });
+            let target = String::from_utf8_lossy(&request).split_whitespace().nth(1)
+                .unwrap_or_default().to_string();
+            let status = if target.starts_with("/") { "200 OK" } else { "404 Not Found" };
+            Ok(format!("HTTP/1.1 {status}\r\nContent-Type: text/csv\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).into_bytes())
+        })
+        .expect("start WHO Prequalification MCP fixture");
+        let base = server.base.clone();
         let who_dir = crate::test_support::TempDirGuard::new("mcp-who-region-root");
         let cache = crate::test_support::TempDirGuard::new("mcp-who-region-cache");
         let _url_fpp = WhoMcpFixtureEnv::set(
@@ -2023,7 +2003,7 @@ mod tests {
             }))
             .await
             .expect("WHO region search returns a tool result");
-        server.abort();
+        server.finish().unwrap();
 
         let value = serde_json::to_value(&result).expect("serialize MCP result");
         assert_eq!(value["isError"], true, "the WHO failure is a tool error");

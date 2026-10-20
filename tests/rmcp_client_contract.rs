@@ -1,6 +1,9 @@
 // sleep reason: existing test sleeps stay until 2081 replaces them with signals
 #![allow(clippy::disallowed_methods)]
 
+use biomcp_mcp_contract_client::test_http::{TestHttpServer, read_request};
+use tokio::io::AsyncWriteExt as _;
+
 use biomcp_mcp_contract_client::{
     ContractHarness, article_fulltext_fixture_env, assert_chart_calls,
     assert_explore_core_contract, assert_initialize_and_tools, assert_invalid_resource_error,
@@ -370,106 +373,60 @@ const MCP_DETAIL_JSON: &str = r###"{
 
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
-use std::net::TcpListener;
 use std::sync::{
     Arc, Mutex,
-    atomic::{AtomicBool, AtomicUsize, Ordering},
+    atomic::{AtomicUsize, Ordering},
 };
 
 struct RequestCounterFixture {
     base: String,
     requests: Arc<AtomicUsize>,
     trace: Arc<Mutex<Vec<String>>>,
-    stop: Arc<AtomicBool>,
-    thread: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 impl RequestCounterFixture {
     fn start() -> anyhow::Result<Self> {
-        let listener = TcpListener::bind(("127.0.0.1", 0))?;
-        listener.set_nonblocking(true)?;
-        let base = format!("http://{}", listener.local_addr()?);
         let requests = Arc::new(AtomicUsize::new(0));
         let trace = Arc::new(Mutex::new(Vec::new()));
-        let thread_trace = Arc::clone(&trace);
-        let stop = Arc::new(AtomicBool::new(false));
-        let thread_requests = Arc::clone(&requests);
-        let thread_stop = Arc::clone(&stop);
-        let thread = thread::spawn(move || {
-            while !thread_stop.load(Ordering::SeqCst) {
-                match listener.accept() {
-                    Ok((mut stream, _)) => {
-                        stream
-                            .set_nonblocking(false)
-                            .expect("blocking request counter connection");
-                        let started = std::time::Instant::now();
-                        let mut request = [0_u8; 2048];
-                        let mut len = 0;
-                        let read = loop {
-                            match stream.read(&mut request[len..]) {
-                                Ok(0) => break Ok(len),
-                                Ok(bytes) => {
-                                    len += bytes;
-                                    if len == request.len()
-                                        || request[..len].windows(4).any(|part| part == b"\r\n\r\n")
-                                    {
-                                        break Ok(len);
-                                    }
-                                }
-                                Err(error) => break Err(error),
-                            }
-                        };
-                        let read_elapsed = started.elapsed();
-                        let request_line = match &read {
-                            Ok(bytes) => safe_counter_request_line(&request[..*bytes]),
-                            Err(error) => format!("read_error={:?}", error.kind()),
-                        };
-                        let headers_complete = read.as_ref().is_ok_and(|bytes| {
-                            request[..*bytes].windows(4).any(|part| part == b"\r\n\r\n")
-                        });
-                        let body = r#"{"total":0,"data":[]}"#;
-                        let response = format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                            body.len()
-                        );
-                        let count = if headers_complete {
-                            thread_requests.fetch_add(1, Ordering::SeqCst) + 1
-                        } else {
-                            thread_requests.load(Ordering::SeqCst)
-                        };
-                        let write_outcome = headers_complete.then(|| {
-                            stream
-                                .write_all(response.as_bytes())
-                                .map_err(|error| error.kind())
-                        });
-                        let mut trace = thread_trace.lock().expect("request trace");
-                        if trace.len() < 32 {
-                            trace.push(format!(
-                            "connection={count} {request_line} read={:?} headers_complete={headers_complete} read_elapsed={read_elapsed:?} write={write_outcome:?} elapsed={:?}",
-                            read.map_err(|error| error.kind()), started.elapsed()
-                            ));
-                        }
-                    }
-                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        thread::sleep(Duration::from_millis(5))
-                    }
-                    Err(_) => return,
+        let captured = trace.clone();
+        let counted = requests.clone();
+        let server = TestHttpServer::spawn(move |mut stream| {
+            let captured = captured.clone();
+            let counted = counted.clone();
+            async move {
+                let started = std::time::Instant::now();
+                let Some(request) = read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+                let read_elapsed = started.elapsed();
+                let request_line = safe_counter_request_line(&request);
+                let count = counted.fetch_add(1, Ordering::SeqCst) + 1;
+                let body = r#"{"total":0,"data":[]}"#;
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let written = stream.write_all(response.as_bytes()).await;
+                let mut trace = captured.lock().expect("request trace");
+                if trace.len() < 32 {
+                    trace.push(format!("connection={count} {request_line} read=Ok({}) headers_complete=true read_elapsed={read_elapsed:?} write={:?} elapsed={:?}", request.len(), written.as_ref().map_err(|error| error.kind()), started.elapsed()));
                 }
+                written
             }
-        });
+        })?;
         Ok(Self {
-            base,
+            base: server.base.clone(),
             requests,
             trace,
-            stop,
-            thread: Some(thread),
+            server,
         })
     }
 }
 
 #[test]
 fn request_counter_waits_for_complete_request_headers() -> anyhow::Result<()> {
-    let fixture = RequestCounterFixture::start()?;
+    let mut fixture = RequestCounterFixture::start()?;
     let address = fixture
         .base
         .strip_prefix("http://")
@@ -494,6 +451,7 @@ fn request_counter_waits_for_complete_request_headers() -> anyhow::Result<()> {
     stream.read_to_string(&mut response)?;
     assert!(response.ends_with(r#"{"total":0,"data":[]}"#));
     assert_eq!(fixture.requests.load(Ordering::SeqCst), 1);
+    fixture.server.finish().unwrap();
     Ok(())
 }
 
@@ -528,14 +486,6 @@ fn safe_counter_request_line(request: &[u8]) -> String {
     format!("{method} {path}?<redacted> {version} expected_prose_query={expected_query}")
 }
 
-impl Drop for RequestCounterFixture {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::SeqCst);
-        if let Some(thread) = self.thread.take() {
-            thread.join().expect("join request counter");
-        }
-    }
-}
 use std::thread;
 use std::time::Duration;
 
@@ -554,78 +504,37 @@ const FAERS_REPORT_PAGE: &str = r#"{
 struct OpenFdaFixture {
     base: String,
     trace: Arc<Mutex<Vec<String>>>,
-    stop: Arc<AtomicBool>,
-    thread: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 impl OpenFdaFixture {
     fn start() -> Self {
-        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind OpenFDA fixture");
-        listener
-            .set_nonblocking(true)
-            .expect("nonblocking OpenFDA fixture");
-        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-        let stop = Arc::new(AtomicBool::new(false));
-        let thread_stop = Arc::clone(&stop);
         let trace = Arc::new(Mutex::new(Vec::new()));
-        let thread_trace = Arc::clone(&trace);
-        let thread = thread::spawn(move || {
-            while !thread_stop.load(Ordering::SeqCst) {
-                let Ok((mut stream, _)) = listener.accept() else {
-                    thread::sleep(Duration::from_millis(5));
-                    continue;
-                };
-                // Accepted sockets inherit the listener's nonblocking mode on
-                // macOS. Wait for every header byte before replying.
-                stream
-                    .set_nonblocking(false)
-                    .expect("blocking OpenFDA connection");
-                let mut request = Vec::new();
-                let mut chunk = [0_u8; 1024];
-                let mut read_error = None;
-                while !request.windows(4).any(|window| window == b"\r\n\r\n") {
-                    let read = match stream.read(&mut chunk) {
-                        Ok(read) => read,
-                        Err(error) => {
-                            read_error = Some(error.kind());
-                            break;
-                        }
-                    };
-                    if read == 0 {
-                        break;
-                    }
-                    request.extend_from_slice(&chunk[..read]);
-                }
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    FAERS_REPORT_PAGE.len(),
-                    FAERS_REPORT_PAGE
-                );
-                let mut trace = thread_trace.lock().expect("OpenFDA trace");
-                let write = stream
-                    .write_all(response.as_bytes())
-                    .map_err(|error| error.kind());
-                let headers_complete = request.windows(4).any(|part| part == b"\r\n\r\n");
+        let captured = trace.clone();
+        let server = TestHttpServer::spawn(move |mut stream| {
+            let captured = captured.clone();
+            async move {
+                let Some(request) = read_request(&mut stream).await? else { return Ok(()); };
+                let response = format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", FAERS_REPORT_PAGE.len(), FAERS_REPORT_PAGE);
+                let written = stream.write_all(response.as_bytes()).await;
+                let mut trace = captured.lock().expect("OpenFDA trace");
                 if trace.len() < 8 {
-                    trace.push(format!(
-                        "request_bytes={} headers_complete={headers_complete} read_error={read_error:?} status=200 response_bytes={} write={write:?}",
-                        request.len(), response.len()
-                    ));
+                    trace.push(format!("request_bytes={} headers_complete=true read_error=None status=200 response_bytes={} write={:?}", request.len(), response.len(), written.as_ref().map_err(|error| error.kind())));
                 }
+                written
             }
-        });
+        }).expect("start OpenFDA fixture");
         Self {
-            base,
+            base: server.base.clone(),
             trace,
-            stop,
-            thread: Some(thread),
+            server,
         }
     }
 }
 
 #[test]
 fn openfda_fixture_waits_for_complete_request_headers() -> anyhow::Result<()> {
-    let fixture = OpenFdaFixture::start();
+    let mut fixture = OpenFdaFixture::start();
     let address = fixture
         .base
         .strip_prefix("http://")
@@ -648,16 +557,8 @@ fn openfda_fixture_waits_for_complete_request_headers() -> anyhow::Result<()> {
     let mut response = String::new();
     stream.read_to_string(&mut response)?;
     assert!(response.ends_with(FAERS_REPORT_PAGE));
+    fixture.server.finish().unwrap();
     Ok(())
-}
-
-impl Drop for OpenFdaFixture {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::SeqCst);
-        if let Some(thread) = self.thread.take() {
-            thread.join().expect("join OpenFDA fixture");
-        }
-    }
 }
 
 const MYDISEASE_MM_RESPONSE: &[u8] = include_bytes!("../testdata/sources/mydisease/query_mm.json");
@@ -674,78 +575,38 @@ const MYGENE_TP53_RESPONSE: &[u8] = br#"{"total":1,"hits":[{"symbol":"TP53","nam
 /// shutdown needs no clock wait.
 struct RefusalFixtureServer {
     base: String,
-    addr: std::net::SocketAddr,
-    stop: Arc<AtomicBool>,
-    thread: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 impl RefusalFixtureServer {
     fn start() -> anyhow::Result<Self> {
-        let listener = TcpListener::bind(("127.0.0.1", 0))?;
-        let addr = listener.local_addr()?;
-        let base = format!("http://{addr}");
-        let stop = Arc::new(AtomicBool::new(false));
-        let thread_stop = Arc::clone(&stop);
-        let thread = thread::spawn(move || {
-            for stream in listener.incoming() {
-                if thread_stop.load(Ordering::SeqCst) {
-                    break;
-                }
-                let Ok(mut stream) = stream else {
-                    continue;
-                };
-                let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
-                // The production GET field lists make a request line span
-                // TCP segments, so read until the headers end before routing.
-                let mut request = vec![0_u8; 32 * 1024];
-                let mut len = 0_usize;
-                while let Ok(read) = stream.read(&mut request[len..]) {
-                    len += read;
-                    if read == 0
-                        || len == request.len()
-                        || request[..len].windows(4).any(|w| w == b"\r\n\r\n")
-                    {
-                        break;
-                    }
-                }
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                let body: &[u8] = if request.contains("/uniprotkb/P04637.json") {
-                    UNIPROT_P04637_RESPONSE
-                } else if request.contains("/query?")
-                    && (request.contains("p.S183Y") || request.contains("dbnsfp"))
-                {
-                    MYVARIANT_TP53_S183Y_RESPONSE
-                } else if request.contains("/query?") && request.contains("MM") {
-                    MYDISEASE_MM_RESPONSE
-                } else if request.contains("/query?") {
-                    MYGENE_TP53_RESPONSE
-                } else {
-                    br#"{"total":0,"hits":[]}"#
-                };
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes());
-                let _ = stream.write_all(body);
-            }
-        });
+        let server = TestHttpServer::respond(|request| async move {
+            let request = String::from_utf8_lossy(&request);
+            let body: &[u8] = if request.contains("/uniprotkb/P04637.json") {
+                UNIPROT_P04637_RESPONSE
+            } else if request.contains("/query?")
+                && (request.contains("p.S183Y") || request.contains("dbnsfp"))
+            {
+                MYVARIANT_TP53_S183Y_RESPONSE
+            } else if request.contains("/query?") && request.contains("MM") {
+                MYDISEASE_MM_RESPONSE
+            } else if request.contains("/query?") {
+                MYGENE_TP53_RESPONSE
+            } else {
+                br#"{"total":0,"hits":[]}"#
+            };
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            let mut response = response.into_bytes();
+            response.extend_from_slice(body);
+            Ok(response)
+        })?;
         Ok(Self {
-            base,
-            addr,
-            stop,
-            thread: Some(thread),
+            base: server.base.clone(),
+            server,
         })
-    }
-}
-
-impl Drop for RefusalFixtureServer {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::SeqCst);
-        let _ = std::net::TcpStream::connect(self.addr);
-        if let Some(thread) = self.thread.take() {
-            thread.join().expect("join refusal fixture");
-        }
     }
 }
 
@@ -1293,8 +1154,8 @@ async fn raw_article_batch_contract_is_safe_over_http() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread")]
 async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
     let harness = harness();
-    let (_thread, ols_url, requests) = start_counting_ols4_stub()?;
-    let (_medline_thread, medline_url) = start_ols4_stub()?;
+    let (mut ols_server, ols_url, requests) = start_counting_ols4_stub()?;
+    let (mut medline_server, medline_url) = start_ols4_stub()?;
     // A fresh empty cache root keeps the spawned server's shared-client
     // construction fast and load-insensitive: startup maintenance on the
     // default user cache grows with that cache, not with this contract.
@@ -1319,6 +1180,8 @@ async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
     assert_eq!(requests.load(Ordering::SeqCst), 1);
 
     client.cancel().await?;
+    ols_server.finish()?;
+    medline_server.finish()?;
     Ok(())
 }
 
@@ -1326,7 +1189,7 @@ async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
 async fn raw_and_typed_article_query_validation_converges_before_provider_work()
 -> anyhow::Result<()> {
     let harness = harness();
-    let fixture = RequestCounterFixture::start()?;
+    let mut fixture = RequestCounterFixture::start()?;
     // Counting requires every valid call to reach the origin, even when the
     // supported cache mode permits reuse of expired responses. The fixture
     // must declare its answers nonstorable rather than rely on revalidation.
@@ -1576,6 +1439,7 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
         fixture.trace.lock().expect("request trace")
     );
     client.cancel().await?;
+    fixture.server.finish().unwrap();
     Ok(())
 }
 
@@ -1672,7 +1536,7 @@ async fn raw_mcp_rejects_contradictory_variant_filters_and_non_trial_batch_sourc
 async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts()
 -> anyhow::Result<()> {
     let harness = harness();
-    let fixture = OpenFdaFixture::start();
+    let mut fixture = OpenFdaFixture::start();
     let cache = tempfile::tempdir()?;
     let client = harness
         .spawn_stdio_client(
@@ -1792,13 +1656,14 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
     );
 
     client.cancel().await?;
+    fixture.server.finish().unwrap();
     Ok(())
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> anyhow::Result<()> {
     let harness = harness();
-    let fixture = OpenFdaFixture::start();
+    let mut fixture = OpenFdaFixture::start();
     let cache = tempfile::tempdir()?;
     let client = harness
         .spawn_stdio_client(
@@ -1843,6 +1708,7 @@ async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> 
     assert!(markdown.contains("does not establish causality"));
 
     client.cancel().await?;
+    fixture.server.finish().unwrap();
     Ok(())
 }
 
@@ -1851,7 +1717,7 @@ async fn mcp_health_names_local_datasets_without_local_paths() -> anyhow::Result
     let harness = harness();
     // Every API probe answers at one loopback origin, so the report renders
     // from the local rows this test is about instead of upstream networks.
-    let probes = RequestCounterFixture::start()?;
+    let mut probes = RequestCounterFixture::start()?;
     let home = tempfile::tempdir()?;
     let env = [
         ("HOME", home.path().display().to_string()),
@@ -1908,6 +1774,7 @@ async fn mcp_health_names_local_datasets_without_local_paths() -> anyhow::Result
         assert!(row.get("local_path").is_none(), "row carried a path: {row}");
     }
     client.cancel().await?;
+    probes.server.finish().unwrap();
     Ok(())
 }
 
@@ -2034,7 +1901,7 @@ async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Res
 #[ignore = "live external-service full contract; run through make verify"]
 async fn rmcp_child_process_client_verifies_stdio_full_contract() -> anyhow::Result<()> {
     let harness = harness();
-    let (_ols_thread, ols_url) = start_ols4_stub()?;
+    let (mut ols_server, ols_url) = start_ols4_stub()?;
     let (client, pid) = harness
         .spawn_stdio_client_with_pid(&[
             ("BIOMCP_OLS4_BASE", ols_url.clone()),
@@ -2052,6 +1919,7 @@ async fn rmcp_child_process_client_verifies_stdio_full_contract() -> anyhow::Res
 
     terminate_process(pid)?;
     client.cancel().await?;
+    ols_server.finish()?;
     Ok(())
 }
 
@@ -2122,7 +1990,7 @@ async fn rmcp_streamable_http_client_verifies_core_contract() -> anyhow::Result<
 #[ignore = "live external-service full contract; run through make verify"]
 async fn rmcp_streamable_http_client_verifies_full_contract() -> anyhow::Result<()> {
     let harness = harness();
-    let (_ols_thread, ols_url) = start_ols4_stub()?;
+    let (mut ols_server, ols_url) = start_ols4_stub()?;
     let (mut child, base_url) = harness
         .spawn_http_server(&[
             ("BIOMCP_OLS4_BASE", ols_url.clone()),
@@ -2144,6 +2012,7 @@ async fn rmcp_streamable_http_client_verifies_full_contract() -> anyhow::Result<
     .await;
 
     child.kill().await.ok();
+    ols_server.finish()?;
     result
 }
 
@@ -2229,7 +2098,7 @@ fn assert_mcp_error_keeps_cli_lines(cli_text: &str, mcp_text: &str, command: &st
 #[tokio::test(flavor = "multi_thread")]
 async fn mcp_error_text_keeps_each_cli_refusal_line() -> anyhow::Result<()> {
     let harness = harness();
-    let fixture = RefusalFixtureServer::start()?;
+    let mut fixture = RefusalFixtureServer::start()?;
     let home = tempfile::tempdir()?;
     let env = refusal_env(&fixture, home.path());
     let client = harness.spawn_stdio_client(&env).await?;
@@ -2251,6 +2120,7 @@ async fn mcp_error_text_keeps_each_cli_refusal_line() -> anyhow::Result<()> {
     }
 
     client.cancel().await?;
+    fixture.server.finish().unwrap();
     Ok(())
 }
 

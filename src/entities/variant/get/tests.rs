@@ -4,7 +4,7 @@ use super::super::test_support::*;
 use super::*;
 use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 struct FixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
 
@@ -39,56 +39,54 @@ fn fixture_response(body: &str) -> Vec<u8> {
     .into_bytes()
 }
 
-async fn population_fixture_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind population fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn population_fixture_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock requests")
-                    .push(request.clone());
-                let body = if request.starts_with("GET /query?") {
-                    if request.contains("rs335") {
-                        r#"{"total":1,"hits":[{"_id":"chr11:g.5248233T>A","dbsnp":{"rsid":"rs335"}}]}"#
-                    } else {
-                        r#"{"total":1,"hits":[{"_id":"chr11:g.5248232T>A","dbsnp":{"rsid":"rs334"}}]}"#
-                    }
-                } else if request.starts_with("GET /variant/") {
-                    r#"{"_id":"chr11:g.5227002T>A","dbsnp":{"rsid":"rs334"}}"#
-                } else if request.starts_with("GET /refsnp/335") {
-                    r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh37.p13","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.9","position":5248232,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
-                } else if request.starts_with("GET /refsnp/334") {
-                    r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh38.p14","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.10","position":5227001,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
-                } else if request.starts_with("POST /")
-                    && request.contains("\"variantId\":\"11-5227002-T-A\"")
-                {
-                    r#"{"data":{"variant":{"variant_id":"11-5227002-T-A","exome":{"ac":2335,"an":1458356,"homozygote_count":31,"hemizygote_count":0,"filters":[],"faf95":{"popmax":0.05474387,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]},"genome":{"ac":1937,"an":152294,"homozygote_count":0,"hemizygote_count":0,"filters":["RF"],"faf95":{"popmax":0.04188667,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]}}}}"#
-                } else if request.starts_with("POST /") {
-                    r#"{"data":{"variant":null}}"#
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock requests")
+                .push(request.clone());
+            let body = if request.starts_with("GET /query?") {
+                if request.contains("rs335") {
+                    r#"{"total":1,"hits":[{"_id":"chr11:g.5248233T>A","dbsnp":{"rsid":"rs335"}}]}"#
                 } else {
-                    r#"{"total":0,"hits":[]}"#
-                };
-                stream
-                    .write_all(&fixture_response(body))
-                    .await
-                    .expect("write fixture response");
-            });
+                    r#"{"total":1,"hits":[{"_id":"chr11:g.5248232T>A","dbsnp":{"rsid":"rs334"}}]}"#
+                }
+            } else if request.starts_with("GET /variant/") {
+                r#"{"_id":"chr11:g.5227002T>A","dbsnp":{"rsid":"rs334"}}"#
+            } else if request.starts_with("GET /refsnp/335") {
+                r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh37.p13","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.9","position":5248232,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
+            } else if request.starts_with("GET /refsnp/334") {
+                r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh38.p14","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.10","position":5227001,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
+            } else if request.starts_with("POST /")
+                && request.contains("\"variantId\":\"11-5227002-T-A\"")
+            {
+                r#"{"data":{"variant":{"variant_id":"11-5227002-T-A","exome":{"ac":2335,"an":1458356,"homozygote_count":31,"hemizygote_count":0,"filters":[],"faf95":{"popmax":0.05474387,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]},"genome":{"ac":1937,"an":152294,"homozygote_count":0,"hemizygote_count":0,"filters":["RF"],"faf95":{"popmax":0.04188667,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]}}}}"#
+            } else if request.starts_with("POST /") {
+                r#"{"data":{"variant":null}}"#
+            } else {
+                r#"{"total":0,"hits":[]}"#
+            };
+            stream
+                .write_all(&fixture_response(body))
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -107,65 +105,64 @@ fn identity_hit(
 
 async fn transcript_alias_fixture_server(
     with_exact_alias: bool,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind transcript alias fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock requests")
-                    .push(request.clone());
-                let hit = if with_exact_alias {
-                    r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_000249.4:c.678-14_678-3del","LRG_216t1:c.678-14_678-3del12"]}}}"#
-                } else {
-                    r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_001258271.2:c.678-14_678-3del"]}}}"#
-                };
-                let body = if request.starts_with("GET /v1/query?") {
-                    format!(r#"{{"total":1,"hits":[{hit}]}}"#)
-                } else if request.starts_with("GET /v1/variant/") {
-                    hit.to_string()
-                } else {
-                    // Mutalyzer, VariantValidator, and CAR all refuse the
-                    // intronic deletion range, so the alias search is the only
-                    // resolution route left.
-                    r#"{"code":422,"success":false,"error":"unsupported"}"#.to_string()
-                };
-                let status = if request.starts_with("GET /v1/") {
-                    "200 OK"
-                } else {
-                    "422 Unprocessable Entity"
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock requests")
+                .push(request.clone());
+            let hit = if with_exact_alias {
+                r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_000249.4:c.678-14_678-3del","LRG_216t1:c.678-14_678-3del12"]}}}"#
+            } else {
+                r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_001258271.2:c.678-14_678-3del"]}}}"#
+            };
+            let body = if request.starts_with("GET /v1/query?") {
+                format!(r#"{{"total":1,"hits":[{hit}]}}"#)
+            } else if request.starts_with("GET /v1/variant/") {
+                hit.to_string()
+            } else {
+                // Mutalyzer, VariantValidator, and CAR all refuse the
+                // intronic deletion range, so the alias search is the only
+                // resolution route left.
+                r#"{"code":422,"success":false,"error":"unsupported"}"#.to_string()
+            };
+            let status = if request.starts_with("GET /v1/") {
+                "200 OK"
+            } else {
+                "422 Unprocessable Entity"
+            };
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn transcript_hgvs_alias_resolves_intronic_deletion_when_normalizers_refuse() {
-    let (base, requests, server) = transcript_alias_fixture_server(true).await;
+    let (base, requests, mut server) = transcript_alias_fixture_server(true).await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MUTALYZER_BASE_URL", &format!("{base}/api"));
@@ -176,7 +173,7 @@ async fn transcript_hgvs_alias_resolves_intronic_deletion_when_normalizers_refus
     let (variant, id_format, _) = resolve_base_with_hit("NM_000249.4:c.678-14_678-3del", None)
         .await
         .expect("intronic deletion resolves");
-    server.abort();
+    server.finish().unwrap();
 
     assert!(matches!(id_format, VariantIdFormat::HgvsGenomic(_)));
     assert_eq!(variant.id, "chr3:g.37055906_37055917del");
@@ -191,7 +188,7 @@ async fn transcript_hgvs_alias_resolves_intronic_deletion_when_normalizers_refus
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn transcript_hgvs_alias_refuses_hits_without_the_exact_coding_alias() {
-    let (base, requests, server) = transcript_alias_fixture_server(false).await;
+    let (base, requests, mut server) = transcript_alias_fixture_server(false).await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MUTALYZER_BASE_URL", &format!("{base}/api"));
@@ -202,7 +199,7 @@ async fn transcript_hgvs_alias_refuses_hits_without_the_exact_coding_alias() {
     let error = resolve_base_with_hit("NM_000249.4:c.678-14_678-3del", None)
         .await
         .expect_err("a different transcript's alias must not resolve");
-    server.abort();
+    server.finish().unwrap();
 
     let message = error.to_string();
     assert!(message.contains("not found"));
@@ -418,69 +415,66 @@ const MYVARIANT_RECORDED_404: &[u8] = br#"{"code":404,"success":false,"error":"N
 
 /// Replay the two recorded builds and log every request line, so a test can
 /// prove the lookup queried exactly the builds it was allowed to.
-async fn assembly_contract_fixture_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind assembly contract fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn assembly_contract_fixture_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured.lock().expect("lock requests").push(
-                    request
-                        .split_whitespace()
-                        .nth(1)
-                        .unwrap_or_default()
-                        .to_string(),
-                );
-                let (status, body) = if request.starts_with("GET /v1/variant/chr7:g.140453136A%3ET")
-                {
-                    if request.contains("assembly=hg19") {
-                        ("200 OK", BRAF_V600E_GRCH37_REPLY.to_vec())
-                    } else {
-                        ("404 Not Found", MYVARIANT_RECORDED_404.to_vec())
-                    }
-                } else if request.starts_with("GET /v1/variant/chr7:g.140753336A%3ET") {
-                    if request.contains("assembly=hg38") {
-                        ("200 OK", BRAF_V600E_GRCH38_REPLY.to_vec())
-                    } else {
-                        ("404 Not Found", MYVARIANT_RECORDED_404.to_vec())
-                    }
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured.lock().expect("lock requests").push(
+                request
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or_default()
+                    .to_string(),
+            );
+            let (status, body) = if request.starts_with("GET /v1/variant/chr7:g.140453136A%3ET")
+            {
+                if request.contains("assembly=hg19") {
+                    ("200 OK", BRAF_V600E_GRCH37_REPLY.to_vec())
                 } else {
-                    (
-                        "404 Not Found",
-                        format!(
-                            "{{\"error\":\"fixture path not found: {}\"}}",
-                            request.split_whitespace().nth(1).unwrap_or_default()
-                        )
-                        .into_bytes(),
+                    ("404 Not Found", MYVARIANT_RECORDED_404.to_vec())
+                }
+            } else if request.starts_with("GET /v1/variant/chr7:g.140753336A%3ET") {
+                if request.contains("assembly=hg38") {
+                    ("200 OK", BRAF_V600E_GRCH38_REPLY.to_vec())
+                } else {
+                    ("404 Not Found", MYVARIANT_RECORDED_404.to_vec())
+                }
+            } else {
+                (
+                    "404 Not Found",
+                    format!(
+                        "{{\"error\":\"fixture path not found: {}\"}}",
+                        request.split_whitespace().nth(1).unwrap_or_default()
                     )
-                };
-                let head = format!(
-                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                stream
-                    .write_all(head.as_bytes())
-                    .await
-                    .expect("write fixture response head");
-                stream
-                    .write_all(&body)
-                    .await
-                    .expect("write fixture response body");
-            });
+                    .into_bytes(),
+                )
+            };
+            let head = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream
+                .write_all(head.as_bytes())
+                .await?;
+            stream
+                .write_all(&body)
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -495,7 +489,7 @@ fn variant_lookup_requests(requests: &[String]) -> Vec<String> {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn declared_assembly_hg38_on_a_grch37_only_coordinate_refuses_as_not_found() {
-    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let (base, requests, mut server) = assembly_contract_fixture_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_CACHE_MODE", "off");
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
@@ -503,7 +497,7 @@ async fn declared_assembly_hg38_on_a_grch37_only_coordinate_refuses_as_not_found
     let error = get_with_workflow_signals("chr7:g.140453136A>T", &[], Some(GenomeBuild::Grch38))
         .await
         .expect_err("a declared build never answers from the other build");
-    server.abort();
+    server.finish().unwrap();
 
     let message = error.to_string();
     assert!(message.contains("attempted GRCh38"), "{message}");
@@ -523,7 +517,7 @@ async fn declared_assembly_hg38_on_a_grch37_only_coordinate_refuses_as_not_found
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn declared_assembly_hg19_on_the_grch37_only_coordinate_finds_braf() {
-    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let (base, requests, mut server) = assembly_contract_fixture_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_CACHE_MODE", "off");
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
@@ -532,7 +526,7 @@ async fn declared_assembly_hg19_on_the_grch37_only_coordinate_finds_braf() {
         get_with_workflow_signals("chr7:g.140453136A>T", &[], Some(GenomeBuild::Grch37))
             .await
             .expect("the declared build that holds the record resolves it");
-    server.abort();
+    server.finish().unwrap();
 
     assert_eq!(variant.gene, "BRAF");
     assert_eq!(variant.rsid.as_deref(), Some("rs113488022"));
@@ -553,7 +547,7 @@ async fn declared_assembly_hg19_on_the_grch37_only_coordinate_finds_braf() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn declared_assembly_agreeing_with_the_prefix_resolves_the_one_build_hit() {
-    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let (base, requests, mut server) = assembly_contract_fixture_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_CACHE_MODE", "off");
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
@@ -562,7 +556,7 @@ async fn declared_assembly_agreeing_with_the_prefix_resolves_the_one_build_hit()
         get_with_workflow_signals("GRCh38:chr7:g.140753336A>T", &[], Some(GenomeBuild::Grch38))
             .await
             .expect("a flag that agrees with the prefix resolves as the prefix alone");
-    server.abort();
+    server.finish().unwrap();
 
     assert_eq!(variant.gene, "BRAF");
     assert_eq!(variant.rsid.as_deref(), Some("rs113488022"));
@@ -586,7 +580,7 @@ async fn declared_assembly_agreeing_with_the_prefix_resolves_the_one_build_hit()
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn declared_assembly_conflicting_with_the_prefix_refuses_naming_both_builds() {
-    let (base, requests, server) = assembly_contract_fixture_server().await;
+    let (base, requests, mut server) = assembly_contract_fixture_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_CACHE_MODE", "off");
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
@@ -595,7 +589,7 @@ async fn declared_assembly_conflicting_with_the_prefix_refuses_naming_both_build
         get_with_workflow_signals("GRCh38:chr7:g.140753336A>T", &[], Some(GenomeBuild::Grch37))
             .await
             .expect_err("a flag that contradicts the prefix refuses");
-    server.abort();
+    server.finish().unwrap();
 
     let message = error.to_string();
     assert!(message.contains("GRCh38"), "{message}");
@@ -797,42 +791,41 @@ fn requested_civic_profile(request: &str) -> Option<String> {
         })
 }
 
-async fn civic_recorded_reply_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind CIViC recorded-reply fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn civic_recorded_reply_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock requests")
-                    .push(request.clone());
-                let body = requested_civic_profile(&request)
-                    .map(|profile| match profile.as_str() {
-                        "BRAF V600E" => BRAF_V600E_CIVIC_GRAPHQL_REPLY.to_vec(),
-                        "EGFR C797S" => EGFR_C797S_CIVIC_GRAPHQL_REPLY.to_vec(),
-                        _ => UNKNOWN_PROFILE_CIVIC_REPLY.as_bytes().to_vec(),
-                    })
-                    .unwrap_or_else(|| UNKNOWN_PROFILE_CIVIC_REPLY.as_bytes().to_vec());
-                stream
-                    .write_all(&fixture_response(&String::from_utf8_lossy(&body)))
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock requests")
+                .push(request.clone());
+            let body = requested_civic_profile(&request)
+                .map(|profile| match profile.as_str() {
+                    "BRAF V600E" => BRAF_V600E_CIVIC_GRAPHQL_REPLY.to_vec(),
+                    "EGFR C797S" => EGFR_C797S_CIVIC_GRAPHQL_REPLY.to_vec(),
+                    _ => UNKNOWN_PROFILE_CIVIC_REPLY.as_bytes().to_vec(),
+                })
+                .unwrap_or_else(|| UNKNOWN_PROFILE_CIVIC_REPLY.as_bytes().to_vec());
+            stream
+                .write_all(&fixture_response(&String::from_utf8_lossy(&body)))
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -862,7 +855,7 @@ fn civic_molecular_profile_name_sends_the_one_letter_change() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn civic_reports_the_accepted_evidence_the_one_letter_name_finds() {
-    let (base, requests, server) = civic_recorded_reply_server().await;
+    let (base, requests, mut server) = civic_recorded_reply_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_CIVIC_BASE", &base);
     env.set("BIOMCP_CACHE_MODE", "off");
@@ -904,7 +897,7 @@ async fn civic_reports_the_accepted_evidence_the_one_letter_name_finds() {
     assert_eq!(egfr_context.evidence_total_count, 2);
     assert_eq!(egfr_context.assertion_total_count, 0);
 
-    server.abort();
+    server.finish().unwrap();
     let requested = requests
         .lock()
         .expect("lock requests")
@@ -931,7 +924,7 @@ async fn population_request_requires_a_grch38_genomic_coordinate() {
         Some("7-140453136-A-T")
     );
 
-    let (base, requests, server) = population_fixture_server().await;
+    let (base, requests, mut server) = population_fixture_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &base);
     env.set("BIOMCP_GNOMAD_BASE", &base);
@@ -948,7 +941,7 @@ async fn population_request_requires_a_grch38_genomic_coordinate() {
     let (grch37_only, _) = get_with_workflow_signals("rs335", &sections, None)
         .await
         .expect("GRCh37-only rsID response");
-    server.abort();
+    server.finish().unwrap();
 
     let rsid_population = serde_json::to_value(
         from_rsid
@@ -1402,65 +1395,52 @@ const UNIPROT_P04637_RESPONSE: &[u8] = include_bytes!(concat!(
 ));
 const MYGENE_TP53_RESPONSE: &[u8] = br#"{"total":1,"hits":[{"symbol":"TP53","name":"tumor protein p53","entrezgene":7157,"type_of_gene":"protein-coding","ensembl":{"gene":"ENSG00000141510"},"uniprot":{"Swiss-Prot":"P04637"}}]}"#;
 
-async fn protein_change_uniprot_fixture_server()
--> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind protein-change fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+async fn protein_change_uniprot_fixture_server() -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                // The production GET field list makes the request line span
-                // TCP segments, so read until the headers end before
-                // routing — a single read would answer mid-request.
-                let mut request = vec![0_u8; 32 * 1024];
-                let mut len = 0_usize;
-                loop {
-                    let read = stream
-                        .read(&mut request[len..])
-                        .await
-                        .expect("read fixture request");
-                    len += read;
-                    if read == 0
-                        || len == request.len()
-                        || request[..len].windows(4).any(|w| w == b"\r\n\r\n")
-                    {
-                        break;
-                    }
-                }
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock requests")
-                    .push(request.clone());
-                let body: &[u8] = if request.starts_with("GET /v1/query?")
-                    && request.contains("dbnsfp.genename%3ATP53")
-                    && request.contains("p.S183Y")
-                {
-                    TP53_S183Y_RESPONSE
-                } else if request.starts_with("GET /query?") && request.contains("TP53") {
-                    MYGENE_TP53_RESPONSE
-                } else if request.starts_with("GET /uniprotkb/P04637.json") {
-                    UNIPROT_P04637_RESPONSE
-                } else {
-                    br#"{"not":"routed"}"#
-                };
-                let head = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                stream.write_all(head.as_bytes()).await.expect("write head");
-                stream
-                    .write_all(body)
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            // The production GET field list makes the request line span
+            // TCP segments, so read until the headers end before
+            // routing — a single read would answer mid-request.
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock requests")
+                .push(request.clone());
+            let body: &[u8] = if request.starts_with("GET /v1/query?")
+                && request.contains("dbnsfp.genename%3ATP53")
+                && request.contains("p.S183Y")
+            {
+                TP53_S183Y_RESPONSE
+            } else if request.starts_with("GET /query?") && request.contains("TP53") {
+                MYGENE_TP53_RESPONSE
+            } else if request.starts_with("GET /uniprotkb/P04637.json") {
+                UNIPROT_P04637_RESPONSE
+            } else {
+                br#"{"not":"routed"}"#
+            };
+            let head = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(head.as_bytes()).await?;
+            stream
+                .write_all(body)
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -1473,7 +1453,7 @@ async fn protein_change_uniprot_fixture_server()
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn protein_change_get_checks_the_canonical_protein_before_answering() {
-    let (base, requests, server) = protein_change_uniprot_fixture_server().await;
+    let (base, requests, mut server) = protein_change_uniprot_fixture_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MYGENE_BASE", &base);
@@ -1483,7 +1463,7 @@ async fn protein_change_get_checks_the_canonical_protein_before_answering() {
     let error = crate::sources::with_no_cache(true, resolve_base_with_hit("TP53 S183Y", None))
         .await
         .expect_err("an isoform-only spelling of a MANE-numbered request refuses");
-    server.abort();
+    server.finish().unwrap();
 
     let message = error.to_string();
     assert!(
@@ -1508,7 +1488,7 @@ async fn protein_change_get_checks_the_canonical_protein_before_answering() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn protein_change_get_notes_unchecked_numbering_when_uniprot_is_unreachable() {
-    let (base, requests, server) = protein_change_uniprot_fixture_server().await;
+    let (base, requests, mut server) = protein_change_uniprot_fixture_server().await;
     let mut env = FixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_MYGENE_BASE", &base);
@@ -1519,7 +1499,7 @@ async fn protein_change_get_notes_unchecked_numbering_when_uniprot_is_unreachabl
         crate::sources::with_no_cache(true, resolve_base_with_hit("TP53 S183Y", None))
             .await
             .expect("the record's spelling of the request resolves with its note");
-    server.abort();
+    server.finish().unwrap();
 
     assert_eq!(variant.id, "chr17:g.7576902G>T");
     assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ser183Tyr"));

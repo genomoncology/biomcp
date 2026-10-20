@@ -426,7 +426,7 @@ async fn ctgov_eligibility_provenance_exists_only_for_explicit_text() {
 
     let recorded =
         include_str!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
-    let (base, _, server) = ctgov_json_fixture(recorded).await;
+    let (base, _, mut server) = ctgov_json_fixture(recorded).await;
     let _env = ctgov_fixture_env(&base);
     let explicit = get(
         "NCT02576665",
@@ -445,7 +445,7 @@ async fn ctgov_eligibility_provenance_exists_only_for_explicit_text() {
     )
     .await
     .expect("all detail");
-    server.abort();
+    server.finish().unwrap();
     assert!(explicit.eligibility_provenance.is_some());
     assert!(default.eligibility.is_some());
     assert!(default.eligibility_provenance.is_none());
@@ -465,7 +465,7 @@ async fn ctgov_eligibility_provenance_exists_only_for_explicit_text() {
                 .unwrap()
                 .remove("eligibilityModule");
         }
-        let (base, _, server) = ctgov_json_fixture(serde_json::to_string(&body).unwrap()).await;
+        let (base, _, mut server) = ctgov_json_fixture(serde_json::to_string(&body).unwrap()).await;
         let _env = ctgov_fixture_env(&base);
         let trial = get(
             "NCT02576665",
@@ -474,7 +474,7 @@ async fn ctgov_eligibility_provenance_exists_only_for_explicit_text() {
         )
         .await
         .unwrap_or_else(|error| panic!("{label}: {error}"));
-        server.abort();
+        server.finish().unwrap();
         assert!(trial.eligibility_provenance.is_none(), "{label}");
     }
 }

@@ -669,19 +669,21 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
         ));
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base = format!("http://{}", listener.local_addr().unwrap());
-        let server = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            let mut request = [0_u8; 2048];
-            let _ = stream.read(&mut request).await.unwrap();
+
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| async move {
+            if crate::test_support::read_request(&mut stream).await?.is_none() {
+                return Ok(());
+            }
             let response = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                 body.len()
             );
-            stream.write_all(response.as_bytes()).await.unwrap();
-            stream.write_all(body).await.unwrap();
-        });
+            stream.write_all(response.as_bytes()).await?;
+            stream.write_all(body).await?;
+            Ok(())
+        })
+        .expect("start HTTP fixture");
+        let base = server.base.clone();
         let mut env = TestEnv::new();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
         env.set(PMC_ARTICLE_BASE_ENV, &base);
@@ -698,26 +700,27 @@ mod tests {
             PmcLinkedFetch::ProofOfWork,
             "the named PMC gate outcome must survive source classification without publishing bytes"
         );
-        server.await.unwrap();
+        server.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn declared_binary_html_is_not_returned_as_bytes() {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base = format!("http://{}", listener.local_addr().unwrap());
-        let server = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            let mut request = [0_u8; 2048];
-            let _ = stream.read(&mut request).await.unwrap();
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| async move {
+            if crate::test_support::read_request(&mut stream).await?.is_none() {
+                return Ok(());
+            }
             let body = b"<!doctype html><title>Unexpected response</title>";
             let response = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                 body.len()
             );
-            stream.write_all(response.as_bytes()).await.unwrap();
-            stream.write_all(body).await.unwrap();
-        });
+            stream.write_all(response.as_bytes()).await?;
+            stream.write_all(body).await?;
+            Ok(())
+        })
+        .expect("start HTTP fixture");
+        let base = server.base.clone();
         let mut env = TestEnv::new();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
         env.set(PMC_ARTICLE_BASE_ENV, &base);
@@ -731,7 +734,7 @@ mod tests {
             PmcLinkedFetch::SourceUnavailable,
             "a declared binary delivered as HTML must be rejected even without a known PoW marker"
         );
-        server.await.unwrap();
+        server.finish().unwrap();
     }
 
     #[tokio::test]

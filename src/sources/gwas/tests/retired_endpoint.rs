@@ -8,7 +8,7 @@
 use super::super::*;
 use crate::test_support::FixtureEnv;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 macro_rules! retired_body {
     () => {
@@ -21,36 +21,38 @@ macro_rules! retired_body {
 
 async fn retired_endpoint_server(
     status_line: &'static str,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind retired endpoint fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream.read(&mut request).await.expect("read request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request.clone());
-                let body = retired_body!();
-                let response = format!(
-                    "HTTP/1.1 {status_line}\r\nContent-Type: text/plain\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request.clone());
+            let body = retired_body!();
+            let response = format!(
+                "HTTP/1.1 {status_line}\r\nContent-Type: text/plain\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -59,9 +61,9 @@ async fn associations_by_rsid_against(
 ) -> (
     Result<Vec<GwasAssociation>, BioMcpError>,
     Arc<Mutex<Vec<String>>>,
-    tokio::task::JoinHandle<()>,
+    crate::test_support::TestHttpServer,
 ) {
-    let (base, requests, server) = retired_endpoint_server(status_line).await;
+    let (base, requests, mut server) = retired_endpoint_server(status_line).await;
     let mut env = FixtureEnv::new();
     env.set("BIOMCP_GWAS_BASE", &base);
     let client = GwasClient::new().expect("client against fixture");
@@ -76,8 +78,8 @@ async fn associations_by_rsid_against(
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
-    let (result, requests, server) = associations_by_rsid_against("410 Gone").await;
-    server.abort();
+    let (result, requests, mut server) = associations_by_rsid_against("410 Gone").await;
+    server.finish().unwrap();
     let error = result.expect_err("the retired endpoint degrades as an error");
     assert_eq!(error.code(), "source_unavailable");
     let detail = format!("{error:?}");
@@ -104,8 +106,8 @@ async fn gone_by_rsid_endpoint_degrades_with_the_retirement_note() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn not_found_by_rsid_endpoint_means_no_associations() {
-    let (result, _requests, server) = associations_by_rsid_against("404 Not Found").await;
-    server.abort();
+    let (result, _requests, mut server) = associations_by_rsid_against("404 Not Found").await;
+    server.finish().unwrap();
     let associations = result.expect("a 404 settles as no associations");
     assert!(
         associations.is_empty(),

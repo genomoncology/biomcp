@@ -3,42 +3,42 @@
 use super::super::super::test_support::*;
 use super::*;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 async fn mydisease_json_fixture(
     respond: impl Fn(&str) -> Option<String> + Send + Sync + 'static,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind synthetic MyDisease fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
     let respond = Arc::new(respond);
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            let respond = respond.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let Ok(len) = stream.read(&mut request).await else {
-                    return;
-                };
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock MyDisease fixture requests")
-                    .push(request.lines().next().unwrap_or("").to_string());
-                let body =
-                    respond(&request).unwrap_or_else(|| r#"{"total":0,"hits":[]}"#.to_string());
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        let respond = respond.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock MyDisease fixture requests")
+                .push(request.lines().next().unwrap_or("").to_string());
+            let body =
+                respond(&request).unwrap_or_else(|| r#"{"total":0,"hits":[]}"#.to_string());
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -52,7 +52,7 @@ async fn mydisease_json_fixture(
 async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
     let mf_hits =
         include_str!("../../../../../testdata/sources/mydisease/query_mf.json").to_string();
-    let (disease_base, disease_requests, disease_server) =
+    let (disease_base, disease_requests, mut disease_server) =
         mydisease_json_fixture(move |request| request.contains("/query?").then(|| mf_hits.clone()))
             .await;
     let ctgov_body = r#"{"totalCount":1,"studies":[{
@@ -62,7 +62,7 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
         }
     }]}"#
         .to_string();
-    let (ctgov_base, ctgov_requests, ctgov_server) = ctgov_json_fixture(ctgov_body).await;
+    let (ctgov_base, ctgov_requests, mut ctgov_server) = ctgov_json_fixture(ctgov_body).await;
 
     let mut env = ctgov_fixture_env(&ctgov_base);
     env.set("BIOMCP_MYDISEASE_BASE", &disease_base);
@@ -79,8 +79,8 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
     .await
     .expect("the default-source keyword search still runs");
     tokio::task::yield_now().await;
-    ctgov_server.abort();
-    disease_server.abort();
+    ctgov_server.finish().unwrap();
+    disease_server.finish().unwrap();
     drop(env);
 
     let note = page
@@ -139,8 +139,8 @@ async fn default_source_names_the_ambiguous_abbreviation_keyword_search() {
 #[serial_test::serial(source_env)]
 async fn default_source_skips_the_ambiguity_note_for_full_words() {
     let ctgov_body = r#"{"totalCount":0,"studies":[]}"#.to_string();
-    let (ctgov_base, _ctgov_requests, ctgov_server) = ctgov_json_fixture(ctgov_body).await;
-    let (disease_base, disease_requests, disease_server) = mydisease_json_fixture(|request| {
+    let (ctgov_base, _ctgov_requests, mut ctgov_server) = ctgov_json_fixture(ctgov_body).await;
+    let (disease_base, disease_requests, mut disease_server) = mydisease_json_fixture(|request| {
         request
             .contains("/query?")
             .then(|| r#"{"total":0,"hits":[]}"#.to_string())
@@ -162,8 +162,8 @@ async fn default_source_skips_the_ambiguity_note_for_full_words() {
     .await
     .expect("the full-word search runs as before");
     tokio::task::yield_now().await;
-    ctgov_server.abort();
-    disease_server.abort();
+    ctgov_server.finish().unwrap();
+    disease_server.finish().unwrap();
     drop(env);
 
     assert!(
@@ -188,10 +188,10 @@ async fn default_source_skips_the_ambiguity_note_for_full_words() {
 async fn default_source_notes_the_lowercase_abbreviation_like_the_uppercase() {
     let mf_hits =
         include_str!("../../../../../testdata/sources/mydisease/query_mf.json").to_string();
-    let (disease_base, disease_requests, disease_server) =
+    let (disease_base, disease_requests, mut disease_server) =
         mydisease_json_fixture(move |request| request.contains("/query?").then(|| mf_hits.clone()))
             .await;
-    let (ctgov_base, ctgov_requests, ctgov_server) =
+    let (ctgov_base, ctgov_requests, mut ctgov_server) =
         ctgov_json_fixture(r#"{"totalCount":0,"studies":[]}"#.to_string()).await;
 
     let mut env = ctgov_fixture_env(&ctgov_base);
@@ -209,8 +209,8 @@ async fn default_source_notes_the_lowercase_abbreviation_like_the_uppercase() {
     .await
     .expect("the lowercase keyword search still runs");
     tokio::task::yield_now().await;
-    ctgov_server.abort();
-    disease_server.abort();
+    ctgov_server.finish().unwrap();
+    disease_server.finish().unwrap();
     drop(env);
 
     let note = page

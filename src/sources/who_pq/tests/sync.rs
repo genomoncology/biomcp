@@ -20,39 +20,20 @@ async fn serve_exports_once(
     api_body: String,
     vaccines_body: String,
     requests: Arc<AtomicUsize>,
-) -> String {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind WHO PQ fixture server");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    tokio::spawn(async move {
-        loop {
-            let Ok((mut stream, _)) = listener.accept().await else {
-                return;
-            };
-            let mut request = [0_u8; 4096];
-            let Ok(read) = stream.read(&mut request).await else {
-                continue;
-            };
-            let request = String::from_utf8_lossy(&request[..read]).to_string();
-            let body = if request.starts_with("GET /fpp.csv") {
-                fpp_body.clone()
-            } else if request.starts_with("GET /api.csv") {
-                api_body.clone()
-            } else if request.starts_with("GET /vaccines.csv") {
-                vaccines_body.clone()
-            } else {
-                String::new()
-            };
-            requests.fetch_add(1, Ordering::SeqCst);
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: text/csv\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                body.len()
-            );
-            let _ = stream.write_all(response.as_bytes()).await;
+) -> (String, crate::test_support::TestHttpServer) {
+    let server = crate::test_support::TestHttpServer::respond(move |request| {
+        let request = String::from_utf8_lossy(&request);
+        let body = if request.starts_with("GET /fpp.csv") { fpp_body.clone() }
+            else if request.starts_with("GET /api.csv") { api_body.clone() }
+            else if request.starts_with("GET /vaccines.csv") { vaccines_body.clone() }
+            else { String::new() };
+        requests.fetch_add(1, Ordering::SeqCst);
+        async move {
+            Ok(format!("HTTP/1.1 200 OK\r\nContent-Type: text/csv\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).into_bytes())
         }
-    });
-    base
+    })
+    .expect("start WHO PQ fixture");
+    (server.base.clone(), server)
 }
 
 fn point_export_urls_at(env: &mut EnvRestore, base: &str) {
@@ -65,7 +46,7 @@ fn point_export_urls_at(env: &mut EnvRestore, base: &str) {
 #[serial_test::serial(who_pq_sync_env)]
 async fn sync_replays_the_recorded_captures_and_reports_every_file_refreshed() {
     let requests = Arc::new(AtomicUsize::new(0));
-    let base = serve_exports_once(
+    let (base, mut server) = serve_exports_once(
         super::fixture_csv(),
         super::fixture_api_csv(),
         super::fixture_vaccine_csv(),
@@ -88,13 +69,14 @@ async fn sync_replays_the_recorded_captures_and_reports_every_file_refreshed() {
         .read_rows()
         .expect("refreshed files should parse");
     assert!(!rows.is_empty());
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(who_pq_sync_env)]
 async fn sync_attempts_every_file_and_names_the_failing_file_when_required_files_are_missing() {
     let requests = Arc::new(AtomicUsize::new(0));
-    let base = serve_exports_once(
+    let (base, mut server) = serve_exports_once(
         "wrong,header\n1,2\n".to_string(),
         super::fixture_api_csv(),
         super::fixture_vaccine_csv(),
@@ -122,6 +104,7 @@ async fn sync_attempts_every_file_and_names_the_failing_file_when_required_files
             && root.path().join(WHO_VACCINES_CSV_FILE).is_file(),
         "later exports must still land when an earlier refresh fails"
     );
+    server.finish().unwrap();
 }
 
 /// The recorded finished-pharma export with one column dropped, the shape a
@@ -146,7 +129,7 @@ fn fixture_csv_missing_basis_of_listing() -> String {
 #[serial_test::serial(who_pq_sync_env)]
 async fn sync_names_the_failing_file_and_column_in_its_final_error() {
     let requests = Arc::new(AtomicUsize::new(0));
-    let base = serve_exports_once(
+    let (base, mut server) = serve_exports_once(
         fixture_csv_missing_basis_of_listing(),
         super::fixture_api_csv(),
         super::fixture_vaccine_csv(),
@@ -223,13 +206,14 @@ async fn sync_names_the_failing_file_and_column_in_its_final_error() {
     );
     assert!(rendered.contains("who_pq.csv"));
     assert!(!rendered.contains(".."));
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(who_pq_sync_env)]
 async fn sync_partial_run_keeps_older_data_and_reports_the_failure_reason_per_file() {
     let requests = Arc::new(AtomicUsize::new(0));
-    let base = serve_exports_once(
+    let (base, mut server) = serve_exports_once(
         fixture_csv_missing_basis_of_listing(),
         super::fixture_api_csv(),
         super::fixture_vaccine_csv(),
@@ -269,6 +253,7 @@ async fn sync_partial_run_keeps_older_data_and_reports_the_failure_reason_per_fi
     );
     // The older copy survives the failed refresh.
     assert!(root.path().join(WHO_PQ_CSV_FILE).is_file());
+    server.finish().unwrap();
 }
 
 #[test]

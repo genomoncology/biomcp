@@ -4,30 +4,27 @@
 //! request, so "makes no request to the disabled source" is asserted
 //! from the provider's side of the wire.
 
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use biomcp_mcp_contract_client::test_http::TestHttpServer;
 use std::process::{Command, Output};
 use std::sync::{Arc, Mutex};
 
 struct Fixture {
     base: String,
     log: Arc<Mutex<Vec<String>>>,
+    server: TestHttpServer,
 }
 
 impl Fixture {
     fn start() -> Fixture {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("bind fixture listener");
-        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
         let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-        let server_log = Arc::clone(&log);
-        std::thread::spawn(move || {
-            for stream in listener.incoming() {
-                let Ok(stream) = stream else { break };
-                let log = Arc::clone(&server_log);
-                std::thread::spawn(move || handle(stream, log));
-            }
-        });
-        Fixture { base, log }
+        let server_log = log.clone();
+        let server = TestHttpServer::respond(move |request| {
+            let response = fixture_response(&request, &server_log);
+            async move { Ok(response) }
+        })
+        .expect("start disabled-source fixture");
+        let base = server.base.clone();
+        Fixture { base, log, server }
     }
 
     fn requests_matching(&self, needle: &str) -> usize {
@@ -40,10 +37,8 @@ impl Fixture {
     }
 }
 
-fn handle(mut stream: TcpStream, log: Arc<Mutex<Vec<String>>>) {
-    let Some((request, body)) = read_request(&mut stream) else {
-        return;
-    };
+fn fixture_response(request: &[u8], log: &Arc<Mutex<Vec<String>>>) -> Vec<u8> {
+    let request = String::from_utf8_lossy(request);
     let request_line = request.lines().next().unwrap_or_default().to_string();
     let path = request_line
         .split_whitespace()
@@ -54,7 +49,6 @@ fn handle(mut stream: TcpStream, log: Arc<Mutex<Vec<String>>>) {
         let mut log = log.lock().expect("fixture log");
         log.push(request_line);
     }
-    let _ = body;
 
     let (path_only, query): (String, String) = match path.split_once('?') {
         Some((p, q)) => (p.to_string(), q.to_string()),
@@ -69,51 +63,9 @@ fn handle(mut stream: TcpStream, log: Arc<Mutex<Vec<String>>>) {
         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         body.len()
     );
-    let _ = stream.write_all(response.as_bytes());
-    let _ = stream.write_all(body);
-    let _ = stream.flush();
-}
-
-fn read_request(stream: &mut TcpStream) -> Option<(String, Vec<u8>)> {
-    let _ = stream.set_read_timeout(Some(std::time::Duration::from_secs(5)));
-    let mut bytes = Vec::new();
-    let mut buffer = [0_u8; 2048];
-    let head_end = loop {
-        if let Some(position) = find_head_end(&bytes) {
-            break position;
-        }
-        let read = stream.read(&mut buffer).ok()?;
-        if read == 0 || bytes.len() > 64 * 1024 {
-            return None;
-        }
-        bytes.extend_from_slice(&buffer[..read]);
-    };
-    let head = String::from_utf8(bytes[..head_end].to_vec()).ok()?;
-    let content_length = head
-        .lines()
-        .find_map(|line| {
-            let (name, value) = line.split_once(':')?;
-            if name.trim().eq_ignore_ascii_case("content-length") {
-                value.trim().parse::<usize>().ok()
-            } else {
-                None
-            }
-        })
-        .unwrap_or(0);
-    let mut body = bytes[head_end + 4..].to_vec();
-    while body.len() < content_length {
-        let read = stream.read(&mut buffer).ok()?;
-        if read == 0 {
-            break;
-        }
-        body.extend_from_slice(&buffer[..read]);
-    }
-    body.truncate(content_length);
-    Some((head, body))
-}
-
-fn find_head_end(bytes: &[u8]) -> Option<usize> {
-    bytes.windows(4).position(|window| window == b"\r\n\r\n")
+    let mut response = response.into_bytes();
+    response.extend_from_slice(body);
+    response
 }
 
 /// One recorded reply per provider path, shaped like the captured
@@ -245,7 +197,7 @@ fn stderr(output: &Output) -> String {
 
 #[test]
 fn disable_kegg_flag_makes_no_kegg_request_and_hides_kegg_rows() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
     let enabled = binary.run(&[
@@ -293,11 +245,12 @@ fn disable_kegg_flag_makes_no_kegg_request_and_hides_kegg_rows() {
         kegg_requests_after_enabled,
         "the disabled run made another KEGG request"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn disable_kegg_env_and_flag_forms_agree_with_comma_and_pipe() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
     let args = [
@@ -319,11 +272,12 @@ fn disable_kegg_env_and_flag_forms_agree_with_comma_and_pipe() {
         assert_eq!(stdout(output), canonical, "comma and pipe forms must agree");
     }
     assert!(!canonical.contains("hsa04010"), "{canonical}");
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn commercial_restricted_group_disables_kegg_and_enrichr() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
     // KEGG: no request, no KEGG rows in pathway search.
@@ -392,11 +346,12 @@ fn commercial_restricted_group_disables_kegg_and_enrichr() {
         stdout(&non_commercial).contains("hsa04010"),
         "non-commercial must not disable KEGG"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn commercial_groups_disable_orcid_records_without_requests() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture)
         .env("BIOMCP_HEALTH_PROBE_BASE", &fixture.base)
         .env("BIOMCP_ORCID_BASE", &format!("{}/orcid", fixture.base))
@@ -458,11 +413,12 @@ fn commercial_groups_disable_orcid_records_without_requests() {
         0,
         "disabled ORCID calls reached the fixture"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn biomcp_disable_kegg_alias_still_disables_kegg() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture).env("BIOMCP_DISABLE_KEGG", "1");
 
     let output = binary.run(&[
@@ -478,11 +434,12 @@ fn biomcp_disable_kegg_alias_still_disables_kegg() {
     assert!(!out.contains("hsa04010"), "{out}");
     assert!(out.contains("R-HSA-5684996"), "{out}");
     assert_eq!(fixture.requests_matching("/kegg/"), 0);
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn kegg_disable_drops_kegg_pathway_names_carried_by_mygene() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
     let enabled = binary.run(&["--json", "get", "gene", "BRAF", "pathways"]);
@@ -513,11 +470,12 @@ fn kegg_disable_drops_kegg_pathway_names_carried_by_mygene() {
         "{disabled_out}"
     );
     assert!(disabled_out.contains("BRAF"), "{disabled_out}");
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn enrichr_disabled_makes_no_enrichr_request_but_enabled_does() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
     let enabled = binary.run(&["--json", "get", "gene", "BRAF", "ontology"]);
@@ -549,11 +507,12 @@ fn enrichr_disabled_makes_no_enrichr_request_but_enabled_does() {
         requests_after_enabled,
         "the disabled run made another Enrichr request"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn unknown_name_fails_with_the_valid_names() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture);
 
     let output = binary.run(&["--disable-sources", "nope", "search", "gene", "BRAF"]);
@@ -575,11 +534,12 @@ fn unknown_name_fails_with_the_valid_names() {
         0,
         "no provider is queried before the setting is validated"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn health_lists_disabled_sources_with_the_reason() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture).env("BIOMCP_DISABLE_SOURCES", "kegg,enrichr");
 
     let output = binary.run(&["--json", "health", "--api", "kegg", "--api", "enrichr"]);
@@ -600,11 +560,12 @@ fn health_lists_disabled_sources_with_the_reason() {
     // Both probed rows are disabled, so no probe request leaves the host.
     assert_eq!(fixture.requests_matching("/kegg/"), 0);
     assert_eq!(fixture.requests_matching("/Enrichr/"), 0);
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn ddinter_sync_refuses_when_the_non_commercial_group_is_off() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture).env("BIOMCP_DISABLE_SOURCES", "non-commercial");
 
     let output = binary.run(&["ddinter", "sync"]);
@@ -614,11 +575,12 @@ fn ddinter_sync_refuses_when_the_non_commercial_group_is_off() {
         combined.contains("DDInter is disabled by the non-commercial group"),
         "{combined}"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn oncokb_lookup_refuses_when_disabled_by_group() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture).env("BIOMCP_DISABLE_SOURCES", "license-required");
 
     let output = binary.run(&["variant", "oncokb", "BRAF V600E"]);
@@ -629,6 +591,7 @@ fn oncokb_lookup_refuses_when_disabled_by_group() {
         combined.contains("disabled by the license-required group"),
         "{combined}"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
@@ -637,13 +600,14 @@ fn mcp_and_cli_read_the_same_env_setting() {
     // the rmcp client contract test cover each transport. This test pins
     // the CLI side of the parity for the gene carried-field case through
     // the environment variable alone.
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture).env("BIOMCP_DISABLE_SOURCES", "kegg");
 
     let output = binary.run(&["--json", "get", "gene", "BRAF", "pathways"]);
     assert!(output.status.success(), "{output:?}");
     let out = stdout(&output);
     assert!(!out.contains("Homo sapiens"), "{out}");
+    fixture.server.finish().unwrap();
 }
 
 // The serve proofs stand every provider up on the golden suite's replay
@@ -987,7 +951,7 @@ async fn serve_http_civic_description(
 
 #[test]
 fn disabled_health_aliases_never_probe_and_name_the_setting() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture).env("BIOMCP_HEALTH_PROBE_BASE", &fixture.base);
     for (id, api) in [
         ("mygene-info", "MyGene"),
@@ -1016,11 +980,12 @@ fn disabled_health_aliases_never_probe_and_name_the_setting() {
         0,
         "disabled health probes reached the network"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn disabled_variant_sections_drop_carried_data_and_report_disabled_without_retry() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture);
     let disabled = "clinvar,civic,gnomad";
     for section in ["clinvar", "civic", "population"] {
@@ -1062,11 +1027,12 @@ fn disabled_variant_sections_drop_carried_data_and_report_disabled_without_retry
         assert!(!text.contains("Retry:"), "{text}");
         assert!(!text.contains("request failed"), "{text}");
     }
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn restricted_group_includes_recorded_cgi_terms() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let output = Binary::new(&fixture).run(&[
         "--json",
         "--disable-sources",
@@ -1085,11 +1051,12 @@ fn restricted_group_includes_recorded_cgi_terms() {
             .any(|entry| entry["id"] == "cancer-genome-interpreter"),
         "{value}"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn disabled_article_sources_are_skipped_without_warnings_or_incompleteness() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary =
         Binary::new(&fixture).env("BIOMCP_EUROPEPMC_BASE", &format!("{}/europe", fixture.base));
     let output = binary.run(&[
@@ -1139,6 +1106,7 @@ fn disabled_article_sources_are_skipped_without_warnings_or_incompleteness() {
         ]);
     assert!(!failed.status.success(), "{failed:?}");
     assert!(stderr(&failed).contains("WARN"), "{}", stderr(&failed));
+    fixture.server.finish().unwrap();
 }
 
 #[test]
@@ -1181,7 +1149,7 @@ fn mcp_override_refusal_names_the_original_flag_setting() {
 
 #[test]
 fn variant_miss_keeps_assembly_outside_the_quoted_identifier() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture).env(
         "BIOMCP_MYVARIANT_BASE",
         &format!("{}/missing", fixture.base),
@@ -1220,11 +1188,12 @@ fn variant_miss_keeps_assembly_outside_the_quoted_identifier() {
             "{message}"
         );
     }
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn fda_nonredirect_health_failures_explain_the_observed_reason() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let mut failures = Vec::new();
     for (base, expected, code) in [
         ("fda-http", "HTTP 503", 1),
@@ -1258,11 +1227,12 @@ fn fda_nonredirect_health_failures_explain_the_observed_reason() {
         failures.is_empty(),
         "FDA must name the observed failure: {failures:?}"
     );
+    fixture.server.finish().unwrap();
 }
 
 #[test]
 fn gwas_health_checks_the_supported_association_search() {
-    let fixture = Fixture::start();
+    let mut fixture = Fixture::start();
     let binary = Binary::new(&fixture)
         .env("BIOMCP_HEALTH_PROBE_BASE", &fixture.base)
         .env(
@@ -1303,4 +1273,5 @@ fn gwas_health_checks_the_supported_association_search() {
         0
     );
     assert_eq!(fixture.requests_matching("v2/associations"), 2);
+    fixture.server.finish().unwrap();
 }

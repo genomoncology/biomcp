@@ -9,7 +9,7 @@ use std::sync::{
     Arc, Mutex,
     atomic::{AtomicUsize, Ordering},
 };
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 fn mydisease_hit(value: serde_json::Value) -> crate::sources::mydisease::MyDiseaseHit {
     serde_json::from_value(value).expect("valid MyDisease hit")
@@ -304,17 +304,19 @@ fn nci_public_filter_table_is_explicit() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_age_rejection_precedes_both_provider_requests() {
-    async fn counter_server() -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base = format!("http://{}", listener.local_addr().unwrap());
+    async fn counter_server() -> (
+        String,
+        Arc<AtomicUsize>,
+        crate::test_support::TestHttpServer,
+    ) {
         let count = Arc::new(AtomicUsize::new(0));
         let observed = count.clone();
-        let task = tokio::spawn(async move {
-            while listener.accept().await.is_ok() {
-                observed.fetch_add(1, Ordering::SeqCst);
-            }
-        });
-        (base, count, task)
+        let server = crate::test_support::TestHttpServer::spawn(move |_| {
+            observed.fetch_add(1, Ordering::SeqCst);
+            async { Ok(()) }
+        })
+        .expect("start counting fixture");
+        (server.base.clone(), count, server)
     }
     struct Restore(Vec<(&'static str, Option<std::ffi::OsString>)>);
     impl Restore {
@@ -339,8 +341,8 @@ async fn nci_age_rejection_precedes_both_provider_requests() {
         }
     }
 
-    let (nci_base, nci_count, nci_server) = counter_server().await;
-    let (disease_base, disease_count, disease_server) = counter_server().await;
+    let (nci_base, nci_count, mut nci_server) = counter_server().await;
+    let (disease_base, disease_count, mut disease_server) = counter_server().await;
     let mut restore = Restore(Vec::new());
     restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
     restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
@@ -358,8 +360,8 @@ async fn nci_age_rejection_precedes_both_provider_requests() {
     .await
     .expect_err("NCI age must be rejected");
     tokio::task::yield_now().await;
-    nci_server.abort();
-    disease_server.abort();
+    nci_server.finish().unwrap();
+    disease_server.finish().unwrap();
     assert!(
         error
             .to_string()
@@ -375,13 +377,13 @@ async fn nci_age_rejection_precedes_both_provider_requests() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_keyword_degrade_note_reaches_the_search_page() {
-    let (nci_base, nci_requests, nci_server) = json_server(|request| {
+    let (nci_base, nci_requests, mut nci_server) = json_server(|request| {
         request
             .contains("keyword=melanoma")
             .then(|| (200, r#"{"total":0,"data":[]}"#.to_string()))
     })
     .await;
-    let (disease_base, _disease_requests, disease_server) = json_server(|_| {
+    let (disease_base, _disease_requests, mut disease_server) = json_server(|_| {
         // 404 avoids the 5xx retry backoff; the query endpoint has no
         // route for a synthetic grounding failure.
         Some((
@@ -411,8 +413,8 @@ async fn nci_keyword_degrade_note_reaches_the_search_page() {
     )
     .await
     .expect("the degraded search still runs");
-    nci_server.abort();
-    disease_server.abort();
+    nci_server.finish().unwrap();
+    disease_server.finish().unwrap();
     drop(restore);
 
     let note = page
@@ -435,37 +437,39 @@ async fn nci_keyword_degrade_note_reaches_the_search_page() {
 
 async fn json_server(
     respond: impl Fn(&str) -> Option<(u16, String)> + Send + Sync + 'static,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let base = format!("http://{}", listener.local_addr().unwrap());
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
     let respond = Arc::new(respond);
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            let respond = respond.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let Ok(len) = stream.read(&mut request).await else {
-                    return;
-                };
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                let first_line = request.lines().next().unwrap_or("").to_string();
-                captured
-                    .lock()
-                    .expect("lock fixture server requests")
-                    .push(first_line.clone());
-                let (status, body) = respond(&request)
-                    .unwrap_or((404, r#"{"error":"fixture route not found"}"#.to_string()));
-                let response = format!(
-                    "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        let respond = respond.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+let request = String::from_utf8_lossy(&request).into_owned();
+            let first_line = request.lines().next().unwrap_or("").to_string();
+            captured
+                .lock()
+                .expect("lock fixture server requests")
+                .push(first_line.clone());
+            let (status, body) = respond(&request)
+                .unwrap_or((404, r#"{"error":"fixture route not found"}"#.to_string()));
+            let response = format!(
+                "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -480,10 +484,10 @@ async fn json_server(
 async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
     let mf_hits =
         include_str!("../../../../../testdata/sources/mydisease/query_mf.json").to_string();
-    let (disease_base, _disease_requests, disease_server) =
+    let (disease_base, _disease_requests, mut disease_server) =
         json_server(move |request| request.contains("/query?").then(|| (200, mf_hits.clone())))
             .await;
-    let (nci_base, nci_requests, nci_server) =
+    let (nci_base, nci_requests, mut nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
     let mut restore = FixtureEnv::new();
@@ -506,8 +510,8 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
     .await
     .expect_err("the refusal must reach the caller");
     tokio::task::yield_now().await;
-    nci_server.abort();
-    disease_server.abort();
+    nci_server.finish().unwrap();
+    disease_server.finish().unwrap();
     drop(restore);
 
     let message = error.to_string();
@@ -555,10 +559,10 @@ async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
 async fn nci_mm_refusal_leads_with_the_reading_and_names_the_trial_retry() {
     let mm_hits =
         include_str!("../../../../../testdata/sources/mydisease/query_mm.json").to_string();
-    let (disease_base, _disease_requests, disease_server) =
+    let (disease_base, _disease_requests, mut disease_server) =
         json_server(move |request| request.contains("/query?").then(|| (200, mm_hits.clone())))
             .await;
-    let (nci_base, nci_requests, nci_server) =
+    let (nci_base, nci_requests, mut nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
     let mut restore = FixtureEnv::new();
@@ -579,8 +583,8 @@ async fn nci_mm_refusal_leads_with_the_reading_and_names_the_trial_retry() {
     .await
     .expect_err("the refusal must reach the caller");
     tokio::task::yield_now().await;
-    nci_server.abort();
-    disease_server.abort();
+    nci_server.finish().unwrap();
+    disease_server.finish().unwrap();
     drop(restore);
 
     let message = error.to_string();
@@ -611,19 +615,19 @@ async fn nci_mm_refusal_leads_with_the_reading_and_names_the_trial_retry() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
-    let (disease_base, _disease_requests, disease_server) = json_server(|request| {
+    let (disease_base, _disease_requests, mut disease_server) = json_server(|request| {
         request
             .contains("/query?")
             .then(|| (200, r#"{"total":0,"hits":[]}"#.to_string()))
     })
     .await;
-    let (ols_base, ols_requests, ols_server) = json_server(|request| {
+    let (ols_base, ols_requests, mut ols_server) = json_server(|request| {
         request
             .contains("/search?")
             .then(|| (200, r#"{"response":{"numFound":0,"docs":[]}}"#.to_string()))
     })
     .await;
-    let (nci_base, nci_requests, nci_server) =
+    let (nci_base, nci_requests, mut nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
     let mut restore = FixtureEnv::new();
@@ -648,9 +652,9 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
     .await
     .expect("the degraded search still runs");
     tokio::task::yield_now().await;
-    nci_server.abort();
-    disease_server.abort();
-    ols_server.abort();
+    nci_server.finish().unwrap();
+    disease_server.finish().unwrap();
+    ols_server.finish().unwrap();
     drop(restore);
 
     let note = page
@@ -685,13 +689,13 @@ async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_overlong_condition_truncates_instead_of_failing() {
-    let (disease_base, disease_requests, disease_server) = json_server(|request| {
+    let (disease_base, disease_requests, mut disease_server) = json_server(|request| {
         request
             .contains("/query?")
             .then(|| (200, r#"{"total":0,"hits":[]}"#.to_string()))
     })
     .await;
-    let (nci_base, nci_requests, nci_server) =
+    let (nci_base, nci_requests, mut nci_server) =
         json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
 
     let mut restore = FixtureEnv::new();
@@ -716,8 +720,8 @@ async fn nci_overlong_condition_truncates_instead_of_failing() {
     .await
     .expect("the truncated search still runs");
     tokio::task::yield_now().await;
-    nci_server.abort();
-    disease_server.abort();
+    nci_server.finish().unwrap();
+    disease_server.finish().unwrap();
     drop(restore);
 
     let note = page

@@ -669,7 +669,7 @@ fn count_all_returns_exact_for_no_post_filters() {
 #[serial_test::serial(source_env)]
 async fn count_all_keeps_an_omitted_provider_total_unknown() {
     // Synthetic first-page envelope reproducing receipted provider optionality.
-    let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
+    let (base, requests, mut server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
     let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     for filters in [
@@ -691,7 +691,7 @@ async fn count_all_keeps_an_omitted_provider_total_unknown() {
             TrialCount::Unknown(TrialCountUnknownReason::ProviderOmittedTotal)
         );
     }
-    server.abort();
+    server.finish().unwrap();
     let requests = requests.lock().expect("lock fixture requests");
     assert_eq!(requests.len(), 2);
     assert!(
@@ -704,7 +704,7 @@ async fn count_all_keeps_an_omitted_provider_total_unknown() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() {
-    let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
+    let (base, requests, mut server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
     let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
@@ -719,14 +719,14 @@ async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() 
         count,
         TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached)
     );
-    server.abort();
+    server.finish().unwrap();
     assert!(requests.lock().expect("lock fixture requests").is_empty());
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn alias_union_returns_the_traversal_limit_reason_at_its_cap() {
-    let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
+    let (base, requests, mut server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
     let _env = ctgov_fixture_env(&base);
     let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
     let filters = TrialSearchFilters {
@@ -753,7 +753,7 @@ async fn alias_union_returns_the_traversal_limit_reason_at_its_cap() {
         count,
         TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached)
     );
-    server.abort();
+    server.finish().unwrap();
     assert!(requests.lock().expect("lock fixture requests").is_empty());
 }
 

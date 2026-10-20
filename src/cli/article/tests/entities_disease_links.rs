@@ -5,7 +5,7 @@
 //! v0.9.1 search command — never a bare crosswalk get.
 
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 macro_rules! recorded {
     ($kind:expr, $name:expr) => {
@@ -24,64 +24,63 @@ macro_rules! recorded {
 /// recorded routes, so a pinned row cannot pass vacuously.
 async fn article_disease_link_fixture_server(
     pubtator_export: &'static str,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind article disease link fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = requests.clone();
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = captured.clone();
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 64 * 1024];
-                let len = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request.clone());
-                let body = if request.starts_with("GET /publications/export/biocjson?") {
-                    pubtator_export
-                } else if request.contains("xrefs.mesh") {
-                    // MyDisease crosswalk queries: the MeSH descriptor value
-                    // names the recorded reply. URL encoding leaves the
-                    // descriptor digits intact in the query string.
-                    if request.contains("D008175") {
-                        recorded!("mydisease", "query_xref_mesh_d008175.json")
-                    } else if request.contains("D000230") {
-                        recorded!("mydisease", "query_xref_mesh_d000230.json")
-                    } else if request.contains("D000236") {
-                        recorded!("mydisease", "query_xref_mesh_d000236.json")
-                    } else if request.contains("D009369") {
-                        recorded!("mydisease", "query_xref_mesh_d009369.json")
-                    } else if request.contains("D012878") {
-                        recorded!("mydisease", "query_xref_mesh_d012878.json")
-                    } else {
-                        r#"{"total":0,"hits":[]}"#
-                    }
-                } else if request.starts_with("GET /search?") {
-                    // Europe PMC metadata lookup: an empty answer keeps the
-                    // PubTator document's own fields.
-                    r#"{"hitCount":0,"resultList":{"result":[]}}"#
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = captured.clone();
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request.clone());
+            let body = if request.starts_with("GET /publications/export/biocjson?") {
+                pubtator_export
+            } else if request.contains("xrefs.mesh") {
+                // MyDisease crosswalk queries: the MeSH descriptor value
+                // names the recorded reply. URL encoding leaves the
+                // descriptor digits intact in the query string.
+                if request.contains("D008175") {
+                    recorded!("mydisease", "query_xref_mesh_d008175.json")
+                } else if request.contains("D000230") {
+                    recorded!("mydisease", "query_xref_mesh_d000230.json")
+                } else if request.contains("D000236") {
+                    recorded!("mydisease", "query_xref_mesh_d000236.json")
+                } else if request.contains("D009369") {
+                    recorded!("mydisease", "query_xref_mesh_d009369.json")
+                } else if request.contains("D012878") {
+                    recorded!("mydisease", "query_xref_mesh_d012878.json")
                 } else {
                     r#"{"total":0,"hits":[]}"#
-                };
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                stream
-                    .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+                }
+            } else if request.starts_with("GET /search?") {
+                // Europe PMC metadata lookup: an empty answer keeps the
+                // PubTator document's own fields.
+                r#"{"hitCount":0,"resultList":{"result":[]}}"#
+            } else {
+                r#"{"total":0,"hits":[]}"#
+            };
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -99,7 +98,7 @@ type ArticleDiseaseLinkEnv = crate::test_support::FixtureEnv;
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn article_entities_disease_rows_link_the_named_disease_or_search() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         article_disease_link_fixture_server(recorded!("pubtator", "export_37887282.json")).await;
     let cache = crate::test_support::TempDirGuard::new("article-disease-links-cache");
     let mut env = ArticleDiseaseLinkEnv::scratch_cache_only();
@@ -117,7 +116,7 @@ async fn article_entities_disease_rows_link_the_named_disease_or_search() {
     ])
     .await
     .expect("article entities renders");
-    server.abort();
+    server.finish().unwrap();
     drop(env);
 
     // Each descriptor's concept name holds on exactly one recorded hit:
@@ -165,7 +164,7 @@ async fn article_entities_disease_rows_link_the_named_disease_or_search() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn article_entities_skin_neoplasms_row_keeps_its_search_command() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         article_disease_link_fixture_server(recorded!("pubtator", "export_22663011.json")).await;
     let cache = crate::test_support::TempDirGuard::new("article-disease-links-cache");
     let mut env = ArticleDiseaseLinkEnv::scratch_cache_only();
@@ -183,7 +182,7 @@ async fn article_entities_skin_neoplasms_row_keeps_its_search_command() {
     ])
     .await
     .expect("article entities renders");
-    server.abort();
+    server.finish().unwrap();
     drop(env);
 
     // The narrower benign-neoplasm card never links, and no disease row

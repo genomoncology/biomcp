@@ -1,13 +1,13 @@
 // sleep reason: existing test sleeps stay until 2081 replaces them with signals
 #![allow(clippy::disallowed_methods)]
 
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use biomcp_mcp_contract_client::test_http::{TestHttpServer, read_request};
+use std::net::TcpListener;
 use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
+use tokio::io::AsyncWriteExt;
 
 struct CommandResult {
     code: Option<i32>,
@@ -57,7 +57,6 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
 const POST_CHILD_FIXTURE_RESULT_TIMEOUT: Duration = Duration::from_secs(1);
 // macOS configures only 127.0.0.1 on the loopback interface, so the
 // fixture binds the one address every Unix host offers.
-const CREDENTIAL_FIXTURE_HOST: &str = "127.0.0.1";
 
 #[derive(Debug)]
 struct CredentialFixtureRequest {
@@ -69,52 +68,37 @@ struct CredentialFixtureRequest {
 struct CredentialRedactionFixture {
     base_url: String,
     request_rx: mpsc::Receiver<Result<CredentialFixtureRequest, String>>,
-    stop: Arc<AtomicBool>,
-    thread: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 impl CredentialRedactionFixture {
     fn start(secret: &'static str) -> Self {
-        let listener =
-            TcpListener::bind((CREDENTIAL_FIXTURE_HOST, 0)).expect("bind credential fixture");
-        listener
-            .set_nonblocking(true)
-            .expect("make credential fixture nonblocking");
-        let base_url = format!("http://{}", listener.local_addr().expect("fixture address"));
         let (request_tx, request_rx) = mpsc::channel();
-        let stop = Arc::new(AtomicBool::new(false));
-        let thread_stop = Arc::clone(&stop);
-        let thread = thread::spawn(move || {
-            loop {
-                if thread_stop.load(Ordering::Relaxed) {
-                    return;
-                }
-                match listener.accept() {
-                    Ok((stream, _)) => match serve_credential_redaction_request(stream, secret) {
-                        Ok(Some(request)) => {
-                            let _ = request_tx.send(Ok(request));
-                        }
-                        Ok(None) => {}
-                        Err(violation) => {
-                            let _ = request_tx.send(Err(violation));
-                            return;
-                        }
-                    },
-                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        thread::sleep(Duration::from_millis(10));
+        let server = TestHttpServer::spawn(move |mut stream| {
+            let request_tx = request_tx.clone();
+            async move {
+                let Some(request) = read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+                let request = String::from_utf8(request)
+                    .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+                let (response, record) = match credential_response(&request, secret) {
+                    Ok(reply) => reply,
+                    Err(error) => {
+                        let _ = request_tx.send(Err(error.clone()));
+                        return Err(std::io::Error::other(error));
                     }
-                    Err(_) => {
-                        let _ = request_tx.send(Err("credential fixture accept failed".into()));
-                        return;
-                    }
-                }
+                };
+                stream.write_all(&response).await?;
+                request_tx.send(Ok(record)).map_err(std::io::Error::other)?;
+                Ok(())
             }
-        });
+        })
+        .expect("start HTTP fixture");
         Self {
-            base_url,
+            base_url: server.base.clone(),
             request_rx,
-            stop,
-            thread: Some(thread),
+            server,
         }
     }
 
@@ -132,60 +116,40 @@ impl CredentialRedactionFixture {
     }
 }
 
-impl Drop for CredentialRedactionFixture {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::Relaxed);
-        if let Some(thread) = self.thread.take() {
-            thread.join().expect("join credential fixture thread");
-        }
-    }
-}
-
 struct LoopbackDenyProxy {
     url: String,
     request_rx: mpsc::Receiver<Result<String, String>>,
-    stop: Arc<AtomicBool>,
-    thread: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 impl LoopbackDenyProxy {
     fn start() -> Self {
-        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind deny proxy");
-        listener
-            .set_nonblocking(true)
-            .expect("make deny proxy nonblocking");
-        let url = format!(
-            "http://{}",
-            listener.local_addr().expect("deny proxy address")
-        );
         let (request_tx, request_rx) = mpsc::channel();
-        let stop = Arc::new(AtomicBool::new(false));
-        let thread_stop = Arc::clone(&stop);
-        let thread = thread::spawn(move || {
-            loop {
-                if thread_stop.load(Ordering::Relaxed) {
-                    return;
-                }
-                match listener.accept() {
-                    Ok((stream, _)) => {
-                        let result = deny_proxy_request(stream);
-                        let _ = request_tx.send(result);
+        let server = TestHttpServer::spawn(move |mut stream| {
+            let request_tx = request_tx.clone();
+            async move {
+                let Some(request) = read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+                let request = String::from_utf8(request)
+                    .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+                let (response, record) = match deny_proxy_response(&request) {
+                    Ok(reply) => reply,
+                    Err(error) => {
+                        let _ = request_tx.send(Err(error.clone()));
+                        return Err(std::io::Error::other(error));
                     }
-                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        thread::sleep(Duration::from_millis(10));
-                    }
-                    Err(_) => {
-                        let _ = request_tx.send(Err("deny proxy accept failed".into()));
-                        return;
-                    }
-                }
+                };
+                stream.write_all(&response).await?;
+                request_tx.send(Ok(record)).map_err(std::io::Error::other)?;
+                Ok(())
             }
-        });
+        })
+        .expect("start HTTP fixture");
         Self {
-            url,
+            url: server.base.clone(),
             request_rx,
-            stop,
-            thread: Some(thread),
+            server,
         }
     }
 
@@ -197,40 +161,6 @@ impl LoopbackDenyProxy {
     }
 }
 
-impl Drop for LoopbackDenyProxy {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::Relaxed);
-        if let Some(thread) = self.thread.take() {
-            thread.join().expect("join deny proxy thread");
-        }
-    }
-}
-
-fn read_http_request(stream: &mut TcpStream) -> Result<String, String> {
-    // A loaded gate host can stall a spawned client well past two
-    // seconds between connect and request, so the fixture windows match
-    // the ten-second bound the rest of this file already uses.
-    stream
-        .set_read_timeout(Some(Duration::from_secs(10)))
-        .map_err(|_| "set fixture read timeout".to_string())?;
-    stream
-        .set_write_timeout(Some(Duration::from_secs(10)))
-        .map_err(|_| "set fixture write timeout".to_string())?;
-
-    let mut request = Vec::new();
-    let mut buffer = [0_u8; 1024];
-    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
-        let read = stream
-            .read(&mut buffer)
-            .map_err(|_| "read fixture request".to_string())?;
-        if read == 0 || request.len() + read > 16 * 1024 {
-            return Err("fixture request ended early or exceeded 16 KiB".into());
-        }
-        request.extend_from_slice(&buffer[..read]);
-    }
-    String::from_utf8(request).map_err(|_| "fixture request was not UTF-8".into())
-}
-
 fn request_target(request: &str) -> Result<&str, String> {
     request
         .lines()
@@ -239,18 +169,10 @@ fn request_target(request: &str) -> Result<&str, String> {
         .ok_or_else(|| "fixture request line was invalid".into())
 }
 
-fn serve_credential_redaction_request(
-    mut stream: TcpStream,
+fn credential_response(
+    request: &str,
     secret: &str,
-) -> Result<Option<CredentialFixtureRequest>, String> {
-    // A loaded client abandons pool connections it opened but never
-    // wrote to; that churn is not the contract under test, so a
-    // read-phase failure skips the connection instead of killing the
-    // fixture thread with every later request.
-    let request = match read_http_request(&mut stream) {
-        Ok(request) => request,
-        Err(_) => return Ok(None),
-    };
+) -> Result<(Vec<u8>, CredentialFixtureRequest), String> {
     let target = request_target(&request)?;
     let path = target.split_once('?').map_or(target, |(path, _)| path);
     let (provider, body, status) = match path {
@@ -277,45 +199,35 @@ fn serve_credential_redaction_request(
             .split('&')
             .any(|part| part == format!("api_key={secret}"))
     });
-    write!(
-        stream,
-        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-        body.len()
-    )
-    .map_err(|_| "write credential fixture response".to_string())?;
-    stream
-        .flush()
-        .map_err(|_| "flush credential fixture response".to_string())?;
-    Ok(Some(CredentialFixtureRequest {
-        provider,
-        credential_present,
-        credential_in_approved_position,
-    }))
+    let response = format!("HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()).into_bytes();
+    Ok((
+        response,
+        CredentialFixtureRequest {
+            provider,
+            credential_present,
+            credential_in_approved_position,
+        },
+    ))
 }
 
-fn deny_proxy_request(mut stream: TcpStream) -> Result<String, String> {
-    let request = read_http_request(&mut stream)?;
+fn deny_proxy_response(request: &str) -> Result<(Vec<u8>, String), String> {
     let destination = request_target(&request)?;
     let destination = destination.split_once('?').map_or_else(
         || destination.to_string(),
         |(path, _)| format!("{path}?<redacted>"),
     );
-    write!(
-        stream,
-        "HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-    )
-    .map_err(|_| "write deny proxy response".to_string())?;
-    stream
-        .flush()
-        .map_err(|_| "flush deny proxy response".to_string())?;
-    Ok(destination)
+    Ok((
+        format!("HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            .into_bytes(),
+        destination,
+    ))
 }
 
 struct MyGeneFixture {
     base_url: String,
     request_rx: mpsc::Receiver<Result<String, String>>,
-    stop: Arc<AtomicBool>,
-    thread: Option<thread::JoinHandle<()>>,
+    server: TestHttpServer,
 }
 
 struct NoProviderContactFixture {
@@ -346,43 +258,32 @@ impl NoProviderContactFixture {
 
 impl MyGeneFixture {
     fn start() -> Self {
-        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind MyGene fixture");
-        listener
-            .set_nonblocking(true)
-            .expect("make MyGene fixture nonblocking");
-        let base_url = format!("http://{}", listener.local_addr().expect("fixture address"));
         let (request_tx, request_rx) = mpsc::channel();
-        let stop = Arc::new(AtomicBool::new(false));
-        let thread_stop = Arc::clone(&stop);
-        let thread = thread::spawn(move || {
-            loop {
-                if thread_stop.load(Ordering::Relaxed) {
-                    return;
-                }
-                match listener.accept() {
-                    Ok((stream, _)) => {
-                        let result = serve_mygene_request(stream);
-                        let failed = result.is_err();
-                        let _ = request_tx.send(result);
-                        if failed {
-                            return;
-                        }
-                    }
-                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        thread::sleep(Duration::from_millis(10));
-                    }
+        let server = TestHttpServer::spawn(move |mut stream| {
+            let request_tx = request_tx.clone();
+            async move {
+                let Some(request) = read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+                let request = String::from_utf8(request)
+                    .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+                let (response, record) = match mygene_response(&request) {
+                    Ok(reply) => reply,
                     Err(error) => {
-                        let _ = request_tx.send(Err(format!("fixture accept failed: {error}")));
-                        return;
+                        let _ = request_tx.send(Err(error.clone()));
+                        return Err(std::io::Error::other(error));
                     }
-                }
+                };
+                stream.write_all(&response).await?;
+                request_tx.send(Ok(record)).map_err(std::io::Error::other)?;
+                Ok(())
             }
-        });
+        })
+        .expect("start HTTP fixture");
         Self {
-            base_url,
+            base_url: server.base.clone(),
             request_rx,
-            stop,
-            thread: Some(thread),
+            server,
         }
     }
 
@@ -394,37 +295,7 @@ impl MyGeneFixture {
     }
 }
 
-impl Drop for MyGeneFixture {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::Relaxed);
-        if let Some(thread) = self.thread.take() {
-            thread.join().expect("join MyGene fixture thread");
-        }
-    }
-}
-
-fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
-    // Same load bound as the credential fixture above.
-    stream
-        .set_read_timeout(Some(Duration::from_secs(10)))
-        .map_err(|error| format!("set fixture read timeout: {error}"))?;
-    stream
-        .set_write_timeout(Some(Duration::from_secs(10)))
-        .map_err(|error| format!("set fixture write timeout: {error}"))?;
-
-    let mut request = Vec::new();
-    let mut buffer = [0_u8; 1024];
-    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
-        let read = stream
-            .read(&mut buffer)
-            .map_err(|error| format!("read fixture request: {error}"))?;
-        if read == 0 || request.len() + read > 16 * 1024 {
-            return Err("fixture request ended early or exceeded 16 KiB".into());
-        }
-        request.extend_from_slice(&buffer[..read]);
-    }
-
-    let request = String::from_utf8(request).map_err(|error| format!("request UTF-8: {error}"))?;
+fn mygene_response(request: &str) -> Result<(Vec<u8>, String), String> {
     let request_target = request
         .lines()
         .next()
@@ -438,16 +309,8 @@ fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
     } else {
         r#"{"total":0,"hits":[]}"#
     };
-    write!(
-        stream,
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-        body.len()
-    )
-    .map_err(|error| format!("write fixture response: {error}"))?;
-    stream
-        .flush()
-        .map_err(|error| format!("flush fixture response: {error}"))?;
-    Ok(request_target)
+    Ok((format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()).into_bytes(), request_target))
 }
 
 fn assert_json_error(result: &CommandResult, expected_exit: i32, expected_code: &str) {
@@ -492,7 +355,7 @@ fn mygene_fixture_without_request_stops_on_drop() {
 
 #[test]
 fn json_mode_gene_not_found_error_writes_json_stdout_and_exit_1() {
-    let fixture = MyGeneFixture::start();
+    let mut fixture = MyGeneFixture::start();
     let result = run_biomcp_with_env(
         &["--json", "--no-cache", "get", "gene", "ZZZNOTAREALGENE"],
         &[
@@ -522,6 +385,7 @@ fn json_mode_gene_not_found_error_writes_json_stdout_and_exit_1() {
     assert_json_error(&result, 1, "not_found");
     let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid json");
     assert_eq!(value["_meta"]["not_found"], true, "json={value}");
+    fixture.server.finish().unwrap();
 }
 
 #[test]
@@ -665,8 +529,8 @@ fn human_runtime_source_error_is_safe_and_actionable() {
 #[test]
 fn swallowed_source_failures_do_not_log_credentials() {
     const SECRET: &str = "VERIFY_SECRET_586";
-    let fixture = CredentialRedactionFixture::start(SECRET);
-    let deny_proxy = LoopbackDenyProxy::start();
+    let mut fixture = CredentialRedactionFixture::start(SECRET);
+    let mut deny_proxy = LoopbackDenyProxy::start();
     let fixture_address = fixture
         .base_url
         .strip_prefix("http://")
@@ -768,6 +632,8 @@ fn swallowed_source_failures_do_not_log_credentials() {
             );
         }
     }
+    fixture.server.finish().unwrap();
+    deny_proxy.server.finish().unwrap();
 }
 
 #[test]

@@ -280,7 +280,7 @@ const NIRAPARIB_LABEL_BODY: &str = r#"{
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn tarceva_resolves_erlotinib_through_the_guarded_discover_rescue() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             (
                 "Tarceva".to_string(),
@@ -330,7 +330,7 @@ async fn tarceva_resolves_erlotinib_through_the_guarded_discover_rescue() {
         }),
         "the erlotinib label text reached the card"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// `get drug Tarceva` against the recorded provider replies of 2026-10-15
@@ -341,7 +341,7 @@ async fn tarceva_resolves_erlotinib_through_the_guarded_discover_rescue() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn tarceva_lists_the_typed_brand_and_no_chemical_synonym() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             (
                 "Tarceva".to_string(),
@@ -377,7 +377,7 @@ async fn tarceva_lists_the_typed_brand_and_no_chemical_synonym() {
         "the record's chemical synonym never lists as a brand: {:?}",
         drug.brand_names
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
@@ -405,7 +405,7 @@ async fn unclassified_brand_alias_requires_one_named_drugbank_identity() {
                 hit.as_object_mut().unwrap().remove("drugbank");
             }
         }
-        let (base, server) = name_resolution_fixture_server(
+        let (base, mut server) = name_resolution_fixture_server(
             vec![
                 (
                     "Tarceva".to_string(),
@@ -425,7 +425,7 @@ async fn unclassified_brand_alias_requires_one_named_drugbank_identity() {
             error.to_string().contains("No drug card matches"),
             "{error}"
         );
-        server.abort();
+        server.finish().unwrap();
     }
 }
 
@@ -437,7 +437,7 @@ async fn unclassified_brand_alias_requires_one_named_drugbank_identity() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn trastuzumab_lists_only_brands_whose_labels_name_trastuzumab() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "trastuzumab".to_string(),
             recorded!("mychem", "query_trastuzumab_get_20261015.json"),
@@ -479,13 +479,13 @@ async fn trastuzumab_lists_only_brands_whose_labels_name_trastuzumab() {
         "a DrugBank synonym never lists as a brand: {:?}",
         drug.brand_names
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn zejula_returns_niraparib_with_the_zejula_label() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "Zejula".to_string(),
             crate::transform::drug::name_resolution_tests::ZEJULA_CAPTURE.to_string(),
@@ -530,13 +530,13 @@ async fn zejula_returns_niraparib_with_the_zejula_label() {
                 .is_some_and(|text| text.contains("ZEJULA"))),
         "the Zejula label text reached the card"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn niraparib_names_the_plain_card_and_takes_its_own_label() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "niraparib".to_string(),
             crate::transform::drug::name_resolution_tests::NIRAPARIB_CAPTURE.to_string(),
@@ -580,7 +580,7 @@ async fn niraparib_names_the_plain_card_and_takes_its_own_label() {
                 .is_some_and(|text| text.contains("ZEJULA")))),
         "the plain niraparib label text reached the card"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// Two exact canonical drugs answering one brand: the discover rescue must
@@ -594,7 +594,7 @@ async fn a_brand_two_exact_drugs_answer_refuses_instead_of_picking_one() {
         {"iri":"http://purl.obolibrary.org/obo/CHEBI_999991","ontology_prefix":"CHEBI","obo_id":"CHEBI:999991","label":"Fixture Drug Aaa","exact_synonyms":["Ambifton"]},
         {"iri":"http://purl.obolibrary.org/obo/CHEBI_999992","ontology_prefix":"CHEBI","obo_id":"CHEBI:999992","label":"Fixture Drug Bbb","exact_synonyms":["Ambifton"]}
     ]}}"#;
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             (
                 "Ambifton".to_string(),
@@ -624,7 +624,7 @@ async fn a_brand_two_exact_drugs_answer_refuses_instead_of_picking_one() {
         message.contains("No drug card matches \"Ambifton\""),
         "{message}"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 /// The live openFDA label answer for the "Pain Relief" identity search,
@@ -734,7 +734,7 @@ async fn shared_name_refusal_drug(name: &str, base: &str) -> crate::error::BioMc
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn pain_relief_refuses_without_naming_products_that_do_not_own_the_name() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![(
             "Pain Relief".to_string(),
             crate::transform::drug::shared_name_tests::PAIN_RELIEF_CAPTURE.to_string(),
@@ -767,13 +767,13 @@ async fn pain_relief_refuses_without_naming_products_that_do_not_own_the_name() 
                 .any(|name| message.contains(name)),
         "the refusal must not name ingredients from non-owner records: {message}"
     );
-    server.abort();
+    server.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn sleep_aid_refuses_when_openfdas_own_brands_disagree() {
-    let (base, server) = name_resolution_fixture_server(
+    let (base, mut server) = name_resolution_fixture_server(
         vec![
             (
                 "Sleep Aid".to_string(),
@@ -807,5 +807,5 @@ async fn sleep_aid_refuses_when_openfdas_own_brands_disagree() {
         message.contains("Candidates:\n- diphenhydramine hcl\n- doxylamine succinate\n"),
         "the refusal lists the ingredients the owner records carry: {message}"
     );
-    server.abort();
+    server.finish().unwrap();
 }

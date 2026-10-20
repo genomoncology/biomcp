@@ -379,36 +379,42 @@ mod tests {
     #[tokio::test]
     async fn provider_limit_covers_actual_downstream_http_work() {
         use std::sync::atomic::{AtomicUsize, Ordering};
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        use tokio::io::AsyncWriteExt as _;
 
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind fixture");
-        let address = listener.local_addr().expect("fixture address");
         let active = Arc::new(AtomicUsize::new(0));
         let peak = Arc::new(AtomicUsize::new(0));
-        let server = {
+        let received = Arc::new(AtomicUsize::new(0));
+        let mut server = {
             let active = active.clone();
             let peak = peak.clone();
-            tokio::spawn(async move {
-                for _ in 0..20 {
-                    let (mut stream, _) = listener.accept().await.expect("accept fixture request");
-                    let active = active.clone();
-                    let peak = peak.clone();
-                    tokio::spawn(async move {
-                        let mut request = [0_u8; 1024];
-                        let _ = stream.read(&mut request).await;
-                        let now = active.fetch_add(1, Ordering::SeqCst) + 1;
-                        peak.fetch_max(now, Ordering::SeqCst);
-                        tokio::time::sleep(Duration::from_millis(25)).await;
-                        let _ = stream
-                            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
-                            .await;
-                        active.fetch_sub(1, Ordering::SeqCst);
-                    });
+            let received = received.clone();
+            crate::test_support::TestHttpServer::spawn(move |mut stream| {
+                let active = active.clone();
+                let peak = peak.clone();
+                let received = received.clone();
+                async move {
+                    if crate::test_support::read_request(&mut stream)
+                        .await?
+                        .is_none()
+                    {
+                        return Ok(());
+                    }
+                    received.fetch_add(1, Ordering::SeqCst);
+                    let now = active.fetch_add(1, Ordering::SeqCst) + 1;
+                    peak.fetch_max(now, Ordering::SeqCst);
+                    tokio::time::sleep(Duration::from_millis(25)).await;
+                    let written = stream
+                        .write_all(
+                            b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok",
+                        )
+                        .await;
+                    active.fetch_sub(1, Ordering::SeqCst);
+                    written
                 }
             })
+            .expect("start provider-limit fixture")
         };
+        let address = server.base.trim_start_matches("http://").to_string();
         // Test-only loopback transport: keeping policy middleware out of this
         // fixture isolates the execution permit's downstream ownership. The
         // exact constructor is inventoried by the network-policy contract.
@@ -442,7 +448,8 @@ mod tests {
             }
         });
         futures::future::join_all(requests).await;
-        server.await.expect("fixture server");
+        server.finish().expect("fixture server");
+        assert_eq!(received.load(Ordering::SeqCst), 20);
 
         assert_eq!(peak.load(Ordering::SeqCst), 10);
         assert_eq!(commit_peak.load(Ordering::SeqCst), 10);

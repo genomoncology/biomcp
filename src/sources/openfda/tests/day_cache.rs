@@ -8,7 +8,7 @@
 use crate::sources::openfda::OpenFdaClient;
 use crate::test_support::FixtureEnv;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 const LABEL_BODY: &str =
     r#"{"meta":{"results":{"skip":0,"limit":5,"total":1}},"results":[{"id":"label-1"}]}"#;
@@ -64,40 +64,41 @@ impl Reply {
 async fn day_cache_server(
     label: Reply,
     count: Reply,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind openFDA day-cache fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = Arc::clone(&requests);
     let label = Arc::new(label);
     let count = Arc::new(count);
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = Arc::clone(&captured);
-            let label = Arc::clone(&label);
-            let count = Arc::clone(&count);
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream.read(&mut request).await.expect("read request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request.clone());
-                let reply = if request.contains("/drug/label.json") {
-                    (*label).clone()
-                } else {
-                    (*count).clone()
-                };
-                stream
-                    .write_all(reply.into_response().as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = Arc::clone(&captured);
+        let label = Arc::clone(&label);
+        let count = Arc::clone(&count);
+
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request.clone());
+            let reply = if request.contains("/drug/label.json") {
+                (*label).clone()
+            } else {
+                (*count).clone()
+            };
+            stream.write_all(reply.into_response().as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -119,7 +120,7 @@ fn request_count(requests: &Arc<Mutex<Vec<String>>>) -> usize {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_repeat_label_search_inside_a_day_makes_no_request() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(Reply::json(LABEL_BODY), Reply::json(COUNT_BODY)).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
@@ -145,7 +146,7 @@ async fn a_repeat_label_search_inside_a_day_makes_no_request() {
     );
     assert!(!warnings.contains("served from cache"), "{warnings}");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),
@@ -159,7 +160,7 @@ async fn a_repeat_label_search_inside_a_day_makes_no_request() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_label_answer_a_day_old_is_refetched() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(Reply::json_a_day_old(LABEL_BODY), Reply::json(COUNT_BODY)).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
@@ -175,7 +176,7 @@ async fn a_label_answer_a_day_old_is_refetched() {
         .expect("refetched label search")
         .expect("the refetch answers");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(request_count(&requests), 2, "the aged answer must refetch");
     assert_eq!(first, second);
@@ -194,7 +195,7 @@ fn count_rows(answer: &crate::sources::openfda::OpenFdaCountResponse) -> Vec<(St
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_repeat_adverse_event_count_inside_a_day_makes_no_request() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(Reply::json(LABEL_BODY), Reply::json(COUNT_BODY)).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
@@ -228,7 +229,7 @@ async fn a_repeat_adverse_event_count_inside_a_day_makes_no_request() {
     );
     assert!(!warnings.contains("served from cache"), "{warnings}");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),
@@ -242,7 +243,7 @@ async fn a_repeat_adverse_event_count_inside_a_day_makes_no_request() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn an_adverse_event_count_a_day_old_is_refetched() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(Reply::json(LABEL_BODY), Reply::json_a_day_old(COUNT_BODY)).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
@@ -266,7 +267,7 @@ async fn an_adverse_event_count_a_day_old_is_refetched() {
         .expect("refetched count")
         .expect("the refetch answers");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(request_count(&requests), 2, "the aged answer must refetch");
     assert_eq!(count_rows(&second), count_rows(&first));
@@ -277,7 +278,7 @@ async fn an_adverse_event_count_a_day_old_is_refetched() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn an_openfda_key_keeps_the_cache_bypassed() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(Reply::json(LABEL_BODY), Reply::json(COUNT_BODY)).await;
     let mut env = FixtureEnv::scratch_cache_only();
     env.set("OPENFDA_API_KEY", "test-key");
@@ -294,7 +295,7 @@ async fn an_openfda_key_keeps_the_cache_bypassed() {
         .expect("second label search")
         .expect("the second fetch answers");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     let requests = requests.lock().expect("lock fixture requests").join("\n");
     assert_eq!(
@@ -313,7 +314,7 @@ async fn an_openfda_key_keeps_the_cache_bypassed() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn cache_mode_off_never_serves_the_stored_label_answer() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(Reply::json(LABEL_BODY), Reply::json(COUNT_BODY)).await;
     let mut env = FixtureEnv::new();
     let client = day_cached_client(&base, &mut env);
@@ -329,7 +330,7 @@ async fn cache_mode_off_never_serves_the_stored_label_answer() {
         .expect("second label search")
         .expect("the second fetch answers");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),
@@ -343,7 +344,7 @@ async fn cache_mode_off_never_serves_the_stored_label_answer() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn infinite_cache_mode_keeps_the_aged_label_warning_and_note() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(Reply::json_a_day_old(LABEL_BODY), Reply::json(COUNT_BODY)).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
@@ -361,7 +362,7 @@ async fn infinite_cache_mode_keeps_the_aged_label_warning_and_note() {
             (answer, crate::sources::take_stale_serve_sentences())
         }))
         .await;
-    server.abort();
+    server.finish().unwrap();
     assert_eq!(first, second);
     assert_eq!(
         request_count(&requests),

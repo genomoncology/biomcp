@@ -141,7 +141,6 @@ pub(crate) async fn run_inline_article_search(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Read as _, Write as _};
     use std::sync::{Arc, Mutex, OnceLock};
 
     const QUERY: &str = "SCENAR therapy";
@@ -163,6 +162,7 @@ mod tests {
         base: String,
         requests: Arc<Mutex<Vec<String>>>,
         cache: crate::test_support::TempDirGuard,
+        _server: crate::test_support::TestHttpServer,
     }
 
     impl Fixture {
@@ -232,36 +232,27 @@ mod tests {
     fn fixture() -> &'static Fixture {
         static FIXTURE: OnceLock<Fixture> = OnceLock::new();
         FIXTURE.get_or_init(|| {
-            let listener =
-                std::net::TcpListener::bind("127.0.0.1:0").expect("bind discover fixture");
-            let address = listener.local_addr().expect("discover fixture address");
             let requests = Arc::new(Mutex::new(Vec::new()));
             let logged = requests.clone();
-            std::thread::spawn(move || {
-                for stream in listener.incoming() {
-                    let Ok(mut stream) = stream else {
-                        continue;
-                    };
-                    let logged = logged.clone();
-                    std::thread::spawn(move || {
-                        let mut buffer = [0_u8; 16 * 1024];
-                        let length = stream.read(&mut buffer).unwrap_or(0);
-                        let request = String::from_utf8_lossy(&buffer[..length]).to_string();
-                        let target = request
-                            .lines()
-                            .next()
-                            .and_then(|line| line.split_whitespace().nth(1))
-                            .unwrap_or_default()
-                            .to_string();
-                        logged.lock().unwrap().push(target.clone());
-                        let _ = stream.write_all(&fixture_response(&target));
-                    });
-                }
-            });
+            // The origin and its owner live for this process because the shared client pins it once.
+            let server = crate::test_support::TestHttpServer::respond(move |request| {
+                let request = String::from_utf8_lossy(&request);
+                let target = request
+                    .lines()
+                    .next()
+                    .and_then(|line| line.split_whitespace().nth(1))
+                    .unwrap_or_default()
+                    .to_string();
+                logged.lock().unwrap().push(target.clone());
+                let response = fixture_response(&target);
+                async move { Ok(response) }
+            })
+            .expect("start discover fixture");
             Fixture {
-                base: format!("http://{address}"),
+                base: server.base.clone(),
                 requests,
                 cache: crate::test_support::TempDirGuard::new("discover-cache"),
+                _server: server,
             }
         })
     }

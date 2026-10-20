@@ -241,7 +241,7 @@ pub(super) async fn add_clinvar(
 mod tests {
     use std::time::Instant;
 
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::io::AsyncWriteExt;
 
     use crate::entities::section_outcome::SectionOutcomeState;
 
@@ -575,56 +575,51 @@ mod tests {
         Fast500,
     }
 
-    async fn direct_answer_server(answer: DirectAnswer) -> (String, tokio::task::JoinHandle<()>) {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind direct ClinVar fixture");
-        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-        let task = tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    if stream.read(&mut request).await.is_err() {
-                        return;
+    async fn direct_answer_server(
+        answer: DirectAnswer,
+    ) -> (String, crate::test_support::TestHttpServer) {
+        let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            async move {
+                let Some(_request) = crate::test_support::read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+
+                match answer {
+                    DirectAnswer::HeldOpen => {
+                        tokio::time::sleep(Duration::from_secs(60)).await; // watchdog: held-open server leg; the client deadline under test bounds the wait
                     }
-                    match answer {
-                        DirectAnswer::HeldOpen => {
-                            tokio::time::sleep(Duration::from_secs(60)).await; // watchdog: held-open server leg; the client deadline under test bounds the wait
-                        }
-                        DirectAnswer::Fast429 { retry_after } => {
-                            let headers = match retry_after {
-                                Some(seconds) => format!("Retry-After: {seconds}\r\n"),
-                                None => String::new(),
-                            };
-                            let response = format!(
-                                "HTTP/1.1 429 Too Many Requests\r\n{headers}\
+                    DirectAnswer::Fast429 { retry_after } => {
+                        let headers = match retry_after {
+                            Some(seconds) => format!("Retry-After: {seconds}\r\n"),
+                            None => String::new(),
+                        };
+                        let response = format!(
+                            "HTTP/1.1 429 Too Many Requests\r\n{headers}\
                                  Content-Length: 0\r\nConnection: close\r\n\r\n"
-                            );
-                            stream
-                                .write_all(response.as_bytes())
-                                .await
-                                .expect("write fixture response");
-                        }
-                        DirectAnswer::Fast500 => {
-                            stream
-                                .write_all(
-                                    b"HTTP/1.1 500 Internal Server Error\r\n\
-                                      Content-Length: 0\r\nConnection: close\r\n\r\n",
-                                )
-                                .await
-                                .expect("write fixture response");
-                        }
+                        );
+                        stream.write_all(response.as_bytes()).await?;
                     }
-                });
+                    DirectAnswer::Fast500 => {
+                        stream
+                            .write_all(
+                                b"HTTP/1.1 500 Internal Server Error\r\n\
+                                      Content-Length: 0\r\nConnection: close\r\n\r\n",
+                            )
+                            .await?;
+                    }
+                }
+                Ok(())
             }
-        });
+        })
+        .expect("start HTTP fixture");
+        let base = task.base.clone();
         (base, task)
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn add_clinvar_labels_a_deadline_miss_when_the_direct_answer_never_arrives() {
-        let (base, server) = direct_answer_server(DirectAnswer::HeldOpen).await;
+        let (base, mut server) = direct_answer_server(DirectAnswer::HeldOpen).await;
         let mut env = ClinvarFixtureEnv::scratch_cache_only();
         env.set("BIOMCP_CLINVAR_BASE", &base);
         // A fresh empty cache root keeps shared client construction fast
@@ -643,7 +638,7 @@ mod tests {
             started.elapsed() < crate::test_support::watchdog(10), // watchdog: bounds the deadline proof well under the held-open wait
             "deadline must bound the wait"
         );
-        server.abort();
+        server.finish().unwrap();
 
         assert_eq!(
             variant
@@ -670,7 +665,7 @@ mod tests {
         // A 429 whose Retry-After hold outlives the caller's deadline: the
         // retry sleep runs inside the dropped send future, so the deadline
         // miss can only be labeled with the honest merged wording.
-        let (base, server) = direct_answer_server(DirectAnswer::Fast429 {
+        let (base, mut server) = direct_answer_server(DirectAnswer::Fast429 {
             retry_after: Some(30),
         })
         .await;
@@ -692,7 +687,7 @@ mod tests {
             started.elapsed() < crate::test_support::watchdog(10), // watchdog: bounds the deadline proof well under the 30 s hold
             "deadline must bound the wait"
         );
-        server.abort();
+        server.finish().unwrap();
 
         let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
         assert_eq!(outcome.outcome(), SectionOutcomeState::Degraded);
@@ -708,7 +703,7 @@ mod tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn add_clinvar_names_a_fast_429_refusal_as_rate_limited() {
-        let (base, server) =
+        let (base, mut server) =
             direct_answer_server(DirectAnswer::Fast429 { retry_after: None }).await;
         let mut env = ClinvarFixtureEnv::scratch_cache_only();
         env.set("BIOMCP_CLINVAR_BASE", &base);
@@ -720,7 +715,7 @@ mod tests {
 
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_secs(15)).await;
-        server.abort();
+        server.finish().unwrap();
 
         let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
         assert_eq!(outcome.outcome(), SectionOutcomeState::Degraded);
@@ -737,7 +732,7 @@ mod tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn add_clinvar_names_a_non_429_provider_failure_distinctly() {
-        let (base, server) = direct_answer_server(DirectAnswer::Fast500).await;
+        let (base, mut server) = direct_answer_server(DirectAnswer::Fast500).await;
         let mut env = ClinvarFixtureEnv::scratch_cache_only();
         env.set("BIOMCP_CLINVAR_BASE", &base);
         // A fresh empty cache root keeps shared client construction fast
@@ -748,7 +743,7 @@ mod tests {
 
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_secs(15)).await;
-        server.abort();
+        server.finish().unwrap();
 
         let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
         assert_eq!(outcome.outcome(), SectionOutcomeState::Degraded);

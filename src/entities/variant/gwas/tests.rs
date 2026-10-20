@@ -220,32 +220,28 @@ fn collect_supporting_pmids_dedupes_case_insensitively() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_retired_endpoint_degrades_the_rendered_gwas_section_with_no_retry() {
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::io::AsyncWriteExt;
 
     let retired_body = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/gwas/associations_retired_410_body.txt"
     ));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind retired GWAS fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let server = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let Ok(len) = stream.read(&mut request).await else {
-                    return;
-                };
-                let _ = &request[..len];
-                let response = format!(
-                    "HTTP/1.1 410 Gone\r\nContent-Type: text/plain\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{retired_body}",
-                    retired_body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            });
+    let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(_request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let response = format!(
+                "HTTP/1.1 410 Gone\r\nContent-Type: text/plain\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{retired_body}",
+                retired_body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = server.base.clone();
     let mut env = crate::test_support::FixtureEnv::new();
     env.set("BIOMCP_GWAS_BASE", &base);
 
@@ -259,7 +255,7 @@ async fn a_retired_endpoint_degrades_the_rendered_gwas_section_with_no_retry() {
         .await
         .expect("the retired endpoint degrades the section, never fails the card");
     drop(env);
-    server.abort();
+    server.finish().unwrap();
 
     let rendered = crate::render::markdown::variant_markdown(&variant, &["all".to_string()])
         .expect("rendered variant card");
@@ -329,7 +325,7 @@ fn sequential_combined_rows(
 #[serial_test::serial(source_env)]
 async fn combined_gene_and_trait_queries_run_at_once_and_keep_the_sequential_rows() {
     use std::time::{Duration, Instant};
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::io::AsyncWriteExt;
 
     const GENE_REPLY: &str = r#"{
       "_embedded": {
@@ -388,36 +384,32 @@ async fn combined_gene_and_trait_queries_run_at_once_and_keep_the_sequential_row
     const HOLD: Duration = Duration::from_millis(1500);
     const PAGE_DEADLINE: Duration = Duration::from_millis(2500);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind parallel GWAS fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let server = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let Ok(len) = stream.read(&mut request).await else {
-                    return;
-                };
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                let body = if request.contains("mapped_gene=") {
-                    GENE_REPLY
-                } else if request.contains("efo_trait=") {
-                    TRAIT_REPLY
-                } else {
-                    let refused = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                    let _ = stream.write_all(refused.as_bytes()).await;
-                    return;
-                };
-                tokio::time::sleep(HOLD).await; // watchdog: the 1.5 s reply hold is the measured subject of the parallel proof
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes()).await;
-            });
+    let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+let request = String::from_utf8_lossy(&request).into_owned();
+            let body = if request.contains("mapped_gene=") {
+                GENE_REPLY
+            } else if request.contains("efo_trait=") {
+                TRAIT_REPLY
+            } else {
+                let refused = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                stream.write_all(refused.as_bytes()).await?;
+                return Ok(());
+            };
+            tokio::time::sleep(HOLD).await; // watchdog: the 1.5 s reply hold is the measured subject of the parallel proof
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = server.base.clone();
     let mut env = crate::test_support::FixtureEnv::new();
     env.set("BIOMCP_GWAS_BASE", &base);
 
@@ -432,7 +424,7 @@ async fn combined_gene_and_trait_queries_run_at_once_and_keep_the_sequential_row
         .expect("combined gene and trait page");
     let elapsed = started.elapsed();
     drop(env);
-    server.abort();
+    server.finish().unwrap();
 
     assert!(
         elapsed < PAGE_DEADLINE, // watchdog: bounds the parallel proof at 2.5 s

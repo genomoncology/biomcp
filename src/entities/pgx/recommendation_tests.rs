@@ -1,6 +1,5 @@
 use super::*;
 use serde_json::json;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn tpmt_rows() -> Vec<CpicRecommendationRow> {
     serde_json::from_str(include_str!(concat!(
@@ -99,47 +98,31 @@ fn recommendation_mapping_does_not_override_the_section_limit() {
 
 #[tokio::test]
 async fn recommendations_fetch_bounded_gene_drug_coverage() {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind CPIC fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let recommendations = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/cpic/recommendation_cyp2d6_20260803.json"
     ));
     let coverage =
         r#"[{"drugname":"codeine"},{"drugname":"amitriptyline"},{"drugname":"codeine"}]"#;
-    let server = tokio::spawn(async move {
-        let mut requests = Vec::new();
-        for body in [recommendations, coverage] {
-            let Ok(accepted) =
-                tokio::time::timeout(Duration::from_millis(500), listener.accept()).await
-            else {
-                break;
-            };
-            let (mut stream, _) = accepted.expect("accept CPIC request");
-            let mut request = Vec::new();
-            loop {
-                let mut chunk = [0_u8; 4096];
-                let read = stream.read(&mut chunk).await.expect("read CPIC request");
-                request.extend_from_slice(&chunk[..read]);
-                if read == 0 || request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
-                    break;
-                }
-            }
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Range: 0-1/2\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                body.len(),
-                body
-            );
-            stream
-                .write_all(response.as_bytes())
-                .await
-                .expect("write CPIC response");
-            requests.push(String::from_utf8(request).expect("request text"));
+    let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let replies = std::sync::Mutex::new(
+        [
+            (recommendations, "application/json"),
+            (coverage, "application/json"),
+        ]
+        .into_iter(),
+    );
+    let mut server = crate::test_support::TestHttpServer::respond(move |request| {
+        captured.lock().expect("request lock").push(String::from_utf8_lossy(&request).into_owned());
+        let reply = replies.lock().expect("reply lock").next();
+        async move {
+            let (body, content_type) = reply.ok_or_else(|| std::io::Error::other("unexpected additional fixture request"))?;
+            Ok(format!("HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Range: 0-1/2\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).into_bytes())
         }
-        requests
-    });
+    })
+    .expect("start scripted HTTP fixture");
+    let base = server.base.clone();
     let client =
         CpicClient::with_test_client(crate::sources::test_client().expect("test client"), base);
     let result = get_with_cpic(
@@ -157,7 +140,8 @@ async fn recommendations_fetch_bounded_gene_drug_coverage() {
 
     assert!(result.interactions.is_empty());
     assert!(!result.recommendations.is_empty());
-    let requests = server.await.expect("CPIC fixture server");
+    server.finish().expect("scripted fixture teardown");
+    let requests = requests.lock().expect("request lock");
     assert_eq!(
         requests.len(),
         2,

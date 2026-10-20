@@ -11,7 +11,7 @@ use super::super::*;
 use crate::test_support::FixtureEnv;
 use http_cache_reqwest::CacheMode;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
 const V2_SEARCH_BODY: &str = r#"{"_embedded":{"associations":[{"accession_id":"GCST90002321","p_value":5e-8,"mapped_genes":["BRAF"]}]},"page":{"totalElements":1}}"#;
 
@@ -63,44 +63,45 @@ impl Reply {
 /// `replies` in order, repeating the last one.
 async fn day_cache_server(
     replies: Vec<Reply>,
-) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind GWAS day-cache fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+) -> (
+    String,
+    Arc<Mutex<Vec<String>>>,
+    crate::test_support::TestHttpServer,
+) {
     let requests = Arc::new(Mutex::new(Vec::new()));
     let captured = Arc::clone(&requests);
     let replies = Arc::new(replies);
     let served = Arc::new(Mutex::new(0_usize));
-    let task = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let captured = Arc::clone(&captured);
-            let replies = Arc::clone(&replies);
-            let served = Arc::clone(&served);
-            tokio::spawn(async move {
-                let mut request = vec![0_u8; 16 * 1024];
-                let len = stream.read(&mut request).await.expect("read request");
-                let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                captured
-                    .lock()
-                    .expect("lock fixture requests")
-                    .push(request);
-                let reply = {
-                    let mut index = served.lock().expect("lock reply index");
-                    let reply = replies
-                        .get(*index)
-                        .unwrap_or(replies.last().expect("at least one reply"))
-                        .clone();
-                    *index += 1;
-                    reply
-                };
-                stream
-                    .write_all(reply.into_response().as_bytes())
-                    .await
-                    .expect("write fixture response");
-            });
+    let task = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+        let captured = Arc::clone(&captured);
+        let replies = Arc::clone(&replies);
+        let served = Arc::clone(&served);
+
+        async move {
+            let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                return Ok(());
+            };
+
+            let request = String::from_utf8_lossy(&request).into_owned();
+            captured
+                .lock()
+                .expect("lock fixture requests")
+                .push(request);
+            let reply = {
+                let mut index = served.lock().expect("lock reply index");
+                let reply = replies
+                    .get(*index)
+                    .unwrap_or(replies.last().expect("at least one reply"))
+                    .clone();
+                *index += 1;
+                reply
+            };
+            stream.write_all(reply.into_response().as_bytes()).await?;
+            Ok(())
         }
-    });
+    })
+    .expect("start HTTP fixture");
+    let base = task.base.clone();
     (base, requests, task)
 }
 
@@ -147,7 +148,7 @@ fn gwas_requests_carry_the_day_cache_mode_on_the_middleware_builder() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_repeat_gwas_search_inside_a_day_makes_no_request() {
-    let (base, requests, server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
+    let (base, requests, mut server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
 
@@ -170,7 +171,7 @@ async fn a_repeat_gwas_search_inside_a_day_makes_no_request() {
     );
     assert!(!warnings.contains("served from cache"), "{warnings}");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),
@@ -188,7 +189,7 @@ async fn a_repeat_gwas_search_inside_a_day_makes_no_request() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_gwas_answer_a_day_old_is_refetched() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(vec![Reply::json_a_day_old(V2_SEARCH_BODY)]).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
@@ -202,7 +203,7 @@ async fn a_gwas_answer_a_day_old_is_refetched() {
         .await
         .expect("refetched search");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(request_count(&requests), 2, "the aged answer must refetch");
     assert_eq!(first.total, 1);
@@ -218,7 +219,7 @@ async fn a_gwas_answer_a_day_old_is_refetched() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn infinite_cache_mode_still_serves_the_aged_gwas_answer() {
-    let (base, requests, server) =
+    let (base, requests, mut server) =
         day_cache_server(vec![Reply::json_a_day_old(V2_SEARCH_BODY)]).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
@@ -244,7 +245,7 @@ async fn infinite_cache_mode_still_serves_the_aged_gwas_answer() {
     );
     assert!(warnings.contains("served from cache"), "{warnings}");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),
@@ -258,7 +259,7 @@ async fn infinite_cache_mode_still_serves_the_aged_gwas_answer() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn cache_mode_off_never_serves_the_stored_gwas_answer() {
-    let (base, requests, server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
+    let (base, requests, mut server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
     let mut env = FixtureEnv::new();
     let client = day_cached_client(&base, &mut env);
 
@@ -271,7 +272,7 @@ async fn cache_mode_off_never_serves_the_stored_gwas_answer() {
         .await
         .expect("second search");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),
@@ -285,7 +286,7 @@ async fn cache_mode_off_never_serves_the_stored_gwas_answer() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn no_cache_flag_never_serves_the_stored_gwas_answer() {
-    let (base, requests, server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
+    let (base, requests, mut server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
 
@@ -298,7 +299,7 @@ async fn no_cache_flag_never_serves_the_stored_gwas_answer() {
             .await
             .expect("second search");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),
@@ -317,7 +318,7 @@ async fn no_cache_flag_never_serves_the_stored_gwas_answer() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_stored_body_that_fails_to_decode_is_replaced_by_a_fresh_fetch() {
-    let (base, requests, server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
+    let (base, requests, mut server) = day_cache_server(vec![Reply::json(V2_SEARCH_BODY)]).await;
     let mut env = FixtureEnv::scratch_cache_only();
     let client = day_cached_client(&base, &mut env);
 
@@ -332,7 +333,7 @@ async fn a_stored_body_that_fails_to_decode_is_replaced_by_a_fresh_fetch() {
         .await
         .expect("the corrupt stored body is replaced by a fresh fetch");
 
-    server.abort();
+    server.finish().unwrap();
     drop(env);
     assert_eq!(
         request_count(&requests),

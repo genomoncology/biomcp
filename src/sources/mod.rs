@@ -2538,13 +2538,59 @@ mod tests {
 
     #[tokio::test]
     async fn shared_body_limit_rejects_before_cache_materialization() {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::io::AsyncWriteExt;
 
         let cache_root = TempDirGuard::new("body-limit-cache");
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind test listener");
-        let address = listener.local_addr().expect("test listener address");
+        let received = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let observed = received.clone();
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            let request_number = observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            async move {
+                if crate::test_support::read_request(&mut stream).await?.is_none() {
+                    return Ok(());
+                }
+                if request_number == 0 {
+                    stream
+                        .write_all(
+                            b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nCache-Control: public, max-age=3600\r\nConnection: close\r\n\r\nok",
+                        )
+                        .await?;
+                    return Ok(());
+                }
+                if request_number == 1 {
+                    let custom_size = DEFAULT_MAX_BODY_BYTES + 1;
+                    stream
+                        .write_all(
+                            format!(
+                                "HTTP/1.1 200 OK\r\nContent-Length: {custom_size}\r\nConnection: close\r\n\r\n"
+                            )
+                            .as_bytes(),
+                        )
+                        .await?;
+                    stream
+                        .write_all(&vec![b'c'; custom_size])
+                        .await?;
+                    return Ok(());
+                }
+
+                stream
+                    .write_all(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nCache-Control: public, max-age=3600\r\n\r\n")
+                    .await?;
+                stream
+                    .write_all(
+                        format!("{:x}\r\n", DEFAULT_MAX_BODY_BYTES + 1).as_bytes(),
+                    )
+                    .await?;
+                stream
+                    .write_all(&vec![b'x'; DEFAULT_MAX_BODY_BYTES + 1])
+                    .await?;
+                stream.write_all(b"\r\n").await?;
+                std::future::pending::<()>().await;
+                Ok(())
+            }
+        })
+.expect("start body-limit fixture");
+        let address = server.base.trim_start_matches("http://").to_string();
         let fixture_url = reqwest::Url::parse(&format!("http://{address}"))
             .expect("parse body-limit fixture origin");
         let fixture_policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
@@ -2562,60 +2608,6 @@ mod tests {
             Some(std::sync::Arc::new(cache)),
         )
         .expect("test client");
-        let server = tokio::spawn(async move {
-            let mut handlers = Vec::new();
-            for request_number in 0..4 {
-                let (mut stream, _) = listener.accept().await.expect("accept request");
-                handlers.push(tokio::spawn(async move {
-                    let mut request = [0_u8; 1024];
-                    let _ = stream.read(&mut request).await.expect("read request");
-                    if request_number == 0 {
-                        stream
-                            .write_all(
-                                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nCache-Control: public, max-age=3600\r\nConnection: close\r\n\r\nok",
-                            )
-                            .await
-                            .expect("write in-bound response");
-                        return;
-                    }
-                    if request_number == 1 {
-                        let custom_size = DEFAULT_MAX_BODY_BYTES + 1;
-                        stream
-                            .write_all(
-                                format!(
-                                    "HTTP/1.1 200 OK\r\nContent-Length: {custom_size}\r\nConnection: close\r\n\r\n"
-                                )
-                                .as_bytes(),
-                            )
-                            .await
-                            .expect("write custom-limit headers");
-                        stream
-                            .write_all(&vec![b'c'; custom_size])
-                            .await
-                            .expect("write custom-limit body");
-                        return;
-                    }
-
-                    stream
-                        .write_all(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nCache-Control: public, max-age=3600\r\n\r\n")
-                        .await
-                        .expect("write oversized headers without a declared length");
-                    stream
-                        .write_all(
-                            format!("{:x}\r\n", DEFAULT_MAX_BODY_BYTES + 1).as_bytes(),
-                        )
-                        .await
-                        .expect("write oversized chunk header");
-                    stream
-                        .write_all(&vec![b'x'; DEFAULT_MAX_BODY_BYTES + 1])
-                        .await
-                        .expect("write bytes through the rejection boundary");
-                    stream.write_all(b"\r\n").await.expect("finish chunk");
-                    std::future::pending::<()>().await;
-                }));
-            }
-            handlers
-        });
 
         let in_bound_url = format!("http://{address}/in-bound");
         let in_bound = client
@@ -2674,14 +2666,8 @@ mod tests {
                 Some(crate::error::RecoveryAction::NarrowRequest.message())
             );
         }
-        let handlers = tokio::time::timeout(Duration::from_secs(2), server)
-            .await
-            .expect("all requests should reach transport")
-            .expect("test server should finish accepting requests");
-        for handler in handlers {
-            handler.abort();
-            let _ = handler.await;
-        }
+        assert_eq!(received.load(std::sync::atomic::Ordering::SeqCst), 4);
+        server.finish().expect("body-limit fixture teardown");
     }
 
     #[tokio::test]
@@ -2705,19 +2691,17 @@ mod tests {
 
     #[tokio::test]
     async fn read_limited_source_body_classifies_chunk_failures_as_retryable() {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind fixture");
-        let address = listener.local_addr().expect("fixture address");
-        let server = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.expect("accept request");
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| async move {
             stream
                 .write_all(
                     b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\nshort",
                 )
-                .await
-                .expect("write truncated response");
-        });
+                .await?;
+
+            Ok(())
+        })
+        .expect("start HTTP fixture");
+        let address = server.base.trim_start_matches("http://").to_string();
         let response = reqwest::Client::new()
             .get(format!("http://{address}"))
             .send()
@@ -2736,7 +2720,7 @@ mod tests {
             error.public_projection().recovery,
             Some(crate::error::RecoveryAction::RetryRemoteSource.message())
         );
-        server.await.expect("fixture server");
+        server.finish().unwrap();
     }
 
     #[tokio::test]

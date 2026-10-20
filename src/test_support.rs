@@ -3,6 +3,8 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
 
+pub(crate) use biomcp_mcp_contract_client::test_http::{TestHttpServer, read_request};
+
 /// Capture warning output for the future without changing the process subscriber.
 pub(crate) async fn capture_warnings<F: std::future::Future>(future: F) -> (F::Output, String) {
     use tracing::instrument::WithSubscriber;
@@ -338,3 +340,6 @@ fn signaled_child_spawn_fails_when_the_child_never_signals() {
         "a child that never signals must fail the handshake spawn"
     );
 }
+
+#[path = "../crates/biomcp-mcp-contract-client/src/test_http/tests.rs"]
+mod shared_http_tests;

@@ -945,15 +945,14 @@ async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
     env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "400");
     // A raw listener that accepts the ID-converter connection and never
     // writes a byte: the bridge stalls until the command deadline expires.
-    let stalled = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let bridge_port = stalled.local_addr().unwrap().port();
-    let bridge_base = format!("http://127.0.0.1:{bridge_port}/tools/idconv/api/v1/articles");
+    let mut holder = crate::test_support::TestHttpServer::spawn(|stream| async move {
+        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        drop(stream);
+        Ok(())
+    })
+    .expect("start stalled ID-converter fixture");
+    let bridge_base = format!("{}/tools/idconv/api/v1/articles", holder.base);
     env.set("BIOMCP_NCBI_IDCONV_BASE", &bridge_base);
-    let holder = tokio::spawn(async move {
-        while let Ok((_socket, _)) = stalled.accept().await {
-            tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-        }
-    });
     let requests = Arc::new(Mutex::new(Vec::new()));
     let logged = requests.clone();
     let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
@@ -1002,7 +1001,7 @@ async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
     )
     .await
     .unwrap_err();
-    holder.abort();
+    holder.finish().unwrap();
     assert!(
         format!("{error:?}").contains("deadline"),
         "expected the bounded command deadline error from the stalled bridge, got {error:?}"
