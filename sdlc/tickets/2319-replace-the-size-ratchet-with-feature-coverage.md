@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Depends on: 2316, 2318
+
 ## Outcome
 
 `sdlc/features.md` lists each feature once in caller words. Every existing outside-in test names a listed feature, including drug, managed-data, study and transport behavior; derive links from golden command metadata where it already exists. The routine gate checks these links cheaply and adds no instrumented build.
