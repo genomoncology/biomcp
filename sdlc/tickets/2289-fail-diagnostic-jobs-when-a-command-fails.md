@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 Every BioMCP job script, smoke and diagnostic helper that runs product commands exits nonzero when any product command fails, and prints that command's captured error. A job exit of 0 always means every command it ran passed.
 
-Changes: `scripts/release-smoke.sh`, `tests/test_release_smoke_script.py`, `scripts/geneagent-demo.sh`, `scripts/genegpt-demo.sh`, `tests/test_demo_scripts.py`, `scripts/measure-mcp-tools.py`, `tests/test_measure_mcp_tools.py`, `tools/measure-0-9-3-baseline`, `tests/test_measurement_summary_contract.py`, `tools/check-png-artifact`, `CHANGELOG.md`.
+Changes: `scripts/release-smoke.sh`, `tests/test_release_smoke_script.py`, `scripts/geneagent-demo.sh`, `scripts/genegpt-demo.sh`, `tests/test_demo_scripts.py`, `scripts/measure-mcp-tools.py`, `tests/test_measure_mcp_tools.py`, `tools/measure-0-9-3-baseline`, `tests/test_measurement_summary_contract.py`, `tools/check-png-artifact`, `tests/test_png_artifact_contract.py`, `CHANGELOG.md`.
 
 - Proof: A deliberately failing command in each fixed helper makes its job exit nonzero and print the error.
 
@@ -25,3 +25,7 @@ Inventory the scripts under `tools/` and `scripts/` and the workflow steps that 
 ## Implementation boundary
 
 Inventory found swallowed MCP helper exits, hidden captured errors in demos and measurement wrappers, and measurement jobs returning success after recorded command failures. Preserve all samples and summaries while returning failure for unexpected command failures or timeouts. Existing explicitly asserted negative cases stay valid. The release.yml shared helper belongs to 2288; report its stderr requirement instead of editing that file here. Reproduce with fake commands through real helper entry points, no providers.
+
+## Reproduction on current main
+
+Before product edits, focused M5 job 2289/1792506036351-91894 on e0d84c429 ran the five owning regression files with fake executables: release smoke, demo scripts, MCP measurement, measurement summary and PNG artifact contracts. Nine cases failed and fifteen passed. Failures demonstrate hidden command streams, ignored MCP helper failure, coverage status 100 returning 0, runtime exit 7 returning 0 and census exit 42 returning 0. The earlier attempt stopped on a regression-test quoting error before product checks; its evidence remains separate. No provider requests or production mutation.
