@@ -6,6 +6,9 @@
 
 ### Fixes
 
+- Update the MCP SDK to reject invalid initial requests without leaking HTTP sessions and repair client metadata and redirect security. (2309)
+- Update certifi, urllib3, mkdocs-material, xxhash-rust and quinn-proto to their first patched security releases. (2308)
+
 - Update TLS certificate validation and bundled trust roots to reject distrusted emSign certificate paths. (2305)
 
 - Report licenses stated by fetched full-text source metadata and JATS links with their source, including when an asset package is unavailable. (2296)
@@ -94,6 +97,8 @@
 - Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
 
 ### Internal
+
+- Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)

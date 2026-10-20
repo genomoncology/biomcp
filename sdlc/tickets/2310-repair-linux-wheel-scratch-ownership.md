@@ -4,13 +4,15 @@ priority: 1
 
 # 2310 — Repair Linux wheel scratch ownership
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 0.9.4
 
+Reviews: revision b12d513, accept
+
 ## Outcome
 
-The existing Linux installed-wheel recipe prevents container-created files from leaving host scratch with root ownership. Run the container as the host uid and gid, or restore the exact owned target before container exit, including failed stages. Ordinary host temporary-directory cleanup then succeeds. Preserve the primary build or smoke failure. Keep the pinned container, build, installation and product smoke behavior.
+The existing Linux installed-wheel recipe prevents container-created files from leaving host scratch with root ownership. Run the container as the host uid and gid, or restore the exact owned target before the container exits, including failed stages. Ordinary host temporary-directory cleanup then succeeds. Preserve the primary build or smoke failure. Keep the pinned container, build, installation and product smoke behavior. Container ownership labels must identify the actual build-job ticket, with an accurate non-job release fallback, rather than a closed hardcoded ticket.
 
 PM ruling: fix ownership at its source, not with an extra cleanup container afterward. Cite the environment-leak class in the 2299 root cause record.
 
