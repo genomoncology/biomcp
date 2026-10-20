@@ -8,13 +8,13 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2234
+Depends on: 2234, 2294
 
 ## Outcome
 
-Identify which changes between 0.9.3 and 0.9.4 raised test-profile compilation and linking cost, then reduce the gene edit-test and Rust-touch rebuild cost while retaining useful test coverage and development behavior.
+Disposition the measured test-profile rebuild slowdown through the approved bounded attribution and single prototype. Land a reduction only if the controlled comparison supports it; otherwise reject the prototype and record that the source cause remains unknown, as the PM explicitly approved.
 
-Changes: `src/entities/article/variant_search.rs`, `sdlc/records/2284-rebuild-attribution.md`, `CHANGELOG.md`.
+Changes: `sdlc/records/2284-rebuild-attribution.md`, `CHANGELOG.md`.
 
 ## Evidence
 
@@ -39,3 +39,7 @@ Use the same measurement command, workload order and settings for both arms: col
 PM decision on 2026-10-20: the exact before-arm baseline is reviewed combined candidate3d9472ecc2b4db2d68eee81d54c65453a9804806. The comparison may run in parallel with its serial landing checks. Both arms use the same Gator host, toolchain, cache and validated helper; the only after-arm source change is the boxed-future prototype. Formal clones exclude this ticket’s SDLC metadata. No timing begins before the PM relays Jarvis’s drained Gator hold. If runtime changes before landing, remeasure only affected rows. This supersedes the prior current-main/M5 location condition.
 
 PM clarification: keep3d9472ecc as the relative experiment baseline while2296 fixes fulltext license reporting. That narrow fix does not invalidate these pairs. Remeasure only if it changes Cargo files, build profiles or the code this prototype changes. Run2296 on the M5 or Yellow; Gator stays exclusive to the comparison once drained.
+
+## Final PM stopping rule
+
+The PM accepted rejection of the sole BoxFuture prototype and forbids a second prototype. One additional native Cargo test-profile attribution compares0.9.3 and current main on the same host. If no crate/unit explains substantial growth, close this ticket with the negative result, no fix and no further work. The completed same-host main test unit differs by only0.33seconds, so the earlier slowdown was not reproduced; machine conditions during2234 remain a possible explanation, not an established cause. The added2294 dependency keeps the accepted experiment baseline ancestry out of main until its owning source ticket lands.

@@ -91,6 +91,8 @@
 
 ### Internal
 
+- Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
+
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
 
