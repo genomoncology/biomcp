@@ -564,6 +564,8 @@ async fn resolve_article_assets_for(
             }
         };
 
+        let primary_healthy = retained_pmc_manifest.is_some() && !any_failed;
+
         match europe_xml {
             SourceAttempt::Success(xml) => {
                 let provider = ArticleFulltextProvider {
@@ -631,8 +633,7 @@ async fn resolve_article_assets_for(
 
         // A complete primary answer does not need the optional ZIP. Keep
         // fallback discovery when any declared file or requested byte is missing.
-        let primary_sufficient = retained_pmc_manifest.is_some()
-            && !any_failed
+        let primary_sufficient = primary_healthy
             && !assets.is_empty()
             && nonretrievable.is_empty()
             && undelivered_supplements.is_empty()
