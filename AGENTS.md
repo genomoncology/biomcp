@@ -70,7 +70,21 @@ profile, including PNG, SVG and terminal output checks. `make release-gate`
 requires the same full-feature build and output checks with the optimized
 release profile before release-profile specifications. The final release
 rehearsal also requires optimized artifacts and their output checks. `make landing-gate` runs lint, routine tests and
-specifications in order. `make main-gate` runs that standard gate and then
+specifications in order. Landing lint skips live dependency advisories only
+when the four Cargo and Python dependency inputs match a verified preceding
+`origin/main`; missing or ambiguous comparison context runs advisories.
+Standalone lint, full main checks and release qualification always run live
+advisories. Required advisory checks run cargo-deny against RustSec and the
+pinned official OSV-Scanner against both Cargo.lock and uv.lock. OSV adds
+GitHub Security Advisories and Python package advisories. The advisory-only
+bootstrap mode installs the verified upstream binary without a Go toolchain;
+installation, parsing, network errors and advisory findings fail the gate.
+The policy helper runs through `uv run --no-sync python` to use the repository's
+pinned development interpreter without installing the Rust project.
+The scanner configuration derives only the reviewed advisory IDs and reasons
+from deny.toml; OSV applies each ID to its aliases. No separate exception list
+or package-wide override is maintained. The release marker subset relies on the release workflow's full
+qualification lint. License checks always run. `make main-gate` runs that standard gate and then
 `make repo-audit` and `make full-feature-check`. The audit stage retains the
 whole-repository source, capture, coupling and CLI surface checks; routine Python
 keeps their focused malformed-input and wrapper checks. Release qualification
@@ -108,9 +122,11 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 ## Landing changes
 
-Land reviewed tickets in batches, as the shared build coordinator skill (`skills/build-coordinator.md`) says. Run `make landing-gate` once on the batch candidate through the configured build job. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
+Land reviewed tickets in batches, as the shared build coordinator skill (`skills/build-coordinator.md`) says. Run `make landing-gate` once on the batch candidate through the configured build job. Reuse that passing gate while its inputs stay unchanged. Do not repeat the gate after merging.
 
-A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another batch.
+A failed batch gate holds that landing. A reviewed repair or backout must pass the candidate gate before publication. On resume, inspect the candidate's exact-revision gate evidence before landing it.
+
+Run `make main-gate` once on the final candidate before the full nonpublishing release rehearsal until nightly qualification is scheduled. Nightly qualification will own the additional repository audit, all-feature checks, rendered output checks and installed Linux wheel smoke.
 
 Everyday builds and tests use build jobs. GitHub Actions run for releases after local checks pass, and retain manual dispatch for explicit checks. The release workflow must qualify its candidate directly; a prior CI run on main does not qualify it. Rehearse the full release workflow without publishing before Ian tags a release.
 
