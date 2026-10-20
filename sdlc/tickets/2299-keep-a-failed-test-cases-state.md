@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 8dffba3, accept
+
 ## Outcome
 
 When a replay-backed test fails, its case directory, cache database and replay logs survive for diagnosis. tests/golden/replay_env.py borrows a pytest-owned case directory, following the 2285 pattern, so teardown no longer deletes the evidence.
