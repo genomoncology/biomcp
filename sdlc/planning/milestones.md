@@ -20,7 +20,7 @@ Done when: every 0.9.3 bug ticket has landed with its proof; the test and build 
 
 ## 0.9.4
 
-Delivers: BioMCP's cache in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely; golden output tests and the remaining fixture consumers on the replay server, with owned fixture identifiers; and, on top of that work, a fix for every known bug, the security updates, tests that fail only on product bugs, and process fixes that make the release path cheaper. `sdlc/plan.md` gives the order.
+Delivers: BioMCP's cache in one SQLite database, so lookups never scan the disk, size limits need no walk, and the CLI and the MCP server share it safely; golden output tests and the remaining fixture consumers on the replay server, with owned fixture identifiers; full FDA approval history for a drug; and, on top of that work, a fix for every known bug, the security updates, tests that fail only on product bugs, and process fixes that make the release path cheaper. `sdlc/plan.md` gives the order.
 
 Serves: BioMCP's ideal state that work stays bounded and that the same binary runs safely as a shell command, a local MCP server and a shared HTTP server.
 
@@ -28,11 +28,11 @@ Done when: every 0.9.4 ticket lands or is withdrawn, main passes its full local 
 
 ## 0.9.5
 
-Delivers: full FDA approval history for a drug; a measurement of whether an agent answers cancer care questions better with BioMCP; and proof that trial answers are correct against keys taken from ClinicalTrials.gov itself.
+Delivers: a measurement of whether an agent answers cancer care questions better with BioMCP; and proof that trial answers are correct against keys taken from ClinicalTrials.gov itself.
 
 Serves: the two gaps BioMCP's ideal state names: nobody measures whether an agent succeeds, and nothing proves the trial answers are correct.
 
-Done when: the FDA approval history ships with its proof, the agent measurement and the trial answer check each run and report a result, and a full release rehearsal passes.
+Done when: the agent measurement and the trial answer check each run and report a result, and a full release rehearsal passes.
 
 ## 1.0
 
