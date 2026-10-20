@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 5c9a4bf, accept
 
+Reviews: revision adc316c, accept
+
 ## Outcome
 
 Changes: `sdlc/records/2233-linux-offline-suites.md`, `CHANGELOG.md`.
