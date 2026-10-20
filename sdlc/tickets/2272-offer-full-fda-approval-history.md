@@ -51,3 +51,5 @@ The new opt-in section uses the existing approvals JSON payload with every provi
 ## Ready review evidence
 
 Implementation 4213dd380f4eaccc5f25fd524e158f26eb9be61e passed full mechanical lint, 218 focused Rust cases and all thirteen regulatory CLI replays. Final focused replay log is 2272/1792506264770-34203. The developer disclosed two local shortage-fixture routing/envelope failures, corrected only those fixture details, and reused the unchanged product source Rust proof. No second provider request occurred. After the developer stopped, the coordinator merged main 6e664cfa20164b58339882d92e2a13c752d222fa and preserved both the accepted protein UniProt table correction and this new history row. Fresh review covers that integration; no landing before the tag.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — retain fda-history/2272 raw job evidence for accepted source287285f24321fb960b6694f563af0141ac3d9b9f through its future 0.9.5 landing. The completed M5 job checkout was removed after retaining all raw runs; the accepted source branch remains held until after the 0.9.4 tag. No source or main integration changed during cleanup.
