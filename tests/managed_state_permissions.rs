@@ -140,139 +140,111 @@ enum FixtureContact {
 #[cfg(windows)]
 struct MyGeneFixture {
     base: String,
-    stop: std::sync::mpsc::Sender<()>,
-    server: std::thread::JoinHandle<Result<FixtureContact, String>>,
+    accepted: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    valid: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    server: biomcp_mcp_contract_client::test_http::TestHttpServer,
 }
 
 #[cfg(windows)]
 fn start_mygene_fixture() -> MyGeneFixture {
-    use std::io::{Read, Write};
-    use std::net::TcpListener;
-    use std::time::{Duration, Instant};
-
-    let listener = TcpListener::bind("127.0.0.1:0").expect("local MyGene fixture");
-    listener.set_nonblocking(true).expect("nonblocking fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-    let (stop, stop_rx) = std::sync::mpsc::channel();
-    let server = std::thread::spawn(move || {
-        let deadline = Instant::now() + Duration::from_secs(30);
-        let mut valid_requests = 0;
-        loop {
-            if stop_rx.try_recv().is_ok() {
-                match listener.accept() {
-                    Ok(_) => return Err("unexpected extra MyGene request".to_string()),
-                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        return match valid_requests {
-                            0 => Ok(FixtureContact::NoContact),
-                            1 => Ok(FixtureContact::ValidRequest),
-                            count => Err(format!("observed {count} valid MyGene requests")),
-                        };
-                    }
-                    Err(error) => return Err(format!("fixture final accept: {error}")),
-                }
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+    use tokio::io::AsyncWriteExt;
+    let accepted = Arc::new(AtomicUsize::new(0));
+    let valid = Arc::new(AtomicUsize::new(0));
+    let observed = accepted.clone();
+    let validated = valid.clone();
+    let server = biomcp_mcp_contract_client::test_http::TestHttpServer::spawn(move |mut stream| {
+        let observed = observed.clone();
+        let validated = validated.clone();
+        async move {
+            if observed.fetch_add(1, Ordering::SeqCst) != 0 {
+                return Err(std::io::Error::other("unexpected extra MyGene request"));
             }
-            let timed_out = Instant::now() >= deadline; // watchdog: bounded readiness timeout
-            if timed_out {
-                return Err("local MyGene fixture timed out before contact".to_string());
-            }
-            match listener.accept() {
-                Ok((mut stream, _)) => {
-                    if valid_requests != 0 {
-                        return Err("unexpected extra MyGene request".to_string());
-                    }
-                    stream
-                        .set_read_timeout(Some(Duration::from_secs(5)))
-                        .map_err(|error| format!("set fixture read timeout: {error}"))?;
-                    let mut request = Vec::new();
-                    let mut chunk = [0_u8; 1024];
-                    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
-                        let count = stream
-                            .read(&mut chunk)
-                            .map_err(|error| format!("read MyGene request: {error}"))?;
-                        if count == 0 {
-                            return Err("MyGene request ended before its headers".to_string());
-                        }
-                        request.extend_from_slice(&chunk[..count]);
-                        if request.len() > 16 * 1024 {
-                            return Err("MyGene request headers exceeded 16 KiB".to_string());
-                        }
-                    }
-                    let request = std::str::from_utf8(&request)
-                        .map_err(|error| format!("MyGene request was not UTF-8: {error}"))?;
-                    let request_line = request
-                        .lines()
-                        .next()
-                        .ok_or_else(|| "MyGene request line was missing".to_string())?;
-                    let mut parts = request_line.split_whitespace();
-                    let method = parts.next();
-                    let target = parts.next();
-                    let version = parts.next();
-                    if parts.next().is_some()
-                        || method != Some("GET")
-                        || version != Some("HTTP/1.1")
-                    {
-                        return Err(format!("unexpected MyGene request line: {request_line}"));
-                    }
-                    let (path, query) = target
-                        .and_then(|target| target.split_once('?'))
-                        .ok_or_else(|| {
-                            format!("MyGene request query was missing: {request_line}")
-                        })?;
-                    if path != "/query" {
-                        return Err(format!("unexpected MyGene request path: {path}"));
-                    }
-                    let params = query
-                        .split('&')
-                        .filter_map(|pair| pair.split_once('='))
-                        .collect::<Vec<_>>();
-                    let exact_param = |name: &str, value: &str| {
-                        let values = params
-                            .iter()
-                            .filter_map(|(key, found)| (*key == name).then_some(*found))
-                            .collect::<Vec<_>>();
-                        values == [value]
-                    };
-                    let query_values = params
-                        .iter()
-                        .filter_map(|(key, value)| (*key == "q").then_some(*value))
-                        .collect::<Vec<_>>();
-                    if query_values.len() != 1
-                        || !query_values[0].to_ascii_uppercase().contains("BRAF")
-                        || !exact_param("species", "human")
-                        || !exact_param("size", "1")
-                        || !exact_param("from", "0")
-                    {
-                        return Err(format!("unexpected MyGene query parameters: {query}"));
-                    }
-                    let body = br#"{"total":1,"hits":[{"symbol":"BRAF","name":"B-Raf proto-oncogene","entrezgene":"673"}]}"#;
-                    write!(
-                        stream,
-                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                        body.len()
-                    )
-                    .map_err(|error| format!("write fixture response headers: {error}"))?;
-                    stream
-                        .write_all(body)
-                        .map_err(|error| format!("write fixture response body: {error}"))?;
-                    valid_requests += 1;
-                }
-                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                    std::thread::sleep(Duration::from_millis(10));
-                }
-                Err(error) => return Err(format!("fixture accept: {error}")),
-            }
+            let Some(request) = biomcp_mcp_contract_client::test_http::read_request(&mut stream).await? else {
+                return Err(std::io::Error::other("MyGene request ended before its headers"));
+            };
+            if request.len() > 16 * 1024 { return Err(std::io::Error::other("MyGene request headers exceeded 16 KiB")); }
+            let request = std::str::from_utf8(&request).map_err(std::io::Error::other)?;
+            validate_mygene_fixture_request(request).map_err(std::io::Error::other)?;
+            let body = br#"{"total":1,"hits":[{"symbol":"BRAF","name":"B-Raf proto-oncogene","entrezgene":"673"}]}"#;
+            let header = format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+            stream.write_all(header.as_bytes()).await?;
+            stream.write_all(body).await?;
+            validated.fetch_add(1, Ordering::SeqCst);
+            Ok(())
         }
-    });
-    MyGeneFixture { base, stop, server }
+    })
+    .expect("start MyGene permission fixture");
+    MyGeneFixture {
+        base: server.base.clone(),
+        accepted,
+        valid,
+        server,
+    }
 }
 
 #[cfg(windows)]
-fn finish_mygene_fixture(fixture: MyGeneFixture) -> Result<FixtureContact, String> {
-    let _ = fixture.stop.send(());
-    fixture
-        .server
-        .join()
-        .map_err(|_| "local MyGene fixture thread panicked".to_string())?
+fn validate_mygene_fixture_request(request: &str) -> Result<(), String> {
+    let request_line = request
+        .lines()
+        .next()
+        .ok_or_else(|| "MyGene request line was missing".to_string())?;
+    let mut parts = request_line.split_whitespace();
+    let method = parts.next();
+    let target = parts.next();
+    let version = parts.next();
+    if parts.next().is_some() || method != Some("GET") || version != Some("HTTP/1.1") {
+        return Err(format!("unexpected MyGene request line: {request_line}"));
+    }
+    let (path, query) = target
+        .and_then(|target| target.split_once('?'))
+        .ok_or_else(|| format!("MyGene request query was missing: {request_line}"))?;
+    if path != "/query" {
+        return Err(format!("unexpected MyGene request path: {path}"));
+    }
+    let params = query
+        .split('&')
+        .filter_map(|pair| pair.split_once('='))
+        .collect::<Vec<_>>();
+    let exact_param = |name: &str, value: &str| {
+        let values = params
+            .iter()
+            .filter_map(|(key, found)| (*key == name).then_some(*found))
+            .collect::<Vec<_>>();
+        values == [value]
+    };
+    let query_values = params
+        .iter()
+        .filter_map(|(key, value)| (*key == "q").then_some(*value))
+        .collect::<Vec<_>>();
+    if query_values.len() != 1
+        || !query_values[0].to_ascii_uppercase().contains("BRAF")
+        || !exact_param("species", "human")
+        || !exact_param("size", "1")
+        || !exact_param("from", "0")
+    {
+        return Err(format!("unexpected MyGene query parameters: {query}"));
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn finish_mygene_fixture(mut fixture: MyGeneFixture) -> Result<FixtureContact, String> {
+    use std::sync::atomic::Ordering;
+    fixture.server.finish().map_err(|error| error.to_string())?;
+    match (
+        fixture.accepted.load(Ordering::SeqCst),
+        fixture.valid.load(Ordering::SeqCst),
+    ) {
+        (0, 0) => Ok(FixtureContact::NoContact),
+        (1, 1) => Ok(FixtureContact::ValidRequest),
+        (accepted, valid) => Err(format!(
+            "observed {accepted} MyGene connections and {valid} valid requests"
+        )),
+    }
 }
 
 #[cfg(windows)]

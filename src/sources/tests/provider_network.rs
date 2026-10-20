@@ -624,8 +624,25 @@ async fn ordinary_client_blocks_untrusted_local_destinations_before_contact() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn ordinary_client_allows_exact_override_but_ignores_proxy_and_cross_origin_redirects() {
-    let provider = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let provider_address = provider.local_addr().unwrap();
+    let received = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let credentials = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let observed = received.clone();
+    let retained = credentials.clone();
+    let mut server = crate::test_support::TestHttpServer::respond(move |request| {
+        let request = String::from_utf8_lossy(&request).to_ascii_lowercase();
+        let response = if observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst) == 0 {
+            let host = request.lines().find_map(|line| line.strip_prefix("host: ")).expect("provider host");
+            format!("HTTP/1.1 302 Found\r\nLocation: http://{host}/final\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").into_bytes()
+        } else {
+            retained.store(request.contains("authorization: bearer approved-origin"), std::sync::atomic::Ordering::SeqCst);
+            b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".to_vec()
+        };
+        async move {
+            Ok(response)
+        }
+    })
+    .expect("start approved-origin fixture");
+    let provider_address = server.base.trim_start_matches("http://").to_string();
     let proxy = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let proxy_url = format!("http://{}", proxy.local_addr().unwrap());
     let escaped = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -643,30 +660,6 @@ async fn ordinary_client_allows_exact_override_but_ignores_proxy_and_cross_origi
         ("no_proxy", Some("")),
     ]);
 
-    let server = tokio::spawn(async move {
-        let (mut first, _) = provider.accept().await.unwrap();
-        let mut request = [0_u8; 2048];
-        let _ = first.read(&mut request).await.unwrap();
-        first
-            .write_all(
-                format!(
-                    "HTTP/1.1 302 Found\r\nLocation: http://{provider_address}/final\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-                )
-                .as_bytes(),
-            )
-            .await
-            .unwrap();
-
-        let (mut second, _) = provider.accept().await.unwrap();
-        let count = second.read(&mut request).await.unwrap();
-        let final_request = String::from_utf8_lossy(&request[..count]).to_ascii_lowercase();
-        second
-            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
-            .await
-            .unwrap();
-        final_request.contains("authorization: bearer approved-origin")
-    });
-
     let client = build_uncached_http_client(SharedHttpClientKind::Default, None).unwrap();
     let response = client
         .get(format!("{base}/start"))
@@ -675,8 +668,10 @@ async fn ordinary_client_allows_exact_override_but_ignores_proxy_and_cross_origi
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
+    server.finish().unwrap();
+    assert_eq!(received.load(std::sync::atomic::Ordering::SeqCst), 2);
     assert!(
-        server.await.unwrap(),
+        credentials.load(std::sync::atomic::Ordering::SeqCst),
         "credential was not retained on the approved origin"
     );
     assert!(
@@ -684,25 +679,20 @@ async fn ordinary_client_allows_exact_override_but_ignores_proxy_and_cross_origi
         "ambient proxy received provider traffic"
     );
 
-    let redirector = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let redirector_address = redirector.local_addr().unwrap();
-    let redirector_base = format!("http://{redirector_address}");
+    let redirected = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let observed = redirected.clone();
+    let mut redirect_server = crate::test_support::TestHttpServer::respond(move |_| {
+        observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let response = format!("HTTP/1.1 302 Found\r\nLocation: http://{escaped_address}/stolen\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        async move {
+            Ok(response.into_bytes())
+        }
+    })
+    .expect("start off-origin redirect fixture");
+    let redirector_base = redirect_server.base.clone();
     let _redirect_env =
         EnvRestore::set(&[("BIOMCP_TEST_UNPACED_ORIGIN", Some(redirector_base.as_str()))]);
-    let redirect_server = tokio::spawn(async move {
-        let (mut socket, _) = redirector.accept().await.unwrap();
-        let mut request = [0_u8; 1024];
-        let _ = socket.read(&mut request).await.unwrap();
-        socket
-            .write_all(
-                format!(
-                    "HTTP/1.1 302 Found\r\nLocation: http://{escaped_address}/stolen\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-                )
-                .as_bytes(),
-            )
-            .await
-            .unwrap();
-    });
+
     let error = client
         .get(format!("{redirector_base}/start"))
         .header("Authorization", "Bearer must-not-escape")
@@ -710,7 +700,8 @@ async fn ordinary_client_allows_exact_override_but_ignores_proxy_and_cross_origi
         .await
         .expect_err("cross-origin redirect must fail");
     assert!(error.to_string().contains("redirect"));
-    redirect_server.await.unwrap();
+    redirect_server.finish().unwrap();
+    assert_eq!(redirected.load(std::sync::atomic::Ordering::SeqCst), 1);
     assert!(
         !accept_with_timeout(&escaped).await,
         "redirect target received credentials"

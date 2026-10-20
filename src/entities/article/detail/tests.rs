@@ -11,7 +11,7 @@ async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
 
     const PUBTATOR: &[u8] =
         include_bytes!("../../../../testdata/sources/pubtator/export_22663011.json");
-    let fixture = TestHttpFixture::spawn(|request| {
+    let mut fixture = TestHttpFixture::spawn(|request| {
         let first_line = request.lines().next().unwrap_or_default();
         if first_line.starts_with("GET /publications/export/biocjson?") {
             TestHttpReply::Bytes(test_http_response("200 OK", "application/json", PUBTATOR))
@@ -54,6 +54,7 @@ async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
             Some("provider_error")
         )
     );
+    fixture.finish().unwrap();
 }
 
 #[serial_test::serial(source_env)]
@@ -66,7 +67,7 @@ async fn all_digit_pmid_past_u32_reports_not_found_with_the_full_identifier() {
 
     let requests = Arc::new(Mutex::new(Vec::<String>::new()));
     let logged = requests.clone();
-    let fixture = TestHttpFixture::spawn(move |request| {
+    let mut fixture = TestHttpFixture::spawn(move |request| {
         logged
             .lock()
             .unwrap()
@@ -110,6 +111,8 @@ async fn all_digit_pmid_past_u32_reports_not_found_with_the_full_identifier() {
             .any(|line| line.contains("pmids=999999999999")),
         "the full PMID reaches the source request: {requests:?}"
     );
+    drop(requests);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]

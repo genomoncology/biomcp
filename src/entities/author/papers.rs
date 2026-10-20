@@ -985,37 +985,41 @@ mod wire_tests {
 
     type AuthorEnv = crate::test_support::FixtureEnv;
 
-    async fn spawn_papers_fixture(status: &str, body: String) -> (String, Arc<Mutex<Vec<String>>>) {
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+    async fn spawn_papers_fixture(
+        status: &str,
+        body: String,
+    ) -> (
+        String,
+        Arc<Mutex<Vec<String>>>,
+        crate::test_support::TestHttpServer,
+    ) {
+        use tokio::io::AsyncWriteExt as _;
         let requests = Arc::new(Mutex::new(Vec::new()));
         let logged = requests.clone();
         let status = status.to_string();
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind author fixture");
-        let address = listener.local_addr().expect("author fixture address");
-        tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let logged = logged.clone();
-                let body = body.clone();
-                let status = status.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let length = stream.read(&mut request).await.unwrap_or(0);
-                    let request = String::from_utf8_lossy(&request[..length]);
-                    if let Some(target) = request.split_whitespace().nth(1) {
-                        logged.lock().unwrap().push(target.to_string());
-                    }
-                    let response = format!(
-                        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                        body.len(),
-                        body
-                    );
-                    let _ = stream.write_all(response.as_bytes()).await;
-                });
+        let server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            let logged = logged.clone();
+            let body = body.clone();
+            let status = status.clone();
+            async move {
+                let Some(request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
+
+                let request = String::from_utf8_lossy(&request);
+                if let Some(target) = request.split_whitespace().nth(1) {
+                    logged.lock().unwrap().push(target.to_string());
+                }
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes()).await?;
+                Ok(())
             }
-        });
-        (format!("http://{address}"), requests)
+        })
+                .expect("start HTTP fixture");
+        let base = server.base.clone();
+        (base, requests, server)
     }
 
     fn page_body(offset: u64, next: Option<u64>, rows: &[serde_json::Value]) -> String {
@@ -1035,7 +1039,8 @@ mod wire_tests {
             serde_json::json!({"paperId": "beta", "title": "Beta"}),
             serde_json::json!({"paperId": "alpha", "title": "Alpha duplicate", "abstract": "dup"}),
         ];
-        let (base, requests) = spawn_papers_fixture("200 OK", page_body(0, Some(1), &rows)).await;
+        let (base, requests, mut server) =
+            spawn_papers_fixture("200 OK", page_body(0, Some(1), &rows)).await;
         for (full, fields) in [
             (
                 false,
@@ -1104,6 +1109,7 @@ mod wire_tests {
             assert!(request.contains("offset=0"), "{request}");
             assert!(request.contains("limit=10"), "{request}");
         }
+        server.finish().unwrap();
     }
 
     #[tokio::test]
@@ -1123,7 +1129,7 @@ mod wire_tests {
             ),
             "{\"offset\":0,\"next\":null,\"data\":[{\"paperId\":\"x\",\"title\":\"T\",\"corpusId\":\"not-a-number\"}]}".to_string(),
         ] {
-            let (base, _requests) = spawn_papers_fixture("200 OK", body).await;
+            let (base, _requests, mut server) = spawn_papers_fixture("200 OK", body).await;
             let mut env = AuthorEnv::scratch_cache_only();
             let cache = crate::test_support::TempDirGuard::new("author-papers-malformed");
             env.set_cache_root(cache.path());
@@ -1140,13 +1146,14 @@ mod wire_tests {
                 message.contains("semantic_scholar") || message.contains("Semantic Scholar"),
                 "{message}"
             );
+            server.finish().unwrap();
         }
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn sanitized_errors_do_not_leak_provider_bodies_urls_or_credentials() {
-        let (base, _requests) =
+        let (base, _requests, mut server) =
             spawn_papers_fixture("503 Service Unavailable", "secret-provider-body".into()).await;
         let mut env = AuthorEnv::scratch_cache_only();
         let cache = crate::test_support::TempDirGuard::new("author-papers-unavailable");
@@ -1162,6 +1169,7 @@ mod wire_tests {
         let message = format!("{error:?}");
         assert!(!message.contains("secret-provider-body"), "{message}");
         assert!(!message.contains(&base), "{message}");
+        server.finish().unwrap();
     }
 
     #[test]
@@ -1172,21 +1180,22 @@ mod wire_tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn stalled_request_future_fails_at_the_absolute_deadline_without_late_output() {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let address = listener.local_addr().unwrap();
-        let stalled = tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let mut sink = vec![0_u8; 1024];
-                use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
-                let _ = stream.read(&mut sink).await;
-                let _ = stream.write_all(&[]).await;
-                std::future::pending::<()>().await;
+        let mut stalled = crate::test_support::TestHttpServer::spawn(|mut stream| async move {
+            if crate::test_support::read_request(&mut stream)
+                .await?
+                .is_none()
+            {
+                return Ok(());
             }
-        });
+            std::future::pending::<()>().await;
+            drop(stream);
+            Ok(())
+        })
+        .expect("start stalled author fixture");
         let mut env = AuthorEnv::scratch_cache_only();
         let cache = crate::test_support::TempDirGuard::new("author-papers-stalled");
         env.set_cache_root(cache.path());
-        let stalled_base = format!("http://{address}");
+        let stalled_base = stalled.base.clone();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &stalled_base);
         env.set("BIOMCP_TEST_AUTHOR_PAPERS_DEADLINE_MS", "300");
         let client =
@@ -1209,13 +1218,7 @@ mod wire_tests {
             "{message}"
         );
         assert!(!message.contains("http://"), "{message}");
-        stalled.abort();
-        assert!(
-            stalled
-                .await
-                .expect_err("cancel stalled fixture")
-                .is_cancelled()
-        );
+        stalled.finish().expect("stalled fixture teardown");
     }
 }
 
@@ -1339,30 +1342,27 @@ mod orcid_works_tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn full_mode_on_an_orcid_id_is_rejected_with_zero_requests() {
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        use tokio::io::AsyncWriteExt as _;
         let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let logged = requests.clone();
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind author orcid fixture");
-        let address = listener.local_addr().expect("fixture address");
-        tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let logged = logged.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let length = stream.read(&mut request).await.unwrap_or(0);
-                    let request = String::from_utf8_lossy(&request[..length]);
-                    if let Some(target) = request.split_whitespace().nth(1) {
-                        logged.lock().unwrap().push(target.to_string());
-                    }
-                    let response =
-                        "HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                    let _ = stream.write_all(response.as_bytes()).await;
-                });
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            let logged = logged.clone();
+            async move {
+                let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+
+                let request = String::from_utf8_lossy(&request);
+                if let Some(target) = request.split_whitespace().nth(1) {
+                    logged.lock().unwrap().push(target.to_string());
+                }
+                let response = "HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                stream.write_all(response.as_bytes()).await?;
+                Ok(())
             }
-        });
-        let base = format!("http://{address}");
+        })
+        .expect("start HTTP fixture");
+        let base = server.base.clone();
         struct EnvRestore {
             previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
         }
@@ -1407,6 +1407,7 @@ mod orcid_works_tests {
             requests.lock().unwrap().is_empty(),
             "no provider request may be made"
         );
+        server.finish().unwrap();
     }
 
     #[test]
@@ -1460,32 +1461,28 @@ mod orcid_works_tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn an_orcid_offset_above_ten_thousand_is_a_static_rejection() {
-        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        use tokio::io::AsyncWriteExt as _;
         let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let logged = requests.clone();
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind offset fixture");
-        let address = listener.local_addr().expect("offset fixture address");
-        tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let logged = logged.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let length = stream.read(&mut request).await.unwrap_or(0);
-                    let request = String::from_utf8_lossy(&request[..length]);
-                    if let Some(target) = request.split_whitespace().nth(1) {
-                        logged.lock().unwrap().push(target.to_string());
-                    }
-                    let _ = stream
-                        .write_all(
-                            b"HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-                        )
-                        .await;
-                });
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+            let logged = logged.clone();
+            async move {
+                let Some(request) = crate::test_support::read_request(&mut stream).await? else {
+                    return Ok(());
+                };
+
+                let request = String::from_utf8_lossy(&request);
+                if let Some(target) = request.split_whitespace().nth(1) {
+                    logged.lock().unwrap().push(target.to_string());
+                }
+                stream
+                    .write_all(b"HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    .await?;
+                Ok(())
             }
-        });
-        let base = format!("http://{address}");
+        })
+        .expect("start HTTP fixture");
+        let base = server.base.clone();
         struct EnvRestore {
             previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
         }
@@ -1529,6 +1526,7 @@ mod orcid_works_tests {
             requests.lock().unwrap().is_empty(),
             "no provider request may be planned or sent"
         );
+        server.finish().unwrap();
     }
 
     #[test]

@@ -955,7 +955,7 @@ async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
     env.set("BIOMCP_NCBI_IDCONV_BASE", &bridge_base);
     let requests = Arc::new(Mutex::new(Vec::new()));
     let logged = requests.clone();
-    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+    let mut fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
         let mut parts = request.splitn(2, ' ');
         let method = parts.next().unwrap_or_default();
         let target = parts
@@ -1009,6 +1009,8 @@ async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
     let requests = requests.lock().unwrap().join("\n");
     assert_eq!(requests.matches("/references").count(), 1, "{requests}");
     assert!(!requests.to_lowercase().contains("fulltext"), "{requests}");
+    drop(requests);
+    fixture.finish().unwrap();
 }
 
 // The OpenCitations confirmation phase.
@@ -1178,7 +1180,7 @@ async fn citation_evidence_confirms_the_edge_the_index_holds() {
         CitationEvidenceConfirmation, CitationEvidenceStatus,
     };
 
-    let (_env, _cache, fixture, requests) = opencitations_case(
+    let (_env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-confirmed",
         vec![opencitations_page()],
         OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
@@ -1249,6 +1251,8 @@ async fn citation_evidence_confirms_the_edge_the_index_holds() {
     );
     let logged = requests.lock().unwrap().join("\n");
     assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1256,7 +1260,7 @@ async fn citation_evidence_confirms_the_edge_the_index_holds() {
 async fn citation_evidence_keeps_the_dead_end_when_no_row_matches() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (_env, _cache, fixture, requests) = opencitations_case(
+    let (_env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-no-match",
         vec![opencitations_page()],
         OpenCitationsReply::Rows(
@@ -1293,6 +1297,8 @@ async fn citation_evidence_keeps_the_dead_end_when_no_row_matches() {
     );
     let logged = requests.lock().unwrap().join("\n");
     assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1300,7 +1306,7 @@ async fn citation_evidence_keeps_the_dead_end_when_no_row_matches() {
 async fn citation_evidence_keeps_the_dead_end_when_the_index_fails() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (_env, _cache, fixture, requests) = opencitations_case(
+    let (_env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-failed",
         vec![opencitations_page()],
         OpenCitationsReply::Status("500 Internal Server Error", "upstream detail".to_string()),
@@ -1342,6 +1348,8 @@ async fn citation_evidence_keeps_the_dead_end_when_the_index_fails() {
     // the phase tried and the outcome stayed bounded.
     let logged = requests.lock().unwrap().join("\n");
     assert!(logged.contains("opencitations:"), "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1349,7 +1357,7 @@ async fn citation_evidence_keeps_the_dead_end_when_the_index_fails() {
 async fn citation_evidence_fails_closed_on_a_matching_row_with_a_hostile_oci() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (_env, _cache, fixture, _requests) = opencitations_case(
+    let (_env, _cache, mut fixture, _requests) = opencitations_case(
         "opencitations-hostile-oci",
         vec![opencitations_page()],
         OpenCitationsReply::Rows(opencitations_row("1|2\\\"`$;&", "2012-07-12")),
@@ -1378,6 +1386,7 @@ async fn citation_evidence_fails_closed_on_a_matching_row_with_a_hostile_oci() {
     );
     let serialized = serde_json::to_string(&result).unwrap();
     assert!(!serialized.contains("1|2"), "{serialized}");
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1385,7 +1394,7 @@ async fn citation_evidence_fails_closed_on_a_matching_row_with_a_hostile_oci() {
 async fn citation_evidence_nulls_a_creation_outside_the_shape_and_never_echoes_provider_text() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (_env, _cache, fixture, _requests) = opencitations_case(
+    let (_env, _cache, mut fixture, _requests) = opencitations_case(
         "opencitations-hostile-creation",
         vec![opencitations_page()],
         OpenCitationsReply::Rows(opencitations_row(
@@ -1421,6 +1430,7 @@ async fn citation_evidence_nulls_a_creation_outside_the_shape_and_never_echoes_p
     let serialized = serde_json::to_string(&result).unwrap();
     assert!(!serialized.contains("10.0000/elsewhere"), "{serialized}");
     assert!(!serialized.contains("2012-07-12\\\""), "{serialized}");
+    fixture.finish().unwrap();
 }
 
 /// The linked JATS document whose reference identity names the cited DOI.
@@ -1456,7 +1466,7 @@ async fn opencitations_case(
 async fn citation_evidence_leaves_the_index_unrequested_with_provider_context() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (_env, _cache, fixture, requests) = opencitations_case(
+    let (_env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-context-state",
         vec![graph_page(
             0,
@@ -1493,6 +1503,7 @@ async fn citation_evidence_leaves_the_index_unrequested_with_provider_context() 
             .join("\n")
             .contains("opencitations:")
     );
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1500,7 +1511,7 @@ async fn citation_evidence_leaves_the_index_unrequested_with_provider_context() 
 async fn citation_evidence_leaves_the_index_unrequested_for_linked_fulltext() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (_env, _cache, fixture, requests) = opencitations_case(
+    let (_env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-fulltext-state",
         vec![opencitations_page()],
         OpenCitationsReply::Rows("[]".to_string()),
@@ -1534,6 +1545,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_linked_fulltext() {
             .join("\n")
             .contains("opencitations:")
     );
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1549,7 +1561,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_a_resolved_reference
         Ok(JatsCitationExtraction::ReferenceUnresolved)
     }
 
-    let (_env, _cache, fixture, requests) = opencitations_case(
+    let (_env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-unresolved-state",
         vec![opencitations_page()],
         OpenCitationsReply::Rows("[]".to_string()),
@@ -1584,6 +1596,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_a_resolved_reference
             .join("\n")
             .contains("opencitations:")
     );
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1601,7 +1614,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_an_unlinked_marker()
         })
     }
 
-    let (_env, _cache, fixture, requests) = opencitations_case(
+    let (_env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-unlinked-state",
         vec![opencitations_page()],
         OpenCitationsReply::Rows("[]".to_string()),
@@ -1639,6 +1652,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_an_unlinked_marker()
             .join("\n")
             .contains("opencitations:")
     );
+    fixture.finish().unwrap();
 }
 #[tokio::test]
 #[serial_test::serial(source_env)]
@@ -1652,7 +1666,7 @@ async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_d
     // cannot address a reference list.
     let requests = Arc::new(Mutex::new(Vec::new()));
     let logged = requests.clone();
-    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+    let mut fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
         let mut parts = request.splitn(2, ' ');
         let method = parts.next().unwrap_or_default();
         let target = parts
@@ -1709,6 +1723,8 @@ async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_d
     );
     let logged = requests.lock().unwrap().join("\n");
     assert!(!logged.contains("/references/doi:"), "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1716,7 +1732,7 @@ async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_d
 async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_no_room() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (mut env, _cache, fixture, requests) = opencitations_case(
+    let (mut env, _cache, mut fixture, requests) = opencitations_case(
         "opencitations-no-room",
         vec![opencitations_page()],
         OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
@@ -1748,6 +1764,8 @@ async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_
     );
     let logged = requests.lock().unwrap().join("\n");
     assert!(!logged.contains("opencitations:"), "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 // Honest degradation when Semantic Scholar refuses.
@@ -1890,7 +1908,7 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
         CitationEvidenceConfirmation, CitationEvidenceStatus,
     };
 
-    let (_env, _cache, fixture, requests) = degradation_case(
+    let (_env, _cache, mut fixture, requests) = degradation_case(
         "citation-refused-seed",
         S2Reply::Refused("429 Too Many Requests"),
         OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
@@ -1978,6 +1996,8 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
     assert!(!logged.contains("s2:graph"), "{logged}");
     assert_eq!(logged.matches("europe:search").count(), 1, "{logged}");
     assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -1985,7 +2005,7 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
 async fn citation_evidence_reuses_the_resolved_citing_seed_when_the_cited_seed_is_refused() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
-    let (_env, _cache, fixture, requests) = degradation_case(
+    let (_env, _cache, mut fixture, requests) = degradation_case(
         "citation-refused-cited-seed",
         S2Reply::CitedSeedRefused("429 Too Many Requests"),
         OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
@@ -2037,12 +2057,14 @@ async fn citation_evidence_reuses_the_resolved_citing_seed_when_the_cited_seed_i
     assert!(!logged.contains("s2:graph"), "{logged}");
     assert!(!logged.contains("europe:search"), "{logged}");
     assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_names_a_malformed_identifier_when_the_matched_row_fails_the_shape() {
-    let (_env, _cache, fixture, requests) = degradation_case(
+    let (_env, _cache, mut fixture, requests) = degradation_case(
         "citation-refused-malformed-oci",
         S2Reply::Refused("429 Too Many Requests"),
         OpenCitationsReply::Rows(opencitations_row("1|2\\\"`$;&", "2012-07-12")),
@@ -2071,12 +2093,14 @@ async fn citation_evidence_names_a_malformed_identifier_when_the_matched_row_fai
     assert!(!projection.message.contains("was unavailable"));
     let logged = requests.lock().unwrap().join("\n");
     assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_names_both_providers_and_reasons_when_both_refuse() {
-    let (_env, _cache, fixture, requests) = degradation_case(
+    let (_env, _cache, mut fixture, requests) = degradation_case(
         "citation-both-refused",
         S2Reply::Refused("429 Too Many Requests"),
         OpenCitationsReply::Status("500 Internal Server Error", "upstream detail".to_string()),
@@ -2108,12 +2132,14 @@ async fn citation_evidence_names_both_providers_and_reasons_when_both_refuse() {
     // Both providers were asked before the summary was written.
     let logged = requests.lock().unwrap().join("\n");
     assert!(logged.contains("opencitations:"), "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_reports_an_unaddressable_index_when_inputs_have_no_doi() {
-    let (_env, _cache, fixture, _requests) = degradation_case(
+    let (_env, _cache, mut fixture, _requests) = degradation_case(
         "citation-no-addressable-doi",
         S2Reply::Refused("429 Too Many Requests"),
         OpenCitationsReply::Rows("[]".to_string()),
@@ -2139,12 +2165,13 @@ async fn citation_evidence_reports_an_unaddressable_index_when_inputs_have_no_do
         "Semantic Scholar rate limited the request; OpenCitations had no DOI to query."
     );
     assert_eq!(projection.source, None);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn citation_evidence_names_both_providers_when_the_answered_index_lacks_the_edge() {
-    let (_env, _cache, fixture, requests) = degradation_case(
+    let (_env, _cache, mut fixture, requests) = degradation_case(
         "citation-refused-no-edge",
         S2Reply::Refused("429 Too Many Requests"),
         // The index answers a parsed reference list whose cited tokens name
@@ -2203,6 +2230,8 @@ async fn citation_evidence_names_both_providers_when_the_answered_index_lacks_th
     let logged = requests.lock().unwrap().join("\n");
     assert_eq!(logged.matches("s2:seed").count(), 1, "{logged}");
     assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+    drop(logged);
+    fixture.finish().unwrap();
 }
 
 #[tokio::test]
@@ -2216,7 +2245,7 @@ async fn citation_evidence_degrades_to_the_index_when_the_reference_walk_is_refu
         ("429 Too Many Requests", "rate_limited"),
         ("503 Service Unavailable", "unavailable"),
     ] {
-        let (_env, _cache, fixture, requests) = degradation_case(
+        let (_env, _cache, mut fixture, requests) = degradation_case(
             "citation-refused-walk",
             S2Reply::SeedsWithWalkRefused(status),
             OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
@@ -2264,5 +2293,7 @@ async fn citation_evidence_degrades_to_the_index_when_the_reference_walk_is_refu
         assert!(logged.contains("s2:graph"), "{logged}");
         assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
         assert!(!logged.contains("europe:search"), "{logged}");
+        drop(logged);
+        fixture.finish().unwrap();
     }
 }

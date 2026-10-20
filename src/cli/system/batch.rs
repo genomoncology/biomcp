@@ -696,14 +696,10 @@ mod tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn dropping_settlement_cancels_cacheable_article_provider_retry_and_admission() {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::io::AsyncWriteExt;
 
         type EnvRestore = crate::test_support::FixtureEnv;
 
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind retry fixture");
-        let url = format!("http://{}", listener.local_addr().expect("address"));
         let requests = Arc::new(AtomicUsize::new(0));
         let first_response = Arc::new(tokio::sync::Notify::new());
         let active = Arc::new(AtomicUsize::new(0));
@@ -711,23 +707,26 @@ mod tests {
         let admitted = Arc::new(AtomicUsize::new(0));
         let cache_gets = Arc::new(AtomicUsize::new(0));
         let cache_puts = Arc::new(AtomicUsize::new(0));
-        let server = tokio::spawn({
+        let mut server = {
             let requests = Arc::clone(&requests);
             let first_response = Arc::clone(&first_response);
-            async move {
-                loop {
-                    let (mut stream, _) = listener.accept().await.expect("accept request");
-                    let mut request = [0_u8; 2048];
-                    let _ = stream.read(&mut request).await.expect("read request");
+            crate::test_support::TestHttpServer::spawn(move |mut stream| {
+let requests = requests.clone();
+let first_response = first_response.clone();
+async move {
+
+                    let Some(request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
                     requests.fetch_add(1, Ordering::SeqCst);
                     stream
                         .write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
-                        .await
-                        .expect("write retry response");
+                        .await?;
                     first_response.notify_one();
-                }
-            }
-        });
+
+Ok(())
+}
+}).expect("start cancellation fixture")
+        };
+        let url = server.base.clone();
         let cache = crate::test_support::TempDirGuard::new("article-batch-cancel-cache");
         let mut env = EnvRestore::scratch_cache_only();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &url);
@@ -778,13 +777,7 @@ mod tests {
         drop(settlement);
         assert_eq!(active.load(Ordering::SeqCst), 0);
         assert_eq!(cancelled.load(Ordering::SeqCst), 1);
-        server.abort();
-        assert!(
-            server
-                .await
-                .expect_err("cancel fixture server")
-                .is_cancelled()
-        );
+        server.finish().expect("cancellation fixture teardown");
         tokio::time::pause();
         tokio::time::advance(std::time::Duration::from_secs(10)).await;
         for _ in 0..10 {

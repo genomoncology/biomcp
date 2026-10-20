@@ -99,7 +99,7 @@ async fn repeated_backend_requests_stop_before_the_fifty_first_future_runs() {
 #[tokio::test]
 async fn pubtator_search_commits_transformed_page_before_one_terminal_event() {
     const BODY: &[u8] = include_bytes!("../../../../testdata/sources/pubtator/search_braf.json");
-    let fixture = TestHttpFixture::spawn(|_| {
+    let mut fixture = TestHttpFixture::spawn(|_| {
         TestHttpReply::Bytes(test_http_response("200 OK", "application/json", BODY))
     })
     .await;
@@ -127,6 +127,7 @@ async fn pubtator_search_commits_transformed_page_before_one_terminal_event() {
     assert_eq!(page.results[0].pmid, "123");
     assert_eq!(page.results[0].source_local_position, 0);
     assert_eq!(execution.terminal_event_count(), 1);
+    fixture.finish().unwrap();
 }
 
 fn query_value<'a>(query: &'a [(String, String)], key: &str) -> Option<&'a str> {
@@ -631,7 +632,7 @@ async fn europepmc_cursor_walk_stops_on_an_absent_cursor_after_a_page_with_rows(
     // parked on the final page and this count grows past three.
     let searches = Arc::new(AtomicUsize::new(0));
     let counter = Arc::clone(&searches);
-    let fixture = TestHttpFixture::spawn(move |request| {
+    let mut fixture = TestHttpFixture::spawn(move |request| {
         let target = request
             .split_whitespace()
             .nth(1)
@@ -684,4 +685,5 @@ async fn europepmc_cursor_walk_stops_on_an_absent_cursor_after_a_page_with_rows(
             .map(|row| row.pmid.as_str())
             .collect::<Vec<_>>()
     );
+    fixture.finish().unwrap();
 }

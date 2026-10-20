@@ -544,7 +544,7 @@ fn source_error(reason: &str) -> BioMcpError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::io::AsyncWriteExt;
 
     struct TestEnv {
         previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
@@ -740,33 +740,35 @@ mod tests {
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn proof_of_work_is_retained_when_a_later_linked_target_fails() {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base = format!("http://{}", listener.local_addr().unwrap());
-        let server = tokio::spawn(async move {
-            for _ in 0..2 {
-                let (mut stream, _) = listener.accept().await.unwrap();
-                let mut request = [0_u8; 2048];
-                let read = stream.read(&mut request).await.unwrap();
-                let request = String::from_utf8_lossy(&request[..read]);
-                if request.contains("pow.xls") {
-                    let body = include_bytes!(concat!(
-                        env!("CARGO_MANIFEST_DIR"),
-                        "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
-                    ));
-                    let response = format!(
-                        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                        body.len()
-                    );
-                    stream.write_all(response.as_bytes()).await.unwrap();
-                    stream.write_all(body).await.unwrap();
-                } else {
-                    stream
-                        .write_all(b"HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
-                        .await
-                        .unwrap();
-                }
-            }
-        });
+        let received = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let observed = received.clone();
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+    let observed = observed.clone();
+    async move {
+        let Some(request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
+observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let request = String::from_utf8_lossy(&request);
+        if request.contains("pow.xls") {
+            let body = include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
+            ));
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await?;
+            stream.write_all(body).await?;
+        } else {
+            stream
+                .write_all(b"HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                .await?;
+        }
+        Ok(())
+    }
+})
+.expect("start linked-article fixture");
+        let base = server.base.clone();
         let mut env = TestEnv::new();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
         env.set(PMC_ARTICLE_BASE_ENV, &base);
@@ -783,33 +785,37 @@ mod tests {
             PmcLinkedFetch::ProofOfWork,
             "a known PMC gate must not be hidden by a later generic source failure"
         );
-        server.await.unwrap();
+        server.finish().unwrap();
+        assert_eq!(received.load(std::sync::atomic::Ordering::SeqCst), 2);
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn equal_identity_routes_continue_until_one_returns_bytes() {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base = format!("http://{}", listener.local_addr().unwrap());
-        let server = tokio::spawn(async move {
-            for _ in 0..2 {
-                let (mut stream, _) = listener.accept().await.unwrap();
-                let mut request = [0_u8; 2048];
-                let read = stream.read(&mut request).await.unwrap();
-                let request = String::from_utf8_lossy(&request[..read]);
-                let response = if request.contains("attempt=stale") {
-                    "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-                        .to_string()
-                } else {
-                    let body = "fallback bytes";
-                    format!(
-                        "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                        body.len()
-                    )
-                };
-                stream.write_all(response.as_bytes()).await.unwrap();
-            }
-        });
+        let received = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let observed = received.clone();
+        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| {
+    let observed = observed.clone();
+    async move {
+        let Some(request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
+observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let request = String::from_utf8_lossy(&request);
+        let response = if request.contains("attempt=stale") {
+            "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                .to_string()
+        } else {
+            let body = "fallback bytes";
+            format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )
+        };
+        stream.write_all(response.as_bytes()).await?;
+        Ok(())
+    }
+})
+.expect("start linked-article fixture");
+        let base = server.base.clone();
         let mut env = TestEnv::new();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
         env.set(PMC_ARTICLE_BASE_ENV, &base);
@@ -828,7 +834,8 @@ mod tests {
                 media_type: Some("application/octet-stream".to_string()),
             }
         );
-        server.await.unwrap();
+        server.finish().unwrap();
+        assert_eq!(received.load(std::sync::atomic::Ordering::SeqCst), 2);
     }
 
     #[tokio::test]
@@ -862,21 +869,22 @@ mod tests {
     #[serial_test::serial(source_env)]
     async fn unsafe_redirect_is_rejected_before_redirect_target_contact() {
         let unsafe_target = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let redirect = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base = format!("http://{}", redirect.local_addr().unwrap());
+
         let target_url = format!(
             "http://{}/articles/instance/999/bin/stolen.xlsx",
             unsafe_target.local_addr().unwrap()
         );
-        let server = tokio::spawn(async move {
-            let (mut stream, _) = redirect.accept().await.unwrap();
-            let mut request = [0_u8; 1024];
-            let _ = stream.read(&mut request).await.unwrap();
-            let response = format!(
-                "HTTP/1.1 302 Found\r\nLocation: {target_url}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-            );
-            stream.write_all(response.as_bytes()).await.unwrap();
-        });
+        let received = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let observed = received.clone();
+        let mut server = crate::test_support::TestHttpServer::respond(move |_| {
+    observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    let response = format!("HTTP/1.1 302 Found\r\nLocation: {target_url}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+    async move {
+        Ok(response.into_bytes())
+    }
+})
+.expect("start redirect fixture");
+        let base = server.base.clone();
         let mut env = TestEnv::new();
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
         env.set(PMC_ARTICLE_BASE_ENV, &base);
@@ -888,7 +896,8 @@ mod tests {
             client.fetch(&linked_target).await,
             PmcLinkedFetch::SourceUnavailable
         );
-        server.await.unwrap();
+        server.finish().unwrap();
+        assert_eq!(received.load(std::sync::atomic::Ordering::SeqCst), 1);
         assert!(
             tokio::time::timeout(
                 std::time::Duration::from_millis(100),

@@ -3117,7 +3117,7 @@ mod tests {
     #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn manifest_and_bytes_preserve_induced_archive_failure_after_figshare_miss() {
-        let fixture = TestHttpFixture::spawn(|request| {
+        let mut fixture = TestHttpFixture::spawn(|request| {
             let (status, content_type, body) = if request.starts_with(
                 "GET /publications/export/biocjson?",
             ) {
@@ -3176,12 +3176,13 @@ mod tests {
             .await
             .expect_err("failed archive plus missing Figshare file must be unavailable");
         assert!(matches!(bytes_err, BioMcpError::SourceUnavailable { .. }));
+        fixture.finish().unwrap();
     }
 
     #[tokio::test]
     #[serial_test::serial(source_env)]
     async fn pow_capture_projects_named_pmc_gate_coverage_without_an_asset() {
-        let fixture = TestHttpFixture::spawn(|request| {
+        let mut fixture = TestHttpFixture::spawn(|request| {
             let body = include_bytes!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
@@ -3270,6 +3271,7 @@ mod tests {
             article_asset_bytes_from_resolution("30311380", "unknown", resolved),
             Err(BioMcpError::NotFound { .. })
         ));
+        fixture.finish().unwrap();
     }
 
     #[test]

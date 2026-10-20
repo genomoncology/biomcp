@@ -1492,7 +1492,7 @@ mod tests {
         env.set_cache_root(cache.path());
         let client = crate::sources::test_client().expect("no-retry classification client");
 
-        let not_found = TestHttpFixture::spawn(|_| {
+        let mut not_found = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
                 "404 Not Found",
                 "text/plain",
@@ -1513,7 +1513,7 @@ mod tests {
 
         let attempts = Arc::new(AtomicUsize::new(0));
         let fixture_attempts = attempts.clone();
-        let status_failure = TestHttpFixture::spawn(move |request| {
+        let mut status_failure = TestHttpFixture::spawn(move |request| {
             let status = if request.contains("/failed.pdf")
                 || fixture_attempts.fetch_add(1, Ordering::SeqCst) < 2
             {
@@ -1548,7 +1548,7 @@ mod tests {
         failed_html(html_with_client(&client, "PMC1", "1").await);
         failed(pdf_with_client(&client, &format!("{refused}/missing.pdf"), "1").await);
 
-        let oversized = TestHttpFixture::spawn(|request| {
+        let mut oversized = TestHttpFixture::spawn(|request| {
             TestHttpReply::Bytes(
                 format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -1578,7 +1578,7 @@ mod tests {
         assert!(format!("{pdf_error:?}").contains("BodyLimit"));
         drop(oversized);
 
-        let unsupported = TestHttpFixture::spawn(|_| {
+        let mut unsupported = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response("200 OK", "text/plain", b"plain text"))
         })
         .await;
@@ -1594,7 +1594,7 @@ mod tests {
         );
         drop(unsupported);
 
-        let invalid_utf8 = TestHttpFixture::spawn(|_| {
+        let mut invalid_utf8 = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response("200 OK", "text/html", &[0xff, 0xfe]))
         })
         .await;
@@ -1602,7 +1602,7 @@ mod tests {
         failed_html(html_with_client(&client, "PMC1", "1").await);
         drop(invalid_utf8);
 
-        let empty_conversion = TestHttpFixture::spawn(|_| {
+        let mut empty_conversion = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "text/html",
@@ -1614,7 +1614,7 @@ mod tests {
         failed_html(html_with_client(&client, "PMC1", "1").await);
         drop(empty_conversion);
 
-        let invalid_pdf = TestHttpFixture::spawn(|_| {
+        let mut invalid_pdf = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/pdf",
@@ -1625,6 +1625,13 @@ mod tests {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &invalid_pdf.base);
         failed(pdf_with_client(&client, &format!("{}/invalid.pdf", invalid_pdf.base), "1").await);
         drop(invalid_pdf);
+        not_found.finish().unwrap();
+        status_failure.finish().unwrap();
+        oversized.finish().unwrap();
+        unsupported.finish().unwrap();
+        invalid_utf8.finish().unwrap();
+        empty_conversion.finish().unwrap();
+        invalid_pdf.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -1638,7 +1645,7 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/tests/fixtures/article/fulltext/pdf/pmc_oa_article_pdf.pdf"
         ));
-        let fixture = TestHttpFixture::spawn(|request| {
+        let mut fixture = TestHttpFixture::spawn(|request| {
             let (status, content_type, body): (&str, &str, &[u8]) =
                 if request.contains("/articles/PMC123456/") {
                     ("200 OK", "text/html; charset=utf-8", challenge_page)
@@ -1728,6 +1735,7 @@ mod tests {
             article.full_text_source.as_ref().map(|s| s.source.as_str()),
             Some("Semantic Scholar")
         );
+        fixture.finish().unwrap();
     }
 
     #[test]
@@ -1805,7 +1813,7 @@ mod tests {
     async fn resolver_continues_after_bad_xml_and_later_data_overrides_failures() {
         let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let calls_for_server = calls.clone();
-        let fixture = TestHttpFixture::spawn(move |_| {
+        let mut fixture = TestHttpFixture::spawn(move |_| {
             let call = calls_for_server.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             let body = if call == 0 {
                 b"<article>".as_slice()
@@ -1849,6 +1857,7 @@ mod tests {
             Some("NCBI EFetch")
         );
         assert!(calls.load(std::sync::atomic::Ordering::SeqCst) >= 2);
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
@@ -1856,7 +1865,7 @@ mod tests {
     async fn abstract_only_xml_continues_to_a_later_body_winner() {
         let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let calls_for_server = calls.clone();
-        let fixture = TestHttpFixture::spawn(move |_| {
+        let mut fixture = TestHttpFixture::spawn(move |_| {
             let call = calls_for_server.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             let body = if call == 0 {
                 b"<article><front><abstract><p>source abstract</p></abstract></front></article>"
@@ -1904,12 +1913,13 @@ mod tests {
                 .quality
                 .has_fulltext_signal
         );
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn stale_v3_partial_artifact_cannot_become_the_current_winner() {
-        let fixture = TestHttpFixture::spawn(|_| {
+        let mut fixture = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/xml",
@@ -1942,12 +1952,13 @@ mod tests {
                 .expect("current artifact")
                 .contains("current body winner")
         );
+        fixture.finish().unwrap();
     }
 
     #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn earlier_fulltext_winner_overrides_failed_pdf_discovery() {
-        let fixture = TestHttpFixture::spawn(|_| {
+        let mut fixture = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/xml",
@@ -1988,6 +1999,7 @@ mod tests {
                 .map(|source| source.source.as_str()),
             Some("Europe PMC")
         );
+        fixture.finish().unwrap();
     }
 
     #[test]

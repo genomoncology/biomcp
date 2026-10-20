@@ -1,7 +1,6 @@
 use super::super::test_support::*;
 use super::*;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn json_response(body: &str) -> Vec<u8> {
     format!(
@@ -16,28 +15,21 @@ async fn exact_resolution_fixture_owned(
 ) -> (
     MyDiseaseClient,
     Arc<Mutex<Vec<String>>>,
-    tokio::task::JoinHandle<()>,
+    crate::test_support::TestHttpServer,
 ) {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind exact-resolution fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let requests = Arc::new(Mutex::new(Vec::new()));
-    let observed = Arc::clone(&requests);
-    let handler = Arc::new(handler);
-    let server = tokio::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let mut bytes = vec![0_u8; 16 * 1024];
-            let length = stream.read(&mut bytes).await.expect("read request");
-            let request = String::from_utf8_lossy(&bytes[..length]).into_owned();
-            observed
-                .lock()
-                .expect("lock exact-resolution requests")
-                .push(request.clone());
-            let response = json_response(&handler(&request));
-            stream.write_all(&response).await.expect("write response");
-        }
-    });
+    let observed = requests.clone();
+    let server = crate::test_support::TestHttpServer::respond(move |request| {
+        let request = String::from_utf8_lossy(&request).into_owned();
+        observed
+            .lock()
+            .expect("lock exact-resolution requests")
+            .push(request.clone());
+        let response = json_response(&handler(&request));
+        async move { Ok(response) }
+    })
+    .expect("start exact-resolution fixture");
+    let base = server.base.clone();
     (
         MyDiseaseClient::new_for_test(base).expect("test MyDisease client"),
         requests,
@@ -50,7 +42,7 @@ async fn exact_resolution_fixture(
 ) -> (
     MyDiseaseClient,
     Arc<Mutex<Vec<String>>>,
-    tokio::task::JoinHandle<()>,
+    crate::test_support::TestHttpServer,
 ) {
     exact_resolution_fixture_owned(move |request| handler(request).to_owned()).await
 }
@@ -273,7 +265,7 @@ fn mf_refusal_names_the_myelofibrosis_reading() {
 /// reading; anything else yields nothing.
 #[tokio::test]
 async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
-    let (client, requests, server) = exact_resolution_fixture(|request| {
+    let (client, requests, mut server) = exact_resolution_fixture(|request| {
         if request.contains("/query?") {
             include_str!("../../../../testdata/sources/mydisease/query_mf.json")
         } else {
@@ -313,7 +305,7 @@ async fn abbreviated_ambiguity_exposes_the_refusal_data_for_the_trial_note() {
         .expect("full words never ground here");
     assert!(plain_word.is_none());
 
-    server.abort();
+    server.finish().unwrap();
     let requests = requests.lock().expect("lock fixture requests").clone();
     assert_eq!(
         requests.len(),
@@ -613,11 +605,11 @@ async fn exact_resolution_zero_and_multiple_identities_each_stop_after_query() {
             {"_id":"DOID:2","disease_ontology":{"name":"Exact syndrome"}}
         ]}"#,
     ] {
-        let (client, requests, server) = exact_resolution_fixture(move |_| body).await;
+        let (client, requests, mut server) = exact_resolution_fixture(move |_| body).await;
         let terms = resolve_exact_disease_terms(&client, "Exact syndrome")
             .await
             .expect("absence and ambiguity safely retain the literal term");
-        server.abort();
+        server.finish().unwrap();
         assert_eq!(terms.requested, "Exact syndrome");
         assert!(terms.canonical_id.is_none());
         let requests = requests.lock().expect("lock requests");
@@ -629,7 +621,7 @@ async fn exact_resolution_zero_and_multiple_identities_each_stop_after_query() {
 
 #[tokio::test]
 async fn exact_resolution_one_identity_fetches_consistent_detail_once() {
-    let (client, requests, server) = exact_resolution_fixture(|request| {
+    let (client, requests, mut server) = exact_resolution_fixture(|request| {
         if request.starts_with("GET /query?") {
             r#"{"total":1,"hits":[{"_id":"MONDO:33642","disease_ontology":{"name":"Long disorder","synonyms":{"exact":"Bachmann-Bupp syndrome"}}}]}"#
         } else {
@@ -640,7 +632,7 @@ async fn exact_resolution_one_identity_fetches_consistent_detail_once() {
     let terms = resolve_exact_disease_terms(&client, "Bachmann-Bupp syndrome")
         .await
         .expect("one exact identity");
-    server.abort();
+    server.finish().unwrap();
     assert_eq!(terms.canonical_id.as_deref(), Some("MONDO:33642"));
     assert_eq!(terms.canonical_name.as_deref(), Some("Long disorder"));
     assert_eq!(terms.synonyms, vec!["BABS"]);
@@ -652,14 +644,14 @@ async fn exact_resolution_one_identity_fetches_consistent_detail_once() {
 
 #[tokio::test]
 async fn exact_resolution_rejects_incomplete_query_without_fetching_detail() {
-    let (client, requests, server) = exact_resolution_fixture(
+    let (client, requests, mut server) = exact_resolution_fixture(
         |_| r#"{"total":2,"hits":[{"_id":"MONDO:33642","mondo":{"name":"Exact syndrome"}}]}"#,
     )
     .await;
     let error = resolve_exact_disease_terms(&client, "Exact syndrome")
         .await
         .expect_err("an incomplete candidate page cannot prove uniqueness");
-    server.abort();
+    server.finish().unwrap();
     assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     assert_eq!(requests.lock().expect("lock requests").len(), 1);
 }
@@ -669,7 +661,7 @@ async fn exact_resolution_refuses_ambiguous_abbreviation_held_by_two_diseases() 
     // "CAD" is an exact synonym of both coronary artery disease
     // and cold agglutinin disease in the source's own lists. Exact resolution
     // must refuse the abbreviation instead of picking one identity.
-    let (client, requests, server) = exact_resolution_fixture(|_| {
+    let (client, requests, mut server) = exact_resolution_fixture(|_| {
         r#"{"total":2,"hits":[
             {"_id":"MONDO:0005010","disease_ontology":{"name":"coronary artery disease"},"mondo":{"synonym":{"exact":["CAD"]}}},
             {"_id":"MONDO:0018922","mondo":{"synonym":{"exact":["CAD","cold agglutinin disease"]}}}
@@ -679,7 +671,7 @@ async fn exact_resolution_refuses_ambiguous_abbreviation_held_by_two_diseases() 
     let terms = resolve_exact_disease_terms(&client, "CAD")
         .await
         .expect("ambiguity safely retains the literal term");
-    server.abort();
+    server.finish().unwrap();
     assert_eq!(terms.requested, "CAD");
     assert!(terms.canonical_id.is_none());
     assert!(terms.canonical_name.is_none());
@@ -691,7 +683,7 @@ async fn exact_resolution_refuses_ambiguous_abbreviation_held_by_two_diseases() 
 async fn exact_resolution_direct_mondo_and_doid_ids_each_use_one_request() {
     for id in ["MONDO:33642", "DOID:123"] {
         let response_id = id;
-        let (client, requests, server) = exact_resolution_fixture(move |_| {
+        let (client, requests, mut server) = exact_resolution_fixture(move |_| {
             if response_id.starts_with("MONDO") {
                 r#"{"_id":"MONDO:33642","mondo":{"name":"Exact syndrome","synonym":"Alias"}}"#
             } else {
@@ -702,7 +694,7 @@ async fn exact_resolution_direct_mondo_and_doid_ids_each_use_one_request() {
         let terms = resolve_exact_disease_terms(&client, id)
             .await
             .expect("direct ontology detail");
-        server.abort();
+        server.finish().unwrap();
         assert_eq!(terms.canonical_id.as_deref(), Some(id));
         let requests = requests.lock().expect("lock requests");
         assert_eq!(requests.len(), 1);
@@ -712,14 +704,14 @@ async fn exact_resolution_direct_mondo_and_doid_ids_each_use_one_request() {
 
 #[tokio::test]
 async fn exact_resolution_maps_selected_detail_inconsistency_to_safe_source_error() {
-    let (client, requests, server) = exact_resolution_fixture(
+    let (client, requests, mut server) = exact_resolution_fixture(
         |_| r#"{"_id":"DOID:999","disease_ontology":{"name":"Wrong identity"}}"#,
     )
     .await;
     let error = resolve_exact_disease_terms(&client, "MONDO:33642")
         .await
         .expect_err("detail ID disagreement must fail closed");
-    server.abort();
+    server.finish().unwrap();
     assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     assert_eq!(requests.lock().expect("lock requests").len(), 1);
 }

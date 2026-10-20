@@ -139,27 +139,22 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
 
     type EnvRestore = crate::test_support::FixtureEnv;
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind command retry fixture");
-    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
     let s2_requests = Arc::new(AtomicUsize::new(0));
     let active_connections = Arc::new(AtomicUsize::new(0));
     let first_s2_response = Arc::new(tokio::sync::Notify::new());
-    let server = tokio::spawn({
+    let mut server = {
         let s2_requests = Arc::clone(&s2_requests);
         let active_connections = Arc::clone(&active_connections);
         let first_s2_response = Arc::clone(&first_s2_response);
-        async move {
-            loop {
-                let (mut stream, _) = listener.accept().await.expect("accept fixture request");
+        crate::test_support::TestHttpServer::spawn(move |mut stream| {
+let s2_requests = s2_requests.clone();
+let active_connections = active_connections.clone();
+let first_s2_response = first_s2_response.clone();
+async move {
+
+                let Some(request) = crate::test_support::read_request(&mut stream).await? else { return Ok(()); };
                 active_connections.fetch_add(1, Ordering::SeqCst);
-                let mut request = [0_u8; 4096];
-                let read = stream
-                    .read(&mut request)
-                    .await
-                    .expect("read fixture request");
-                let request = String::from_utf8_lossy(&request[..read]);
+let request = String::from_utf8_lossy(&request);
                 let (status, body) = if request.starts_with("POST /graph/v1/paper/batch?") {
                     s2_requests.fetch_add(1, Ordering::SeqCst);
                     ("503 Service Unavailable", "")
@@ -182,15 +177,17 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
                 );
                 stream
                     .write_all(response.as_bytes())
-                    .await
-                    .expect("write fixture response");
+                    .await?;
                 active_connections.fetch_sub(1, Ordering::SeqCst);
                 if status.starts_with("503") {
                     first_s2_response.notify_one();
                 }
-            }
-        }
-    });
+
+Ok(())
+}
+}).expect("start cancellation fixture")
+    };
+    let base = server.base.clone();
 
     let cache = crate::test_support::TempDirGuard::new("article-command-cancel-cache");
     let mut env = EnvRestore::scratch_cache_only();
@@ -257,13 +254,7 @@ async fn dropping_canonical_compact_command_cancels_provider_retry() {
     drop(command);
     assert!(middleware_dropped.upgrade().is_none());
     assert_eq!(active_connections.load(Ordering::SeqCst), 0);
-    server.abort();
-    assert!(
-        server
-            .await
-            .expect_err("fixture server should be cancelled")
-            .is_cancelled()
-    );
+    server.finish().expect("cancellation fixture teardown");
     // Finish the real server before advancing time to prove cancellation
     // cannot schedule another retry.
     tokio::time::pause();

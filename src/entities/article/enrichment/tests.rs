@@ -159,7 +159,7 @@ async fn empty_enrichment_plan_makes_no_provider_requests() {
     };
     let hits = Arc::new(AtomicUsize::new(0));
     let observed = hits.clone();
-    let fixture = TestHttpFixture::spawn(move |_| {
+    let mut fixture = TestHttpFixture::spawn(move |_| {
         observed.fetch_add(1, Ordering::SeqCst);
         TestHttpReply::Bytes(test_http_response("200 OK", "application/json", b"[null]"))
     })
@@ -176,6 +176,7 @@ async fn empty_enrichment_plan_makes_no_provider_requests() {
     let rows = vec![row_with("8896569", ArticleSource::PubMed, None, None, None)];
     enrich_and_finalize_article_candidates(rows, 1, 0, None, &empty_filters(), &[]).await;
     assert_eq!(hits.load(Ordering::SeqCst), 0);
+    fixture.finish().unwrap();
 }
 
 /// Capture every event whose `operation` names the visible-row fallback,
@@ -256,7 +257,7 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
     ));
     let requests = Arc::new(Mutex::new(Vec::<String>::new()));
     let logged = requests.clone();
-    let fixture = TestHttpFixture::spawn(move |request| {
+    let mut fixture = TestHttpFixture::spawn(move |request| {
         let target = request
             .split_whitespace()
             .nth(1)
@@ -351,4 +352,6 @@ async fn check_metadata_fallback(variant: bool, covered: bool) {
             .any(|target| target.starts_with("/search?query=EXT_ID%3A20516115")),
         "Europe PMC is consulted (the colon arrives percent-encoded): {requests:?}"
     );
+    drop(requests);
+    fixture.finish().unwrap();
 }
