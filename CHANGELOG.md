@@ -84,6 +84,8 @@
 
 ### Internal
 
+- Run the existing release metadata checks together before a metadata gate, and report every failed group in one local command. (2290)
+
 - Record release qualification, live replay coverage, measurement limits and the nonpublishing release rehearsal. (2258)
 
 - Qualify the final candidate from a fresh Linux clone under kernel network isolation, with complete Python, strict docs and shipped-feature checks plus approved reuse of unchanged Rust suite evidence. Preserve both failed qualification attempts and their evidence limits. (2233)
