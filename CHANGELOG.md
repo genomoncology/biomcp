@@ -100,6 +100,7 @@
 
 - Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
 - Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
+- Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
 - Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
 - Keep reversed-search test state in the prepared temporary directory so concurrent source packaging cannot read removed test directories. (2320)
 

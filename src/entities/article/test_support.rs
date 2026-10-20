@@ -41,6 +41,14 @@ pub(super) fn held_reply_gate() -> (tokio::sync::mpsc::Sender<()>, HeldReplyGate
     )
 }
 
+/// Bound a held reply without coupling the timer to a real socket.
+pub(super) async fn wait_for_held_reply(release: HeldReplyGate) {
+    let _ = tokio::time::timeout(crate::test_support::watchdog(180), async {
+        release.lock().await.recv().await;
+    })
+    .await;
+}
+
 pub(super) struct TestHttpFixture {
     pub(super) base: String,
     task: tokio::task::JoinHandle<()>,
@@ -69,22 +77,7 @@ impl TestHttpFixture {
                             let _ = stream.write_all(&response).await;
                         }
                         TestHttpReply::Hold(release) => {
-                            // The hold waits on async primitives, so it never
-                            // parks a runtime worker thread.
-                            // The wait also carries its own bound, above
-                            // every legitimate test bound (the 60 s search
-                            // deadline, the 60-120 s watchdogs): nextest
-                            // kills a hung test at its slow-timeout, but a
-                            // bare `cargo test` run has no such budget, so
-                            // a hold that outlives its test self-releases
-                            // and closes the connection. The caller waiting
-                            // on the reply then fails instead of hanging
-                            // the runner.
-                            let _ =
-                                tokio::time::timeout(crate::test_support::watchdog(180), async {
-                                    release.lock().await.recv().await;
-                                })
-                                .await;
+                            wait_for_held_reply(release).await;
                         }
                     }
                 });
