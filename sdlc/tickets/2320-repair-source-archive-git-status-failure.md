@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 52b1782, accept
+
 ## Outcome
 
 The source archive check passes while unrelated tests create and remove their temporary directories. Retain the real package-content and source-boundary checks. Do not hide a packaging failure with retries or a skipped assertion.
