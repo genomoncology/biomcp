@@ -6,6 +6,7 @@
 
 ### Fixes
 
+- Update the MCP SDK to reject invalid initial requests without leaking HTTP sessions and repair client metadata and redirect security. (2309)
 - Update certifi, urllib3, mkdocs-material, xxhash-rust and quinn-proto to their first patched security releases. (2308)
 
 - Update TLS certificate validation and bundled trust roots to reject distrusted emSign certificate paths. (2305)

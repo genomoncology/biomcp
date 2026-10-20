@@ -96,7 +96,7 @@ scraper = { version = "0.27", default-features = false, features = ["errors"] }
 toml = "0.8"
 
 # MCP
-rmcp = { version = "1.1.1", features = ["server", "transport-io", "transport-streamable-http-server"] }
+rmcp = { version = "2.1.0", features = ["server", "transport-io", "transport-streamable-http-server"] }
 
 # Templates
 minijinja = { version = "2", features = ["builtins"] }
