@@ -10,6 +10,8 @@ Milestone: 0.9.4
 
 Reviews: revision 4d19476, accept
 
+Reviews: revision 4153762, accept
+
 ## Outcome
 
 Changes: `Cargo.toml`, `Cargo.lock`, `crates/biomcp-mcp-contract-client/Cargo.toml`, `src/mcp/shell/http_server.rs`, `src/mcp/shell.rs`, `src/mcp/shell/modern.rs`, `crates/biomcp-mcp-contract-client/src/lib.rs`, `examples/rmcp_streamable_http_contract.rs`, `src/mcp/shell/http_server_security_tests.rs`, `CHANGELOG.md`, `sdlc/records/2309-mcp-security-upgrade.md`.
