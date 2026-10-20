@@ -19,6 +19,8 @@ Reviews: revision 98152f6, accept
 
 Reviews: revision db9ef7c, accept
 
+Reviews: revision 0b7272e, accept
+
 ## Outcome
 
 An article assets or asset-bytes request does not call or wait on the optional Europe PMC supplementaryFiles ZIP when the primary PMC archive answer is complete and sufficient. Existing XML, HTML and Figshare discovery can add assets and retain their existing budgets. When the primary fails or lacks the asset, the secondary sources still serve as fallback with their existing budgets and unavailable labels.
@@ -38,3 +40,5 @@ Keep the change local to assets resolution. Keep source labels and unavailable r
 Return the usable primary assets without making an unnecessary supplementary ZIP request. Preserve the existing fallback for missing primary bytes and failed primary archives. Starting source: 63e786985. Gator job 1792514074258-861653 ran the real CLI control against unchanged production source plus test-only overlay 6a3b6bf13; it failed after 10.759 seconds because the complete-primary request contacted the hanging ZIP. The missing-byte fallback control passed. Exact commands and retained evidence are in `sdlc/records/2294-primary-article-asset-resolution.md`.
 
 PM approved updating the two superseded primary-success empty-ZIP observation assertions. The explicit historical refusal handle, failed/missing-primary fallbacks, existing budgets and unavailable labels remain covered. No new cache or public provider calls are involved.
+
+Keep: experiments/2114-biomcp-2294-primary-asset-latency — retain original raw asset-latency jobs and qualified binaries for release admission.
