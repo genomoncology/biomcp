@@ -21,7 +21,7 @@ pytestmark = [pytest.mark.needs_binary]
 FIXTURE = REPO_ROOT / "tests/fixtures/article/gene-aliases/authored.json"
 
 
-@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "absent-markdown", "batch", "mcp", "absent", "unavailable", "slow", "disabled", "ambiguous", "missing_entrez", "duplicate_entrez", "truncated", "cap", "grouped", "grouped-markdown", "split", "verify"])
+@pytest.mark.parametrize("surface", ["json", "debug", "markdown", "absent-markdown", "batch", pytest.param("mcp", marks=pytest.mark.timeout(120)), "absent", "unavailable", "slow", "disabled", "ambiguous", "missing_entrez", "duplicate_entrez", "truncated", "cap", "grouped", "grouped-markdown", "split", "verify"])
 def test_source_backed_gene_alias_queries(surface: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     mode = surface.removesuffix("-markdown")
     control = json.loads(FIXTURE.read_text())

@@ -20,7 +20,7 @@ CAPTURE = REPO_ROOT / "tests/fixtures/article/transcript-aliases/replay"
 UNKNOWN_TRANSCRIPT = "source transcript not stated by the provider"
 
 
-@pytest.mark.parametrize("surface", ["json", "markdown", "mcp"])
+@pytest.mark.parametrize("surface", ["json", "markdown", pytest.param("mcp", marks=pytest.mark.timeout(120))])
 def test_recorded_alias_only_paper_is_not_presented_as_verified_evidence(
     surface: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:

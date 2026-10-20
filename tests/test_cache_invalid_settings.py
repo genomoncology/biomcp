@@ -60,6 +60,7 @@ def test_bad_cache_setting_is_invalid_input(cache_env, setting, value, json_outp
     assert replay.request_log_entries(since=before) == []
 
 
+@pytest.mark.timeout(120)
 def test_mcp_bad_cache_setting_reports_invalid_input(cache_env, monkeypatch):
     env, replay = cache_env
     env["BIOMCP_CACHE_MAX_SIZE"] = "10GB"

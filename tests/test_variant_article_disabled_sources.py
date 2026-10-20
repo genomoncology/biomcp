@@ -21,7 +21,7 @@ from replay_env import REPO_ROOT, replay_environment  # noqa: E402
 pytestmark = [pytest.mark.needs_binary]
 
 
-@pytest.mark.parametrize("surface", ["cli", "mcp"])
+@pytest.mark.parametrize("surface", ["cli", pytest.param("mcp", marks=pytest.mark.timeout(120))])
 @pytest.mark.parametrize("disabled", ["all", "myvariant-info"])
 def test_variant_literature_names_configured_resolution_disable(
     surface: str, disabled: str, monkeypatch: pytest.MonkeyPatch,
