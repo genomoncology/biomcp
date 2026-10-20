@@ -10,7 +10,7 @@ FULL_FEATURE_PROFILE ?= dev
 FULL_FEATURE_BIN = target/$(if $(filter dev,$(FULL_FEATURE_PROFILE)),debug,$(FULL_FEATURE_PROFILE))/biomcp
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
-PYTEST_WORKERS ?= 4
+PYTEST_WORKERS = $(TEST_LANE_WORKERS)
 PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
 # Cargo maps the dev profile to target/debug; every other profile name is
 # its own directory under target/.
@@ -48,26 +48,18 @@ prepare-test: prepare-routine-test-tmp
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
 	$(MAKE) prepare-test-contracts
 
-# Each lane gets a bounded share of the host; callers can tune these after
-# measuring their workload. CPU discovery also works on supported non-Linux hosts.
-TEST_LANE_WORKERS ?= $(shell python3 -c 'import os; print(min(4, max(1, (os.cpu_count() or 1) // 2)))')
-NEXTEST_JOBS ?= $(TEST_LANE_WORKERS)
+# The measured routine booking (8 GiB disk / 7 GiB memory) covers two
+# workers in each sequential phase. Change this allowance with the booking,
+# never from the shared host's CPU count.
+TEST_LANE_WORKERS ?= 2
+export CARGO_BUILD_JOBS = $(TEST_LANE_WORKERS)
+NEXTEST_JOBS = $(TEST_LANE_WORKERS)
 NEXTEST_JOBS_ARG = -j $(NEXTEST_JOBS)
 
 test:
 	$(MAKE) prepare-test
-	@set -eu; \
-	logs="$$(mktemp -d)"; rust_pid=; python_pid=; \
-	trap 'kill $$rust_pid $$python_pid 2>/dev/null || true; rm -rf "$$logs"' EXIT; \
-	trap 'exit 130' INT; trap 'exit 143' TERM; \
-	$(MAKE) test-rust >"$$logs/rust" 2>&1 & rust_pid=$$!; \
-	$(MAKE) test-python >"$$logs/python" 2>&1 & python_pid=$$!; \
-	rust_status=0; python_status=0; \
-	wait $$rust_pid || rust_status=$$?; rust_pid=; \
-	wait $$python_pid || python_status=$$?; python_pid=; \
-	printf '\n=== Rust lane (exit %s) ===\n' "$$rust_status"; cat "$$logs/rust"; \
-	printf '\n=== Python lane (exit %s) ===\n' "$$python_status"; cat "$$logs/python"; \
-	test "$$rust_status" -eq 0 && test "$$python_status" -eq 0
+	$(MAKE) test-rust
+	$(MAKE) test-python
 
 # Both lanes consume the artifacts prepared once by `make test`. Each can
 # also run independently against an existing prepared build.

@@ -60,8 +60,10 @@ and run through `make test`. The executable docs themselves call
 `.cache/biomcp-specs/` cache/XDG roots, optional-key stripping, and warm-hit
 `BIOMCP_CACHE_MODE=infinite` replay when CI sets `BIOMCP_SPEC_CACHE_HIT=1`.
 Use `make lint`, `make test`, and `make spec` as the canonical local gates.
-The Python portion of `make test` uses four bounded file-distributed workers;
-use `make test PYTEST_WORKERS=1` for a one-worker diagnostic run. There is no
+`make test` runs Rust before Python. `TEST_LANE_WORKERS` in the Makefile
+sets the shared Cargo, nextest and pytest allowance for the measured routine
+job booking documented in AGENTS.md. Python uses file distribution. Use
+`make test TEST_LANE_WORKERS=1` for a one-worker diagnostic run. There is no
 supported `make check` command. `make release-gate` is the single
 release-readiness command; it runs the routine gates, the named full-feature
 proof, and release-profile specs. The GitHub
