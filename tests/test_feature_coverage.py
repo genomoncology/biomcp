@@ -155,3 +155,13 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_pat
     data = json.loads((output / "coverage.json").read_text())
     assert data["status"] == "incomplete"
     assert "outside_in_percent" not in data
+
+
+def test_a_new_executable_spec_requires_a_feature_owner(tmp_path: Path) -> None:
+    root = tree(tmp_path)
+    page = root / "spec/entity/new.md"
+    page.parent.mkdir(parents=True)
+    page.write_text("# A new contract\n\n```bash\nbiomcp list\n```\n")
+    rejected = run(root, "links")
+    assert rejected.returncode != 0
+    assert "unclassified test module spec/entity/new.md" in rejected.stderr

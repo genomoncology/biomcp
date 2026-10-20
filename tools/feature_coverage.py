@@ -106,6 +106,8 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
     # New test modules require an explicit surface or internal-test classification.
     discovered = {str(p.relative_to(root)) for p in (root / "tests").rglob("test_*.py")}
     discovered.update(str(p.relative_to(root)) for p in (root / "tests").glob("*.rs"))
+    discovered.update(str(p.relative_to(root)) for p in (root / "spec").rglob("*.md")
+                      if re.search(r"^```(?:bash|sh)\b", p.read_text(), re.M))
     for relative in sorted(discovered - seen):
         errors.append(f"unclassified test module {relative}")
     owners = {link["feature"] for link in links}

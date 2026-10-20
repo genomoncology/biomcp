@@ -466,9 +466,6 @@
     "spec/surface/build-profile-live.md": {
       "feature": "cli-reference"
     },
-    "spec/surface/build-profile.md": {
-      "feature": "cli-reference"
-    },
     "spec/surface/cli-contract-ratchet.md": {
       "feature": "cli-reference"
     },
@@ -479,12 +476,6 @@
       "feature": "cli-reference"
     },
     "spec/surface/discover.md": {
-      "feature": "cli-reference"
-    },
-    "spec/surface/docker-image.md": {
-      "feature": "cli-reference"
-    },
-    "spec/surface/homebrew.md": {
       "feature": "cli-reference"
     },
     "spec/surface/mcp.md": {
@@ -602,6 +593,9 @@
     "tests/pty_helpers.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
     "tests/search_all_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
     "tests/skill_cli_structure.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
-    "tests/windows_lock_contract.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection."
+    "tests/windows_lock_contract.rs": "Source structure, direct internal parser/locking API, test helper, package identity or opt-in live helper; excluded from the local CLI/MCP collection.",
+    "spec/surface/build-profile.md": "Checks source, dependency metadata or release configuration without exercising the shipped product.",
+    "spec/surface/docker-image.md": "Checks source, dependency metadata or release configuration without exercising the shipped product.",
+    "spec/surface/homebrew.md": "Checks source, dependency metadata or release configuration without exercising the shipped product."
   }
 }
