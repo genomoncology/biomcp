@@ -720,13 +720,19 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
             except SyntaxError as exc:
                 errors.append(f"{relative}: {exc}")
                 continue
+            sleep_names = {"sleep"} | {
+                alias.asname or alias.name
+                for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
+                and node.module in {"time", "asyncio"}
+                for alias in node.names if alias.name == "sleep"
+            }
             parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
             for node in ast.walk(tree):
                 kind = None
                 if isinstance(node, ast.Call):
                     name = (node.func.attr if isinstance(node.func, ast.Attribute)
                             else node.func.id if isinstance(node.func, ast.Name) else "")
-                    if name == "sleep":
+                    if name in sleep_names:
                         kind = "sleep"
                     elif any(kw.arg == "timeout" and isinstance(kw.value, ast.Constant)
                              and isinstance(kw.value.value, (int, float)) for kw in node.keywords):
@@ -737,8 +743,9 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
                             kind = "deadline"
                 elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
                     left = node.left
-                    if (isinstance(left, ast.Call) and isinstance(left.func, ast.Attribute)
-                        and left.func.attr in {"monotonic", "time", "perf_counter"}
+                    clock = (left.func.attr if isinstance(left, ast.Call) and isinstance(left.func, ast.Attribute)
+                             else left.func.id if isinstance(left, ast.Call) and isinstance(left.func, ast.Name) else "")
+                    if (clock in {"monotonic", "time", "perf_counter"}
                         and isinstance(node.right, ast.Constant)
                         and isinstance(node.right.value, (int, float))):
                         kind = "deadline"
@@ -757,7 +764,7 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
             continue
 
         masked = _mask_rust_non_code(source)
-        all_test = relative.startswith("tests/") or bool(re.search(r"(?:^|/)(?:tests|test_support)(?:/|\.rs$)", relative))
+        all_test = relative.startswith(("tests/", "crates/biomcp-mcp-contract-client/")) or bool(re.search(r"(?:^|/)(?:tests|test_support|[\w]+_tests)(?:/|\.rs$)", relative))
         ranges: list[tuple[int, int]] = []
         for annotation in re.finditer(r"#\[\s*(?:cfg\(test\)|(?:tokio::)?test(?:\([^\]]*\))?)\s*\]", masked):
             span = _brace_span(masked, annotation.end())
@@ -812,6 +819,12 @@ def check_test_waits(root_dir: Path) -> dict[str, object]:
         if (not isinstance(entry, dict) or set(entry) != set(selectors + ["reason"])
             or not isinstance(entry.get("reason"), str) or not entry["reason"].strip()):
             errors.append("each wait exception needs one exact selector and a concrete reason")
+            continue
+        if (any(not isinstance(entry[field], str) or not entry[field].strip()
+                for field in selectors[:-1])
+            or entry["kind"] not in {"sleep", "deadline"}
+            or type(entry["occurrence"]) is not int or entry["occurrence"] < 1):
+            errors.append("invalid wait exception selector")
             continue
         key = tuple(entry[field] for field in selectors)
         if key in allowed:

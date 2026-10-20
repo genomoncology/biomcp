@@ -728,7 +728,9 @@ def test_wrapper_can_run_only_the_named_spec_lint_audit(tmp_path: Path) -> None:
     assert "mcp_allowlist" not in summary
 
 
-def _run_renderer_audit(root: Path, output_dir: Path) -> subprocess.CompletedProcess[str]:
+def _run_source_audit(
+    root: Path, output_dir: Path, *, audit: str = "renderer_next_command_source",
+) -> subprocess.CompletedProcess[str]:
     return _run_python_script(
         RATCHET_TOOL,
         "--root-dir",
@@ -750,13 +752,13 @@ def _run_renderer_audit(root: Path, output_dir: Path) -> subprocess.CompletedPro
         "--health-file",
         str(REPO_ROOT / "src/cli/health/catalog.rs"),
         "--audit",
-        "renderer_next_command_source",
+        audit,
     )
 
 
 @pytest.mark.repo_audit
 def test_renderer_next_command_source_audit_passes_for_repo(tmp_path: Path) -> None:
-    result = _run_renderer_audit(REPO_ROOT, tmp_path / "clean-output")
+    result = _run_source_audit(REPO_ROOT, tmp_path / "clean-output")
     assert result.returncode == 0, result.stderr
 
 
@@ -771,7 +773,7 @@ def test_renderer_next_command_source_audit_rejects_pre_1069_pattern(
     )
 
     fixture_output = tmp_path / "fixture-output"
-    fixture_result = _run_renderer_audit(fixture_root, fixture_output)
+    fixture_result = _run_source_audit(fixture_root, fixture_output)
     assert fixture_result.returncode == 1, fixture_result.stderr
     payload = json.loads(
         (fixture_output / "quality-ratchet-renderer-next-command-source.json").read_text()
@@ -1788,6 +1790,8 @@ def test_paused_clock_audit_rejects_pending_io_but_allows_completed_io(
 @pytest.mark.parametrize("relative,source", [
     ("tests/test_wait.py", "import time\ndef test_ready():\n    time.sleep(0.01)\n"),
     ("tests/test_wait.py", "import socket\ndef test_ready():\n    socket.create_connection(('localhost', 1), timeout=2)\n"),
+    ("tests/test_wait.py", "from time import sleep as snooze\ndef test_ready():\n    snooze(0.01)\n"),
+    ("tests/test_wait.py", "from time import monotonic\ndef test_ready():\n    deadline = monotonic() + 2\n"),
     ("src/lib.rs", "#[tokio::test]\nasync fn ready() { tokio::time::sleep(Duration::from_millis(5)).await; }"),
     ("src/lib.rs", "#[tokio::test]\nasync fn ready() { tokio::time::timeout(Duration::from_secs(2), reply).await; }"),
 ])
@@ -1796,10 +1800,12 @@ def test_wait_audit_rejects_unlisted_coordination_limits(
 ) -> None:
     fixture = tmp_path / "wait-fixture"
     _write_dead_code_fixture(fixture, source, relative)
-    tool = _load_ratchet_module()
-    result = tool.check_test_waits(fixture)
-    assert result["status"] == "fail", result
-    assert len(result["findings"]) == 1, result
+    output = tmp_path / "audit-output"
+    result = _run_source_audit(fixture, output, audit="test_waits")
+    assert result.returncode == 1, result.stdout + result.stderr
+    payload = json.loads((output / "quality-ratchet-test-waits.json").read_text())
+    assert payload["status"] == "fail", payload
+    assert len(payload["findings"]) == 1, payload
 
 
 def test_wait_audit_preserves_reasoned_timing_and_ignores_non_test_text(tmp_path: Path) -> None:
@@ -1817,6 +1823,30 @@ def test_wait_audit_preserves_reasoned_timing_and_ignores_non_test_text(tmp_path
     inventory = fixture / "tools/test-wait-exceptions.json"
     inventory.parent.mkdir(parents=True, exist_ok=True)
     inventory.write_text(json.dumps([{**rows[0], "reason": "Injected provider delay is the behavior under test."}]))
-    assert tool.check_test_waits(fixture)["status"] == "pass"
+    result = _run_source_audit(fixture, tmp_path / "audit-output", audit="test_waits")
+    assert result.returncode == 0, result.stdout + result.stderr
     inventory.write_text(json.dumps([{**rows[0], "reason": ""}]))
     assert tool.check_test_waits(fixture)["status"] == "error"
+
+
+def test_wait_audit_rejects_a_second_copy_and_stale_exception(tmp_path: Path) -> None:
+    fixture = tmp_path / "wait-fixture"
+    source = "import time\ndef test_ready():\n    time.sleep(0.01)\n"
+    _write_dead_code_fixture(fixture, source, "tests/test_wait.py")
+    tool = _load_ratchet_module()
+    rows, errors = tool.test_wait_rows(fixture)
+    assert not errors
+    inventory = fixture / "tools/test-wait-exceptions.json"
+    inventory.parent.mkdir(parents=True)
+    inventory.write_text(json.dumps([{**rows[0], "reason": "Legacy readiness interval can miss progress under load."}]))
+    test = fixture / "tests/test_wait.py"
+    test.write_text(source + "    time.sleep(0.01)\n")
+    result = _run_source_audit(fixture, tmp_path / "duplicate", audit="test_waits")
+    assert result.returncode == 1
+    findings = json.loads((tmp_path / "duplicate/quality-ratchet-test-waits.json").read_text())["findings"]
+    assert len(findings) == 1 and findings[0]["occurrence"] == 2
+    test.write_text("def test_ready():\n    pass\n")
+    result = _run_source_audit(fixture, tmp_path / "stale", audit="test_waits")
+    assert result.returncode == 1
+    findings = json.loads((tmp_path / "stale/quality-ratchet-test-waits.json").read_text())["findings"]
+    assert findings[0]["message"] == "stale wait exception"
