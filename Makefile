@@ -142,7 +142,6 @@ release-gate-markers:
 	$(MAKE) sync-python-dev
 	tools/run-offline -- uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 
-release-gate: override export BIOMCP_ADVISORY_SCOPE = always
 release-gate: lint
 	$(MAKE) test
 	$(MAKE) test-long
@@ -150,6 +149,9 @@ release-gate: lint
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -m release_gate -v $(PYTEST_XDIST_ARGS)
 	$(MAKE) full-feature-check FULL_FEATURE_PROFILE=release
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
+
+# Release lint remains unconditional even when a caller carries landing scope.
+release-gate: override export BIOMCP_ADVISORY_SCOPE = always
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh
