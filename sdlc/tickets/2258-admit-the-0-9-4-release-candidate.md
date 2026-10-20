@@ -67,6 +67,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 - 2026-10-20 next: PM-authorized batch2298/2236/2294/2296 is in landing preflight after fresh accepted integration reviews. One shared gate and one actual-main full check follow. Negative2284 disposition accepted; two unused M5 job worktrees removed. No rehearsal or tag.
 - 2026-10-20 next: Shared batch gate2298/1792522040407-14157 failed:1731Pythonpass/docsPASS; Rustprimary_collision_handle_does_not_consult_the_zip hit fixtureReadWouldBlock andDropjoinpanic. Sole2294repairdeveloper is fixing bounded fixture transport/cleanup; accepted runtime unchanged. Preserve failedgate, reviewfix, rerun same fourticketbatch thenoneactualmainfull. Docs/checklist4177accepted. No rehearsal/tag.
 - 2026-10-20 next: Reviewed batch2298/2236/2294/2296 landed91118b5881ccbf4186875e445173b61ec4dbc86d after shared gate1792523154427-91308 PASS285.7s. Actual-main make main-gate runs now. Prepare accepted negative2284 and admission text; PM approves text-only full-main reuse with required changelog citation and metadata collector before their gate. Final full untagged rehearsal follows all records. No tag.
+- 2026-10-20 next: Batch91118b588 actual-main full continues. PM seed3819a97ab adds2299-2304 to0.9.4; fresh2299 and2304 lanes started in order, pending job slots. Negative2284 will carry the reviewed RCA record and six ticket seeds before their code landings. Rehearsal waits for expanded scope. No tag.
 
 ## Preparation evidence
 
