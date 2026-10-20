@@ -118,112 +118,108 @@ def test_main_and_release_use_the_shared_installed_wheel_smoke() -> None:
 
 
 @pytest.mark.parametrize("root_owned", [False, True])
-@pytest.mark.parametrize("failed_stage,version", [("build", "0.9.4"), ("smoke", "0.9.4"), ("", "0.9.4"), ("", "0.9.5.dev1"), ("cleanup", "0.9.4"), ("build,cleanup", "0.9.4")])
+@pytest.mark.parametrize("failed_stage,version", [
+    ("build", "0.9.4"), ("smoke", "0.9.4"), ("", "0.9.4"),
+    ("", "0.9.5.dev1"), ("ownership", "0.9.4"), ("build,ownership", "0.9.4"),
+])
 def test_local_wheel_gate_runs_release_steps_and_propagates_failure(
     tmp_path: Path, failed_stage: str, version: str, root_owned: bool,
 ) -> None:
-    # The opt-in Linux control exercises real Docker ownership without compiling.
-    real_docker = shutil.which("docker") if root_owned else None
+    # Opt in on Linux to exercise real root ownership without compiling a wheel.
     if root_owned and (sys.platform != "linux" or not os.environ.get("BIOMCP_TEST_ROOT_OWNED_WHEEL")):
         pytest.skip("real Linux Docker ownership control is opt-in")
+    real_docker = shutil.which("docker") if root_owned else None
     assert not root_owned or real_docker
-
     for relative in (".github/workflows/release.yml", "scripts/check-linux-wheel.sh"):
         destination = tmp_path / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / relative, destination)
-    metadata = tmp_path / "pyproject.toml"
-    metadata.write_text(f'[project]\nversion = "{version}"\n')
+    (tmp_path / "pyproject.toml").write_text(f'[project]\nversion = "{version}"\n')
+    unrelated = tmp_path / "unrelated"
+    unrelated.write_text("keep")
+    unrelated.chmod(0o640)
+    identity = (unrelated.stat().st_uid, unrelated.stat().st_gid, unrelated.stat().st_mode)
     tools = tmp_path / "tools"
     tools.mkdir()
     (tools / "with-build-identity").write_text(
         '#!/bin/sh\nprintf "BIOMCP_BUILD_VERSION=%s\\n" "$BIOMCP_BUILD_VERSION"\n',
-        encoding="utf-8",
     )
     (tools / "uv").write_text(
         f"#!{sys.executable}\nimport os, sys\n"
         "assert sys.argv[1:4] == ['run', '--no-sync', 'python']\n"
-        "os.execv(sys.executable, [sys.executable] + sys.argv[4:])\n", encoding="utf-8",
+        "os.execv(sys.executable, [sys.executable] + sys.argv[4:])\n",
     )
     (tools / "docker").write_text(
-        f"#!{sys.executable}\nFAILED_STAGE = {failed_stage!r}.split(',')\nEXPECTED_VERSION = {version!r}\nREAL_DOCKER = {real_docker!r}\n"
-        '''import os, pathlib, shutil, subprocess, sys
+        f"#!{sys.executable}\nFAILED = {failed_stage!r}.split(',')\nVERSION = {version!r}\nREAL_DOCKER = {real_docker!r}\n"
+        '''import os, pathlib, subprocess, sys
 args = sys.argv[1:]
 assert '--platform' in args and '--label' in args
-assert any('@sha256:' in arg for arg in args)
+image = next(arg for arg in args if '@sha256:' in arg)
 script = args[-1]
-stage = 'cleanup' if '/scratch' in args else ('build' if 'maturin build' in script else 'smoke')
+stage = 'build' if 'maturin build' in script else 'smoke'
 with pathlib.Path('docker.calls').open('a') as log:
     log.write(stage + '\\n')
-if stage == 'cleanup':
-    if stage in FAILED_STAGE:
-        sys.exit(19)
-    if REAL_DOCKER:
-        sys.exit(subprocess.call([REAL_DOCKER] + args))
-    mount = args[args.index('--mount') + 1]
-    scratch = pathlib.Path(mount.split('src=', 1)[1].split(',', 1)[0])
-    for child in scratch.iterdir():
-        if child.is_dir() and not child.is_symlink():
-            shutil.rmtree(child)
-        else:
-            child.unlink()
-    sys.exit(0)
 if stage == 'build':
-    target_arg = next(arg for arg in args if arg.startswith('CARGO_TARGET_DIR='))
-    target = pathlib.Path.cwd() / target_arg.split('=', 1)[1].removeprefix('/io/')
-    if REAL_DOCKER:
-        image = next(arg for arg in args if '@sha256:' in arg)
-        subprocess.run([REAL_DOCKER, 'run', '--rm', '--label', 'pm.repo=biomcp', '--label', 'pm.ticket=2310', '-v', str(pathlib.Path.cwd()) + ':/io', '--entrypoint', '/bin/sh', image, '-c', 'mkdir -p "$1/private"; touch "$1/private/root-owned"; chmod 700 "$1/private"', 'sh', target_arg.split('=', 1)[1]], check=True)
-        assert target.stat().st_uid == 0
-if stage in FAILED_STAGE:
-    print(stage + ' stdout failure')
-    print(stage + ' stderr failure', file=sys.stderr)
-    sys.exit(17)
-if stage == 'build':
-    assert os.environ['BIOMCP_BUILD_VERSION'] == EXPECTED_VERSION
+    assert os.environ['BIOMCP_BUILD_VERSION'] == VERSION
     destination = script.split(' -o ', 1)[1].split()[0]
     destination = pathlib.Path.cwd() / destination.removeprefix('/io/')
     target_arg = next(arg for arg in args if arg.startswith('CARGO_TARGET_DIR='))
     target = pathlib.Path.cwd() / target_arg.split('=', 1)[1].removeprefix('/io/')
-    assert target == destination.parent / 'target', 'build target must belong to this run'
-    if not REAL_DOCKER:
-        assert not target.exists(), 'build target must start empty'
-        target.mkdir()
-    (destination / 'fixture.whl').touch()
-else:
-    mount = next(arg for arg in args if arg.endswith(':/wheel:ro'))
-    assert list(pathlib.Path(mount.removesuffix(':/wheel:ro')).glob('*.whl'))
-    assert 'installed-wheel-smoke.sh' in script
-''', encoding="utf-8",
+    assert target == destination.parent / 'target'
+    assert not target.exists(), 'each build starts with its own empty target'
+    # Run the actual injected EXIT trap, substituting only the expensive build.
+    prefix = script.split('curl --proto', 1)[0]
+    operation = 'mkdir -p "$1/private"; touch "$1/private/root-owned"; chmod 700 "$1/private"; ln -s /io/unrelated "$1/link"; '
+    if 'ownership' in FAILED:
+        prefix = 'chown() { return 19; }; ' + prefix
+    if 'build' in FAILED:
+        operation += 'echo "build stdout failure"; echo "build stderr failure" >&2; exit 17'
+    else:
+        operation += 'touch "$2/fixture.whl"'
+    if REAL_DOCKER:
+        result = subprocess.run([REAL_DOCKER, 'run', '--rm', '--label', 'pm.repo=biomcp', '--label', 'pm.ticket=2310', '-v', str(pathlib.Path.cwd()) + ':/io', '--entrypoint', 'bash', image, '-euo', 'pipefail', '-c', prefix + operation, 'bash', target_arg.split('=', 1)[1], '/io/' + str(destination.relative_to(pathlib.Path.cwd()))])
+    else:
+        prefix = prefix.replace('/io/', str(pathlib.Path.cwd()) + '/')
+        operation = operation.replace('/io/unrelated', str(pathlib.Path.cwd() / 'unrelated'))
+        result = subprocess.run(['bash', '-euo', 'pipefail', '-c', prefix + operation, 'bash', str(target), str(destination)])
+    sys.exit(result.returncode)
+mount = next(arg for arg in args if arg.endswith(':/wheel:ro'))
+assert list(pathlib.Path(mount.removesuffix(':/wheel:ro')).glob('*.whl'))
+assert 'installed-wheel-smoke.sh' in script
+if 'smoke' in FAILED:
+    print('smoke stdout failure')
+    print('smoke stderr failure', file=sys.stderr)
+    sys.exit(17)
+''',
     )
     for executable in tools.iterdir():
         executable.chmod(0o755)
-    (tmp_path / 'unrelated').write_text('keep')
     result = subprocess.run(
         ["bash", "scripts/check-linux-wheel.sh"], cwd=tmp_path,
         env=os.environ | {"PATH": str(tools) + os.pathsep + os.environ["PATH"]},
         capture_output=True, text=True, check=False,
     )
-    # Clean up the control's deliberately restricted directory even on a red run.
-    cache = tmp_path / '.cache' / 'installed-wheel'
-    remaining = list(cache.glob('run-*'))
+    remaining = list((tmp_path / '.cache' / 'installed-wheel').glob('run-*'))
+    # Reclaim only this control's scratch after intentional restoration failures.
     if real_docker and remaining:
-        image = next(row['container'] for row in yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['pypi-build']['strategy']['matrix']['include'] if row.get('target') == 'x86_64-unknown-linux-gnu')
+        entries = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']['pypi-build']['strategy']['matrix']['include']
+        image = next(row['container'] for row in entries if row.get('target') == 'x86_64-unknown-linux-gnu')
         for scratch in remaining:
-            subprocess.run([real_docker, 'run', '--rm', '--label', 'pm.repo=biomcp', '--label', 'pm.ticket=2310', '-v', str(scratch) + ':/scratch', '--entrypoint', '/bin/sh', image, '-c', 'find /scratch -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +'], check=True)
+            subprocess.run([real_docker, 'run', '--rm', '--label', 'pm.repo=biomcp', '--label', 'pm.ticket=2310', '-v', str(scratch) + ':/scratch', '--entrypoint', 'find', image, '/scratch', '-mindepth', '1', '-maxdepth', '1', '-exec', 'rm', '-rf', '--', '{}', '+'], check=True)
     assert bool(result.returncode) == bool(failed_stage), result.stdout + result.stderr
     primary = failed_stage.split(',')[0]
     if primary in ('build', 'smoke'):
         assert primary + ' stdout failure' in result.stdout
         assert primary + ' stderr failure' in result.stderr
-        assert 'exit status 17' in result.stderr
-    if 'cleanup' in failed_stage:
-        assert 'exit status 19' in result.stderr
-    assert (tmp_path / 'docker.calls').read_text().splitlines() == (
-        ['build', 'cleanup'] if primary == 'build' else ['build', 'smoke', 'cleanup']
-    )
-    assert bool(remaining) == ('cleanup' in failed_stage)
+        assert result.stderr.rstrip().endswith('exit status 17.'), result.stderr
+    if 'ownership' in failed_stage:
+        assert 'wheel scratch ownership restoration failed' in result.stderr
+        if primary == 'ownership':
+            assert result.stderr.rstrip().endswith('exit status 19.'), result.stderr
+    expected = ['build'] if primary in ('build', 'ownership') else ['build', 'smoke']
+    assert (tmp_path / 'docker.calls').read_text().splitlines() == expected
+    assert bool(remaining) == (root_owned and 'ownership' in failed_stage)
     for scratch in remaining:
         shutil.rmtree(scratch)
-    assert (tmp_path / 'unrelated').read_text() == 'keep'
-
+    assert unrelated.read_text() == 'keep'
+    assert (unrelated.stat().st_uid, unrelated.stat().st_gid, unrelated.stat().st_mode) == identity
