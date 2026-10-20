@@ -20,6 +20,8 @@ Reviews: revision d14fbd7, accept
 
 Reviews: revision a857590, accept
 
+Reviews: revision 5cfc0b5, accept
+
 ## Outcome
 
 Every BioMCP job script, smoke and diagnostic helper that runs product commands exits nonzero when any product command fails, and prints that command's captured error. A job exit of 0 always means every command it ran passed.
