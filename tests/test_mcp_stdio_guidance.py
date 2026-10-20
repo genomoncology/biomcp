@@ -270,6 +270,8 @@ def test_client_without_initialize_expires_startup_wait(
         if writer is not None:
             writer.join()
         assert not errors, errors
+        if send_pings:
+            assert responses, "startup expiry was observed while ping replies continued"
         assert all(response["id"] == 1 and response["result"] == {} for response in responses)
         assert time.monotonic() - started >= 4
         assert client.process.stdin is not None
