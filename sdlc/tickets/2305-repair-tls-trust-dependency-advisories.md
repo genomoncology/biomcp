@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 The locked TLS dependency graph no longer contains the certificate-trust versions rejected by RUSTSEC-2026-0382 and RUSTSEC-2026-0381. Preserve BioMCP's certificate verification, configured trust roots and existing transport behavior. Update the smallest compatible dependency set, without advisory suppression or unrelated upgrades.
 
-Changes: `Cargo.lock`, `Cargo.toml`, `CHANGELOG.md`, `sdlc/records/2305-tls-trust-dependency-advisories.md`.
+Changes: `Cargo.lock`, `CHANGELOG.md`, `sdlc/records/2305-tls-trust-dependency-advisories.md`.
 
 Proof: The unchanged lockfile fails the current advisory check; the repaired graph passes the same check and existing TLS/transport controls, mechanical checks and routine suite on branch plus current main. A fresh review precedes landing; the actual repaired main passes its full check before ordinary landings resume.
 
