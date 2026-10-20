@@ -1,0 +1,9 @@
+# 2304 — Include repository contracts in the local collector
+
+The existing release metadata collector retains its six metadata groups and adds one final Repository contracts group that calls canonical `make repo-audit`. It aggregates failures through the existing collector result. The runbook keeps the original collector instructions and explains the added tier. The change adds no second audit implementation.
+
+On published main 91118b5881ccbf4186875e445173b61ec4dbc86d, M5 job 2304/1792524516814-76812 planted an unregistered source. The direct source audit rejected it while the original collector passed. Corrected collector proof 2304/1792524701352-10813 passed the clean collection and rejected both a missing changelog citation and an unregistered source. Its first command-discovery control was ineffective because the scanner still classified the planted arm; that control-design failure remains recorded. Corrected command-only proof 2304/1792525020915-89067 moved Discover into the final denied match arm and confirmed that both the direct audit and collector rejected the unregistered command. Every planted source was restored. No repeated complete control matrix was needed.
+
+Raw commands, source overlays, logs, state and results remain under M5 experiment 2102-biomcp-2258-final-live-replay/contract-tier/2304. Overlay SHA256 is 40c73b17306f31858ae43fefa69bfba54b137f3bb0b6efacc5c789c83ade0447. The source checkpoint is a6ceb0664e3dcf82ecbdd244afe174e3b3e83cb5.
+
+Routine attempt 2304/1792525159422-52988 stopped at the TLS dependency advisories. It also used a dirty overlay, so it does not qualify the branch. A final routine run must use repaired main and a clean committed candidate with its ticket branch identity before fresh review. This record does not claim that pending check passed.
