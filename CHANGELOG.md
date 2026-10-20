@@ -6,7 +6,7 @@
 
 ### Fixes
 
-- Report the license stated by fetched PMC metadata in full-text output, including when an asset package is unavailable. (2296)
+- Report licenses stated by fetched full-text source metadata and JATS links with their source, including when an asset package is unavailable. (2296)
 
 - Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
 
