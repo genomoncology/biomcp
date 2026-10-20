@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision ebe8628, accept
+
 ## Outcome
 
 The slow-test reporter reliably forwards termination and reaps its runner, and its outside-in test observes the actual lifecycle without a readiness race. Restore main qualification with a bounded correction. Preserve routine slow-test warnings and failing test assertions.
