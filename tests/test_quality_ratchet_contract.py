@@ -1790,6 +1790,8 @@ def test_paused_clock_audit_rejects_pending_io_but_allows_completed_io(
 @pytest.mark.parametrize("relative,source", [
     ("tests/test_wait.py", "import time\ndef test_ready():\n    time.sleep(0.01)\n"),
     ("tests/test_wait.py", "import socket\ndef test_ready():\n    socket.create_connection(('localhost', 1), timeout=2)\n"),
+    ("tests/test_wait.py", "import select\ndef test_ready():\n    select.select([], [], [], 3)\n"),
+    ("tests/test_wait.py", "import asyncio\nasync def test_ready():\n    async with asyncio.timeout(0.1):\n        await reply()\n"),
     ("tests/test_wait.py", "from time import sleep as snooze\ndef test_ready():\n    snooze(0.01)\n"),
     ("tests/test_wait.py", "from time import monotonic\ndef test_ready():\n    deadline = monotonic() + 2\n"),
     ("src/lib.rs", "#[tokio::test]\nasync fn ready() { tokio::time::sleep(Duration::from_millis(5)).await; }"),

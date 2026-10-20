@@ -729,17 +729,24 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
             parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
             for node in ast.walk(tree):
                 kind = None
+                waits: list[ast.expr] = []
                 if isinstance(node, ast.Call):
                     name = (node.func.attr if isinstance(node.func, ast.Attribute)
                             else node.func.id if isinstance(node.func, ast.Name) else "")
                     if name in sleep_names:
                         kind = "sleep"
-                    elif any(kw.arg == "timeout" and isinstance(kw.value, ast.Constant)
-                             and isinstance(kw.value.value, (int, float)) for kw in node.keywords):
-                        kind = "deadline"
-                    elif name in {"settimeout", "set_timeout", "join", "wait", "communicate"} and node.args:
-                        arg = node.args[0]
-                        if isinstance(arg, ast.Constant) and isinstance(arg.value, (int, float)):
+                        waits = node.args[:1] or [kw.value for kw in node.keywords]
+                    else:
+                        waits = [kw.value for kw in node.keywords if kw.arg == "timeout"]
+                        position = {"settimeout": 0, "setdefaulttimeout": 0,
+                                    "set_timeout": 0, "join": 0, "wait": 0,
+                                    "communicate": 1, "select": 3, "poll": 0,
+                                    "wait_for": 1, "timeout": 0, "urlopen": 2,
+                                    "create_connection": 1}.get(name)
+                        if not waits and position is not None and len(node.args) > position:
+                            waits = [node.args[position]]
+                        if any(isinstance(arg, ast.Constant) and type(arg.value) in (int, float)
+                               for arg in waits):
                             kind = "deadline"
                 elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
                     left = node.left
@@ -755,8 +762,6 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
                         parent = parents.get(parent)
                     scope = parent.name if parent else "<module>"
                     if isinstance(node, ast.Call):
-                        waits = ([kw.value for kw in node.keywords if kw.arg == "timeout"]
-                                 if any(kw.arg == "timeout" for kw in node.keywords) else node.args[:1])
                         expression = f"{ast.unparse(node.func)}({', '.join(ast.unparse(arg) for arg in waits)})"
                     else:
                         expression = ast.unparse(node)
@@ -775,7 +780,7 @@ def test_wait_rows(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
             span = _brace_span(masked, function.end())
             if span:
                 functions.append((span, function[1]))
-        duration = r"(?:[\w:]+::)?Duration::from_(?:secs|millis|micros|nanos)\s*\(\s*[\d_]+(?:\.[\d_]+)?\s*\)"
+        duration = r"(?:[\w:]+::)?Duration::from_(?:secs|millis|micros|nanos)(?:_f32|_f64)?\s*\(\s*[\d_]+(?:\.[\d_]+)?\s*\)"
         pattern = re.compile(
             r"\b(?P<sleep>sleep)\s*\(|"
             r"\b(?P<timeout>timeout|connect_timeout|read_timeout|write_timeout|set_read_timeout|set_write_timeout)"
