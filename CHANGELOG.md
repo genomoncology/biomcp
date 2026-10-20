@@ -93,6 +93,8 @@
 
 ### Internal
 
+- Share concurrent cache reuse checks so skipped best-effort writes may refetch while admitted answers must remain cached. (2300)
+
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
 
