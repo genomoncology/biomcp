@@ -14,6 +14,8 @@ Depends on: 2305
 
 The landing gate runs live dependency advisory checks only when the candidate changes Cargo.lock, Cargo.toml, uv.lock or pyproject.toml. Every full main check and every release qualification still runs live advisory checks, including when no dependency input changes. A newly published advisory can block release admission. Preserve the remaining lint, license, test and specification checks.
 
+Changes: `Makefile`, `bin/lint`, `tests/test_lint.py`, `tests/test_dependency_advisory_gate.py`, `AGENTS.md`, `CHANGELOG.md`, `sdlc/records/2307-dependency-advisory-gate.md`.
+
 ## Keeps
 
 Use the existing gate commands and dependency-input source of truth. Keep advisory failures visible when required. Missing or ambiguous comparison information fails safely or runs the check; it must never silently suppress required checks. Do not disable certificate checks, suppress advisories, weaken license policy or add a second advisory implementation.
