@@ -98,6 +98,8 @@
 
 ### Internal
 
+- Keep reversed-search test state in the prepared temporary directory so concurrent source packaging cannot read removed test directories. (2320)
+
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
