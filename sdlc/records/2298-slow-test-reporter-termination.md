@@ -1,0 +1,9 @@
+# Slow-test reporter termination check
+
+Before test edits, actual-main full2297/1792519818443-70753 on d1ced4374c45285683c02e5c6632426ae81db096 failed the reporter lifecycle case at its three-second subprocess.communicate deadline. Unchanged focused2298/1792520186484-55296 passes that case. Controlled job2298/1792520237130-63073 pauses the reporter after the forwarded child PID, sends SIGTERM, observes the same caller timeout, then resumes it and verifies exit143 and reaped/absent child. This proves a fixed short deadline can reject correct eventual behavior. It does not establish the cause of the original failure. Reporter handlers precede forwarded PID; a readiness race is unsupported.
+
+Available job overlap and earlier load samples do not establish load at failure. No production reporter defect or corrupt state was reproduced. The developer stopped after one controlled diagnostic before proposing speculative code. The PM then explicitly approved a bounded event-based test replacement with negative controls and a generous outer safety limit, permitting a queued batch when claims allow.
+
+The pre-code plan changes only tests/test_slow_test_reporting.py: child-side SIGTERM acknowledgment after handler readiness, parent observation of forwarding and exit143, and explicit runner absence. An outer test safety guard and finally cleanup bound broken child behavior; speed is not the acceptance condition. Private missing-forward and missing-drain/reap mutations must fail the same behavioral case. Production reporter code remains unchanged. Final affected proof and fresh review are not yet claimed.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay/slow-reporter-termination/2298 — retain exact diagnostic commands/scripts, both focused jobs, original failing source job, attribution job identity and host-load samples with their uncertainty.

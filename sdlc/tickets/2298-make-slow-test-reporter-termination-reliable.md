@@ -12,7 +12,7 @@ Milestone: 0.9.4
 
 The slow-test reporter reliably forwards termination and reaps its runner, and its outside-in test observes the actual lifecycle without a readiness race. Restore main qualification with a bounded correction. Preserve routine slow-test warnings and failing test assertions.
 
-Changes: `tools/report-slow-tests.py`, `tests/test_slow_test_reporting.py`, `sdlc/records/2298-slow-test-reporter-termination.md`, `CHANGELOG.md`.
+Changes: `tests/test_slow_test_reporting.py`, `sdlc/records/2298-slow-test-reporter-termination.md`, `CHANGELOG.md`.
 
 ## Current main failure
 
@@ -28,4 +28,8 @@ Unchanged current-main focused job2298/1792520186484-55296 passes the existing l
 
 The full-main and attribution jobs overlapped for about71seconds. An earlier log sample shows load9.57/8.83/8.15, but the actual failure has no contemporaneous timestamp/load sample. Original cause remains unknown. No source defect was reproduced; no source file changed. The developer stopped after the agreed one controlled diagnostic.
 
-PM decision needed: recommend one unchanged-main full retry after the focused pass, with the original failure and uncertainty retained; withdraw the speculative repair if qualification passes. Alternatively authorize a bounded event-based termination test replacement that preserves detection of missing forwarding/reaping. Do not infer an original cause or lengthen the deadline blindly.
+PM decision on2026-10-20: replace the fixed short deadline with real forwarding, exit143 and runner-reaping events under a generous outer safety limit. Keep a control that rejects missing forwarding or reaping. The controlled pause establishes the test weakness; original failure cause stays unknown and no reporter defect is claimed. Land with the queued batch if claims allow, followed by one full-main check.
+
+## Approved pre-code test plan
+
+Change only tests/test_slow_test_reporting.py. The child installs its SIGTERM handler before publishing its PID; the handler acknowledges delivery, restores default SIGTERM and signals itself. The parent observes PID readiness, sends termination, observes acknowledgment and EOF/exit143, then asserts the child PID is absent. Replace the three-second communicate deadline with real event waits and an outer pytest-timeout safety guard with finally cleanup of owned processes. Two private temporary reporter mutations, missing forwarding and missing drain/reap, must still fail this behavioral case. Restore production source after each; no mutation or reporter implementation change lands. The existing module and mechanical checks are the bounded final proof.
