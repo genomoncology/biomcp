@@ -17,3 +17,5 @@ The release process lives in one place, `docs/reference/release-process.md`. `sd
 ## Evidence
 
 The release steps are described in three places, and the checklist demands review of records-only commits and repeated rehearsals; 0.9.1 needed six rounds of go requests. From Ian's process assessment of 2026-10-20.
+
+- Changes: `docs/reference/release-process.md`, `sdlc/release-checklist.md`, `AGENTS.md`, `CHANGELOG.md`.

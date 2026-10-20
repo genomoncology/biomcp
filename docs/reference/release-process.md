@@ -2,6 +2,40 @@
 
 BioMCP publishes from `.github/workflows/release.yml`. A push of a stable tag matching `v*` starts a release. The workflow creates the GitHub release as a draft, validates and publishes the artifacts, then makes the release public last. A manual dispatch can validate an existing tag, republish its container image, or rehearse an untagged candidate without publishing.
 
+## Release sequence
+
+This document owns the release steps. A release ticket links here and records decisions, failures and the successful candidate evidence; it does not copy and tick a second checklist. Ian alone authorizes and tags a release.
+
+### Prepare the go request
+
+Each release ticket carries its changelog bullet in its own landing. Keep the New features, Fixes and Internal headings in place even when a section is empty.
+
+1. Resolve every finding for the release with its fix or an approved deferral. Keep each ticket's code review and local gate evidence. Claimed fixes need a regression that fails without the fix. A fresh project review covers the release's source and workflow changes; later records-only commits need no new review.
+2. State each new or changed source's terms in `docs/reference/sources.json` and `docs/reference/source-licensing.md`, including identifier-only sources.
+3. Commit stable versions and the versioned changelog, including fixed GitHub issues and merged tickets. Run the collected checks in [Version metadata](#version-metadata) before the metadata landing gate.
+4. Land reviewed changes through the coordinator's landing gate and check actual main. Complete the final candidate's routine, shipped-feature and required long checks in [Local qualification](#local-qualification). Retain the live replay results and name disabled providers as unverified.
+5. Compare any claimed performance measurements on one host with the same toolchain, workload and cache settings. Keep raw samples and label failed collections incomplete. Existing measurements remain evidence for their measured revision; records-only changes do not require new measurements.
+6. Clean merged ticket branches, owned worktrees, reservations and scratch builds. Leave other teams' open work alone. Confirm clean main and owned worktrees with `git status --porcelain` and owned cleanup with `pm daily`.
+7. Complete [Full untagged rehearsal](#full-untagged-rehearsal). The go request names the exact source commit to tag, the successful rehearsal URL, local qualification evidence, fixed GitHub issues and the rehearsal's publication limits. Ian's reviewer returns GO, and Ian decides whether to release.
+
+### Tag and verify
+
+Ian tags the named commit explicitly with `git tag vX.Y.Z <sha>` and pushes that tag. Never tag an advanced `HEAD` by accident. Watch the [tag-push release](#tag-push-release) through publication. If publication fails before PyPI succeeds, repair the cause and remove the failed draft and tag before starting again. After PyPI succeeds, rerun only failed jobs; PyPI refuses the same version twice.
+
+Verify the public release against its published artifacts:
+
+- Install `biomcp-cli==X.Y.Z` in a clean environment and run `biomcp --version`.
+- Check the five public archives and SHA-256 sidecars. Each binary's version names the released version and tagged commit.
+- Check the versioned container image for both supported platforms. Check `latest` only when this release qualifies for that pointer under [Container publication](#container-publication).
+- Check the published Homebrew version and checksums, install it and run `biomcp --version`.
+- Reproduce each fixed GitHub issue against the published artifact and retain the result.
+
+### Finish the release
+
+Reply to fixed issues with their verification evidence and close them. Keep one release record with the tag, commit, workflow run, workflow duration, archive download sizes, number and failure causes of full rehearsals, and published-artifact verification. Link this document rather than repeating the steps.
+
+Bump main to the next development version through a ticket, add an empty `## Unreleased` changelog section, and record any process lesson here. Handle directory submissions as [Separate manual directory actions](#separate-manual-directory-actions) describes.
+
 ## Local qualification
 
 `make main-gate` runs the routine gate followed by `make repo-audit` and `make full-feature-check`. The full-feature check runs all-target Clippy, the AlphaGenome behavior tests, and a development-profile build with PNG, SVG and terminal output checks.
@@ -54,7 +88,7 @@ The rehearsal runs direct qualification, the packaged-crate marker gate, all fiv
 
 Every rehearsal job has read-only or empty permissions. Publisher jobs cannot run in this mode, and no publication credential or trusted-publishing identity is granted. GitHub release creation/upload/publication, PyPI trusted upload, registry authentication/pushes, Pages deployment and live-site verification, the Homebrew push, and moving `latest` remain unexercised. A rehearsal validates their prepared payloads and build paths; actual publication still requires its own successful run.
 
-Run this complete manual rehearsal on the final candidate after every release ticket and final measurement record has landed. Record its run URL and SHA before asking Ian to tag. A later source or workflow change requires another full rehearsal of the new candidate.
+Run this complete manual rehearsal after the release source and workflow changes have landed. Record its run URL and candidate SHA before asking Ian to tag. A later source or workflow change requires another full rehearsal of the new candidate. A records-only change requires neither a fresh review nor another rehearsal. Keep the successful rehearsal bound to the source commit it qualified, and ask Ian to tag that commit explicitly even when later administrative records advance main.
 
 ## Documentation publication
 
