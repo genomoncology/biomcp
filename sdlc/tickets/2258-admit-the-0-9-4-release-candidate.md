@@ -184,4 +184,4 @@ PM decision: required repair2297 gives every installed-wheel run its own clean t
 
 PM requires 2308 to include the minimal compatible quinn-proto 0.11.18 update for RUSTSEC-2026-0338 through 0342. Split only if a direct dependency needs a major-version move. The expanded advisory check derives existing reviewed exceptions from deny.toml as its only policy source, without broadening them.
 
-After final repaired-source freeze, retain historical runtime and storage comparison rows and their accepted regressions. Refresh only the existing paired build and gate rows, version and binary size, in the same job window as final qualification. No new runtime, provider or MCP timing experiment. This explicit final refresh supplements the earlier historical-context ruling.
+Latest PM ruling withdraws the briefly requested measurement refresh. The standing historical-context ruling governs: retain the 2234 comparison and accepted regressions as historical evidence, make no final-source speed claim, and run no new measurement experiment. Final-source functional qualification and artifact checks remain required.
