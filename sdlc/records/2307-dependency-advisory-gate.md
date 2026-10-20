@@ -29,3 +29,7 @@ Live policy job 2307/1792530898689-1331650 confirms the original locks remain bl
 M5 2307/1792530932038-98015 passed the same 103 focused controls, mechanical checks and actual pinned Darwin-arm64 scanner bootstrap with digest verification. The old Make release-scope failure is corrected. These controls bind source ddb7f1f04. Latest-main composition f2de0d095 additionally merges reviewed main a5314c569, preserving both changelog entries; it still requires its routine gate before fresh review.
 
 The policy evidence mirror was initially deferred and absent on M5. It is now copied and verified: 34 files, including osv-live-policy/pins-d0b775be9/results.json with SHA256 73615f218c0d3adaba4e3adbc832bdf511ddb51462027a6d7983bea9def59bb0. The manifest policy-evidence.SHA256SUMS has SHA256 e7bcd94bc5267fed48073f326aab7cfb14c433422ceb979610050236481b372f. This correction changes neither the scan result nor its tested lock inputs.
+
+## Final routine classification correction
+
+Routine 2307/1792531221869-74743 failed one Python CI-classification contract while 1781 cases passed. Its lexical detector interpreted a fixture label ending in the quoted word cargo as a real Cargo caller. Candidate a8bf9f19e changes only malformed and missing fixture case names to their actual Cargo.lock and uv.lock names. It changes neither the detector nor test markers or dependency requirements. The failed aggregate routine remains failed, with full raw retained under routine-fe8093832/jobs. Focused helper, classifier and Ruff checks precede the next exact routine attempt.
