@@ -6,6 +6,9 @@
 
 ### Fixes
 
+- Update the MCP SDK to reject invalid initial requests without leaking HTTP sessions and repair client metadata and redirect security. (2309)
+- Update certifi, urllib3, mkdocs-material, xxhash-rust and quinn-proto to their first patched security releases. (2308)
+
 - Update TLS certificate validation and bundled trust roots to reject distrusted emSign certificate paths. (2305)
 
 - Report licenses stated by fetched full-text source metadata and JATS links with their source, including when an asset package is unavailable. (2296)
@@ -99,8 +102,13 @@
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
 - Keep real socket work separate from paused test clocks and reject unsafe clock and socket ordering in routine checks. (2301)
+- Supply pinned Python lint and test tools in each build job’s own declared environment. (2311)
+- Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
+- Keep reversed-search test state in the prepared temporary directory so concurrent source packaging cannot read removed test directories. (2320)
+
+- Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
+
 - Preserve failed replay cases with their command state, cache database and request logs; remove passing cases. (2299)
-- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
 

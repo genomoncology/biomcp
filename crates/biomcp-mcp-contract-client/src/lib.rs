@@ -11,7 +11,7 @@ use std::time::Duration;
 use base64::Engine;
 use rmcp::ServiceExt;
 use rmcp::model::{
-    CallToolRequestParams, RawContent, ReadResourceRequestParams, ResourceContents, Tool,
+    CallToolRequestParams, ContentBlock, ReadResourceRequestParams, ResourceContents, Tool,
 };
 use rmcp::service::ServiceError;
 use rmcp::transport::{StreamableHttpClientTransport, TokioChildProcess};
@@ -80,6 +80,18 @@ const TOOLS_LIST_BYTE_CEILING: usize = 22_600;
 fn assert_tool_metadata(tools: &[Tool]) {
     for tool in tools {
         let name = tool.name.as_ref();
+        // ERepo supplies a bespoke schema; the other tools expose their
+        // named input types. Preserve that existing wire metadata when the
+        // SDK changes its automatic schema generation.
+        if name != "variant_erepo" {
+            assert!(
+                tool.input_schema
+                    .get("title")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|title| !title.is_empty()),
+                "MCP tool {name} lost its named input schema title"
+            );
+        }
         let annotations = tool
             .annotations
             .as_ref()
@@ -105,27 +117,27 @@ fn assert_tool_metadata(tools: &[Tool]) {
     }
 }
 
-pub fn text_chunks(content: &[rmcp::model::Content]) -> Vec<&str> {
+pub fn text_chunks(content: &[rmcp::model::ContentBlock]) -> Vec<&str> {
     content
         .iter()
-        .filter_map(|chunk| match &chunk.raw {
-            RawContent::Text(text) => Some(text.text.as_str()),
+        .filter_map(|chunk| match chunk {
+            ContentBlock::Text(text) => Some(text.text.as_str()),
             _ => None,
         })
         .collect()
 }
 
-pub fn image_chunks(content: &[rmcp::model::Content]) -> Vec<(&str, &str)> {
+pub fn image_chunks(content: &[rmcp::model::ContentBlock]) -> Vec<(&str, &str)> {
     content
         .iter()
-        .filter_map(|chunk| match &chunk.raw {
-            RawContent::Image(image) => Some((image.mime_type.as_str(), image.data.as_str())),
+        .filter_map(|chunk| match chunk {
+            ContentBlock::Image(image) => Some((image.mime_type.as_str(), image.data.as_str())),
             _ => None,
         })
         .collect()
 }
 
-pub fn first_text(content: &[rmcp::model::Content]) -> &str {
+pub fn first_text(content: &[rmcp::model::ContentBlock]) -> &str {
     text_chunks(content)
         .into_iter()
         .next()
