@@ -63,8 +63,9 @@ async fn rejected_http_initializations_do_not_accumulate_sessions() {
             .send()
             .await
             .unwrap();
-        assert_eq!(response.status(), reqwest::StatusCode::BAD_REQUEST);
-        let _ = response.bytes().await.unwrap();
+        assert_eq!(response.status(), reqwest::StatusCode::UNPROCESSABLE_ENTITY);
+        let rejection = response.text().await.unwrap();
+        assert!(rejection.contains("initialize request"), "{rejection}");
         assert!(
             sessions.sessions.read().await.is_empty(),
             "rejected first POST {id} leaked a session"
