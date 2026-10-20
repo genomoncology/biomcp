@@ -421,7 +421,11 @@ FORMAT_CASES = [
     ("image/jpeg", b"\xff\xd8\xff\xe0photo", b"not a jpeg"),
     ("application/msword", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1document", b"not a doc"),
     ("application/zip", b"PK\x03\x04archive", b"not a zip"),
-    ("text/html", b"<!DOCTYPE html><html><body>article</body></html>", b"not html"),
+    (
+        "text/html",
+        b"<!DOCTYPE html><html><body>article</body></html>",
+        b"not html",
+    ),
     ("binary/octet-stream", b'{"Key":"value","tail":1}', b""),
 ]
 
@@ -434,17 +438,20 @@ def test_real_formats_report_only_the_checks_performed(
     server, origin = provider
     replay, routes = recording(tmp_path, origin)
     next(iter(routes.values()))["headers"]["content-type"] = content_type
-    (replay / "manifest.json").write_text(json.dumps({"schema_version": 1, "routes": routes}))
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
     (replay / "reply.json").write_bytes(malformed if fault == "historical" else body)
     server.content_type = content_type if fault != "type" else "application/json"
     server.body = malformed if fault == "live" else body
     server.status = 503 if fault == "status" else 200
     process, results, summary = run_check(tmp_path, replay, "--live")
-    assert results[0]["qualification"] == "status/type/signature only"
-    assert process.returncode == int(fault is not None)
+    assert process.returncode == int(fault is not None), process.stdout
     assert summary["checked"] == int(fault != "historical")
-    assert summary["blocked" if fault == "historical" else "drift" if fault else "passed"] == 1
+    state = "blocked" if fault == "historical" else "drift" if fault else "passed"
+    assert summary[state] == 1
     assert results[0]["added_paths"] == []
+    assert results[0]["qualification"] == "status/type/signature only"
     if fault == "status":
         assert "changed status" in results[0]["details"]
     if fault == "type":
@@ -454,10 +461,13 @@ def test_real_formats_report_only_the_checks_performed(
 @pytest.mark.parametrize(
     ("doctype", "refused"),
     [
-        (b'<!DOCTYPE reply SYSTEM "http://127.0.0.1:1/no-fetch">', False),
+        (b'<!DOCTYPE reply SYSTEM "UPSTREAM/no-fetch">', False),
         (b'<!DOCTYPE reply [<!ENTITY word "expanded">]>', True),
-        (b'<!DOCTYPE reply [<!ENTITY word SYSTEM "file:///etc/passwd">]>', True),
-        (b'<!DOCTYPE reply [<!ENTITY % remote SYSTEM "http://127.0.0.1:1/no-fetch">%remote;]>', True),
+        (b'<!DOCTYPE reply [<!ENTITY word SYSTEM "file:///never-read">]>', True),
+        (
+            b'<!DOCTYPE reply [<!ENTITY % remote SYSTEM "UPSTREAM/no-fetch">%remote;]>',
+            True,
+        ),
     ],
 )
 @pytest.mark.parametrize("historical", [False, True])
@@ -467,14 +477,19 @@ def test_doctype_allows_declarations_but_refuses_entity_expansion(
     server, origin = provider
     replay, routes = recording(tmp_path, origin)
     next(iter(routes.values()))["headers"]["content-type"] = "application/xml"
-    (replay / "manifest.json").write_text(json.dumps({"schema_version": 1, "routes": routes}))
-    xml = doctype + b"<reply><row/></reply>"
-    (replay / "reply.json").write_bytes(xml if historical else b"<reply><row/></reply>")
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    xml = doctype.replace(b"UPSTREAM", origin.encode()) + b"<reply><row/></reply>"
+    (replay / "reply.json").write_bytes(
+        xml if historical else b"<reply><row/></reply>"
+    )
     server.content_type = "application/xml"
     server.body = b"<reply><row/></reply>" if historical else xml
     process, _, summary = run_check(tmp_path, replay, "--live")
-    assert process.returncode == int(refused)
-    assert summary["blocked" if historical and refused else "drift" if refused else "passed"] == 1
+    assert process.returncode == int(refused), process.stdout
+    state = "blocked" if historical and refused else "drift" if refused else "passed"
+    assert summary[state] == 1
     assert len(server.requests) == int(not (historical and refused))
 
 
@@ -483,10 +498,46 @@ def test_real_formats_keep_root_object_provider_from_capture_provenance(tmp_path
     entry = next(iter(routes.values()))
     entry["recording_provenance"] = {"provider": "mygene"}
     entry["upstream"] = "https://mygene.info/v3/object?q=1"
-    (replay / "manifest.json").write_text(json.dumps({
-        "schema_version": 1, "routes": {"GET /v3/object?q=1": entry}
-    }))
+    (replay / "manifest.json").write_text(
+        json.dumps({
+            "schema_version": 1, "routes": {"GET /v3/object?q=1": entry}
+        })
+    )
     process, results, summary = run_check(tmp_path, replay)
     assert process.returncode == 0
     assert results[0]["provider"] == "mygene"
     assert summary["ready"] == 1
+
+
+def test_real_formats_do_not_parse_octet_stream_json_as_json(tmp_path, provider):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "application/octet-stream"
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    (replay / "reply.json").write_bytes(b'{"same-prefix":  "recorded"}')
+    server.content_type = "application/octet-stream"
+    server.body = b'{"same-prefix":  invalid JSON remains uninterpreted'
+    process, results, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == 0
+    assert summary["passed"] == 1
+    assert results[0]["qualification"] == "status/type/signature only"
+
+
+@pytest.mark.parametrize("historical", [False, True])
+def test_real_formats_reject_truncated_opaque_signature(tmp_path, provider, historical):
+    server, origin = provider
+    replay, routes = recording(tmp_path, origin)
+    next(iter(routes.values()))["headers"]["content-type"] = "binary/octet-stream"
+    (replay / "manifest.json").write_text(
+        json.dumps({"schema_version": 1, "routes": routes})
+    )
+    body = b'{"recorded":"opaque body"}'
+    (replay / "reply.json").write_bytes(body[:8] if historical else body)
+    server.content_type = "binary/octet-stream"
+    server.body = body if historical else body[:8]
+    process, _, summary = run_check(tmp_path, replay, "--live")
+    assert process.returncode == 1
+    assert summary["blocked" if historical else "drift"] == 1
+    assert summary["checked"] == int(not historical)

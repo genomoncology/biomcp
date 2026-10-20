@@ -88,6 +88,8 @@
 
 ### Internal
 
+- Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
+
 - Build and smoke an installed Linux wheel with a fresh home during the full main check, sharing release smoke commands and pinned manylinux images. (2288)
 - Require changelog citations for shipped changes and reject tracked scratch files in the local lint gate, including stable release candidates with dated changelog sections. (2291)
 
