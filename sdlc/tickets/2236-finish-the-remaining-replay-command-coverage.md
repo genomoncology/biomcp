@@ -14,6 +14,8 @@ Reviews: revision e44b173, accept
 
 Reviews: revision e3c49e8, accept
 
+Reviews: revision 61c64f5, accept
+
 ## Outcome
 
 Extend the existing recorded replay and JSON/Markdown goldens to the remaining command families after the narrowed 2079 and 2111 release batches. Keep authored fault controls and excluded local datasets in their existing helpers. Each implementation batch declares its own exact source claim before code changes.
