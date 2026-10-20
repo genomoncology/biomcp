@@ -1806,8 +1806,10 @@ def test_wait_audit_preserves_reasoned_timing_and_ignores_non_test_text(tmp_path
     fixture = tmp_path / "wait-fixture"
     _write_dead_code_fixture(fixture, "fn production() { std::thread::sleep(duration); }\n"
                              '#[test]\nfn example() { let s = "sleep(2)"; }\n')
-    _write_dead_code_fixture(fixture, 'import time\ndef test_delay():\n    time.sleep(0.2)\n',
-                             "tests/test_wait.py")
+    tests = fixture / "tests"
+    tests.mkdir()
+    (tests / "test_wait.py").write_text('import time\ndef test_delay():\n    time.sleep(0.2)\n')
+    subprocess.run(["git", "add", "."], cwd=fixture, check=True)
     tool = _load_ratchet_module()
     rows, errors = tool.test_wait_rows(fixture)
     assert not errors
