@@ -11,7 +11,9 @@ The release procedure lives in [the canonical runbook](../../docs/reference/rele
 | 39425d8fce157f9aa1a92310af9da60983d2dae6 | 2309/1792534415712-7306 | Passed, 1011661 ms, including repaired-source installed Linux wheel |
 | 5eaba3028d0b494d441eafd6d6e7e36d34bcc3f3 | 2310/1792535942921-65624 | Failed, 231447 ms, source archive scan encountered a disappearing temporary directory |
 
-The coordinator independently read these terminal results. Passing landing gates remain in their owning ticket/job records. The source-archive repair's branch routine 2320/1792536475770-292 passed on 52b1782a19011c5ace2bb55be474e476d317f50e; that branch pass does not qualify a later pushed main. Historical failures retain their original statuses.
+The coordinator independently read these terminal results. Passing landing gates remain in their owning ticket/job records. The source-archive repair's branch routine 2320/1792536475770-292 passed on 52b1782a19011c5ace2bb55be474e476d317f50e. Its post-merge job 1792537535078-50249 was canceled under the single-gate ruling and ended with exit 143; it is not a pass or a new source defect. Historical failures retain their original statuses.
+
+The advisory-scope policy landed at 01c431110d3e44a400663c8dd4459e33e1304db4 with candidate gate 2307/1792538030462-72182 passing in 380323 ms. The focused Python environment landed at badecf8c3a2eae2050f5ef4b47cf9f372065de46 with candidate gate 2311/1792538597761-89232 passing in 402731 ms. The coordinator read both terminal results. Neither landing repeated the full main check: the final candidate receives that check once before rehearsal.
 
 Fresh source reviews cover the published increments through 5eaba3028; their original reviewers remain attributed. The continuing prefix reviewer accepted that bounded scope and made no final GO claim. No new reading of the earlier 1122 commits or every large golden body is claimed. Source fixes and reviews remain in their owning records rather than duplicated here.
 

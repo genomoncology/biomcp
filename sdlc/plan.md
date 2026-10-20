@@ -7,17 +7,17 @@ This plan says what BioMCP builds next, why, and in what order. Read status from
 1. Release blockers first: the security updates (2308 lock pins, 2309 rmcp 2.1) and the installed-wheel cleanup ownership (2310).
 2. Test reliability from the root cause record 2299, so full checks fail only on product bugs: 2299 to 2304, the advisory-gate scope (2307) and the focused Python environment. Then add the checks that stop new fixed waits and paused clocks mixed with real sockets.
 3. Process fixes from Ian's 2026-10-20 assessment that make the release path cheaper: one release document, release-only checks run earlier, the landing gate booking its real need, and removal of leftover pipeline scripts and re-stamping checkers.
-4. Records cleanup (2306), which may follow the tag.
+4. Full FDA approval history (2272), adopted with its recorded provider replies and normal source review.
+5. Feature coverage linked to outside-in behavior, with one valid baseline and a nightly/release floor. Complete records cleanup (2306) before the release rehearsal.
 
 Exit: every 0.9.4 ticket lands or is withdrawn, main passes its full local check, the Linux fresh-clone offline run passes, and one full manual release rehearsal passes on final main without a tag. Ian then authorizes the tag.
 
 ## 0.9.5: prove BioMCP helps clinicians' agents
 
-1. Full FDA approval history (2272).
-2. Measure whether an agent answers cancer care questions better with BioMCP (ideal-state gap: nobody measures agent success), following `sdlc/planning/2026-10-03-prove-agent-value.md`.
-3. Prove trial answers correct against keys taken from ClinicalTrials.gov itself (ideal-state gap: nothing proves the trial answers are correct).
+1. Measure whether an agent answers cancer care questions better with BioMCP (ideal-state gap: nobody measures agent success), following `sdlc/planning/2026-10-03-prove-agent-value.md`.
+2. Prove trial answers correct against keys taken from ClinicalTrials.gov itself (ideal-state gap: nothing proves the trial answers are correct).
 
-Lanes run in parallel where their claims do not collide. Accepted tickets land in batches through one lander, each lane runs the routine suite on its branch merged with main before review, and the full main check runs once per batch.
+Lanes run in parallel where their claims do not collide. Accepted tickets land in batches through one lander, with one candidate landing gate per batch. All assessment and reliability work stays in 0.9.4. Run the full main check once on the final candidate before the full untagged rehearsal; nightly qualification will own its additional checks when scheduling is available.
 
 ## Hardest problems
 
