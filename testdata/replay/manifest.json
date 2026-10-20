@@ -16,6 +16,134 @@
         "provider_origin_statement": "Captured directly from the public PMC OA bucket. Own article metadata explicitly records CC BY and is_pmc_openaccess true."
       }
     },
+    "GET /PMC3467229.1/PMC3467229.1.xml?md5=895a36e49ef4c6e5b106ae2920ed3571": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.xml?md5=895a36e49ef4c6e5b106ae2920ed3571",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-825d31a1bed9.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/PMC3467229.1.xml?md5=895a36e49ef4c6e5b106ae2920ed3571",
+        "captured_at": "2026-10-20T16:12:04.651755+00:00",
+        "sha256": "a792b383180062bcdd20c690480a8e288a77e036a82713b8a2758d065831704f",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.g001.jpg?md5=a5ccba5f36c809af6083141f59d48761": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g001.jpg?md5=a5ccba5f36c809af6083141f59d48761",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-40a8e385d245.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g001.jpg?md5=a5ccba5f36c809af6083141f59d48761",
+        "captured_at": "2026-10-20T16:12:06.873634+00:00",
+        "sha256": "5d7caf8d5f3996c8326422f823fc9829aabc60507c32ca0fb721bca59bb6d4d9",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.g002.jpg?md5=89e6c6c3ce4ff6eac44cefc127b9da8c": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g002.jpg?md5=89e6c6c3ce4ff6eac44cefc127b9da8c",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-070a3fd81158.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g002.jpg?md5=89e6c6c3ce4ff6eac44cefc127b9da8c",
+        "captured_at": "2026-10-20T16:12:09.061753+00:00",
+        "sha256": "eae3f8d3639846fa6ac4d3f7f5c08decad11d466c8e06627b2a9b3f4e8b9cdd0",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.g003.jpg?md5=0bbeee23dade3db002e6f33405dee4a9": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g003.jpg?md5=0bbeee23dade3db002e6f33405dee4a9",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-c3b64f0b6793.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.g003.jpg?md5=0bbeee23dade3db002e6f33405dee4a9",
+        "captured_at": "2026-10-20T16:12:11.383349+00:00",
+        "sha256": "edb2115cdff0837bf4be21b68d6933349161ebd2be6fccae21dd5ea15fd31b04",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.s001.doc?md5=38d5b56940bf4b3ca1d70113b29cf91b": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s001.doc?md5=38d5b56940bf4b3ca1d70113b29cf91b",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-a374311bac5d.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s001.doc?md5=38d5b56940bf4b3ca1d70113b29cf91b",
+        "captured_at": "2026-10-20T16:12:13.595923+00:00",
+        "sha256": "aab8c23f416463e92a79779c288ea6597fcb31da0a98e00e3fccf80d7de54d40",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.s002.doc?md5=7c574b2ca061b95bec9f5ed7ef001a24": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s002.doc?md5=7c574b2ca061b95bec9f5ed7ef001a24",
+      "status": 200,
+      "file": "responses/pmc-oa/pmc3467229-s002.doc.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.s002.doc?md5=7c574b2ca061b95bec9f5ed7ef001a24",
+        "captured_at": "2026-10-20T16:12:15.834943+00:00",
+        "sha256": "45f315e02432c0ef3714434fe5709a22958377e1bbb2c727c4f5e71c8615312f",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.t001.jpg?md5=32b3b7cfefb8be87ebb03de41483ed5b": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t001.jpg?md5=32b3b7cfefb8be87ebb03de41483ed5b",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-541cf1b69c2b.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t001.jpg?md5=32b3b7cfefb8be87ebb03de41483ed5b",
+        "captured_at": "2026-10-20T16:12:18.116639+00:00",
+        "sha256": "bc2ad2efa4f5cc9ad25debc6d05ea7b8f579e327bcfb49de802f8ad5bfd55011",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /PMC3467229.1/pone.0047054.t002.jpg?md5=386a6a4f31b8f96b5ddb091658f1d829": {
+      "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t002.jpg?md5=386a6a4f31b8f96b5ddb091658f1d829",
+      "status": 200,
+      "file": "responses/pmc-oa/oa23056577-d3a1d44e4455.bin",
+      "headers": {
+        "content-type": "binary/octet-stream"
+      },
+      "recording_provenance": {
+        "provider": "pmc-oa",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3467229.1/pone.0047054.t002.jpg?md5=386a6a4f31b8f96b5ddb091658f1d829",
+        "captured_at": "2026-10-20T16:12:20.327204+00:00",
+        "sha256": "6706bf630abd4a3401a421573e2c087c6431f26e43c64a88a3a6fbd7e3ab79db",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
     "GET /cellosaurus/cell-line/CVCL_0005?fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr&format=json": {
       "upstream": "https://api.cellosaurus.org/cell-line/CVCL_0005?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
       "status": 200,
@@ -430,6 +558,22 @@
       "status": 200,
       "upstream": "https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/113488022"
     },
+    "GET /europepmc/PMC3467229/fullTextXML": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3467229/fullTextXML",
+      "status": 200,
+      "file": "responses/europepmc/oa23056577-da5c07b59dc6.bin",
+      "headers": {
+        "content-type": "application/xml"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3467229/fullTextXML",
+        "captured_at": "2026-10-20T16:12:23.552508+00:00",
+        "sha256": "7d40038dbf616090981cdc71eea819e5008356cf3ad6d8d5ea4e5701812e9d0e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
     "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED": {
       "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED",
       "status": 200,
@@ -444,6 +588,22 @@
         "sha256": "16b56e8553a13b8696ee8252a2e9b3fcd40c5245e1a0bb1a522ef0528f081c9e",
         "minimization_or_redaction": "Raw public response bytes retained without edits.",
         "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A23056577+AND+SRC%3AMED": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A23056577+AND+SRC%3AMED",
+      "status": 200,
+      "file": "responses/europepmc/oa23056577-42bd2437194c.bin",
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A23056577+AND+SRC%3AMED",
+        "captured_at": "2026-10-20T15:57:33.189907+00:00",
+        "sha256": "85660ada5b28040b78439e290a25e705e17054679d8fd1ceb72000d7eab68d78",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
       }
     },
     "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A30738221+AND+SRC%3AMED": {
@@ -996,6 +1156,22 @@
         "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
       }
     },
+    "GET /pubmed/efetch.fcgi?db=pubmed&id=23056577&retmode=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=23056577&retmode=xml",
+      "status": 200,
+      "file": "responses/pubmed/oa23056577-cf694ce8e88c.bin",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=23056577&retmode=xml",
+        "captured_at": "2026-10-20T15:57:35.403424+00:00",
+        "sha256": "ab6076fda874b9046f4702897de03dc0ba0b2027986a1e5b3ef1bf2ebaf696d5",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
+      }
+    },
     "GET /pubmed/efetch.fcgi?db=pubmed&id=30738221&retmode=xml": {
       "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30738221&retmode=xml",
       "status": 200,
@@ -1120,6 +1296,22 @@
         "sha256": "df4b97b3a5dbcf7ba359261ff2f97d1d0746eda021370772f7c8d9d2cc2a52d4",
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    "GET /pubtator/publications/export/biocjson?pmids=23056577": {
+      "upstream": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=23056577",
+      "status": 200,
+      "file": "responses/pubtator/oa23056577-b112657fce51.bin",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "pubtator",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=23056577",
+        "captured_at": "2026-10-20T15:57:29.237608+00:00",
+        "sha256": "b47024794fb35ad089a510e7efea3c0bdf19dbcfc43b87d3baaaef478d15e8ef",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless normal provider route. Article PMC3467229 own current metadata records CC BY and is_pmc_openaccess true."
       }
     },
     "GET /pubtator/publications/export/biocjson?pmids=30738221": {
