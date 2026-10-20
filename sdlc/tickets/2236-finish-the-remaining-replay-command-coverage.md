@@ -6,13 +6,15 @@ priority: 4
 
 Status: OPEN.
 
-Milestone: 0.9.5
+Milestone: 0.9.4
+
+Depends on: 2287
 
 ## Outcome
 
 Extend the existing recorded replay and JSON/Markdown goldens to the remaining command families after the narrowed 2079 and 2111 release batches. Keep authored fault controls and excluded local datasets in their existing helpers. Each implementation batch declares its own exact source claim before code changes.
 
-Changes: `tests/golden/test_golden_output.py`, `tests/golden/cases/get-protein-p15056.*`, `tests/golden/cases/get-protein-p15056-structures.*`, `tests/golden/cases/protein-structures-p15056-limit5-offset5.*`, `CHANGELOG.md`.
+Changes: `tests/golden/test_golden_output.py`, `tests/golden/cases/get-protein-p15056.*`, `tests/golden/cases/get-protein-p15056-structures.*`, `tests/golden/cases/protein-structures-p15056-limit1-offset1.*`, `CHANGELOG.md`.
 
 ## Inventory
 
@@ -28,7 +30,7 @@ Preserve existing complete or explicitly minimized source captures and their rec
 
 Each cohesive batch adds executed output goldens that reject changed output and passes the affected recorded consumer checks without missing requests. Keep original reader claims and unique request/refusal assertions. Reuse existing replay lifecycle, runner and measurement tools; add no framework. Record exactly which command selectors and traversal outputs are covered, then close this follow-up only at its approved finite boundary.
 
-PM decision: 2026-10-19. This follow-up is outside 0.9.4. That release ends replay work after the accepted gene and pathway goldens and supported pathway reader migration; authored fault controls and excluded local datasets remain in their helpers.
+PM decision: 2026-10-20. Ian moved this coverage into 0.9.4; it already found the protein structures JSON panic (2287). Land it after the release-blocking repairs, in cohesive batches.
 
 ## Progress
 
@@ -36,4 +38,5 @@ PM decision: 2026-10-19. This follow-up is outside 0.9.4. That release ends repl
 
 ## First batch boundary
 
-Use the existing exact UniProt P15056 recording to cover get protein identity, get protein structures and protein structures with limit 5 and offset 5 in both JSON and Markdown. Existing captures and authored fault controls remain unchanged. Protein search and every other selector stay outside this batch. Reproduce current main before implementation; a suspected structures source-credit panic must be reported before any registry change. This batch cannot close the whole follow-up.
+Use the existing exact UniProt P15056 recording to cover get protein identity, get protein structures and protein structures with limit 1 and offset 1 in both JSON and Markdown. Existing captures and authored fault controls remain unchanged. This pagination selects the second of the two retained structures instead of testing only an empty page. Protein search and every other selector stay outside this first implementation batch. The 2287 repair owns the reproduced JSON panic. This batch cannot close the whole follow-up; inventory the remaining exact captures and missing inputs before proposing further batches.
+
