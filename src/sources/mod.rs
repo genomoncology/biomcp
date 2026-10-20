@@ -2691,14 +2691,14 @@ mod tests {
 
     #[tokio::test]
     async fn read_limited_source_body_classifies_chunk_failures_as_retryable() {
-        let mut server = crate::test_support::TestHttpServer::spawn(move |mut stream| async move {
-            stream
-                .write_all(
-                    b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\nshort",
-                )
-                .await?;
-
-            Ok(())
+        // Consume the request before closing a deliberately truncated response.
+        // Closing a socket with unread request bytes can reset it before reqwest
+        // receives the headers, which exercises a different failure boundary.
+        let mut server = crate::test_support::TestHttpServer::respond(|_| async {
+            Ok(
+                b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\nshort"
+                    .to_vec(),
+            )
         })
         .expect("start HTTP fixture");
         let address = server.base.trim_start_matches("http://").to_string();

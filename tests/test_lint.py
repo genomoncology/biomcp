@@ -5,6 +5,8 @@ import importlib.util
 import os
 import json
 import shutil
+import shlex
+import sys
 import subprocess
 import tomllib
 from pathlib import Path
@@ -43,7 +45,37 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
     shutil.copy2(LINT_SCRIPT, fixture_root / "bin" / "lint")
     shutil.copy2(TEXT_LINT_SCRIPT, fixture_root / "tools" / "check-tracked-text")
     shutil.copy2(BUILD_IDENTITY_WRAPPER, fixture_root / "tools" / "with-build-identity")
+    shutil.copy2(REPO_ROOT / "tools/check-dependency-advisories", fixture_root / "tools/check-dependency-advisories")
+    shutil.copy2(REPO_ROOT / "deny.toml", fixture_root / "deny.toml")
+    _write_executable(
+        fixture_root / "tools/bootstrap-lint-tools",
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$PWD/tools"\n',
+    )
+    _write_executable(
+        fixture_root / "tools/osv-scanner",
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "${OSV_LOG:-/dev/null}"\nexit "${OSV_EXIT:-0}"\n',
+    )
+    _write_executable(
+        fixture_root / "tools/uv",
+        '#!/usr/bin/env bash\n'
+        'printf "%s\\n" "$*" >> "${UV_LOG:-/dev/null}"\n'
+        '[ "$1 $2 $3" = "run --no-sync python" ] || exit 64\n'
+        'shift 3\n'
+        f'exec {shlex.quote(sys.executable)} "$@"\n',
+    )
+    lock = '[[package]]\nname = "fixture"\nversion = "0.1.0"\n'
+    (fixture_root / "Cargo.lock").write_text(lock)
+    (fixture_root / "uv.lock").write_text(lock)
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
+    # Project this test job's interpreter into the isolated fixture. Production
+    # lint uses only its own checkout's environment, never a PATH executable.
+    (fixture_root / ".git/info/exclude").write_text(".venv/\n", encoding="utf-8")
+    (fixture_root / ".venv/bin").mkdir(parents=True)
+    _write_executable(
+        fixture_root / ".venv/bin/python",
+        f'#!/bin/sh\nexec "{sys.executable}" "$@"\n',
+    )
+    shutil.copy2(PYPROJECT_FILE, fixture_root / "pyproject.toml")
     return fixture_root
 
 
@@ -63,7 +95,8 @@ def _write_executable(path: Path, contents: str) -> None:
 def _run_lint(
     repo_root: Path, *, env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
-    full_env = None if env is None else {"PATH": "", **env}
+    full_env = os.environ.copy() if env is None else {"PATH": "", **env}
+    full_env["PATH"] = str(repo_root / "tools") + os.pathsep + full_env.get("PATH", "")
     return subprocess.run(
         ["bash", "bin/lint"],
         cwd=repo_root,
@@ -75,10 +108,8 @@ def _run_lint(
 
 
 def _require_ruff() -> str:
-    ruff = shutil.which("ruff")
-    if ruff is None:
-        pytest.skip("ruff not installed")
-    return ruff
+    subprocess.run([sys.executable, "-m", "ruff", "--version"], check=True)
+    return sys.executable
 
 
 def test_lint_skips_source_fixture_contract_when_pair_is_absent(tmp_path: Path) -> None:
@@ -305,9 +336,7 @@ def test_lint_requires_cargo_deny_for_rust_repos(tmp_path: Path) -> None:
     assert "[FAIL] Rust license lint (cargo-deny missing)" in result.stdout
 
 
-def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
-    tmp_path: Path,
-) -> None:
+def _advisory_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path]:
     repo_root = _copy_lint_fixture(tmp_path)
     _track_files(
         repo_root,
@@ -315,6 +344,12 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
             "Cargo.toml": '[package]\nname = "fixture"\nversion = "0.1.0"\nedition = "2024"\n'
         },
     )
+    lock = '[[package]]\nname = "fixture"\nversion = "0.1.0"\n'
+    _track_files(repo_root, {"Cargo.lock": lock, "uv.lock": lock, "pyproject.toml": "# fixture\n", "README.md": "base\n"})
+    subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.org", "commit", "-qm", "Set base"], cwd=repo_root, check=True)
+    subprocess.run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"], cwd=repo_root, check=True)
+    _track_files(repo_root, {"README.md": "candidate\n"})
+    subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.org", "commit", "-qm", "Change text"], cwd=repo_root, check=True)
     tool_dir = tmp_path / "tools"
     tool_dir.mkdir()
     log_file = tmp_path / "cargo-deny.log"
@@ -343,22 +378,34 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
         'printf \'%s\\n\' "$*" >> "$CARGO_DENY_LOG"\n',
     )
 
-    result = _run_lint(
-        repo_root,
-        env={
-            "CARGO_DENY_LOG": str(log_file),
-            # The fixture cargo shadows the real one; the host PATH keeps
-            # every other lint tool (ruff above all) reachable, which a
-            # /usr/bin-only path cannot promise on a gate host whose
-            # toolchain lives elsewhere.
-            "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
-        },
-    )
+    env = {
+        "CARGO_DENY_LOG": str(log_file),
+        "BIOMCP_ADVISORY_SCOPE": "landing",
+        "OSV_LOG": str(tmp_path / "osv.log"),
+        "UV_LOG": str(tmp_path / "uv.log"),
+        "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
+    }
+    return repo_root, env, log_file
 
+
+@pytest.mark.parametrize("dependency_input", [None, "Cargo.lock", "Cargo.toml", "uv.lock", "pyproject.toml"])
+def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
+    tmp_path: Path, dependency_input: str | None,
+) -> None:
+    repo_root, env, log_file = _advisory_fixture(tmp_path)
+    if dependency_input:
+        with (repo_root / dependency_input).open("a") as output:
+            output.write("# change\n")
+    result = _run_lint(repo_root, env=env)
     assert result.returncode == 0
-    assert log_file.read_text(encoding="utf-8") == "check licenses\ncheck advisories\n"
+    expected = "check licenses\n" + ("check advisories\n" if dependency_input else "")
+    assert log_file.read_text(encoding="utf-8") == expected
+    scanner_log = Path(env["OSV_LOG"])
+    assert scanner_log.exists() == bool(dependency_input)
+    if dependency_input:
+        assert scanner_log.read_text().startswith("scan source --lockfile=Cargo.lock --lockfile=uv.lock --config=")
     assert "[PASS] Rust license lint (cargo deny check licenses)" in result.stdout
-    assert "[PASS] Rust advisory lint (cargo deny check advisories)" in result.stdout
+    assert ("[PASS] Rust advisory lint (cargo deny check advisories)" in result.stdout) == bool(dependency_input)
 
 
 def test_lint_fails_when_cargo_deny_advisory_check_fails(tmp_path: Path) -> None:
@@ -616,3 +663,55 @@ def test_local_lint_rejects_tracked_scratch(tmp_path: Path) -> None:
     assert result.returncode == 1, result.stdout + result.stderr
     assert "[FAIL] Tracked scratch check" in result.stdout
     assert ".climb/design.md" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "failure", ["ready", "missing", "wrong-version", "version-command", "failed-version-output", "missing-pin", "duplicate-pin"]
+)
+def test_lint_rejects_unprepared_local_tools_despite_foreign_environment(
+    tmp_path: Path, failure: str
+) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(repo_root, {"scripts/probe.py": "print(1)\n"})
+    local_python = repo_root / ".venv/bin/python"
+    ruff_version = next(pin.removeprefix("ruff==") for pin in tomllib.loads(
+        PYPROJECT_FILE.read_text())["project"]["optional-dependencies"]["dev"]
+        if pin.startswith("ruff=="))
+    if failure == "missing":
+        local_python.unlink()
+    elif failure in {"wrong-version", "version-command", "failed-version-output"}:
+        _write_executable(
+            local_python,
+            "#!/bin/sh\n"
+            + ("echo 'ruff 999.0.0'\n" if failure == "wrong-version"
+               else 'if [ "$3" = "--version" ]; then\n'
+                    f'  echo "ruff {ruff_version}"\n  exit 19\nfi\nexit 0\n'
+               if failure == "failed-version-output" else "exit 19\n"),
+        )
+    if failure in {"missing-pin", "duplicate-pin"}:
+        manifest = repo_root / "pyproject.toml"
+        text = manifest.read_text(encoding="utf-8")
+        pin = next(line for line in text.splitlines() if '"ruff==' in line)
+        text = text.replace(pin, "" if failure == "missing-pin" else f"{pin}\n{pin}")
+        manifest.write_text(text, encoding="utf-8")
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    marker = foreign / "used"
+    _write_executable(foreign / "ruff", f'#!/bin/sh\ntouch "{marker}"\nexit 0\n')
+
+    result = _run_lint(
+        repo_root,
+        env={
+            "PATH": f"{foreign}:{os.environ.get('PATH', '')}",
+            "VIRTUAL_ENV": str(foreign),
+            "UV_PROJECT_ENVIRONMENT": str(foreign),
+        },
+    )
+
+    if failure == "ready":
+        assert result.returncode == 0
+        assert "[PASS] Python lint (ruff check .)" in result.stdout
+    else:
+        assert result.returncode == 1
+        assert "run make sync-python-dev for the declared Ruff pin" in result.stdout
+    assert not marker.exists()
