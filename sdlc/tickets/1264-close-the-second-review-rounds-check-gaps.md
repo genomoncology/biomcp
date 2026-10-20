@@ -1,6 +1,6 @@
 # Close the second review round's check gaps
 
-From sdlc/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md (Checks section). Ian's standing bar: every check catches the next spelling it was never told about.
+From sdlc/archive/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md (Checks section). Ian's standing bar: every check catches the next spelling it was never told about.
 
 ## Fix
 

@@ -1,6 +1,6 @@
 # Make the stale-cache claims true
 
-From sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md (Stale-cache note section and Stdio test section). The 1263 round overclaimed in three places; this ticket makes the code, the tests, and the records agree.
+From sdlc/archive/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md (Stale-cache note section and Stdio test section). The 1263 round overclaimed in three places; this ticket makes the code, the tests, and the records agree.
 
 ## Fixes
 

@@ -27,5 +27,5 @@ subsystems; the split moved the boundary item to ticket 1220's settled decision
 and the cache flake to ticket 1228. The code review accepted with three notes;
 the guard was made less order-sensitive, the container test gained the
 `FROM ${RUNTIME_IMAGE}` assertion, and the stale test name was left in place
-because `sdlc/issues/2026-09-18-release-workflow-tests-describe-a-retired-workflow.md`
+because `sdlc/archive/issues/2026-09-18-release-workflow-tests-describe-a-retired-workflow.md`
 still cites it.

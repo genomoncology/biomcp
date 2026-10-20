@@ -1,6 +1,6 @@
 # 1284 — close the fifth go-request round
 
-Filed 2026-10-01 with `sdlc/records/1284-close-the-fifth-go-request-round.md`; closes `sdlc/issues/2026-09-30-review-of-the-fifth-0.9.1-go-request.md`, whose dispositions are appended to it.
+Filed 2026-10-01 with `sdlc/records/1284-close-the-fifth-go-request-round.md`; closes `sdlc/archive/issues/2026-09-30-review-of-the-fifth-0.9.1-go-request.md`, whose dispositions are appended to it.
 
 ## What landed
 

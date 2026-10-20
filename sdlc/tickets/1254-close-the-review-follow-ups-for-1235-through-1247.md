@@ -1,6 +1,6 @@
 # Close the review follow-ups for 1235 through 1247
 
-From sdlc/issues/2026-09-24-review-follow-ups-for-1235-through-1247.md.
+From sdlc/archive/issues/2026-09-24-review-follow-ups-for-1235-through-1247.md.
 Every item below is a should-fix from the independent reviews; none
 blocks another ticket.
 

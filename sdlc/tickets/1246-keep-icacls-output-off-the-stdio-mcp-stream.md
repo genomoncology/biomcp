@@ -1,6 +1,6 @@
 # Keep icacls output off the stdio MCP stream
 
-Source issue: `sdlc/issues/2026-09-24-windows-icacls-output-corrupts-the-stdio-mcp-stream.md` (GitHub #283). Queue after the open 0.9.1 tickets.
+Source issue: `sdlc/archive/issues/2026-09-24-windows-icacls-output-corrupts-the-stdio-mcp-stream.md` (GitHub #283). Queue after the open 0.9.1 tickets.
 
 ## Problem
 

@@ -1,7 +1,7 @@
 # Render source failures honestly
 
 Split from ticket 1238. Source issue:
-`sdlc/issues/2026-09-23-source-failures-render-as-empty-or-complete-results.md`.
+`sdlc/archive/issues/2026-09-23-source-failures-render-as-empty-or-complete-results.md`.
 
 ## Problem
 

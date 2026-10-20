@@ -1,6 +1,6 @@
 # 1282 — close the third go-request round
 
-Filed 2026-09-30 with its record; the round closes `sdlc/issues/2026-09-30-review-of-the-third-0.9.1-go-request.md`.
+Filed 2026-09-30 with its record; the round closes `sdlc/archive/issues/2026-09-30-review-of-the-third-0.9.1-go-request.md`.
 
 ## What landed
 

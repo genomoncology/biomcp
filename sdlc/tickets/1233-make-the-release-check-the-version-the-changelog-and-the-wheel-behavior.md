@@ -1,6 +1,6 @@
 # Make the release check the version, the changelog, and the wheel behavior
 
-Filed from `sdlc/issues/2026-09-23-release-does-not-check-the-tag-against-the-committed-version.md` and `sdlc/issues/2026-09-23-changelog-unreleased-misses-user-visible-changes.md`. Both block 0.9.1.
+Filed from `sdlc/archive/issues/2026-09-23-release-does-not-check-the-tag-against-the-committed-version.md` and `sdlc/archive/issues/2026-09-23-changelog-unreleased-misses-user-visible-changes.md`. Both block 0.9.1.
 
 ## Problem
 

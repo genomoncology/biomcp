@@ -1,6 +1,6 @@
 # Source licensing review pass (delegated), 2026-09-27
 
-Ian moved the source licensing review from himself to the developer on 2026-09-27 (`sdlc/issues/2026-09-27-review-follow-ups-after-the-1238-close.md`, direction section). This is that review's first pass. Its immediate job was the 2027-03 crossing: 48 sources carried `reviewed_on` 2026-03-20 and would cross the guard's 365-day fail on 2027-03-20.
+Ian moved the source licensing review from himself to the developer on 2026-09-27 (`sdlc/archive/issues/2026-09-27-review-follow-ups-after-the-1238-close.md`, direction section). This is that review's first pass. Its immediate job was the 2027-03 crossing: 48 sources carried `reviewed_on` 2026-03-20 and would cross the guard's 365-day fail on 2027-03-20.
 
 ## Method
 

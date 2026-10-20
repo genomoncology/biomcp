@@ -10,7 +10,7 @@ Every workflow job runs on a pinned image, so the 2026-10-19 move of `ubuntu-lat
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 14). The sixth 0.9.1 review said to tag before 2026-10-19 or pin the runner; 0.9.2 will likely tag after it.
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 14). The sixth 0.9.1 review said to tag before 2026-10-19 or pin the runner; 0.9.2 will likely tag after it.
 
 - `.github/workflows/release.yml` lines 514 (pypi-publish), 540 (homebrew-tap) and 609 (container-publish), and `.github/workflows/contracts.yml:9`, use `runs-on: ubuntu-latest`. Every other job uses `ubuntu-24.04`.
 - The 0.9.1 wheel and tarball binaries print `biomcp 0.9.1 (git unknown, build unknown)`. The release workflow calls `cargo build` and `maturin build` directly and never `tools/with-build-identity`.

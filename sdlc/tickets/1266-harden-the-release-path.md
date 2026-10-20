@@ -1,6 +1,6 @@
 # Harden the release path
 
-From sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md
+From sdlc/archive/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md
 (Release section, bullets three through five).
 
 ## Problem

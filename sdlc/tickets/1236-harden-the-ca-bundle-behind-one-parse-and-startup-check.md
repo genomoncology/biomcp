@@ -1,6 +1,6 @@
 # Harden the CA bundle behind one parse and startup check
 
-Filed from `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJECT design review (2026-09-23). Before 0.9.1.
+Filed from `sdlc/archive/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJECT design review (2026-09-23). Before 0.9.1.
 
 ## Design
 

@@ -49,7 +49,7 @@ removes every provider match, the command prints
 returned rows. The provider total (`state.total` from `totalCount`) is
 discarded by `finish_ctgov_single_page` (`ctgov.rs:515-535`) because
 `returned_total` counts only verified rows. The original observation is
-`sdlc/issues/2026-09-11-search-trial-criteria-returns-zero-results.md`.
+`sdlc/archive/issues/2026-09-11-search-trial-criteria-returns-zero-results.md`.
 
 ## Design
 

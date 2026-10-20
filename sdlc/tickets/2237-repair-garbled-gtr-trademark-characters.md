@@ -16,13 +16,13 @@ Reviews: revision c663ebc, accept
 
 ## Outcome
 
-- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `src/sources/gtr.rs` `tests/test_public_example_accessions.py`.
+- Changes: `CHANGELOG.md` `sdlc/archive/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `src/sources/gtr.rs` `tests/test_public_example_accessions.py`.
 
 Every displayed GTR text field, including test, lab and manufacturer names and method text, shows ™ and ® correctly instead of "â„¢" and "Â®".
 
 ## Evidence
 
-Finding 6 of `sdlc/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md`. The GTR CSV reader (`src/sources/gtr.rs` near lines 475-482 and 562) does no encoding repair. Check first whether the upstream file itself is double-encoded.
+Finding 6 of `sdlc/archive/issues/2026-09-09-findings-from-the-2026-09-01-interface-study-with-no-ticket.md`. The GTR CSV reader (`src/sources/gtr.rs` near lines 475-482 and 562) does no encoding repair. Check first whether the upstream file itself is double-encoded.
 
 ## Keeps
 

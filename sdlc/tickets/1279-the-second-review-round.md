@@ -1,6 +1,6 @@
 # 1279 — the second review round
 
-Filed 2026-09-30 (retroactively, as its own ticket): the 2026-09-29 review of the CI rework and records round (`sdlc/issues/2026-09-29-review-of-the-ci-rework-and-records-round.md`) drove this work, and the round's record existed before this ticket file did. The 2026-09-30 go-request review flagged the missing file.
+Filed 2026-09-30 (retroactively, as its own ticket): the 2026-09-29 review of the CI rework and records round (`sdlc/archive/issues/2026-09-29-review-of-the-ci-rework-and-records-round.md`) drove this work, and the round's record existed before this ticket file did. The 2026-09-30 go-request review flagged the missing file.
 
 ## Scope
 

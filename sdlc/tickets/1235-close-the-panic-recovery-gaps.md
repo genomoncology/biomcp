@@ -1,6 +1,6 @@
 # Close the panic recovery gaps
 
-Filed from `sdlc/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised after a REJECT design review (2026-09-23). Blocks 0.9.1.
+Filed from `sdlc/archive/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised after a REJECT design review (2026-09-23). Blocks 0.9.1.
 
 ## Design
 

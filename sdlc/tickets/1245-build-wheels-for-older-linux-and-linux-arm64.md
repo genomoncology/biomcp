@@ -1,7 +1,7 @@
 # Build wheels for older Linux and Linux ARM64
 
 Split from ticket 1238. Source issue:
-`sdlc/issues/2026-09-23-pypi-wheels-miss-older-linux-and-linux-arm64.md`.
+`sdlc/archive/issues/2026-09-23-pypi-wheels-miss-older-linux-and-linux-arm64.md`.
 
 ## Problem
 

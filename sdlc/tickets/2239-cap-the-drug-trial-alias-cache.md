@@ -18,13 +18,13 @@ Reviews: revision de3d97b, accept
 
 ## Outcome
 
-- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-23-large-futures-and-per-call-runtimes.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `sdlc/tickets/2238-reject-limit-and-offset-in-variant-erepo-caid-mode.md` `sdlc/tickets/2240-use-the-ca-bundle-for-alphagenome.md` `sdlc/tickets/2241-carry-stale-cache-notes-in-get-json.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` and this ticket. Carried PM ticket and milestone records are unchanged except this ticket own reviewed proof.
+- Changes: `CHANGELOG.md` `sdlc/archive/issues/2026-09-23-large-futures-and-per-call-runtimes.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `sdlc/tickets/2237-repair-garbled-gtr-trademark-characters.md` `sdlc/tickets/2238-reject-limit-and-offset-in-variant-erepo-caid-mode.md` `sdlc/tickets/2240-use-the-ca-bundle-for-alphagenome.md` `sdlc/tickets/2241-carry-stale-cache-notes-in-get-json.md` `sdlc/tickets/2242-settle-three-suspected-bugs-with-live-runs.md` `sdlc/tickets/2243-fix-the-remaining-test-reliability-leftovers.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/entities/drug/get.rs` `src/entities/drug/get/tests.rs` and this ticket. Carried PM ticket and milestone records are unchanged except this ticket own reviewed proof.
 
 The in-memory drug trial-alias cache in a long-running `biomcp serve` stays bounded.
 
 ## Evidence
 
-`sdlc/issues/2026-09-23-large-futures-and-per-call-runtimes.md`, smaller items; deferred by 1243. `src/entities/drug/get.rs` near lines 698-701 holds a plain HashMap with no cap, filled near line 916.
+`sdlc/archive/issues/2026-09-23-large-futures-and-per-call-runtimes.md`, smaller items; deferred by 1243. `src/entities/drug/get.rs` near lines 698-701 holds a plain HashMap with no cap, filled near line 916.
 
 ## Keeps
 

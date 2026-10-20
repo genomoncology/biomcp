@@ -1,6 +1,6 @@
 # Rework the release gates so v0.9.1 can pass them
 
-Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test-nothing.md`; revised after two REJECT design reviews (2026-09-23). Blocks 0.9.1.
+Filed from `sdlc/archive/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test-nothing.md`; revised after two REJECT design reviews (2026-09-23). Blocks 0.9.1.
 
 ## Design
 

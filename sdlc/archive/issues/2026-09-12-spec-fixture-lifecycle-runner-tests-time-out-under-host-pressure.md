@@ -1,0 +1,68 @@
+# Spec fixture lifecycle runner tests time out under host pressure
+
+Disposition (2026-10-20): Closed as an active defect under the recurrence-only watch ruling recorded by ticket 1238 at 6e695bf19. The original watch and its revisit trigger remain in force.
+
+
+Observed 2026-09-12 during full `make test` gate runs on both hosts.
+
+The runner-termination lifecycle tests spawn `bash scripts/run-specs.sh` with
+a 10-second subprocess timeout and assert cleanup after signaling:
+
+- `tests/test_article_spec_fixture_lifecycle.py::test_runner_signal_cleans_article_fixture`
+- `tests/test_article_spec_fixture_lifecycle.py::test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns`
+- `tests/test_ctgov_spec_fixture_lifecycle.py::test_runner_termination_cleans_ctgov_process_group_env_and_port`
+- `tests/test_disease_survival_fixture_lifecycle.py::test_real_bounded_runner_timeout_reaps_disease_server_and_root`
+
+All fail with `subprocess.TimeoutExpired` at the 10-second budget on the
+4-core gate host (9 of them per run) and on the 16-core dev host (4 of them
+per run at 93 percent disk usage, 7 percent free). Evidence they are
+independent of the 1187/1188/1189 changes: the pass/fail set is byte-identical
+between yellow runs at 857f5deb (before 1189) and 34dc58c1 (after), and the
+dev host's last fully green `make test` on main was verified 2026-08-27/28
+(release-0.9-runbook Phase 0) on a main that has since changed by
+documentation commits only, while its disk filled from about 10 percent free
+to 7 percent free during 2026-09-12 build work.
+
+Worth considering: whether the 10-second budget reflects a realistic runner
+startup under fixture standup on loaded or disk-pressed hosts, whether the
+timeout should scale with host capability, and whether the runner's fixture
+standup slowed for an environmental reason worth finding on its own. These
+tests are the only remaining red in an otherwise fully passing `make test`
+on the gate host.
+
+Root causes identified 2026-09-12 by live capture of stuck runners during
+reproduction:
+
+1. Deterministic, gate-host-only: Ubuntu 25.10's uutils coreutils 0.2.2
+   `timeout --signal=KILL` never delivers the kill (`timeout --signal=KILL
+   2s sleep 5` runs the full five seconds and exits 124 there; GNU kills at
+   two seconds, exit 137). The disease-survival bounded-runner test wraps its
+   runner in this construct, so the wrapper never fires on the gate host and
+   the runner bash orphans in the hold loop indefinitely. Fixed in ticket
+   1190 amendment by enforcing the three-second bound in Python with a direct
+   SIGKILL of the Popen pid. Recorded here per policy; no external issue
+   filed against uutils.
+2. Intermittent, both hosts: CPU-starvation sensitivity of the fork-heavy
+   EXIT-trap teardown. All affected tests pass solo on both hosts, pass the
+   full trio on an idle gate host, and passed the complete pytest lane on an
+   idle gate host. Every captured runner waits in `do_wait` on a one-second
+   sleep; no locks or D-states are involved. Mitigated by ticket 1190's
+   sixty-second waits plus the operational rule that the gate host runs
+   nothing else during gates.
+
+Root cause correction, 2026-09-14 (ticket 1193): the class was never CPU
+contention. POSIX forbids a non-interactive shell from trapping a signal
+ignored at entry, so a launcher chain leaking SIG_IGN silently disables the
+runner's termination traps. The gate scripts' own nohup launcher leaks
+SIGHUP — every "[1]" (SIGHUP-valued) parametrization was doomed regardless
+of load, while a foreground lane passes 37/37 at load average 26. The gate
+host's "[2]" (SIGINT) failures were the same mechanism through its chain.
+Fixed by restoring fatal-signal dispositions at spawn in the lifecycle
+tests, with a leak-simulating regression test. The sixty-second waits from
+1190 remain as cover for genuine teardown latency only.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Watch item under the stress lane; the ten-second subprocess timeout
+has held across every gate since the observation. If it recurs,
+convert the wait to the shared helper with a scaled watchdog.

@@ -1,7 +1,7 @@
 # Carry DDInter coverage and fix the drug card
 
 Split from ticket 1238. Source issue:
-`sdlc/issues/2026-09-23-drug-card-reports-ddinter-not-covered-as-no-interactions.md`.
+`sdlc/archive/issues/2026-09-23-drug-card-reports-ddinter-not-covered-as-no-interactions.md`.
 
 ## Problem
 

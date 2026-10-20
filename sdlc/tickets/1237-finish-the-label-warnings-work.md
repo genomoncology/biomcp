@@ -1,6 +1,6 @@
 # Finish the label warnings work
 
-Filed from `sdlc/issues/2026-09-23-fda-label-warning-follow-ups.md`. Before 0.9.1.
+Filed from `sdlc/archive/issues/2026-09-23-fda-label-warning-follow-ups.md`. Before 0.9.1.
 
 ## Design
 

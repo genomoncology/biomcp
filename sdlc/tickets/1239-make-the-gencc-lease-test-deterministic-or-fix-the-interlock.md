@@ -1,6 +1,6 @@
 # Make the GenCC lease test deterministic or fix the lease interlock
 
-Filed from `sdlc/issues/2026-09-23-gencc-lease-test-flakes-under-full-suite-load.md`.
+Filed from `sdlc/archive/issues/2026-09-23-gencc-lease-test-flakes-under-full-suite-load.md`.
 Before 0.9.1 per the review instruction.
 
 ## Problem

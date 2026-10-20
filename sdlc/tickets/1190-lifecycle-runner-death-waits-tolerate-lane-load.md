@@ -35,7 +35,7 @@ hosts (the gate-host solo pass of the bounded-runner case predates the
   before coreutils behavior was implicated, and is deterministic only under
   the wrapper construct the amendment removes). The failures are the
 documented class in
-sdlc/issues/2026-09-12-spec-fixture-lifecycle-runner-tests-time-out-under-host-pressure.md
+sdlc/archive/issues/2026-09-12-spec-fixture-lifecycle-runner-tests-time-out-under-host-pressure.md
 and are the only red in otherwise green gates.
 
 ## Scope

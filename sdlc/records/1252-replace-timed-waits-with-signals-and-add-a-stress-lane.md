@@ -31,7 +31,7 @@ child deterministically (four-cell evidence: multi-CPU and two-CPU
 pass in 0.05 s, one-CPU fails at exactly the 60 s watchdog with the
 child demonstrably past its write and the parent's reader blocked on
 the same pipe). The mechanism is unidentified and filed as
-`sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md`;
+`sdlc/archive/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md`;
 the lane pins to two CPUs and a contract test forbids ever pinning to
 exactly one.
 

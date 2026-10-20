@@ -1,6 +1,6 @@
 # Finish the records round
 
-From sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md
+From sdlc/archive/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md
 (Licensing and records section). Documentation only; every claim
 names its evidence.
 

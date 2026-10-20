@@ -16,7 +16,7 @@ deadlines, budgets, and semantics do not change at all.
 ## Current Facts
 
 Three documented load failures share one root-cause class
-(sdlc/issues/2026-09-12-gencc-expired-budget-projection-test-starves-its-reserve-under-load.md):
+(sdlc/archive/issues/2026-09-12-gencc-expired-budget-projection-test-starves-its-reserve-under-load.md):
 
 1. `expired_refresh_budget_still_projects_authoritative_stale_data`
    (src/entities/gene/gencc/tests.rs:300) routes through

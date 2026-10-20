@@ -11,7 +11,7 @@ The variant headline pairs a ClinVar classification with that classification's o
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, findings 11 and 12).
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, findings 11 and 12).
 
 - `src/transform/variant.rs:687`: `significance_evaluated` is the newest date across all ClinVar submission records, printed beside the most severe classification. `get variant 'BRAF V600E'` prints `Significance: Pathogenic — MyVariant.info (evaluated 2025-01-23)`. The 2025-01-23 record (RCV005089260) says Uncertain significance; the Pathogenic records date from 2014 to 2023. Ticket 1290 asked for the newest date, so the code follows the ticket, but the line misleads.
 - `src/cli/variant/query.rs:196` accepts gene aliases. `search variant 'HCC liver cancer'` becomes `gene=HYCC1`, 0 rows, no hint. `'MODY diabetes'` routes to HNF4A only and `'HHT telangiectasia'` to ACVRL1 only. `'BRAF V600E melanoma'` becomes `gene=BRAF, condition=V600E melanoma`, 0 rows, no hint.
@@ -92,7 +92,7 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
 ## Second-review fix round
 
 - Code re-review (the 2026-10-07 second review of the work since 0.9.1,
-  `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`,
+  `sdlc/archive/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`,
   findings 12 and 15 and the review-line gap of findings 10 and 11):
   REJECT 2026-10-07, fixed 2026-10-08. Finding 12: the branch re-indented
   `capture-receipts.json` from two spaces to one; the rebase unions by

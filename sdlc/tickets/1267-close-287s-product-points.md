@@ -1,6 +1,6 @@
 # Close GitHub #287's product points
 
-From `sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md` (GitHub #287 section). The reporter's four points beyond the build profile: exit codes, the debug-embed feature, the 0.8.x wheels, and the open issue itself. This ticket covers the first two; the 0.8.x wheel check needs PyPI access (the supervisor runs it); the reply waits for Ian's go and for 0.9.1 to reach PyPI.
+From `sdlc/archive/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md` (GitHub #287 section). The reporter's four points beyond the build profile: exit codes, the debug-embed feature, the 0.8.x wheels, and the open issue itself. This ticket covers the first two; the 0.8.x wheel check needs PyPI access (the supervisor runs it); the reply waits for Ian's go and for 0.9.1 to reach PyPI.
 
 ## Fix
 

@@ -61,7 +61,7 @@ Do not tag 0.9.2. The work since the fourth review fixed the named problems: Tag
 
 ## Smaller items
 
-21. **Gene routing times out on a machine with a full cache.** With an 844 MB cache, each client build spends about 3.4 seconds walking the cache, with about 290,000 file opens. That uses up the 2.5-second routing deadline, so `search variant "SCN5A brugada"` reads as a condition. `search gene SCN5A` takes 3.4 seconds where 0.8.25 takes 0.3. This predates the range. 22. **`get disease ET` resolves to ethmoid sinus cancer** on all three builds. `HD` refuses with only Huntington's disease and no Hodgkin pointer. On the default trial source, `-c MM` mixes myeloma with periodontitis and hip trials with no note. 23. **The GTR spec-contract failure is untriaged.** `sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md` is still open, and the contract smoke workflow last ran in June.
+21. **Gene routing times out on a machine with a full cache.** With an 844 MB cache, each client build spends about 3.4 seconds walking the cache, with about 290,000 file opens. That uses up the 2.5-second routing deadline, so `search variant "SCN5A brugada"` reads as a condition. `search gene SCN5A` takes 3.4 seconds where 0.8.25 takes 0.3. This predates the range. 22. **`get disease ET` resolves to ethmoid sinus cancer** on all three builds. `HD` refuses with only Huntington's disease and no Hodgkin pointer. On the default trial source, `-c MM` mixes myeloma with periodontitis and hip trials with no note. 23. **The GTR spec-contract failure is untriaged.** `sdlc/archive/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md` is still open, and the contract smoke workflow last ran in June.
 
 ## What holds
 

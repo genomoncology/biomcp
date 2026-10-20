@@ -1,6 +1,6 @@
 # Make the changelog gate see every ticket and the workflow tests guard every step
 
-From sdlc/issues/2026-09-24-release-gate-follow-ups-after-1234.md. The
+From sdlc/archive/issues/2026-09-24-release-gate-follow-ups-after-1234.md. The
 reviewer ran a v0.9.1 dry run: the coverage gate rightly failed, but
 for the wrong set of tickets, a bare number list still passes, and 17
 of 18 workflow mutations outside the version-check job stay green.

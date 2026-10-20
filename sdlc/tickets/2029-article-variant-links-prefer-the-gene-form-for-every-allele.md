@@ -10,7 +10,7 @@ Every variant row in `biomcp article entities <PMID>` that has a gene symbol and
 
 ## Evidence
 
-Filed 2026-10-07 from the second review of the work since v0.9.1 (`sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`, finding 1).
+Filed 2026-10-07 from the second review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`, finding 1).
 
 - Ticket 2018 landed in `6b504219e` and reads complete. Its Outcome says "A row never points at an rsID that covers several alleles."
 - The landed fix notices a shared rsID only when the same article names two of its alleles. A probe test with one article that mentions only KRAS G12A (`rs121913529`, gene 3845) still prints `biomcp get variant rs121913529`. That command opens G12D.

@@ -1,6 +1,6 @@
 # 1280 — close the go-request review findings
 
-Ian's 2026-09-30 direction (recorded in `sdlc/issues/2026-09-30-review-of-the-0.9.1-go-request.md`): fix every finding before the tag, including the follow-ups; no rush.
+Ian's 2026-09-30 direction (recorded in `sdlc/archive/issues/2026-09-30-review-of-the-0.9.1-go-request.md`): fix every finding before the tag, including the follow-ups; no rush.
 
 ## What landed
 

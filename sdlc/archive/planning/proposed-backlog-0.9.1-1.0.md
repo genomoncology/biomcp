@@ -8,7 +8,7 @@ issues, deferred backlog items, and known gaps. Split into a hotfix track
 
 ### P1: PyPI wheel binary stack-overflows on the trial search path
 
-Filed as `sdlc/issues/2026-09-17-pypi-wheel-binary-stack-overflows-on-trial-search.md`.
+Filed as `sdlc/archive/issues/2026-09-17-pypi-wheel-binary-stack-overflows-on-trial-search.md`.
 The maturin-built binary hits a stack overflow that the cargo-built binary
 does not. The primary Python install path (`pip install biomcp-cli` /
 `uvx`) is broken for trial searches. Fix the stack margin and add a
@@ -113,14 +113,14 @@ distribution contracts). Needs a design review before implementation.
 
 ### F8: Benchmark tokenizer blob-diff noise
 
-Filed as `sdlc/issues/2026-09-16-benchmark-tokenizer-blob-diff-noise.md`.
+Filed as `sdlc/archive/issues/2026-09-16-benchmark-tokenizer-blob-diff-noise.md`.
 The benchmark contract produces diff noise from tokenizer state blobs.
 
 **Estimated complexity:** Level 1.
 
 ### F9: Git pack history size audit
 
-Filed as `sdlc/issues/2026-09-16-git-pack-history-size-audit.md`. The repo
+Filed as `sdlc/archive/issues/2026-09-16-git-pack-history-size-audit.md`. The repo
 has accumulated large history blobs from the growth audit.
 
 **Estimated complexity:** Level 1 (an audit and cleanup, not a code change).

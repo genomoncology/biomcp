@@ -20,11 +20,11 @@ Reviews: revision 256641e, accept
 
 The two GenCC lease tests finish on one CPU, so the two-CPU workaround and the one-CPU ban can go.
 
-- Changes: `CHANGELOG.md` `Makefile` `sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/test_support.rs` `tests/test_stress_lane_contract.py`.
+- Changes: `CHANGELOG.md` `Makefile` `sdlc/archive/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md` `sdlc/tickets/2244-find-the-single-cpu-gencc-lease-hang.md` `src/test_support.rs` `tests/test_stress_lane_contract.py`.
 
 ## Evidence
 
-`sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md`. Worked around at `Makefile` near line 229; one-CPU pinning is refused by `tests/test_stress_lane_contract.py` near line 91. Cause unknown.
+`sdlc/archive/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md`. Worked around at `Makefile` near line 229; one-CPU pinning is refused by `tests/test_stress_lane_contract.py` near line 91. Cause unknown.
 
 ## Keeps
 

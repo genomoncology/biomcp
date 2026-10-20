@@ -1,6 +1,6 @@
 # 1283 — close the fourth go-request round
 
-Filed 2026-09-30 with its record; the round closes `sdlc/issues/2026-09-30-review-of-the-fourth-0.9.1-go-request.md` and works `sdlc/release-checklist.md` for 0.9.1.
+Filed 2026-09-30 with its record; the round closes `sdlc/archive/issues/2026-09-30-review-of-the-fourth-0.9.1-go-request.md` and works `sdlc/release-checklist.md` for 0.9.1.
 
 ## What landed
 

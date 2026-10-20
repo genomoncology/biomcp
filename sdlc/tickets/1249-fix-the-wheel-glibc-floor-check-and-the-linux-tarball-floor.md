@@ -1,6 +1,6 @@
 # Fix the wheel glibc floor check and the Linux tarball floor
 
-From sdlc/issues/2026-09-24-wheel-glibc-floor-check-fails-every-real-wheel.md.
+From sdlc/archive/issues/2026-09-24-wheel-glibc-floor-check-fails-every-real-wheel.md.
 Blocks 0.9.1: every real Linux wheel currently fails the floor check
 and nothing would publish.
 

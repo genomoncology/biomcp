@@ -1,6 +1,6 @@
 # Let the SSL_CERT_FILE fallback degrade to a warning
 
-Filed from `sdlc/issues/2026-09-23-ssl-cert-file-fallback-fails-closed-for-users-who-never-opted-in.md`. Blocks 0.9.1. Reverses part of ticket 1221's recorded fail-closed stance.
+Filed from `sdlc/archive/issues/2026-09-23-ssl-cert-file-fallback-fails-closed-for-users-who-never-opted-in.md`. Blocks 0.9.1. Reverses part of ticket 1221's recorded fail-closed stance.
 
 ## Problem
 

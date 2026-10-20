@@ -20,7 +20,7 @@ Reviews: revision 7a82a29, accept
 
 Look up the approved same-allele transcript spellings and name the matched transcript while preserving headline numbering; distinguish unverified transcript identity from source-resolved missing records.
 
-- Changes: `CHANGELOG.md` `sdlc/issues/2026-09-11-variant-display-mixes-transcript-numbering.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `src/entities/variant/get.rs` `src/entities/variant/get/tests.rs` `src/entities/variant/mod.rs` `src/render/markdown/variant.rs` `src/render/provenance.rs` `src/transform/variant.rs` `templates/variant.md.j2` `tests/fixtures/variant-transcript-lookup/authored.json` `tests/test_variant_transcript_lookup.py`.
+- Changes: `CHANGELOG.md` `sdlc/archive/issues/2026-09-11-variant-display-mixes-transcript-numbering.md` `sdlc/tickets/1260-unify-variant-transcript-numbering-in-lookup-and-display.md` `src/entities/variant/get.rs` `src/entities/variant/get/tests.rs` `src/entities/variant/mod.rs` `src/render/markdown/variant.rs` `src/render/provenance.rs` `src/transform/variant.rs` `templates/variant.md.j2` `tests/fixtures/variant-transcript-lookup/authored.json` `tests/test_variant_transcript_lookup.py`.
 
 ## Problem
 

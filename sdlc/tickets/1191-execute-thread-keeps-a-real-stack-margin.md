@@ -13,7 +13,7 @@ megabytes of stack headroom on every host, proven by a measured margin, so
 the gate host completes its full Rust lane.
 
 ## Current Facts — the eight whys (all measured 2026-09-14 under gdb on the
-gate host, in sdlc/issues/2026-09-13-raw-ctgov-total-test-sigaborts-on-the-gate-host.md)
+gate host, in sdlc/archive/issues/2026-09-13-raw-ctgov-total-test-sigaborts-on-the-gate-host.md)
 
 1. Why did the gate lane die? The test aborted with SIGABRT — gdb shows a
    write into the thread stack's guard page (`mov %rdi,0x8(%rsp)` faulting

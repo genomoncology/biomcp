@@ -1,6 +1,6 @@
 # Make the MCP server survive a panicking tool call
 
-Filed from `sdlc/issues/2026-09-23-a-panic-in-one-tool-call-ends-the-mcp-server.md`. Blocks 0.9.1.
+Filed from `sdlc/archive/issues/2026-09-23-a-panic-in-one-tool-call-ends-the-mcp-server.md`. Blocks 0.9.1.
 
 ## Problem
 

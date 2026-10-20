@@ -1,6 +1,6 @@
 # Carry the stale-cache note into every search body
 
-From sdlc/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md
+From sdlc/archive/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md
 (Product section): three JSON outputs dropped the note, a spawned
 fetch lost it, and two small comment/branch faults rode along.
 

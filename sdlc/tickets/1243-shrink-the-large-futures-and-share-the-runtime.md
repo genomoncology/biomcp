@@ -1,7 +1,7 @@
 # Shrink the large futures and share the runtime
 
 Split from ticket 1238. Source issue:
-`sdlc/issues/2026-09-23-large-futures-and-per-call-runtimes.md`.
+`sdlc/archive/issues/2026-09-23-large-futures-and-per-call-runtimes.md`.
 
 ## Problem
 

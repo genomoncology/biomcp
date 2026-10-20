@@ -31,7 +31,7 @@ and `cleanup_locked` (508, 514, 533, 538). Two full `make test` runs on the
 expired the budget under load while neighboring fsync-heavy tests ran. Each
 affected test passes solo in well under a second on the same host. Evidence and
 analysis live in
-`sdlc/issues/2026-09-12-gencc-store-deadline-expires-under-load-on-slower-machines.md`.
+`sdlc/archive/issues/2026-09-12-gencc-store-deadline-expires-under-load-on-slower-machines.md`.
 
 Production reaches the same path: `Store::open` itself is `#[cfg(test)]` with
 a 2-second budget, but production calls

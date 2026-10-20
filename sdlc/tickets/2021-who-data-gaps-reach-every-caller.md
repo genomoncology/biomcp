@@ -10,7 +10,7 @@ When WHO Prequalification data is missing or partly failed, every caller sees it
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 12). Ticket 1304 item 4 says a validation failure must never end in a generic message; this finishes it.
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 12). Ticket 1304 item 4 says a validation failure must never end in a generic message; this finishes it.
 
 - Starts from: ticket 1304 and issue #288.
 - Keeps: the header normalisation, the per-file results, and searches that degrade instead of aborting.
@@ -96,12 +96,12 @@ column — never the generic #288 line.
   after the fold: `spec/entity/drug.md` 18/18; `spec/surface/mcp.md`
   45/46 with only the pre-existing diagnostic-synonym failure, as
   before and as already filed
-  (`sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`).
+  (`sdlc/archive/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`).
   A review minor note folded into this record: the mcp.md degrade block
   makes three forced-degrade searches (CLI JSON, raw MCP JSON, raw MCP
   Markdown), not two.
 - Fix round for the second review of the work since 0.9.1
-  (`sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`),
+  (`sdlc/archive/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`),
   2026-10-08: rebased onto main (2023 and 1300 landed; the size
   inventory unioned by path with measured baselines), merged the two
   Build status sections into this one and put every review line in the

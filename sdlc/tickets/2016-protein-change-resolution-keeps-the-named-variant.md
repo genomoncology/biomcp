@@ -57,7 +57,7 @@ Each criterion 2 to 5 fails on `37631c357`.
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 2). The reviewer ran a release build of main at `37631c357` against MyVariant.info and compared with 0.8.25.
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/archive/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 2). The reviewer ran a release build of main at `37631c357` against MyVariant.info and compared with 0.8.25.
 
 - `src/entities/variant/get.rs:239` (`resolve_protein_change_hit`) picks the single matching hit that has a ClinVar record. It never checks that the ClinVar record names the protein change the user asked for. dbNSFP lists other-isoform protein names on other variants, so a hit can "match" by an isoform name.
 - `biomcp get variant 'TP53 C124Y'` now returns `chr17:g.7578526C>T`, headline `# TP53 p.Cys135Tyr`, Pathogenic. 0.8.25 returned `chr17:g.7579316C>T p.C124Y`. MyVariant lists `chr17:g.7579316C>T` first, with no ClinVar record, then `chr17:g.7578526C>T` with ClinVar 141762.

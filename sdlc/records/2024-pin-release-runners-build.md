@@ -13,7 +13,7 @@ a red-first fresh-worktree proof. Gates: branch CI green on the
 main-merged tree (407940cad); yellow lint and spec green at c037bddb3;
 the yellow test phase hung twice in the deadline-test module —
 forensics captured and filed at
-sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md,
+sdlc/archive/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md,
 with the identical suite green on the branch CI (the interim
 gate-evidence rule recorded there). Record filed at landing.
 

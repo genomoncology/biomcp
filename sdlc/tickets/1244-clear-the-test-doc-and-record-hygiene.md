@@ -1,7 +1,7 @@
 # Clear the test, doc, and record hygiene
 
 Split from ticket 1238. Source issue:
-`sdlc/issues/2026-09-23-test-doc-and-record-hygiene.md`.
+`sdlc/archive/issues/2026-09-23-test-doc-and-record-hygiene.md`.
 
 ## Problem
 

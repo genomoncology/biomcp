@@ -1,6 +1,6 @@
 # Replace timed waits in tests with signals and add a stress lane
 
-From sdlc/issues/2026-09-24-tests-wait-on-the-wall-clock.md. Three
+From sdlc/archive/issues/2026-09-24-tests-wait-on-the-wall-clock.md. Three
 gate flakes (GenCC lease, GenCC settle, disease-survival reap) share
 one cause: tests wait for events with fixed deadlines, polling loops,
 and short samples, on a parallel 4-core host. Ticket 1239 lengthened a
@@ -90,7 +90,7 @@ guessed at a cause from one 200 ms heartbeat sample.
    watchdogs absorb the deliberate contention. One-CPU pinning was
    tried first and deadlocks the pipe handshake child
    deterministically — the mechanism is unidentified and filed as
-   `sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md`;
+   `sdlc/archive/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md`;
    the lane guards against ever pinning to exactly one CPU. The
    yellow gate runs it after `make test` for tickets that touch those
    areas — starting with this one. A fix is proven by reproduction

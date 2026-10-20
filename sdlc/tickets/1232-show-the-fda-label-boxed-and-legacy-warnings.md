@@ -1,6 +1,6 @@
 # Show the FDA label boxed and legacy warnings
 
-Filed from `sdlc/issues/2026-09-23-fda-label-boxed-and-legacy-warnings-are-never-shown.md`. Blocks 0.9.1.
+Filed from `sdlc/archive/issues/2026-09-23-fda-label-boxed-and-legacy-warnings-are-never-shown.md`. Blocks 0.9.1.
 
 ## Problem
 

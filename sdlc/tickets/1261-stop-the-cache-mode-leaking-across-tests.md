@@ -1,6 +1,6 @@
 # Stop the cache mode leaking across tests
 
-From `sdlc/issues/2026-09-27-cache-mode-is-fixed-for-the-whole-test-process.md`
+From `sdlc/archive/issues/2026-09-27-cache-mode-is-fixed-for-the-whole-test-process.md`
 (Ian's filing, tracking GitHub #286). Close #286 when this ships.
 
 ## Problem
