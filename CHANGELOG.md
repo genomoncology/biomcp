@@ -7,6 +7,7 @@
 ### Fixes
 
 - Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
+- Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
 
 - Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails. (2286)
 

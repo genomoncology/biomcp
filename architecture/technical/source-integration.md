@@ -520,7 +520,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | protein | domains | canonical | additive | InterPro | `domains` outcome and provenance projection |
 | protein | interactions | canonical | additive | STRING | `interactions` outcome and provenance projection |
 | protein | complexes | canonical | additive | Complex Portal | `complexes` outcome and provenance projection |
-| protein | structures | canonical | additive | PDBe | `structures` outcome and provenance projection |
+| protein | structures | canonical | additive | UniProt | `structures` outcome and provenance projection |
 | drug | approvals | canonical | additive | OpenFDA Drugs@FDA | `approvals` outcome and provenance projection |
 | drug | label | canonical | fallback | OpenFDA label | `label` outcome and provenance projection |
 | drug | safety | canonical | additive | OpenFDA FAERS / OpenFDA label / EMA | `safety` outcome and provenance projection |
