@@ -110,6 +110,8 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 Land reviewed tickets in batches, as the shared build coordinator skill (`skills/build-coordinator.md`) says. Run `make landing-gate` once on the batch candidate through the configured build job. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
 
+Invoke each gate directly as the build job command: `pm job run NNNN SHA -- make landing-gate` for the landing candidate and `pm job run NNNN SHA -- make main-gate` for pushed main. The normal candidate preparation may construct the merge before it invokes the declared `make landing-gate`. Keep every required check in the repository Make targets. Do not run a gate through a private script in an experiment folder or add private checks around it. Retain the build job log as evidence; run any separate inspection or resource sampling outside the gate command.
+
 A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another batch.
 
 Everyday builds and tests use build jobs. GitHub Actions run for releases after local checks pass, and retain manual dispatch for explicit checks. The release workflow must qualify its candidate directly; a prior CI run on main does not qualify it. Rehearse the full release workflow without publishing before Ian tags a release.
