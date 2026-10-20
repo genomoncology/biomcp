@@ -43,3 +43,7 @@ PM clarification: keep3d9472ecc as the relative experiment baseline while2296 fi
 ## Final PM stopping rule
 
 The PM accepted rejection of the sole BoxFuture prototype and forbids a second prototype. One additional native Cargo test-profile attribution compares0.9.3 and current main on the same host. If no crate/unit explains substantial growth, close this ticket with the negative result, no fix and no further work. The completed same-host main test unit differs by only0.33seconds, so the earlier slowdown was not reproduced; machine conditions during2234 remain a possible explanation, not an established cause. The added2294 dependency keeps the accepted experiment baseline ancestry out of main until its owning source ticket lands.
+
+## Progress
+
+- 2026-10-20 started
