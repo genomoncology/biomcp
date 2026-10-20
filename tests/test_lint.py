@@ -8,7 +8,6 @@ import shutil
 import shlex
 import sys
 import subprocess
-import sys
 import tomllib
 from pathlib import Path
 
