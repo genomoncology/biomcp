@@ -108,7 +108,7 @@ runtime state. Keep local caches and generated build outputs out of git.
 
 ## Landing changes
 
-Land reviewed tickets in batches, as the shared build coordinator skill (`skills/build-coordinator.md`) says. Run `make landing-gate` once on the batch candidate through the configured build job. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
+Land accepted tickets in batches through one lander, as the shared build coordinator skill (`skills/build-coordinator.md`) says. Run `make landing-gate` once on the batch candidate through the configured build job. Reuse a passing gate while its inputs stay unchanged. After merging, run `make main-gate` through the build job on the actual pushed main revision before another ordinary landing.
 
 A failed or absent check for current main holds ordinary landings. Only a reviewed repair or backout may land during that hold; check the resulting main before resuming. On resume, inspect current main's exact-revision job evidence before landing another batch.
 
