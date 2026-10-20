@@ -351,10 +351,9 @@ def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, fail
 
 
 @pytest.mark.skipif(not hasattr(os, "sched_getaffinity"), reason="Linux stress affinity")
-def test_stress_uses_two_cpus_available_to_the_job(tmp_path: Path) -> None:
-    available = sorted(os.sched_getaffinity(0))
-    if len(available) < 2:
-        pytest.skip("stress needs two available CPUs")
+def test_stress_uses_one_cpu_available_to_the_job(tmp_path: Path) -> None:
+    # Restrict the recipe to one allowed CPU, normally outside CPU zero.
+    selected = max(os.sched_getaffinity(0))
     (tmp_path / ".cache").mkdir()
     (tmp_path / ".cache/routine-tests.tar.zst").write_text("prepared archive")
     binary = tmp_path / "biomcp"
@@ -370,6 +369,7 @@ def test_stress_uses_two_cpus_available_to_the_job(tmp_path: Path) -> None:
         path.chmod(0o755)
     calls = tmp_path / "calls"
     result = subprocess.run([
+        shutil.which("taskset"), "-c", str(selected),
         shutil.which("make"), "-f", str(ROOT / "Makefile"), "stress", "MAKE=" + str(commands / "make"),
         "SPEC_BIN=" + str(binary), "BIOMCP_STRESS_REPEAT=1",
     ], cwd=tmp_path, env={
@@ -377,5 +377,5 @@ def test_stress_uses_two_cpus_available_to_the_job(tmp_path: Path) -> None:
         "CALLS": str(calls),
     }, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
-    expected = "-c " + ",".join(map(str, available[:2]))
+    expected = "-c " + str(selected)
     assert calls.read_text().splitlines() == [expected, expected]
