@@ -80,6 +80,18 @@ const TOOLS_LIST_BYTE_CEILING: usize = 22_600;
 fn assert_tool_metadata(tools: &[Tool]) {
     for tool in tools {
         let name = tool.name.as_ref();
+        // ERepo supplies a bespoke schema; the other tools expose their
+        // named input types. Preserve that existing wire metadata when the
+        // SDK changes its automatic schema generation.
+        if name != "variant_erepo" {
+            assert!(
+                tool.input_schema
+                    .get("title")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|title| !title.is_empty()),
+                "MCP tool {name} lost its named input schema title"
+            );
+        }
         let annotations = tool
             .annotations
             .as_ref()

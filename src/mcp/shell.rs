@@ -5,6 +5,7 @@ use std::panic::AssertUnwindSafe;
 use base64::Engine;
 use futures::FutureExt;
 use rmcp::handler::server::router::tool::ToolRouter;
+use rmcp::handler::server::tool::schema_for_type;
 use rmcp::model::{
     CallToolRequestParams, CallToolResult, ContentBlock, Implementation, ListPromptsResult,
     ListResourceTemplatesResult, ListResourcesResult, ListToolsResult, PaginatedRequestParams,
@@ -1341,7 +1342,7 @@ impl BioMcpServer {
         panic!("injected MCP tool panic")
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<ShellCommand>())]
     async fn biomcp(
         &self,
         Parameters(ShellCommand { command, json }): Parameters<ShellCommand>,
@@ -1376,7 +1377,7 @@ impl BioMcpServer {
         Self::execute_cli(cli, args, json).await
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedSearch>())]
     async fn search(
         &self,
         Parameters(input): Parameters<TypedSearch>,
@@ -1393,7 +1394,7 @@ impl BioMcpServer {
         .await
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedGet>())]
     async fn get(
         &self,
         Parameters(input): Parameters<TypedGet>,
@@ -1410,7 +1411,7 @@ impl BioMcpServer {
         .await
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedVariantCar>())]
     async fn variant_normalize_car(
         &self,
         Parameters(input): Parameters<TypedVariantCar>,
@@ -1515,7 +1516,7 @@ impl BioMcpServer {
         }
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedGeneCspec>())]
     async fn gene_cspec(
         &self,
         Parameters(input): Parameters<TypedGeneCspec>,
@@ -1576,7 +1577,7 @@ impl BioMcpServer {
         }
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedVariantArticles>())]
     async fn variant_articles(
         &self,
         Parameters(input): Parameters<TypedVariantArticles>,
