@@ -169,3 +169,9 @@ The PM additionally authorized 2307 to limit routine landing live advisory check
 ## Security blockers before final qualification
 
 The PM requires 2308 and 2309 before release admission. They update flagged Python and Rust lock pins and migrate both rmcp consumers to 2.1 or later. Ticket 2307 also expands the local advisory check to GitHub advisories and uv.lock; its earlier RustSec-only proof cannot qualify that expanded outcome. Final dependency and runtime qualification and the untagged rehearsal must bind the repaired candidate. No tag or publication is authorized.
+
+## Additional advisory and final measurement scope
+
+The official scanner in 2307 detects the ten unique GitHub advisory IDs behind 2308 and 2309 on retained 267f583 locks. It also exposes quinn-proto 0.11.15 under five newer RustSec advisories; the PM requires its minimal compatible 0.11.18 update in 2308. Existing reviewed deny.toml exceptions must be derived as one unchanged policy source for the expanded scanner. No additional exception is authorized.
+
+The PM explicitly requires a final-source refresh of only the existing paired build and gate rows, version and binary size after source freeze, scheduled with final qualification. Historical runtime and storage rows and their accepted regressions remain as measured. No new runtime, provider or MCP timing is required, and prior measurements are not relabelled as final-source results.

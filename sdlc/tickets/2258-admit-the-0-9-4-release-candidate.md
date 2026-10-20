@@ -179,3 +179,9 @@ The bounded checker repair2295 resolves five existing canonical provider-policy 
 PM decision: 2296 is a required release repair. Report stated licenses from fetched fulltext metadata and structured JATS without changing reuse policy or the recorded coverage scope. The isolated rebuild experiment uses approved published baseline 3d9472ecc2b4db2d68eee81d54c65453a9804806 on Gator. Relative before/after pairs need not use final main; only changes to Cargo, profiles or prototype code invalidate that comparison. Narrow license work proceeds independently.
 
 PM decision: required repair2297 gives every installed-wheel run its own clean temporary build target after the unchanged-main recovery. This addresses the transient retained-build failure without changing the pinned toolchain, dependencies or installation smoke. Main remains held until reviewed recovery passes qualification.
+
+## Final security and measurement rulings
+
+PM requires 2308 to include the minimal compatible quinn-proto 0.11.18 update for RUSTSEC-2026-0338 through 0342. Split only if a direct dependency needs a major-version move. The expanded advisory check derives existing reviewed exceptions from deny.toml as its only policy source, without broadening them.
+
+After final repaired-source freeze, retain historical runtime and storage comparison rows and their accepted regressions. Refresh only the existing paired build and gate rows, version and binary size, in the same job window as final qualification. No new runtime, provider or MCP timing experiment. This explicit final refresh supplements the earlier historical-context ruling.
