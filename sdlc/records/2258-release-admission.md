@@ -165,3 +165,7 @@ The PM permits reuse of the repaired source full check for reviewed administrati
 The minimal dependency repair landed as 7503f6fd9927d86d8cecb3c260fec893c2380f32 after fresh review and landing check 2305/1792526870082-97817 passed. Actual pushed-main full check 2305/1792527235023-86827 then passed. This clears the main hold above and permits ordinary landings. It qualifies the repaired main for that command; it does not transfer an older Linux fresh-clone run or paired measurement to a new source identity. Complete source, advisory and qualification evidence belongs to record 2305 and its experiment directory.
 
 The PM additionally authorized 2307 to limit routine landing live advisory checks to changed dependency inputs, while requiring them in every full main and release check. That gate change joins the reliability outcomes before final admission. Issue-triage 2306 is a separate priority-three records outcome that the PM permits after the candidate if it would delay the tag. It is not an admission prerequisite. No final rehearsal, tag or publication has run.
+
+## Security blockers before final qualification
+
+The PM requires 2308 and 2309 before release admission. They update flagged Python and Rust lock pins and migrate both rmcp consumers to 2.1 or later. Ticket 2307 also expands the local advisory check to GitHub advisories and uv.lock; its earlier RustSec-only proof cannot qualify that expanded outcome. Final dependency and runtime qualification and the untagged rehearsal must bind the repaired candidate. No tag or publication is authorized.
