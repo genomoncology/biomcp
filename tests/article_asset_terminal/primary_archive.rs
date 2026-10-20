@@ -129,7 +129,7 @@ fn complete_primary_assets_do_not_wait_for_an_optional_zip() {
     assert!(output.status.success(), "{output:?}");
     assert!(
         !zip.requested.load(Ordering::SeqCst),
-        "a complete primary archive must not request the hanging secondary ZIP"
+        "a complete primary archive must not request the hanging secondary ZIP: {output:?}"
     );
     let manifest: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     let mut names: Vec<_> = manifest["assets"]
