@@ -1,5 +1,21 @@
 {
   "routes": {
+    "GET /cpic/pair_view?drugname=ilike.%2Aclopidogrel%2A&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?drugname=ilike.*clopidogrel*&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-pair-view-942b0d0d43eb.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/pair_view?drugname=ilike.*clopidogrel*&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "0b35b4e8d788eb9cd464662dbe407dc4d79d41a3e6deab175f4752c56aa9f751",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
     "GET /cpic/pair_view?genesymbol=eq.BRAF&limit=15&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
       "file": "responses/cpic/cpic-pair-view-a004e3956d1f.bin",
       "headers": {
@@ -33,6 +49,76 @@
       },
       "status": 200,
       "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.BRAF&select=*&limit=5&offset=0&order=cpiclevel.asc%2Cdrugname.asc"
+    },
+    "GET /cpic/pair_view?genesymbol=eq.CYP2D6&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.CYP2D6&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-pair-view-cc07ebeadbe2.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.CYP2D6&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "e2408ec6d131107a0279a47e2a310b2a18ee40da3a4e55a671c685903d751e9e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    "GET /cpic/pair_view?genesymbol=eq.CYP2D6&limit=11&offset=0&order=cpiclevel.asc%2Cdrugname.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.CYP2D6&select=%2A&limit=11&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-pair-view-c6c3eede717e.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:36.050019+00:00",
+        "sha256": "1bf179afedd63415255836b97fa1ea3c9487c8ab55a44ce23a942e1bc822c533",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /cpic/recommendation_view?limit=11&lookupkey-%3E%3ECYP2D6=not.is.null&offset=0&order=drugname.asc%2Crecommendationid.asc&select=%2A": {
+      "upstream": "https://api.cpicpgx.org/v1/recommendation_view?lookupkey-%3E%3ECYP2D6=not.is.null&select=%2A&limit=11&offset=0&order=drugname.asc%2Crecommendationid.asc",
+      "status": 200,
+      "file": "responses/cpic/cpic-recommendation-view-7c37a430b055.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:38.480691+00:00",
+        "sha256": "7f67fa1a914245942fe3eb2756a0df019c0f531b01045d8c52eec910beaaacec",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /cpic/recommendation_view?limit=200&lookupkey-%3E%3ECYP2D6=not.is.null&select=drugname": {
+      "upstream": "https://api.cpicpgx.org/v1/recommendation_view?lookupkey-%3E%3ECYP2D6=not.is.null&select=drugname&limit=200",
+      "status": 200,
+      "file": "responses/cpic/cpic-recommendation-view-ffb594e0fb34.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:40.882449+00:00",
+        "sha256": "44a3551410b505010e5d8f765712de14264c7a11a86daed45bb14ce3ad604f03",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
     },
     "GET /ctgov/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CNCTId%2COverallStatus%2CPhase%2CReferenceCitation%2CReferencePMID%2CReferenceType%2CStartDate%2CStudyType%2CWhyStopped": {
       "file": "responses/ctgov/ctgov-studies-nct02576665-references.json",
@@ -234,6 +320,42 @@
       "status": 200,
       "upstream": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?page=0&size=50&sort=p_value&direction=asc&mapped_gene=BRAF"
     },
+    "GET /hpo/terms/HP:0001250": {
+      "upstream": "https://ontology.jax.org/api/hp/terms/HP:0001250",
+      "status": 200,
+      "file": "responses/hpo/hpo-terms-hp-0001250-e9a34a041c96.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:50.651958+00:00",
+        "sha256": "12795d85eed56e806e80b0fcd903e2501f9283de541d933cf921ca3ea59c67db",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /hpo/terms/HP:0001263": {
+      "upstream": "https://ontology.jax.org/api/hp/terms/HP:0001263",
+      "status": 200,
+      "file": "responses/hpo/hpo-terms-hp-0001263-a17e69acc5b6.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:52.981405+00:00",
+        "sha256": "89d0aa3399d26eb26043402622c4976610fb25d03b0407133a4cf4732a11002e",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
     "GET /kegg/find/pathway/BRAF": {
       "file": "responses/kegg/kegg-find-pathway-braf-ed8e51ae50dc.bin",
       "live_check_note": "not checked live: commercial-restricted source",
@@ -257,6 +379,42 @@
       "live_check_note": "not checked live: commercial-restricted source",
       "status": 200,
       "upstream": "https://rest.kegg.jp/get/hsa05200"
+    },
+    "GET /monarch/v3/api/association?category=biolink%3ADiseaseToPhenotypicFeatureAssociation&direct=true&limit=500&object=HP%3A0001250&object=HP%3A0001263&object_category=biolink%3APhenotypicFeature&offset=0&predicate=biolink%3Ahas_phenotype&subject=MONDO%3A0010450": {
+      "upstream": "https://api-v3.monarchinitiative.org/v3/api/association?subject=MONDO%3A0010450&object=HP%3A0001250&object=HP%3A0001263&category=biolink%3ADiseaseToPhenotypicFeatureAssociation&predicate=biolink%3Ahas_phenotype&object_category=biolink%3APhenotypicFeature&direct=true&limit=500&offset=0",
+      "status": 200,
+      "file": "responses/monarch/monarch-v3-api-association-b1298efbdc14.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:10:00.092641+00:00",
+        "sha256": "3a3087675b0bc884e585a79bb757395023a283393839e24cb4e69eb071f93cbe",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
+    },
+    "GET /monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=50": {
+      "upstream": "https://api-v3.monarchinitiative.org/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=50",
+      "status": 200,
+      "file": "responses/monarch/monarch-v3-api-semsim-search-hp-0001250--c2596cb50b19.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:55.270476+00:00",
+        "sha256": "d56c61edb6cc6918f88a4d2e74f54c61de6aa0ebd51e59f35803d909defeec42",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
     },
     "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=6": {
       "file": "responses/mychem/mychem-query-212dd06e4cf8.bin",
@@ -484,6 +642,38 @@
       "status": 200,
       "upstream": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF+AND+clinvar.rcv.conditions.name%3A%22melanoma%22&size=3&from=0&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.revel.score%2Cdbnsfp.gerp*.rs%2Cclinvar.gene.symbol%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.preferred_name%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad.exomes.af.af%2Cgnomad.genomes.af.af%2Ccadd.consequence"
     },
+    "GET /orcid/0000-0002-4299-3018/person": {
+      "upstream": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/person",
+      "status": 200,
+      "file": "responses/orcid/orcid-0000-0002-4299-3018-person-136eeda9ae98.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "ORCID",
+        "request": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/person",
+        "captured_at": "2026-10-15T21:40:00Z",
+        "sha256": "f344c8f20a9ebda2b29cbcefa80ad62e178472eee07a8ac6b224bbdfe06f26fa",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 person response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
+      }
+    },
+    "GET /orcid/0000-0002-4299-3018/works": {
+      "upstream": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/works",
+      "status": 200,
+      "file": "responses/orcid/orcid-0000-0002-4299-3018-works-cab5148f3bce.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "provider": "ORCID",
+        "request": "https://pub.orcid.org/v3.0/0000-0002-4299-3018/works",
+        "captured_at": "2026-10-15T21:40:00Z",
+        "sha256": "278059c2159eb3cffa6e0925703c79184fe01ab2e8aa3bebc8ea63c27f8afc9a",
+        "minimization_or_redaction": "none; the full 380-group reply is committed byte-faithful",
+        "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 works response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
+      }
+    },
     "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRAF+AND+melanoma+NOT+retracted+publication%5Bpt%5D": {
       "file": "responses/pubmed/pubmed-esearch-fcgi-43c7b53a5cd6.bin",
       "headers": {
@@ -689,6 +879,24 @@
       },
       "status": 200,
       "upstream": "https://rest.uniprot.org/uniprotkb/P15056.json"
+    },
+    "GET /uniprot/uniprotkb/search?fields=accession%2Cid%2Cprotein_name%2Cgene_names%2Corganism_name%2Clength%2Ccc_function%2Cxref_pdb%2Cxref_alphafolddb&format=json&offset=0&query=%28BRAF%29+AND+organism_id%3A9606+AND+reviewed%3Atrue&size=25": {
+      "upstream": "https://rest.uniprot.org/uniprotkb/search?query=%28BRAF%29+AND+organism_id%3A9606+AND+reviewed%3Atrue&format=json&size=25&offset=0&fields=accession%2Cid%2Cprotein_name%2Cgene_names%2Corganism_name%2Clength%2Ccc_function%2Cxref_pdb%2Cxref_alphafolddb",
+      "status": 200,
+      "file": "responses/uniprot/uniprot-uniprotkb-search-e63e2f22f62b.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "recording_provenance": {
+        "observed_at": "2026-10-20T15:09:32.522761+00:00",
+        "sha256": "17cb3871c1c28dabb47f98dd5a24b8e28c5f4044937b5d8078788d0d204b699b",
+        "source_revision": "87df265ba55d14fd5f8ae66b969454dd351f8b67",
+        "collection_settings": {
+          "interval_seconds": 2,
+          "retries": 0,
+          "credential_free": true
+        }
+      }
     },
     "GET /wikipathways/findPathwaysByText.json": {
       "file": "responses/wikipathways/wikipathways-findpathwaysbytext-json-ce9c5698da2d.bin",

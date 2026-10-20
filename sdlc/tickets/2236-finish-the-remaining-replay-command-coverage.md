@@ -16,7 +16,7 @@ Reviews: revision e44b173, accept
 
 Extend the existing recorded replay and JSON/Markdown goldens to the remaining command families after the narrowed 2079 and 2111 release batches. Keep authored fault controls and excluded local datasets in their existing helpers. Each implementation batch declares its own exact source claim before code changes.
 
-Changes: `tests/golden/test_golden_output.py`, `tests/golden/cases/get-protein-p15056.*`, `tests/golden/cases/get-protein-p15056-structures.*`, `tests/golden/cases/protein-structures-p15056-limit1-offset1.*`, `sdlc/records/2236-recorded-command-goldens.md`, `CHANGELOG.md`.
+Changes: `tests/golden/test_golden_output.py`, `tests/golden/cases/get-protein-p15056.*`, `tests/golden/cases/get-protein-p15056-structures.*`, `tests/golden/cases/protein-structures-p15056-limit1-offset1.*`, `tests/golden/cases/search-disease-melanoma-limit5.*`, `tests/golden/cases/search-variant-braf-melanoma-limit3.*`, `tests/golden/cases/search-gwas-braf-limit3.*`, `tests/golden/cases/search-gwas-melanoma-limit3.*`, `tests/golden/cases/search-pgx-cyp2d6-limit20.*`, `tests/golden/cases/search-pgx-clopidogrel-limit20.*`, `tests/golden/cases/get-author-orcid-4299-3018.*`, `tests/golden/cases/author-papers-orcid-4299-3018-limit3.*`, `tests/golden/cases/search-protein-braf-limit3.*`, `tests/golden/cases/search-phenotype-hp1250-hp1263-limit1.*`, `tests/golden/cases/get-pgx-cyp2d6-interactions.*`, `tests/golden/cases/get-pgx-cyp2d6-recommendations.*`, `testdata/replay/manifest.json`, `testdata/replay/responses/cpic/*`, `testdata/replay/responses/orcid/*`, `testdata/replay/responses/uniprot/*`, `testdata/replay/responses/hpo/*`, `testdata/replay/responses/monarch/*`, `sdlc/records/2236-recorded-command-goldens.md`, `CHANGELOG.md`.
 
 ## Inventory
 
@@ -46,3 +46,7 @@ Use the existing exact UniProt P15056 recording to cover get protein identity, g
 Keep: experiments/2102-biomcp-2258-final-live-replay — retain protein-goldens/2236 raw preimage and corrected job evidence while release admission consumes this batch.
 
 PM completion boundary, 2026-10-20: cover protein, every existing exact or receipted recording group, and the finite approved public capture plan. Semantic Scholar, KEGG, restricted and local sources stay excluded. The current first batch is partial and cannot close this parent. Exact request-count and no-Semantic-Scholar clarification is required before new captures.
+
+## Second batch boundary
+
+Starting from 87df265ba55d14fd5f8ae66b969454dd351f8b67, extend the existing golden table with disease and variant search, GWAS gene and trait search, PGx gene and drug search, ORCID identity and claimed works, protein search, phenotype matching, and the two successful CYP2D6 interaction/recommendation sections. Reuse canonical routes and unchanged exact receipted CPIC/ORCID replies; import approved current successful public captures without changing any request. The existing absent-golden assertion is the failing outside-in check before update mode generates the expected output. Keep all accepted protein cases and authored controls. CPIC frequency and guideline reads returned real HTTP400 schema errors and cannot establish successful section coverage; retain raw errors and report the product defects separately. No product code or replay helper changes.

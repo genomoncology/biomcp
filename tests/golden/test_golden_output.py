@@ -44,6 +44,63 @@ class Case:
 
 
 CASES = (
+    Case(
+        'search-disease-melanoma-limit5',
+        ('search', 'disease', 'melanoma', '--limit', '5'),
+    ),
+    Case(
+        'search-variant-braf-melanoma-limit3',
+        (
+            'search',
+            'variant',
+            '--gene',
+            'BRAF',
+            '--condition',
+            'melanoma',
+            '--limit',
+            '3',
+        ),
+    ),
+    Case(
+        'search-gwas-braf-limit3',
+        ('search', 'gwas', '--gene', 'BRAF', '--limit', '3'),
+    ),
+    Case(
+        'search-gwas-melanoma-limit3',
+        ('search', 'gwas', '--trait', 'melanoma', '--limit', '3'),
+    ),
+    Case(
+        'search-pgx-cyp2d6-limit20',
+        ('search', 'pgx', '--gene', 'CYP2D6', '--limit', '20'),
+    ),
+    Case(
+        'search-pgx-clopidogrel-limit20',
+        ('search', 'pgx', '--drug', 'clopidogrel', '--limit', '20'),
+    ),
+    Case(
+        'get-author-orcid-4299-3018',
+        ('get', 'author', 'orcid:0000-0002-4299-3018'),
+    ),
+    Case(
+        'author-papers-orcid-4299-3018-limit3',
+        ('author', 'papers', 'orcid:0000-0002-4299-3018', '--limit', '3'),
+    ),
+    Case(
+        'search-protein-braf-limit3',
+        ('search', 'protein', 'BRAF', '--limit', '3'),
+    ),
+    Case(
+        'search-phenotype-hp1250-hp1263-limit1',
+        ('search', 'phenotype', 'HP:0001250 HP:0001263', '--limit', '1'),
+    ),
+    Case(
+        'get-pgx-cyp2d6-interactions',
+        ('get', 'pgx', 'CYP2D6', 'interactions'),
+    ),
+    Case(
+        'get-pgx-cyp2d6-recommendations',
+        ('get', 'pgx', 'CYP2D6', 'recommendations'),
+    ),
     Case("get-gene-braf", ("get", "gene", "BRAF")),
     Case("get-protein-p15056", ("get", "protein", "P15056")),
     Case(
