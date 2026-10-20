@@ -1746,6 +1746,13 @@ def test_profile_independence_audit_reads_the_dual_lane_list_from_the_runner(
     ("", "let listener = TcpListener::bind(addr).await; let server = tokio::spawn(async move { listener.accept().await; }); server.abort(); server.await.unwrap_err(); time::pause(); time::advance(duration).await;", False),
     ("", "let listener = TcpListener::bind(addr).await; let (mut stream, _) = listener.accept().await; stream.read(&mut request).await; time::pause();", True),
     ("", "let listener = TcpListener::bind(addr).await; let (mut stream, _) = listener.accept().await; drop(listener); time::pause();", True),
+    ("", "let server = MockServer::start().await; time::pause();", True),
+    ("", "let fixture = TestHttpFixture::spawn(handler).await; time::pause();", True),
+    ("", "time::pause(); let fixture = TestHttpServer::spawn(handler).await;", True),
+    ("", "time::pause(); let server = MockServer::start().await;", True),
+    ("", "let fixture = TestHttpFixture::spawn(handler).await; drop(fixture); time::pause();", False),
+    ("", "let server = tokio::spawn(async move { let fixture = TestHttpFixture::spawn(handler).await; }); server.await.unwrap(); time::pause();", False),
+    ("", "let fixture = TestHttpFixture::spawn(handler).await; let server = tokio::spawn(async move { drop(fixture); }); server.await.unwrap(); time::pause();", False),
     ("start_paused = true", "time::advance(duration).await;", False),
 ])
 def test_paused_clock_audit_rejects_pending_io_but_allows_completed_io(
