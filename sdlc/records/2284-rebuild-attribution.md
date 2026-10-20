@@ -1,0 +1,9 @@
+# Rebuild attribution experiment
+
+The approved experiment tests whether a real BoxFuture boundary at search_variant_articles_identity reduces rebuild cost. Before measurement, the cause remains a hypothesis. Preserve its arguments, results, body, useful tests and release profiles; reject a negative prototype without a wider architecture change.
+
+The PM approved exact reviewed combined candidate3d9472ecc2b4db2d68eee81d54c65453a9804806 as the before arm while serial M5 landing checks continue. Formal before clones checkout that exact commit; after clones apply only the prototype source patch. The coordinator merged the accepted candidate into this ticket branch for development, but additional SDLC metadata is excluded from timed clones. The completed older M5 comparison remains historical context.
+
+Gator experiment2113-biomcp-2284-rebuild-attribution retains setup2284/1792513281820-832573 and the identical validated helper, SHA256b8711489699dcd4d66b39c1bba3c6d385a4cb171ac1569b192554cdf0c838426. Set SCCACHE_SERVER_UDS=/home/ian/.cache/sccache/biomcp-2284.sock identically for every arm so the compiler cache works inside Linux offline isolation. Preserve prepared host/toolchain/profile/cache settings and leave CARGO_INCREMENTAL unset. Setup is not a timing result. The PM’s drained quiet-host relay remains a required admission condition.
+
+Three alternating pairs retain each arm’s independent clone and empty initial target: before/after, after/before, before/after. Use the same cold-dev-build, rust-edit-rebuild, doc-edit-rebuild and edit-test-group order. Retain compiler-plus-link totals separately from selected test execution; do not claim a compiler-versus-link subdivision. The first before arm must complete before prototype source editing. The only measured after-arm delta is that prototype; any later runtime source change requires only affected remeasurement.
