@@ -84,6 +84,8 @@
 
 - Record paired 0.9.4 and 0.9.3 build, command and cache measurements. Accept the measured warm variant and GWAS costs and small-cache SQLite overhead; retain slower developer rebuild and gate costs for follow-up. (2234)
 
+- Verify parallel article cache reuse against admitted responses and preserve failed-case cache databases. (2285)
+
 - Qualify concurrent CLI and MCP cache sharing with distinct stored requests and strict warm reuse after bounded admission. (2283)
 
 - Send the current BioMCP application identity, default Accept header, and uncached policy during replay live checks while preserving recorded request headers and bounded transport controls. (2281)
