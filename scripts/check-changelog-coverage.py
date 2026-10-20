@@ -318,10 +318,14 @@ def branch_section_text(path: Path) -> tuple[str, str] | None:
     )
     if version is None:
         return None
-    try:
-        return section_text(path, "v" + version.group(1))
-    except RuntimeError:
+    content = path.read_text(encoding="utf-8")
+    first = re.search(r"^## (.+)$", content, re.MULTILINE)
+    if first is None or re.fullmatch(
+        re.escape(version.group(1)) + r"\s+—\s+[0-9]{4}-[0-9]{2}-[0-9]{2}\s*",
+        first.group(1),
+    ) is None:
         return None
+    return section_text(path, "v" + version.group(1))
 
 
 def branch_main(changelog: Path) -> int:

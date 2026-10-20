@@ -552,6 +552,9 @@ def test_lint_passes_a_runtime_string_that_names_a_ticket(tmp_path: Path) -> Non
         ("ticket/1234-search", "0.9.1", "0.9.1 — 2026-10-19", False, 1),
         ("ticket/1234-search", "0.9.2-dev", "0.9.1 — 2026-10-19", True, 1),
         ("ticket/1234-search", "0.9.2", "0.9.1 — 2026-10-19", True, 1),
+        ("ticket/1234-search", "0.8.4", "0.9.1 — 2026-10-19", True, 1),
+        ("ticket/1234-search", "0.9.2", "0.9.1 — 2026-10-19\n\n## Unreleased", True, 1),
+        ("ticket/1234-search", "0.8.4", "0.9.1 — 2026-10-19\n\n## 0.8.4 — 2026-10-18", True, 1),
     ],
 )
 def test_local_lint_requires_shipped_change_citations(

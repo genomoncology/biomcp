@@ -4,25 +4,33 @@ bin/lint now runs the existing branch changelog-coverage and tracked scratch-fil
 
 M5 preimage job 2291/1792505910947-78109 failed nine outside-in Git/lint fixture cases. The first corrected job 1792506102012-97685 passed 113 focused tests but its real-tree check found historical bare 0.8.4 incorrectly selected beneath dated 0.9.4. That integration failure remains failed. Final source 686c8713968356e2a8a18d2bddba6b25df71e8e5 passed job 1792507023960-82920: all 113 tests, Ruff, ShellCheck, actual-tree coverage of 52 shipped-change tickets and whitespace. The historical-heading regression is included. Raw runs remain under experiment 2102-biomcp-2258-final-live-replay/local-ci-parity/2291.
 
-| CI validation or group | Local execution or explicit disposition |
+| ci.yml run step | Local execution or explicit disposition |
 | --- | --- |
-| changes / ci-classify-push | CI optimization; local gates always execute their selected checks. |
-| build / prepare-test and artifact preparation | make test preparation in the landing gate. Cargo fetch, checkout, setup, caches and artifact transport prepare execution rather than validate behavior. |
-| lint / make lint | Landing lint. |
-| rust-tests / test-rust | Landing make test. |
-| python-lane / test-python | Landing make test, with sync-python-dev preparation. |
-| spec-lane / make spec | Landing specifications. |
-| stress-lane / make stress | Deliberately release/manual-only repeated CPU/load workload, outside routine gates. |
-| release-panic / optimized build and panic selection | Deliberately release-only optimized-profile verification, outside the routine development graph. |
-| full-features | Main full-feature-check covers development profile; release-gate covers optimized profile. |
-| generated-sources / regenerate --check | Deliberately release/manual-only pinned protobuf generator/toolchain check. This record does not claim it ran on the M5. |
-| Windows contracts and released-binary comparison | Deliberately release/manual platform checks; Linux/macOS cannot exercise Windows semantics. This record does not claim the new local lint executed those checks. |
-| repository-contracts / non-binary pytest selection | Routine contracts, required repo-audit and release marker tests retain their existing selection boundaries. |
-| strict mkdocs | Existing test-contracts-prepared documentation validation. |
-| installer equality | Existing canonical installer checksum contract. |
-| version synchronization | Existing specification and directory submission contract checks. |
-| tracked no-climb check | Newly invoked from local lint; existing implementation reused. |
-| branch changelog coverage | Newly invoked from local lint; source selection corrected for current stable candidates. |
-| historical green-CI gh query | Obsolete prior-run provenance assumption; direct release candidate qualification replaces it. No offline local GitHub query is introduced. |
+| changes: `scripts/ci-classify-push.sh` | CI scheduling optimization, including its previous-run query. Local gates always run their selected checks and do not need this optimization. |
+| build: `make prepare-test` | `landing-gate` → `make test` → `prepare-test` builds the same routine archive and binaries. |
+| build and python-lane: `cargo fetch --locked` | Dependency preparation, not a behavioral check. Local preparation resolves the required graph before offline tests; cache transport, checkout, lane setup and executable-bit restoration likewise prepare execution. |
+| lint: `make lint` | `landing-gate` → `make lint`. |
+| rust-tests: `make test-rust` | `landing-gate` → `make test` → `test-rust`. |
+| python-lane: `make test-python` | `landing-gate` → `make test` → `test-python`, including `sync-python-dev`. |
+| spec-lane: `make spec` | `landing-gate` → `make spec`. |
+| stress-lane: `make stress` | Deliberately release/manual-only repeated CPU/load workload. Neither `landing-gate`, `main-gate` nor local `release-gate` invokes it. |
+| release-panic: `cargo build --release --locked`; `cargo nextest run --release --test rmcp_client_contract rmcp_stdio_recovers_from_tool_panic` | Deliberately release/manual-only optimized panic-recovery contract. Optional `make verify` runs the same optimized build and selection. Routine development-profile tests do not substitute for it; local `release-gate` does not invoke this command. |
+| full-features: `make full-feature-check FULL_FEATURE_PROFILE=release` | `main-gate` runs the development-profile target. Local `release-gate` runs the release-profile target. This variable selects the artifact build and output checks; its Clippy and AlphaGenome Rust test commands retain their default profile. |
+| generated-sources: `scripts/regenerate-alphagenome-proto --check` | Deliberately release/manual-only pinned protobuf generator/toolchain check. No local gate invokes it. The M5 focused job did not exercise the pinned protoc tooling or generator. |
+| windows-contracts: released 0.9.3 archive download/checksum/version and cache comparison | Manual `windows_only: true` dispatch only. It compares the released binary against the cache contract; a normal tagged release does not run this comparison. Platform/network reasons keep it outside local gates. |
+| windows-contracts: `windows_stdio_contract`, `windows_lock_contract`, `sqlite_busy_deadline_finishes_without_late_publication`, `construction_under_a_held_sqlite_writer_honors_the_deadline` | Deliberately release/manual-only Windows cache/concurrency/deadline validation. Linux/macOS cannot exercise Windows semantics. |
+| windows-contracts: `cargo check --locked`; `managed_state_permissions`; `cache::private` | Deliberately release/manual-only Windows compilation and managed-state validation, skipped by `windows_only`. |
+| windows-contracts: `tools/with-build-identity` successful Cargo invocation, failing Cargo invocation, and child exit 42 | Deliberately release/manual-only Windows process-exit propagation validation, skipped by `windows_only`. Local wrapper tests do not prove Windows behavior. |
+| repository-contracts: `uv sync --extra dev --no-install-project` | `sync-python-dev` prepares the same Python environment. |
+| repository-contracts: `pytest tests/ -q -m "not needs_binary"` | Routine `test-contracts-prepared` selects `not release_gate and not repo_audit and not long`; `main-gate` adds `repo-audit`. Local `release-gate` adds long and release marker selections. These deliberate release-only boundaries retain expensive long/packaged-crate checks outside per-landing gates. |
+| repository-contracts: strict MkDocs build | `test-contracts-prepared` runs `mkdocs build --strict`. |
+| repository-contracts: `cmp --silent install.sh docs/install.sh` | Routine `test_root_installer_is_the_canonical_deployed_copy` compares both complete byte strings. |
+| repository-contracts: `bash scripts/check-version-sync.sh` | Routine `test_manifest_matches_directory_bundle_contract` invokes the same script; specifications also check release preparation. |
+| repository-contracts: `bash scripts/check-no-climb-tracked.sh` | Newly invoked from local lint; existing implementation reused. |
+| release-checks: `python3 scripts/check-changelog-coverage.py --branch` | Newly invoked from local lint; source selection corrected for current stable candidates. Reusable qualification skips this step because release version-check already invokes the stronger `--tag` form against the candidate. |
+| release-checks: historical `gh run list` / `jq` green-CI query | Its syntax smoke still runs in reusable CI, but its historical push-run count no longer qualifies a release. `release.yml` version-check validates the candidate and `qualification` calls `ci.yml` with its resolved `source_sha`; archive publication depends on qualification and release markers. No local GitHub query is needed. |
 
-Fresh review must check these dispositions against the actual workflow; table entries describe execution locations or exclusions, not new pass claims. The coordinator merged accepted main 6e664cfa after the developer stopped. This gate implementation lands separately.
+The reusable workflow runs the heavy lanes on tag pushes or manual dispatch, unless `windows_only` or docs-only classification excludes them. The release workflow calls it for tag publication and explicit candidate rehearsal; those caller events satisfy the tag/manual conditions. This describes configured execution, not a claim that the Windows, stress, optimized-panic or generator lanes ran in the focused M5 job. The historical released-binary Windows comparison requires its separate manual input.
+Review checked these dispositions against ci.yml, release.yml, Makefile and the installer/version contracts; table entries describe execution locations or exclusions, not new pass claims. The coordinator merged accepted main 6e664cfa after the developer stopped. This gate implementation lands separately.
+
+Review found that the stable fallback still searched historical sections through the release-form selector. A stale stable manifest could therefore revive an older bare or dated section, or a buried Unreleased section, and incorrectly pass lint. The fallback now requires the leading heading to be the matching dated stable release. M5 review preimage job 1792508024028-87388 failed all three new real-Git lint controls; corrected job 1792508045977-90401 passed all 116 focused cases and Ruff. That corrected job remains failed: the review wrapper then named a nonexistent shell-check command, so its trailing shell and actual-tree checks did not run. The shell sources did not change after the developer's passing ShellCheck run.
