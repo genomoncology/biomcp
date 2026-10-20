@@ -520,6 +520,27 @@
       "status": 200,
       "upstream": "https://clinicaltrials.gov/api/v2/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING&pageSize=3&query.cond=melanoma"
     },
+    "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&filter.overallStatus=RECRUITING&pageSize=5&query.cond=melanoma": {
+      "status": 200,
+      "file": "responses/ctgov/melanoma-default-55b650b18997.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "upstream": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING&countTotal=true&pageSize=5&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+      "recording_provenance": {
+        "provider": "ctgov",
+        "request": {
+          "method": "GET",
+          "url": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING&countTotal=true&pageSize=5&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+          "body": null
+        },
+        "captured_at": "2026-10-20T16:30:01.730067+00:00",
+        "sha256": "b7f0a428dd0b2b6d20db7cc79d3275e38d363ad034ccfee5dcb4222c00fdd5d3",
+        "observed_response_sha256": "7d6c64bed3712c9388bcb88c33485f2cac229802d7cf0ed3bc270ee6ea1688ae",
+        "minimization_or_redaction": "Exact public Open Targets/CTGov query response; request projection contains only fields read by the default disease card.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      }
+    },
     "GET /ctgov/studies?countTotal=true&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge&pageSize=1&query.cond=Phelan-McDermid+Syndrome": {
       "file": "responses/ctgov/ctgov-studies-c5eab0b2a63e.json",
       "headers": {
@@ -802,6 +823,27 @@
         }
       }
     },
+    "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=10": {
+      "status": 200,
+      "file": "responses/mychem/melanoma-default-2f53d7c95d4d.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "upstream": "https://mychem.info/v1/query?q=drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=10&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+      "recording_provenance": {
+        "provider": "mychem",
+        "request": {
+          "method": "GET",
+          "url": "https://mychem.info/v1/query?q=drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=10&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+          "body": null
+        },
+        "captured_at": "2026-10-20T16:29:36.496752+00:00",
+        "sha256": "92f69bcbc2fb3267499cf040d0686448072c87d69322713d87cef80a3bfa2a25",
+        "observed_response_sha256": "5288162c90cac62680649e91fa486b9bfeeb988a376279dd9ee7344ea6beeba8",
+        "minimization_or_redaction": "Retain query metadata and command-read public DrugCentral/ChEMBL/GtoPdb/UNII/NDC/ChEBI/OpenFDA fields; remove DrugBank and every other hit block.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      }
+    },
     "GET /mychem/query?fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name&from=0&q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A%2Amelanoma%2A&size=6": {
       "file": "responses/mychem/mychem-query-212dd06e4cf8.bin",
       "headers": {
@@ -819,41 +861,46 @@
       "status": 200,
       "upstream": "https://mychem.info/v1/query?q=gtopdb.interaction_targets.symbol%3ABRAF+AND+drugcentral.drug_use.indication.concept_name%3A*melanoma*&size=6&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name"
     },
-    "GET /mydisease/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
-      "file": "responses/mydisease/melanoma-detail.json",
-      "note": "Ontology identity fields from recorded melanoma query hit.",
+    "GET /mydisease/disease/DOID:0050687?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
       "status": 200,
-      "upstream": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "file": "responses/mydisease/melanoma-default-d3fe9c0bcc46.json",
       "headers": {
         "content-type": "application/json; charset=UTF-8"
       },
+      "upstream": "https://mydisease.info/v1/disease/DOID:0050687?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
       "recording_provenance": {
-        "original_sha256": "2ba1b70a2a5136815fd826e5335c91d47dc378e3e53607bccfa0c5fb769489ed",
-        "observed_at": "2026-10-19T22:22:03.000063+00:00",
-        "observed_status": 200,
-        "observed_content_type": "application/json; charset=UTF-8",
-        "source_revision": "5c3d7794febb31612e628d2e9caa2688c9a4ebfd",
-        "collection_settings": {
-          "proxy": false,
-          "redirects": false,
-          "retries": 0,
-          "deadline_seconds": 90,
-          "max_response_bytes": 33554432
+        "provider": "mydisease",
+        "request": {
+          "method": "GET",
+          "url": "https://mydisease.info/v1/disease/DOID:0050687?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+          "body": null
         },
-        "observed_response_sha256": "783e1b57a05aa8fa6f0bcf226fcb5666fd948165e576389f269eaef66d6d9394",
-        "sha256": "a746d0129eb9e602c62200343c64c52836f41965203817b5619e481fbc2e33f8",
+        "captured_at": "2026-10-20T16:29:02.568092+00:00",
+        "sha256": "86c16c21f2740808dd74ed724b37ad4298bb33940f3ec88fbaf8720e4ba3920c",
+        "observed_response_sha256": "4401f85dfebae89d7af1197b3d1679064cbeded7c14038fc5c0cc3cf39bbf91e",
+        "minimization_or_redaction": "Retain only _id and command-read public MONDO/DO fields; remove UMLS, DisGeNET, HPO and all other blocks.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      }
+    },
+    "GET /mydisease/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
+      "status": 200,
+      "file": "responses/mydisease/melanoma-default-653b6c2dad5f.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "recording_provenance": {
+        "provider": "mydisease",
         "request": {
           "method": "GET",
           "url": "https://mydisease.info/v1/disease/MONDO:0005105?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
-          "headers": {
-            "Accept-Encoding": "identity",
-            "User-Agent": "biomcp-cli/0.9.4",
-            "Cache-Control": "no-store",
-            "Accept": "*/*"
-          },
           "body": null
         },
-        "projection": "Retain only previously recorded public fields actually returned by the exact filtered detail response; omit additional datasets and fields."
+        "captured_at": "2026-10-20T16:28:57.686618+00:00",
+        "sha256": "e973ac41aed7af1cc51ebb2a564651336a3b8d785cbb6fd1a9134a75fea51720",
+        "observed_response_sha256": "783e1b57a05aa8fa6f0bcf226fcb5666fd948165e576389f269eaef66d6d9394",
+        "minimization_or_redaction": "Retain only _id and command-read public MONDO/DO fields; remove UMLS, DisGeNET, HPO and all other blocks.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
       }
     },
     "GET /mydisease/disease/MONDO:0007947?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
@@ -890,6 +937,27 @@
           "body": null
         },
         "projection": "Retain only previously recorded public fields actually returned by the exact filtered detail response; omit additional datasets and fields."
+      }
+    },
+    "GET /mydisease/disease/MONDO:0021143?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id": {
+      "status": 200,
+      "file": "responses/mydisease/melanoma-default-6eee0a495dcf.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "upstream": "https://mydisease.info/v1/disease/MONDO:0021143?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+      "recording_provenance": {
+        "provider": "mydisease",
+        "request": {
+          "method": "GET",
+          "url": "https://mydisease.info/v1/disease/MONDO:0021143?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+          "body": null
+        },
+        "captured_at": "2026-10-20T16:29:00.307580+00:00",
+        "sha256": "00a2d73258741ee8a7e9da28b5b01aa55b653c7d579dfcf0e5a4c1e818e4f53c",
+        "observed_response_sha256": "02cd0ff55e80a69df998c6f2121e301c55c3d0feb1ea343d35498ab9d2ea0625",
+        "minimization_or_redaction": "Retain only _id and command-read public MONDO/DO fields; remove UMLS, DisGeNET, HPO and all other blocks.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
       }
     },
     "GET /mydisease/query?fields=_id%2Cmondo.name%2Cmondo.label%2Cmondo.synonym%2Cmondo.ancestors%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name&from=0&q=%28disease_ontology.name%3Amelanoma%5E10+OR+disease_ontology.synonyms.exact%3Amelanoma+OR+mondo.name%3Amelanoma%5E10+OR+mondo.synonym.exact%3Amelanoma%29&size=15": {
@@ -1584,6 +1652,58 @@
         "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"limit\":50,\"offset\":0,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
       },
       "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"limit\":50,\"offset\":0,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
+    },
+    "POST /opentargets/graphql#0c48cbd3393ce56a": {
+      "status": 200,
+      "file": "responses/opentargets/melanoma-default-871c9d3b41b6.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "recording_provenance": {
+        "provider": "opentargets",
+        "request": {
+          "method": "POST",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "body": "{\"query\":\"\\nquery SearchDisease($query: String!) {\\n  search(queryString: $query, entityNames: [\\\"disease\\\"], page: {index: 0, size: 5}) {\\n    hits {\\n      id\\n      name\\n      entity\\n    }\\n  }\\n}\\n\",\"variables\":{\"query\":\"melanoma\"}}"
+        },
+        "captured_at": "2026-10-20T16:29:34.203347+00:00",
+        "sha256": "7a50c52bb3de199cd72e6c2fba93052d1c6af44d52671d0be862774d9fb9a07f",
+        "observed_response_sha256": "56cbe7543520149af5b19adcbcff11bfcc384d2569cd9e369e5eb83ead780b5b",
+        "minimization_or_redaction": "Exact public Open Targets/CTGov query response; request projection contains only fields read by the default disease card.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      },
+      "request_body": "{\"query\":\"\\nquery SearchDisease($query: String!) {\\n  search(queryString: $query, entityNames: [\\\"disease\\\"], page: {index: 0, size: 5}) {\\n    hits {\\n      id\\n      name\\n      entity\\n    }\\n  }\\n}\\n\",\"variables\":{\"query\":\"melanoma\"}}",
+      "request_headers": {
+        "content-type": "application/json",
+        "accept": "application/json"
+      }
+    },
+    "POST /opentargets/graphql#30993b962d429334": {
+      "status": 200,
+      "file": "responses/opentargets/melanoma-default-471d10da535a.json",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
+      "recording_provenance": {
+        "provider": "opentargets",
+        "request": {
+          "method": "POST",
+          "url": "https://api.platform.opentargets.org/api/v4/graphql",
+          "body": "{\"query\":\"\\nquery DiseaseGenes($efoId: String!, $size: Int!) {\\n  disease(efoId: $efoId) {\\n    id\\n    name\\n    associatedTargets(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        datatypeScores {\\n          id\\n          score\\n        }\\n        datasourceScores {\\n          id\\n          score\\n        }\\n        target {\\n          approvedSymbol\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"efoId\":\"MONDO_0005105\",\"size\":20}}"
+        },
+        "captured_at": "2026-10-20T16:29:38.997009+00:00",
+        "sha256": "c8083280fe1677814d5892e5a877eed30d7f54a4d8ab5f6aa71610b9eb9f8f73",
+        "observed_response_sha256": "1ba1e3e6a7b6f45c6d2c066d4ed90b74f2ff85d3a2567a0302276f815bc3d1ee",
+        "minimization_or_redaction": "Exact public Open Targets/CTGov query response; request projection contains only fields read by the default disease card.",
+        "provider_origin_statement": "Direct public keyless normal route; original aggregate reply retained only in private experiment2102."
+      },
+      "request_body": "{\"query\":\"\\nquery DiseaseGenes($efoId: String!, $size: Int!) {\\n  disease(efoId: $efoId) {\\n    id\\n    name\\n    associatedTargets(page: {index: 0, size: $size}) {\\n      rows {\\n        score\\n        datatypeScores {\\n          id\\n          score\\n        }\\n        datasourceScores {\\n          id\\n          score\\n        }\\n        target {\\n          approvedSymbol\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"efoId\":\"MONDO_0005105\",\"size\":20}}",
+      "request_headers": {
+        "content-type": "application/json",
+        "accept": "application/json"
+      }
     },
     "POST /opentargets/graphql#34180b1b60125348": {
       "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
