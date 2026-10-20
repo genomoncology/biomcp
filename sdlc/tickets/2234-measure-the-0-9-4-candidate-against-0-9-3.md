@@ -51,6 +51,7 @@ Keep: experiments/809-biomcp-2234-paired — retain every raw sample, failed att
 
 Keep: experiments/491-biomcp-2234-raw — independently verified backup of the first old-release arm raw archive, SHA256 ec3c8b6d15db08472c5129ba6987d99e4878131a4bcad435ae5641597726c17d.
 - 2026-10-19 next: PM approved unchanged runtime source51f5e03. Candidate paired collection resumed in1792454239309-63056; preserve successful first old arm and failures. Final records await all paired rows and regression disposition. Local raw backup491 verified and kept.
+- 2026-10-19 next: Paired collection continues with two candidate arms green and second old arm running. Gene edit-test and Rust-touch rebuild costs are higher in both observed pairs; selected gene-test execution is unchanged. Existing Cargo output localizes added cost to compilation/linking. Finish third pair and runtime rows, then obtain PM disposition for persistent regressions; no extra probe or source change.
 
 ## Test-only qualification disposition
 
