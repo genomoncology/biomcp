@@ -626,7 +626,9 @@ def test_local_lint_rejects_tracked_scratch(tmp_path: Path) -> None:
     assert ".climb/design.md" in result.stderr
 
 
-@pytest.mark.parametrize("failure", ["missing", "wrong-version", "version-command"])
+@pytest.mark.parametrize(
+    "failure", ["ready", "missing", "wrong-version", "version-command", "missing-pin", "duplicate-pin"]
+)
 def test_lint_rejects_unprepared_local_tools_despite_foreign_environment(
     tmp_path: Path, failure: str
 ) -> None:
@@ -635,12 +637,18 @@ def test_lint_rejects_unprepared_local_tools_despite_foreign_environment(
     local_python = repo_root / ".venv/bin/python"
     if failure == "missing":
         local_python.unlink()
-    else:
+    elif failure in {"wrong-version", "version-command"}:
         _write_executable(
             local_python,
             "#!/bin/sh\n"
             + ("echo 'ruff 999.0.0'\n" if failure == "wrong-version" else "exit 19\n"),
         )
+    if failure in {"missing-pin", "duplicate-pin"}:
+        manifest = repo_root / "pyproject.toml"
+        text = manifest.read_text(encoding="utf-8")
+        pin = next(line for line in text.splitlines() if '"ruff==' in line)
+        text = text.replace(pin, "" if failure == "missing-pin" else f"{pin}\n{pin}")
+        manifest.write_text(text, encoding="utf-8")
     foreign = tmp_path / "foreign"
     foreign.mkdir()
     marker = foreign / "used"
@@ -655,6 +663,10 @@ def test_lint_rejects_unprepared_local_tools_despite_foreign_environment(
         },
     )
 
-    assert result.returncode == 1
-    assert "run make sync-python-dev for the declared Ruff pin" in result.stdout
+    if failure == "ready":
+        assert result.returncode == 0
+        assert "[PASS] Python lint (ruff check .)" in result.stdout
+    else:
+        assert result.returncode == 1
+        assert "run make sync-python-dev for the declared Ruff pin" in result.stdout
     assert not marker.exists()

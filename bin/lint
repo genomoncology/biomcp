@@ -78,7 +78,7 @@ fi
 if has_tracked_files '*.py'; then
   python_tool="$repo_root/.venv/bin/python"
   ruff_version="$(sed -nE 's/^[[:space:]]*"ruff==([^"]+)",?$/\1/p' pyproject.toml)"
-  if [ -n "$ruff_version" ] && [ -x "$python_tool" ] && \
+  if [[ "$ruff_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ -x "$python_tool" ] && \
       "$python_tool" -m ruff --version | grep -Fxq "ruff $ruff_version"; then
     run_required 'Python lint (ruff check .)' "$python_tool" -m ruff check .
   else
