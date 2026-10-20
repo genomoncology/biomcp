@@ -96,6 +96,9 @@
 ### Internal
 
 - Limit landing advisory lookups to dependency changes while retaining live checks for full main and release qualification. (2307)
+- Record the test reliability root cause and authorized local test-support follow-up work. (2299)
+
+- Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)
 
 - Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
 - Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
