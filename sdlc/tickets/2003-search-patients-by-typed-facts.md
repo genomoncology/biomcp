@@ -21,9 +21,11 @@ biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 
 ## Evidence
 
+- Proof: the existing acceptance cases and their stated gate checks below.
+
 - Changes: `src/cli/patient/mod.rs` `src/cli/patient/dispatch.rs` `src/sources/fhir.rs` `tests/patient_fhir_contract.rs`
 
-## Current Facts
+### Current Facts
 
 - Ticket 2002 supplies `BIOMCP_FHIR_BASE`, URL encoding, the 2002 patient ID rule, and the serve-http refusal. Its one private request function in `src/sources/fhir.rs` sets every header.
 - Other `search` commands take `-l/--limit` with a default of 10 (`src/cli/disease/mod.rs:29`).
@@ -31,7 +33,7 @@ biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 - A FHIR server may ignore a search parameter it does not support, and may ignore `_elements`. Under `Prefer: handling=strict` it must fail instead of ignoring a parameter. The CapabilityStatement at `metadata` lists the search parameters the server supports.
 - MCP typed search for `patient` takes no filters today (`src/mcp/shell.rs:237`).
 
-## Scope
+### Scope
 
 - `search patient` takes `--gender`, `--born-after`, `--born-before`, `--condition <system|code>`, `--limit`, and `--count`. It rejects free text and requires at least one filter. `--limit` runs 1 to 50 with a default of 10.
 - Values are checked before any request. `--gender` is one of `male`, `female`, `other`, or `unknown`. Each date is a FHIR date: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`, with no prefix of its own. `--condition` holds one `|` with a non-empty system on the left and a non-empty code on the right. A comma in any value fails.
@@ -44,11 +46,11 @@ biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 - MCP typed search for `patient` stays filterless. A filterless call reaches the CLI and fails the no-filter check with no request. MCP stdio callers search with filters through the shell tool, which runs the same CLI checks. Reason: typed filters would copy the value rules into a JSON schema and a second test surface. Ian can overturn this in a follow-up ticket.
 - `docs/user-guide/patient.md` and `CHANGELOG.md` cover search and name the shell tool as the MCP route.
 
-## Exclusions
+### Exclusions
 
 No free text, no name or identifier search, no paging past the first page, no other `_has` targets, no typed MCP filters, and no cohort entity.
 
-## Acceptance
+### Acceptance
 
 Synthetic bundles only, served by the existing spec fixture runner. "Sends no request" means the fixture request log is empty.
 
@@ -63,11 +65,11 @@ Synthetic bundles only, served by the existing spec fixture runner. "Sends no re
 
 `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA. The manual smoke run against the live HAPI server confirms that its CapabilityStatement declares `gender`, `birthdate`, and `_has` where the refusal test checks, that it accepts `Prefer: handling=strict`, and that a condition search returns results.
 
-## Dependencies
+### Dependencies
 
 2002.
 
-## Complexity
+### Complexity
 
 - Contract score: 2 (new search grammar, value rules, date semantics, count contract)
 - State and timing score: 0 (one capability read and one page)
@@ -80,7 +82,7 @@ Synthetic bundles only, served by the existing spec fixture runner. "Sends no re
 - Reasons: the server can ignore filters and field limits, so correctness rests on the capability check, strict handling, value checks, and local output trimming
 - Selected model: claude-opus
 
-## Review
+### Review
 
 - Design review (item batch): ACCEPT 2026-09-23, split from 2002. Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
 - Design re-review (item batch): ACCEPT 2026-09-23. Stated the `--limit` range and where `_has` must be declared.

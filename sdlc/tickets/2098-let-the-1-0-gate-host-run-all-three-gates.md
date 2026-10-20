@@ -10,6 +10,10 @@ Status: OPEN.
 
 Milestone: 1.0
 
+## Outcome
+
+Fix causes 1 and 2 as code: the lint bootstrap gains a Darwin-arm64 case; the spec scripts read process data portably or degrade explicitly when `/proc` is absent. Cause 3 goes to the PM with options; it blocks `make test` only through the website prepare step.
+
 ## Evidence
 
 - Filed 2026-10-15 from lanes 2004 and 2006: every 1.0 lane's acceptance names `make lint`, `make test`, and `make spec` on the gate host, and all three fail on the macOS build host for pre-existing reasons proven at the base tip e2dff0a46, before any lane's diff.
@@ -19,15 +23,11 @@ Milestone: 1.0
 - Cause 4 (test): `tools/run-offline` refuses macOS by design, so `make test` cannot run as-is on the macOS build host; lanes run the underlying gate commands unsandboxed instead.
 - Cause 3 (environment, needs an owner decision): `website/prepare` pins Node v22.22.3 while the macOS build host carries only v26; either the macOS build host installs a v22 toolchain or the pin moves — not decidable by a lane.
 
-## Work
-
-Fix causes 1 and 2 as code: the lint bootstrap gains a Darwin-arm64 case; the spec scripts read process data portably or degrade explicitly when `/proc` is absent. Cause 3 goes to the PM with options; it blocks `make test` only through the website prepare step.
-
-## Acceptance
+### Acceptance
 
 1. On macOS build host, `make lint`, `make test`, and `make spec` each run to their own verdicts (pass or real findings) at the 1.0 line tip, in one pm job, with no step exiting on a missing platform.
 
-## Ruling 2026-10-15: Node pin and the offline sandbox on macOS
+### Ruling 2026-10-15: Node pin and the offline sandbox on macOS
 
 The PM rules on the two gaps a lane could not decide.
 

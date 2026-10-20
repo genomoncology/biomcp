@@ -10,14 +10,16 @@ Status: OPEN.
 
 Milestone: 1.0
 
-## Evidence
-
-- 2098's acceptance run on the macOS build host: 14 spec pages fail on macOS while the fixture orchestration itself works. Standalone reproduction with the fixture serving (spec/entity/disease.md: 14 passed/5 failed) shows page-level findings — e.g. CAD candidates print "(no label in the search response)" — plus a page-block Bash 3.2 parse error and an mcp.md typed-schemas block failure. These are product/page findings surfaced by the now-working macOS build host gates, not fixture-orchestration defects.
-
-## Work
+## Outcome
 
 - Reproduce each failing page on the macOS build host, separate macOS-only behavior (Bash 3.2 blocks, path handling) from real line regressions (missing labels), fix or ticket each with its own evidence.
 
-## Acceptance
+## Evidence
+
+- Proof: the existing acceptance cases and their stated gate checks below.
+
+- 2098's acceptance run on the macOS build host: 14 spec pages fail on macOS while the fixture orchestration itself works. Standalone reproduction with the fixture serving (spec/entity/disease.md: 14 passed/5 failed) shows page-level findings — e.g. CAD candidates print "(no label in the search response)" — plus a page-block Bash 3.2 parse error and an mcp.md typed-schemas block failure. These are product/page findings surfaced by the now-working macOS build host gates, not fixture-orchestration defects.
+
+### Acceptance
 
 1. `make spec` on the macOS build host fails no page, or every remaining macOS-only page carries a recorded refusal reason.

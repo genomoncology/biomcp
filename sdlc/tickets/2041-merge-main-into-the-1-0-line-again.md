@@ -18,7 +18,7 @@ After this merge, the branch merges `main` daily, and a day that cannot merge cl
 - Proof: `git rev-list --left-right --count origin/the 1.0 release branch...origin/main` reports zero on the right, and the branch's own test run passes after the merge.
 - Defers: the 1.0 feature work itself. This ticket only ends the drift.
 
-## Risk this reduces
+### Risk this reduces
 
 Every day the branch stays behind, a conflict that would have been one file becomes a conflict across many. The release line is what people download, so a 1.0 that cannot absorb it is a 1.0 that cannot ship.
 

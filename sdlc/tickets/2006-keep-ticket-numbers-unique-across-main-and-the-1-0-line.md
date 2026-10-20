@@ -16,15 +16,17 @@ Milestone: 1.0
 
 ## Evidence
 
+- Proof: the existing acceptance cases and their stated gate checks below.
+
 - Changes: `Makefile` `tools/check-ticket-numbers.sh`
 
-## Current Facts
+### Current Facts
 
 - Main files tickets in the 1000s. The 1.0 line files tickets numbered 2001 and up (`AGENTS.md`, "the data platform 1.0 migration verification"; ticket 2001's own numbering note).
 - The two lines once collided on ticket numbers 1234 through 1236, one file on each line sharing a number.
 - `make lint` already runs `tools/check-quality-ratchet.sh` and other repository-owned checks (`Makefile`, `lint` target).
 
-## Scope
+### Scope
 
 - A lint script reads the ticket numbers filed in `sdlc/tickets/` on the current branch and the ticket numbers filed in `sdlc/tickets/` on `origin/main`.
 - It fails when the current branch is the 1.0 line and a ticket number there matches a main ticket number attached to a different file path.
@@ -32,11 +34,11 @@ Milestone: 1.0
 - It passes silently otherwise, including on main itself.
 - Wire the script into `make lint`.
 
-## Exclusions
+### Exclusions
 
 No change to how tickets are numbered or reviewed. No check of ticket content, only the number and the branch it is filed on.
 
-## Acceptance
+### Acceptance
 
 1. Planting a ticket file on the 1.0 line numbered to match an existing main ticket, in a different file, makes the script fail.
 2. Planting a 1.0-line ticket numbered below 2001 makes the script fail.
@@ -45,11 +47,11 @@ No change to how tickets are numbered or reviewed. No check of ticket content, o
 
 `make lint` passes on the gate host at the pushed SHA.
 
-## Dependencies
+### Dependencies
 
 None.
 
-## Complexity
+### Complexity
 
 - Contract score: 1 (one numbering rule, checked against `origin/main`)
 - State and timing score: 0
@@ -62,6 +64,6 @@ None.
 - Reasons: a scoped check added to an existing lint gate
 - Selected model: claude-sonnet
 
-## Review
+### Review
 
 - Design review: pending

@@ -20,8 +20,6 @@ On 2026-10-20 `sdlc/issues/` held 79 files: 69 from September and 4 from August.
 
 Mechanical moves and renames suit a cheap delegated job; a developer verifies each disposition against main before closing. Real still-open findings become tickets in the current milestone. Lands as records only.
 
-## Scope and archive rules
-
 The PM approved the canonical archive/issues destination. Preserve the zero-lint outcome. Necessary moves of the nine executable scripts out of SDLC and the checklist may update AGENTS.md, tests and other consumer references, but they are post-tag layout work separate from release qualification. Product behavior remains unchanged. Current admission records stay protected until their active work closes.
 
 For this implementation, historical completed-build records with no ticket may move unchanged into sdlc/archive/records with Markdown links and active references corrected; they must not be relabeled as design studies. Preserve original evidence and quoted command results. Existing deferred ideas, recurrence-only watches and future preconditions can close as active defects with their original ruling and reason preserved in archive/issues; this does not complete a future task or revoke a recurrence watch. Unresolved real findings still require an open ticket.
