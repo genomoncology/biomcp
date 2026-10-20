@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 3394100, accept
+
 ## Outcome
 
 Every check `.github/workflows/ci.yml` runs also runs in the local landing gate or the full main check, or is recorded here as deliberately release-only with its reason. Everyday GitHub Actions no longer run, so a check that lives only in ci.yml never runs.
