@@ -294,7 +294,8 @@ try:
 
     call = request({'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'get','arguments':{'entity':'gene','id':'BRAF','json':False}}})
     text = '\n'.join(item.get('text','') for item in call.get('result',{}).get('content',[]) if item.get('type') == 'text')
-    provenance_ok = '## Sources' in text and 'Identity:' in text and 'NCBI Gene' in text
+    command_ok = 'error' not in call and not call.get('result', {}).get('isError', False)
+    provenance_ok = command_ok and '## Sources' in text and 'Identity:' in text and 'NCBI Gene' in text
     print('434 MCP provenance footer\t' + ('PASS' if provenance_ok else 'FAIL') + '\tget gene BRAF includes section sources')
 finally:
     p.kill()
@@ -309,6 +310,7 @@ PY
     return
   fi
   local name status detail
+  local failures_before="$FAIL"
   while IFS=$'\t' read -r name status detail; do
     [[ -n "$name" ]] || continue
     if [[ "$status" == "PASS" ]]; then
@@ -317,6 +319,9 @@ PY
       record_fail "$name" "$detail"
     fi
   done <"$mcp_out"
+  if ((FAIL > failures_before)); then
+    show_command_output "$mcp_err"
+  fi
 }
 
 smoke_version() {

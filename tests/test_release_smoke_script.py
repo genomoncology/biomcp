@@ -284,3 +284,32 @@ def test_release_smoke_reports_failed_command_streams(tmp_path: Path, failure: s
     assert result.returncode != 0, result.stdout + result.stderr
     assert "command stdout failure" in result.stdout + result.stderr
     assert "command stderr failure" in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("includes_sources", [False, True])
+def test_release_smoke_reports_mcp_error_response(tmp_path: Path, includes_sources: bool) -> None:
+    repo_root = _copy_release_smoke_fixture(tmp_path)
+    head_sha = subprocess.check_output(
+        ["git", "rev-parse", "--short=8", "HEAD"], cwd=repo_root, text=True
+    ).strip()
+    fake_bin = _install_fake_tools(repo_root, head_sha)
+    binary = repo_root / "biomcp"
+    failed_text = "MCP provider command failed"
+    if includes_sources:
+        failed_text += "\n\n## Sources\nIdentity: NCBI Gene"
+    script = _fake_biomcp_script(head_sha).replace(
+        'text = "# BRAF\\n\\n## Sources\\nIdentity: NCBI Gene"',
+        f'text = {failed_text!r}\n'
+        '            print("MCP command stderr failure", file=sys.stderr, flush=True)',
+    )
+    script = script.replace(
+        '{"content":[{"type":"text","text":text}]}',
+        '{"isError":True,"content":[{"type":"text","text":text}]}',
+    )
+    _write_executable(binary, script)
+
+    result = _run_release_smoke(repo_root, fake_bin, "--bin", str(binary))
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "MCP provider command failed" in result.stdout + result.stderr
+    assert "MCP command stderr failure" in result.stdout + result.stderr
