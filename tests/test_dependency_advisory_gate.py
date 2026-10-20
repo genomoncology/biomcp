@@ -125,6 +125,7 @@ def test_lint_checks_github_and_python_lock_advisories(tmp_path: Path) -> None:
     result = _run_lint(root, env=env)
     assert result.returncode == 0, result.stdout + result.stderr
     assert scanner_log.exists(), "lint never checked Cargo.lock and uv.lock against OSV"
+    assert Path(env["UV_LOG"]).read_text().startswith("run --no-sync python tools/check-dependency-advisories ")
     assert scanner_log.read_text().startswith("scan source --lockfile=Cargo.lock --lockfile=uv.lock --config=")
 
 

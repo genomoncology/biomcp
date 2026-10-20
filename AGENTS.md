@@ -79,6 +79,8 @@ pinned official OSV-Scanner against both Cargo.lock and uv.lock. OSV adds
 GitHub Security Advisories and Python package advisories. The advisory-only
 bootstrap mode installs the verified upstream binary without a Go toolchain;
 installation, parsing, network errors and advisory findings fail the gate.
+The policy helper runs through `uv run --no-sync python` to use the repository's
+pinned development interpreter without installing the Rust project.
 The scanner configuration derives only the reviewed advisory IDs and reasons
 from deny.toml; OSV applies each ID to its aliases. No separate exception list
 or package-wide override is maintained. The release marker subset relies on the release workflow's full

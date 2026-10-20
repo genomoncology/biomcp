@@ -57,7 +57,7 @@ advisories_required() {
 run_osv_advisories() {
   local advisory_tool_dir
   advisory_tool_dir="$(tools/bootstrap-lint-tools --advisories)" || return 1
-  python3 tools/check-dependency-advisories "$advisory_tool_dir/osv-scanner"
+  uv run --no-sync python tools/check-dependency-advisories "$advisory_tool_dir/osv-scanner"
 }
 
 run_tracked_text_checks() {

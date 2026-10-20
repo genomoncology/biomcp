@@ -5,6 +5,8 @@ import importlib.util
 import os
 import json
 import shutil
+import shlex
+import sys
 import subprocess
 import tomllib
 from pathlib import Path
@@ -53,6 +55,14 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
         fixture_root / "tools/osv-scanner",
         '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "${OSV_LOG:-/dev/null}"\nexit "${OSV_EXIT:-0}"\n',
     )
+    _write_executable(
+        fixture_root / "tools/uv",
+        '#!/usr/bin/env bash\n'
+        'printf "%s\\n" "$*" >> "${UV_LOG:-/dev/null}"\n'
+        '[ "$1 $2 $3" = "run --no-sync python" ] || exit 64\n'
+        'shift 3\n'
+        f'exec {shlex.quote(sys.executable)} "$@"\n',
+    )
     lock = '[[package]]\nname = "fixture"\nversion = "0.1.0"\n'
     (fixture_root / "Cargo.lock").write_text(lock)
     (fixture_root / "uv.lock").write_text(lock)
@@ -76,7 +86,8 @@ def _write_executable(path: Path, contents: str) -> None:
 def _run_lint(
     repo_root: Path, *, env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
-    full_env = None if env is None else {"PATH": "", **env}
+    full_env = os.environ.copy() if env is None else {"PATH": "", **env}
+    full_env["PATH"] = str(repo_root / "tools") + os.pathsep + full_env.get("PATH", "")
     return subprocess.run(
         ["bash", "bin/lint"],
         cwd=repo_root,
@@ -364,6 +375,7 @@ def _advisory_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path]:
         "CARGO_DENY_LOG": str(log_file),
         "BIOMCP_ADVISORY_SCOPE": "landing",
         "OSV_LOG": str(tmp_path / "osv.log"),
+        "UV_LOG": str(tmp_path / "uv.log"),
         "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
     }
     return repo_root, env, log_file
