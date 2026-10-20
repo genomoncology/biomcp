@@ -1,7 +1,7 @@
 """Keep release checks connected to earlier execution or a platform boundary.
 
-Publication and installed-platform checks cannot run in nightly Linux jobs.
-Their existing executable release contracts and full rehearsal remain required.
+Nightly Linux runs the local installed-wheel smoke. Other native platforms and
+publication boundaries retain their executable contracts and full rehearsal.
 Adding a release command requires choosing its earlier command or explaining
 that boundary here; merely retaining a familiar job name does not admit it.
 """
@@ -194,10 +194,12 @@ def test_nightly_reuses_the_existing_release_only_commands() -> None:
     assert "make prepare-test" in nightly
     assert "make test-long" in nightly
     assert "make feature-coverage" in nightly
+    for target in ("repo-audit", "full-feature-check", "installed-wheel-smoke"):
+        assert f"make {target}" in nightly
     assert "nightly-checks:" in (ROOT / "Makefile").read_text()
 
 
-@pytest.mark.parametrize("failure", ["", "stress"])
+@pytest.mark.parametrize("failure", ["", "stress", "installed-wheel-smoke"])
 def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, failure: str) -> None:
     scripts = tmp_path / "scripts"
     scripts.mkdir()
@@ -224,10 +226,13 @@ def test_nightly_executes_the_checks_and_stops_at_a_failure(tmp_path: Path, fail
         "cargo build --release --locked",
         "cargo nextest run --release --test rmcp_client_contract rmcp_stdio_recovers_from_tool_panic",
         "proto --check",
+        "make repo-audit", "make full-feature-check", "make installed-wheel-smoke",
         "make feature-coverage",
     ]
     assert result.returncode == (19 if failure else 0), result.stderr
-    assert calls.read_text().splitlines() == (expected[:2] if failure else expected)
+    if failure:
+        expected = expected[:expected.index("make " + failure) + 1]
+    assert calls.read_text().splitlines() == expected
 
 
 @pytest.mark.skipif(not hasattr(os, "sched_getaffinity"), reason="Linux stress affinity")

@@ -98,7 +98,7 @@
 
 ### Internal
 
-- Add a local nightly target for stress, optimized panic recovery, protobuf generation, long tests and feature coverage, and reject release checks without an earlier counterpart or a platform boundary. (2315)
+- Add a local nightly target for stress, optimized panic recovery, protobuf generation, long tests, repository audit, full-feature output, installed wheels and feature coverage, and reject release checks without an earlier counterpart or a platform boundary. (2315)
 
 - Restore ownership of Linux wheel build outputs before the container exits and preserve stage failures during scratch cleanup. (2310)
 
