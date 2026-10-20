@@ -400,10 +400,13 @@ EXAMPLES:
   biomcp get drug Ozempic safety --region eu
   biomcp get drug pembrolizumab targets
   biomcp get drug pembrolizumab approvals
+  biomcp get drug Keytruda approval-history
   biomcp get drug --name \"tepotinib hydrochloride\" label
 
 Use --name when a multi-word drug name would otherwise be confused with section tokens.
 Note: `--region ema` is accepted as an alias for the canonical `eu` region value.
+`approval-history` shows full provider-returned Drugs@FDA submissions, source classes, dates, and document links. It is US-only, opt-in, and excluded from `all`.
+
 If you omit `--region` on `biomcp get drug <name> regulatory`, BioMCP checks U.S. and EU regulatory data.
 
 See also: biomcp list drug")]

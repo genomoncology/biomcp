@@ -240,7 +240,10 @@ fn dedupe_trimmed_casefold(values: impl IntoIterator<Item = String>, max: usize)
     out
 }
 
-pub(super) fn map_drugsfda_approvals(resp: OpenFdaResponse<DrugsFdaResult>) -> Vec<DrugApproval> {
+pub(super) fn map_drugsfda_approvals(
+    resp: OpenFdaResponse<DrugsFdaResult>,
+    full_history: bool,
+) -> Vec<DrugApproval> {
     let mut out: Vec<DrugApproval> = Vec::new();
     let mut seen_apps: HashSet<String> = HashSet::new();
 
@@ -331,7 +334,8 @@ pub(super) fn map_drugsfda_approvals(resp: OpenFdaResponse<DrugsFdaResult>) -> V
                 let status_date =
                     normalize_date_yyyymmdd(submission.submission_status_date.as_deref());
 
-                if submission_type.is_none()
+                if !full_history
+                    && submission_type.is_none()
                     && submission_number.is_none()
                     && status.is_none()
                     && status_date.is_none()
@@ -344,12 +348,25 @@ pub(super) fn map_drugsfda_approvals(resp: OpenFdaResponse<DrugsFdaResult>) -> V
                     submission_number,
                     status,
                     status_date,
+                    submission_class_code: full_history
+                        .then_some(submission.submission_class_code)
+                        .flatten(),
+                    submission_class_code_description: full_history
+                        .then_some(submission.submission_class_code_description)
+                        .flatten(),
+                    application_docs: if full_history {
+                        submission.application_docs
+                    } else {
+                        Vec::new()
+                    },
                 })
             })
             .collect();
 
         submissions.sort_by(|a, b| b.status_date.cmp(&a.status_date));
-        submissions.truncate(8);
+        if !full_history {
+            submissions.truncate(8);
+        }
 
         out.push(DrugApproval {
             application_number,

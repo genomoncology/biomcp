@@ -27,11 +27,12 @@ use super::metadata::{
 use super::search::search_page;
 use super::targets::{TargetSources, enrich_indications, enrich_targets, fetch_target_sources};
 use super::{
-    DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CELL_LINES, DRUG_SECTION_CIVIC,
-    DRUG_SECTION_INDICATIONS, DRUG_SECTION_INTERACTIONS, DRUG_SECTION_LABEL, DRUG_SECTION_NAMES,
-    DRUG_SECTION_REGULATORY, DRUG_SECTION_SAFETY, DRUG_SECTION_SHORTAGE, DRUG_SECTION_TARGETS,
-    Drug, DrugApproval, DrugRegion, DrugSearchFilters, OPTIONAL_SAFETY_TIMEOUT, build_ema_identity,
-    build_who_identity, direct_drug_lookup,
+    DRUG_SECTION_ALL, DRUG_SECTION_APPROVAL_HISTORY, DRUG_SECTION_APPROVALS,
+    DRUG_SECTION_CELL_LINES, DRUG_SECTION_CIVIC, DRUG_SECTION_INDICATIONS,
+    DRUG_SECTION_INTERACTIONS, DRUG_SECTION_LABEL, DRUG_SECTION_NAMES, DRUG_SECTION_REGULATORY,
+    DRUG_SECTION_SAFETY, DRUG_SECTION_SHORTAGE, DRUG_SECTION_TARGETS, Drug, DrugApproval,
+    DrugRegion, DrugSearchFilters, OPTIONAL_SAFETY_TIMEOUT, build_ema_identity, build_who_identity,
+    direct_drug_lookup,
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -45,6 +46,7 @@ struct DrugSections {
     include_interactions: bool,
     include_civic: bool,
     include_approvals: bool,
+    include_approval_history: bool,
     include_cell_lines: bool,
     requested_all: bool,
     requested_safety: bool,
@@ -86,6 +88,7 @@ fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSectio
             DRUG_SECTION_INDICATIONS => out.include_indications = true,
             DRUG_SECTION_INTERACTIONS => out.include_interactions = true,
             DRUG_SECTION_CIVIC => out.include_civic = true,
+            DRUG_SECTION_APPROVAL_HISTORY => out.include_approval_history = true,
             DRUG_SECTION_APPROVALS => out.include_approvals = true,
             DRUG_SECTION_CELL_LINES => out.include_cell_lines = true,
             DRUG_SECTION_ALL => {
@@ -199,7 +202,16 @@ async fn fetch_civic_therapy_context(name: &str) -> CivicFetch {
         },
     }
 }
-fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, BioMcpError>) {
+fn apply_approvals_result(
+    drug: &mut Drug,
+    result: Result<Vec<DrugApproval>, BioMcpError>,
+    full_history: bool,
+) {
+    let key = if full_history {
+        "approval-history"
+    } else {
+        "approvals"
+    };
     match result {
         Ok(rows) => {
             let outcome = if rows.is_empty() {
@@ -211,12 +223,12 @@ fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, Bio
                 SectionOutcome::data("OpenFDA Drugs@FDA")
             };
             drug.approvals = Some(rows);
-            drug.section_outcomes.complete("approvals", outcome);
+            drug.section_outcomes.complete(key, outcome);
         }
         Err(_) => {
             drug.approvals = Some(Vec::new());
             drug.section_outcomes.complete(
-                "approvals",
+                key,
                 SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
             );
         }
@@ -227,18 +239,25 @@ async fn add_approvals_section(
     drug: &mut Drug,
     label_response: Option<&serde_json::Value>,
     identity_brands: &[String],
+    full_history: bool,
 ) {
+    let key = if full_history {
+        "approval-history"
+    } else {
+        "approvals"
+    };
     let name = drug.name.trim();
     if name.is_empty() {
         drug.approvals = Some(Vec::new());
         drug.section_outcomes.complete(
-            "approvals",
+            key,
             SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
         );
         return;
     }
 
-    let approvals_fut = super::approvals::fetch(drug, label_response, identity_brands);
+    let approvals_fut =
+        super::approvals::fetch(drug, label_response, identity_brands, full_history);
 
     let result = match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
         Ok(result) => result,
@@ -248,7 +267,7 @@ async fn add_approvals_section(
             suggestion: "Retry the request.".to_string(),
         }),
     };
-    apply_approvals_result(drug, result);
+    apply_approvals_result(drug, result, full_history);
 }
 
 pub(super) struct ResolvedDrugBase {
@@ -1369,9 +1388,13 @@ async fn populate_us_regional_sections(
     }
 
     if section_flags.include_regulatory || section_flags.include_approvals {
-        add_approvals_section(drug, label_response, identity_brands).await;
+        add_approvals_section(drug, label_response, identity_brands, false).await;
     } else {
         drug.approvals = None;
+    }
+
+    if section_flags.include_approval_history {
+        add_approvals_section(drug, label_response, identity_brands, true).await;
     }
 
     drug.fda_orphan_designations = if section_flags.include_regulatory {
@@ -1518,6 +1541,11 @@ fn validate_region_usage(
         return Ok(());
     }
 
+    if section_flags.include_approval_history {
+        return Err(BioMcpError::InvalidArgument(
+            "--region is not supported with approval-history. Use regulatory for the regional regulatory view.".into(),
+        ));
+    }
     if section_flags.include_approvals {
         return Err(BioMcpError::InvalidArgument(
             "--region is not supported with approvals. Use regulatory for the regional regulatory view.".into(),
@@ -1584,6 +1612,7 @@ async fn get_with_region_owned(
         || (region.includes_us()
             && (section_flags.include_safety
                 || section_flags.include_approvals
+                || section_flags.include_approval_history
                 || section_flags.include_regulatory));
 
     let mut resolved = resolve_drug_identity(&name).await?;

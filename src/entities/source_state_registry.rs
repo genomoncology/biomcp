@@ -294,6 +294,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
     ),
     state(
         "drug",
+        "approval-history",
+        "Drugs@FDA Approval History",
+        &["OpenFDA Drugs@FDA"],
+        Aggregation::Additive,
+    ),
+    state(
+        "drug",
         "approvals",
         "Drugs@FDA Approvals",
         &["OpenFDA Drugs@FDA"],
@@ -688,6 +695,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         Some("interactions"),
     ),
     selector("drug", "civic", SelectorClass::Canonical, Some("civic")),
+    selector(
+        "drug",
+        "approval-history",
+        SelectorClass::Canonical,
+        Some("approval-history"),
+    ),
     selector(
         "drug",
         "approvals",

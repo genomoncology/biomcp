@@ -2,8 +2,8 @@ use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
@@ -766,6 +766,24 @@ pub struct DrugsFdaSubmission {
     pub submission_status: Option<String>,
     #[serde(default)]
     pub submission_status_date: Option<String>,
+    #[serde(default)]
+    pub submission_class_code: Option<String>,
+    #[serde(default)]
+    pub submission_class_code_description: Option<String>,
+    #[serde(default)]
+    pub application_docs: Vec<DrugsFdaDocument>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DrugsFdaDocument {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
+    #[serde(default, rename = "type", skip_serializing_if = "Option::is_none")]
+    pub document_type: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

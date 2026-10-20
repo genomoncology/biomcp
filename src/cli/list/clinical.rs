@@ -165,6 +165,7 @@ pub(super) fn list_drug() -> String {
 - `get drug <name> indications` - enrich with OpenTargets indications
 - `get drug <name> interactions` - the first 25 local DDInter-backed rows with totals, freshness, and helper continuation guidance; empty states stay scoped to the current bundle
 - `get drug <name> civic` - CIViC therapy evidence/assertion summary
+- `get drug <name> approval-history` - full provider-returned Drugs@FDA submission history with source classes and document links; opt-in and excluded from `all`
 - `get drug <name> approvals` - Drugs@FDA approval/application details (US-only legacy section)
 - `get drug <name> cell_lines` - PharmacoDB experiment counts per dataset for that compound (asked for by name, never under `all`)
 - `get drug <name> all [--region <us|eu|ema|who|all>]` - include all sections

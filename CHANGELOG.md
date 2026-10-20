@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.5
+
+### New features
+
+- Add the opt-in drug `approval-history` section with full provider-returned Drugs@FDA submissions, source classes, dates, and document links. Keep compact approvals and regulatory views unchanged. (2272)
+
+### Fixes
+
+### Internal
+
 ## 0.9.4 — 2026-10-19
 
 ### New features

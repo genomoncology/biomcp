@@ -37,6 +37,10 @@ def replay(tmp_path: Path):
                     self.answer({}, 503)
                     return
                 rows = []
+                if name == "pembrolizumab":
+                    fixture = Path(__file__).resolve().parents[1] / "testdata/sources/openfda/drugsfda_keytruda_20261020.json"
+                    self.answer(json.loads(fixture.read_text()))
+                    return
                 if name == "daratumumab" and "products.active_ingredients.name" in query:
                     rows = [{"application_number": app, "products": [{"active_ingredients": [{"name": ingredient}]}]}
                             for app, ingredient in [("BLA761036", name), ("BLA761145", name),
@@ -80,6 +84,8 @@ def replay(tmp_path: Path):
                 self.answer({"results": [{"set_id": "label-fixture", "effective_time": "20180429",
                     "openfda": {"generic_name": [name if name == "belantamab mafodotin" else ingredient], "substance_name": substances,
                                 "brand_name": ["RELATED"] if state["related_label"] else state["brands"]}, "warnings": ["Recorded label warning."]}]})
+            elif "shortages" in path.path:
+                self.answer({"meta": {"results": {"skip": 0, "limit": 5, "total": 0}}, "results": []})
             elif "event" in path.path:
                 self.answer({"results": []})
             elif "mechanism" in path.path:
@@ -207,10 +213,10 @@ def test_empty_approvals_explain_unverified_identity_without_ruling_out_approval
     state, run = replay
     state.update(name="belantamab mafodotin", brands=brands, label_extra=unverified,
                  approvals_unavailable=unavailable)
-    for section in ["approvals", "regulatory"]:
+    for section in ["approvals", "approval-history", "regulatory"]:
         data, _ = run(section)
         assert data["approvals"] == []
-        outcome = data["section_outcomes"]["approvals"]
+        outcome = data["section_outcomes"]["approval-history" if section == "approval-history" else "approvals"]
         markdown = run(section, markdown=True).stdout
         if unavailable:
             assert outcome["outcome"] == "unavailable"
@@ -225,3 +231,34 @@ def test_empty_approvals_explain_unverified_identity_without_ruling_out_approval
             assert "FDA approvals are not ruled out" in message
             assert message in markdown
         assert "No approvals found" not in markdown
+
+
+def test_approval_history_preserves_full_provider_submissions_and_documents(replay):
+    state, run = replay
+    state.update(name="pembrolizumab", brands=["KEYTRUDA"])
+    compact, _ = run("approvals")
+    assert len(compact["approvals"][0]["submissions"]) == 8
+    assert all("submission_class_code" not in row for row in compact["approvals"][0]["submissions"])
+    history, _ = run("approval-history")
+    app = history["approvals"][0]
+    assert app["application_number"] == "BLA125514"
+    fixture = Path(__file__).resolve().parents[1] / "testdata/sources/openfda/drugsfda_keytruda_20261020.json"
+    expected = json.loads(fixture.read_text())["results"][0]["submissions"]
+    assert len(app["submissions"]) == len(expected) == 127
+    by_number = {(row["submission_type"], row["submission_number"]): row for row in app["submissions"]}
+    for source in expected:
+        row = by_number[(source["submission_type"], source["submission_number"])]
+        assert row.get("submission_class_code") == source.get("submission_class_code")
+        assert row.get("submission_class_code_description") == source.get("submission_class_code_description")
+        date = source.get("submission_status_date")
+        assert row.get("status_date") == (f"{date[:4]}-{date[4:6]}-{date[6:]}" if date else None)
+        assert row.get("application_docs", []) == source.get("application_docs", [])
+    assert history["section_outcomes"]["approval-history"]["outcome"] == "data"
+    markdown = run("approval-history", markdown=True).stdout
+    assert "EFFICACY" in markdown
+    assert "125514s128lbl.pdf" in markdown
+    assert "125514Orig1s128ltr.pdf" in markdown
+    for section in ["regulatory", "all"]:
+        data, _ = run(section)
+        assert data["section_outcomes"]["approval-history"]["outcome"] == "not_requested"
+        assert len(data["approvals"][0]["submissions"]) == 8

@@ -3,7 +3,8 @@
 use std::fmt::Write as _;
 
 use super::drug_regulatory::{
-    render_regulatory_block, render_safety_block, render_shortage_block, render_us_approvals_block,
+    render_approval_history_block, render_regulatory_block, render_safety_block,
+    render_shortage_block, render_us_approvals_block,
 };
 use super::*;
 use crate::entities::section_outcome::SectionOutcomeState;
@@ -127,7 +128,7 @@ pub fn drug_markdown_with_region(
         regulatory_block => if show_regulatory_section { render_regulatory_block(drug, region) } else { String::new() },
         safety_block => if show_safety_section { render_safety_block(drug, region, safety_status, safety_state.payload_allowed, show_safety_boxed_warning, raw_label && show_label_section) } else { String::new() },
         shortage_block => if show_shortage_section { render_shortage_block(drug, region) } else { String::new() },
-        approvals_block => if show_approvals_section {
+        approvals_block => format!("{}{}", if show_approvals_section {
             match drug.section_outcomes.get("approvals").map(|value| value.outcome()) {
                 Some(SectionOutcomeState::Unavailable | SectionOutcomeState::Inapplicable) => {
                     format!("{approvals_heading}\n")
@@ -139,7 +140,7 @@ pub fn drug_markdown_with_region(
             }
         } else {
             String::new()
-        },
+        }, if has_requested("approval-history") { render_approval_history_block(drug) } else { String::new() }),
         show_cell_lines_section => show_cell_lines_section,
         cell_lines => &drug.cell_lines,
         cell_lines_counts_line => drug.cell_lines.as_ref().map(|section| {

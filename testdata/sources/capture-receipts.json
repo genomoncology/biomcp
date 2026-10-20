@@ -2897,6 +2897,18 @@
       "ineligible_reason": "Synthetic provider-contract response; total is aligned with the receipted pembrolizumab reaction-count fixture so aggregate percentage examples remain arithmetically coherent. It is not a provider capture."
     },
     {
+      "path": "openfda/drugsfda_keytruda_20261020.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "OpenFDA Drugs@FDA",
+        "request": "https://api.fda.gov/drug/drugsfda.json?search=application_number:%22BLA125514%22&limit=1",
+        "captured_at": "2026-10-20T14:08:02.164607Z",
+        "sha256": "ce7a65b867f8a24dc7cb145bd25d185001f93eabebad183e1cb422bd439a5212",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from one keyless public provider GET response, HTTP 200, with no retries."
+      }
+    },
+    {
       "path": "openfda/label_erlotinib_hydrochloride_20261015.json",
       "classification": "real_and_receipted",
       "receipt": {

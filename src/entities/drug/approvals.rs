@@ -12,6 +12,7 @@ pub(super) async fn fetch(
     drug: &Drug,
     label_response: Option<&serde_json::Value>,
     identity_brands: &[String],
+    full_history: bool,
 ) -> Result<Vec<DrugApproval>, BioMcpError> {
     let names = std::iter::once(drug.name.as_str())
         .chain(drug.brand_names.iter().map(String::as_str))
@@ -39,7 +40,7 @@ pub(super) async fn fetch(
     response
         .results
         .retain_mut(|row| filter_row(row, drug, &linked_labels, identity_brands));
-    Ok(map_drugsfda_approvals(response))
+    Ok(map_drugsfda_approvals(response, full_history))
 }
 
 struct LabelIdentity {

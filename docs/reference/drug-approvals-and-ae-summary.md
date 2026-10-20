@@ -77,3 +77,9 @@ when the query resolves to a vaccine and the active filters are VAERS-compatible
 `--source vaers` is aggregate-only and surfaces matched vaccine identity, CDC
 WONDER code, CVX code(s) when available, serious vs non-serious counts, age
 distribution, and top reactions.
+
+## Full FDA submission history
+
+Run `biomcp get drug Keytruda approval-history` to see every submission returned by Drugs@FDA for the matched application, including the provider's submission class, date, and application document links. JSON places these applications under the existing `approvals` field. Class codes and descriptions are provider data. They do not establish an indication or a clinical recommendation.
+
+This U.S. section is opt-in and does not accept `--region`. The `approvals` and `regulatory` sections keep their compact submission lists. `all` excludes the full history.
