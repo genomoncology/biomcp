@@ -159,6 +159,8 @@ def test_local_wheel_gate_runs_release_steps_and_propagates_failure(
         '''import os, pathlib, subprocess, sys
 args = sys.argv[1:]
 assert '--platform' in args and '--label' in args
+assert 'pm.repo=biomcp' in args
+assert ('pm.ticket=release' if VERSION == '0.9.5.dev1' else 'pm.ticket=2310') in args
 image = next(arg for arg in args if '@sha256:' in arg)
 script = args[-1]
 stage = 'build' if 'maturin build' in script else 'smoke'
@@ -203,9 +205,13 @@ if 'smoke' in FAILED:
     )
     for executable in tools.iterdir():
         executable.chmod(0o755)
+    env = os.environ | {"PATH": str(tools) + os.pathsep + os.environ["PATH"]}
+    env.pop('PM_JOB', None)
+    if version != '0.9.5.dev1':
+        env['PM_JOB'] = '2310 ' + 'a' * 40
     result = subprocess.run(
         ["bash", "scripts/check-linux-wheel.sh"], cwd=tmp_path,
-        env=os.environ | {"PATH": str(tools) + os.pathsep + os.environ["PATH"]},
+        env=env,
         capture_output=True, text=True, check=False,
     )
     remaining = list((tmp_path / '.cache' / 'installed-wheel').glob('run-*'))

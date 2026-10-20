@@ -5,6 +5,7 @@ set -euo pipefail
 uv run --no-sync python - <<'PY'
 import os
 import platform
+import re
 import shlex
 import shutil
 import subprocess
@@ -16,6 +17,10 @@ from pathlib import Path
 import yaml
 
 root = Path.cwd()
+job = os.environ.get('PM_JOB')
+if job is not None and not re.fullmatch(r'[0-9]{4,} [0-9a-fA-F]{7,40}', job):
+    raise ValueError('PM_JOB must contain the owning ticket and revision')
+ticket = job.split()[0] if job is not None else 'release'
 workflow = yaml.safe_load((root / '.github/workflows/release.yml').read_text())
 arch = {'arm64': 'aarch64', 'aarch64': 'aarch64', 'x86_64': 'x86_64', 'AMD64': 'x86_64'}[platform.machine()]
 target = f'{arch}-unknown-linux-gnu'
@@ -43,7 +48,7 @@ try:
     command = command.replace('target/wheels', container_wheels)
     # Build each wheel with an empty target owned and removed by this run.
     container_target = '/io/' + (scratch / 'target').relative_to(root).as_posix()
-    command = command.replace('docker run --rm', f'docker run --rm --platform {linux_platform} --label pm.repo=biomcp --label pm.ticket=2288 -e CARGO_TARGET_DIR={container_target}', 1)
+    command = command.replace('docker run --rm', f'docker run --rm --platform {linux_platform} --label pm.repo=biomcp --label pm.ticket={ticket} -e CARGO_TARGET_DIR={container_target}', 1)
     # Restore only this run's outputs before the root container exits. Physical
     # traversal changes symlink ownership without following links out of scratch.
     restore = f'''status=$?
@@ -64,7 +69,7 @@ exit "$status"
     env = os.environ | {'RUNNER_TEMP': str(scratch), 'TAG': f'v{version}', 'BIOMCP_BUILD_VERSION': version}
     subprocess.run(['bash', '-euo', 'pipefail', '-c', command], env=env, check=True)
     command = smoke_step['run'].replace('${{ matrix.container }}', image)
-    command = command.replace('docker run --rm', f'docker run --rm --platform {linux_platform} --label pm.repo=biomcp --label pm.ticket=2288', 1)
+    command = command.replace('docker run --rm', f'docker run --rm --platform {linux_platform} --label pm.repo=biomcp --label pm.ticket={ticket}', 1)
     env['RUNNER_TEMP'] = str(scratch)
     wheel_dir.rename(scratch / 'wheel')
     subprocess.run(['bash', '-euo', 'pipefail', '-c', command], env=env, check=True)
