@@ -8,7 +8,7 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
-Depends on: 2234, 2294
+Depends on: 2234, 2294, 2296
 
 Reviews: revision 7b56fb8, accept
 
@@ -49,3 +49,7 @@ The PM accepted rejection of the sole BoxFuture prototype and forbids a second p
 ## Progress
 
 - 2026-10-20 started
+
+Keep: experiments/2113-biomcp-2284-rebuild-attribution — retain the rejected prototype comparison, raw arms and source identities.
+
+Keep: experiments/2288-biomcp-2284-unit-attribution — retain native unit timings, exact inputs and completed job evidence.
