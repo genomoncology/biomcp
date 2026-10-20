@@ -9,6 +9,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from cache_fixture import set_cache_root
+
 ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / "scripts/installed-wheel-smoke.sh"
 
@@ -76,12 +78,12 @@ def test_installed_smoke_is_cold_keyless_and_propagates_product_failures(
     tmp_path: Path, fault: str, details: tuple[str, ...],
 ) -> None:
     executable = fake_cli(tmp_path, fault)
-    env = os.environ | {
+    env = set_cache_root(os.environ | {
         "HOME": str(tmp_path), "NCBI_API_KEY": "fixture-only",
-        "S2_API_KEY": "fixture-only", "BIOMCP_CACHE_DIR": str(tmp_path),
+        "S2_API_KEY": "fixture-only",
         "XDG_CACHE_HOME": str(tmp_path),
         "BIOMCP_WHEEL_SMOKE_ISOLATED": "" if fault else "1",
-    }
+    }, tmp_path)
     result = subprocess.run(
         ["bash", str(HELPER), str(executable), "0.9.4"],
         env=env, capture_output=True, text=True, check=False,
