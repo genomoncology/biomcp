@@ -1,0 +1,11 @@
+# Canonical replay provider policies
+
+The shared replay identity resolver derives aliases from the existing client source IDs and verifies them against the source registry. Direct canonical identities retain precedence when providers share an endpoint. This removes the handwritten alias dictionary without changing policy terms, disabled sources, request identity or response qualification scope.
+
+The original inventory and preimage controls remain in private experiment2102/provider-policy-identities/2295, owned by biomcp/2295 and marked Keep. Job1792514428439-67254 reproduced107total/92ready/10disabled/5blocked. Job1792514464140-78009 reproduced four new focused failures. The five actual gaps were HPA once, HPO twice and Monarch twice. Unknown and ambiguous identities remain refused before any checker request.
+
+Job1792514513314-94474 passed74 checker tests before a formatting check stopped its mechanical tail. The subsequent direct-canonical identity correction preserves PubMed when it shares an endpoint with NCBI EFetch; the intermediate failure remains retained. Job1792514680843-84005 passed focused checks, Ruff, tracked-text, quality ratchet, the full recorded inventory and current-branch gate inventory. Full recorded inventory is107total/97ready/10disabled/0blocked/0checked, unchanged live scope: no request was made. Current-branch gate inventory is49total/41ready/8disabled/0blocked.
+
+Final sourceaf473ccbf5497e62042dbf57f9d477da492b67cc was checked by job1792514736376-20265: six focused controls, Ruff, formatting and whitespace pass. Its unknown-provider control runs the actual extracted Makefile recipe and requires nonzero refusal. The landing gate now invokes the existing offline checker after lint, with commercial-restricted, Semantic Scholar and KEGG disabled and no live flag. Future unknown recordings therefore fail that landing. This adds no new source permission or capture server policy boundary.
+
+All original failure/setup logs, corrected logs and job state/result files remain in the same private folder. The completed232 recorded-command checks are reused rather than repeated. This proof does not claim a new live observation or final release qualification.
