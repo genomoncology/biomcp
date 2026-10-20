@@ -313,10 +313,13 @@ def _run_case(
     )
     # The CLI reports its managed download path. Only this run's private
     # cache prefix varies; keep the basename and all output around it pinned.
-    cache = str(run.run_dir / "cache")
-    run.process.stdout = run.process.stdout.replace(
-        json.dumps(cache)[1:-1], "<CACHE_ROOT>"
-    ).replace(cache, "<CACHE_ROOT>")
+    cache = run.run_dir / "cache"
+    # macOS may expose the same temporary root through /var and /private/var.
+    roots = {str(cache), str(cache.resolve())}
+    for root in sorted(roots, key=len, reverse=True):
+        run.process.stdout = run.process.stdout.replace(
+            json.dumps(root)[1:-1], "<CACHE_ROOT>"
+        ).replace(root, "<CACHE_ROOT>")
     return run.process
 
 
