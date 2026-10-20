@@ -115,6 +115,7 @@ def test_nextest_reporter_forwards_termination_and_reaps_runner() -> None:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        start_new_session=True,
     ) as process:
         try:
             assert process.stdout is not None
@@ -128,11 +129,9 @@ def test_nextest_reporter_forwards_termination_and_reaps_runner() -> None:
                 os.kill(child_pid, 0)
             child_pid = None
         finally:
-            if child_pid is not None:
-                try:
-                    os.kill(child_pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-            if process.poll() is None:
-                process.kill()
+            # Include a runner whose PID readiness was never forwarded.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             process.wait()
