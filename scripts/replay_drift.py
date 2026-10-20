@@ -11,6 +11,7 @@ from xml.parsers import expat
 
 OPAQUE_SIGNATURE_BYTES = 16
 
+
 def provider_policy_ids(
     sources_dir: Path, overrides: dict[str, str], source_ids: set[str]
 ) -> dict[str, str]:
@@ -21,7 +22,7 @@ def provider_policy_ids(
     """
     candidates: dict[str, set[str]] = {}
     client = re.compile(
-        r'(?:shared_client(?:_with_deadline)?|provider_url_client|'
+        r"(?:shared_client(?:_with_deadline)?|provider_url_client|"
         r'semantic_scholar_provider_client)\(\s*"([^"\n]+)"'
     )
     for path in sorted(sources_dir.rglob("*.rs")):
@@ -132,7 +133,9 @@ def json_shape(value: object) -> dict[str, set[str]]:
 def reply_qualification(content_type: str) -> str:
     media_type = content_type.split(";", 1)[0].strip().lower()
     if media_type in {
-        "application/json", "application/xml", "text/xml"
+        "application/json",
+        "application/xml",
+        "text/xml",
     } or media_type.endswith(("+json", "+xml")):
         return "structure"
     return "status/type/signature only"
@@ -151,7 +154,7 @@ def file_signature(body: bytes, media_type: str) -> str:
         raise ValueError("response does not match its file signature")
     if media_type == "text/html":
         prefix = body.removeprefix(b"\xef\xbb\xbf").lstrip()
-        if re.match(br"(?:<!doctype\s+html(?:\s|>)|<html(?:\s|>))", prefix, re.I):
+        if re.match(rb"(?:<!doctype\s+html(?:\s|>)|<html(?:\s|>))", prefix, re.I):
             return "html"
         raise ValueError("response does not match its file signature")
     if media_type in {"application/octet-stream", "binary/octet-stream"}:
@@ -201,7 +204,10 @@ def reply_shape(body: bytes, content_type: str) -> dict[str, set[str]]:
             walk(root, "$")
             return shape
         except (
-            ElementTree.ParseError, expat.ExpatError, LookupError, RecursionError
+            ElementTree.ParseError,
+            expat.ExpatError,
+            LookupError,
+            RecursionError,
         ) as error:
             raise ValueError("invalid XML response structure") from error
     return {"signature": {file_signature(body, media_type)}}

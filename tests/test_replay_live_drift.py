@@ -481,9 +481,7 @@ def test_doctype_allows_declarations_but_refuses_entity_expansion(
         json.dumps({"schema_version": 1, "routes": routes})
     )
     xml = doctype.replace(b"UPSTREAM", origin.encode()) + b"<reply><row/></reply>"
-    (replay / "reply.json").write_bytes(
-        xml if historical else b"<reply><row/></reply>"
-    )
+    (replay / "reply.json").write_bytes(xml if historical else b"<reply><row/></reply>")
     server.content_type = "application/xml"
     server.body = b"<reply><row/></reply>" if historical else xml
     process, _, summary = run_check(tmp_path, replay, "--live")
@@ -497,7 +495,10 @@ def test_doctype_allows_declarations_but_refuses_entity_expansion(
     ("source", "upstream"),
     [
         ("mygene", "https://mygene.info/v3/object?q=1"),
-        ("pmc-html", "https://pmc.ncbi.nlm.nih.gov/articles/instance/3467229/bin/supp.doc"),
+        (
+            "pmc-html",
+            "https://pmc.ncbi.nlm.nih.gov/articles/instance/3467229/bin/supp.doc",
+        ),
     ],
 )
 def test_real_formats_keep_root_object_provider_from_capture_provenance(
@@ -508,12 +509,11 @@ def test_real_formats_keep_root_object_provider_from_capture_provenance(
     entry["recording_provenance"] = {"provider": source}
     entry["upstream"] = upstream
     from urllib.parse import urlsplit
+
     parsed = urlsplit(upstream)
     raw_path = parsed.path + ("?" + parsed.query if parsed.query else "")
     (replay / "manifest.json").write_text(
-        json.dumps({
-            "schema_version": 1, "routes": {f"GET {raw_path}": entry}
-        })
+        json.dumps({"schema_version": 1, "routes": {f"GET {raw_path}": entry}})
     )
     process, results, summary = run_check(tmp_path, replay)
     assert process.returncode == 0
@@ -563,7 +563,9 @@ def test_real_formats_reject_truncated_opaque_signature(tmp_path, provider, hist
         ("monarch", "monarch-initiative", "https://api-v3.monarchinitiative.org"),
     ],
 )
-def test_inventory_uses_runtime_provider_policy_identity(tmp_path, name, source_id, origin):
+def test_inventory_uses_runtime_provider_policy_identity(
+    tmp_path, name, source_id, origin
+):
     replay, _ = recording(tmp_path, origin, provider=name)
     process, results, summary = run_check(tmp_path, replay)
     assert process.returncode == 0, results
@@ -595,8 +597,14 @@ def test_policy_identity_follows_runtime_declaration_and_refuses_ambiguity(tmp_p
     resolve = helper["provider_policy_id"]
     identities = derive(tmp_path, overrides, {"kegg", "mygene-info"})
     assert resolve("future", identities) == "kegg"
-    module.write_text(module.read_text() + 'fn other() { shared_client("mygene-info"); }')
-    with pytest.raises(ValueError, match="unknown or ambiguous provider policy identity"):
+    module.write_text(
+        module.read_text() + 'fn other() { shared_client("mygene-info"); }'
+    )
+    with pytest.raises(
+        ValueError, match="unknown or ambiguous provider policy identity"
+    ):
         resolve("future", derive(tmp_path, overrides, {"kegg", "mygene-info"}))
-    with pytest.raises(ValueError, match="unknown or ambiguous provider policy identity"):
+    with pytest.raises(
+        ValueError, match="unknown or ambiguous provider policy identity"
+    ):
         resolve("future", derive(tmp_path, overrides, set()))

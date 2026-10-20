@@ -259,16 +259,13 @@ def main(argv: list[str] | None = None) -> int:
                             stopped.add(provider)
                         if response.status != entry["status"]:
                             details.append("changed status")
-                        if (
-                            response.headers.get("Content-Type", "")
-                            .split(";", 1)[0]
-                            .strip()
-                            .lower()
-                            != content_type.split(";", 1)[0].strip().lower()
-                            or (
-                                qualification == "status/type/signature only"
-                                and response.headers.get("Content-Type", "") != content_type
-                            )
+                        if response.headers.get("Content-Type", "").split(";", 1)[
+                            0
+                        ].strip().lower() != content_type.split(";", 1)[
+                            0
+                        ].strip().lower() or (
+                            qualification == "status/type/signature only"
+                            and response.headers.get("Content-Type", "") != content_type
                         ):
                             details.append("changed content-type")
                         actual_body = response.read(MAX_REPLY_BYTES + 1)
