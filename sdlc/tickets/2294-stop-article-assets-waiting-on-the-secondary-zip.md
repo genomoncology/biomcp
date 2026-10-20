@@ -16,6 +16,8 @@ Reviews: revision 3d9472e, accept
 
 Reviews: revision 148474f, accept
 
+Reviews: revision 98152f6, accept
+
 ## Outcome
 
 An article assets or asset-bytes request does not call or wait on the optional Europe PMC supplementaryFiles ZIP when the primary PMC archive answer is complete and sufficient. Existing XML, HTML and Figshare discovery can add assets and retain their existing budgets. When the primary fails or lacks the asset, the secondary sources still serve as fallback with their existing budgets and unavailable labels.
