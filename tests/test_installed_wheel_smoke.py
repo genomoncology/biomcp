@@ -45,7 +45,7 @@ elif '-j' in args or '--json' in args:
         print('{"error":"json stdout detail"}')
         print('json stderr detail', file=sys.stderr)
         sys.exit(1)
-    print('{}')
+    print('json shape stdout detail' if FAULT == 'json-shape' else '{}')
 elif args == ['skill', 'list']:
     print('article-follow-up')
 elif args == ['skill', 'article-follow-up']:
@@ -67,6 +67,7 @@ else:
 @pytest.mark.parametrize("fault,details", [
     ("cold-root", ("missing cache ancestor", "cache stderr detail")),
     ("json", ("json stdout detail", "json stderr detail")),
+    ("json-shape", ("json shape stdout detail", "json mode must print an object")),
     ("panic", ("panic stdout detail", "panic stderr detail")),
     ("faers", ("unexpected FAERS response", "expected a successful FAERS not-found response")),
     ("", ()),
@@ -78,7 +79,7 @@ def test_installed_smoke_is_cold_keyless_and_propagates_product_failures(
     env = os.environ | {
         "HOME": str(tmp_path), "NCBI_API_KEY": "fixture-only",
         "S2_API_KEY": "fixture-only", "BIOMCP_CACHE_DIR": str(tmp_path),
-        "XDG_CACHE_HOME": str(tmp_path),
+        "XDG_CACHE_HOME": str(tmp_path), "BIOMCP_WHEEL_SMOKE_ISOLATED": "1",
     }
     result = subprocess.run(
         ["bash", str(HELPER), str(executable), "0.9.4"],

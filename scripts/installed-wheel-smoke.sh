@@ -4,22 +4,20 @@ set -euo pipefail
 # Run the installed artifact without the caller's configuration or credentials.
 BIOMCP="$1"
 expected="$2"
-if [ "${BIOMCP_WHEEL_SMOKE_ISOLATED:-}" != 1 ]; then
-  smoke_root="$(mktemp -d)"
-  trap 'rm -rf "$smoke_root"' EXIT
-  mkdir "$smoke_root/home"
-  smoke_home="$smoke_root/home"
-  if command -v cygpath >/dev/null 2>&1; then
-    smoke_home="$(cygpath -w "$smoke_home")"
-  fi
-  env -i PATH="$PATH" SYSTEMROOT="${SYSTEMROOT:-}" WINDIR="${WINDIR:-}" \
-    HOME="$smoke_home" USERPROFILE="$smoke_home" \
-    LOCALAPPDATA="$smoke_home/AppData/Local" APPDATA="$smoke_home/AppData/Roaming" \
-    BIOMCP_WHEEL_SMOKE_ISOLATED=1 \
-    BIOMCP_DISABLE_SOURCES=commercial-restricted,kegg,semantic-scholar \
-    bash --noprofile --norc "$0" "$BIOMCP" "$expected"
-  exit
+smoke_root="$(mktemp -d)"
+trap 'rm -rf "$smoke_root"' EXIT
+mkdir "$smoke_root/home"
+smoke_home="$smoke_root/home"
+if command -v cygpath >/dev/null 2>&1; then
+  smoke_home="$(cygpath -w "$smoke_home")"
 fi
+env -i PATH="$PATH" SYSTEMROOT="${SYSTEMROOT:-}" WINDIR="${WINDIR:-}" \
+  HOME="$smoke_home" USERPROFILE="$smoke_home" \
+  LOCALAPPDATA="$smoke_home/AppData/Local" APPDATA="$smoke_home/AppData/Roaming" \
+  BIOMCP_DISABLE_SOURCES=commercial-restricted,kegg,semantic-scholar \
+  bash --noprofile --norc -euo pipefail -s -- "$BIOMCP" "$expected" <<'SMOKE'
+BIOMCP="$1"
+expected="$2"
 
 printed="$("$BIOMCP" --version 2>&1)" || {
   printf '%s\n' "$printed" >&2
@@ -79,7 +77,7 @@ require_json() {
   fi
   case "$output" in
     "{"*) ;;
-    *) echo "json mode must print an object from: biomcp $*" >&2; return 1 ;;
+    *) printf '%s\n' "$output" >&2; echo "json mode must print an object from: biomcp $*" >&2; return 1 ;;
   esac
   if printf '%s\n' "$output" | grep -q "skill asset"; then
     printf '%s\n' "$output" >&2
@@ -148,3 +146,4 @@ if [ "$status" -ne 0 ] || ! printf '%s\n' "$output" | grep -q "Bar Chart"; then
   exit 1
 fi
 require_json --json get article 32794606
+SMOKE
