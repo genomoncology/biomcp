@@ -149,7 +149,7 @@ impl CpicClient {
             .query("select", "*")
             .query("limit", limit.to_string())
             .query("offset", offset.to_string())
-            .query("order", "genesymbol.asc,allele.asc"))
+            .query("order", "genesymbol.asc,name.asc,population_group.asc"))
     }
 
     #[cfg(test)]
@@ -173,7 +173,7 @@ impl CpicClient {
             .query("select", "*")
             .query("limit", limit.to_string())
             .query("offset", offset.to_string())
-            .query("order", "guidelinename.asc"))
+            .query("order", "guideline_name.asc"))
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(

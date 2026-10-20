@@ -23,6 +23,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from replay_drift import (  # noqa: E402
     ID_ALIASES,
     product_headers,
+    recording_provider,
+    reply_qualification,
     reply_shape,
     shape_drift,
 )
@@ -197,11 +199,11 @@ def main(argv: list[str] | None = None) -> int:
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     for index, (key, entry) in enumerate(sorted(manifest["routes"].items()), 1):
         # Never print URLs, request bodies, response bodies or raw exceptions.
-        provider = (
-            key.split("/", 1)[1].split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]
-        )
+        provider = recording_provider(key, entry, routes)
         result = {"recording": index, "provider": provider, "file": entry.get("file")}
         state, details, added_paths = "blocked", [], []
+        content_type = entry.get("headers", {}).get("content-type", "")
+        qualification = reply_qualification(content_type)
         source_id = ID_ALIASES.get(provider, provider)
         try:
             if source_id in disabled:
@@ -257,6 +259,10 @@ def main(argv: list[str] | None = None) -> int:
                             .strip()
                             .lower()
                             != content_type.split(";", 1)[0].strip().lower()
+                            or (
+                                qualification == "status/type/signature only"
+                                and response.headers.get("Content-Type", "") != content_type
+                            )
                         ):
                             details.append("changed content-type")
                         actual_body = response.read(MAX_REPLY_BYTES + 1)
@@ -266,8 +272,11 @@ def main(argv: list[str] | None = None) -> int:
                             actual = reply_shape(
                                 actual_body, response.headers.get("Content-Type", "")
                             )
-                            details.extend(shape_drift(expected, actual))
-                            added_paths = sorted(actual.keys() - expected.keys())
+                            if qualification == "structure":
+                                details.extend(shape_drift(expected, actual))
+                                added_paths = sorted(actual.keys() - expected.keys())
+                            elif expected != actual:
+                                details.append("changed file signature")
                         except (ValueError, UnicodeError):
                             details.append(
                                 "live response has unsupported or invalid shape"
@@ -286,6 +295,7 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     **result,
                     "state": state,
+                    "qualification": qualification,
                     "details": details,
                     "added_paths": added_paths,
                 },

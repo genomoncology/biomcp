@@ -1,11 +1,15 @@
-"""Compare observed JSON key/type unions or XML element paths, ignoring values."""
+"""Compare JSON/XML structure or explicitly limited response signatures."""
 
 from __future__ import annotations
 
 import json
-import tomllib
+import re
 from pathlib import Path
+from urllib.parse import parse_qsl, urlsplit
 from xml.etree import ElementTree
+from xml.parsers import expat
+
+OPAQUE_SIGNATURE_BYTES = 16
 
 ID_ALIASES = {
     "ctgov": "clinicaltrials-gov",
@@ -17,11 +21,43 @@ ID_ALIASES = {
     "mydisease": "mydisease-info",
     "gwas": "gwas-catalog",
     "europepmc": "europe-pmc",
+    # pmc_article uses provider_url_client("pmc-oa", policy).
+    "pmc-html": "pmc-oa",
 }
+
+
+def recording_provider(key: str, entry: dict, routes: dict[str, str]) -> str:
+    """Resolve exact origin-path recordings from their declared capture provider."""
+    method, raw_path = key.split(" ", 1)
+    path = urlsplit(raw_path)
+    prefix = path.path.lstrip("/").split("/", 1)[0]
+    if prefix in routes:
+        return prefix
+    provenance = entry.get("recording_provenance", {})
+    provider = provenance.get("provider") if isinstance(provenance, dict) else None
+    if method not in {"GET", "HEAD"} or provider not in routes:
+        return prefix
+    upstream = urlsplit(entry.get("upstream", ""))
+    base = urlsplit(routes[provider])
+    if (
+        (upstream.scheme, upstream.netloc) == (base.scheme, base.netloc)
+        and (
+            upstream.path == base.path
+            or upstream.path.startswith(base.path.rstrip("/") + "/")
+        )
+        and upstream.path == path.path
+        and not path.fragment
+        and sorted(parse_qsl(upstream.query, keep_blank_values=True))
+        == sorted(parse_qsl(path.query, keep_blank_values=True))
+    ):
+        return provider
+    return prefix
 
 
 def product_headers(root: Path) -> dict[str, str]:
     """Shared client's uncached application profile; urllib transport stays distinct."""
+    import tomllib
+
     version = tomllib.loads((root / "Cargo.toml").read_text())["package"]["version"]
     return {
         "user-agent": f"biomcp-cli/{version}",
@@ -66,6 +102,56 @@ def json_shape(value: object) -> dict[str, set[str]]:
     return shape
 
 
+def reply_qualification(content_type: str) -> str:
+    media_type = content_type.split(";", 1)[0].strip().lower()
+    if media_type in {
+        "application/json", "application/xml", "text/xml"
+    } or media_type.endswith(("+json", "+xml")):
+        return "structure"
+    return "status/type/signature only"
+
+
+def file_signature(body: bytes, media_type: str) -> str:
+    signatures = {
+        "image/jpeg": (b"\xff\xd8\xff",),
+        "application/msword": (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",),
+        "application/zip": (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"),
+    }
+    if media_type in signatures:
+        for signature in signatures[media_type]:
+            if body.startswith(signature):
+                return signature.hex()
+        raise ValueError("response does not match its file signature")
+    if media_type == "text/html":
+        prefix = body.removeprefix(b"\xef\xbb\xbf").lstrip()
+        if re.match(br"(?:<!doctype\s+html(?:\s|>)|<html(?:\s|>))", prefix, re.I):
+            return "html"
+        raise ValueError("response does not match its file signature")
+    if media_type in {"application/octet-stream", "binary/octet-stream"}:
+        if len(body) < OPAQUE_SIGNATURE_BYTES:
+            raise ValueError("response is too short for its recorded file signature")
+        # Literal prefix only: this cannot prove completeness or document validity.
+        # Do not infer JSON or another media type from octet-stream bytes.
+        return body[:OPAQUE_SIGNATURE_BYTES].hex()
+    raise ValueError(
+        "unsupported response format; structure comparison supports JSON and XML only"
+    )
+
+
+def reject_xml_entities(body: bytes) -> None:
+    # Expat never loads an external subset. Refuse declarations before a second
+    # parse can expand internal entities, including parameter entities.
+    parser = expat.ParserCreate()
+
+    def refuse(*_args):
+        raise ValueError("XML entities and external resources are unsupported")
+
+    parser.EntityDeclHandler = refuse
+    parser.ExternalEntityRefHandler = refuse
+    parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_NEVER)
+    parser.Parse(body, True)
+
+
 def reply_shape(body: bytes, content_type: str) -> dict[str, set[str]]:
     media_type = content_type.split(";", 1)[0].strip().lower()
     if media_type == "application/json" or media_type.endswith("+json"):
@@ -74,10 +160,8 @@ def reply_shape(body: bytes, content_type: str) -> dict[str, set[str]]:
         except (ValueError, UnicodeError, RecursionError) as error:
             raise ValueError("invalid JSON response structure") from error
     if media_type in {"application/xml", "text/xml"} or media_type.endswith("+xml"):
-        # No external entities or document types belong in a structure check.
-        if b"<!DOCTYPE" in body.upper() or b"<!ENTITY" in body.upper():
-            raise ValueError("XML document types and entities are unsupported")
         try:
+            reject_xml_entities(body)
             root = ElementTree.fromstring(body)
             shape: dict[str, set[str]] = {}
 
@@ -89,11 +173,11 @@ def reply_shape(body: bytes, content_type: str) -> dict[str, set[str]]:
 
             walk(root, "$")
             return shape
-        except (ElementTree.ParseError, LookupError, RecursionError) as error:
+        except (
+            ElementTree.ParseError, expat.ExpatError, LookupError, RecursionError
+        ) as error:
             raise ValueError("invalid XML response structure") from error
-    raise ValueError(
-        "unsupported response format; structure comparison supports JSON and XML only"
-    )
+    return {"signature": {file_signature(body, media_type)}}
 
 
 def shape_drift(
