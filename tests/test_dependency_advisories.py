@@ -47,12 +47,12 @@ def test_scanner_policy_contains_exactly_reviewed_ids_and_reasons(tmp_path: Path
     assert not Path(captured["args"][-1].split("=", 1)[1]).exists()
 
 
-@pytest.mark.parametrize("bad_input", ["missing-cargo", "missing-uv", "malformed-cargo", "empty-uv", "invalid-package", "invalid-policy", "broadened-exception"])
+@pytest.mark.parametrize("bad_input", ["missing-Cargo.lock", "missing-uv.lock", "malformed-Cargo.lock", "empty-uv", "invalid-package", "invalid-policy", "broadened-exception"])
 def test_scanner_does_not_run_with_incomplete_locks_or_invalid_policy(tmp_path: Path, bad_input: str) -> None:
     root, scanner, env = _fixture(tmp_path)
     if bad_input.startswith("missing-"):
-        (root / ("Cargo.lock" if bad_input.endswith("cargo") else "uv.lock")).unlink()
-    elif bad_input == "malformed-cargo":
+        (root / bad_input.removeprefix("missing-")).unlink()
+    elif bad_input == "malformed-Cargo.lock":
         (root / "Cargo.lock").write_text("[broken")
     elif bad_input == "empty-uv":
         (root / "uv.lock").write_text("version = 1\n")
