@@ -37,6 +37,23 @@ def test_cache_path_names_database_without_creating_it(tmp_path):
     assert not (tmp_path / "cache").exists()
 
 
+@pytest.mark.parametrize("command", [("cache", "stats"), ("search", "gene", "BRAF", "--limit", "1")])
+def test_cached_commands_create_cache_ancestors_in_a_fresh_home(tmp_path, gene_provider, command):
+    fresh_home = tmp_path / "home"
+    fresh_home.mkdir()
+    env = retained_cache_env(fresh_home, {"BIOMCP_MYGENE_BASE": gene_provider}, gene_provider)
+    env.pop("BIOMCP_CACHE_DIR")
+    database = Path(invoke(env, "cache", "path")["path"])
+    assert not database.parent.parent.exists()
+    result = invoke(env, *command)
+    assert database.is_file()
+    if command[0] == "cache":
+        assert result["http_entry_count"] == 0
+    else:
+        assert result["results"][0]["symbol"] == "BRAF"
+        assert invoke(env, "cache", "stats")["http_entry_count"] > 0
+
+
 def test_sqlite_coexists_with_legacy_cache_and_preserves_saved_downloads(tmp_path, gene_provider):
     cache = tmp_path / "cache"
     for name in ("http", "captures", "citation-evidence", "downloads"):

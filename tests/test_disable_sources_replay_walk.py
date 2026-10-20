@@ -177,7 +177,7 @@ WALK: tuple[WalkEntry, ...] = (
     WalkEntry("europe-pmc", ("--json", "search", "article", "BRAF", "--source", "europepmc", "--limit", "1"), ("europepmc",)),
     WalkEntry("semantic-scholar", ("--json", "search", "article", "BRAF", "--source", "semanticscholar", "--limit", "1"), ("s2",)),
     WalkEntry("litsense2", ("--json", "search", "article", "BRAF V600E melanoma", "--source", "litsense2", "--limit", "1"), ("litsense2",)),
-    WalkEntry("pubtator3", ("--json", "article", "entities", "22663011"), ("pubtator",)),
+    WalkEntry("pubtator3", ("--json", "article", "entities", "42875213"), ("pubtator",)),
     WalkEntry("orcid", ("--json", "author", "papers", "orcid:0000-0002-1825-0097"), ("orcid",), extra_env=ORCID_ENV),
     # Local dataset syncs.
     WalkEntry("cdc-cvx", ("--json", "cvx", "sync"), ("cvx", "cvx-tradename", "mvx")),
@@ -214,6 +214,63 @@ def test_walk_covers_every_source_id_in_the_registry() -> None:
         f"missing entries={sorted(recorded - walked)} "
         f"unknown entries={sorted(walked - recorded)}"
     )
+
+
+def test_wheel_article_smoke_does_not_request_semantic_scholar(tmp_path: Path) -> None:
+    """The release smoke's base article card also attempts optional enrichment."""
+    from replay_env import isolated_command_env
+
+    requests: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            path = urlsplit(self.path).path
+            requests.append(path)
+            if path == "/publications/export/biocjson":
+                payload = {"PubTator3": [{"pmid": 32794606, "passages": [
+                    {"infons": {"type": "title"}, "text": "Authored wheel smoke control"},
+                    {"infons": {"type": "abstract"}, "text": "Authored abstract control"},
+                ]}]}
+                status = 200
+            elif path == "/search":
+                payload = {"hitCount": 0, "resultList": {"result": []}}
+                status = 200
+            else:
+                payload = {"error": "Authored unavailable source control"}
+                status = 404
+            body = json.dumps(payload).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *_args) -> None:
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    origin = f"http://127.0.0.1:{server.server_port}"
+    env = isolated_command_env(tmp_path, {
+        "BIOMCP_PUBTATOR_BASE": origin, "BIOMCP_EUROPEPMC_BASE": origin,
+        "BIOMCP_PUBMED_BASE": origin, "BIOMCP_S2_BASE": origin,
+    }, origin)
+    env["BIOMCP_DISABLE_SOURCES"] = "commercial-restricted,kegg,semantic-scholar"
+    binary = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
+    try:
+        process = subprocess.run(
+            [str(binary), "--json", "get", "article", "32794606"], env=env,
+            capture_output=True, text=True, timeout=RUN_TIMEOUT_SECONDS, cwd=REPO_ROOT,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+    assert process.returncode == 0, (process.stdout, process.stderr, requests)
+    assert json.loads(process.stdout)["pmid"] == "32794606"
+    assert "/publications/export/biocjson" in requests, requests
+    assert not any(path.startswith("/graph/v1/paper/") for path in requests), requests
 
 
 def test_every_disabled_source_id_stops_its_own_requests() -> None:
