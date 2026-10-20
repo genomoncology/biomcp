@@ -35,6 +35,7 @@ fn parallel_fixtures_serve_after_idle_partial_and_disconnected_clients() {
                 survivor.read_to_string(&mut response).unwrap();
                 assert!(response.ends_with("\r\n\r\nok"), "{response}");
                 server.finish().unwrap();
+                assert_eq!(server.accepted_connections(), 15);
             });
         }
     });

@@ -140,7 +140,6 @@ enum FixtureContact {
 #[cfg(windows)]
 struct MyGeneFixture {
     base: String,
-    accepted: std::sync::Arc<std::sync::atomic::AtomicUsize>,
     valid: std::sync::Arc<std::sync::atomic::AtomicUsize>,
     server: biomcp_mcp_contract_client::test_http::TestHttpServer,
 }
@@ -152,17 +151,11 @@ fn start_mygene_fixture() -> MyGeneFixture {
         atomic::{AtomicUsize, Ordering},
     };
     use tokio::io::AsyncWriteExt;
-    let accepted = Arc::new(AtomicUsize::new(0));
     let valid = Arc::new(AtomicUsize::new(0));
-    let observed = accepted.clone();
     let validated = valid.clone();
     let server = biomcp_mcp_contract_client::test_http::TestHttpServer::spawn(move |mut stream| {
-        let observed = observed.clone();
         let validated = validated.clone();
         async move {
-            if observed.fetch_add(1, Ordering::SeqCst) != 0 {
-                return Err(std::io::Error::other("unexpected extra MyGene request"));
-            }
             let Some(request) = biomcp_mcp_contract_client::test_http::read_request(&mut stream).await? else {
                 return Err(std::io::Error::other("MyGene request ended before its headers"));
             };
@@ -180,7 +173,6 @@ fn start_mygene_fixture() -> MyGeneFixture {
     .expect("start MyGene permission fixture");
     MyGeneFixture {
         base: server.base.clone(),
-        accepted,
         valid,
         server,
     }
@@ -236,7 +228,7 @@ fn finish_mygene_fixture(mut fixture: MyGeneFixture) -> Result<FixtureContact, S
     use std::sync::atomic::Ordering;
     fixture.server.finish().map_err(|error| error.to_string())?;
     match (
-        fixture.accepted.load(Ordering::SeqCst),
+        fixture.server.accepted_connections(),
         fixture.valid.load(Ordering::SeqCst),
     ) {
         (0, 0) => Ok(FixtureContact::NoContact),
@@ -405,4 +397,17 @@ fn windows_cache_database_files_are_user_only_and_reject_hard_links() {
     let stderr = String::from_utf8_lossy(&rejected.stderr);
     assert!(stderr.contains("managed file has 2 links"), "{stderr}");
     assert!(!stderr.contains("fsutil"));
+}
+
+#[cfg(windows)]
+#[test]
+fn queued_tcp_contact_is_never_reported_as_no_contact() {
+    for _ in 0..64 {
+        let fixture = start_mygene_fixture();
+        let client = std::net::TcpStream::connect(fixture.base.trim_start_matches("http://"))
+            .expect("connect before fixture teardown");
+        let result = finish_mygene_fixture(fixture);
+        drop(client);
+        assert!(result.is_err(), "completed TCP contact was reported as {result:?}");
+    }
 }

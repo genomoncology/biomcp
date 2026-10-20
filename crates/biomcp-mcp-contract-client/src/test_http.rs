@@ -2,7 +2,10 @@
 
 use std::future::Future;
 use std::io;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 use std::thread;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -12,6 +15,7 @@ use tokio::task::JoinSet;
 
 pub struct TestHttpServer {
     pub base: String,
+    accepted: Arc<AtomicUsize>,
     stop: Option<oneshot::Sender<()>>,
     worker: Option<thread::JoinHandle<io::Result<()>>>,
 }
@@ -27,14 +31,17 @@ impl TestHttpServer {
         listener.set_nonblocking(true)?;
         let base = format!("http://{}", listener.local_addr()?);
         let (stop, stopped) = oneshot::channel();
+        let accepted = Arc::new(AtomicUsize::new(0));
+        let observed = accepted.clone();
         let worker = thread::spawn(move || {
             let runtime = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()?;
-            runtime.block_on(serve(listener, stopped, Arc::new(handler)))
+            runtime.block_on(serve(listener, stopped, Arc::new(handler), observed))
         });
         Ok(Self {
             base,
+            accepted,
             stop: Some(stop),
             worker: Some(worker),
         })
@@ -56,6 +63,12 @@ impl TestHttpServer {
                 Ok(())
             }
         })
+    }
+
+    /// Count accepted sockets, including the backlog drained during finish.
+    /// Read after finish when asserting that a completed client made no contact.
+    pub fn accepted_connections(&self) -> usize {
+        self.accepted.load(Ordering::SeqCst)
     }
 
     /// Normal teardown must assert this result; Drop only provides unwind cleanup.
@@ -81,6 +94,7 @@ async fn serve<F, Fut>(
     listener: std::net::TcpListener,
     mut stopped: oneshot::Receiver<()>,
     handler: Arc<F>,
+    accepted_count: Arc<AtomicUsize>,
 ) -> io::Result<()>
 where
     F: Fn(TcpStream) -> Fut + Send + Sync + 'static,
@@ -98,11 +112,29 @@ where
             _ = &mut stopped => break,
             accepted = listener.accept() => match accepted {
                 Ok((stream, _)) => {
+                    accepted_count.fetch_add(1, Ordering::SeqCst);
                     let handler = handler.clone();
                     connections.spawn(async move { handler(stream).await });
                 }
                 Err(error) if transient(&error) => continue,
                 Err(error) => { failure.get_or_insert(error); break; }
+            }
+        }
+    }
+    // Clients may have completed connect before the stop signal won select.
+    // Account for those sockets before closing the listener, without awaiting
+    // request bytes or invoking handlers during teardown.
+    let listener = listener.into_std()?;
+    loop {
+        match listener.accept() {
+            Ok((_stream, _)) => {
+                accepted_count.fetch_add(1, Ordering::SeqCst);
+            }
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => break,
+            Err(error) if transient(&error) => continue,
+            Err(error) => {
+                failure.get_or_insert(error);
+                break;
             }
         }
     }
