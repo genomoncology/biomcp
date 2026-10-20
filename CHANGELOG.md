@@ -6,6 +6,15 @@
 
 ### Fixes
 
+- Report licenses stated by fetched full-text source metadata and JATS links with their source, including when an asset package is unavailable. (2296)
+
+- Return complete primary article assets without waiting for the optional supplementary ZIP. (2294)
+
+- Fail smoke and diagnostic jobs when a command fails, show captured errors, and preserve measurement samples and summaries. (2289)
+- Restore PGx frequency and guideline sections broken against the current CPIC API by ordering on supported provider columns. (2292)
+
+- Fix the pre-existing panic in protein structures JSON output by recognizing UniProt as the source of the structure references. (2287)
+
 - Restore cache statistics and cached searches and lookups on a fresh installation whose cache parent directories do not exist; show captured errors when the Linux wheel smoke fails. (2286)
 
 - Find drug approvals by supported ingredient and brand names, report regulatory source gaps truthfully, show safety label dates, and accept empty Open Targets mechanisms without a warning. Empty approvals explain when Drugs@FDA found no exact-name match; suffixed biologic names require source-confirmed identity and do not rule out FDA approvals. (2270)
@@ -83,6 +92,19 @@
 - Let supported MCP tool calls before initialization finish under their invocation budget, and exit promptly when the startup wait expires even if the client keeps stdin open. (2256)
 
 ### Internal
+
+- Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article output, including full text, asset manifests and exact supplement bytes. (2236)
+- Check slow-test reporter termination through signal, exit and child-reaping events instead of a short elapsed-time assertion. (2298)
+
+- Isolate each installed-wheel check in a fresh build directory and remove its output after the run. (2297)
+
+- Derive replay provider policy identities from the runtime clients and refuse unknown or ambiguous identities. (2295)
+
+- Qualify replay XML declarations safely and report non-structural response checks as status, type and signature only. (2293)
+
+- Run the existing release metadata checks together before a metadata gate, and report every failed group in one local command. (2290)
+- Build and smoke an installed Linux wheel with a fresh home during the full main check, sharing release smoke commands and pinned manylinux images. (2288)
+- Require changelog citations for shipped changes and reject tracked scratch files in the local lint gate, including stable release candidates with dated changelog sections. (2291)
 
 - Record release qualification, live replay coverage, measurement limits and the nonpublishing release rehearsal. (2258)
 

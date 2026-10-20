@@ -1,0 +1,25 @@
+# Slow-test reporter termination check
+
+Before test edits, actual-main full2297/1792519818443-70753 on d1ced4374c45285683c02e5c6632426ae81db096 failed the reporter lifecycle case at its three-second subprocess.communicate deadline. Unchanged focused2298/1792520186484-55296 passes that case. Controlled job2298/1792520237130-63073 pauses the reporter after the forwarded child PID, sends SIGTERM, observes the same caller timeout, then resumes it and verifies exit143 and reaped/absent child. This proves a fixed short deadline can reject correct eventual behavior. It does not establish the cause of the original failure. Reporter handlers precede forwarded PID; a readiness race is unsupported.
+
+Available job overlap and earlier load samples do not establish load at failure. No production reporter defect or corrupt state was reproduced. The developer stopped after one controlled diagnostic before proposing speculative code. The PM then explicitly approved a bounded event-based test replacement with negative controls and a generous outer safety limit, permitting a queued batch when claims allow.
+
+The pre-code plan changes only tests/test_slow_test_reporting.py: child-side SIGTERM acknowledgment after handler readiness, parent observation of forwarding and exit143, and explicit runner absence. An outer test safety guard and finally cleanup bound broken child behavior; speed is not the acceptance condition. Private missing-forward and missing-drain/reap mutations must fail the same behavioral case. Production reporter code remains unchanged. Final affected proof and fresh review are not yet claimed.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay/slow-reporter-termination/2298 — retain exact diagnostic commands/scripts, both focused jobs, original failing source job, attribution job identity and host-load samples with their uncertainty.
+
+## Event-based correction
+
+Ready source bdf978bbfb9479adc1febcda50dc2e09a21dbf98 changes only the lifecycle test. The child installs its handler before PID readiness, acknowledges SIGTERM and terminates itself with default SIGTERM. The parent observes acknowledgment/EOF, exit143 and absent runner PID. A30second whole-case watchdog contains broken tests; the former three-second communicate acceptance deadline is gone, and finally cleanup kills/reaps owned processes even when the watchdog fires. Production reporter bytes remain unchanged.
+
+Job2298/1792520573975-71515 passed in35.235seconds. Its missing-forward mutation failed at the outer watchdog waiting for acknowledgment; its immediate-exit-after-forward mutation failed because acknowledgment was lost. The second control rejects abandoning output/lifecycle after forwarding; it does not independently establish detection of removing only explicit wait(), because Popen context cleanup also reaps. Restoring the original reporter passed all12 affected module cases in1.89seconds, changed-file Ruff, tracked text and whitespace.
+
+To avoid a work-in-progress push, the job used published0e374fa07 with the exact replacement test source and private control script recorded in its command arguments. The resulting test input matches pushed bdf978; no mutation lands. Exact commands/scripts/test source, log/state/result and prior diagnostics remain under the owning experiment's jobs/1792520573975-71515. The coordinator retains the original failure without claiming its cause. Fresh review and the PM-authorized integrated landing/full-main check remain required.
+
+## Fresh review cleanup correction
+
+Fresh review found that the new indefinite runner could outlive a watchdog firing before its PID reached the parent: the original finally block knew only the reporter PID. Accepted correction972273bbe2fa97e32163f143be2dd1563e642b39 starts an isolated session and kills the owned process group before waiting for the reporter. This closes the pre-readiness path without altering production reporter code. The preceding ready-source cleanup claim did not cover that case; this review correction supplies its proof.
+
+Review job2298/1792520853292-80472 passed in6.833seconds. A private reporter that withholds the numeric PID and a private shortened watchdog reproduce the old cleanup leak: runner alive before correction, absent after it. Control teardown removed the baseline orphan. Restoring the fixed test passed12 affected cases in1.98seconds plus Ruff, tracked text and whitespace. Exact before/after sources and the control script are retained in job state arguments; original log/state/result are copied beside the prior evidence. The reviewer accepted972273 without remaining findings and returned writer ownership. Original main failure cause stays unknown.
+
+The PM explicitly directs one integrated landing of this correction with accepted2236,2294 and2296, followed by one full-main check. Their deliberate dependency composition must preserve every accepted change and truthful ticket records; no separate per-ticket full reruns are requested for this batch.

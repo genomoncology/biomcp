@@ -1,0 +1,33 @@
+{
+  "section_outcomes": {
+    "complexes": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "domains": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "interactions": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "structures": {
+      "outcome": "data",
+      "sources": [
+        "UniProt"
+      ]
+    }
+  },
+  "accession": "P15056",
+  "entry_id": "BRAF_HUMAN",
+  "name": "P15056",
+  "length": 766,
+  "structures": [
+    "P15056 (AlphaFold model)"
+  ],
+  "structure_count": 2,
+  "domains": [],
+  "interactions": [],
+  "complexes": []
+}

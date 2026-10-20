@@ -45,12 +45,32 @@ pub(crate) fn classify_jats_document(
     } else {
         ArticleDocumentCoverage::MetadataOnly
     };
+    let license = find_child(root, "front")
+        .and_then(|front| find_child(front, "article-meta"))
+        .and_then(|metadata| find_child(metadata, "permissions"))
+        .and_then(|permissions| {
+            permissions
+                .children()
+                .filter(|node| node.has_tag_name("license"))
+                .find_map(|node| {
+                    node.attribute(("http://www.w3.org/1999/xlink", "href"))
+                        .filter(|value| !value.trim().is_empty())
+                        .or_else(|| {
+                            node.descendants()
+                                .filter(|node| node.has_tag_name("license_ref"))
+                                .filter_map(|node| node.text())
+                                .find(|value| !value.trim().is_empty())
+                        })
+                        .map(|value| value.trim().to_string())
+                })
+        });
     let quality = quality_from_root(root, coverage);
     let markdown = render_jats_root(root);
     if coverage == ArticleDocumentCoverage::FullText && markdown.is_none() {
         return Err(ArticleDocumentUnusable::Conversion);
     }
     Ok(ClassifiedArticleDocument {
+        license,
         coverage,
         markdown,
         abstract_text,

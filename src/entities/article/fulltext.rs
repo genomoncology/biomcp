@@ -895,21 +895,48 @@ pub(super) async fn resolve_fulltext(
                     .map(|manifest| manifest.package_url.clone())
             });
         let oa_retracted = oa_manifest.as_ref().and_then(|manifest| manifest.retracted);
-        let license = preprint_metadata
+        let stated_license = preprint_metadata
             .as_ref()
             .and_then(|metadata| metadata.license.clone())
-            .or_else(|| article.europepmc_license.clone())
+            .map(|license| (license, manifest_provider(&source)))
+            .or_else(|| {
+                article.europepmc_license.clone().map(|license| {
+                    (
+                        license,
+                        ArticleFulltextProvider {
+                            label: "Europe PMC metadata".to_string(),
+                            source: "Europe PMC".to_string(),
+                        },
+                    )
+                })
+            })
             .or_else(|| {
                 oa_manifest
                     .as_ref()
                     .and_then(|manifest| manifest.license.clone())
+                    .map(|license| {
+                        (
+                            license,
+                            manifest_provider(&xml_source_metadata(
+                                XmlWaterfallWinner::PmcOaArchive,
+                            )),
+                        )
+                    })
+            })
+            .or_else(|| {
+                classified
+                    .license
+                    .clone()
+                    .map(|license| (license, manifest_provider(&source)))
             });
+        let mut reuse = manifest_reuse(stated_license.as_ref().map(|(license, _)| license.clone()));
+        reuse.license_source = stated_license.map(|(_, provider)| provider);
         let manifest = ArticleFulltextManifest {
             source_kind: ArticleFulltextManifestKind::JatsXml,
             provider: manifest_provider(&source),
             source_identifier,
             quality: classified.quality,
-            reuse: manifest_reuse(license),
+            reuse,
             provenance: manifest_provenance(article, false, package_url, oa_retracted),
         };
         article.full_text_coverage = Some(ArticleFulltextCoverage {

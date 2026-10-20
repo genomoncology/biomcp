@@ -1,0 +1,960 @@
+{
+  "count": 49,
+  "results": [
+    {
+      "rsid": "rs10487888",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "3e-101",
+        "mantissa": 3,
+        "exponent": -101,
+        "numeric": 2.999999999999999e-101
+      },
+      "confidence_interval": "[0.013-0.016]",
+      "risk_allele_frequency": 0.4878,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90245848",
+      "pmid": "36224396",
+      "author": "Yengo L"
+    },
+    {
+      "rsid": "rs2364399",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "2e-74",
+        "mantissa": 2,
+        "exponent": -74,
+        "numeric": 1.9999999999999995e-74
+      },
+      "confidence_interval": "[0.014-0.018]",
+      "risk_allele_frequency": 0.1653,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90245848",
+      "pmid": "36224396",
+      "author": "Yengo L"
+    },
+    {
+      "rsid": "rs10487888",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "1e-30",
+        "mantissa": 1,
+        "exponent": -30,
+        "numeric": 9.999999999999999e-31
+      },
+      "confidence_interval": "[0.023-0.033]",
+      "risk_allele_frequency": 0.3835,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90245844",
+      "pmid": "36224396",
+      "author": "Yengo L"
+    },
+    {
+      "rsid": "rs9886260",
+      "trait_name": "health trait",
+      "p_value": {
+        "scientific": "1e-21",
+        "mantissa": 1,
+        "exponent": -21,
+        "numeric": 1e-21
+      },
+      "confidence_interval": "[0.0089-0.0136]",
+      "risk_allele_frequency": 0.274517,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90565837",
+      "pmid": "40374629",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs3829814",
+      "trait_name": "health trait",
+      "p_value": {
+        "scientific": "6e-21",
+        "mantissa": 6,
+        "exponent": -21,
+        "numeric": 5.999999999999999e-21
+      },
+      "confidence_interval": "[0.008-0.0122]",
+      "risk_allele_frequency": 0.436011,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90565837",
+      "pmid": "40374629",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs13438418",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "4e-17",
+        "mantissa": 4,
+        "exponent": -17,
+        "numeric": 4e-17
+      },
+      "confidence_interval": "-",
+      "risk_allele_frequency": 0.11751,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90492734",
+      "pmid": "38374256",
+      "author": "Suzuki K"
+    },
+    {
+      "rsid": "rs11762469",
+      "trait_name": "vital capacity",
+      "p_value": {
+        "scientific": "6e-16",
+        "mantissa": 6,
+        "exponent": -16,
+        "numeric": 6e-16
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST007081",
+      "pmid": "30595370",
+      "author": "Kichaev G"
+    },
+    {
+      "rsid": "rs1292982927",
+      "trait_name": "Alzheimer disease",
+      "p_value": {
+        "scientific": "2e-15",
+        "mantissa": 2,
+        "exponent": -15,
+        "numeric": 2e-15
+      },
+      "confidence_interval": "-",
+      "risk_allele": "AT",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90624094",
+      "pmid": "39998322",
+      "author": "Willett JDS"
+    },
+    {
+      "rsid": "rs13227429",
+      "trait_name": "vital capacity",
+      "p_value": {
+        "scientific": "1e-14",
+        "mantissa": 1,
+        "exponent": -14,
+        "numeric": 1e-14
+      },
+      "confidence_interval": "-",
+      "risk_allele_frequency": 0.515,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90244093",
+      "pmid": "36914875",
+      "author": "Shrine N"
+    },
+    {
+      "rsid": "rs9886260",
+      "trait_name": "size",
+      "p_value": {
+        "scientific": "1e-14",
+        "mantissa": 1,
+        "exponent": -14,
+        "numeric": 1e-14
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90309355",
+      "pmid": "38965376",
+      "author": "Carey CE"
+    },
+    {
+      "rsid": "rs13227429",
+      "trait_name": "vital capacity",
+      "p_value": {
+        "scientific": "2e-14",
+        "mantissa": 2,
+        "exponent": -14,
+        "numeric": 2e-14
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90705071",
+      "pmid": "41565855",
+      "author": "He Y"
+    },
+    {
+      "rsid": "rs9886260",
+      "trait_name": "forced expiratory volume",
+      "p_value": {
+        "scientific": "6e-14",
+        "mantissa": 6,
+        "exponent": -14,
+        "numeric": 6e-14
+      },
+      "confidence_interval": "[0.011-0.018]",
+      "risk_allele_frequency": 0.274866,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90565844",
+      "pmid": "40374629",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs3829814",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "1e-13",
+        "mantissa": 1,
+        "exponent": -13,
+        "numeric": 1e-13
+      },
+      "confidence_interval": "[0.022-0.038]",
+      "risk_allele_frequency": 0.5793,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90479636",
+      "pmid": "39024449",
+      "author": "Verma A"
+    },
+    {
+      "rsid": "rs3829814",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "3e-13",
+        "mantissa": 3,
+        "exponent": -13,
+        "numeric": 3.0000000000000003e-13
+      },
+      "confidence_interval": "[0.0069-0.012]",
+      "risk_allele_frequency": 0.436011,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90565843",
+      "pmid": "40374629",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs3829814",
+      "trait_name": "body shape measurement",
+      "p_value": {
+        "scientific": "6e-13",
+        "mantissa": 6,
+        "exponent": -13,
+        "numeric": 6.000000000000001e-13
+      },
+      "confidence_interval": "[0.012-0.02]",
+      "risk_allele_frequency": 0.439311,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90832990",
+      "pmid": "38640244",
+      "author": "Peruchet-Noray L"
+    },
+    {
+      "rsid": "rs73165497",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "9e-13",
+        "mantissa": 9,
+        "exponent": -13,
+        "numeric": 9e-13
+      },
+      "confidence_interval": "[0.0067-0.0118]",
+      "risk_allele_frequency": 0.4289,
+      "risk_allele": "C",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90565843",
+      "pmid": "40374629",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs60251368",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "2e-12",
+        "mantissa": 2,
+        "exponent": -12,
+        "numeric": 2e-12
+      },
+      "confidence_interval": "[0.04-0.07]",
+      "risk_allele_frequency": 0.0681,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST010557",
+      "pmid": "32541925",
+      "author": "Vujkovic M"
+    },
+    {
+      "rsid": "rs3829814",
+      "trait_name": "forced expiratory volume",
+      "p_value": {
+        "scientific": "1e-11",
+        "mantissa": 1,
+        "exponent": -11,
+        "numeric": 1e-11
+      },
+      "confidence_interval": "[0.0084-0.0152]",
+      "risk_allele_frequency": 0.43651,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90565844",
+      "pmid": "40374629",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs71170768",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "2e-10",
+        "mantissa": 2,
+        "exponent": -10,
+        "numeric": 2e-10
+      },
+      "effect_size": 1.07,
+      "effect_type": "OR",
+      "confidence_interval": "[1.05-1.09]",
+      "risk_allele_frequency": 0.316,
+      "risk_allele": "TA",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST010118",
+      "pmid": "32499647",
+      "author": "Spracklen CN"
+    },
+    {
+      "rsid": "rs11983228",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "3e-10",
+        "mantissa": 3,
+        "exponent": -10,
+        "numeric": 3e-10
+      },
+      "effect_size": 1.05,
+      "effect_type": "OR",
+      "confidence_interval": "[1.04-1.07]",
+      "risk_allele": "C",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90132183",
+      "pmid": "35551307",
+      "author": "Mahajan A"
+    },
+    {
+      "rsid": "rs73165497",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "5e-10",
+        "mantissa": 5,
+        "exponent": -10,
+        "numeric": 5e-10
+      },
+      "confidence_interval": "[0.074-0.143]",
+      "risk_allele": "C",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90267284",
+      "pmid": "37106081",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs59183598",
+      "trait_name": "gestational age",
+      "p_value": {
+        "scientific": "6e-10",
+        "mantissa": 6,
+        "exponent": -10,
+        "numeric": 6e-10
+      },
+      "confidence_interval": "-",
+      "risk_allele": "C",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90693230",
+      "pmid": "37643619",
+      "author": "He Y"
+    },
+    {
+      "rsid": "rs11974112",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "7e-10",
+        "mantissa": 7,
+        "exponent": -10,
+        "numeric": 7.000000000000001e-10
+      },
+      "confidence_interval": "[0.027-0.052]",
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90693212",
+      "pmid": "38685053",
+      "author": "Elashi AA"
+    },
+    {
+      "rsid": "rs10487888",
+      "trait_name": "fibromyalgia",
+      "p_value": {
+        "scientific": "1e-9",
+        "mantissa": 1,
+        "exponent": -9,
+        "numeric": 1e-9
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90998902",
+      "pmid": "42521668",
+      "author": "Bright U"
+    },
+    {
+      "rsid": "rs7806794",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "1e-9",
+        "mantissa": 1,
+        "exponent": -9,
+        "numeric": 1e-9
+      },
+      "confidence_interval": "[0.035-0.068]",
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90693212",
+      "pmid": "38685053",
+      "author": "Elashi AA"
+    },
+    {
+      "rsid": "rs9648716",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "1e-9",
+        "mantissa": 1,
+        "exponent": -9,
+        "numeric": 1e-9
+      },
+      "effect_size": 1.06,
+      "effect_type": "OR",
+      "confidence_interval": "[1.04-1.09]",
+      "risk_allele_frequency": 0.15,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST004894",
+      "pmid": "28869590",
+      "author": "Zhao W"
+    },
+    {
+      "rsid": "rs13236223",
+      "trait_name": "bipolar disorder",
+      "p_value": {
+        "scientific": "2e-9",
+        "mantissa": 2,
+        "exponent": -9,
+        "numeric": 2e-9
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST010641",
+      "pmid": "32606422",
+      "author": "Wu Y"
+    },
+    {
+      "rsid": "rs13227429",
+      "trait_name": "forced expiratory volume",
+      "p_value": {
+        "scientific": "4e-9",
+        "mantissa": 4,
+        "exponent": -9,
+        "numeric": 4e-9
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90705070",
+      "pmid": "41565855",
+      "author": "He Y"
+    },
+    {
+      "rsid": "rs10265001",
+      "trait_name": "anorexia nervosa",
+      "p_value": {
+        "scientific": "5e-9",
+        "mantissa": 5,
+        "exponent": -9,
+        "numeric": 5e-9
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST009600",
+      "pmid": "31835028",
+      "author": "Cross-Disorder Group of the Psychiatric Genomics Consortium"
+    },
+    {
+      "rsid": "rs11768253",
+      "trait_name": "grip strength measurement",
+      "p_value": {
+        "scientific": "5e-9",
+        "mantissa": 5,
+        "exponent": -9,
+        "numeric": 5e-9
+      },
+      "confidence_interval": "[0.0069-0.0139]",
+      "risk_allele_frequency": 0.797609,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90565845",
+      "pmid": "40374629",
+      "author": "Schoeler T"
+    },
+    {
+      "rsid": "rs62484294",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "5e-9",
+        "mantissa": 5,
+        "exponent": -9,
+        "numeric": 5e-9
+      },
+      "confidence_interval": "[0.048-0.096]",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90651113",
+      "pmid": "40465716",
+      "author": "Liu TY"
+    },
+    {
+      "rsid": "rs569319774",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "6e-9",
+        "mantissa": 6,
+        "exponent": -9,
+        "numeric": 6.000000000000001e-9
+      },
+      "effect_size": 1.1131161,
+      "effect_type": "OR",
+      "confidence_interval": "[1.073681356-1.153999397]",
+      "risk_allele_frequency": 0.064552806,
+      "risk_allele": "GA",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90013693",
+      "pmid": "32514122",
+      "author": "Ishigaki K"
+    },
+    {
+      "rsid": "rs6970893",
+      "trait_name": "serum creatinine amount",
+      "p_value": {
+        "scientific": "8e-9",
+        "mantissa": 8,
+        "exponent": -9,
+        "numeric": 8e-9
+      },
+      "confidence_interval": "[0.0067-0.0137]",
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90662902",
+      "pmid": "40436827",
+      "author": "Jee YH"
+    },
+    {
+      "rsid": "rs7806794",
+      "trait_name": "body height",
+      "p_value": {
+        "scientific": "9e-9",
+        "mantissa": 9,
+        "exponent": -9,
+        "numeric": 9.000000000000001e-9
+      },
+      "confidence_interval": "[0.015-0.03]",
+      "risk_allele_frequency": 0.076336,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90018739",
+      "pmid": "34594039",
+      "author": "Sakaue S"
+    },
+    {
+      "rsid": "rs10487888",
+      "trait_name": "gout",
+      "p_value": {
+        "scientific": "1e-8",
+        "mantissa": 1,
+        "exponent": -8,
+        "numeric": 1e-8
+      },
+      "effect_size": 1.0299394,
+      "effect_type": "OR",
+      "confidence_interval": "[1.02-1.04]",
+      "risk_allele_frequency": 0.5287,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90455676",
+      "pmid": "39406924",
+      "author": "Major TJ"
+    },
+    {
+      "rsid": "rs11284960",
+      "trait_name": "blood glucose amount",
+      "p_value": {
+        "scientific": "1e-8",
+        "mantissa": 1,
+        "exponent": -8,
+        "numeric": 1e-8
+      },
+      "confidence_interval": "[0.016-0.032]",
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST90662896",
+      "pmid": "40436827",
+      "author": "Jee YH"
+    },
+    {
+      "rsid": "rs13236223",
+      "trait_name": "bipolar disorder",
+      "p_value": {
+        "scientific": "1e-8",
+        "mantissa": 1,
+        "exponent": -8,
+        "numeric": 1e-8
+      },
+      "confidence_interval": "[0.049-0.101]",
+      "risk_allele_frequency": 0.7823,
+      "risk_allele": "T",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST012091",
+      "pmid": "33479212",
+      "author": "Yao X"
+    },
+    {
+      "rsid": "rs10255167",
+      "trait_name": "bipolar disorder",
+      "p_value": {
+        "scientific": "2e-8",
+        "mantissa": 2,
+        "exponent": -8,
+        "numeric": 2e-8
+      },
+      "effect_size": 0.93576,
+      "effect_type": "OR",
+      "confidence_interval": "[0.91-0.96]",
+      "risk_allele_frequency": 0.222,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST012465",
+      "pmid": "34002096",
+      "author": "Mullins N"
+    },
+    {
+      "rsid": "rs13236223",
+      "trait_name": "schizophrenia",
+      "p_value": {
+        "scientific": "2e-8",
+        "mantissa": 2,
+        "exponent": -8,
+        "numeric": 2e-8
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST010640",
+      "pmid": "32606422",
+      "author": "Wu Y"
+    },
+    {
+      "rsid": "rs11980547",
+      "trait_name": "gut microbiome measurement",
+      "p_value": {
+        "scientific": "3e-8",
+        "mantissa": 3,
+        "exponent": -8,
+        "numeric": 3.0000000000000004e-8
+      },
+      "confidence_interval": "[-2.72--1.33]",
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90568900",
+      "pmid": "40187613",
+      "author": "Stickley SA"
+    },
+    {
+      "rsid": "rs35407685",
+      "trait_name": "influenza A (H1N1)",
+      "p_value": {
+        "scientific": "3e-8",
+        "mantissa": 3,
+        "exponent": -8,
+        "numeric": 3.0000000000000004e-8
+      },
+      "confidence_interval": "-",
+      "risk_allele_frequency": 0.0,
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST003124",
+      "pmid": "26379185",
+      "author": "Garcia-Etxebarria K"
+    },
+    {
+      "rsid": "rs62485379",
+      "trait_name": "type 2 diabetes mellitus",
+      "p_value": {
+        "scientific": "3e-8",
+        "mantissa": 3,
+        "exponent": -8,
+        "numeric": 3.0000000000000004e-8
+      },
+      "confidence_interval": "[0.045-0.094]",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90651113",
+      "pmid": "40465716",
+      "author": "Liu TY"
+    },
+    {
+      "rsid": "rs9886260",
+      "trait_name": "BMI-adjusted waist circumference",
+      "p_value": {
+        "scientific": "3e-8",
+        "mantissa": 3,
+        "exponent": -8,
+        "numeric": 3.0000000000000004e-8
+      },
+      "confidence_interval": "[0.011-0.024]",
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90020029",
+      "pmid": "34021172",
+      "author": "Christakoudi S"
+    },
+    {
+      "rsid": "rs9886260",
+      "trait_name": "body shape measurement",
+      "p_value": {
+        "scientific": "3e-8",
+        "mantissa": 3,
+        "exponent": -8,
+        "numeric": 3.0000000000000004e-8
+      },
+      "confidence_interval": "[0.0072-0.0151]",
+      "risk_allele_frequency": 0.276186,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90832991",
+      "pmid": "38640244",
+      "author": "Peruchet-Noray L"
+    },
+    {
+      "rsid": "rs79811809",
+      "trait_name": "cerebrospinal fluid composition attribute",
+      "p_value": {
+        "scientific": "3e-7",
+        "mantissa": 3,
+        "exponent": -7,
+        "numeric": 3e-7
+      },
+      "confidence_interval": "[NR]",
+      "risk_allele_frequency": 0.04,
+      "risk_allele": "A",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST003070",
+      "pmid": "26252872",
+      "author": "Li QS"
+    },
+    {
+      "rsid": "rs1267601",
+      "trait_name": "life span determination trait",
+      "p_value": {
+        "scientific": "1e-6",
+        "mantissa": 1,
+        "exponent": -6,
+        "numeric": 1e-6
+      },
+      "confidence_interval": "[0.12-0.28]",
+      "risk_allele": "C",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST012210",
+      "pmid": "33657282",
+      "author": "Liu X"
+    },
+    {
+      "rsid": "rs55762971",
+      "trait_name": "dementia",
+      "p_value": {
+        "scientific": "2e-6",
+        "mantissa": 2,
+        "exponent": -6,
+        "numeric": 2e-6
+      },
+      "confidence_interval": "-",
+      "risk_allele_frequency": 0.03395,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF",
+        "CCT4P1"
+      ],
+      "study_accession": "GCST90449022",
+      "pmid": "39046104",
+      "author": "Fongang B"
+    },
+    {
+      "rsid": "rs1733826",
+      "trait_name": "creatinine clearance measurement",
+      "p_value": {
+        "scientific": "4e-6",
+        "mantissa": 4,
+        "exponent": -6,
+        "numeric": 4e-6
+      },
+      "confidence_interval": "-",
+      "risk_allele": "?",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST006072",
+      "pmid": "26148204",
+      "author": "Wanga V"
+    },
+    {
+      "rsid": "rs17623382",
+      "trait_name": "response to vitamin",
+      "p_value": {
+        "scientific": "4e-6",
+        "mantissa": 4,
+        "exponent": -6,
+        "numeric": 4e-6
+      },
+      "confidence_interval": "[0.45-1.11]",
+      "risk_allele_frequency": 0.16,
+      "risk_allele": "G",
+      "mapped_genes": [
+        "BRAF"
+      ],
+      "study_accession": "GCST001450",
+      "pmid": "22437554",
+      "author": "Major JM"
+    }
+  ],
+  "_meta": {
+    "pagination": {
+      "limit": 49,
+      "offset": 0,
+      "returned": 49,
+      "has_more": false,
+      "next_offset": null,
+      "truncated_by_provider_budget": true
+    },
+    "next_commands": [
+      "biomcp get variant rs10487888",
+      "biomcp list gwas"
+    ]
+  }
+}

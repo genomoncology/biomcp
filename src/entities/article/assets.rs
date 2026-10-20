@@ -294,7 +294,8 @@ pub async fn article_asset_bytes(
     asset_key: &str,
 ) -> Result<(Vec<u8>, Option<String>, String), BioMcpError> {
     let article = super::detail::get_article_base(requested_id, false).await?;
-    let resolved = resolve_article_assets(requested_id, article).await?;
+    let resolved =
+        resolve_article_assets_for(requested_id, article, Some(asset_key.trim())).await?;
     article_asset_bytes_from_resolution(requested_id, asset_key.trim(), resolved)
 }
 
@@ -373,7 +374,15 @@ pub(super) async fn attach_not_included(article: &mut Article, requested_id: &st
 
 pub(super) async fn resolve_article_assets(
     requested_id: &str,
+    article: Article,
+) -> Result<ResolvedArticleAssets, BioMcpError> {
+    resolve_article_assets_for(requested_id, article, None).await
+}
+
+async fn resolve_article_assets_for(
+    requested_id: &str,
     mut article: Article,
+    wanted: Option<&str>,
 ) -> Result<ResolvedArticleAssets, BioMcpError> {
     let (pmcid, mut any_failed) = match resolve_article_pmcid(&article).await {
         Ok(pmcid) => (pmcid, false),
@@ -396,9 +405,8 @@ pub(super) async fn resolve_article_assets(
 
     if let Some(pmcid) = pmcid.as_deref() {
         let mut figshare_article = article.clone();
-        let (pmc, europe, europe_xml, ncbi_xml, html, figshare) = tokio::join!(
+        let (pmc, europe_xml, ncbi_xml, html, figshare) = tokio::join!(
             bounded_source_attempt(PRIMARY_ASSET_SOURCE_BUDGET, observe_pmc_package(pmcid)),
-            bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_europe_package(pmcid)),
             bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_europe_xml(pmcid)),
             bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_ncbi_xml(pmcid)),
             bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_pmc_html(pmcid)),
@@ -413,15 +421,6 @@ pub(super) async fn resolve_article_assets(
             ArticleAssetSourceDocument::PmcOaArchive,
             &pmc,
             matches!(&pmc, SourceAttempt::Success(observation) if observation.failed),
-        ));
-        source_attempts.push(source_attempt_record(
-            ArticleFulltextProvider {
-                label: EUROPE_PMC_PROVIDER_LABEL.into(),
-                source: EUROPE_PMC_PROVIDER_SOURCE.into(),
-            },
-            ArticleAssetSourceDocument::EuropePmcZip,
-            &europe,
-            false,
         ));
         source_attempts.push(source_attempt_record(
             ArticleFulltextProvider {
@@ -565,70 +564,7 @@ pub(super) async fn resolve_article_assets(
             }
         };
 
-        match europe {
-            SourceAttempt::Success(observation) => {
-                let provider = ArticleFulltextProvider {
-                    label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
-                    source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
-                };
-                let pmc_manifest = observation
-                    .pmc_manifest
-                    .as_ref()
-                    .or(retained_pmc_manifest.as_ref());
-                let reuse = europe_pmc_reuse(pmc_manifest, &article);
-                let provenance = ArticleFulltextProvenance {
-                    open_access: article.open_access,
-                    retracted: pmc_manifest
-                        .and_then(|manifest| manifest.retracted)
-                        .or(article.europepmc_retracted),
-                    package_url: None,
-                    pdf_fallback_used: false,
-                };
-                for entry in &observation.package.entries {
-                    let identity = package_identity("europe-pmc", pmcid, &entry.filename);
-                    if entry.bytes.is_empty() {
-                        nonretrievable.push(refused_download_coverage(
-                            identity,
-                            ArticleFulltextProvider {
-                                label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
-                                source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
-                            },
-                            ArticleAssetSourceDocument::EuropePmcZip,
-                            &entry.filename,
-                            ArticleAssetNamedOutcome::EmptyResponse,
-                        ));
-                        undelivered_supplements.insert(entry.filename.clone());
-                        continue;
-                    }
-                    if !asset_bytes_match_filename(&entry.filename, &entry.bytes) {
-                        nonretrievable.push(refused_download_coverage(
-                            identity,
-                            ArticleFulltextProvider {
-                                label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
-                                source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
-                            },
-                            ArticleAssetSourceDocument::EuropePmcZip,
-                            &entry.filename,
-                            ArticleAssetNamedOutcome::UnusableAsset,
-                        ));
-                        undelivered_supplements.insert(entry.filename.clone());
-                        continue;
-                    }
-                    let mut public =
-                        europe_pmc_asset_entry(requested_id, entry, &provider, &reuse, &provenance);
-                    public.asset_key = sha256_hex(identity.as_bytes());
-                    assets.push(ResolvedAsset {
-                        canonical_identity: identity,
-                        precedence: 1,
-                        entry: public,
-                        bytes: entry.bytes.clone(),
-                    });
-                }
-            }
-            SourceAttempt::Absent => {}
-            SourceAttempt::Failed(_) => any_failed = true,
-            SourceAttempt::TimedOut => any_failed = true,
-        }
+        let primary_healthy = retained_pmc_manifest.is_some() && !any_failed;
 
         match europe_xml {
             SourceAttempt::Success(xml) => {
@@ -693,6 +629,118 @@ pub(super) async fn resolve_article_assets(
             SourceAttempt::Absent => {}
             SourceAttempt::Failed(_) => any_failed = true,
             SourceAttempt::TimedOut => any_failed = true,
+        }
+
+        // A complete primary answer does not need the optional ZIP. Keep
+        // fallback discovery when any declared file or requested byte is missing.
+        let primary_sufficient = primary_healthy
+            && !assets.is_empty()
+            && nonretrievable.is_empty()
+            && undelivered_supplements.is_empty()
+            && wanted.is_none_or(|wanted| {
+                assets.iter().any(|asset| {
+                    asset.entry.asset_key == wanted
+                        || asset.entry.filename == wanted
+                        || collision_asset_key(
+                            &asset.entry.provider.source,
+                            &asset.canonical_identity,
+                            &asset.entry.filename,
+                        ) == wanted
+                })
+            })
+            && PmcArticleClient::new(pmcid).is_ok_and(|client| {
+                candidates.iter().all(|candidate| {
+                    client
+                        .linked_target(&candidate.href, candidate.relative_to_bin)
+                        .is_ok_and(|target| {
+                            assets
+                                .iter()
+                                .any(|asset| asset.canonical_identity == target.canonical_identity)
+                        })
+                })
+            });
+        if !primary_sufficient {
+            let europe =
+                bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_europe_package(pmcid))
+                    .await;
+            source_attempts.push(source_attempt_record(
+                ArticleFulltextProvider {
+                    label: EUROPE_PMC_PROVIDER_LABEL.into(),
+                    source: EUROPE_PMC_PROVIDER_SOURCE.into(),
+                },
+                ArticleAssetSourceDocument::EuropePmcZip,
+                &europe,
+                false,
+            ));
+            match europe {
+                SourceAttempt::Success(observation) => {
+                    let provider = ArticleFulltextProvider {
+                        label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+                        source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+                    };
+                    let pmc_manifest = observation
+                        .pmc_manifest
+                        .as_ref()
+                        .or(retained_pmc_manifest.as_ref());
+                    let reuse = europe_pmc_reuse(pmc_manifest, &article);
+                    let provenance = ArticleFulltextProvenance {
+                        open_access: article.open_access,
+                        retracted: pmc_manifest
+                            .and_then(|manifest| manifest.retracted)
+                            .or(article.europepmc_retracted),
+                        package_url: None,
+                        pdf_fallback_used: false,
+                    };
+                    for entry in &observation.package.entries {
+                        let identity = package_identity("europe-pmc", pmcid, &entry.filename);
+                        if entry.bytes.is_empty() {
+                            nonretrievable.push(refused_download_coverage(
+                                identity,
+                                ArticleFulltextProvider {
+                                    label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+                                    source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+                                },
+                                ArticleAssetSourceDocument::EuropePmcZip,
+                                &entry.filename,
+                                ArticleAssetNamedOutcome::EmptyResponse,
+                            ));
+                            undelivered_supplements.insert(entry.filename.clone());
+                            continue;
+                        }
+                        if !asset_bytes_match_filename(&entry.filename, &entry.bytes) {
+                            nonretrievable.push(refused_download_coverage(
+                                identity,
+                                ArticleFulltextProvider {
+                                    label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+                                    source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+                                },
+                                ArticleAssetSourceDocument::EuropePmcZip,
+                                &entry.filename,
+                                ArticleAssetNamedOutcome::UnusableAsset,
+                            ));
+                            undelivered_supplements.insert(entry.filename.clone());
+                            continue;
+                        }
+                        let mut public = europe_pmc_asset_entry(
+                            requested_id,
+                            entry,
+                            &provider,
+                            &reuse,
+                            &provenance,
+                        );
+                        public.asset_key = sha256_hex(identity.as_bytes());
+                        assets.push(ResolvedAsset {
+                            canonical_identity: identity,
+                            precedence: 1,
+                            entry: public,
+                            bytes: entry.bytes.clone(),
+                        });
+                    }
+                }
+                SourceAttempt::Absent => {}
+                SourceAttempt::Failed(_) => any_failed = true,
+                SourceAttempt::TimedOut => any_failed = true,
+            }
         }
 
         // A supplement the archive routes listed without delivering a usable
@@ -1609,11 +1657,10 @@ fn assign_asset_keys(
         asset.entry.asset_key = if counts.get(&filename) == Some(&1) {
             filename.clone()
         } else {
-            format!(
-                "{}-{}--{}",
-                provider_slug(&asset.entry.provider.source),
-                sha256_hex(asset.canonical_identity.as_bytes()),
-                filename
+            collision_asset_key(
+                &asset.entry.provider.source,
+                &asset.canonical_identity,
+                &filename,
             )
         };
         asset.entry.handle = article_asset_command(requested_id, &asset.entry.asset_key);
@@ -1626,16 +1673,19 @@ fn assign_asset_keys(
         let asset_key = if counts.get(&filename) == Some(&1) {
             filename.clone()
         } else {
-            format!(
-                "{}-{}--{}",
-                provider_slug(&coverage.row.provider.source),
-                sha256_hex(identity.as_bytes()),
-                filename
-            )
+            collision_asset_key(&coverage.row.provider.source, identity, &filename)
         };
         coverage.row.asset_key = Some(asset_key.clone());
         coverage.row.handle = Some(article_asset_command(requested_id, &asset_key));
     }
+}
+
+fn collision_asset_key(source: &str, identity: &str, filename: &str) -> String {
+    format!(
+        "{}-{}--{filename}",
+        provider_slug(source),
+        sha256_hex(identity.as_bytes()),
+    )
 }
 
 fn retrievable_coverage(asset: &ResolvedAsset) -> ArticleAssetNamedCoverage {
@@ -1858,7 +1908,7 @@ async fn observe_pmc_html(pmcid: &str) -> SourceAttempt<String> {
     }
 }
 
-async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePackage> {
+async fn resolve_archive_package(article: &mut Article) -> SourceAttempt<ArchivePackage> {
     let pmcid = match resolve_article_pmcid(article).await {
         Ok(Some(pmcid)) => pmcid,
         Ok(None) => return SourceAttempt::Absent,
@@ -1883,6 +1933,23 @@ async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePack
             None
         }
     };
+    // License metadata remains useful even if the package download fails.
+    // Keep the fulltext provider separate from the source stating its license.
+    if let Some(license) = pmc_manifest
+        .as_ref()
+        .and_then(|manifest| manifest.license.as_deref())
+        .map(str::trim)
+        .filter(|license| !license.is_empty())
+        && let Some(fulltext) = article.full_text_manifest.as_mut()
+        && !fulltext.reuse.license_present
+    {
+        fulltext.reuse = ArticleFulltextReuse {
+            license_present: true,
+            license: Some(license.to_string()),
+            license_source: Some(provider()),
+            reuse_warning: None,
+        };
+    }
     if let Some(manifest) = pmc_manifest.clone() {
         match pmc.archive_package(manifest).await {
             Ok(package) => {

@@ -1,0 +1,45 @@
+---
+priority: 2
+---
+
+# 2296 — Report fetched fulltext license metadata
+
+Status: COMPLETE.
+
+Milestone: 0.9.4
+
+Depends on: 2294
+
+Reviews: revision 24ff8e9, accept
+
+Reviews: revision 52cce26, accept
+
+Reviews: revision ea5ce68, accept
+
+Reviews: revision 7c93663, accept
+
+## Outcome
+
+When a fetched fulltext source’s own metadata states a license, get article fulltext reports that license with truthful source attribution. Unknown is allowed only when no fetched source states one. Reuse the existing license classification and restrictions rather than adding a new licensing policy.
+
+Changes: `src/entities/article/assets.rs`, `src/entities/article/fulltext.rs`, `src/transform/article.rs`, `src/transform/article/jats.rs`, `src/transform/article/html.rs`, `tests/test_article_fulltext_license.py`, `tests/golden/cases/get-article-23056577-fulltext.*`, `sdlc/records/2296-fulltext-license-metadata.md`, `CHANGELOG.md`.
+
+## Evidence and PM ruling
+
+Accepted recorded-command coverage2236 observes get article23056577 fulltext returning license_present:false and reuse unknown, although the fetched current PMC3467229.1 metadata explicitly records CC BY and is_pmc_openaccess:true. Its exact captured metadata SHA256 is4240e488862f7ed12db13a2a12c162102dd54e54f18df9e156436bc3779acb6b. The PM classified this as a required0.9.4 product bug on2026-10-20. A coverage disclosure is not its disposition. Keep2236 scope unchanged.
+
+## Proof
+
+Before code, restate the outcome, reproduce on current main or the approved dependency candidate, name the exact command/output and files, and add a meaningful outside-in failure using the already retained PMC3467229 captures. Show the final real CLI JSON reports the supplied license identity and source, while the Markdown body remains unchanged; preserve unknown when no source supplies a license and existing restricted/no-access behavior. Do not infer permission from an OA flag alone or weaken source restrictions. If sources conflict in a way existing rules do not resolve, ask the PM rather than inventing policy.
+
+Run only affected checks through pm job. Reuse captured replies; no new capture unless a genuinely needed field is absent, and then only under the standing approved public-keyless rule. Existing body, sections, references and asset bytes remain outside the fix unless the actual propagation path requires them. Update only affected recorded output and preserve exact source bindings. No full suite or new live collection during development.
+
+Keep: experiments/2102-biomcp-2258-final-live-replay — preserve the observed metadata and prior fulltext output while this repair and final admission consume them. Name the repair’s raw job folder in its record.
+
+## Pre-code restatement
+
+The existing metadata fetch already supplies the article license after fulltext resolution. Preserve the stated fact in an unknown fulltext reuse result immediately after that fetch, with PMC OA attribution, before an archive-package failure can discard it. Preserve known reuse decisions, source restrictions, bodies and asset results. No Cargo, build-profile or variant-search path changes are planned.
+
+## Structured XML evidence before parser edits
+
+The already captured JATS body itself states a Creative Commons license through structured license links. The same approved outcome therefore also requires carrying those links with the fetched fulltext source, using existing XML parsing and classification. Add no legal-text parser or new policy. Preserve existing known metadata decisions and correct their missing source attribution. Truly absent controls remove structured license elements from every authored reply.

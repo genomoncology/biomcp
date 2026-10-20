@@ -167,15 +167,15 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
     ("target", "expected"),
     [
         ("landing-gate", ["lint", "test", "spec"]),
-        ("main-gate", ["lint", "test", "spec", "repo-audit", "full-feature-check"]),
+        ("main-gate", ["lint", "test", "spec", "repo-audit", "full-feature-check", "installed-wheel-smoke"]),
     ],
 )
-@pytest.mark.parametrize("failed_stage", [None, "test", "repo-audit"])
+@pytest.mark.parametrize("failed_stage", [None, "test", "repo-audit", "installed-wheel-smoke"])
 def test_landing_commands_run_ordered_checks_and_stop_on_failure(
     tmp_path: Path, target: str, expected: list[str], failed_stage: str | None
 ) -> None:
-    if failed_stage == "repo-audit" and target == "landing-gate":
-        pytest.skip("the required repository audit runs after merging")
+    if failed_stage and failed_stage not in expected:
+        pytest.skip("this check runs after merging")
     # Override existing leaves, not the gate recipes: exercise Make's real
     # ordering and failure propagation without compiling the product again.
     wrapper = tmp_path / "gate.mk"
@@ -184,7 +184,7 @@ def test_landing_commands_run_ordered_checks_and_stop_on_failure(
         + "\n".join(
             f"{stage}:\n\t@echo gate-stage:{stage}\n"
             + ("\t@exit 23\n" if stage == failed_stage else "")
-            for stage in ("lint", "test", "spec", "repo-audit", "full-feature-check")
+            for stage in ("lint", "test", "spec", "repo-audit", "full-feature-check", "installed-wheel-smoke")
         ),
         encoding="utf-8",
     )
@@ -298,7 +298,7 @@ def test_full_feature_gates_build_and_smoke_the_selected_profile(
     wrapper = tmp_path / "gate.mk"
     wrapper.write_text(
         f"include {REPO_ROOT / 'Makefile'}\n"
-        "landing-gate lint test test-long prepare-test prepare-routine-test-tmp spec repo-audit sync-python-dev:\n\t@:\n",
+        "landing-gate lint test test-long prepare-test prepare-routine-test-tmp spec repo-audit sync-python-dev installed-wheel-smoke:\n\t@:\n",
         encoding="utf-8",
     )
     result = subprocess.run(

@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "next_commands": [
+      "biomcp get protein P15056",
+      "biomcp list protein"
+    ]
+  },
+  "count": 3,
+  "pagination": {
+    "has_more": true,
+    "limit": 3,
+    "next_offset": 3,
+    "next_page_token": null,
+    "offset": 0,
+    "returned": 3,
+    "total": null
+  },
+  "results": [
+    {
+      "accession": "P15056",
+      "gene_symbol": "BRAF",
+      "name": "Serine/threonine-protein kinase B-raf",
+      "reviewed": true,
+      "species": "Homo sapiens",
+      "uniprot_id": "BRAF_HUMAN"
+    },
+    {
+      "accession": "Q8IVT5",
+      "gene_symbol": "KSR1",
+      "name": "Kinase suppressor of Ras 1",
+      "reviewed": true,
+      "species": "Homo sapiens",
+      "uniprot_id": "KSR1_HUMAN"
+    },
+    {
+      "accession": "Q92963",
+      "gene_symbol": "RIT1",
+      "name": "GTP-binding protein Rit1",
+      "reviewed": true,
+      "species": "Homo sapiens",
+      "uniprot_id": "RIT1_HUMAN"
+    }
+  ]
+}

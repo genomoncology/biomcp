@@ -1,0 +1,341 @@
+{
+  "took": 8,
+  "total": 19,
+  "max_score": 1.0,
+  "hits": [
+    {
+      "_id": "BFSMGDJOXZAERB-UHFFFAOYSA-N",
+      "_score": 1.0,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "dabrafenib"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "atc_classifications": "L01EC02",
+        "molecule_chembl_id": "CHEMBL2028663",
+        "molecule_type": "Small molecule",
+        "pref_name": "DABRAFENIB"
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "interaction_targets": [
+          {
+            "symbol": "BRAF"
+          }
+        ],
+        "name": "dabrafenib"
+      },
+      "ndc": [
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "dabrafenib",
+          "pharm_classes": [
+            "Protein Kinase Inhibitors [MoA]",
+            "Organic Anion Transporter 1 Inhibitors [MoA]",
+            "Cytochrome P450 2C9 Inducers [MoA]",
+            "Cytochrome P450 2C19 Inducers [MoA]",
+            "Cytochrome P450 3A4 Inducers [MoA]",
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 2B6 Inducers [MoA]",
+            "Organic Anion Transporter 3 Inhibitors [MoA]",
+            "Organic Anion Transporting Polypeptide 1B1 Inhibitors [MoA]",
+            "Cytochrome P450 2C8 Inducers [MoA]",
+            "Organic Anion Transporting Polypeptide 1B3 Inhibitors [MoA]",
+            "Breast Cancer Resistance Protein Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "dabrafenib",
+          "pharm_classes": [
+            "Protein Kinase Inhibitors [MoA]",
+            "Organic Anion Transporter 1 Inhibitors [MoA]",
+            "Cytochrome P450 2C9 Inducers [MoA]",
+            "Cytochrome P450 2C19 Inducers [MoA]",
+            "Cytochrome P450 3A4 Inducers [MoA]",
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 2B6 Inducers [MoA]",
+            "Organic Anion Transporter 3 Inhibitors [MoA]",
+            "Organic Anion Transporting Polypeptide 1B1 Inhibitors [MoA]",
+            "Cytochrome P450 2C8 Inducers [MoA]",
+            "Organic Anion Transporting Polypeptide 1B3 Inhibitors [MoA]",
+            "Breast Cancer Resistance Protein Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "dabrafenib",
+          "pharm_classes": [
+            "Protein Kinase Inhibitors [MoA]",
+            "Organic Anion Transporter 1 Inhibitors [MoA]",
+            "Cytochrome P450 2C9 Inducers [MoA]",
+            "Cytochrome P450 2C19 Inducers [MoA]",
+            "Cytochrome P450 3A4 Inducers [MoA]",
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 2B6 Inducers [MoA]",
+            "Organic Anion Transporter 3 Inhibitors [MoA]",
+            "Organic Anion Transporting Polypeptide 1B1 Inhibitors [MoA]",
+            "Cytochrome P450 2C8 Inducers [MoA]",
+            "Organic Anion Transporting Polypeptide 1B3 Inhibitors [MoA]",
+            "Breast Cancer Resistance Protein Inhibitors [MoA]"
+          ]
+        }
+      ],
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "DABRAFENIB",
+        "unii": "QGP4HA4G1B"
+      }
+    },
+    {
+      "_id": "N658GY6L3E",
+      "_score": 1.0,
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "TEBENTAFUSP",
+        "unii": "N658GY6L3E"
+      }
+    },
+    {
+      "_id": "BSMCAPRUBJMWDF-KRWDZBQOSA-N",
+      "_score": 1.0,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "cobimetinib"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "atc_classifications": "L01EE02",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Dual specificity mitogen-activated protein kinase kinase 1"
+          },
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Dual specificity mitogen-activated protein kinase kinase 2"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL2146883",
+        "molecule_type": "Small molecule",
+        "pref_name": "COBIMETINIB"
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "interaction_targets": [
+          {
+            "symbol": "MAP2K1"
+          },
+          {
+            "symbol": "MAP2K2"
+          },
+          {
+            "symbol": "MAP2K7"
+          }
+        ],
+        "name": "cobimetinib"
+      },
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "COBIMETINIB",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Kinase Inhibitors [MoA]"
+        ]
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "COBIMETINIB",
+        "unii": "ER29L26N1X"
+      }
+    },
+    {
+      "_id": "HHJUWIANJFBDHT-ZVTSDNJWSA-N",
+      "_score": 1.0,
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "atc_classifications": "L01CA03",
+        "molecule_chembl_id": "CHEMBL238071",
+        "molecule_type": "Small molecule",
+        "pref_name": "VINDESINE"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "VINDESINE",
+        "unii": "RSA8KO39WH"
+      }
+    },
+    {
+      "_id": "ACWZRVQXLIRSDF-UHFFFAOYSA-N",
+      "_score": 1.0,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "binimetinib"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "atc_classifications": "L01EE03",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Dual specificity mitogen-activated protein kinase kinase 1"
+          },
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Dual specificity mitogen-activated protein kinase kinase 2"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL3187723",
+        "molecule_type": "Small molecule",
+        "pref_name": "BINIMETINIB"
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "interaction_targets": [
+          {
+            "symbol": "MAP2K1"
+          },
+          {
+            "symbol": "MAP2K2"
+          }
+        ],
+        "name": "binimetinib"
+      },
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "BINIMETINIB"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "BINIMETINIB",
+        "unii": "181R97MR71"
+      }
+    },
+    {
+      "_id": "M89N0Q7EQR",
+      "_score": 1.0,
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "ALDESLEUKIN",
+        "unii": "M89N0Q7EQR"
+      }
+    },
+    {
+      "_id": "AF75XOF6W3",
+      "_score": 1.0,
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "RELATLIMAB",
+        "unii": "AF75XOF6W3"
+      }
+    },
+    {
+      "_id": "CMJCXYNUCSMDBY-ZDUSSCGKSA-N",
+      "_score": 1.0,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "encorafenib"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "atc_classifications": "L01EC03",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Serine/threonine-protein kinase B-raf"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL3301612",
+        "molecule_type": "Small molecule",
+        "pref_name": "ENCORAFENIB"
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "name": "encorafenib"
+      },
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Encorafenib"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "ENCORAFENIB",
+        "unii": "8L7891MRB6"
+      }
+    },
+    {
+      "_id": "6T8C155666",
+      "_score": 1.0,
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "IPILIMUMAB",
+        "unii": "6T8C155666"
+      }
+    },
+    {
+      "_id": "LIRYPHYGHXZJBZ-UHFFFAOYSA-N",
+      "_score": 1.0,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "trametinib"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "atc_classifications": "L01EE01",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Dual specificity mitogen-activated protein kinase kinase; MEK1/2"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL2103875",
+        "molecule_type": "Small molecule",
+        "pref_name": "TRAMETINIB"
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "interaction_targets": [
+          {
+            "symbol": "MAP2K1"
+          },
+          {
+            "symbol": "MAP2K2"
+          }
+        ],
+        "name": "trametinib"
+      },
+      "ndc": [
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "trametinib",
+          "pharm_classes": [
+            "Protein Kinase Inhibitors [MoA]",
+            "Kinase Inhibitor [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "trametinib",
+          "pharm_classes": [
+            "Protein Kinase Inhibitors [MoA]",
+            "Kinase Inhibitor [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "trametinib",
+          "pharm_classes": [
+            "Protein Kinase Inhibitors [MoA]",
+            "Kinase Inhibitor [EPC]"
+          ]
+        }
+      ],
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "TRAMETINIB",
+        "unii": "33E86K87QN"
+      }
+    }
+  ]
+}
