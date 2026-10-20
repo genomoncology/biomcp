@@ -19,6 +19,6 @@ No test pauses or auto-advances the Tokio clock while real sockets are pending. 
 
 ## Evidence
 
-Changes: CHANGELOG.md, sdlc/records/2301-paused-clock-io.md, sdlc/tickets/2301-finish-the-paused-clock-repairs-and-forbid-the-mix.md, src/cli/system/batch.rs, src/cli/system/tests/dev2_contracts.rs, src/entities/article/search/tests/deadline.rs, src/entities/article/test_support.rs, src/entities/author/papers.rs, src/entities/disease/resolution/paging_tests.rs, tests/test_provider_network_policy.py, tests/test_quality_ratchet_contract.py, tools/check-quality-ratchet.py
+Changes: `CHANGELOG.md`, `sdlc/records/2301-paused-clock-io.md`, `sdlc/tickets/2301-finish-the-paused-clock-repairs-and-forbid-the-mix.md`, `src/cli/system/batch.rs`, `src/cli/system/tests/dev2_contracts.rs`, `src/entities/article/search/tests/deadline.rs`, `src/entities/article/test_support.rs`, `src/entities/author/papers.rs`, `src/entities/disease/resolution/paging_tests.rs`, `tests/test_provider_network_policy.py`, `tests/test_quality_ratchet_contract.py`, `tools/check-quality-ratchet.py`
 
 2230 and 2276 failed full runs when paused time advanced while real TCP was pending; two more tests still use the same pattern. See the root cause record `sdlc/records/2299-root-cause-of-test-only-check-failures.md`.
