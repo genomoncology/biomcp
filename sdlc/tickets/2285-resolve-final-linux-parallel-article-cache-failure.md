@@ -37,3 +37,13 @@ Keep: experiments/170-biomcp-2233-linux-offline-evidence — retain all initial,
 ## Progress
 
 - 2026-10-19 started
+
+## Coordinator verification
+
+The coordinator read the complete test diff and safe record, checked the clean final branch and its test hash against complete-inputs.json, and read the final 29-case pass and required-check results. Final focused job 2285/1792458135864-11811 exited zero. The original Linux failure remains failed and its missing database limit remains explicit. Only this repair is ready; landing it alone unlocks final qualification. A fresh reviewer must inspect the final revision and evidence before landing.
+
+Keep: experiments/2285-biomcp-parallel-article-cache — retain all controlled attempts, the intermediate fixture failure, final affected results, source hashes and owned binary. OWNER identifies biomcp/2285.
+
+## Final Linux reuse ruling
+
+The PM approved reusing the unchanged Rust routine, long-selection and inventory proof from 4c582db4186837893e4839f6d47e5e60a129aae7 only when the exact repaired-tip diff contains Python tests and change records, with no Rust, Cargo, build, script or fixture-file changes. Otherwise rerun the whole Linux suite. A fresh clone, exact rebuilt CLI, full corrected Python suite, strict docs and shipped-feature checks under network isolation remain required, as do the full actual-main build-host check and release rehearsal. Keep the failed attempt marked failed.
