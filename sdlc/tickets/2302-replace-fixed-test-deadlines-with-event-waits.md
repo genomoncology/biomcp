@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Depends on: 2300
+
 ## Outcome
 
 Changes: `tests/test_cache_sqlite.py`, `tests/test_mcp_http_surface.py`, `tests/test_mcp_stdio_guidance.py`, `tests/test_mcp_2026_protocol.py`, `tests/test_replay_server_lifetime.py`, `tests/test_routine_cargo_feature_contract.py`, `tests/test_no_cache_managed_state.py`, `tests/test_cache_invalid_settings.py`, `tests/test_variant_article_disabled_sources.py`, `tests/test_variant_article_transcript_aliases.py`, `tests/test_variant_article_gene_aliases.py`, `CHANGELOG.md`, `sdlc/records/2302-event-waits.md`.
