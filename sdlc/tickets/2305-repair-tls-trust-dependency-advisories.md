@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision c4babd3, accept
+
 ## Outcome
 
 The locked TLS dependency graph no longer contains the certificate-trust versions rejected by RUSTSEC-2026-0382 and RUSTSEC-2026-0381. Preserve BioMCP's certificate verification, configured trust roots and existing transport behavior. Update the smallest compatible dependency set, without advisory suppression or unrelated upgrades.
