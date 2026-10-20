@@ -21,7 +21,8 @@ from urllib.parse import parse_qsl, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from replay_drift import (  # noqa: E402
-    ID_ALIASES,
+    provider_policy_id,
+    provider_policy_ids,
     product_headers,
     recording_provider,
     reply_qualification,
@@ -182,6 +183,11 @@ def main(argv: list[str] | None = None) -> int:
         if authorized - records.keys():
             raise ValueError("unknown restricted source authorization")
         helper = runpy.run_path(str(ROOT / "tools/replay-server"))
+        overrides = {
+            name: helper["prefix_for"](name)
+            for name in helper["provider_routes"](ROOT / "src/sources")
+        }
+        identities = provider_policy_ids(ROOT / "src/sources", overrides, set(records))
         routes = {
             helper["prefix_for"](name): url
             for name, url in helper["provider_routes"](ROOT / "src/sources").items()
@@ -204,8 +210,8 @@ def main(argv: list[str] | None = None) -> int:
         state, details, added_paths = "blocked", [], []
         content_type = entry.get("headers", {}).get("content-type", "")
         qualification = reply_qualification(content_type)
-        source_id = ID_ALIASES.get(provider, provider)
         try:
+            source_id = provider_policy_id(provider, identities)
             if source_id in disabled:
                 state = "disabled"
             else:

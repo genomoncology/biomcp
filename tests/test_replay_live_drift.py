@@ -581,3 +581,22 @@ def test_inventory_refuses_unknown_provider_identity(tmp_path):
     assert process.returncode == 1
     assert summary["blocked"] == 1
     assert results[0]["details"] == ["unknown or ambiguous provider policy identity"]
+
+
+def test_policy_identity_follows_runtime_declaration_and_refuses_ambiguity(tmp_path):
+    helper = runpy.run_path(str(ROOT / "scripts/replay_drift.py"))
+    module = tmp_path / "provider.rs"
+    module.write_text(
+        'const BASE_ENV: &str = "BIOMCP_FUTURE_BASE";\n'
+        'fn new() { shared_client("kegg"); }\n'
+    )
+    overrides = {"BIOMCP_FUTURE_BASE": "future"}
+    derive = helper["provider_policy_ids"]
+    resolve = helper["provider_policy_id"]
+    identities = derive(tmp_path, overrides, {"kegg", "mygene-info"})
+    assert resolve("future", identities) == "kegg"
+    module.write_text(module.read_text() + 'fn other() { shared_client("mygene-info"); }')
+    with pytest.raises(ValueError, match="unknown or ambiguous provider policy identity"):
+        resolve("future", derive(tmp_path, overrides, {"kegg", "mygene-info"}))
+    with pytest.raises(ValueError, match="unknown or ambiguous provider policy identity"):
+        resolve("future", derive(tmp_path, overrides, set()))
