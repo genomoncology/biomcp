@@ -12,6 +12,8 @@ Reviews: revision 6a057f3, accept
 
 Reviews: revision 854f005, accept
 
+Reviews: revision 045f43d, accept
+
 ## Outcome
 
 One local command runs every version, changelog, runbook and release-metadata check, Python and Rust, against a candidate with a proposed version and tag. A developer runs it before any metadata gate, so a gate never stops on a second metadata check.
