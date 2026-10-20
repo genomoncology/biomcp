@@ -1124,6 +1124,22 @@
         "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 works response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
       }
     },
+    "GET /pmc-html/articles/PMC3467229/": {
+      "upstream": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3467229/",
+      "status": 200,
+      "file": "responses/pmc-html/oa23056577-80a046ad3335.bin",
+      "headers": {
+        "content-type": "text/html; charset=utf-8"
+      },
+      "recording_provenance": {
+        "provider": "pmc-html",
+        "request": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3467229/",
+        "captured_at": "2026-10-20T16:26:26.980538+00:00",
+        "sha256": "dc232abb05ab33634d50cd9f6a20c24684158aca0cffa9a5e8a39eeb8647fb5e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from public keyless normal route. Article PMC3467229 own metadata states CC BY and is_pmc_openaccess true."
+      }
+    },
     "GET /pmc-oa/?delimiter=%2F&list-type=2&prefix=PMC3467229.": {
       "upstream": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC3467229.&delimiter=%2F",
       "status": 200,
@@ -1138,6 +1154,22 @@
         "sha256": "d977e2d8059ad86853f61830b2e3750f811c2b0aa34f40163867a57fd3f20399",
         "minimization_or_redaction": "Raw public metadata bytes retained without edits.",
         "provider_origin_statement": "Captured directly from the public PMC OA bucket. Own article metadata explicitly records CC BY and is_pmc_openaccess true."
+      }
+    },
+    "GET /pubmed/efetch.fcgi?db=pmc&id=3467229&rettype=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=3467229&rettype=xml",
+      "status": 200,
+      "file": "responses/pubmed/oa23056577-419a824dfd90.bin",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=3467229&rettype=xml",
+        "captured_at": "2026-10-20T16:26:29.273022+00:00",
+        "sha256": "79c096c824afa3d9ee163860888efed6861f03ed98aaa297210c91dea051e86c",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from public keyless normal route. Article PMC3467229 own metadata states CC BY and is_pmc_openaccess true."
       }
     },
     "GET /pubmed/efetch.fcgi?db=pubmed&id=20516115&retmode=xml": {
