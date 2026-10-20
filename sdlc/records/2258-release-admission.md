@@ -180,7 +180,7 @@ The PM subsequently withdrew the measurement-refresh request in answer 2 of the 
 
 ## Landed security lock repair
 
-Actual main a5314c569719e0336f5ace6c83134dd9afbd6982 passed full job 2299/1792530993968-62782 in 1004001 ms, including installed Linux wheel smoke. Accepted 2308 then landed as main 3c9ddc1510c0152a150f7bf86d7466d718c5d6d4 after gate 2308/1792532380663-49780 passed. Its actual-main full job 2308/1792532689278-14540 is submitted; the earlier main pass does not qualify its changed locks.
+Actual main a5314c569719e0336f5ace6c83134dd9afbd6982 passed full job 2299/1792530993968-62782 in 1004001 ms, including installed Linux wheel smoke. Accepted 2308 then landed as main 3c9ddc1510c0152a150f7bf86d7466d718c5d6d4 after gate 2308/1792532380663-49780 passed. Its actual-main full job 2308/1792532689278-14540 passed in 879115 ms. The coordinator independently read its terminal result. This qualifies the changed locks for the full main command; fresh-clone Linux qualification and the full untagged rehearsal remain required on the final composed source.
 
 Read-only GitHub observations now show all six assigned Dependabot alerts fixed: 80, 87, 88, 89, 91 and 93, with fixed_at values 21:45:37Z through 21:45:39Z. Canonical security-pins/2308/post-landing-alerts-first.json retains the API response. No alert was manually closed and no workflow was triggered to obtain this observation.
 
