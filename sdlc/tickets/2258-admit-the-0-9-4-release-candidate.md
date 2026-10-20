@@ -55,6 +55,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 - 2026-10-20 next: WholeLinux2ca and actualmainc937full passed; administrativee0d and finalmetadata88 passed. Rehearsal held before dispatch because protein-structures JSON panics on currentmain. PM requires sole release repair2287 plus class check; refresh affected qualification then full untagged rehearsal, no tag.
 - 2026-10-20 next: Main6e full passed; finish reviewed2288/2289/2290/2291 process batch, finite2236 replay batches and quietM5 rebuild2284 before affected qualification and one final untagged rehearsal.2272 accepted held for0.9.5. No tag.
 - 2026-10-20 next: Main74d9f2d full407.756s passed.2288retrylandinggate underway;2290/2289 accepted integrated;2236partial57goldens accepted;2292CPICrepair live200s verified focusedchecksfinish. Quiet2284 timings then remaining2236 and finalqualification/rehearsal. No tag.
+- 2026-10-20 next: Main e3db5a0 contains reviewedCPICrepair; gate327.945s passed, actualmainfull1792511348320-29396 runs. Main245 nativeinstalledwheel positive724.052s passed. Separate2289/2290 ready afterthismaincheck;2236 extends77acceptedgoldens withCCBY/OA3467229 fulltext/assets, onepermitted-minimizedmelanomacard and correctedCPICgoldens. Quiet2284 awaitsJarvis confirmation. No newrehearsal/tag.
 
 ## Preparation evidence
 
