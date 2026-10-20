@@ -329,7 +329,13 @@
       "feature": "source-policy"
     },
     "tests/json_error_contract.rs": {
-      "feature": "output-safety"
+      "feature": "output-safety",
+      "tests": {
+        "public_trial_design_error_path_preserves_the_typed_source_chain": null
+      },
+      "internal": {
+        "public_trial_design_error_path_preserves_the_typed_source_chain": "Direct typed error-chain API regression; does not invoke the shipped CLI or MCP surface."
+      }
     },
     "tests/managed_state_permissions.rs": {
       "feature": "cache"

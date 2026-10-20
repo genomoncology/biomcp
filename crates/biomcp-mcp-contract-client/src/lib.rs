@@ -1111,6 +1111,7 @@ impl ContractHarness {
             "LD_PRELOAD",
             "DYLD_LIBRARY_PATH",
             "DYLD_INSERT_LIBRARIES",
+            "LLVM_PROFILE_FILE",
         ] {
             if let Some(value) = std::env::var_os(key) {
                 command.env(key, value);
@@ -1292,4 +1293,35 @@ pub fn child_cache_env(
         ("BIOMCP_CACHE_DIR", root.as_ref().to_owned()),
         ("BIOMCP_CACHE_MIN_DISK_FREE", "1B".into()),
     ]
+}
+
+#[cfg(all(test, unix))]
+mod environment_contract {
+    use super::ContractHarness;
+
+    #[test]
+    fn child_preserves_optional_coverage_and_clears_unrelated_environment() {
+        let harness = ContractHarness::new("/usr/bin/env", ".");
+        let output = harness
+            .server_command_with(&[])
+            .as_std_mut()
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let text = String::from_utf8(output.stdout).unwrap();
+        let variables = text
+            .lines()
+            .filter_map(|line| line.split_once('='))
+            .collect::<std::collections::HashMap<_, _>>();
+        let expected = std::env::var("LLVM_PROFILE_FILE").ok();
+        assert_eq!(
+            variables.get("LLVM_PROFILE_FILE").copied(),
+            expected.as_deref()
+        );
+        assert!(!variables.contains_key("BIOMCP_REVIEW_UNRELATED"));
+        assert_eq!(
+            variables.get("HOME").copied(),
+            harness.environment.path().to_str()
+        );
+    }
 }

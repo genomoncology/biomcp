@@ -7,6 +7,7 @@ import os
 import re
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 
 from feature_coverage import coverage_report, inventory
@@ -15,6 +16,9 @@ from feature_coverage import coverage_report, inventory
 def collect(root: Path, baseline: bool) -> int:
     import tomllib
 
+    output = root / ".cache/feature-coverage"
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "reason": "collection has not finished"}) + "\n")
     links, config, errors = inventory(root)
     if errors:
         raise ValueError("\n".join(errors))
@@ -22,9 +26,6 @@ def collect(root: Path, baseline: bool) -> int:
     floor = settings.get("floor")
     if not baseline and (not isinstance(floor, (int, float)) or not 0 <= floor <= 100):
         raise ValueError("configure the PM-approved outside-in coverage floor first")
-    output = root / ".cache/feature-coverage"
-    output.mkdir(parents=True, exist_ok=True)
-    (output / "coverage.json").write_text(json.dumps({"status": "incomplete", "reason": "collection has not finished"}) + "\n")
     ordinary = os.environ.copy()
     statuses = {}
 
@@ -71,7 +72,13 @@ def collect(root: Path, baseline: bool) -> int:
             instrumented[key] = words[0] if words else ""
     target = root / "target/llvm-cov-target"
     instrumented["CARGO_TARGET_DIR"] = str(target)
-    instrumented["LLVM_PROFILE_FILE"] = str(target / "outside-%p-%m.profraw")
+    # MCP tests deliberately terminate servers. Continuous counters survive
+    # SIGTERM instead of losing every request served before the signal.
+    if sys.platform not in {"linux", "darwin"}:
+        raise ValueError("outside-in continuous profiling requires Linux or macOS")
+    if sys.platform == "linux":
+        instrumented["RUSTFLAGS"] += " -Cllvm-args=-runtime-counter-relocation"
+    instrumented["LLVM_PROFILE_FILE"] = str(target / "outside-%c%p.profraw")
     # Compile only binaries/examples and selected integration targets. cfg(test)
     # library/unit artifacts are never built or included as test consumers.
     rust_args = [arg for path in sorted(config["rust"]) for arg in ("--test", Path(path).stem)]

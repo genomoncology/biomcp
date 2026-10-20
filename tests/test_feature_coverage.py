@@ -146,7 +146,7 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_pat
         '#!/bin/sh\ncase "$1 $2" in\n'
         '"llvm-cov clean") exit 0;;\n'
         '"llvm-cov show-env") echo \'RUSTFLAGS="--cfg instrumented"\'; exit 0;;\n'
-        'build*) exit 17;;\n'
+        'build*) printf "%s\\n%s\\n" "$RUSTFLAGS" "$LLVM_PROFILE_FILE" > profile-env.txt; exit 17;;\n'
         '*) exit 90;;\nesac\n'
     )
     cargo.chmod(0o755)
@@ -160,6 +160,23 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_pat
     data = json.loads((output / "coverage.json").read_text())
     assert data["status"] == "incomplete"
     assert "outside_in_percent" not in data
+    flags, pattern = (root / "profile-env.txt").read_text().splitlines()
+    if sys.platform == "linux":
+        assert "-Cllvm-args=-runtime-counter-relocation" in flags
+    assert Path(pattern).is_absolute()
+    assert pattern == str(root / "target/llvm-cov-target/outside-%c%p.profraw")
+    # Even errors before compilation must not leave yesterday's passing report.
+    (output / "coverage.json").write_text('{"status":"pass","outside_in_percent":100}')
+    (root / "tests/test_unknown.py").write_text("def test_new(): pass\n")
+    rejected = subprocess.run(
+        [sys.executable, str(tools / "collect_feature_coverage.py"), "--baseline"],
+        text=True, capture_output=True,
+    )
+    assert rejected.returncode != 0
+    assert "unclassified test module" in rejected.stdout
+    data = json.loads((output / "coverage.json").read_text())
+    assert data["status"] == "incomplete"
+    assert "outside_in_percent" not in data
 
 
 def test_a_new_executable_spec_requires_a_feature_owner(tmp_path: Path) -> None:
@@ -170,3 +187,21 @@ def test_a_new_executable_spec_requires_a_feature_owner(tmp_path: Path) -> None:
     rejected = run(root, "links")
     assert rejected.returncode != 0
     assert "unclassified test module spec/entity/new.md" in rejected.stderr
+
+
+def test_nested_rust_consumers_keep_qualified_feature_ownership(tmp_path: Path) -> None:
+    root = tree(tmp_path)
+    target = root / "tests/consumer.rs"
+    target.write_text('#[path = "cases/child.rs"]\nmod child;\n#[test]\nfn direct() {}\n')
+    child = root / "tests/cases/child.rs"
+    child.parent.mkdir()
+    child.write_text('#[test]\nfn nested() {}\n// #[test] fn not_a_test() {}\n')
+    config_path = root / "tests/feature-links.json"
+    config = json.loads(config_path.read_text())
+    config["rust"]["tests/consumer.rs"] = {"feature": "gene", "tests": {"child::nested": "drug"}}
+    config_path.write_text(json.dumps(config))
+    rejected = run(root, "links")
+    assert "unknown feature drug" in rejected.stderr
+    assert "missing test" not in rejected.stderr
+    (root / "sdlc/features.md").write_text("- gene: Find a gene.\n- drug: Find a drug.\n")
+    assert run(root, "links").returncode == 0

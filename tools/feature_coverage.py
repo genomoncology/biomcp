@@ -73,6 +73,37 @@ def golden_call_feature(root: Path, path: Path, test: str) -> str:
     return features.pop()
 
 
+def rust_tests(root: Path, path: Path, prefix: str = "", ancestors: tuple[Path, ...] = ()) -> list[str]:
+    """Follow integration-test module declarations, retaining nextest names."""
+    path = path.resolve()
+    if path in ancestors:
+        raise ValueError(f"cyclic Rust test module {path}")
+    text = path.read_text()
+    masked = rust_lexer(root)(text)
+    if re.search(r"\bmod\s+\w+\s*\{", masked):
+        raise ValueError(f"inline Rust integration-test modules need qualified inventory support: {path}")
+    declarations = re.finditer(
+        r"#\[(?:test|tokio::test[^\]]*)\](?:\s*#\[[^\]]*\])*\s*"
+        r"(?:async\s+)?fn\s+(\w+)", masked)
+    names = [prefix + match[1] for match in declarations]
+    # Existing integration targets use external modules. Read the path string
+    # from the original text because the Rust lexer masks string contents.
+    for match in re.finditer(r"\bmod\s+(\w+)\s*;", masked):
+        attributes = text[:match.start()]
+        explicit = re.search(r'#\[path\s*=\s*"([^"]+)"\]\s*$', attributes)
+        if explicit:
+            child = path.parent / explicit[1]
+        else:
+            directory = path.parent if not prefix or path.name == "mod.rs" else path.parent / path.stem
+            candidates = [directory / (match[1] + ".rs"), directory / match[1] / "mod.rs"]
+            existing = [candidate for candidate in candidates if candidate.is_file()]
+            if len(existing) != 1:
+                raise ValueError(f"cannot resolve Rust test module {path}::{match[1]}")
+            child = existing[0]
+        names.extend(rust_tests(root, child, prefix + match[1] + "::", (*ancestors, path)))
+    return names
+
+
 def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
     names = read_features(root)
     config = json.loads((root / "tests/feature-links.json").read_text())
@@ -89,9 +120,7 @@ def inventory(root: Path) -> tuple[list[dict[str, str]], dict, list[str]]:
             if kind == "python":
                 tests = python_tests(path)
             elif kind == "rust":
-                # Names identify the existing integration test, not every helper fn.
-                tests = re.findall(r"#\[(?:test|tokio::test[^\]]*)\](?:\s*#\[[^\]]*\])*\s*"
-                                   r"(?:async\s+)?fn\s+(\w+)", path.read_text())
+                tests = rust_tests(root, path)
             else:
                 tests = [f"block-{i}" for i, _ in enumerate(
                     re.finditer(r"^```(?:bash|sh)\b", path.read_text(), re.M), 1)]
