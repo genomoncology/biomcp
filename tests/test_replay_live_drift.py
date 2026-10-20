@@ -559,6 +559,7 @@ def test_real_formats_reject_truncated_opaque_signature(tmp_path, provider, hist
 @pytest.mark.parametrize(
     ("name", "source_id", "origin"),
     [
+        ("pubmed", "pubmed", "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"),
         ("hpa", "human-protein-atlas", "https://www.proteinatlas.org"),
         ("hpo", "hpo-jax-api", "https://ontology.jax.org/api/hp"),
         ("monarch", "monarch-initiative", "https://api-v3.monarchinitiative.org"),
@@ -580,8 +581,17 @@ def test_inventory_uses_runtime_provider_policy_identity(
 
 def test_inventory_refuses_unknown_provider_identity(tmp_path):
     replay, _ = recording(tmp_path, "https://example.invalid", provider="future-source")
-    recipe = (ROOT / "Makefile").read_text().split("landing-gate:\n", 1)[1].split("\n\n", 1)[0]
-    command = next(line.strip() for line in recipe.splitlines() if "tools/check-replay-live" in line)
+    recipe = (
+        (ROOT / "Makefile")
+        .read_text()
+        .split("landing-gate:\n", 1)[1]
+        .split("\n\n", 1)[0]
+    )
+    command = next(
+        line.strip()
+        for line in recipe.splitlines()
+        if "tools/check-replay-live" in line
+    )
     arguments = shlex.split(command)
     assert "--live" not in arguments
     # Execute the real gate recipe with only its Python launcher replaced, using
@@ -589,7 +599,9 @@ def test_inventory_refuses_unknown_provider_identity(tmp_path):
     arguments = [sys.executable, str(CHECKER), *arguments[5:]]
     process = subprocess.run(
         [*arguments, "--replay-dir", str(replay)],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
         env=isolated_command_env(tmp_path / "home", {}, "http://127.0.0.1"),
     )
     rows = [json.loads(line) for line in process.stdout.splitlines()]
