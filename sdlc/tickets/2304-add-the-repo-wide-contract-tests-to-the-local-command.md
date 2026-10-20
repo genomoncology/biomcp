@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 0016493, accept
+
 ## Outcome
 
 The single local command from 2290 gains a contract tier that runs every test reading the whole repository: changelog coverage, command and source registries, docs, fixture inventory, command discovery and source policy. Developers run it before pushing, so these meet a change before the shared gate.
