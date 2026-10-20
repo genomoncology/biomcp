@@ -43,6 +43,14 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
     shutil.copy2(LINT_SCRIPT, fixture_root / "bin" / "lint")
     shutil.copy2(TEXT_LINT_SCRIPT, fixture_root / "tools" / "check-tracked-text")
     shutil.copy2(BUILD_IDENTITY_WRAPPER, fixture_root / "tools" / "with-build-identity")
+    _write_executable(
+        fixture_root / "tools/bootstrap-lint-tools",
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$PWD/tools"\n',
+    )
+    _write_executable(
+        fixture_root / "tools/osv-scanner",
+        '#!/usr/bin/env bash\nprintf '%s\\n' "$*" >> "${OSV_LOG:-/dev/null}"\nexit "${OSV_EXIT:-0}"\n',
+    )
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
     return fixture_root
 

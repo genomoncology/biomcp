@@ -112,3 +112,13 @@ def test_gate_entry_points_preserve_advisory_policy_and_failures(
         assert "ratchet\n" in gates
         if target != "lint":
             assert "test\n" in gates and "spec\n" in gates
+
+
+def test_lint_checks_github_and_python_lock_advisories(tmp_path: Path) -> None:
+    root, env, _ = _advisory_fixture(tmp_path)
+    scanner_log = tmp_path / "osv.log"
+    env |= {"BIOMCP_ADVISORY_SCOPE": "always", "OSV_LOG": str(scanner_log)}
+    result = _run_lint(root, env=env)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert scanner_log.exists(), "lint never checked Cargo.lock and uv.lock against OSV"
+    assert scanner_log.read_text() == "scan source --lockfile=Cargo.lock --lockfile=uv.lock\n"
