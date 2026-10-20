@@ -151,7 +151,7 @@ release-gate: lint
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 
 # Release lint remains unconditional even when a caller carries landing scope.
-release-gate: override export BIOMCP_ADVISORY_SCOPE = always
+release-gate: override BIOMCP_ADVISORY_SCOPE = always
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh

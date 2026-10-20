@@ -95,7 +95,7 @@
 
 ### Internal
 
-- Limit landing advisory lookups to dependency changes while retaining live checks for full main and release qualification. (2307)
+- Audit Cargo and Python locks against RustSec and GitHub/Python advisories on dependency changes, full main checks and release qualification. (2307)
 - Record the test reliability root cause and authorized local test-support follow-up work. (2299)
 
 - Measure developer rebuild costs and retain the implementation after a bounded optimization experiment found no consistent improvement. (2284)

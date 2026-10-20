@@ -73,7 +73,14 @@ specifications in order. Landing lint skips live dependency advisories only
 when the four Cargo and Python dependency inputs match a verified preceding
 `origin/main`; missing or ambiguous comparison context runs advisories.
 Standalone lint, full main checks and release qualification always run live
-advisories. The release marker subset relies on the release workflow's full
+advisories. Required advisory checks run cargo-deny against RustSec and the
+pinned official OSV-Scanner against both Cargo.lock and uv.lock. OSV adds
+GitHub Security Advisories and Python package advisories. The advisory-only
+bootstrap mode installs the verified upstream binary without a Go toolchain;
+installation, parsing, network errors and advisory findings fail the gate.
+The scanner configuration derives only the reviewed advisory IDs and reasons
+from deny.toml; OSV applies each ID to its aliases. No separate exception list
+or package-wide override is maintained. The release marker subset relies on the release workflow's full
 qualification lint. License checks always run. `make main-gate` runs that standard gate and then
 `make repo-audit` and `make full-feature-check`. The audit stage retains the
 whole-repository source, capture, coupling and CLI surface checks; routine Python

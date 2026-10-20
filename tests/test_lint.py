@@ -43,6 +43,8 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
     shutil.copy2(LINT_SCRIPT, fixture_root / "bin" / "lint")
     shutil.copy2(TEXT_LINT_SCRIPT, fixture_root / "tools" / "check-tracked-text")
     shutil.copy2(BUILD_IDENTITY_WRAPPER, fixture_root / "tools" / "with-build-identity")
+    shutil.copy2(REPO_ROOT / "tools/check-dependency-advisories", fixture_root / "tools/check-dependency-advisories")
+    shutil.copy2(REPO_ROOT / "deny.toml", fixture_root / "deny.toml")
     _write_executable(
         fixture_root / "tools/bootstrap-lint-tools",
         '#!/usr/bin/env bash\nprintf "%s\\n" "$PWD/tools"\n',
@@ -51,6 +53,9 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
         fixture_root / "tools/osv-scanner",
         '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "${OSV_LOG:-/dev/null}"\nexit "${OSV_EXIT:-0}"\n',
     )
+    lock = '[[package]]\nname = "fixture"\nversion = "0.1.0"\n'
+    (fixture_root / "Cargo.lock").write_text(lock)
+    (fixture_root / "uv.lock").write_text(lock)
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
     return fixture_root
 
@@ -321,7 +326,8 @@ def _advisory_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path]:
             "Cargo.toml": '[package]\nname = "fixture"\nversion = "0.1.0"\nedition = "2024"\n'
         },
     )
-    _track_files(repo_root, {"Cargo.lock": "lock\n", "uv.lock": "lock\n", "pyproject.toml": "# fixture\n", "README.md": "base\n"})
+    lock = '[[package]]\nname = "fixture"\nversion = "0.1.0"\n'
+    _track_files(repo_root, {"Cargo.lock": lock, "uv.lock": lock, "pyproject.toml": "# fixture\n", "README.md": "base\n"})
     subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.org", "commit", "-qm", "Set base"], cwd=repo_root, check=True)
     subprocess.run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"], cwd=repo_root, check=True)
     _track_files(repo_root, {"README.md": "candidate\n"})
@@ -357,6 +363,7 @@ def _advisory_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path]:
     env = {
         "CARGO_DENY_LOG": str(log_file),
         "BIOMCP_ADVISORY_SCOPE": "landing",
+        "OSV_LOG": str(tmp_path / "osv.log"),
         "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
     }
     return repo_root, env, log_file
@@ -374,6 +381,10 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
     assert result.returncode == 0
     expected = "check licenses\n" + ("check advisories\n" if dependency_input else "")
     assert log_file.read_text(encoding="utf-8") == expected
+    scanner_log = Path(env["OSV_LOG"])
+    assert scanner_log.exists() == bool(dependency_input)
+    if dependency_input:
+        assert scanner_log.read_text().startswith("scan source --lockfile=Cargo.lock --lockfile=uv.lock --config=")
     assert "[PASS] Rust license lint (cargo deny check licenses)" in result.stdout
     assert ("[PASS] Rust advisory lint (cargo deny check advisories)" in result.stdout) == bool(dependency_input)
 

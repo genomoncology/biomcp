@@ -53,12 +53,13 @@ def test_landing_runs_advisories_for_every_tracked_change_state(tmp_path: Path, 
     if state == "deleted":
         (root / "Cargo.lock").unlink()
     else:
-        (root / "Cargo.lock").write_text("changed\n")
+        with (root / "Cargo.lock").open("a") as output:
+            output.write("# changed\n")
         _git(root, "add", "Cargo.lock")
         if state == "committed":
             _git(root, "commit", "-qm", "Change dependencies")
     result = _run_lint(root, env=env)
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == (1 if state == "deleted" else 0), result.stdout + result.stderr
     assert log.read_text() == "check licenses\ncheck advisories\n"
 
 
@@ -71,11 +72,9 @@ def _make_fixture(root: Path, env: dict[str, str]) -> None:
         for target in ("test", "test-long", "repo-audit", "full-feature-check", "spec", "installed-wheel-smoke")
     ) + '\n'
     (root / "Makefile").write_text(makefile)
-    _write_executable(root / "tools/bootstrap-lint-tools", '#!/usr/bin/env bash\nprintf "%s\\n" "$LINT_TOOL_DIR"\n')
     _write_executable(root / "tools/check-quality-ratchet.sh", '#!/usr/bin/env bash\necho ratchet >> "$GATE_LOG"\n')
     _write_executable(Path(env["PATH"].split(":")[0]) / "uv", '#!/usr/bin/env bash\necho "uv $*" >> "$GATE_LOG"\n')
     _write_executable(root / "tools/run-offline", '#!/usr/bin/env bash\nshift\nexec "$@"\n')
-    env["LINT_TOOL_DIR"] = env["PATH"].split(":")[0]
     env["GATE_LOG"] = str(root.parent / "gates.log")
 
 
@@ -92,7 +91,8 @@ def test_gate_entry_points_preserve_advisory_policy_and_failures(
     root, env, log = _advisory_fixture(tmp_path)
     _make_fixture(root, env)
     if dependency_changed:
-        (root / "Cargo.lock").write_text("changed\n")
+        with (root / "Cargo.lock").open("a") as output:
+            output.write("# changed\n")
     if advisory_fails:
         with (tmp_path / "tools/cargo-deny").open("a") as output:
             output.write('if [ "$*" = "check advisories" ]; then exit 1; fi\n')
@@ -104,6 +104,10 @@ def test_gate_entry_points_preserve_advisory_policy_and_failures(
     )
     assert (result.returncode != 0) == (required and advisory_fails), result.stdout + result.stderr
     assert log.read_text() == "check licenses\n" + ("check advisories\n" if required else "")
+    scanner_log = Path(env["OSV_LOG"])
+    assert scanner_log.exists() == required
+    if required:
+        assert scanner_log.read_text().startswith("scan source --lockfile=Cargo.lock --lockfile=uv.lock --config=")
     assert "[PASS] Rust lint (cargo fmt --check)" in result.stdout
     assert "[PASS] Rust lint (cargo clippy --all-targets -- -D warnings)" in result.stdout
     assert "[PASS] Rust license lint" in result.stdout
@@ -121,4 +125,34 @@ def test_lint_checks_github_and_python_lock_advisories(tmp_path: Path) -> None:
     result = _run_lint(root, env=env)
     assert result.returncode == 0, result.stdout + result.stderr
     assert scanner_log.exists(), "lint never checked Cargo.lock and uv.lock against OSV"
-    assert scanner_log.read_text() == "scan source --lockfile=Cargo.lock --lockfile=uv.lock\n"
+    assert scanner_log.read_text().startswith("scan source --lockfile=Cargo.lock --lockfile=uv.lock --config=")
+
+
+@pytest.mark.parametrize("failure", ["install", "finding", "network", "parse"])
+def test_lint_fails_closed_when_osv_cannot_clear_both_locks(tmp_path: Path, failure: str) -> None:
+    root, env, log = _advisory_fixture(tmp_path)
+    env["BIOMCP_ADVISORY_SCOPE"] = "always"
+    if failure == "install":
+        _write_executable(root / "tools/bootstrap-lint-tools", "#!/usr/bin/env bash\nexit 42\n")
+    else:
+        env["OSV_EXIT"] = str({"finding": 1, "network": 2, "parse": 128}[failure])
+    result = _run_lint(root, env=env)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert log.read_text() == "check licenses\ncheck advisories\n"
+    assert "[PASS] Rust license lint" in result.stdout
+    assert "[FAIL] Dependency advisory lint (OSV Cargo.lock and uv.lock)" in result.stdout
+
+
+@pytest.mark.parametrize("target", ["lint", "landing-gate", "main-gate", "release-gate"])
+def test_required_gate_propagates_osv_findings(tmp_path: Path, target: str) -> None:
+    root, env, _ = _advisory_fixture(tmp_path)
+    _make_fixture(root, env)
+    env |= {"OSV_EXIT": "1", "BIOMCP_ADVISORY_SCOPE": ""}
+    if target == "landing-gate":
+        with (root / "uv.lock").open("a") as output:
+            output.write("# changed\n")
+    result = subprocess.run(["make", target], cwd=root, env=os.environ | env,
+                            capture_output=True, text=True, check=False)
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "[PASS] Rust license lint" in result.stdout
+    assert "[FAIL] Dependency advisory lint (OSV Cargo.lock and uv.lock)" in result.stdout
