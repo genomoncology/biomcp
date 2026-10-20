@@ -20,12 +20,14 @@ Reviews: revision 5db2cfd, accept
 
 Main holds a stable 0.9.4 candidate that meets `docs/reference/release-process.md`, passes the full Linux fresh-clone offline qualification and one complete untagged release rehearsal, and has a PM go request naming the exact commit. Ian alone authorizes the tag. This ticket creates no tag or publication.
 
+- Proof: The final source passes the full local main check, fresh-clone Linux qualification and full untagged release rehearsal; the go request names their exact revisions and jobs.
+
 Changes: `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, `docs/reference/release-process.md`, `CHANGELOG.md`, `AGENTS.md`, `sdlc/tickets/**`, `sdlc/plan.md`, `sdlc/planning/**`, `sdlc/archive/planning/**`, `sdlc/decisions/**`, `sdlc/records/**`.
 
-## Proof
+## Evidence
 
 The release admission record names the exact candidate, final Linux job, successful full untagged release workflow, and unexercised publication operations. Historical measurements stay bound to their measured source under the PM ruling; no measurement refresh or final-source speed claim is required. Disabled sources stay explicitly unverified. The execution trail lives in pm job logs and the owning retained raw evidence.
 
-## Final gate
+Final gate:
 
 Pending the remaining accepted source landings and assessment work. The final job and rehearsal identifiers will be recorded here when they complete.
