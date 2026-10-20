@@ -8,6 +8,8 @@ Status: OPEN.
 
 Milestone: 0.9.4
 
+Reviews: revision 63edd27, accept
+
 ## Outcome
 
 The existing live replay checker handles the real response formats needed by the approved recorded-command coverage without claiming stronger verification than it performs.
