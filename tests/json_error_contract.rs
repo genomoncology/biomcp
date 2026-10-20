@@ -947,7 +947,8 @@ fn json_mode_unknown_subcommand_parse_error_writes_json_stdout_and_exit_2() {
 #[test]
 fn reversed_search_process_errors_are_golden_and_do_no_work() {
     let fixture = NoProviderContactFixture::start();
-    let state_parent = tempfile::tempdir_in(env!("CARGO_MANIFEST_DIR")).expect("state parent");
+    // Honor the test lane TMPDIR; root-level untracked state races Cargo packaging.
+    let state_parent = tempfile::tempdir().expect("state parent");
     let cache = state_parent.path().join("absent-cache");
     let cache_env = biomcp_mcp_contract_client::child_cache_env(&cache);
     let providers = [
