@@ -43,9 +43,11 @@ def collect(root: Path, baseline: bool) -> int:
     tool_bin = tooling / "bin"
     tool_env = ordinary | {"UV_TOOL_DIR": str(tooling / "uv"), "UV_TOOL_BIN_DIR": str(tool_bin)}
     ordinary["PATH"] = str(tool_bin) + os.pathsep + ordinary["PATH"]
-    if not (tool_bin / "cargo-llvm-cov").exists():
-        version = settings["llvm-cov-version"]
-        if run("install-llvm-cov", ["cargo", "install", "cargo-llvm-cov", "--locked", "--version", version, "--root", str(tooling)]):
+    version = settings["llvm-cov-version"]
+    executable = tool_bin / "cargo-llvm-cov"
+    current = subprocess.run([str(executable), "--version"], capture_output=True, text=True) if executable.is_file() else None
+    if current is None or current.returncode or current.stdout.strip() != "cargo-llvm-cov " + version:
+        if run("install-llvm-cov", ["cargo", "install", "cargo-llvm-cov", "--locked", "--version", version, "--root", str(tooling), "--force"]):
             return 1
     if run("llvm-tools", ["rustup", "component", "add", "llvm-tools-preview"]):
         return 1
