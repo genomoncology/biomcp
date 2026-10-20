@@ -86,7 +86,7 @@
 
 ### Internal
 
-- Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype and ORCID command output in JSON and Markdown. (2236)
+- Pin recorded protein, disease, variant, GWAS, pharmacogenomics, phenotype, ORCID, cell-line, gene section and article command output in JSON and Markdown. (2236)
 
 - Record release qualification, live replay coverage, measurement limits and the nonpublishing release rehearsal. (2258)
 

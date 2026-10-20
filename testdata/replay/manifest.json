@@ -332,6 +332,38 @@
       "status": 200,
       "upstream": "https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/113488022"
     },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED",
+      "status": 200,
+      "file": "responses/europepmc/europepmc-current-3.json",
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A20516115+AND+SRC%3AMED",
+        "captured_at": "2026-10-20T15:28:13.720448+00:00",
+        "sha256": "16b56e8553a13b8696ee8252a2e9b3fcd40c5245e1a0bb1a522ef0528f081c9e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
+    "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A30738221+AND+SRC%3AMED": {
+      "upstream": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A30738221+AND+SRC%3AMED",
+      "status": 200,
+      "file": "responses/europepmc/europepmc-current-5.json",
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "europepmc",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A30738221+AND+SRC%3AMED",
+        "captured_at": "2026-10-20T15:28:18.430026+00:00",
+        "sha256": "02b276b5005e5a97890e914cb37b4d97c414e96218bbbfcc2f4a37099746bdec",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
     "GET /europepmc/search?cursorMark=%2A&format=json&pageSize=1&query=EXT_ID%3A42875213+AND+SRC%3AMED": {
       "file": "responses/europepmc/europepmc-search-a1b3c35e3557.bin",
       "headers": {
@@ -736,6 +768,38 @@
       "status": 200,
       "upstream": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1"
     },
+    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22EGFR%22&size=1&species=human": {
+      "upstream": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22EGFR%22&size=1&species=human",
+      "status": 200,
+      "file": "responses/mygene/mygene-current-1.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "mygene",
+        "request": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22EGFR%22&size=1&species=human",
+        "captured_at": "2026-10-20T15:28:09.022859+00:00",
+        "sha256": "312c983ad4711f0c67a492fe1714c0f92012e884351dd5579556138c97ee34f4",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
+    "GET /mygene/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22ERBB2%22&size=1&species=human": {
+      "upstream": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22ERBB2%22&size=1&species=human",
+      "status": 200,
+      "file": "responses/mygene/mygene-current-2.json",
+      "headers": {
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "mygene",
+        "request": "https://mygene.info/v3/query?fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&q=symbol%3A%22ERBB2%22&size=1&species=human",
+        "captured_at": "2026-10-20T15:28:11.303298+00:00",
+        "sha256": "3b15a9c661d112842448771b398328ee03c47c7c53487f10a4a17fe01255edc7",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
     "GET /myvariant/query?fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Cclinvar.hgvs.coding%2Csnpeff.ann.feature_id%2Csnpeff.ann.feature_type%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_amr%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_amr%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic&from=0&q=dbnsfp.genename%3ABRAF+AND+dbnsfp.hgvsp%3A%22p.V600E%22&size=5": {
       "file": "responses/myvariant/myvariant-query-05bd87d2d97a.bin",
       "headers": {
@@ -800,6 +864,38 @@
         "sha256": "278059c2159eb3cffa6e0925703c79184fe01ab2e8aa3bebc8ea63c27f8afc9a",
         "minimization_or_redaction": "none; the full 380-group reply is committed byte-faithful",
         "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 works response with no Authorization header, tokenless (Accept: application/vnd.orcid+json, HTTP 200), pinning the tokenless read behind ticket 2088."
+      }
+    },
+    "GET /pubmed/efetch.fcgi?db=pubmed&id=20516115&retmode=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=20516115&retmode=xml",
+      "status": 200,
+      "file": "responses/pubmed/pubmed-current-4.xml",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=20516115&retmode=xml",
+        "captured_at": "2026-10-20T15:28:15.951561+00:00",
+        "sha256": "4ef64ce301f022a0c85e5ad1b39810d2cc2d3debf88c8e626bd1ea31cd23d571",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
+      }
+    },
+    "GET /pubmed/efetch.fcgi?db=pubmed&id=30738221&retmode=xml": {
+      "upstream": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30738221&retmode=xml",
+      "status": 200,
+      "file": "responses/pubmed/pubmed-current-6.xml",
+      "headers": {
+        "content-type": "text/xml; charset=UTF-8"
+      },
+      "recording_provenance": {
+        "provider": "pubmed",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30738221&retmode=xml",
+        "captured_at": "2026-10-20T15:28:20.622363+00:00",
+        "sha256": "cfec75d989e5f98c8babdd8da999277e7f3682a4e8c21d90727b49790505cda9",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint."
       }
     },
     "GET /pubmed/esearch.fcgi?db=pubmed&retmax=100&retmode=json&retstart=0&term=BRAF+AND+melanoma+NOT+retracted+publication%5Bpt%5D": {
@@ -1132,6 +1228,24 @@
         "provider_origin_statement": "Bytes were recorded from the public DGIdb response through BioMCP's production request path before any stated minimization."
       },
       "request_body": "{\"query\":\"\\nquery DgidbGeneDruggability($gene: String!, $first: Int!) {\\n  genes(names: [$gene], first: $first) {\\n    nodes {\\n      name\\n      geneCategories {\\n        name\\n      }\\n      interactions {\\n        drug {\\n          name\\n          approved\\n        }\\n        interactionScore\\n        interactionTypes {\\n          type\\n        }\\n        sources {\\n          sourceDbName\\n        }\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{\"first\":1,\"gene\":\"EGFR\"}}"
+    },
+    "POST /nih-reporter/projects/search#01496fb4d08fc4c2": {
+      "upstream": "https://api.reporter.nih.gov/v2/projects/search",
+      "status": 200,
+      "file": "responses/nih-reporter/nih-reporter-current-body.json",
+      "headers": {
+        "content-type": "application/json; charset=utf-8"
+      },
+      "recording_provenance": {
+        "provider": "nih",
+        "request": "https://api.reporter.nih.gov/v2/projects/search",
+        "captured_at": "2026-10-20T15:28:23.156871+00:00",
+        "sha256": "a6c7198d4e581c96c23f724f9febfb160589a30d81344d9ed6f17be0739dd64c",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from the public keyless provider endpoint.",
+        "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"limit\":50,\"offset\":0,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
+      },
+      "request_body": "{\"criteria\":{\"advanced_text_search\":{\"operator\":\"and\",\"search_field\":\"projecttitle,abstracttext\",\"search_text\":\"\\\"ERBB2\\\"\"},\"fiscal_years\":[2023,2024,2025,2026,2027]},\"include_fields\":[\"ProjectTitle\",\"PrincipalInvestigators\",\"ContactPiName\",\"Organization\",\"FiscalYear\",\"AwardAmount\",\"ProjectNum\",\"CoreProjectNum\",\"ProjectDetailUrl\"],\"limit\":50,\"offset\":0,\"sort_field\":\"award_amount\",\"sort_order\":\"desc\"}"
     },
     "POST /opentargets/graphql#34180b1b60125348": {
       "upstream": "https://api.platform.opentargets.org/api/v4/graphql",
