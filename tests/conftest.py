@@ -27,6 +27,15 @@ def replay_server_owner() -> Iterator[None]:
         yield
 
 
+@pytest.fixture(autouse=True)
+def replay_case_owner(tmp_path: Path, replay_server_owner: None) -> Iterator[None]:
+    """Leave replay evidence in pytest storage for failed cases only."""
+    from replay_env import replay_case_directory
+
+    with replay_case_directory(tmp_path / "replay"):
+        yield
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Register the needs_binary marker: the test drives a built
     biomcp binary or the spec runner. The docs-only CI lane excludes

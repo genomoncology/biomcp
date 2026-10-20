@@ -19,7 +19,7 @@ import urllib.request
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from threading import RLock
 from typing import Iterator
 
@@ -258,6 +258,7 @@ class _ReplaySession:
         self.lock = RLock()
         self.environment: ReplayEnvironment | None = None
         self.selection = (self.root, False)
+        self.case_dir: Path | None = None
 
     def select(self, root: Path, record: bool) -> None:
         if (root, record) == self.selection:
@@ -284,7 +285,14 @@ class _ReplaySession:
             previous = self.selection
             self.select(root, record)
             try:
-                with TemporaryDirectory(prefix="test-", dir=server.work_dir) as work:
+                with ExitStack() as ownership:
+                    if self.case_dir is None:
+                        work = ownership.enter_context(
+                            TemporaryDirectory(prefix="test-", dir=server.work_dir)
+                        )
+                    else:
+                        self.case_dir.mkdir(parents=True, exist_ok=True)
+                        work = mkdtemp(prefix="test-", dir=self.case_dir)
                     environment = replace(
                         server, work_dir=Path(work), provider_env=server.provider_env.copy(),
                         record=record, _run_counter=0,
@@ -294,6 +302,12 @@ class _ReplaySession:
                         yield environment
                     finally:
                         environment._log_end = server.request_log_line_count()
+                        if self.case_dir is not None:
+                            (environment.work_dir / "request.log").write_text(
+                                "".join(json.dumps(entry) + "\n" for entry in
+                                        environment.request_log_entries()),
+                                encoding="utf-8",
+                            )
             finally:
                 self.select(*previous)
 
@@ -314,6 +328,19 @@ def replay_session() -> Iterator[None]:
     finally:
         _SESSION = None
         session.stack.close()
+
+
+@contextmanager
+def replay_case_directory(directory: Path) -> Iterator[None]:
+    """Borrow pytest's case storage; pytest decides whether to retain it."""
+    if _SESSION is None:
+        raise RuntimeError("a replay case requires a replay session")
+    previous = _SESSION.case_dir
+    _SESSION.case_dir = directory
+    try:
+        yield
+    finally:
+        _SESSION.case_dir = previous
 
 
 @contextmanager
