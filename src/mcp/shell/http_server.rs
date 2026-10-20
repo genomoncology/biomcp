@@ -450,7 +450,6 @@ fn http_router(
         .route("/readyz", get(health_handler))
         .route("/", get(index_handler))
         .layer(from_fn_with_state(allowed_hosts, enforce_host_policy))
-
 }
 
 pub(in crate::mcp) async fn run_http(

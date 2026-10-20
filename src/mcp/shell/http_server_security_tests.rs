@@ -26,18 +26,44 @@ async fn rejected_http_initializations_do_not_accumulate_sessions() {
             .unwrap();
     });
     let client = reqwest::Client::new();
+    let endpoint = format!("http://{address}/mcp");
+    let initialized = client
+        .post(&endpoint)
+        .header("Accept", "application/json, text/event-stream")
+        .json(&json!({
+            "jsonrpc": "2.0", "id": "valid", "method": "initialize",
+            "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                       "clientInfo": {"name": "session-security-test", "version": "0"}}
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert!(initialized.status().is_success());
+    let session_id = initialized.headers()["mcp-session-id"].clone();
+    let _ = initialized.bytes().await.unwrap();
+    assert_eq!(sessions.sessions.read().await.len(), 1);
+    let terminated = client
+        .delete(&endpoint)
+        .header("Mcp-Session-Id", session_id)
+        .header("MCP-Protocol-Version", "2025-06-18")
+        .send()
+        .await
+        .unwrap();
+    assert!(terminated.status().is_success());
+    let _ = terminated.bytes().await.unwrap();
+    assert!(sessions.sessions.read().await.is_empty());
     // GHSA-9pj6-vhgr-3mwh: each rejected first POST formerly left a permanent
     // LocalSessionManager entry. Inspect the production router's real manager
     // after each completed HTTP response, without a memory or timing threshold.
     for id in 0..128 {
         let response = client
-            .post(format!("http://{address}/mcp"))
+            .post(&endpoint)
             .header("Accept", "application/json, text/event-stream")
             .json(&json!({"jsonrpc": "2.0", "id": id, "method": "ping"}))
             .send()
             .await
             .unwrap();
-        assert!(response.status().is_client_error());
+        assert_eq!(response.status(), reqwest::StatusCode::BAD_REQUEST);
         let _ = response.bytes().await.unwrap();
         assert!(
             sessions.sessions.read().await.is_empty(),
