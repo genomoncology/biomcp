@@ -25,7 +25,7 @@ Changes: `sdlc/records/2258-release-admission.md`, `sdlc/release-checklist.md`, 
 ## Order
 
 1. After the last source landing, the admission commit lands through child ticket 2262: stable 0.9.4 in every public version file, the changelog section `## 0.9.4 — YYYY-MM-DD` covering every ticket since v0.9.3, and a disposition line for each finding in every open `sdlc/issues/` file this release touches (fixed with its commit, moot, or not a bug with the reason). `check-version-sync.sh`, `check-release-versions.py --tag v0.9.4` and `check-changelog-coverage.py --tag v0.9.4 --revision <sha>` pass without a tag.
-2. On that candidate: the final 2233 Linux fresh-clone offline run and the 2234 paired measurement against v0.9.3, with raw evidence in a numbered experiment folder.
+2. On that candidate: the final 2233 Linux fresh-clone offline qualification, with raw evidence in its owning experiment. Retain the completed 2234 same-M5 comparison against v0.9.3 as historical context under the PM ruling; run no measurement refresh and make no final-source speed claim.
 3. A fresh read-only reviewer reads every commit since v0.9.3 through the final tip, including records-only commits; commits after its accept get their own review.
 4. The full untagged `release.yml` rehearsal on GitHub from the final commit with its full `candidate_sha` and `rehearsal_version` 0.9.4. Every required job succeeds. Record the run URL, the SHA and the unexercised publication limits.
 5. Branch, worktree, reservation and scratch cleanup for this repository; `git status --porcelain` empty on main and each owned worktree, plus `pm daily` cleanup evidence.
