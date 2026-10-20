@@ -45,7 +45,7 @@ def collect(root: Path, baseline: bool) -> int:
     ordinary["PATH"] = str(tool_bin) + os.pathsep + ordinary["PATH"]
     version = settings["llvm-cov-version"]
     executable = tool_bin / "cargo-llvm-cov"
-    current = subprocess.run([str(executable), "--version"], capture_output=True, text=True) if executable.is_file() else None
+    current = subprocess.run([str(executable), "llvm-cov", "--version"], capture_output=True, text=True) if executable.is_file() else None
     if current is None or current.returncode or current.stdout.strip() != "cargo-llvm-cov " + version:
         if run("install-llvm-cov", ["cargo", "install", "cargo-llvm-cov", "--locked", "--version", version, "--root", str(tooling), "--force"]):
             return 1

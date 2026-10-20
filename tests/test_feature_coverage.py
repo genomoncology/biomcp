@@ -132,7 +132,7 @@ def test_failed_build_replaces_an_old_success_with_incomplete_collection(tmp_pat
     commands.mkdir()
     tooling = output / "tools/bin"
     tooling.mkdir(parents=True)
-    (tooling / "cargo-llvm-cov").write_text("#!/bin/sh\necho cargo-llvm-cov 0.9.1\n")
+    (tooling / "cargo-llvm-cov").write_text('#!/bin/sh\n[ "$*" = "llvm-cov --version" ] || exit 88\necho cargo-llvm-cov 0.9.1\n')
     (tooling / "cargo-llvm-cov").chmod(0o755)
     for name in ("rustup", "uv"):
         executable = commands / name
