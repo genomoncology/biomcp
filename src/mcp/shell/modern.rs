@@ -114,12 +114,7 @@ async fn dispatch_result(
         }
         "resources/list" => {
             reject_unknown_cursor(params)?;
-            json!({
-            "resources": build_resource_list()
-                .into_iter()
-                .map(rmcp::model::AnnotateAble::no_annotation)
-                .collect::<Vec<_>>()
-            })
+            json!({"resources": build_resource_list()})
         }
         "resources/templates/list" => {
             reject_unknown_cursor(params)?;
