@@ -38,6 +38,7 @@ The release record lists every checklist item in section 1 with its evidence, an
 - 2026-10-19 next: PM approved test-only2283 under existing best-effort admission policy. Fresh review accepts; sole repair landing gate runs. Measurements resumed on unchanged product51f5e03. Final Linux whole run follows repair tip; live39/39 proof remains applicable to unchanged runtime/checker/recordings. No tag.
 - 2026-10-19 next: Reviewed test-only2283 landed4c582db4186837893e4839f6d47e5e60a129aae7. Gate1792454342992-75134 and actualmainfull1792454758788-87321 passed; raw2103 retained. Whole final Linux rerun starts on this tip; paired measurements continue on PM-approved unchanged runtime51f5e03. No tag; final records and rehearsal follow.
 - 2026-10-19 next: Final Linux 2233/1792455276832-365318 failed parallel article cache command1 during full Python; traceback pending, accessible raw evidence kept and caseDB teardown limit recorded. Sole repair2285 prepares diagnosis. Measurements continue old-release rows and hold before remaining candidate/runtime samples. Main M5 full remains green; no tag.
+- 2026-10-19 next: Repair2285 landed as 40eac3b; actual-main M5 full job2285/1792458885162-87683 passed, raw retained in experiment2285. Linux renewal2233/1792458909149-436786 remains queued for memory under approved Rust reuse. Measurements complete; exact millisecond timing and fixed SQLite disk costs sent PM for disposition. Final records, fresh reviews and nonpublishing release rehearsal remain; no tag.
 
 ## Preparation evidence
 
