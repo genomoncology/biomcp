@@ -10,7 +10,9 @@ Milestone: 0.9.4
 
 ## Outcome
 
-The existing Linux installed-wheel recipe removes its own temporary build scratch after successful and failed container stages, without permission errors or deletion outside its verified scratch. Preserve the primary build or smoke failure when cleanup also fails. Keep the existing pinned container, build, installation and product smoke behavior.
+The existing Linux installed-wheel recipe prevents container-created files from leaving host scratch with root ownership. Run the container as the host uid and gid, or restore the exact owned target before container exit, including failed stages. Ordinary host temporary-directory cleanup then succeeds. Preserve the primary build or smoke failure. Keep the pinned container, build, installation and product smoke behavior.
+
+PM ruling: fix ownership at its source, not with an extra cleanup container afterward. Cite the environment-leak class in the 2299 root cause record.
 
 Changes: `scripts/check-linux-wheel.sh`, `tests/test_installed_wheel_smoke.py`, `CHANGELOG.md`, `sdlc/records/2310-wheel-scratch-ownership.md`.
 
@@ -20,7 +22,7 @@ Gator job 2308/1792530689487-1311653 runs `make installed-wheel-smoke` on the un
 
 ## Proof
 
-A bounded real Linux ownership control reproduces the current cleanup failure without a cold package rebuild. The repaired command cleans its exact owned scratch after both success and an intentional stage failure, and preserves that original failure. Verify no unrelated path is changed. Reuse actual retained build and smoke receipts accurately; do not relabel their failed aggregate jobs as passing. Run affected tests and the required routine through pm job, then obtain fresh review. The final untagged release rehearsal still must pass the complete packaging workflow.
+A bounded real Linux ownership control reproduces the current cleanup failure without a cold package rebuild. The repaired command leaves host-owned removable scratch after both success and an intentional stage failure, and preserves that original failure. Verify no unrelated path is changed. Reuse actual retained build and smoke receipts accurately; do not relabel their failed aggregate jobs as passing. Run affected tests and the required routine through pm job, then obtain fresh review. The final untagged release rehearsal still must pass the complete packaging workflow.
 
 ## Keeps
 
