@@ -5,11 +5,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import subprocess
 import sys
 import threading
 from urllib.error import HTTPError
+from urllib.parse import parse_qsl, urlencode, urlsplit
 from urllib.request import urlopen
 
 import pytest
@@ -23,6 +25,23 @@ ARTICLE = ("search", "article", "--gene", "BRAF", "--disease", "melanoma", "--so
 GENE = ("search", "gene", "BRAF", "--limit", "1")
 
 
+def recorded_path(path):
+    return path.replace("query=BRAF+AND+melanoma", "query=GENE_PROTEIN%3ABRAF+AND+melanoma")
+
+
+def admitted_provider_keys(cache):
+    with sqlite3.connect(cache / "biomcp.db") as connection:
+        urls = [json.loads(row[0])["response"]["url"] for row in
+                connection.execute("select metadata from entries where namespace='http'")]
+    keys = set()
+    for url in urls:
+        parts = urlsplit(url)
+        if parts.path.startswith(("/europepmc/", "/mygene/")):
+            path = urlsplit(recorded_path(parts.path + "?" + parts.query))
+            keys.add(f"GET {path.path}?{urlencode(sorted(parse_qsl(path.query, keep_blank_values=True)))}")
+    return keys
+
+
 @pytest.fixture
 def provider(tmp_path: Path):
     with replay_environment(record=False) as replay:
@@ -30,7 +49,7 @@ def provider(tmp_path: Path):
             def do_GET(self):
                 # Reuse the recorded article answer: its search-all route anchors
                 # the same gene, while this CLI case only exercises cache behavior.
-                path = self.path.replace("query=BRAF+AND+melanoma", "query=GENE_PROTEIN%3ABRAF+AND+melanoma")
+                path = recorded_path(self.path)
                 try:
                     reply = urlopen(replay.origin + path, timeout=10)
                 except HTTPError as error:
@@ -59,8 +78,9 @@ def provider(tmp_path: Path):
         server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
-        run_dir = replay._next_run_dir()
-        env = retained_cache_env(run_dir, replay.provider_env, replay.origin)
+        run_dir = Path(shutil.move(replay._next_run_dir(), tmp_path / "run"))
+        env = retained_cache_env(run_dir, replay.provider_env, replay.origin,
+                                 cache_dir=run_dir / "cache")
         origin = f"http://127.0.0.1:{server.server_port}"
         for name, value in replay.provider_env.items():
             env[name] = value.replace(replay.origin, origin)
@@ -117,24 +137,39 @@ def test_parallel_article_sources_fill_cold_cache_then_reuse_answers(provider, c
     first_payload = json.loads(first.stdout)
     assert first_payload.get("results") or any(section["results"] for section in first_payload["sections"])
     assert (cache / "biomcp.db").is_file(), "cold search must fill SQLite cache"
-    # Cold parallel startup may skip best-effort writes. Once that process has
-    # exited, one call in this isolated cache admits any skipped responses
-    # without competing with startup; the following call must reuse them.
+    # This call can still fan out internally and skip best-effort writes.
     admitted = run(command)
     assert admitted.returncode == 0, admitted.stderr
     admitted_payload = json.loads(admitted.stdout)
     assert admitted_payload.get("results", admitted_payload.get("sections")) == first_payload.get("results", first_payload.get("sections"))
+    if command[1] == "all":
+        # The standalone gene request has the same size=50 provider identity as
+        # search-all, with no competing provider writes in this private cache.
+        seeded = run(GENE)
+        assert seeded.returncode == 0, seeded.stderr
+        gene_section = next(section for section in first_payload["sections"] if section["entity"] == "gene")
+        assert json.loads(seeded.stdout)["results"] == gene_section["results"]
+        assert "local HTTP cache" not in seeded.stderr, seeded.stderr
+    cached_keys = admitted_provider_keys(cache)
     before = replay.request_log_line_count()
     second = run(command)
     assert second.returncode == 0, second.stderr
     second_payload = json.loads(second.stdout)
     assert second_payload.get("results", second_payload.get("sections")) == first_payload.get("results", first_payload.get("sections"))
     assert "local HTTP cache" not in first.stderr + admitted.stderr + second.stderr, (first.stderr, admitted.stderr, second.stderr)
-    cached_keys = {
+    contacted_keys = {
         entry["key"] for entry in replay.request_log_entries()[:before]
         if entry["status"] == 200 and entry["key"].startswith(("GET /europepmc/", "GET /mygene/"))
     }
-    assert cached_keys, "cold search must contact the cacheable providers"
+    assert cached_keys and cached_keys <= contacted_keys, "reuse proof must name genuinely admitted provider answers"
+    # EuropeOnly awaits its primary write before enrichment. Search-all uses
+    # the uncontended gene seed instead; its exact original request must exist.
+    seed_keys = {key for key in contacted_keys if key.startswith("GET /mygene/")} if command[1] == "all" else {
+        key for key in contacted_keys if ("pageSize", "25") in parse_qsl(urlsplit(key.removeprefix("GET ")).query)
+    }
+    assert len(seed_keys) == 1 and seed_keys <= cached_keys, "single-source admission must preserve the exact provider identity"
+    if command[1] == "all":
+        assert ("size", "50") in parse_qsl(urlsplit(next(iter(seed_keys)).removeprefix("GET ")).query)
     repeated = {entry["key"] for entry in replay.request_log_entries(since=before)}
     assert not cached_keys & repeated, "identical search must reuse cached provider answers"
 
