@@ -18,7 +18,7 @@ When a replay-backed test fails, its case directory, cache database and replay l
 
 ## Evidence
 
-Changes: CHANGELOG.md, pyproject.toml, sdlc/records/2299-root-cause-of-test-only-check-failures.md, sdlc/tickets/2299-keep-a-failed-test-cases-state.md, tests/conftest.py, tests/golden/replay_env.py, tests/test_replay_case_state.py
+Changes: `CHANGELOG.md`, `pyproject.toml`, `sdlc/records/2299-root-cause-of-test-only-check-failures.md`, `sdlc/tickets/2299-keep-a-failed-test-cases-state.md`, `tests/conftest.py`, `tests/golden/replay_env.py`, `tests/test_replay_case_state.py`
 
 Four lanes (2275, 2283, 2285, 2298) ended with the original cause unknown because fixture teardown deleted the failed case's database before anyone could read it. See the root cause record `sdlc/records/2299-root-cause-of-test-only-check-failures.md`.
 
