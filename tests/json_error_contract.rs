@@ -173,7 +173,7 @@ fn credential_response(
     request: &str,
     secret: &str,
 ) -> Result<(Vec<u8>, CredentialFixtureRequest), String> {
-    let target = request_target(&request)?;
+    let target = request_target(request)?;
     let path = target.split_once('?').map_or(target, |(path, _)| path);
     let (provider, body, status) = match path {
         "/query" => (
@@ -212,14 +212,13 @@ fn credential_response(
 }
 
 fn deny_proxy_response(request: &str) -> Result<(Vec<u8>, String), String> {
-    let destination = request_target(&request)?;
+    let destination = request_target(request)?;
     let destination = destination.split_once('?').map_or_else(
         || destination.to_string(),
         |(path, _)| format!("{path}?<redacted>"),
     );
     Ok((
-        format!("HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
-            .into_bytes(),
+        b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".to_vec(),
         destination,
     ))
 }
