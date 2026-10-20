@@ -539,3 +539,77 @@ def test_lint_passes_a_runtime_string_that_names_a_ticket(tmp_path: Path) -> Non
 
     assert result.returncode == 0
     assert "[PASS] code-comment ticket citation scan" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("ref_name", "version", "heading", "cited", "exit_code"),
+    [
+        ("ticket/1234-search", None, "Unreleased", False, 1),
+        ("ticket/1234-search", None, "Unreleased", True, 0),
+        ("main", None, "Unreleased", False, 1),
+        ("main", None, "Unreleased", True, 0),
+        ("ticket/1234-search", "0.9.1", "0.9.1 — 2026-10-19", True, 0),
+        ("ticket/1234-search", "0.9.1", "0.9.1 — 2026-10-19", False, 1),
+        ("ticket/1234-search", "0.9.2-dev", "0.9.1 — 2026-10-19", True, 1),
+        ("ticket/1234-search", "0.9.2", "0.9.1 — 2026-10-19", True, 1),
+    ],
+)
+def test_local_lint_requires_shipped_change_citations(
+    tmp_path: Path, ref_name: str, version: str | None, heading: str,
+    cited: bool, exit_code: int,
+) -> None:
+    repo = _copy_lint_fixture(tmp_path)
+    scripts = repo / "scripts"
+    scripts.mkdir()
+    shutil.copy2(REPO_ROOT / "scripts/check-changelog-coverage.py", scripts)
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", *args],
+            cwd=repo, check=True, capture_output=True,
+        )
+
+    git("symbolic-ref", "HEAD", "refs/heads/main")
+    _track_files(repo, {"README.md": "Previous release\n"})
+    git("commit", "-qm", "Previous release")
+    git("tag", "v0.9.0")
+    git("update-ref", "refs/remotes/origin/main", "HEAD")
+    if ref_name != "main":
+        git("checkout", "-qb", ref_name)
+    files = {
+        "docs/search.md": "Search help\n",
+        "CHANGELOG.md": f"# Changelog\n\n## {heading}\n\n"
+        + ("- Improve article searches. (1234)\n" if cited else "")
+        + "\n## 0.8.4\n\n- Improve article searches. (1234)\n",
+    }
+    if version is not None:
+        files["Cargo.toml"] = f'[package]\nname = "fixture"\nversion = "{version}"\n'
+    _track_files(repo, files)
+    git("commit", "-qm", "Land 1234: improve searches" if ref_name == "main" else "Improve searches")
+    tool_dir = tmp_path / "commands"
+    tool_dir.mkdir()
+    _write_executable(tool_dir / "cargo", "#!/bin/sh\nexit 0\n")
+    result = _run_lint(repo, env={
+        "PATH": f"{tool_dir}:{os.environ.get('PATH', '')}",
+        "CARGO_PKG_VERSION": version or "0.9.1-dev",
+    })
+
+    assert result.returncode == exit_code, result.stdout + result.stderr
+    assert ("[PASS] Branch changelog coverage" if exit_code == 0
+            else "[FAIL] Branch changelog coverage") in result.stdout
+    if not cited:
+        assert "1234" in result.stderr
+
+
+def test_local_lint_rejects_tracked_scratch(tmp_path: Path) -> None:
+    repo = _copy_lint_fixture(tmp_path)
+    scripts = repo / "scripts"
+    scripts.mkdir()
+    shutil.copy2(REPO_ROOT / "scripts/check-no-climb-tracked.sh", scripts)
+    _track_files(repo, {".climb/design.md": "Scratch\n"})
+
+    result = _run_lint(repo)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "[FAIL] Tracked scratch check" in result.stdout
+    assert ".climb/design.md" in result.stderr

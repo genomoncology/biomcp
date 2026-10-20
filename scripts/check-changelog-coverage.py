@@ -5,7 +5,8 @@ At a tag, `--tag` is the release bar: every ticket merged since the
 previous tag must carry a described bullet in the tagged section. On
 a branch, `--branch` is the early form: the tickets landed since the
 last tag plus the branch's own ticket need bullets only when their
-diffs change shipped behavior, checked against the live section.
+diffs change shipped behavior, checked against the live section or the
+matching dated section of a stable release candidate.
 """
 
 from __future__ import annotations
@@ -279,15 +280,16 @@ def live_section_text(path: Path) -> tuple[str, str] | None:
     """The dev cycle's section, or None when the changelog has none.
 
     A released section carries its date (`## 0.9.2 — 2026-10-11`),
-    so a heading with a suffix is closed; a bare version heading is
-    the release under way, and `## Unreleased` is the same thing
+    so a heading with a suffix is closed; a leading bare version heading
+    is the release under way, and `## Unreleased` is the same thing
     before its number is chosen.
     """
     try:
         content = path.read_text(encoding="utf-8")
     except OSError as error:
         raise RuntimeError(f"cannot read {path}: {error}") from error
-    heading = LIVE_HEADING.search(content)
+    first = re.search(r"^## .+$", content, re.MULTILINE)
+    heading = LIVE_HEADING.fullmatch(first.group(0)) if first is not None else None
     if heading is None:
         return None
     body = re.search(
@@ -297,11 +299,36 @@ def live_section_text(path: Path) -> tuple[str, str] | None:
     return heading.group(1), body.group(1)
 
 
+def branch_section_text(path: Path) -> tuple[str, str] | None:
+    """Use the live section, or the stable candidate's matching closed section."""
+    section = live_section_text(path)
+    if section is not None:
+        return section
+    manifest = Path("Cargo.toml")
+    if not manifest.is_file():
+        return None
+    package = re.search(
+        r"(?ms)^\[package\]\s*\n(.*?)(?=^\[|\Z)",
+        manifest.read_text(encoding="utf-8"),
+    )
+    version = re.search(
+        r'^version\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)"\s*(?:#.*)?$',
+        package.group(1) if package is not None else "",
+        re.MULTILINE,
+    )
+    if version is None:
+        return None
+    try:
+        return section_text(path, "v" + version.group(1))
+    except RuntimeError:
+        return None
+
+
 def branch_main(changelog: Path) -> int:
     """The branch form of the gate: fail a branch that changes
-    shipped behavior without a described bullet in the live section.
+    shipped behavior without a described bullet in the current section.
     """
-    ref_name = os.environ.get("GITHUB_REF_NAME", "")
+    ref_name = os.environ.get("GITHUB_REF_NAME") or run_git("branch", "--show-current").strip()
     previous = latest_tag()
     if previous is None:
         print("no previous release; nothing to cover")
@@ -320,14 +347,15 @@ def branch_main(changelog: Path) -> int:
         ),
         key=int,
     )
-    section = live_section_text(changelog)
+    section = branch_section_text(changelog)
     described = described_tickets(section[1]) if section is not None else set()
     if not needing:
         print(f"no ticket since {previous} changed shipped behavior")
         return 0
     if section is None:
         print(
-            "the changelog has no Unreleased or under-way version section to "
+            "the changelog has no Unreleased or under-way version section, or "
+            "matching stable candidate section, to "
             f"carry bullets for: {', '.join(needing)}",
             file=sys.stderr,
         )
