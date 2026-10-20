@@ -5,11 +5,12 @@ use std::panic::AssertUnwindSafe;
 use base64::Engine;
 use futures::FutureExt;
 use rmcp::handler::server::router::tool::ToolRouter;
+use rmcp::handler::server::tool::schema_for_type;
 use rmcp::model::{
-    AnnotateAble, CallToolRequestParams, CallToolResult, Content, Implementation,
-    ListPromptsResult, ListResourceTemplatesResult, ListResourcesResult, ListToolsResult,
-    PaginatedRequestParams, RawResource, ReadResourceRequestParams, ReadResourceResult,
-    ResourceContents, ServerCapabilities, ServerInfo,
+    CallToolRequestParams, CallToolResult, ContentBlock, Implementation, ListPromptsResult,
+    ListResourceTemplatesResult, ListResourcesResult, ListToolsResult, PaginatedRequestParams,
+    ReadResourceRequestParams, ReadResourceResult, Resource, ResourceContents, ServerCapabilities,
+    ServerInfo,
 };
 use rmcp::schemars;
 use rmcp::service::RequestContext;
@@ -567,7 +568,7 @@ impl BioMcpServer {
         // Document policy: error text keeps its line breaks, matching the
         // CLI, while controls and bidi overrides still strip.
         let message = crate::render::human::sanitize_document(&message.into());
-        CallToolResult::error(vec![Content::text(message)])
+        CallToolResult::error(vec![ContentBlock::text(message)])
     }
 
     /// Render a `BioMcpError` for an MCP caller through the public error
@@ -652,10 +653,10 @@ impl BioMcpServer {
                 } else {
                     crate::render::human::sanitize_document(&text)
                 };
-                let mut content = vec![Content::text(text)];
+                let mut content = vec![ContentBlock::text(text)];
                 if let Some(svg) = output.svg {
                     let encoded = base64::engine::general_purpose::STANDARD.encode(svg.as_bytes());
-                    content.push(Content::image(encoded, "image/svg+xml"));
+                    content.push(ContentBlock::image(encoded, "image/svg+xml"));
                 }
                 Ok(
                     if output.variant_articles_mcp_disposition
@@ -1341,7 +1342,7 @@ impl BioMcpServer {
         panic!("injected MCP tool panic")
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<ShellCommand>())]
     async fn biomcp(
         &self,
         Parameters(ShellCommand { command, json }): Parameters<ShellCommand>,
@@ -1376,7 +1377,7 @@ impl BioMcpServer {
         Self::execute_cli(cli, args, json).await
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedSearch>())]
     async fn search(
         &self,
         Parameters(input): Parameters<TypedSearch>,
@@ -1393,7 +1394,7 @@ impl BioMcpServer {
         .await
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedGet>())]
     async fn get(
         &self,
         Parameters(input): Parameters<TypedGet>,
@@ -1410,7 +1411,7 @@ impl BioMcpServer {
         .await
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedVariantCar>())]
     async fn variant_normalize_car(
         &self,
         Parameters(input): Parameters<TypedVariantCar>,
@@ -1421,7 +1422,7 @@ impl BioMcpServer {
             ));
         }
         match crate::entities::variant::normalize_car_batch(input.inputs).await {
-            Ok(response) => Ok(CallToolResult::success(vec![Content::text(
+            Ok(response) => Ok(CallToolResult::success(vec![ContentBlock::text(
                 crate::render::json::to_pretty(&response).map_err(|error| {
                     McpError::internal_error(
                         format!("Failed to serialize CAR response: {error}"),
@@ -1460,7 +1461,7 @@ impl BioMcpServer {
                 ));
             }
             return match crate::entities::variant::search_erepo_gene(&gene, limit, offset).await {
-                Ok(response) => Ok(CallToolResult::success(vec![Content::text(
+                Ok(response) => Ok(CallToolResult::success(vec![ContentBlock::text(
                     crate::render::json::to_pretty(&response).map_err(|error| {
                         McpError::internal_error(
                             format!("Failed to serialize ERepo response: {error}"),
@@ -1495,7 +1496,7 @@ impl BioMcpServer {
         )
         .await
         {
-            Ok(response) => Ok(CallToolResult::success(vec![Content::text(
+            Ok(response) => Ok(CallToolResult::success(vec![ContentBlock::text(
                 redact_mcp_json_text(&crate::render::json::to_pretty(&response).map_err(
                     |error| {
                         McpError::internal_error(
@@ -1515,7 +1516,7 @@ impl BioMcpServer {
         }
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedGeneCspec>())]
     async fn gene_cspec(
         &self,
         Parameters(input): Parameters<TypedGeneCspec>,
@@ -1564,7 +1565,7 @@ impl BioMcpServer {
             }
         };
         match result {
-            Ok(text) => Ok(CallToolResult::success(vec![Content::text(
+            Ok(text) => Ok(CallToolResult::success(vec![ContentBlock::text(
                 redact_mcp_json_text(&text).map_err(|error| {
                     McpError::internal_error(
                         format!("Failed to sanitize CSpec response: {error}"),
@@ -1576,7 +1577,7 @@ impl BioMcpServer {
         }
     }
 
-    #[tool]
+    #[tool(input_schema = schema_for_type::<TypedVariantArticles>())]
     async fn variant_articles(
         &self,
         Parameters(input): Parameters<TypedVariantArticles>,
@@ -1626,9 +1627,9 @@ impl BioMcpServer {
                         )
                     })?;
                     Ok(if outcome.hard_error {
-                        CallToolResult::error(vec![Content::text(text)])
+                        CallToolResult::error(vec![ContentBlock::text(text)])
                     } else {
-                        CallToolResult::success(vec![Content::text(text)])
+                        CallToolResult::success(vec![ContentBlock::text(text)])
                     })
                 }
                 Err(error) => Ok(Self::tool_error(Self::bio_mcp_error_text(&error))),
@@ -1699,10 +1700,7 @@ impl ServerHandler for BioMcpServer {
             return std::future::ready(Err(error));
         }
         std::future::ready(Ok(ListResourcesResult::with_all_items(
-            build_resource_list()
-                .into_iter()
-                .map(|r| r.no_annotation())
-                .collect(),
+            build_resource_list(),
         )))
     }
 
@@ -1758,10 +1756,9 @@ pub(super) fn read_resource_markdown(uri: &str) -> Result<ReadResourceResult, Mc
     ))
 }
 
-pub(super) fn build_resource_list() -> Vec<RawResource> {
-    let mut resources = vec![
-        RawResource::new(RESOURCE_HELP_URI, "BioMCP Overview").with_mime_type("text/markdown"),
-    ];
+pub(super) fn build_resource_list() -> Vec<Resource> {
+    let mut resources =
+        vec![Resource::new(RESOURCE_HELP_URI, "BioMCP Overview").with_mime_type("text/markdown")];
 
     if let Ok(skills) = crate::cli::skill::list_use_case_refs() {
         for skill in skills {
@@ -1772,7 +1769,7 @@ pub(super) fn build_resource_list() -> Vec<RawResource> {
                 format!("Pattern: {title}")
             };
             resources.push(
-                RawResource::new(format!("biomcp://skill/{}", skill.slug), name)
+                Resource::new(format!("biomcp://skill/{}", skill.slug), name)
                     .with_mime_type("text/markdown"),
             );
         }
@@ -2423,8 +2420,8 @@ mod tests {
         result
             .content
             .iter()
-            .filter_map(|chunk| match &chunk.raw {
-                rmcp::model::RawContent::Text(text) => Some(text.text.clone()),
+            .filter_map(|chunk| match chunk {
+                rmcp::model::ContentBlock::Text(text) => Some(text.text.clone()),
                 _ => None,
             })
             .collect::<Vec<_>>()
